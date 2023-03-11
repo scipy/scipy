@@ -18,7 +18,6 @@ from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
 from ._morestats import directional_stats
 from scipy.optimize import root_scalar
-import pdb
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -6148,37 +6147,6 @@ for name in ['logpmf', 'pmf', 'mean', 'var', 'cov']:
                                       dirichlet_mn_docdict_params)
 
 
-_vonmises_fisher_doc_default_callparams = """\
-mu : array_like
-    Mean direction of the distribution. Must be a one-dimensional unit
-    vector of norm 1.
-kappa : float
-    Concentration parameter. Must be positive."""
-
-_vonmises_fisher_doc_callparams_note = ""
-
-_vonmises_fisher_doc_frozen_callparams = ""
-
-_vonmises_fisher_doc_frozen_callparams_note = """\
-See class definition for a detailed description of parameters."""
-
-vonmises_fisher_docdict_params = {
-    '_doc_vonmises_fisher_default_callparams':
-        _vonmises_fisher_doc_default_callparams,
-    '_doc_vonmises_fisher_callparams_note':
-        _vonmises_fisher_doc_callparams_note,
-    '_doc_random_state': _doc_random_state
-}
-
-vonmises_fisher_docdict_noparams = {
-    '_doc_vonmises_fisher_default_callparams':
-        _vonmises_fisher_doc_frozen_callparams,
-    '_doc_vonmises_fisher_callparams_note':
-        _vonmises_fisher_doc_frozen_callparams_note,
-    '_doc_random_state': _doc_random_state
-}
-
-
 class vonmises_fisher_gen(multi_rv_generic):
     r"""A von Mises-Fisher variable.
 
@@ -6200,12 +6168,24 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     Parameters
     ----------
-    %(_dirichlet_mn_doc_default_callparams)s
-    %(_doc_random_state)s
+    mu : array_like
+        Mean direction of the distribution. Must be a one-dimensional unit
+        vector of norm 1.
+    kappa : float
+        Concentration parameter. Must be positive.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
 
     See Also
     --------
     scipy.stats.vonmises : Von-Mises Fisher distribution in 2D on a circle
+    uniform_direction: uniform distribution on the surface of a hypersphere
 
     Notes
     -----
@@ -6375,9 +6355,6 @@ class vonmises_fisher_gen(multi_rv_generic):
     """
     def __init__(self, seed=None):
         super().__init__(seed)
-        # pdb.set_trace()
-        self.__doc__ = doccer.docformat(self.__doc__,
-                                        dirichlet_mn_docdict_params)
 
     def __call__(self, mu=None, kappa=1, seed=None):
         """Create a frozen von Mises-Fisher distribution.
@@ -6433,15 +6410,6 @@ class vonmises_fisher_gen(multi_rv_generic):
     def _logpdf(self, x, dim, mu, kappa):
         """Log of the von Mises-Fisher probability density function.
 
-        Parameters
-        ----------
-        x : ndarray
-            Points at which to evaluate the log of the probability
-            density function. The last axis of `x` corresponds to unit
-            vectors of the same dimension as the distribution.
-
-        Notes
-        -----
         As this function does no argument checking, it should not be
         called directly; use 'logpdf' instead.
 
@@ -6456,12 +6424,15 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_dirichlet_mn_doc_default_callparams)s
-
-        x : ndarray
+        x : array_like
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
             to unit vectors of the same dimension as the distribution.
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
 
         Returns
         -------
@@ -6478,11 +6449,15 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_dirichlet_mn_doc_default_callparams)s
-        x : ndarray
-            Points at which to evaluate the probability
+        x : array_like
+            Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
             to unit vectors of the same dimension as the distribution.
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
 
         Returns
         -------
@@ -6595,11 +6570,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Returns
         -------
-        rotation_matrix : array-like, shape=[n, n]
-            Rotation matrix to rotate vectors from (1, 0, ..., 0)
-            to mu
-        sign : 1 or -1
-            Sign the vectors have to be multiplied with after rotation
+        samples : rotated samples
 
         """
         base_point = np.zeros((dim, ))
@@ -6632,13 +6603,26 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_dirichlet_mn_doc_default_callparams)s
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
         size : integer, optional
             Number of samples to draw (default 1).
+        random_state : {None, int, np.random.RandomState, np.random.Generator},
+                        optional
+            Used for drawing random variates.
+            If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is `None`.
 
         Returns
         -------
-        rvs : ndarray or scalar
+        rvs : ndarray
             Random variates of size (`size`, `N`), where `N` is the
             dimension of the random variable.
 
@@ -6659,7 +6643,11 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        %(_dirichlet_mn_doc_default_callparams)s
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
 
         Returns
         -------
@@ -6675,7 +6663,7 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x : ndarray
+        x : array-like
             Data the distribution is fitted to. The last axis of `x` must
             correspond to unit vectors of norm 1.
 
@@ -6743,34 +6731,83 @@ class vonmises_fisher_frozen(multi_rv_frozen):
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
 
-        Examples
-        --------
-        bla
-
         """
         self._dist = vonmises_fisher_gen(seed)
         self.dim, self.mu, self.kappa = (
             self._dist._process_parameters(mu, kappa))
 
     def logpdf(self, x):
+        """
+        Parameters
+        ----------
+        mu : array_like, default: ``[0, 0]``
+            Mean direction of the distribution.
+        kappa : concentration parameter.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            Log of probability density function evaluated at `x`
+
+        """
         return self._dist._logpdf(x, self.dim, self.mu, self.kappa)
 
     def pdf(self, x):
+        """
+        Parameters
+        ----------
+        mu : array_like, default: ``[0, 0]``
+            Mean direction of the distribution.
+        kappa : concentration parameter.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Probability density function evaluated at `x`
+
+        """
         return np.exp(self.logpdf(x))
 
     def rvs(self, size=1, random_state=None):
+        """Draw random variates from the Von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        mu : array_like, default: ``[0, 0]``
+            Mean direction of the distribution.
+        kappa : concentration parameter.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the random variable.
+
+        """
         random_state = self._dist._get_random_state(random_state)
         return self._dist._rvs(self.dim, self.mu, self.kappa, size,
                                random_state)
 
     def entropy(self):
+        """
+        Parameters
+        ----------
+        mu : array_like, default: ``[0, 0]``
+            Mean direction of the distribution.
+        kappa : concentration parameter.
+
+        Returns
+        -------
+        h: float
+            Entropy of the Von Mises-Fisher distribution.
+
+        """
         return self._dist._entropy(self.dim, self.kappa)
-
-
-for name in ['logpdf', 'pdf', 'rvs', 'entropy']:
-    method = vonmises_fisher_gen.__dict__[name]
-    method_frozen = vonmises_fisher_frozen.__dict__[name]
-    method_frozen.__doc__ = doccer.docformat(
-        method.__doc__, dirichlet_mn_docdict_noparams)
-    method.__doc__ = doccer.docformat(method.__doc__,
-                                      dirichlet_mn_docdict_params)
