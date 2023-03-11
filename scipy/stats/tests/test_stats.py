@@ -7778,7 +7778,7 @@ class TestConfInt:
             Naive implementation for computing the index of one-sided CI
             (lower-bound)
             '''
-            # compute all probabilities from the binomiale distribution for the
+            # compute all probabilities from the binomial distribution for the
             # quantile of interest
             bd = stats.binom(N, quantile)
             ppm = [np.maximum(1-x, 0.0)
