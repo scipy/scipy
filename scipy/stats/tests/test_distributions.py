@@ -660,7 +660,7 @@ class TestGenHyperbolic:
         assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
 
     def test_rvs(self):
-        # Kolmogorov-Smirnov test to ensure alignemnt
+        # Kolmogorov-Smirnov test to ensure alignment
         # of analytical and empirical cdfs
 
         lmbda, alpha, beta = 2, 2, 1
@@ -1656,6 +1656,50 @@ class TestLoggamma:
         btest = stats.binomtest(np.count_nonzero(x < med), len(x))
         ci = btest.proportion_ci(confidence_level=0.999)
         assert ci.low < 0.5 < ci.high
+
+
+class TestJohnsonsu:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonsu_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x + mp.sqrt(x*x + 1)))))
+    # Order is x, a, b, sf, isf tol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(-500, 1, 1, 0.9999999982660072, 1e-8),
+             (2000, 1, 1, 7.426351000595343e-21, 5e-14),
+             (100000, 1, 1, 4.046923979269977e-40, 5e-14)]
+
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsu.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsu.isf(sf, a, b), x, rtol=tol)
+
+
+class TestJohnsonb:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonb_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x/(mp.one - x)))))
+    # Order is x, a, b, sf, isf atol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(1e-4, 1, 1, 0.9999999999999999, 1e-7),
+             (0.9999, 1, 1, 8.921114313932308e-25, 5e-14),
+             (0.999999, 1, 1, 5.815197487181902e-50, 5e-14)]
+
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsb.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsb.isf(sf, a, b), x, atol=tol)
 
 
 class TestLogistic:
