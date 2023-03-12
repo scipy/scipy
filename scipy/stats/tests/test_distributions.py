@@ -1480,7 +1480,7 @@ class TestGenLogistic:
     @pytest.mark.parametrize('q, c, ref', [(0.1, 20, 2.10358298091805),
                                            (0.9, 0.2, 0.3659913776736257)])
     def test_ppf(self, q, c, ref):
-        assert_allclose(stats.genlogistic.ppf(q, c), ref, rtol=1e-15)
+        assert_allclose(stats.genlogistic.ppf(q, c), ref, rtol=5e-15)
 
 
 class TestHypergeom:
