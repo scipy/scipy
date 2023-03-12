@@ -1435,6 +1435,7 @@ class TestGenLogistic:
     # def entropy_mp(c):
     #     c = mp.mpf(c)
     #     return float(-mp.log(c)+mp.one+mp.digamma(c + mp.one) + mp.euler)
+
     @pytest.mark.parametrize('c, ref', [(1e-100, 231.25850929940458),
                                         (1e-4, 10.21050485336338),
                                         (1e8, 1.577215669901533),
