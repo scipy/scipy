@@ -7057,7 +7057,7 @@ class t_gen(rv_continuous):
             h = 0.5 + 0.5 * np.log(np.pi) + 0.5 * np.log(2) + 1 / df
             return h
 
-        h = _lazywhere(df >= 3e7, (df,), f=asymptotic, f2=regular)
+        h = _lazywhere(df >= 75000, (df,), f=asymptotic, f2=regular)
         return h
 
 t = t_gen(name='t')
