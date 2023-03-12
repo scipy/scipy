@@ -3458,7 +3458,7 @@ class gengamma_gen(rv_continuous):
     def _entropy(self, a, c):
         def regular(a, c):
             val = sc.psi(a)
-            A = a * (1 - val) + 1.0 / (c * val)
+            A = a * (1 - val) + val / c
             B = sc.gammaln(a) - np.log(abs(c))
             h = A + B
             return h
