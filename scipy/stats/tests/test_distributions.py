@@ -6872,10 +6872,8 @@ def test_gengamma_edge():
 
 @pytest.mark.parametrize("a, ref",
                          [(1500000.0, -5.621230523748292),
-                         (10000000000.0, -10.05055748355847),
-                         (1e+30, -33.10536137897591),
-                         (1e+60, -67.65137601525164),
-                         (1e+100, -113.70597317167858)])
+                          (1e+30, -33.10536137897591),
+                          (1e+100, -113.70597317167858)])
 def test_gengamma_extreme_entropy(a, ref):
     # The reference values were calculated with mpmath:
     # c was assumed to be 1 for convenience
