@@ -995,9 +995,10 @@ class TestSomersD(_TestPythranFunc):
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
 
-    def test_somersd_large_inputs(self):
+    def test_somersd_large_inputs_gh18132(self):
         # Test that large inputs where potential overflows could occur give
         # the expected output. This is tested in the case of binary inputs.
+        # See gh-18126.
 
         # generate lists of random classes 1-2 (binary)
         classes = [1, 2]
@@ -1013,8 +1014,8 @@ class TestSomersD(_TestPythranFunc):
         # val_sklearn = 2 * val_auc_sklearn - 1
         val_sklearn = -0.001528138777036947
 
-        # calculate the Somers' D statistic, which should be equal to the result
-        # of val_sklearn until approximately machine precision
+        # calculate the Somers' D statistic, which should be equal to the
+        # result of val_sklearn until approximately machine precision
         val_scipy = stats.somersd(x, y).statistic
         assert_allclose(val_sklearn, val_scipy, atol=1e-15)
 
