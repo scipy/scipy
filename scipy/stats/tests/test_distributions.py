@@ -2923,8 +2923,8 @@ class TestInvGamma:
         assert_allclose(x, xx, rtol=1.0)
 
     @pytest.mark.parametrize("a, ref",
-                            [(100000000.0, -26.21208257605721),
-                            (1e+100, -343.9688254159022)])
+                             [(100000000.0, -26.21208257605721),
+                              (1e+100, -343.9688254159022)])
     def test_large_entropy(self, a, ref):
         # The reference values were calculated with mpmath:
         # from mpmath import mp
