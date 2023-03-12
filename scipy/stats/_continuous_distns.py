@@ -2747,8 +2747,7 @@ class genlogistic_gen(rv_continuous):
         return -c * np.log1p(np.exp(-x))
 
     def _ppf(self, q, c):
-        vals = -np.log(pow(q, -1.0/c)-1)
-        return vals
+        return -np.log(sc.powm1(q, -1.0/c))
 
     def _sf(self, x, c):
         return -sc.expm1(self._logcdf(x, c))
