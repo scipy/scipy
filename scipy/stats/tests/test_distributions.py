@@ -2988,13 +2988,28 @@ def test_moments_t():
 
 
 def test_t_entropy():
-    df = [1, 2, 25, 100, 3e7, 1e100]
-    h = 0.5 + 0.25 * np.log(np.pi) + 0.5 * np.log(2)
+    df = [1, 2, 25, 100]
     # Expected values were computed with mpmath.
     expected = [2.5310242469692907, 1.9602792291600821,
-                1.459327578078393, 1.4289633653182439, h, h]
+                1.459327578078393, 1.4289633653182439]
     assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
+@pytest.mark.parametrize("v, ref",
+                         [(30000000.0, 1.4189385665380063),
+                         (1e+100, 1.4189385332046727)])
+def test_t_extreme_entropy(v, ref):
+    # Reference values were calculated with mpmath:
+    # from mpmath import mp
+    # mp.dps = 500
+    #
+    # def t_entropy(v):
+    #   v = mp.mpf(v)
+    #   C = (v + mp.one) / 2
+    #   A = C * (mp.digamma(C) - mp.digamma(v / 2))
+    #   B = 0.5 * mp.log(v) + mp.log(mp.beta(v / 2, mp.one / 2))
+    #   h = A + B
+    #   return float(h)
+    assert_allclose(stats.t.entropy(v), ref, rtol=1e-14)
 
 @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
                                       "ppf", "sf", "isf"])

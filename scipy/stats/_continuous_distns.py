@@ -7054,7 +7054,7 @@ class t_gen(rv_continuous):
             # psi(x) ~ ln(x) - 1 / (2 * x)
             # B(x, y) ~ gamma(x) * y ** (-x)
             # (x / 2) * (psi(x + 1) - psi(x)) ~ 0.5
-            h = 0.5 + 0.5 * sc.gammaln(0.5) + 0.5 * np.log(2)
+            h = 0.5 + 0.5 * np.log(np.pi) + 0.5 * np.log(2) + 1 / df
             return h
 
         h = _lazywhere(df >= 3e7, (df,), f=asymptotic, f2=regular)
