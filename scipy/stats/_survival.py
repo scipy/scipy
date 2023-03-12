@@ -10,7 +10,15 @@ __all__ = ['ecdf']
 
 
 @dataclass
-class ECDFNestedResult:
+class EmpiricalDistributionFunction:
+    """An empirical distribution function produced by `scipy.stats.ecdf`
+
+    Attributes
+    ----------
+    points : ndarray
+        The point estimate of the cumulative distribution function (CDF) or its
+        complement, the survival function (SF), at unique values of the sample.
+    """
     points: np.ndarray
     # Exclude these from __str__
     _n: np.ndarray = field(repr=False)  # number "at risk"
@@ -18,6 +26,31 @@ class ECDFNestedResult:
     _sf: np.ndarray = field(repr=False)  # survival function for var estimate
 
     def confidence_interval(self, confidence_level=0.95):
+        """Compute a confidence interval around the CDF/SF point estimate
+
+        Parameters
+        ----------
+        confidence_level : float
+            Confidence level for the computed confidence interval
+
+        Returns
+        ci : ``ConfidenceInterval`` object
+            An object with attributes ``low`` and ``high``: arrays of the
+            lower and upper bounds of the confidence interval at unique values
+            of the sample.
+
+        Notes
+        -----
+        The confidence interval is computed according to Greenwood's
+        formula [1]_.
+
+        References
+        ----------
+        .. [1] Sawyer, Stanley. "The Greenwood and Exponential Greenwood
+               Confidence Intervals in Survival Analysis."
+               https://www.math.wustl.edu/~sawyer/handouts/greenwood.pdf
+
+        """
         sf, d, n = self._sf, self._d, self._n
 
         # When n == d, Greenwood's formula divides by zero.
@@ -41,21 +74,36 @@ class ECDFNestedResult:
 
 @dataclass
 class ECDFResult:
+    """ Result object returned by `scipy.stats.ecdf`
+
+    Attributes
+    ----------
+    x : ndarray
+        The unique values of the sample processed by `scipy.stats.ecdf`.
+    cdf : ``EmpiricalDistributionFunction`` object
+        An object representing the empirical cumulative distribution function.
+    sf : ``EmpiricalDistributionFunction`` object
+        An object representing the complement of the empirical cumulative
+        distribution function.
+    """
     x: np.ndarray
-    cdf: ECDFNestedResult
-    sf: ECDFNestedResult
+    cdf: EmpiricalDistributionFunction
+    sf: EmpiricalDistributionFunction
 
     def __init__(self, x, cdf, sf, n, d):
         self.x = x
-        self.cdf = ECDFNestedResult(cdf, n, d, sf)  # Both CDF and SF results
-        self.sf = ECDFNestedResult(sf, n, d, sf)    # need SF for variance est.
+        # Both CDF and SF results need SF for variance est.
+        self.cdf = EmpiricalDistributionFunction(cdf, n, d, sf)
+        self.sf = EmpiricalDistributionFunction(sf, n, d, sf)
 
 
 def ecdf(sample):
     """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
-    estimate of the CDF of the distribution underlying a sample.
+    estimate of the CDF of the distribution underlying a sample. This function
+    returns objects representing both the empirical distribution function and
+    its complement, the empirical survival function.
 
     Parameters
     ----------
@@ -70,12 +118,11 @@ def ecdf(sample):
     An object with the following attributes.
 
     x : ndarray
-        The unique values at which the ECDF changes.
-    cdf : ECDFNestedResult
-        An object representing the empirical cumulative distribution function
-    sf : ECDFNestedResult
-        An object representing the complement of the empirical cumulative
-        distribution function.
+        The unique values in the sample.
+    cdf : ``EmpiricalDistributionFunction`` object
+        An object representing the empirical cumulative distribution function.
+    sf : ``EmpiricalDistributionFunction`` object
+        An object representing the empirical survival function.
 
     The `cdf` and `sf` attributes themselves have the following attributes.
 
