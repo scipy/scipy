@@ -3464,8 +3464,8 @@ class gengamma_gen(rv_continuous):
             return h
 
         def asymptotic(a, c):
-            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a)
-            # + 0.5 * ln(2 * pi) + 1 / (12 * a)
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) +
+            #              0.5 * ln(2 * pi) + 1 / (12 * a)
             # psi(a) ~ ln(a) - 1 / (2 * a) - 1 / (12 * a ^ 2)
             P = np.log(a) - 1 / (2 * a) - 1 / (12 * a ** 2)
             A = 0.5 + 1 / (6 * a) + 1 / (c * P) - 0.5 * np.log(a)
