@@ -1,9 +1,9 @@
+import warnings
 from dataclasses import dataclass, field
 import numpy as np
-from ._censored_data import CensoredData
 from scipy import special
-from ._common import ConfidenceInterval
-import warnings
+from scipy.stats._censored_data import CensoredData
+from scipy.stats._common import ConfidenceInterval
 
 
 __all__ = ['ecdf']
