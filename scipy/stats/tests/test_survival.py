@@ -63,6 +63,19 @@ class TestSurvival:
         with pytest.raises(NotImplementedError, match=message):
             stats.ecdf(stats.CensoredData.left_censored([1], censored=[True]))
 
+        message = 'method` must be one of...'
+        res = stats.ecdf([1, 2, 3])
+        with pytest.raises(ValueError, match=message):
+            res.cdf.confidence_interval(method='ekki-ekki')
+        with pytest.raises(ValueError, match=message):
+            res.sf.confidence_interval(method='shrubbery')
+
+        message = 'confidence_level` must be a scalar between 0 and 1'
+        with pytest.raises(ValueError, match=message):
+            res.cdf.confidence_interval(-1)
+        with pytest.raises(ValueError, match=message):
+            res.sf.confidence_interval([0.5, 0.6])
+
     def test_edge_cases(self):
         res = stats.ecdf([])
         assert_equal(res.x, [])
@@ -174,7 +187,7 @@ class TestSurvival:
         assert_allclose(res[2], ref.sf.points, rtol=1e-14)
 
     def test_right_censored_ci(self):
-        # test `ecdf` confidence interval against example 4 (URL above).
+        # test "greenwood" confidence interval against example 5 (URL above).
         times, died = self.t4, self.d4
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
@@ -191,6 +204,24 @@ class TestSurvival:
         assert_allclose(sf_ci.high, np.clip(res.sf.points + allowance, 0, 1))
         assert_allclose(cdf_ci.low, np.clip(res.cdf.points - allowance, 0, 1))
         assert_allclose(cdf_ci.high, np.clip(res.cdf.points + allowance, 0, 1))
+
+    def test_right_censored_exponential_greenwood_ci(self):
+        # test "exponential greenwood" confidence interval against example 5
+        times, died = self.t5, self.d5
+        sample = stats.CensoredData.right_censored(times, np.logical_not(died))
+        res = stats.ecdf(sample)
+        lower = np.array([0.66639, 0.624174, 0.456179, 0.287822, 0.287822,
+                          0.287822, 0.128489, 0.030957, 0.030957, 0.030957])
+        upper = np.array([0.991983, 0.970995, 0.87378, 0.739467, 0.739467,
+                          0.739467, 0.603133, 0.430365, 0.430365, 0.430365])
+
+        sf_ci = res.sf.confidence_interval(method='exponential greenwood')
+        cdf_ci = res.cdf.confidence_interval(method='exponential greenwood')
+
+        assert_allclose(sf_ci.low, lower, atol=1e-5)
+        assert_allclose(sf_ci.high, upper, atol=1e-5)
+        assert_allclose(cdf_ci.low, 1-upper, atol=1e-5)
+        assert_allclose(cdf_ci.high, 1-lower, atol=1e-5)
 
     def test_right_censored_ci_nans(self):
         # test `ecdf` confidence interval (with NaNs) against Matlab

@@ -25,6 +25,7 @@ class EmpiricalDistributionFunction:
     _n: np.ndarray = field(repr=False)  # number "at risk"
     _d: np.ndarray = field(repr=False)  # number of "deaths"
     _sf: np.ndarray = field(repr=False)  # survival function for var estimate
+    _kind: str = field(repr=False)  # type of function: "cdf" or "sf"
 
     def __init__(self, x, points, n, d, kind):
         self.points = points
@@ -32,6 +33,7 @@ class EmpiricalDistributionFunction:
         self._n = n
         self._d = d
         self._sf = points if kind == 'sf' else 1 - points
+        self._kind = kind
         f0 = 1 if kind == 'sf' else 0  # leftmost function value
         f1 = 1 - f0
         # fill_value can't handle edge cases at infinity
@@ -41,13 +43,17 @@ class EmpiricalDistributionFunction:
         self._f = interpolate.interp1d(x, y, kind='previous',
                                        assume_sorted=True)
 
-    def confidence_interval(self, confidence_level=0.95):
+    def confidence_interval(self, confidence_level=0.95, method='Greenwood'):
         """Compute a confidence interval around the CDF/SF point estimate
 
         Parameters
         ----------
-        confidence_level : float
+        confidence_level : float, default: 0.95
             Confidence level for the computed confidence interval
+
+        method : str, optional
+            Method used to compute the confidence interval. Options are
+            "Greenwood" and "Exponential Greenwood".
 
         Returns
         -------
@@ -58,8 +64,8 @@ class EmpiricalDistributionFunction:
 
         Notes
         -----
-        The confidence interval is computed according to Greenwood's
-        formula [1]_.
+        Confidence intervals are computed according to the Greenwood formula or
+        the more recent "Exponential Greenwood" formula as described in [1]_.
 
         References
         ----------
@@ -68,8 +74,24 @@ class EmpiricalDistributionFunction:
                https://www.math.wustl.edu/~sawyer/handouts/greenwood.pdf
 
         """
-        sf, d, n = self._sf, self._d, self._n
+        methods = {'greenwood': self._greenwood_ci,
+                   'exponential greenwood': self._exp_greenwood_ci}
 
+        message = f"`method` must be one of {set(methods)}."
+        if method.lower() not in methods:
+            raise ValueError(message)
+
+        message = "`confidence_level` must be a scalar between 0 and 1."
+        confidence_level = np.asarray(confidence_level)[()]
+        if confidence_level.shape or not (0 <= confidence_level <= 1):
+            raise ValueError(message)
+
+        method_fun = methods[method.lower()]
+        low, high = method_fun(confidence_level)
+        return ConfidenceInterval(np.clip(low, 0, 1), np.clip(high, 0, 1))
+
+    def _greenwood_ci(self, confidence_level):
+        sf, d, n = self._sf, self._d, self._n
         # When n == d, Greenwood's formula divides by zero.
         # When s != 0, this can be ignored: var == inf, and CI is [0, 1]
         # When s == 0, this results in NaNs. Produce an informative warning.
@@ -84,9 +106,24 @@ class EmpiricalDistributionFunction:
         se = np.sqrt(var)
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
-        low = np.clip(self.points - z * se, 0, 1)
-        high = np.clip(self.points + z * se, 0, 1)
-        return ConfidenceInterval(low, high)
+        low = self.points - z * se
+        high = self.points + z * se
+        return low, high
+
+    def _exp_greenwood_ci(self, confidence_level):
+        sf, d, n = self._sf, self._d, self._n
+
+        var = 1 / np.log(sf) ** 2 * np.cumsum(d / (n * (n - d)))
+
+        se = np.sqrt(var)
+        z = special.ndtri(1 / 2 + confidence_level / 2)
+
+        lnl_points = np.log(-np.log(sf))
+        low = np.exp(-np.exp(lnl_points + z * se))
+        high = np.exp(-np.exp(lnl_points - z * se))
+        if self._kind == "cdf":
+            low, high = 1-high, 1-low
+        return low, high
 
     def __call__(self, x):
         """Evaluate the empirical CDF/SF function at the input.
@@ -155,7 +192,7 @@ def ecdf(sample):
             The unique values in the sample.
         cdf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
             An object representing the empirical cumulative distribution function.
-        sf : ``~scipy.stats._result_classes.EmpiricalDistributionFunction`
+        sf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
             An object representing the empirical survival function.
 
         The `cdf` and `sf` attributes themselves have the following attributes.
@@ -184,7 +221,8 @@ def ecdf(sample):
     For right-censored data, the ECDF is given by the Kaplan-Meier estimator
     [2]_; other forms of censoring are not supported at this time.
 
-    Confidence intervals are computed according to the Greenwood formula [4]_.
+    Confidence intervals are computed according to the Greenwood formula or the
+    more recent "Exponential Greenwood" formula as described in [4]_.
 
     References
     ----------
@@ -303,10 +341,7 @@ def _ecdf_uncensored(sample):
     # [1].89 "the relative frequency of the sample that exceeds x in value"
     sf = 1 - cdf
 
-    _n = sf*sample.size
-    _d = counts
-
-    return x, cdf, sf, _n, _d
+    return x, cdf, sf, sf * sample.size, counts
 
 
 def _ecdf_right_censored(sample):
