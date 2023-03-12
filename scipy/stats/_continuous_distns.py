@@ -7040,11 +7040,25 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         if df == np.inf:
             return norm._entropy()
+
         half = df/2
         half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half))
-                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
+        # _lazywhere complains if the functions don't have inputs
+        def regular(df):
+            return (half1*(sc.digamma(half1) - sc.digamma(half))
+                    + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+
+        def asymptotic(df):
+            # gammaln(x) ~ x * ln(x) - x - 0.5 * ln(x) + 0.5 * ln(2 * pi)
+            # psi(x) ~ ln(x) - 1 / (2 * x)
+            # B(x, y) ~ gamma(x) * y ** (-x)
+            # (x / 2) * (psi(x + 1) - psi(x)) ~ 0.5
+            h = 0.5 + 0.5 * sc.gammaln(0.5) + 0.5 * np.log(2)
+            return h
+
+        h = _lazywhere(df >= 3e7, (df,), f=asymptotic, f2=regular)
+        return h
 
 t = t_gen(name='t')
 

@@ -2988,10 +2988,11 @@ def test_moments_t():
 
 
 def test_t_entropy():
-    df = [1, 2, 25, 100]
+    df = [1, 2, 25, 100, 3e7, 1e100]
+    h = 0.5 + 0.25 * np.log(np.pi) + 0.5 * np.log(2)
     # Expected values were computed with mpmath.
     expected = [2.5310242469692907, 1.9602792291600821,
-                1.459327578078393, 1.4289633653182439]
+                1.459327578078393, 1.4289633653182439, h, h]
     assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
 
