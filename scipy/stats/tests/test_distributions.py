@@ -2931,6 +2931,7 @@ class TestInvGamma:
         # mp.dps = 500
 
         # def invgamma_entropy(a):
+        #     a = mp.mpf(a)
         #     h = a + mp.loggamma(a) - (mp.one + a) * mp.digamma(a)
         #     return float(h)
         assert_allclose(stats.invgamma.entropy(a), ref, rtol=1e-10)
