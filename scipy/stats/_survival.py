@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
 import numpy as np
-from scipy import special
+from scipy import special, interpolate
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
@@ -21,9 +21,25 @@ class EmpiricalDistributionFunction:
     """
     points: np.ndarray
     # Exclude these from __str__
+    _x: np.ndarray = field(repr=False)  # points at which function is estimated
     _n: np.ndarray = field(repr=False)  # number "at risk"
     _d: np.ndarray = field(repr=False)  # number of "deaths"
     _sf: np.ndarray = field(repr=False)  # survival function for var estimate
+
+    def __init__(self, x, points, n, d, kind):
+        self.points = points
+        self._x = x
+        self._n = n
+        self._d = d
+        self._sf = points if kind == 'sf' else 1 - points
+        f0 = 1 if kind == 'sf' else 0  # leftmost function value
+        f1 = 1 - f0
+        # fill_value can't handle edge cases at infinity
+        x = np.insert(x, [0, len(x)], [-np.inf, np.inf])
+        y = np.insert(points, [0, len(points)], [f0, f1])
+        # `or` conditions handle the case of empty x, points
+        self._f = interpolate.interp1d(x, y, kind='previous',
+                                       assume_sorted=True)
 
     def confidence_interval(self, confidence_level=0.95):
         """Compute a confidence interval around the CDF/SF point estimate
@@ -34,7 +50,8 @@ class EmpiricalDistributionFunction:
             Confidence level for the computed confidence interval
 
         Returns
-        ci : ``ConfidenceInterval`` object
+        -------
+        ci : ``ConfidenceInterval``
             An object with attributes ``low`` and ``high``: arrays of the
             lower and upper bounds of the confidence interval at unique values
             of the sample.
@@ -71,6 +88,22 @@ class EmpiricalDistributionFunction:
         high = np.clip(self.points + z * se, 0, 1)
         return ConfidenceInterval(low, high)
 
+    def __call__(self, x):
+        """Evaluate the empirical CDF/SF function at the input.
+
+        Parameters
+        ----------
+        x : ndarray
+            Argument to the CDF/SF
+
+        Returns
+        -------
+        p : ndarray
+            The CDF/SF evaluated at `x`
+
+        """
+        return self._f(x)
+
 
 @dataclass
 class ECDFResult:
@@ -80,9 +113,9 @@ class ECDFResult:
     ----------
     x : ndarray
         The unique values of the sample processed by `scipy.stats.ecdf`.
-    cdf : ``EmpiricalDistributionFunction`` object
+    cdf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
         An object representing the empirical cumulative distribution function.
-    sf : ``EmpiricalDistributionFunction`` object
+    sf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
         An object representing the complement of the empirical cumulative
         distribution function.
     """
@@ -93,8 +126,8 @@ class ECDFResult:
     def __init__(self, x, cdf, sf, n, d):
         self.x = x
         # Both CDF and SF results need SF for variance est.
-        self.cdf = EmpiricalDistributionFunction(cdf, n, d, sf)
-        self.sf = EmpiricalDistributionFunction(sf, n, d, sf)
+        self.cdf = EmpiricalDistributionFunction(x, cdf, n, d, "cdf")
+        self.sf = EmpiricalDistributionFunction(x, sf, n, d, "sf")
 
 
 def ecdf(sample):
@@ -110,29 +143,34 @@ def ecdf(sample):
     sample : 1D array_like or `scipy.stats.CensoredData`
         Besides array_like, instances of `scipy.stats.CensoredData` containing
         uncensored and right-censored observations are supported. Currently,
-        other instances of `stats.CensoredData` will result in a
+        other instances of `scipy.stats.CensoredData` will result in a
         ``NotImplementedError``.
 
     Returns
     -------
-    An object with the following attributes.
+    res : `~scipy.stats._result_classes.ECDFResult`
+        An object with the following attributes.
 
-    x : ndarray
-        The unique values in the sample.
-    cdf : ``EmpiricalDistributionFunction`` object
-        An object representing the empirical cumulative distribution function.
-    sf : ``EmpiricalDistributionFunction`` object
-        An object representing the empirical survival function.
+        x : ndarray
+            The unique values in the sample.
+        cdf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
+            An object representing the empirical cumulative distribution function.
+        sf : ``~scipy.stats._result_classes.EmpiricalDistributionFunction`
+            An object representing the empirical survival function.
 
-    The `cdf` and `sf` attributes themselves have the following attributes.
+        The `cdf` and `sf` attributes themselves have the following attributes.
 
-    points : ndarray
-        The point estimate of the CDF/SF at the values in `x`.
+        points : ndarray
+            The point estimate of the CDF/SF at the values in `x`.
 
-    And the following methods:
+        And the following methods:
 
-    proportion_ci(confidence_level=0.95) :
-        Compute the confidence interval around the CDF/SF at the values in `x`.
+        __call__(x) :
+            Evaluate the CDF/SF at the argument.
+
+        proportion_ci(confidence_level=0.95) :
+            Compute the confidence interval around the CDF/SF at the values in
+            `x`.
 
     Notes
     -----
@@ -191,8 +229,8 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.points, 0, 0),
-    ...         where='post')
+    >>> x = np.insert(res.x, [0, len(res.x)], [res.x[0]-1, res.x[-1]+1])
+    >>> ax.step(x, res.cdf(x), where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
@@ -227,8 +265,8 @@ def ecdf(sample):
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.points, 0, 1),
-    ...                   where='post')
+    >>> x = np.insert(res.x, [0, len(res.x)], [res.x[0]-1, res.x[-1]+1])
+    >>> ax.step(x, res.sf(x), where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()

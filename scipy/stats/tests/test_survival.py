@@ -36,6 +36,18 @@ def _kaplan_meier_reference(times, censored):
 
 
 class TestSurvival:
+
+    @staticmethod
+    def get_random_sample(rng, n_unique):
+        # generate random sample
+        unique_times = rng.random(n_unique)
+        # convert to `np.int32` to resolve `np.repeat` failure in 32-bit CI
+        repeats = rng.integers(1, 4, n_unique).astype(np.int32)
+        times = rng.permuted(np.repeat(unique_times, repeats))
+        censored = rng.random(size=times.size) > rng.random()
+        sample = stats.CensoredData.right_censored(times, censored)
+        return sample, times, censored
+
     def test_input_validation(self):
         message = '`sample` must be a one-dimensional sequence.'
         with pytest.raises(ValueError, match=message):
@@ -81,6 +93,24 @@ class TestSurvival:
         assert_equal(res.x, ref_x)
         assert_equal(res.cdf.points, ref_cdf)
         assert_equal(res.sf.points, ref_sf)
+
+    def test_call_methods(self):
+        # Test CDF and SF call methods
+        rng = np.random.default_rng(1162729143302572461)
+        sample, _, _ = self.get_random_sample(rng, 15)
+        res = stats.ecdf(sample)
+        x = res.x
+        xr = res.x + np.diff(res.x, append=x[-1]+1)/2  # right shifted points
+
+        assert_equal(res.cdf(x), res.cdf.points)
+        assert_equal(res.cdf(xr), res.cdf.points)
+        assert_equal(res.cdf(x[0]-1), 0)  # CDF starts at 0
+        assert_equal(res.cdf([-np.inf, np.inf]), [0, 1])
+
+        assert_equal(res.sf(x), res.sf.points)
+        assert_equal(res.sf(xr), res.sf.points)
+        assert_equal(res.sf(x[0]-1), 1)  # CDF starts at 1
+        assert_equal(res.sf([-np.inf, np.inf]), [1, 0])
 
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
@@ -128,13 +158,7 @@ class TestSurvival:
         # test `ecdf` against reference implementation on random problems
         rng = np.random.default_rng(seed)
         n_unique = rng.integers(10, 100)
-        unique_times = rng.random(n_unique)
-        # convert to `np.int32` to resolve `np.repeat` failure in 32-bit CI
-        repeats = rng.integers(1, 4, n_unique).astype(np.int32)
-        times = rng.permuted(np.repeat(unique_times, repeats))
-        censored = rng.random(size=times.size) > rng.random()
-
-        sample = stats.CensoredData.right_censored(times, censored)
+        sample, times, censored = self.get_random_sample(rng, n_unique)
         res = stats.ecdf(sample)
         ref = _kaplan_meier_reference(times, censored)
         assert_allclose(res.x, ref[0])
