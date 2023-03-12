@@ -871,7 +871,8 @@ def somersd(x, y=None, alternative='two-sided'):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table, alternative)
+    # The table type is converted to a float to avoid an integer overflow
+    d, p = _somers_d(table.astype(float), alternative)
 
     # add alias for consistency with other correlation functions
     res = SomersDResult(d, p, table)
