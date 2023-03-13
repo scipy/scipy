@@ -928,6 +928,10 @@ class TestInv:
         a_inv = inv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = inv(a)
+        assert_equal(a_empty, [])
 
 class TestDet:
     def setup_method(self):
@@ -965,6 +969,11 @@ class TestDet:
         a = [[1, 2], [3, 4]]
         a_det = det(a, check_finite=False)
         assert_almost_equal(a_det, -2.0)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = det(a)
+        assert_equal(a_empty, 1)
 
 
 def direct_lstsq(a, b, cmplx=0):
