@@ -6871,9 +6871,9 @@ def test_gengamma_edge():
     assert_equal(p, 1.0)
 
 @pytest.mark.parametrize("a, ref",
-                         [(1500000.0, -5.621230523748292),
-                          (1e+30, -33.10536137897591),
-                          (1e+100, -113.70597317167858)])
+                         [(1500000.0, 8.529426144018633),
+                         (1e+30, 35.95771492811536),
+                         (1e+100, 116.54819318290696)])
 def test_gengamma_extreme_entropy(a, ref):
     # The reference values were calculated with mpmath:
     # c was assumed to be 1 for convenience
@@ -6882,7 +6882,7 @@ def test_gengamma_extreme_entropy(a, ref):
 
     # def gen_entropy(a):
     #     a = mp.mpf(a)
-    #     h = a * (mp.one - mp.digamma(a)) + mp.one / mp.digamma(a) + mp.loggamma(a)
+    #     h = a * (mp.one - mp.digamma(a)) + mp.digamma(a) + mp.loggamma(a)
     #     return float(h)
     assert_allclose(stats.gengamma.entropy(a, 1), ref, rtol=1e-10)
 
