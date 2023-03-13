@@ -9344,6 +9344,7 @@ def friedmanchisquare(*samples):
     We set the null hypothesis to be the claim that the average reaction
     time of the three different drugs is approximately the same.
 
+    >>> from scipy.stats import friedmanchisquare
     >>> drug1 = [4, 6, 3, 4, 3, 2, 2, 7, 6, 5]
     >>> drug2 = [5, 6, 8, 7, 7, 8, 4, 6, 4, 5]
     >>> drug3 = [2, 4, 4, 3, 2, 2, 1, 4, 3, 2]
