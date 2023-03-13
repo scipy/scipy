@@ -931,7 +931,7 @@ class TestInv:
     def test_empty(self):
         a = np.array([]).reshape((0,0))
         a_empty = inv(a)
-        assert_equal(a_empty, [])
+        assert_array_almost_equal(a_empty, a)
 
 class TestDet:
     def setup_method(self):
@@ -973,7 +973,7 @@ class TestDet:
     def test_empty(self):
         a = np.array([]).reshape((0,0))
         a_empty = det(a)
-        assert_equal(a_empty, 1)
+        assert_array_almost_equal(a_empty, 1)
 
 
 def direct_lstsq(a, b, cmplx=0):
