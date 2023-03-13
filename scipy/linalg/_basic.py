@@ -931,6 +931,11 @@ def inv(a, overwrite_a=False, check_finite=True):
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accomadate empty arrays
+    if a1.size == 0:
+        return np.asfortranarray(a.copy())
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
     # XXX: I found no advantage or disadvantage of using finv.
 #     finv, = get_flinalg_funcs(('inv',),(a1,))
