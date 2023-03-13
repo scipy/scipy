@@ -9336,6 +9336,25 @@ def friedmanchisquare(*samples):
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
 
+    Examples
+    --------
+    Suppose we want to test that the average reaction time of three different
+    drugs is different. We can use the friedman test for this analysis by
+    measuring the reaction time of 10 patients on each of the three drugs.
+    We set the null hypothesis to be the claim that the average reaction
+    time of the three different drugs is approximately the same.
+
+    >>> drug1 = [4, 6, 3, 4, 3, 2, 2, 7, 6, 5]
+    >>> drug2 = [5, 6, 8, 7, 7, 8, 4, 6, 4, 5]
+    >>> drug3 = [2, 4, 4, 3, 2, 2, 1, 4, 3, 2]
+    >>> friedmanchisquare(drug1, drug2, drug3)
+    FriedmanchisquareResult(statistic=13.351351351351344, pvalue=0.0012612201221243592)
+
+    According to the results the test statistic is about 13.35135 with a p
+    value of 0.00126. Since the p value is less than 0.05 (value of alpha)
+    we can reject the null hypothesis and conclude that the average response
+    times of the three drugs are different.
+
     """
     k = len(samples)
     if k < 3:
