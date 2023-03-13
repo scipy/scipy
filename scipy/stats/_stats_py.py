@@ -9353,7 +9353,7 @@ def friedmanchisquare(*samples):
     According to the results the test statistic is about 13.35135 with a p
     value of 0.00126. Since the p value is less than 0.05 (value of alpha)
     we can reject the null hypothesis and conclude that the average response
-    times of the three drugs is different.
+    time of the three drugs is different.
 
     """
     k = len(samples)
