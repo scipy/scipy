@@ -141,6 +141,10 @@ class TestDunnett:
         ]
         control = [55, 47, 48]
 
+        # alternative
+        with pytest.raises(ValueError, match="alternative must be"):
+            stats.dunnett(*samples, control=control, alternative='bob')
+
         # 2D for a sample
         samples_ = copy.deepcopy(samples)
         samples_[0] = [samples_[0]]

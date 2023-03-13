@@ -34,18 +34,21 @@ def dunnett(
 ) -> DunnettResult:
     """Dunnett's test: multiple comparisons of means against a control group.
 
+    This is an implementation of Dunnett's original, single-step test as
+    described in [1]_.
+
     Parameters
     ----------
     sample1, sample2, ... : 1D array_like
-        The sample measurements for each experiment group.
+        The sample measurements for each experimental group.
     control : 1D array_like
         The sample measurements for the control group.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis. The null hypothesis being that
-        the means of the distributions underlying the samples and control are
-        equal.
-
-        The following options are available (default is 'two-sided'):
+        Defines the alternative hypothesis. 
+        
+        The null hypothesis is that the means of the distributions underlying
+        the samples and control are equal. The following alternative
+        hypotheses are available (default is 'two-sided'):
 
         * 'two-sided': the means of the distributions underlying the samples
           and control are unequal.
@@ -70,11 +73,11 @@ def dunnett(
 
         statistic : float ndarray
             The computed statistic of the test for each comparison. The element
-            at index ``(i,)`` is the statistic for the comparison between
+            at index ``i`` is the statistic for the comparison between
             groups ``i`` and the control.
         pvalue : float ndarray
             The computed p-value of the test for each comparison. The element
-            at index ``(i,)`` is the p-value for the comparison between
+            at index ``i`` is the p-value for the comparison between
             group ``i`` and the control.
 
     See Also
@@ -83,12 +86,21 @@ def dunnett(
 
     Notes
     -----
-    Dunnett's test [1]_ compares the means of multiple experiment groups
-    against a control group.
-    `tukey_hsd` instead, performs pairwise comparison of means.
-    It means Dunnett's test performs fewer tests, hence there is less p-value
-    adjustment which makes the test more powerful.
-    It should be preferred when there is a control group.
+    Like the independent-sample t-test, Dunnett's test [1]_ is used to make
+    inferences about the means of distributions from which samples were drawn.
+    However, when multiple t-tests are performed at a fixed significance level,
+    the "family-wise error rate" - the probability of incorrectly rejecting the
+    null hypothesis in at least one test - will exceed the significance level. 
+    Dunnett's test is designed to perform multiple comparisons while
+    controlling the family-wise error rate.
+
+    Dunnett's test compares the means of multiple experimental groups
+    against a single control group. Tukey's Honestly Significant Difference Test
+    is another multiple-comparison test that controls the family-wise error
+    rate, but `tukey_hsd` performs *all* pairwise comparisons between groups.
+    When pairwise comparisons between experimental groups are not needed,
+    Dunnett's test is preferable due to its higher power.
+
 
     The use of this test relies on several assumptions.
 
@@ -103,10 +115,6 @@ def dunnett(
        Several Treatments with a Control."
        Journal of the American Statistical Association, 50:272, 1096-1121,
        :doi:`10.1080/01621459.1955.10501294`, 1955.
-    .. [2] K.S. Kwong, W. Liu. "Calculation of critical values for Dunnett
-       and Tamhane's step-up multiple test procedure."
-       Statistics and Probability Letters, 49, 411-416,
-       :doi:`10.1016/S0167-7152(00)00076-6`, 2000.
 
     Examples
     --------
@@ -117,21 +125,10 @@ def dunnett(
     two groups received different drugs, and one group acted as a control.
     Blood counts (in millions of cells per cubic millimeter) were recorded::
 
-         Control      Drug A      Drug B
-           7.40        9.76        12.80
-           8.50        8.80         9.68
-           7.20        7.68        12.16
-           8.24        9.36         9.20
-           9.84                    10.55
-           8.32
-
     >>> import numpy as np
     >>> control = np.array([7.40, 8.50, 7.20, 8.24, 9.84, 8.32])
     >>> drug_a = np.array([9.76, 8.80, 7.68, 9.36])
     >>> drug_b = np.array([12.80, 9.68, 12.16, 9.20, 10.55])
-
-    The `dunnett` statistic is sensitive to the difference in means between
-    the samples and the control.
 
     We would like to see if the means between any of the groups are
     significantly different. First, visually examine a box and whisker plot.
@@ -143,37 +140,43 @@ def dunnett(
     >>> ax.set_ylabel("mean")  # doctest: +SKIP
     >>> plt.show()
 
-    From the box and whisker plot, we can see overlap in the interquartile
-    ranges between the control group and the group from drug A.
-    We can apply the `dunnett`
-    test to determine if the difference between means is significant. We
-    set a significance level of .05 to reject the null hypothesis.
+    Note the overlapping interquartile ranges of the drug A group and control
+    group and the apparent separation between the drug B group and control
+    group.
+
+    Next, we will use Dunnett's test to assess whether the difference
+    between group means is significant while controlling the family-wise error
+    rate: the probability of making any false discoveries.
+    Let the null hypothesis be that the experimental groups have the same
+    mean as the control and the alternative be that an experimental group does
+    not have the same mean as the control. We will consider a 5% family-wise
+    error rate to be acceptable, and therefore we choose 0.05 as the threshold
+    for significance.
 
     >>> from scipy.stats import dunnett
     >>> res = dunnett(drug_a, drug_b, control=control)
     >>> res.pvalue
-    array([0.47773146, 0.00889328])  # random
+    array([0.62004941, 0.0059035 ])  # may vary
 
-    The null hypothesis is that each group has the same mean. The p-value for
-    comparisons between ``control`` and ``drug_b`` do not exceed .05,
-    so we reject the null hypothesis that they
-    have the same means. The p-value of the comparison between ``control``
-    and ``drug_a`` exceeds .05, so we do not reject the null hypothesis that
-    there is not a significant difference between their means.
+    The p-value corresponding with the comparison between group A and control
+    exceeds 0.05, so we do not reject the null hypothesis for that comparison.
+    However, the p-value corresponding with the comparison between group B
+    and control is less than 0.05, so we consider the experimental results
+    to be evidence against the null hypothesis in favor of the alternative:
+    group B has a different mean than the control group.
 
     """
-    samples_, control, rng = _iv_dunnett(
-        samples=samples, control=control, random_state=random_state
+    samples_, control_, rng = _iv_dunnett(
+        samples=samples, control=control,
+        alternative=alternative, random_state=random_state
     )
 
-    rho, df, n_group = _params_dunnett(samples=samples_, control=control)
+    rho, df, n_group = _params_dunnett(samples=samples_, control=control_)
 
-    statistic = _statistic_dunnett(samples_, control, df)
+    statistic = _statistic_dunnett(samples_, control_, df)
 
     pvalue = _pvalue_dunnett(
-        rho=rho, df=df,
-        statistic=statistic, alternative=alternative,
-        rng=rng
+        rho=rho, df=df, statistic=statistic, alternative=alternative, rng=rng
     )
 
     return DunnettResult(
@@ -184,10 +187,16 @@ def dunnett(
 def _iv_dunnett(
     samples: Sequence[npt.ArrayLike],
     control: npt.ArrayLike,
+    alternative: Literal['two-sided', 'less', 'greater'],
     random_state: SeedType
 ) -> tuple[list[np.ndarray], np.ndarray, SeedType]:
     """Input validation for Dunnett's test."""
     rng = check_random_state(random_state)
+
+    if alternative not in {'two-sided', 'less', 'greater'}:
+        raise ValueError(
+            "alternative must be 'less', 'greater' or 'two-sided'"
+        )
 
     ndim_msg = "Control and samples groups must be 1D arrays"
     n_obs_msg = "Control and samples groups must have at least 1 observation"
@@ -212,26 +221,19 @@ def _params_dunnett(
 ) -> tuple[np.ndarray, int, int]:
     """Specific parameters for Dunnett's test.
 
-    Covariance matrix depends on the number of observations in each group:
-
-    - All groups are equals (including the control), ``rho_ij=0.5`` except for
-      the diagonal which is 1.
-    - All groups but the control are equal, balanced design.
-    - Groups are not equal, unbalanced design.
-
     Degree of freedom is the number of observations minus the number of groups
     including the control.
     """
     n_samples = np.array([sample.size for sample in samples])
 
-    # From Dunnett1955 p. 1100 d.f. = (sum N)-(p+1)
+    # From [1] p. 1100 d.f. = (sum N)-(p+1)
     n_sample = n_samples.sum()
     n_control = control.size
     n = n_sample + n_control
     n_groups = len(samples)
     df = n - n_groups - 1
 
-    # rho_ij = 1/sqrt((N0/Ni+1)(N0/Nj+1))
+    # From [1] p. 1103 rho_ij = 1/sqrt((N0/Ni+1)(N0/Nj+1))
     rho = n_control/n_samples + 1
     rho = 1/np.sqrt(rho[:, None] * rho[None, :])
     np.fill_diagonal(rho, 1)
@@ -244,7 +246,7 @@ def _statistic_dunnett(
 ) -> np.ndarray:
     """Statistic of Dunnett's test.
 
-    Computation based on the original single-step test from Dunnett1955.
+    Computation based on the original single-step test from [1].
     """
     n_control = control.size
     n_samples = np.array([sample.size for sample in samples])
