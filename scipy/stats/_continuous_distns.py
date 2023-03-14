@@ -3467,7 +3467,7 @@ class gengamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) +
             #              0.5 * ln(2 * pi) + 1 / (12 * a)
             # psi(a) ~ ln(a) - 1 / (2 * a) - 1 / (12 * a ^ 2)
-            P = np.log(a) - 1 / (2 * a) - 1 / (12 * a ** 2)
+            P = np.log(a) - 1 / (2 * a) - (a**-2)/12
             A = 1 / (6 * a) + P / c - 0.5 * np.log(a)
             B = norm._entropy() - np.log(abs(c))
             h = A + B
