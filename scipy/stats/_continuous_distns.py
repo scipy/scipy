@@ -7057,7 +7057,7 @@ class t_gen(rv_continuous):
                  - 1. / 8. * df**-4 + 3. / 10. * df**-5 + 1 / 4 * df**-6)
             return h
 
-        h = _lazywhere(df >= 100, (df,), f=asymptotic, f2=regular)
+        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
         return h
 
 t = t_gen(name='t')
