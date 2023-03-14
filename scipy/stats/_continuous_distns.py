@@ -7052,8 +7052,9 @@ class t_gen(rv_continuous):
             # psi(x) ~ ln(x) - 1 / (2 * x)
             # B(x, y) ~ gamma(x) * y ** (-x)
             # (x / 2) * (psi(x + 1) - psi(x)) ~ 0.5
+            df = np.array(df, dtype=np.float64)
             h = (norm._entropy() + 1./df + 1. / 4 * df**-2 - 1. / 6. * df**-3
-              - 1. / 8. * df**-4 + 3. / 10. * df**-5 + 1 / 4 * df**-6)
+                 - 1. / 8. * df**-4 + 3. / 10. * df**-5 + 1 / 4 * df**-6)
             return h
 
         h = _lazywhere(df >= 100, (df,), f=asymptotic, f2=regular)
