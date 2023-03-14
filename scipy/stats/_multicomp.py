@@ -44,8 +44,8 @@ def dunnett(
     control : 1D array_like
         The sample measurements for the control group.
     alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis. 
-        
+        Defines the alternative hypothesis.
+
         The null hypothesis is that the means of the distributions underlying
         the samples and control are equal. The following alternative
         hypotheses are available (default is 'two-sided'):
@@ -90,7 +90,7 @@ def dunnett(
     inferences about the means of distributions from which samples were drawn.
     However, when multiple t-tests are performed at a fixed significance level,
     the "family-wise error rate" - the probability of incorrectly rejecting the
-    null hypothesis in at least one test - will exceed the significance level. 
+    null hypothesis in at least one test - will exceed the significance level.
     Dunnett's test is designed to perform multiple comparisons while
     controlling the family-wise error rate.
 
