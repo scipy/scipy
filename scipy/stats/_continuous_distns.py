@@ -4354,7 +4354,9 @@ class invgamma_gen(rv_continuous):
         def asymptotic(a):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
-            h = -1.5 * np.log(a) + 0.5 * np.log(2 * np.pi) + 0.5 + 1 / (2 * a)
+            h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
+                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+            return h
             return h
 
         h = _lazywhere(a >= 2e2, (a), f=asymptotic, f2=regular)
