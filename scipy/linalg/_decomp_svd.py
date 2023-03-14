@@ -108,6 +108,11 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
+
+    # Quick return for square empty array
+    if a1.size == 0:
+        return a1.copy()
+
     m, n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 

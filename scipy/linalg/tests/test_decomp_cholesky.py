@@ -1,4 +1,5 @@
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+import numpy as np
+from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
 from pytest import raises as assert_raises
 
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
@@ -64,6 +65,11 @@ class TestCholesky:
             c = transpose(c)
             a = dot(c, transpose(conjugate(c)))
             assert_array_almost_equal(cholesky(a, lower=1), c)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = cholesky(a)
+        assert_allclose(a_empty, a)
 
 
 class TestCholeskyBanded:
