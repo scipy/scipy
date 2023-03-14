@@ -7049,11 +7049,10 @@ class t_gen(rv_continuous):
 
         def asymptotic(df):
             # Formula from Wolfram Alpha:
-            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2)) 
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2))
             #  + log(sqrt(d) * beta(d/2, 1/2))"
-            df = np.array(df, dtype=np.float64)
-            h = (norm._entropy() + 1./df + 1. / 4 * df**-2 - 1. / 6. * df**-3
-                 - 1. / 8. * df**-4 + 3. / 10. * df**-5 + 1 / 4 * df**-6)
+            h = (norm._entropy() + 1/df + (df**-2.)/4 - (df**-3.)/6
+                 - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
             return h
 
         h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
