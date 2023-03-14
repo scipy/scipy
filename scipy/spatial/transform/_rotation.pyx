@@ -658,10 +658,12 @@ cdef class Rotation:
     >>> plot_rotated_axes(ax, r0, name="r0", offset=(0, 0, 0))
     >>> plot_rotated_axes(ax, r1, name="r1", offset=(3, 0, 0))
     >>> plot_rotated_axes(ax, r2, name="r2", offset=(6, 0, 0))
-    >>> ax.annotate("r0: Identity Rotation\\n"
-    ...             "r1: Intrinsic Euler Rotation (ZYX)\\n"
-    ...             "r2: Extrinsic Euler Rotation (zyx)",
-    ...             xy=(0.6, 0.7), xycoords="axes fraction", ha="left")
+    >>> _ = ax.annotate(
+    ...     "r0: Identity Rotation\\n"
+    ...     "r1: Intrinsic Euler Rotation (ZYX)\\n"
+    ...     "r2: Extrinsic Euler Rotation (zyx)",
+    ...     xy=(0.6, 0.7), xycoords="axes fraction", ha="left"
+    ... )
     >>> ax.set(xlim=(-1.25, 7.25), ylim=(-1.25, 1.25), zlim=(-1.25, 1.25))
     >>> ax.set(xticks=range(-1, 8), yticks=[-1, 0, 1], zticks=[-1, 0, 1])
     >>> ax.set_aspect("equal", adjustable="box")
