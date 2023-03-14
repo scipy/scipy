@@ -3464,14 +3464,10 @@ class gengamma_gen(rv_continuous):
             return h
 
         def asymptotic(a, c):
-            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) +
-            #              0.5 * ln(2 * pi) + 1 / (12 * a)
-            # psi(a) ~ ln(a) - 1 / (2 * a) - 1 / (12 * a ^ 2)
-            P = np.log(a) - 1 / (2 * a) - (a**-2)/12
-            A = 1 / (6 * a) + P / c - 0.5 * np.log(a)
-            B = norm._entropy() - np.log(abs(c))
-            h = A + B
-            return h
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            return ((-np.log(a) + np.log(2) + 1 + np.log(np.pi))/2
+                    - np.log(np.abs(c)) + (a**-1)/6 - (a**-3)/90
+                    + (np.log(a) - (a**-1)/2 - (a**-2)/12 + (a**-4)/120)/c)
 
         h = _lazywhere(a >= 1.5e6, (a, c), f=asymptotic, f2=regular)
         return h
