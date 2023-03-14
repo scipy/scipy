@@ -9335,26 +9335,29 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
+    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
+           Methods, Third Edition". Chapter 6, Section 6.3.2.
 
     Examples
     --------
-    Suppose we want to test that the average reaction time of three different
-    drugs is different. We can use the friedman test for this analysis by
-    measuring the reaction time of 10 patients on each of the three drugs.
-    We set the null hypothesis to be the claim that the average reaction
-    time of the three different drugs is approximately the same.
+    For a group of seven students the pulse rate (per minute) was measured
+    before exercise, immediately after exercise and 5 minutes after exercise.
+    We use the Friedman test to determine whether the pulse rates are similar
+    on the three different occasions.
 
     >>> from scipy.stats import friedmanchisquare
-    >>> drug1 = [4, 6, 3, 4, 3, 2, 2, 7, 6, 5]
-    >>> drug2 = [5, 6, 8, 7, 7, 8, 4, 6, 4, 5]
-    >>> drug3 = [2, 4, 4, 3, 2, 2, 1, 4, 3, 2]
-    >>> friedmanchisquare(drug1, drug2, drug3)
-    FriedmanchisquareResult(statistic=13.351351351351344, pvalue=0.0012612201221243592)
+    >>> before = [72, 96, 88, 92, 74, 76, 82]
+    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
+    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
+    >>> stat, p = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> stat
+    10.57142857142857
+    >>> p
+    0.005063414171757498
 
-    According to the results the test statistic is about 13.35135 with a p
-    value of 0.00126. Since the p value is less than 0.05 (value of alpha)
-    we can reject the null hypothesis and conclude that the average response
-    time of the three drugs is different.
+    The p-value of less than ``0.05`` indicates that this test rejects the
+    null hypothesis at the 5% significance level. Therefore we conclude that
+    the pulse rates are different between the three times.
 
     """
     k = len(samples)
