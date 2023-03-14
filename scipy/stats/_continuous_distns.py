@@ -4346,7 +4346,6 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        a = np.asarray([a])
         def regular(a):
             h = a - (a + 1.0) * sc.psi(a) + sc.gammaln(a)
             return h
