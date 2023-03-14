@@ -7766,8 +7766,12 @@ class TestQuantileTest:
     np.random.seed(0)
     m = 100                                     # number of tests
     N = np.random.randint(2, 100, size=m)       # num of samples
+    x = [np.random.randint(2, 100, size=int(N[i])) 
+        for i in range(m)]
+    x = [np.sort(x[i]) for i in range(m)]       # sorted sample
     quantile = np.random.rand(m)                # quantile in [0,1)
     confidence = 0.25*np.random.rand(m)+0.75    # confidence in [0.75,1)
+
 
     def test_quantile_test_iv(self):
         
@@ -7799,15 +7803,18 @@ class TestQuantileTest:
         with pytest.raises(TypeError, match=message):
             stats.quantile_test(x,p,q,'one-sided')
         
-        
+        message = "`confidence_level` must be a number between 0 and 1."
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,p,q,'one-sided').confidence_interval(1)
+
     def test_confint_naive(self):
-        # test against a naive implementation
+        # Test the confidence intervals against a naive implementation
         m, N, quantile, confidence = (self.m, self.N, self.quantile,
                                       self.confidence)
 
         def confint_naive(N, quantile, confidence):
             '''
-            Naive implementation for computing the index of one-sided CI
+            Naive implementation for computing the index of a one-sided CI
             (lower-bound)
             '''
             # compute all probabilities from the binomial distribution for the
@@ -7833,17 +7840,22 @@ class TestQuantileTest:
         # Test for the one-sided case
         # .. Derive the lower and upper bounds using naive implem
         tmp = [confint_naive(int(N[i]), quantile[i], confidence[i])
-               for i in range(m)]
-        LB = [i if (not np.isnan(i)) else None for i in tmp]
+            for i in range(m)]
+        LB = [i if (not np.isnan(i)) else np.nan for i in tmp]
+        LB_val = [ x[i][LB[i]] if (not np.isnan(LB[i])) else np.nan 
         # .. UB is (N-1-LB(1-q))
         tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence[i])
-               for i in range(m)]
-        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None
-              for i in range(m)]
-        test = [(LB[i], UB[i]) for i in range(m)]
+            for i in range(m)]
+        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else np.nan
+            for i in range(m)]
+                for i in range(m)]
+        UB_val = [ x[i][UB[i]] if (not np.isnan(UB[i])) else np.nan 
+                for i in range(m)]
+        test = [(LB_val[i], UB_val[i]) for i in range(m)]
         # .. Compare to the public function
-        public = [stats.confint_quantile(int(N[i]), quantile[i], confidence[i])
-                  for i in range(m)]
+        public = [(stats.quantile_test(x[i], 0, quantile[i], alternative='greater').confidence_interval(confidence[i]).low,
+        stats.quantile_test(x[i], 0, quantile[i], alternative='less').confidence_interval(confidence[i]).high)
+            for i in range(m)]
         assert_equal(public, test)
 
         # Test for the two-sided case
@@ -7852,15 +7864,20 @@ class TestQuantileTest:
         tmp = [confint_naive(int(N[i]), quantile[i], confidence_two_sided[i])
                for i in range(m)]
         LB = [i if (not np.isnan(i)) else None for i in tmp]
+        LB_val = [ x[i][LB[i]] if (not np.isnan(LB[i])) else np.nan 
         # .. UB is (N-1-LB(1-q))
         tmp = [confint_naive(int(N[i]), 1-quantile[i], confidence_two_sided[i])
                for i in range(m)]
         UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else None
               for i in range(m)]
+                for i in range(m)]
+        UB_val = [ x[i][UB[i]] if (not np.isnan(UB[i])) else np.nan 
+                for i in range(m)]
         test = [(LB[i], UB[i]) for i in range(m)]
         # .. Compare to the public function
-        public = [stats.confint_quantile(int(N[i]), quantile[i], confidence[i],
-                                         type='two-sided') for i in range(m)]
+        tmp = [stats.quantile_test(x[i], 0, quantile[i], alternative='two-sided').confidence_interval(confidence[i])
+            for i in range(m)]
+        public = [(tmp[i].low, tmp[i].high) for i in range(m)]
         assert_equal(public, test)
 
 
