@@ -1356,6 +1356,11 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = inv(a)
+        assert_allclose(a_empty, a)
+
 
 class TestPinvSymmetric:
 

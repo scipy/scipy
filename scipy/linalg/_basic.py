@@ -1357,6 +1357,11 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
+
+    # accomadate empty arrays
+    if a.size == 0:
+        return np.asfortranarray(a.copy())
+
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(s)
