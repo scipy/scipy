@@ -3469,7 +3469,7 @@ class gengamma_gen(rv_continuous):
                     - np.log(np.abs(c)) + (a**-1)/6 - (a**-3)/90
                     + (np.log(a) - (a**-1)/2 - (a**-2)/12 + (a**-4)/120)/c)
 
-        h = _lazywhere(a >= 1.5e6, (a, c), f=asymptotic, f2=regular)
+        h = _lazywhere(a >= 2e2, (a, c), f=asymptotic, f2=regular)
         return h
 
 
