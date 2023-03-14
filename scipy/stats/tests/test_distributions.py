@@ -2996,7 +2996,7 @@ def test_t_entropy():
 
 @pytest.mark.parametrize("v, ref",
                          [(100, 1.4289633653182439),
-                         (1e+100, 1.4189385332046727)])
+                          (1e+100, 1.4189385332046727)])
 def test_t_extreme_entropy(v, ref):
     # Reference values were calculated with mpmath:
     # from mpmath import mp
