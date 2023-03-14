@@ -4357,7 +4357,6 @@ class invgamma_gen(rv_continuous):
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
                  + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
             return h
-            return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
         return h
