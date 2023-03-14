@@ -1413,14 +1413,14 @@ class chi_gen(rv_continuous):
     def _entropy(self, df):
 
         def regular_formula(df):
-            return (sc.gammaln(.5 * df) + 0.5 *
-                    (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
+            return (sc.gammaln(.5 * df)
+                    + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
 
         def asymptotic_formula(df):
-            return (0.5 * (1 + np.log(np.pi)) - 1/(6 * df) + 1/(6 * df**2) -
-                    2/(45 * df**3) + 1/(15 * df**4))
+            return (0.5 + np.log(np.pi)/2 - 1/(6*df) - 1/(6*df**2)
+                    - 4/(45*df**3) + 1/(15*df**4))
 
-        return _lazywhere(df < 5e5, (df, ), regular_formula,
+        return _lazywhere(df < 3e2, (df, ), regular_formula,
                           f2=asymptotic_formula)
 
 

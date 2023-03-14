@@ -484,7 +484,7 @@ class TestChi:
                               (1e3, 1.0721981095025448),
                               (1e10, 1.0723649429080335)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi(df).entropy(), ref, rtol=1e-12)
+        assert_allclose(stats.chi(df).entropy(), ref, rtol=1e-15)
 
 
 class TestNBinom:
