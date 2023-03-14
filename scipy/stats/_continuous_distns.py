@@ -7048,10 +7048,9 @@ class t_gen(rv_continuous):
                     + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
         def asymptotic(df):
-            # gammaln(x) ~ x * ln(x) - x - 0.5 * ln(x) + 0.5 * ln(2 * pi)
-            # psi(x) ~ ln(x) - 1 / (2 * x)
-            # B(x, y) ~ gamma(x) * y ** (-x)
-            # (x / 2) * (psi(x + 1) - psi(x)) ~ 0.5
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2)) 
+            #  + log(sqrt(d) * beta(d/2, 1/2))"
             df = np.array(df, dtype=np.float64)
             h = (norm._entropy() + 1./df + 1. / 4 * df**-2 - 1. / 6. * df**-3
                  - 1. / 8. * df**-4 + 3. / 10. * df**-5 + 1 / 4 * df**-6)
