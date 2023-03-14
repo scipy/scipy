@@ -235,20 +235,30 @@ class TestVonMises:
         assert -np.pi < loc_fit < np.pi
 
 
-def _assert_less_or_close_loglike(dist, data, func, **kwds):
+def _assert_less_or_close_loglike(dist, data, func=None, **kwds):
     """
-    This utility function checks that the log-likelihood (computed by
-    func) of the result computed using dist.fit() is less than or equal
+    This utility function checks that the negative log-likelihood function
+    (or `func`) of the result computed using dist.fit() is less than or equal
     to the result computed using the generic fit method.  Because of
     normal numerical imprecision, the "equality" check is made using
     `np.allclose` with a relative tolerance of 1e-15.
     """
+    if func is None:
+        func = dist.nnlf
+
     mle_analytical = dist.fit(data, **kwds)
     numerical_opt = super(type(dist), dist).fit(data, **kwds)
     ll_mle_analytical = func(mle_analytical, data)
     ll_numerical_opt = func(numerical_opt, data)
     assert (ll_mle_analytical <= ll_numerical_opt or
             np.allclose(ll_mle_analytical, ll_numerical_opt, rtol=1e-15))
+
+    # Ideally we'd check that shapes are correctly fixed, too, but that is
+    # complicated by the many ways of fixing them (e.g. f0, fix_a, fa).
+    if 'floc' in kwds:
+        assert mle_analytical[-2] == kwds['floc']
+    if 'fscale' in kwds:
+        assert mle_analytical[-1] == kwds['fscale']
 
 
 def assert_fit_warnings(dist):
@@ -1763,14 +1773,9 @@ class TestLogistic:
 
     def test_fit_comp_optimizer(self):
         data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
-
-        # obtain objective function to compare results of the fit methods
-        args = [data, (stats.logistic._fitstart(data),)]
-        func = stats.logistic._reduce_func(args, {})[1]
-
-        _assert_less_or_close_loglike(stats.logistic, data, func)
-        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
-        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
+        _assert_less_or_close_loglike(stats.logistic, data)
+        _assert_less_or_close_loglike(stats.logistic, data, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):
@@ -1842,9 +1847,6 @@ class TestGumbel_r_l:
         data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
                         random_state=rng)
 
-        # obtain objective function to compare results of the fit methods
-        args = [data, (dist._fitstart(data),)]
-        func = dist._reduce_func(args, {})[1]
 
         kwds = dict()
         # the fixed location and scales are arbitrarily modified to not be
@@ -1855,7 +1857,7 @@ class TestGumbel_r_l:
             kwds['fscale'] = scale_rvs * 2
 
         # test that the gumbel_* fit method is better than super method
-        _assert_less_or_close_loglike(dist, data, func, **kwds)
+        _assert_less_or_close_loglike(dist, data, **kwds)
 
     @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
                                            (stats.gumbel_l, -1)])
@@ -1980,8 +1982,6 @@ class TestPareto:
                                     fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
-        args = [data, (stats.pareto._fitstart(data), )]
-        func = stats.pareto._reduce_func(args, {})[1]
 
         kwds = {}
         if fix_shape:
@@ -1991,7 +1991,7 @@ class TestPareto:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.pareto, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.pareto, data, **kwds)
 
     @np.errstate(invalid="ignore")
     def test_fit_known_bad_seed(self):
@@ -2001,9 +2001,7 @@ class TestPareto:
         shape, location, scale = 1, 0, 1
         data = stats.pareto.rvs(shape, location, scale, size=100,
                                 random_state=np.random.default_rng(2535619))
-        args = [data, (stats.pareto._fitstart(data), )]
-        func = stats.pareto._reduce_func(args, {})[1]
-        _assert_less_or_close_loglike(stats.pareto, data, func)
+        _assert_less_or_close_loglike(stats.pareto, data)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)
@@ -2583,27 +2581,22 @@ class TestInvgauss:
         invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
         assert_equal(super_fitted, invgauss_fit)
 
-        # obtain log-likelihood objective function to compare results
-        args = [data, (stats.invgauss._fitstart(data), )]
-        func = stats.invgauss._reduce_func(args, {})[1]
-
         # fixed `floc` uses analytical formula and provides better fit than
         # super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc)
 
         # fixed `floc` not resulting in invalid data < 0 uses analytical
         # formulas and provides a better fit than the super method
         assert np.all((data - (rvs_loc - 1)) > 0)
-        _assert_less_or_close_loglike(stats.invgauss, data, func,
-                                      floc=rvs_loc - 1)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc - 1)
 
         # fixed `floc` to an arbitrary number, 0, still provides a better fit
         # than the super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=0)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=0)
 
         # fixed `fscale` to an arbitrary number still provides a better fit
         # than the super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc,
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc,
                                       fscale=np.random.rand(1)[0])
 
     def test_fit_raise_errors(self):
@@ -2811,9 +2804,6 @@ class TestPowerlaw:
         data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
                                   scale=rvs_scale, random_state=rng)
 
-        args = [data, (stats.powerlaw._fitstart(data), )]
-        func = stats.powerlaw._reduce_func(args, {})[1]
-
         kwds = dict()
         if fix_shape:
             kwds['f0'] = rvs_shape
@@ -2821,7 +2811,7 @@ class TestPowerlaw:
             kwds['floc'] = np.nextafter(data.min(), -np.inf)
         if fix_scale:
             kwds['fscale'] = rvs_scale
-        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
     def test_problem_case(self):
         # An observed problem with the test method indicated that some fixed
@@ -2834,10 +2824,8 @@ class TestPowerlaw:
                                   random_state=np.random.default_rng(5))
 
         kwds = {'fscale': data.ptp() * 2}
-        args = [data, (stats.powerlaw._fitstart(data), )]
-        func = stats.powerlaw._reduce_func(args, {})[1]
 
-        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
@@ -2872,7 +2860,7 @@ class TestPowerlaw:
         data = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6]
         dist = stats.powerlaw
         with np.errstate(over='ignore'):
-            _assert_less_or_close_loglike(dist, data, dist.nnlf)
+            _assert_less_or_close_loglike(dist, data)
 
 
 class TestPowerNorm:
@@ -3756,8 +3744,6 @@ class TestLognorm:
                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
                                  loc=rvs_loc, random_state=rng)
-        args = [data, (stats.lognorm._fitstart(data), )]
-        func = stats.lognorm._reduce_func(args, {})[1]
 
         kwds = {}
         if fix_shape:
@@ -3767,7 +3753,7 @@ class TestLognorm:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.lognorm, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.lognorm, data, **kwds)
 
 
 class TestBeta:
@@ -5887,12 +5873,7 @@ class TestRayleigh:
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
-
-        # obtain objective function with same method as `rv_continuous.fit`
-        args = [data, (stats.rayleigh._fitstart(data), )]
-        func = stats.rayleigh._reduce_func(args, {})[1]
-
-        _assert_less_or_close_loglike(stats.rayleigh, data, func)
+        _assert_less_or_close_loglike(stats.rayleigh, data)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
