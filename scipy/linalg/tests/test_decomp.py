@@ -1199,6 +1199,11 @@ class TestSVD_GESDD:
         assert_allclose(s[0], 1.0)
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = svd(a)
+        assert_allclose(a_empty, a)
+
 
 class TestSVD_GESVD(TestSVD_GESDD):
     def setup_method(self):
