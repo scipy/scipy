@@ -51,6 +51,69 @@ class TestDunnett:
         )
         assert_allclose(res, pvalue, atol=5e-3)
 
+    # For the following tests, p-values were computed using Matlab, e.g.
+    #     sample = [18.  15.  18.  16.  17.  15.  14.  14.  14.  15.  15....
+    #               14.  15.  14.  22.  18.  21.  21.  10.  10.  11.  9....
+    #               25.  26.  17.5 16.  15.5 14.5 22.  22.  24.  22.5 29....
+    #               24.5 20.  18.  18.5 17.5 26.5 13.  16.5 13.  13.  13....
+    #               28.  27.  34.  31.  29.  27.  24.  23.  38.  36.  25....
+    #               38. 26.  22.  36.  27.  27.  32.  28.  31....
+    #               24.  27.  33.  32.  28.  19. 37.  31.  36.  36....
+    #               34.  38.  32.  38.  32....
+    #               26.  24.  26.  25.  29. 29.5 16.5 36.  44....
+    #               25.  27.  19....
+    #               25.  20....
+    #               28.];
+    #     j = [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...
+    #          0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ...
+    #          0 0 0 0...
+    #          1 1 1 1 1 1 1 1 1 1 1 1 1 1 1...
+    #          2 2 2 2 2 2 2 2 2...
+    #          3 3 3...
+    #          4 4...
+    #          5];
+    #     [~, ~, stats] = anova1(sample, j, "off");
+    #     [results, ~, ~, gnames] = multcompare(stats, ...
+    #     "CriticalValueType", "dunnett", ...
+    #     "Approximate", false);
+    #     tbl = array2table(results, "VariableNames", ...
+    #     ["Group", "Control Group", "Lower Limit", ...
+    #     "Difference", "Upper Limit", "P-value"]);
+    #     tbl.("Group") = gnames(tbl.("Group"));
+    #     tbl.("Control Group") = gnames(tbl.("Control Group"))
+
+    # Matlab doesn't report the statistic, so the statistics were
+    # computed using R multcomp `glht`, e.g.:
+    #     library(multcomp)
+    #     options(digits=16)
+    #     control < - c(18.0, 15.0, 18.0, 16.0, 17.0, 15.0, 14.0, 14.0, 14.0,
+    #                   15.0, 15.0, 14.0, 15.0, 14.0, 22.0, 18.0, 21.0, 21.0,
+    #                   10.0, 10.0, 11.0, 9.0, 25.0, 26.0, 17.5, 16.0, 15.5,
+    #                   14.5, 22.0, 22.0, 24.0, 22.5, 29.0, 24.5, 20.0, 18.0,
+    #                   18.5, 17.5, 26.5, 13.0, 16.5, 13.0, 13.0, 13.0, 28.0,
+    #                   27.0, 34.0, 31.0, 29.0, 27.0, 24.0, 23.0, 38.0, 36.0,
+    #                   25.0, 38.0, 26.0, 22.0, 36.0, 27.0, 27.0, 32.0, 28.0,
+    #                   31.0)
+    #     t < - c(24.0, 27.0, 33.0, 32.0, 28.0, 19.0, 37.0, 31.0, 36.0, 36.0,
+    #             34.0, 38.0, 32.0, 38.0, 32.0)
+    #     w < - c(26.0, 24.0, 26.0, 25.0, 29.0, 29.5, 16.5, 36.0, 44.0)
+    #     x < - c(25.0, 27.0, 19.0)
+    #     y < - c(25.0, 20.0)
+    #     z < - c(28.0)
+    #
+    #     groups = factor(rep(c("control", "t", "w", "x", "y", "z"),
+    #                         times=c(length(control), length(t), length(w),
+    #                                 length(x), length(y), length(z))))
+    #     df < - data.frame(response=c(control, t, w, x, y, z),
+    #                       group=groups)
+    #     model < - aov(response
+    #     ~group, data = df)
+    #     test < - glht(model=model,
+    #                   linfct=mcp(group="Dunnett"),
+    #                   alternative="g")
+    #     summary(test)
+    # p-values agreed with those produced by Matlab to at least atol=1e-3
+
     # From Matlab's documentation on multcompare
     samples_1 = [
         [
@@ -71,6 +134,11 @@ class TestDunnett:
         38.0, 26.0, 22.0, 36.0, 27.0, 27.0, 32.0, 28.0, 31.0
     ]
     pvalue_1 = [4.727e-06, 0.022346, 0.97912, 0.99953, 0.86579]
+    statistic_1 = [5.27356, 2.91270, 0.60831, 0.27002, 0.96637]
+    # These p-values were computeded using R multcomp `glht`
+    pvalue_1_twosided = [1e-4, 0.02237, 0.97913, 0.99953, 0.86583]
+    pvalue_1_greater = [1e-4, 0.011217, 0.768500, 0.896991, 0.577211]
+    pvalue_1_less = [1, 1, 0.99660, 0.98398, .99953]
 
     # From Dunnett1995 comparing with R's DescTools: DunnettTest
     samples_2 = [
@@ -78,12 +146,14 @@ class TestDunnett:
     ]
     control_2 = [7.40, 8.50, 7.20, 8.24, 9.84, 8.32]
     pvalue_2 = [0.6201, 0.0058]
+    statistic_2 = [0.85703, 3.69375]
 
     samples_3 = [
         [55, 64, 64], [55, 49, 52], [50, 44, 41]
     ]
     control_3 = [55, 47, 48]
     pvalue_3 = [0.0364, 0.8966, 0.4091]
+    statistic_3 = [3.09073, 0.56195, -1.40488]
 
     # From Thomson and Short,
     # Mucociliary function in health, chronic obstructive airway disease,
@@ -92,23 +162,37 @@ class TestDunnett:
     samples_4 = [[3.8, 2.7, 4.0, 2.4], [2.8, 3.4, 3.7, 2.2, 2.0]]
     control_4 = [2.9, 3.0, 2.5, 2.6, 3.2]
     pvalue_4 = [0.5832, 0.9982]
+    statistic_4 = [0.90875, -0.05007]
 
     @pytest.mark.parametrize(
-        'samples, control, pvalue',
+        'samples, control, pvalue, statistic',
         [
-            (samples_1, control_1, pvalue_1),
-            (samples_2, control_2, pvalue_2),
-            (samples_3, control_3, pvalue_3),
-            (samples_4, control_4, pvalue_4),
+            (samples_1, control_1, pvalue_1, statistic_1),
+            (samples_2, control_2, pvalue_2, statistic_2),
+            (samples_3, control_3, pvalue_3, statistic_3),
+            (samples_4, control_4, pvalue_4, statistic_4),
         ]
     )
-    def test_unbalanced(self, samples, control, pvalue):
+    def test_unbalanced(self, samples, control, pvalue, statistic):
         rng = np.random.default_rng(11681140010308601919115036826969764808)
 
         res = stats.dunnett(*samples, control=control, random_state=rng)
 
         assert isinstance(res, DunnettResult)
+        assert_allclose(res.statistic, statistic, atol=1e-5)
         assert_allclose(res.pvalue, pvalue, atol=1e-3)
+
+    @pytest.mark.parametrize("alternative, pvalue",
+                             [["two-sided", pvalue_1_twosided],
+                              ["greater", pvalue_1_greater],
+                              ["less", pvalue_1_less]])
+    def test_unbalanced_one_sided(self, alternative, pvalue):
+        # Check p-value against R multcomp `glht` with one-sided alternatives
+        rng = np.random.default_rng(19191150368269697648081168114001030860)
+        res = stats.dunnett(*self.samples_1, control=self.control_1,
+                            alternative=alternative, random_state=rng)
+        assert_allclose(res.statistic, self.statistic_1, atol=1e-5)
+        assert_allclose(res.pvalue, pvalue, atol=1e-4)
 
     @pytest.mark.parametrize(
         'alternative',
