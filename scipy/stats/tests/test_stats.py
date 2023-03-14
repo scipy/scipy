@@ -7758,16 +7758,48 @@ class TestMGCStat:
         assert_equal(res.stat, res.statistic)
 
 
-class TestConfInt:
-    """ Test the computation of non-parametric
-    confidence intervals for quantiles
+class TestQuantileTest:
+    r""" Test the non-parametric quantile test, 
+    including the computation of confidence intervals
     """
+    
     np.random.seed(0)
     m = 100                                     # number of tests
     N = np.random.randint(2, 100, size=m)       # num of samples
     quantile = np.random.rand(m)                # quantile in [0,1)
     confidence = 0.25*np.random.rand(m)+0.75    # confidence in [0.75,1)
 
+    def test_quantile_test_iv(self):
+        
+        x = [1,2,3]
+        p = 0.5
+        q = 0
+        alternative = 'less'
+
+        message = "`x` must be a one-dimensional array of numbers."
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test([[1,2,3]],p,q,alternative)
+        
+        message = "`q` must be a scalar (i.e. a single number)."
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,p,[1,2],alternative)
+        
+        message = "`p` must be a float strictly between 0 and 1."
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,[0.5,0.75],q,alternative)
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,2,q,alternative)
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,-2,q,alternative)
+        
+        alternatives = {'two-sided': 'two-sided',
+                        'less': 'greater',
+                        'greater': 'less'}
+        message = f'`alternative` must be one of {set(alternatives.keys())}'
+        with pytest.raises(TypeError, match=message):
+            stats.quantile_test(x,p,q,'one-sided')
+        
+        
     def test_confint_naive(self):
         # test against a naive implementation
         m, N, quantile, confidence = (self.m, self.N, self.quantile,
