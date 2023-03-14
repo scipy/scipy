@@ -485,15 +485,17 @@ class TestChi:
     #     df = mp.mpf(df)
     #     half_df = 0.5 * df
     #     entropy = mp.log(mp.gamma(half_df)) + 0.5 * \
-    #               (df - mp.log(2) - (df -1) * mp.digamma(half_df))
+    #               (df - mp.log(2) - (df - mp.one) * mp.digamma(half_df))
     #     return float(entropy)
 
     @pytest.mark.parametrize('df, ref',
-                             [(1, 0.7257913526447274),
-                              (500, 1.0720309422146606),
-                              (1e8, 1.0723649412580334)])
+                             [(1e-4, -9989.7316027504),
+                              (1, 0.7257913526447274),
+                              (1e3, 1.0721981095025448),
+                              (1e10, 1.0723649429080335),
+                              (1e100, 1.0723649429247002)])
     def test_entropy(self, df, ref):
-        assert_allclose(stats.chi(df).entropy(), ref)
+        assert_allclose(stats.chi(df).entropy(), ref, rtol=1e-15)
 
 
 class TestNBinom:
