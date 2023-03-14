@@ -1417,8 +1417,8 @@ class chi_gen(rv_continuous):
                     + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
 
         def asymptotic_formula(df):
-            return (0.5 + np.log(np.pi)/2 - 1/(6*df) - 1/(6*df**2)
-                    - 4/(45*df**3) + 1/(15*df**4))
+            return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
+                    - 4/45*(df**-3) + (df**-4)/15)
 
         return _lazywhere(df < 3e2, (df, ), regular_formula,
                           f2=asymptotic_formula)
