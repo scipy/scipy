@@ -434,7 +434,11 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     """
     if not isinstance(args, tuple):
         args = (args,)
-
+    
+    # if a == b, directly return 0 with error 0
+    if a == b:
+        return [0, 0]
+    
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)
 
