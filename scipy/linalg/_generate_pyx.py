@@ -376,7 +376,7 @@ cpdef int _test_izamax(double complex[:] zx) nogil:
 cpdef float _test_sasum(float[:] sx) nogil:
     cdef:
         int n = sx.shape[0]
-        int incx = sx.shape[0] // sizeof(sx[0])
+        int incx = sx.strides[0] // sizeof(sx[0])
     return sasum(&n, &sx[0], &incx)
 
 cpdef float _test_scasum(float complex[:] cx) nogil:
@@ -401,7 +401,7 @@ cpdef float _test_sdot(float[:] sx, float[:] sy) nogil:
 cpdef float _test_snrm2(float[:] x) nogil:
     cdef:
         int n = x.shape[0]
-        int incx = x.shape[0] // sizeof(x[0])
+        int incx = x.strides[0] // sizeof(x[0])
     return snrm2(&n, &x[0], &incx)
 
 cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) nogil:
