@@ -4359,7 +4359,7 @@ class invgamma_gen(rv_continuous):
             return h
             return h
 
-        h = _lazywhere(a >= 2e2, (a), f=asymptotic, f2=regular)
+        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
         return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
