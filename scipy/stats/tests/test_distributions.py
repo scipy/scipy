@@ -1657,6 +1657,27 @@ class TestLoggamma:
         ci = btest.proportion_ci(confidence_level=0.999)
         assert ci.low < 0.5 < ci.high
 
+    @pytest.mark.parametrize("c, ref",
+                            [(3, 0.9247941752645439),
+                             (0.001, 7.908754457315668),
+                             (5.3, 0.6164581314552009)])
+    def test_entropy(self, c, ref):
+        # Reference values were calculated with the generic method.
+        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-14)
+
+    @pytest.mark.parametrize("c, ref",
+                            [(2100, -2.405828413571719),
+                             (10000000000.0, -10.093986931748889),
+                             (1e+100, -113.71031611649761)])
+    def test_extreme_entropy(self, c, ref):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def entropy(c):
+        # h = 0.5 + 0.5 * mp.log(2 * mp.pi) - 0.5 * mp.log(c) + 1 / (6 * c)
+        # return float(h)
+        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-14)
 
 class TestLogistic:
     # gh-6226

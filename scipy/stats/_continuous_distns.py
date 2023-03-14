@@ -5771,6 +5771,21 @@ class loggamma_gen(rv_continuous):
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
 
+    def _entropy(self, c):
+        def regular(c):
+            h = sc.gammaln(c) - c * sc.digamma(c) + c
+            return h
+
+        def asymptotic(c):
+            # gammaln(c):
+            # c * ln(c) - c + 0.5 * (-ln(c) + ln(2 * pi)) + 1 / (12 * c)
+            # digamma(c):
+            # ln(c) - 1 / (2 * c) - 1 / (12 * c ** 2)
+            h = norm._entropy() - 0.5 * np.log(c) + 1 / (6 * c)
+            return h
+
+        h = _lazywhere(c >= 2100, (c,), f=asymptotic, f2=regular)
+        return h
 
 loggamma = loggamma_gen(name='loggamma')
 
