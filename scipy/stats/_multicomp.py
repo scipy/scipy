@@ -6,12 +6,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from scipy import stats
+from scipy.optimize import minimize_scalar
+from scipy.stats._common import ConfidenceInterval
 from scipy.stats._qmc import check_random_state
 from scipy.stats._stats_py import _var
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import SeedType
+    from scipy._lib._util import DecimalNumber, SeedType
     from typing import Literal, Sequence  # noqa: UP035
 
 
@@ -24,6 +26,133 @@ __all__ = [
 class DunnettResult:
     statistic: np.ndarray
     pvalue: np.ndarray
+    _alternative: Literal['two-sided', 'less', 'greater']
+    _rho: np.ndarray
+    _df: int
+    _std: float
+    _mean_samples: np.ndarray
+    _mean_control: np.ndarray
+    _ci: ConfidenceInterval | None = None
+    _ci_cl: DecimalNumber | None = None
+
+    def __str__(self):
+        # Note: `__str__` prints the confidence intervals from the most
+        # recent call to `confidence_interval`. If it has not been called,
+        # it will be called with the default CL of .95.
+        if self._ci is None:
+            self.confidence_interval(confidence_level=.95)
+        s = (
+            "Dunnett's test"
+            f" ({self._ci_cl*100:.1f}% Confidence Interval)\n"
+            "Comparison               Statistic  p-value  Lower CI  Upper CI\n"
+        )
+        for i in range(self.pvalue.shape[0]):
+            s += (f" (Sample {i} - Control) {self.statistic[i]:>10.3f}"
+                  f"{self.pvalue[i]:>10.3f}"
+                  f"{self._ci.low[i]:>10.3f}"
+                  f"{self._ci.high[i]:>10.3f}\n")
+
+        if self._alternative == 'less':
+            s += (
+                "\nOne-sided alternative (less): sample i's mean exceed "
+                "the control's mean by an amount at least Lower CI"
+            )
+        elif self._alternative == 'greater':
+            s += (
+                "\nOne-sided alternative (greater): sample i's mean exceed "
+                "the control's mean by an amount at most Upper CI"
+            )
+        else:
+            s += (
+                "\nTwo-sided alternative: sample i's mean exceed the "
+                "control's mean by an amount between Lower CI and Upper CI"
+            )
+        return s
+
+    def _allowance(self, confidence_level: DecimalNumber = 0.95) -> float:
+        """Allowance.
+
+        It is the quantity to add/substract from the observed difference
+        between the means of observed groups and the mean of the control
+        group. The result gives confidence limits.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is .95.
+
+        Returns
+        -------
+        allowance : float
+            Allowance around the mean.
+        """
+        alpha = 1 - confidence_level
+
+        def pvalue_from_stat(statistic):
+            # two-sided to have +- bounds
+            statistic = np.array(statistic)
+            sf = _pvalue_dunnett(
+                rho=self._rho, df=self._df,
+                statistic=statistic, alternative=self._alternative
+            )
+            return abs(sf - alpha)
+
+        res = minimize_scalar(pvalue_from_stat, method='brent', tol=1e-4)
+        critical_value = res.x
+
+        allowance = critical_value*self._std*np.sqrt(2/len(self.pvalue))
+        return abs(allowance)
+
+    def confidence_interval(
+        self, confidence_level: DecimalNumber = 0.95
+    ) -> ConfidenceInterval:
+        """Compute the confidence interval for the specified confidence level.
+
+        The confidence interval corresponds to the difference in means of the
+        groups with the control +- the allowance.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is .95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence intervals for each
+            comparison. The high and low values are accessible for each
+            comparison at index ``i`` for each group ``i``.
+
+        """
+        # check to see if the supplied confidence level matches that of the
+        # previously computed CI.
+        if (self._ci is not None and self._ci_cl is not None and
+                confidence_level == self._ci_cl):
+            return self._ci
+
+        if not 0 < confidence_level < 1:
+            raise ValueError("Confidence level must be between 0 and 1.")
+
+        allowance = self._allowance(confidence_level=confidence_level)
+        diff_means = self._mean_samples - self._mean_control
+
+        low = diff_means-allowance
+        high = diff_means+allowance
+
+        if self._alternative == 'less':
+            high = [np.inf] * len(diff_means)
+        elif self._alternative == 'greater':
+            low = [-np.inf] * len(diff_means)
+
+        self._ci_cl = confidence_level
+        self._ci = ConfidenceInterval(
+            low=low,
+            high=high
+        )
+        return self._ci
 
 
 def dunnett(
@@ -173,7 +302,7 @@ def dunnett(
 
     rho, df, n_group = _params_dunnett(samples=samples_, control=control_)
 
-    statistic = _statistic_dunnett(samples_, control_, df)
+    statistic, std, mean_control, mean_samples = _statistic_dunnett(samples_, control_, df)
 
     pvalue = _pvalue_dunnett(
         rho=rho, df=df, statistic=statistic, alternative=alternative, rng=rng
@@ -181,6 +310,10 @@ def dunnett(
 
     return DunnettResult(
         statistic=statistic, pvalue=pvalue,
+        _alternative=alternative,
+        _rho=rho, _df=df, _std=std,
+        _mean_samples=mean_samples,
+        _mean_control=mean_control
     )
 
 
@@ -243,7 +376,7 @@ def _params_dunnett(
 
 def _statistic_dunnett(
     samples: list[np.ndarray], control: np.ndarray, df: int
-) -> np.ndarray:
+) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
     """Statistic of Dunnett's test.
 
     Computation based on the original single-step test from [1].
@@ -258,11 +391,12 @@ def _statistic_dunnett(
     # Variance estimate s^2 from [1] Eq. 1
     s2 = np.sum([_var(sample, mean=mean)*sample.size
                  for sample, mean in zip(all_samples, all_means)]) / df
+    std = np.sqrt(s2)
 
     # z score inferred from [1] unlabeled equation after Eq. 1
     z = (mean_samples - mean_control) / np.sqrt(1/n_samples + 1/n_control)
 
-    return z / np.sqrt(s2)
+    return z / std, std, mean_control, mean_samples
 
 
 def _pvalue_dunnett(

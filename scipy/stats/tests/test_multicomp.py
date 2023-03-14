@@ -250,6 +250,61 @@ class TestDunnett:
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
+    @pytest.mark.parametrize(
+        'alternative, allowance, ci_low, ci_high',
+        [
+            ('two-sided', 11, [0, -9, -16], [22, 13, 6]),
+            ('less', 9, [2, -7, -14], [np.inf, np.inf, np.inf]),
+            ('greater', 9, [-np.inf, -np.inf, -np.inf], [20, 11, 4])
+        ]
+    )
+    def test_allowance(self, alternative, allowance, ci_low, ci_high):
+        # Example (a) from Dunnett1995
+        rng = np.random.default_rng(189117774084579816190295271136455278291)
+        samples = [
+            [55, 64, 64],
+            [55, 49, 52],
+            [50, 44, 41]
+        ]
+        control = [55, 47, 48]
+
+        res = stats.dunnett(
+            *samples, control=control, alternative=alternative,
+            random_state=rng
+        )
+        allowance_ = res._allowance(confidence_level=0.95)
+        assert_allclose(allowance_, allowance, atol=1)
+
+        assert res._ci is None
+        assert res._ci_cl is None
+        ci = res.confidence_interval(confidence_level=0.95)
+        assert_allclose(ci.low, ci_low, atol=1)
+        assert_allclose(ci.high, ci_high, atol=1)
+
+        # re-run to use the cached value "is" to check id as same object
+        assert res._ci is ci
+        assert res._ci_cl == 0.95
+        ci_ = res.confidence_interval(confidence_level=0.95)
+        assert ci_ is ci
+
+        # check some str output
+        res_str = str(res)
+        assert '(Sample 2 - Control)' in res_str
+        assert '95.0%' in res_str
+
+        if alternative == 'less':
+            assert 'inf' in res_str
+            assert 'at least Lower' in res_str
+            assert '-13.' in res_str
+        elif alternative == 'greater':
+            assert '-inf' in res_str
+            assert 'at most Upper' in res_str
+            assert '19.' in res_str
+        else:
+            assert 'inf' not in res_str
+            assert 'between' in res_str
+            assert '21.' in res_str
+
     def test_raises(self):
         samples = [
             [55, 64, 64],
@@ -284,3 +339,7 @@ class TestDunnett:
         control_ = []
         with pytest.raises(ValueError, match="at least 1 observation"):
             stats.dunnett(*samples, control=control_)
+
+        res = stats.dunnett(*samples, control=control)
+        with pytest.raises(ValueError, match="Confidence level must"):
+            res.confidence_interval(confidence_level=3)
