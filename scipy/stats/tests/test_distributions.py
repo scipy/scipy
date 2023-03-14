@@ -2934,7 +2934,7 @@ class TestInvGamma:
         #     a = mp.mpf(a)
         #     h = a + mp.loggamma(a) - (mp.one + a) * mp.digamma(a)
         #     return float(h)
-        assert_allclose(stats.invgamma.entropy(a), ref, rtol=1e-10)
+        assert_allclose(stats.invgamma.entropy(a), ref, rtol=1e-15)
 
 
 class TestF:
