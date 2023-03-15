@@ -120,7 +120,7 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     int      i, j, k, iptr, jcol, n, ldb, nrhs;
     complex   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void cprint_soln();
+    void cprint_soln(int n, int nrhs, complex *soln);
 
     /* Test input parameters ... */
     *info = 0;
