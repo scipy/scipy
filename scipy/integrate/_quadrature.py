@@ -783,6 +783,7 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
+    cumulative_trapezoid : cumulative integration using the composite trapezoidal rule
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
@@ -792,6 +793,11 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     romb : integrators for sampled data
     ode : ODE integrators
     odeint : ODE integrators
+
+    Notes
+    -----
+
+    .. versionadded:: 1.11.0
 
     Examples
     --------
