@@ -1692,6 +1692,7 @@ class TestLoggamma:
         # return float(h)
         assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-12)
 
+
 class TestJohnsonsu:
     # reference values were computed via mpmath
     # from mpmath import mp
