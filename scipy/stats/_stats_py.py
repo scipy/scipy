@@ -9342,22 +9342,28 @@ def friedmanchisquare(*samples):
     --------
     For a group of seven students the pulse rate (per minute) was measured
     before exercise, immediately after exercise and 5 minutes after exercise.
-    We use the Friedman test to determine whether the pulse rates are similar
-    on the three different occasions.
+    Is there evidence to suggest that the pulse rates on the three occasions
+    are similar?
+
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The pulse rates are identical on the three occasions
+
+    Let's assess the plausibility of this hypothesis with a Friedman test.
 
     >>> from scipy.stats import friedmanchisquare
     >>> before = [72, 96, 88, 92, 74, 76, 82]
     >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
     >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
-    >>> stat, p = friedmanchisquare(before, immediately_after, five_min_after)
-    >>> stat
+    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> res.statistic
     10.57142857142857
-    >>> p
+    >>> res.pvalue
     0.005063414171757498
 
-    The p-value of less than ``0.05`` indicates that this test rejects the
-    null hypothesis at the 5% significance level. Therefore we conclude that
-    the pulse rates are different between the three times.
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the pulse rates are different on
+    the three occasions".
 
     """
     k = len(samples)
