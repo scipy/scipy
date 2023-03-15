@@ -593,6 +593,7 @@ class TestBSpline:
         assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
 
     def test_read_only(self):
+        # BSpline must work on read-only knots and coefficients.
         t = np.array([0, 1])
         c = np.array([3.0])
         t.setflags(write=False)
