@@ -1,7 +1,7 @@
 import numpy as np
 from .common import Benchmark, safe_import
 
-from scipy.integrate import quad
+from scipy.integrate import quad, cumulative_simpson
 
 with safe_import():
     import ctypes
@@ -112,3 +112,17 @@ class Quad(Benchmark):
 
     def time_quad_cffi(self):
         quad(self.f_cffi, 0, np.pi)
+
+
+class CumulativeSimpson(Benchmark):
+
+    def setup(self) -> None:
+        x, self.dx = np.linspace(0, 5, 1000, retstep=True)
+        self.y = np.sin(2*np.pi*x)
+        self.y2 = np.tile(self.y, (100, 100, 1))
+
+    def time_1d(self) -> None:
+        cumulative_simpson(self.y, dx=self.dx)
+
+    def time_multid(self) -> None:
+        cumulative_simpson(self.y2, dx=self.dx)
