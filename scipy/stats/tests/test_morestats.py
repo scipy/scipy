@@ -343,7 +343,7 @@ class TestAnderson:
         # This is also an example in which an error occurs during fitting
         x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
         wmessage = "Critical values of the test statistic are given for the..."
-        emessage = "An error occured while fitting the Weibull distribution..."
+        emessage = "An error occurred while fitting the Weibull distribution..."
         wcontext = pytest.warns(UserWarning, match=wmessage)
         econtext = pytest.raises(ValueError, match=emessage)
         with wcontext, econtext:

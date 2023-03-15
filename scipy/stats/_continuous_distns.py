@@ -490,7 +490,7 @@ class alpha_gen(rv_continuous):
         return _norm_cdf(a-1.0/x) / _norm_cdf(a)
 
     def _ppf(self, q, a):
-        return 1.0/np.asarray(a-sc.ndtri(q*_norm_cdf(a)))
+        return 1.0/np.asarray(a - _norm_ppf(q*_norm_cdf(a)))
 
     def _stats(self, a):
         return [np.inf]*2 + [np.nan]*2
@@ -853,12 +853,27 @@ class betaprime_gen(rv_continuous):
     for :math:`x >= 0`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\beta(a, b)` is the beta function (see `scipy.special.beta`).
 
+    `betaprime` takes ``a`` and ``b`` as shape parameters.
+
     The distribution is related to the `beta` distribution as follows:
     If :math:`X` follows a beta distribution with parameters :math:`a, b`,
     then :math:`Y = X/(1-X)` has a beta prime distribution with
     parameters :math:`a, b` ([1]_).
 
-    `betaprime` takes ``a`` and ``b`` as shape parameters.
+    The beta prime distribution is a reparametrized version of the
+    F distribution.  The beta prime distribution with shape parameters
+    ``a`` and ``b`` and ``scale = s`` is equivalent to the F distribution
+    with parameters ``d1 = 2*a``, ``d2 = 2*b`` and ``scale = (a/b)*s``.
+    For example,
+
+    >>> from scipy.stats import betaprime, f
+    >>> x = [1, 2, 5, 10]
+    >>> a = 12
+    >>> b = 5
+    >>> betaprime.pdf(x, a, b, scale=2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
+    >>> f.pdf(x, 2*a, 2*b, scale=(a/b)*2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
 
     %(after_notes)s
 
@@ -1411,8 +1426,17 @@ class chi_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        return (sc.gammaln(.5 * df) +
-                .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df)))
+
+        def regular_formula(df):
+            return (sc.gammaln(.5 * df)
+                    + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
+
+        def asymptotic_formula(df):
+            return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
+                    - 4/45*(df**-3) + (df**-4)/15)
+
+        return _lazywhere(df < 3e2, (df, ), regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -2088,14 +2112,14 @@ class fatiguelife_gen(rv_continuous):
         return _norm_cdf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _ppf(self, q, c):
-        tmp = c*sc.ndtri(q)
+        tmp = c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _sf(self, x, c):
         return _norm_sf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _isf(self, q, c):
-        tmp = -c*sc.ndtri(q)
+        tmp = -c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
@@ -3215,7 +3239,20 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return sc.psi(a)*(1-a) + a + sc.gammaln(a)
+
+        def regular_formula(a):
+            return sc.psi(a) * (1-a) + a + sc.gammaln(a)
+
+        def asymptotic_formula(a):
+            # plug in above formula the expansions:
+            # psi(a) ~ ln(a) - 1/2a - 1/12a^2 + 1/120a^4
+            # gammaln(a) ~ a * ln(a) - a - 1/2 * ln(a) + 1/2 ln(2 * pi) +
+            #              1/12a - 1/360a^3
+            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
+                    - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
+
+        return _lazywhere(a < 250, (a, ), regular_formula,
+                          f2=asymptotic_formula)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
@@ -3533,7 +3570,7 @@ class genhyperbolic_gen(rv_continuous):
 
         f(x, p, a, b) =
             \frac{(a^2 - b^2)^{p/2}}
-            {\sqrt{2\pi}a^{p-0.5}
+            {\sqrt{2\pi}a^{p-1/2}
             K_p\Big(\sqrt{a^2 - b^2}\Big)}
             e^{bx} \times \frac{K_{p - 1/2}
             (a \sqrt{1 + x^2})}
@@ -4151,13 +4188,13 @@ class halfnorm_gen(rv_continuous):
         return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
-        return sc.ndtri((1+q)/2.0)
+        return _norm_ppf((1+q)/2.0)
 
     def _sf(self, x):
         return 2 * _norm_sf(x)
 
     def _isf(self, p):
-        return -sc.ndtri(p/2)
+        return  _norm_isf(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -4346,8 +4383,19 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+        def regular(a):
+            h = a - (a + 1.0) * sc.psi(a) + sc.gammaln(a)
+            return h
 
+        def asymptotic(a):
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
+            # psi(a) ~ ln(a) - 1 / (2 * a)
+            h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
+                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+            return h
+
+        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
+        return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -5067,14 +5115,20 @@ class johnsonsb_gen(rv_continuous):
 
     def _pdf(self, x, a, b):
         # johnsonsb.pdf(x, a, b) = b / (x*(1-x)) * phi(a + b * log(x/(1-x)))
-        trm = _norm_pdf(a + b*np.log(x/(1.0-x)))
+        trm = _norm_pdf(a + b*sc.logit(x))
         return b*1.0/(x*(1-x))*trm
 
     def _cdf(self, x, a, b):
-        return _norm_cdf(a + b*np.log(x/(1.0-x)))
+        return _norm_cdf(a + b*sc.logit(x))
 
     def _ppf(self, q, a, b):
-        return 1.0 / (1 + np.exp(-1.0 / b * (_norm_ppf(q) - a)))
+        return sc.expit(1.0 / b * (_norm_ppf(q) - a))
+
+    def _sf(self, x, a, b):
+        return _norm_sf(a + b*sc.logit(x))
+
+    def _isf(self, q, a, b):
+        return sc.expit(1.0 / b * (_norm_isf(q) - a))
 
 
 johnsonsb = johnsonsb_gen(a=0.0, b=1.0, name='johnsonsb')
@@ -5120,14 +5174,20 @@ class johnsonsu_gen(rv_continuous):
         # johnsonsu.pdf(x, a, b) = b / sqrt(x**2 + 1) *
         #                          phi(a + b * log(x + sqrt(x**2 + 1)))
         x2 = x*x
-        trm = _norm_pdf(a + b * np.log(x + np.sqrt(x2+1)))
+        trm = _norm_pdf(a + b * np.arcsinh(x))
         return b*1.0/np.sqrt(x2+1.0)*trm
 
     def _cdf(self, x, a, b):
-        return _norm_cdf(a + b * np.log(x + np.sqrt(x*x + 1)))
+        return _norm_cdf(a + b * np.arcsinh(x))
 
     def _ppf(self, q, a, b):
         return np.sinh((_norm_ppf(q) - a) / b)
+
+    def _sf(self, x, a, b):
+        return _norm_sf(a + b * np.arcsinh(x))
+
+    def _isf(self, x, a, b):
+        return np.sinh((_norm_isf(x) - a) / b)
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
@@ -5442,7 +5502,7 @@ class levy_gen(rv_continuous):
 
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
-        val = -sc.ndtri(q/2)
+        val = _norm_isf(q/2)
         return 1.0 / (val * val)
 
     def _isf(self, p):
@@ -7054,11 +7114,23 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         if df == np.inf:
             return norm._entropy()
-        half = df/2
-        half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half))
-                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
+        def regular(df):
+            half = df/2
+            half1 = (df + 1)/2
+            return (half1*(sc.digamma(half1) - sc.digamma(half))
+                    + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+
+        def asymptotic(df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2))
+            #  + log(sqrt(d) * beta(d/2, 1/2))"
+            h = (norm._entropy() + 1/df + (df**-2.)/4 - (df**-3.)/6
+                 - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
+            return h
+
+        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
+        return h
 
 t = t_gen(name='t')
 
@@ -7886,11 +7958,16 @@ class powernorm_gen(rv_continuous):
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
     where :math:`\phi` is the normal pdf, :math:`\Phi` is the normal cdf,
-    :math:`x` is any real, and :math:`c > 0`.
+    :math:`x` is any real, and :math:`c > 0` [1]_.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.13,
+           https://www.itl.nist.gov/div898/handbook//eda/section3/eda366d.htm
 
     %(example)s
 
@@ -8950,7 +9027,7 @@ def _log_gauss_mass(a, b):
     case_central = ~(case_left | case_right)
 
     def mass_case_left(a, b):
-        return _log_diff(sc.log_ndtr(b), sc.log_ndtr(a))
+        return _log_diff(_norm_logcdf(b), _norm_logcdf(a))
 
     def mass_case_right(a, b):
         return mass_case_left(-b, -a)
@@ -8966,7 +9043,7 @@ def _log_gauss_mass(a, b):
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
+        return sc.log1p(-_norm_cdf(a) - _norm_cdf(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -9060,12 +9137,12 @@ class truncnorm_gen(rv_continuous):
         case_right = ~case_left
 
         def ppf_left(q, a, b):
-            log_Phi_x = _log_sum(sc.log_ndtr(a),
+            log_Phi_x = _log_sum(_norm_logcdf(a),
                                  np.log(q) + _log_gauss_mass(a, b))
             return sc.ndtri_exp(log_Phi_x)
 
         def ppf_right(q, a, b):
-            log_Phi_x = _log_sum(sc.log_ndtr(-b),
+            log_Phi_x = _log_sum(_norm_logcdf(-b),
                                  np.log1p(-q) + _log_gauss_mass(a, b))
             return -sc.ndtri_exp(log_Phi_x)
 
@@ -9089,12 +9166,12 @@ class truncnorm_gen(rv_continuous):
         case_right = ~case_left
 
         def isf_left(q, a, b):
-            log_Phi_x = _log_diff(sc.log_ndtr(b),
+            log_Phi_x = _log_diff(_norm_logcdf(b),
                                   np.log(q) + _log_gauss_mass(a, b))
             return sc.ndtri_exp(np.real(log_Phi_x))
 
         def isf_right(q, a, b):
-            log_Phi_x = _log_diff(sc.log_ndtr(-a),
+            log_Phi_x = _log_diff(_norm_logcdf(-a),
                                   np.log1p(-q) + _log_gauss_mass(a, b))
             return -sc.ndtri_exp(np.real(log_Phi_x))
 
