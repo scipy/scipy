@@ -130,6 +130,11 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
+    
+    # Quick return for square empty array
+    if a1.size == 0:
+        return a1.copy()
+
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
