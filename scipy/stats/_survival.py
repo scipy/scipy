@@ -2,11 +2,12 @@ import warnings
 from dataclasses import dataclass, field
 import numpy as np
 from scipy import special
+from scipy.stats import chi
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
 
-__all__ = ['ecdf']
+__all__ = ['ecdf', 'log_rank']
 
 
 @dataclass
@@ -371,3 +372,60 @@ def _ecdf_right_censored(sample):
     sf = np.cumprod((n - d) / n)
     cdf = 1 - sf
     return t, cdf, sf, n, d
+
+
+def _kaplan_meier(sample):
+    tod = sample._uncensored  # time of "death"
+    tol = sample._right  # time of "loss"
+    times = np.concatenate((tod, tol))
+    died = np.asarray([1]*tod.size + [0]*tol.size)
+
+    # sort by times
+    i = np.argsort(times)
+    times = times[i]
+    died = died[i]
+    at_risk = np.arange(times.size, 0, -1)
+    return times, died, at_risk
+
+
+def _log_rank(sample):
+    times, died, at_risk = _kaplan_meier(sample)
+
+    idx_died = died.astype(bool)
+    times = times[idx_died]
+    at_risk = at_risk[idx_died]
+    return times, died, at_risk
+
+
+def log_rank(t_sample, t_control, e_sample, e_control):
+
+    sample = CensoredData.right_censored(t_sample, np.logical_not(e_sample))
+    control = CensoredData.right_censored(t_control, np.logical_not(e_control))
+
+    sample_tot = CensoredData.right_censored(t_sample+t_control, np.logical_not(e_sample+e_control))
+
+    times_sample, died_sample, at_risk_sample = _log_rank(sample)
+    times_control, died_control, at_risk_control = _log_rank(control)
+    times_sample_tot, _, at_risk_sample_tot = _log_rank(sample_tot)
+
+    at_risk_ = at_risk_sample_tot.copy()
+
+    idx = np.searchsorted(times_sample_tot, times_sample)
+    at_risk_[idx] = at_risk_sample_tot[idx] - at_risk_sample
+    idx = np.searchsorted(times_sample_tot, times_control)
+    at_risk_[idx] = at_risk_control
+
+    at_risk_control = at_risk_
+    at_risk_sample = at_risk_sample_tot - at_risk_
+
+    sum_exp_event_sample = np.sum(at_risk_sample * (1/at_risk_sample_tot))
+    sum_exp_event_control = np.sum(at_risk_control * (1/at_risk_sample_tot))
+
+    statistics = (
+        (np.sum(died_sample) - sum_exp_event_sample)**2/sum_exp_event_sample
+        + (np.sum(died_control) - sum_exp_event_control)**2/sum_exp_event_control
+    )
+
+    pvalue = 1 - chi(df=1).cdf(statistics)
+
+    return statistics, pvalue
