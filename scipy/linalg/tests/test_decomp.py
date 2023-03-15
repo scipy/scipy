@@ -145,6 +145,11 @@ class TestEigVals:
         exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
         assert_array_almost_equal(w, exact_w)
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = eig(a)
+        assert_allclose(a_empty, a)
+
 
 class TestEig:
 
@@ -362,6 +367,11 @@ class TestEig:
         B = np.arange(9.0).reshape(3, 3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = eig(a)
+        assert_allclose(a_empty, a)
 
 
 class TestEigBanded:
@@ -911,6 +921,11 @@ class TestEigh:
         w, v = eigh(a, subset_by_index=[0, 1])
         assert_allclose(w_dep, w)
         assert_allclose(v_dep, v)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = eig(a)
+        assert_allclose(a_empty, a)
 
 
 class TestLU:
