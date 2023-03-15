@@ -57,6 +57,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import orthogonal_procrustes
     >>> A = np.array([[ 2,  0,  1], [-2,  0,  0]])
 
@@ -80,7 +81,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     if A.ndim != 2:
         raise ValueError('expected ndim to be 2, but observed %s' % A.ndim)
     if A.shape != B.shape:
-        raise ValueError('the shapes of A and B differ (%s vs %s)' % (
+        raise ValueError('the shapes of A and B differ ({} vs {})'.format(
             A.shape, B.shape))
     # Be clever with transposes, with the intention to save memory.
     u, w, vt = svd(B.T.dot(A).T)

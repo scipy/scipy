@@ -1,30 +1,31 @@
-# -*- coding: utf-8 -*-
-import sys, os, re
-import glob
-from datetime import date
+import math
+import os
+from os.path import relpath, dirname
+import re
+import sys
 import warnings
+from datetime import date
 
-import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from numpydoc.docscrape_sphinx import SphinxDocString
+from sphinx.util import inspect
 
-# Currently required to build scipy.fft docs
-os.environ['_SCIPY_BUILDING_DOC'] = 'True'
-
-# Check Sphinx version
-import sphinx
-if sphinx.__version__ < "2.0":
-    raise RuntimeError("Sphinx 2.0 or newer required")
-
-needs_sphinx = '2.0'
-
+import scipy
+from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
-from sphinx.util import inspect
 import scipy._lib.uarray as ua
 from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
 from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
+
+
 old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
+
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -44,28 +45,17 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
-    'sphinx_panels',
+    'sphinx_design',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
-    'sphinx_tabs.tabs',
 ]
 
-# Determine if the matplotlib has a recent enough version of the
-# plot_directive.
-from matplotlib.sphinxext import plot_directive
-if plot_directive.__version__ < 2:
-    raise RuntimeError("You need a recent enough version of matplotlib")
+
 # Do some matplotlib config in case users have a matplotlibrc that will break
 # things
-import matplotlib
 matplotlib.use('agg')
-import matplotlib.pyplot as plt
 plt.ioff()
-
-# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
-# already loads it
-panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -82,7 +72,6 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
@@ -91,7 +80,7 @@ if os.environ.get('CIRCLE_JOB', False) and \
     version = os.environ['CIRCLE_BRANCH']
     release = version
 
-print("%s (VERSION %s)" % (project, version))
+print(f"{project} (VERSION {version})")
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -197,7 +186,7 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "dev"
 
-if 'versionwarning' in tags:
+if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
@@ -209,7 +198,7 @@ if 'versionwarning' in tags:
     }
     html_js_files = ['versioncheck.js']
 
-html_title = "%s v%s Manual" % (project, version)
+html_title = f"{project} v{version} Manual"
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
@@ -239,6 +228,7 @@ intersphinx_mapping = {
     'neps': ('https://numpy.org/neps', None),
     'matplotlib': ('https://matplotlib.org/stable', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
+    'statsmodels': ('https://www.statsmodels.org/stable', None),
 }
 
 
@@ -260,6 +250,16 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 # -----------------------------------------------------------------------------
 
 autosummary_generate = True
+
+# maps functions with a name same as a class name that is indistinguishable
+# Ex: scipy.signal.czt and scipy.signal.CZT or scipy.odr.odr and scipy.odr.ODR
+# Otherwise, the stubs are overwritten when the name is same for
+# OS (like MacOS) which has a filesystem that ignores the case
+# See https://github.com/sphinx-doc/sphinx/pull/7927
+autosummary_filename_map = {
+    "scipy.odr.odr": "odr-function",
+    "scipy.signal.czt": "czt-function",
+}
 
 
 # -----------------------------------------------------------------------------
@@ -294,6 +294,12 @@ coverage_ignore_c_items = {}
 #------------------------------------------------------------------------------
 
 plot_pre_code = """
+import warnings
+for key in (
+        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        ):
+    warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
+
 import numpy as np
 np.random.seed(123)
 """
@@ -302,7 +308,6 @@ plot_formats = [('png', 96)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
 
-import math
 phi = (math.sqrt(5) + 1)/2
 
 font_size = 13*72/96.0  # 13 px
@@ -327,9 +332,8 @@ plot_rcparams = {
 # Source code links
 # -----------------------------------------------------------------------------
 
-import re
-import inspect
-from os.path import relpath, dirname
+# Not the same as from sphinx.util import inspect and needed here
+import inspect  # noqa: E402
 
 for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     try:
@@ -340,6 +344,7 @@ for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
         pass
 else:
     print("NOTE: linkcode extension not found -- no links to source generated")
+
 
 def linkcode_resolve(domain, info):
     """
@@ -363,7 +368,8 @@ def linkcode_resolve(domain, info):
             return None
 
     # Use the original function object if it is wrapped.
-    obj = getattr(obj, "__wrapped__", obj)
+    while hasattr(obj, "__wrapped__"):
+        obj = obj.__wrapped__
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
     if isinstance(obj, (rv_generic, multi_rv_generic)):
@@ -395,14 +401,18 @@ def linkcode_resolve(domain, info):
 
     if fn.startswith('scipy/'):
         m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        base_url = "https://github.com/scipy/scipy/blob"
         if m:
-            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
-                m.group(1), fn, linespec)
+            return f"{base_url}/{m.group(1)}/{fn}{linespec}"
         elif 'dev' in scipy.__version__:
-            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
-                fn, linespec)
+            return f"{base_url}/main/{fn}{linespec}"
         else:
-            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
-                scipy.__version__, fn, linespec)
+            return f"{base_url}/v{scipy.__version__}/{fn}{linespec}"
     else:
         return None
+
+
+# Tell overwrite numpydoc's logic to render examples containing rng.
+SphinxDocString._str_examples = _rng_html_rewrite(
+    SphinxDocString._str_examples
+)

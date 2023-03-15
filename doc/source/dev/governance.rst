@@ -330,7 +330,7 @@ A list of current Institutional Partners is maintained at the page
 Document history
 ================
 
-https://github.com/scipy/scipy/commits/master/doc/source/dev/governance/governance.rst
+https://github.com/scipy/scipy/commits/main/doc/source/dev/governance/governance.rst
 
 Acknowledgements
 ================

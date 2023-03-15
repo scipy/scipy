@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 r"""
 ====================================================
 Quasi-Monte Carlo submodule (:mod:`scipy.stats.qmc`)

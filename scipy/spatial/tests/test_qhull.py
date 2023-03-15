@@ -17,10 +17,6 @@ def sorted_tuple(x):
     return tuple(sorted(x))
 
 
-def sorted_unique_tuple(x):
-    return tuple(np.unique(x))
-
-
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
         a = a.tolist()
@@ -192,7 +188,7 @@ class TestUtilities:
                   (0.75, 0.75, 0),
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
-            assert_equal(i, p[2], err_msg='%r' % (p,))
+            assert_equal(i, p[2], err_msg=f'{p!r}')
             j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
@@ -306,20 +302,20 @@ class TestUtilities:
         with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
 
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Invalid simplices must be (nearly) zero volume
         q = vertices[:,:-1,:] - vertices[:,-1,None,:]
         volume = np.array([np.linalg.det(q[k,:,:])
                            for k in range(tri.nsimplex)])
         ok = np.isfinite(tri.transform[:,0,0]) | (volume < np.sqrt(eps))
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Also, find_simplex for the centroid should end up in some
         # simplex for the non-degenerate cases
         j = tri.find_simplex(centroids)
         ok = (j != -1) | np.isnan(tri.transform[:,0,0])
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
@@ -327,7 +323,7 @@ class TestUtilities:
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
-            assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+            assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
@@ -397,7 +393,7 @@ class TestVertexNeighborVertices:
         got = [set(map(int, indices[indptr[j]:indptr[j+1]]))
                for j in range(tri.points.shape[0])]
 
-        assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
+        assert_equal(got, expected, err_msg=f"{got!r} != {expected!r}")
 
     def test_triangle(self):
         points = np.array([(0,0), (0,1), (1,0)], dtype=np.double)
@@ -542,13 +538,6 @@ class TestDelaunay:
 
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
-
-    def test_vertices_deprecation(self):
-        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            tri.vertices
 
 
 def assert_hulls_equal(points, facets_1, facets_2):
@@ -795,6 +784,41 @@ class TestConvexHull:
         assert_equal(hull.good, expected)
 
 class TestVoronoi:
+
+    @pytest.mark.parametrize("qhull_opts, extra_pts", [
+        # option Qz (default for SciPy) will add
+        # an extra point at infinity
+        ("Qbb Qc Qz", 1),
+        ("Qbb Qc", 0),
+    ])
+    @pytest.mark.parametrize("n_pts", [50, 100])
+    @pytest.mark.parametrize("ndim", [2, 3])
+    def test_point_region_structure(self,
+                                    qhull_opts,
+                                    n_pts,
+                                    extra_pts,
+                                    ndim):
+        # see gh-16773
+        rng = np.random.default_rng(7790)
+        points = rng.random((n_pts, ndim))
+        vor = Voronoi(points, qhull_options=qhull_opts)
+        pt_region = vor.point_region
+        assert pt_region.max() == n_pts - 1 + extra_pts
+        assert pt_region.size == len(vor.regions) - extra_pts
+        assert len(vor.regions) == n_pts + extra_pts
+        assert vor.points.shape[0] == n_pts
+        # if there is an empty sublist in the Voronoi
+        # regions data structure, it should never be
+        # indexed because it corresponds to an internally
+        # added point at infinity and is not a member of the
+        # generators (input points)
+        if extra_pts:
+            sublens = [len(x) for x in vor.regions]
+            # only one point at infinity (empty region)
+            # is allowed
+            assert sublens.count(0) == 1
+            assert sublens.index(0) not in pt_region
+
     def test_masked_array_fails(self):
         masked_array = np.ma.masked_all(1)
         assert_raises(ValueError, qhull.Voronoi, masked_array)
@@ -969,7 +993,7 @@ class TestVoronoi:
 
             def remap(x):
                 if hasattr(x, '__len__'):
-                    return tuple(set([remap(y) for y in x]))
+                    return tuple({remap(y) for y in x})
                 try:
                     return vertex_map[x]
                 except KeyError as e:

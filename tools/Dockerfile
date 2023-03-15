@@ -17,8 +17,8 @@
 #
 # docker run -it --rm -v $PWD/:/home/scipy scipy/scipy-dev /bin/bash
 #
-# The available Python executables are python3.8 (along with
-# pip3.8.
+# The available Python executables are python3.10 (along with
+# pip3.10.
 # The image does not come bundled with cython/numpy/pytest/pybind11, those need to
 # be installed with pip before trying to build/run scipy.
 #
@@ -29,8 +29,8 @@
 # http://scipy.github.io/devdocs/dev/contributor/quickstart_docker.html#quickstart-docker
 
 
-# ubuntu focal has python 3.8 as default
-FROM ubuntu:focal
+# ubuntu focal has python 3.10 as default
+FROM ubuntu:jammy
 
 RUN apt-get update && apt-get install -y \
 	python3-pip \
@@ -48,5 +48,5 @@ RUN apt-get update && apt-get install -y \
 	git
 
 
-# setup pips and pip3.8
-RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.8 get-pip.py && rm get-pip.py
+# setup pips and pip3.10
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3.10 get-pip.py && rm get-pip.py

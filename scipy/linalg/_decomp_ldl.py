@@ -67,6 +67,28 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
         If a complex-valued array with nonzero imaginary parts on the
         diagonal is given and hermitian is set to True.
 
+    See Also
+    --------
+    cholesky, lu
+
+    Notes
+    -----
+    This function uses ``?SYTRF`` routines for symmetric matrices and
+    ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
+    the algorithm details.
+
+    Depending on the `lower` keyword value, only lower or upper triangular
+    part of the input array is referenced. Moreover, this keyword also defines
+    the structure of the outer factors of the factorization.
+
+    .. versionadded:: 1.1.0
+
+    References
+    ----------
+    .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
+       inertia and solving symmetric linear systems, Math. Comput. Vol.31,
+       1977. :doi:`10.2307/2005787`
+
     Examples
     --------
     Given an upper triangular array ``a`` that represents the full symmetric
@@ -94,28 +116,6 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     array([[ 2., -1.,  3.],
            [-1.,  2.,  0.],
            [ 3.,  0.,  1.]])
-
-    Notes
-    -----
-    This function uses ``?SYTRF`` routines for symmetric matrices and
-    ``?HETRF`` routines for Hermitian matrices from LAPACK. See [1]_ for
-    the algorithm details.
-
-    Depending on the `lower` keyword value, only lower or upper triangular
-    part of the input array is referenced. Moreover, this keyword also defines
-    the structure of the outer factors of the factorization.
-
-    .. versionadded:: 1.1.0
-
-    See Also
-    --------
-    cholesky, lu
-
-    References
-    ----------
-    .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
-       inertia and solving symmetric linear systems, Math. Comput. Vol.31,
-       1977. :doi:`10.2307/2005787`
 
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))

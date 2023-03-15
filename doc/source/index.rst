@@ -20,75 +20,81 @@ SciPy documentation
 **SciPy** (pronounced "Sigh Pie") is an open-source software for mathematics,
 science, and engineering.
 
-.. panels::
-    :card: + intro-card text-center
-    :column: col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex
+.. grid:: 2
 
-    ---
-    :img-top: _static/index_getting_started.png
+    .. grid-item-card::
+        :img-top: _static/index_getting_started.png
 
-    Getting started
-    ^^^^^^^^^^^^^^^
+        Getting started
+        ^^^^^^^^^^^^^^^
 
-    New to *SciPy*? Check out the getting started guides. They contain an
-    introduction to *SciPy's* main concepts and links to additional tutorials.
+        New to *SciPy*? Check out the getting started guides. They contain an
+        introduction to *SciPy's* main concepts and links to additional tutorials.
 
-    +++
+        +++
 
-    .. link-button:: getting_started_ref
-            :type: ref
-            :text: To the getting started guides
-            :classes: btn-block btn-secondary stretched-link
+        .. button-ref:: getting_started_ref
+            :expand:
+            :color: secondary
+            :click-parent:
 
-    ---
-    :img-top: _static/index_user_guide.png
+            To the getting started guides
 
-    User guide
-    ^^^^^^^^^^
+    .. grid-item-card::
+        :img-top: _static/index_user_guide.png
 
-    The user guide provides in-depth information on the
-    key concepts of SciPy with useful background information and explanation.
+        User guide
+        ^^^^^^^^^^
 
-    +++
+        The user guide provides in-depth information on the
+        key concepts of SciPy with useful background information and explanation.
 
-    .. link-button:: user_guide
-            :type: ref
-            :text: To the user guide
-            :classes: btn-block btn-secondary stretched-link
+        +++
 
-    ---
-    :img-top: _static/index_api.png
+        .. button-ref:: user_guide
+            :expand:
+            :color: secondary
+            :click-parent:
 
-    API reference
-    ^^^^^^^^^^^^^
+            To the user guide
 
-    The reference guide contains a detailed description of
-    the SciPy API. The reference describes how the methods work and which parameters can
-    be used. It assumes that you have an understanding of the key concepts.
+    .. grid-item-card::
+        :img-top: _static/index_api.png
 
-    +++
+        API reference
+        ^^^^^^^^^^^^^
 
-    .. link-button:: scipy-api
-            :type: ref
-            :text: To the reference guide
-            :classes: btn-block btn-secondary stretched-link
+        The reference guide contains a detailed description of
+        the SciPy API. The reference describes how the methods work and which parameters can
+        be used. It assumes that you have an understanding of the key concepts.
 
-    ---
-    :img-top: _static/index_contribute.png
+        +++
 
-    Developer guide
-    ^^^^^^^^^^^^^^^
+        .. button-ref:: scipy-api
+            :expand:
+            :color: secondary
+            :click-parent:
 
-    Saw a typo in the documentation? Want to improve
-    existing functionalities? The contributing guidelines will guide
-    you through the process of improving SciPy.
+            To the reference guide
 
-    +++
+    .. grid-item-card::
+        :img-top: _static/index_contribute.png
 
-    .. link-button:: scipy-development
-            :type: ref
-            :text: To the development guide
-            :classes: btn-block btn-secondary stretched-link
+        Developer guide
+        ^^^^^^^^^^^^^^^
+
+        Saw a typo in the documentation? Want to improve
+        existing functionalities? The contributing guidelines will guide
+        you through the process of improving SciPy.
+
+        +++
+
+        .. button-ref:: scipy-development
+            :expand:
+            :color: secondary
+            :click-parent:
+
+            To the development guide
 
 .. toctree::
    :maxdepth: 1

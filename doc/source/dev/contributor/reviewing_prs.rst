@@ -85,8 +85,7 @@ Assuming you set up your development environment according to one of the
 
 build the code and test it::
 
-   python setup.py build_ext --inplace
-   python runtests.py -v
+   python dev.py test -v
 
 and if you ``import`` SciPy from Python, you'll be importing the
 author's modified version of SciPy.

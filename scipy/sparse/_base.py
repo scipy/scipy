@@ -190,7 +190,7 @@ class spmatrix:
         """
         # As an inplace operation, this requires implementation in each format.
         raise NotImplementedError(
-            '{}.resize is not implemented'.format(type(self).__name__))
+            f'{type(self).__name__}.resize is not implemented')
 
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
@@ -369,7 +369,7 @@ class spmatrix:
             try:
                 convert_method = getattr(self, 'to' + format)
             except AttributeError as e:
-                raise ValueError('Format {} is unknown.'.format(format)) from e
+                raise ValueError(f'Format {format} is unknown.') from e
 
             # Forward the copy kwarg, if it's accepted.
             try:

@@ -122,7 +122,7 @@ reflect_symm_index(int64_t j, int64_t m)
 {
     // First map j to k in the interval [0, 2*m-1).
     // Then flip the k values that are greater than or equal to m.
-    int64_t k = (j >= 0) ? (j % (2*m)) : (abs(j + 1) % (2*m));
+    int64_t k = (j >= 0) ? (j % (2*m)) : (llabs(j + 1) % (2*m));
     return (k >= m) ? (2*m - k - 1) : k;
 }
 

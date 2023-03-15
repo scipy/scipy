@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-from numpy import arccosh, arcsinh, arctanh
 from numpy.testing import suppress_warnings
 import pytest
 
@@ -11,7 +10,7 @@ from scipy.special import (
     jn, jv, jvp, yn, yv, yvp, iv, ivp, kn, kv, kvp,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
-    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
+    ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc,
     elliprc, elliprd, elliprf, elliprg, elliprj,
     erf, erfc, erfinv, erfcinv, exp1, expi, expn,
     bdtrik, btdtr, btdtri, btdtria, btdtrib, chndtr, gdtr, gdtrc, gdtrix, gdtrib,
@@ -63,10 +62,6 @@ def ellipe_(k):
 
 def ellipeinc_(f, k):
     return ellipeinc(f, k*k)
-
-
-def ellipj_(k):
-    return ellipj(k*k)
 
 
 def zeta_(x):
@@ -200,15 +195,6 @@ def clog1p(x, y):
 
 
 BOOST_TESTS = [
-        data(arccosh, 'acosh_data_ipp-acosh_data', 0, 1, rtol=5e-13),
-        data(arccosh, 'acosh_data_ipp-acosh_data', 0j, 1, rtol=5e-13),
-
-        data(arcsinh, 'asinh_data_ipp-asinh_data', 0, 1, rtol=1e-11),
-        data(arcsinh, 'asinh_data_ipp-asinh_data', 0j, 1, rtol=1e-11),
-
-        data(arctanh, 'atanh_data_ipp-atanh_data', 0, 1, rtol=1e-11),
-        data(arctanh, 'atanh_data_ipp-atanh_data', 0j, 1, rtol=1e-11),
-
         data(assoc_legendre_p_boost_, 'assoc_legendre_p_ipp-assoc_legendre_p', (0,1,2), 3, rtol=1e-11),
 
         data(legendre_p_via_assoc_, 'legendre_p_ipp-legendre_p', (0,1), 2, rtol=1e-11),

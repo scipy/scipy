@@ -114,10 +114,9 @@ development environment, you'll need to activate your development virtual
 environment, perform an in-place build, and run tests::
 
    conda activate name-of-your-virtual-environment
-   python setup.py build_ext --inplace
-   python runtests.py -v
+   python dev.py test -v
 
-Otherwise, see :ref:`building`, :ref:`runtests` for more information.
+Otherwise, see :ref:`building`, :ref:`meson` for more information.
 
 .. _editing-workflow:
 
@@ -275,7 +274,7 @@ Checklist before submitting a PR
    :ref:`license-considerations`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`runtests`.
+-  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.

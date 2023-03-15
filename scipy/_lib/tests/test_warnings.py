@@ -41,7 +41,7 @@ class FindFuncs(ast.NodeVisitor):
         if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
             if node.args[0].s == "ignore":
                 self.bad_filters.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+                    f"{self.__filename}:{node.lineno}")
 
         if p.ls[-1] == 'warn' and (
                 len(p.ls) == 1 or p.ls[-2] == 'warnings'):
@@ -56,7 +56,7 @@ class FindFuncs(ast.NodeVisitor):
             args = {kw.arg for kw in node.keywords}
             if "stacklevel" not in args:
                 self.bad_stacklevels.append(
-                    "{}:{}".format(self.__filename, node.lineno))
+                    f"{self.__filename}:{node.lineno}")
 
 
 @pytest.fixture(scope="session")
@@ -92,6 +92,8 @@ def test_warning_calls_filters(warning_calls):
     # SciPy correctly. So we list exceptions here.  Add new entries only if
     # there's a good reason.
     allowed_filters = (
+        os.path.join('datasets', '_fetchers.py'),
+        os.path.join('datasets', '__init__.py'),
         os.path.join('optimize', '_optimize.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901

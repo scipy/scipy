@@ -4,7 +4,7 @@ from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
 from ._optimize import OptimizeWarning
-from warnings import warn
+from warnings import warn, catch_warnings, simplefilter
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
@@ -99,6 +99,7 @@ class NonlinearConstraint:
     Constrain ``x[0] < sin(x[1]) + 1.9``
 
     >>> from scipy.optimize import NonlinearConstraint
+    >>> import numpy as np
     >>> con = lambda x: x[0] - np.sin(x[1])
     >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
 
@@ -165,11 +166,18 @@ class LinearConstraint:
 
     def __init__(self, A, lb=-np.inf, ub=np.inf, keep_feasible=False):
         if not issparse(A):
-            self.A = np.atleast_2d(A)
+            # In some cases, if the constraint is not valid, this emits a
+            # VisibleDeprecationWarning about ragged nested sequences
+            # before eventually causing an error. `scipy.optimize.milp` would
+            # prefer that this just error out immediately so it can handle it
+            # rather than concerning the user.
+            with catch_warnings():
+                simplefilter("error")
+                self.A = np.atleast_2d(A).astype(np.float64)
         else:
             self.A = A
-        self.lb = np.atleast_1d(lb)
-        self.ub = np.atleast_1d(ub)
+        self.lb = np.atleast_1d(lb).astype(np.float64)
+        self.ub = np.atleast_1d(ub).astype(np.float64)
         self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
         self._input_validation()
 
@@ -454,8 +462,10 @@ def new_constraint_to_old(con, x0):
         A = con.A
         if issparse(A):
             A = A.toarray()
-        fun = lambda x: np.dot(A, x)
-        jac = lambda x: A
+        def fun(x):
+            return np.dot(A, x)
+        def jac(x):
+            return A
 
     # FIXME: when bugs in VectorFunction/LinearVectorFunction are worked out,
     # use pcon.fun.fun and pcon.fun.jac. Until then, get fun/jac above.
@@ -551,9 +561,11 @@ def old_constraint_to_new(ic, con):
     jac = '2-point'
     if 'args' in con:
         args = con['args']
-        fun = lambda x: con['fun'](x, *args)
+        def fun(x):
+            return con["fun"](x, *args)
         if 'jac' in con:
-            jac = lambda x: con['jac'](x, *args)
+            def jac(x):
+                return con["jac"](x, *args)
     else:
         fun = con['fun']
         if 'jac' in con:

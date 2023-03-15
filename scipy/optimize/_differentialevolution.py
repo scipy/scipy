@@ -45,11 +45,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         to ``len(x)``.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`.
+
+            1. Instance of `Bounds` class.
+            2. ``(min, max)`` pairs for each element in ``x``, defining the
+               finite lower and upper bounds for the optimizing argument of
+               `func`.
+
         The total number of bounds is used to determine the number of
-        parameters, N.
+        parameters, N. If there are parameters whose bounds are equal the total
+        number of free parameters is ``N - N_equal``.
+
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -73,13 +78,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * N``
+        is: ``(maxiter + 1) * popsize * (N - N_equal)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * N`` individuals. This keyword is overridden if an
-        initial population is supplied via the `init` keyword. When using
+        ``popsize * (N - N_equal)`` individuals. This keyword is overridden if
+        an initial population is supplied via the `init` keyword. When using
         ``init='sobol'`` the population size is calculated as the next power
-        of 2 after ``popsize * N``.
+        of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -101,9 +106,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -145,8 +148,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
         size which is calculated as the next power of 2 after
-        ``popsize * N``. 'halton' has no requirements but is a bit less
-        efficient. See `scipy.stats.qmc` for more details.
+        ``popsize * (N - N_equal)``. 'halton' has no requirements but is a bit
+        less efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -322,6 +325,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Let us consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`.
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)
@@ -363,8 +367,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
     >>> result = differential_evolution(ackley, bounds, seed=1)
-    >>> result.x, result.fun, result.nfev
-    (array([0., 0.]), 4.440892098500626e-16, 3063)
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
 
     The Ackley function is written in a vectorized manner, so the
     ``'vectorized'`` keyword can be employed. Note the reduced number of
@@ -373,8 +377,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result = differential_evolution(
     ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
     ... )
-    >>> result.x, result.fun, result.nfev
-    (array([0., 0.]), 4.440892098500626e-16, 190)
+    >>> result.x, result.fun
+    (array([0., 0.]), 4.440892098500626e-16)
 
     """
 
@@ -414,11 +418,15 @@ class DifferentialEvolutionSolver:
         to ``len(x)``.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`.
+
+            1. Instance of `Bounds` class.
+            2. ``(min, max)`` pairs for each element in ``x``, defining the
+               finite lower and upper bounds for the optimizing argument of
+               `func`.
+
         The total number of bounds is used to determine the number of
-        parameters, N.
+        parameters, N. If there are parameters whose bounds are equal the total
+        number of free parameters is ``N - N_equal``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -443,13 +451,13 @@ class DifferentialEvolutionSolver:
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * N``
+        is: ``(maxiter + 1) * popsize * (N - N_equal)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * N`` individuals. This keyword is overridden if an
-        initial population is supplied via the `init` keyword. When using
+        ``popsize * (N - N_equal)`` individuals. This keyword is overridden if
+        an initial population is supplied via the `init` keyword. When using
         ``init='sobol'`` the population size is calculated as the next power
-        of 2 after ``popsize * N``.
+        of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -471,9 +479,7 @@ class DifferentialEvolutionSolver:
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -518,8 +524,8 @@ class DifferentialEvolutionSolver:
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
         size which is calculated as the next power of 2 after
-        ``popsize * N``. 'halton' has no requirements but is a bit less
-        efficient. See `scipy.stats.qmc` for more details.
+        ``popsize * (N - N_equal)``. 'halton' has no requirements but is a bit
+        less efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -711,6 +717,12 @@ class DifferentialEvolutionSolver:
         # _unscale_parameter. This is an optimization
         self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
         self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
+        with np.errstate(divide='ignore'):
+            # if lb == ub then the following line will be 1/0, which is why
+            # we ignore the divide by zero warning. The result from 1/0 is
+            # inf, so replace those values by 0.
+            self.__recip_scale_arg2 = 1 / self.__scale_arg2
+            self.__recip_scale_arg2[~np.isfinite(self.__recip_scale_arg2)] = 0
 
         self.parameter_count = np.size(self.limits, 1)
 
@@ -745,11 +757,20 @@ class DifferentialEvolutionSolver:
         else:
             self.integrality = False
 
+        # check for equal bounds
+        eb = self.limits[0] == self.limits[1]
+        eb_count = np.count_nonzero(eb)
+
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
-        self.num_population_members = max(5, popsize * self.parameter_count)
+        # 202301 - reduced population size to account for parameters with
+        # equal bounds. If there are no varying parameters set N to at least 1
+        self.num_population_members = max(
+            5,
+            popsize * max(1, self.parameter_count - eb_count)
+        )
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
@@ -1464,7 +1485,7 @@ class DifferentialEvolutionSolver:
 
     def _unscale_parameters(self, parameters):
         """Scale from parameters to a number between 0 and 1."""
-        return (parameters - self.__scale_arg1) / self.__scale_arg2 + 0.5
+        return (parameters - self.__scale_arg1) * self.__recip_scale_arg2 + 0.5
 
     def _ensure_constraint(self, trial):
         """Make sure the parameters lie between the limits."""
@@ -1500,6 +1521,7 @@ class DifferentialEvolutionSolver:
             i = 0
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count

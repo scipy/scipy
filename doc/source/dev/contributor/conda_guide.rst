@@ -58,24 +58,23 @@ the latest release of conda from either
 
 #. Initialize git submodules: ``git submodule update --init``.
 
-#. Do an in-place build: enter ``python setup.py build_ext --inplace``.
-   This will compile the C, C++, and Fortran code that comes with SciPy. We
-   installed ``python`` with Anaconda. ``setup.py`` is a script in the root
-   directory of SciPy, which is why you have to be in the SciPy root directory
-   to call it. ``build_ext`` is a command defined in ``setup.py``, and
-   ``--inplace`` is an option we'll use to ensure that the compiling happens in
-   the SciPy directory you already have rather than the default location for
-   Python packages. By building in-place, you avoid having to re-build SciPy
-   before you can test changes to the Python code.
+#. Build SciPy: enter ``python dev.py build``. 
 
-#. Test the build: enter ``python runtests.py -v``.
+    This will compile the C, C++, and Fortran code that comes with SciPy and
+    install it in the directory you already have rather than the default
+    location for Python packages. We installed ``python`` with Anaconda.
+    ``dev.py`` is a script in the root directory of SciPy which can be used to
+    execute several development tasks (see :ref:`the-dev-py-interface` for
+    details).
 
-   * ``runtests.py`` is another script in the SciPy root directory. It runs a
-     suite of tests that make sure SciPy is working as it should, and ``-v``
-     activates the ``--verbose`` option to show all the test output. If the
-     tests are successful, you now have a working development build of SciPy!
-     You could stop here, but you would only be able to use this development
-     build when the Python working directory is the SciPy root directory.
+#. Test the build: enter ``python dev.py test -v``.
+
+    This command runs a suite of tests that make sure SciPy is working as it
+    should, and ``-v`` activates the ``--verbose`` option to show all the test
+    output. If the tests are successful, you now have a working development
+    build of SciPy!
+    You could stop here, but you would only be able to use this development
+    build when the Python working directory is the SciPy root directory.
 
 #. Enter ``conda develop .``, where ``.`` refers to the present directory.
    This will allow us to ``import`` the development version of SciPy in Python

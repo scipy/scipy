@@ -1515,7 +1515,8 @@ class TestNdimageFilters:
 def test_ticket_701():
     # Test generic filter sizes
     arr = numpy.arange(4).reshape((2, 2))
-    func = lambda x: numpy.min(x)
+    def func(x):
+        return numpy.min(x)
     res = ndimage.generic_filter(arr, func, size=(1, 1))
     # The following raises an error unless ticket 701 is fixed
     res2 = ndimage.generic_filter(arr, func, size=1)
@@ -1579,7 +1580,8 @@ def test_orders_gauss():
 
 def test_valid_origins():
     """Regression test for #1311."""
-    func = lambda x: numpy.mean(x)
+    def func(x):
+        return numpy.mean(x)
     data = numpy.array([1, 2, 3, 4, 5], dtype=numpy.float64)
     assert_raises(ValueError, ndimage.generic_filter, data, func, size=3,
                   origin=2)
@@ -1819,6 +1821,40 @@ def test_gaussian_truncate():
     nonzero_indices = numpy.nonzero(y != 0)[0]
     n = nonzero_indices.ptp() + 1
     assert_equal(n, 15)
+
+
+def test_gaussian_radius():
+    # Test that Gaussian filters with radius argument produce the same
+    # results as the filters with corresponding truncate argument.
+    # radius = int(truncate * sigma + 0.5)
+    # Test gaussian_filter1d
+    x = numpy.zeros(7)
+    x[3] = 1
+    f1 = ndimage.gaussian_filter1d(x, sigma=2, truncate=1.5)
+    f2 = ndimage.gaussian_filter1d(x, sigma=2, radius=3)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a number.
+    a = numpy.zeros((9, 9))
+    a[4, 4] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=0.5, truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=0.5, radius=2)
+    assert_equal(f1, f2)
+
+    # Test gaussian_filter when sigma is a sequence.
+    a = numpy.zeros((50, 50))
+    a[25, 25] = 1
+    f1 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], truncate=3.5)
+    f2 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], radius=[2, 9])
+    assert_equal(f1, f2)
+
+
+def test_gaussian_radius_invalid():
+    # radius must be a nonnegative integer
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=-1)
+    with assert_raises(ValueError):
+        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=1.1)
 
 
 class TestThreading:

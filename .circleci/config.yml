@@ -5,7 +5,7 @@ _defaults: &defaults
   docker:
     # CircleCI maintains a library of pre-built images
     # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: cimg/python:3.8
+    - image: cimg/python:3.9
   working_directory: ~/repo
 
 commands:
@@ -75,10 +75,10 @@ jobs:
           name: setup Python venv
           command: |
             pip install --install-option="--no-cython-compile" cython
-            pip install numpy==1.21.5
+            pip install numpy==1.23.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -118,7 +118,7 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
             python dev.py --no-build doc -j2
 
       - store_artifacts:
@@ -145,7 +145,7 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
@@ -171,7 +171,7 @@ jobs:
 
       - add_ssh_keys:
           fingerprints:
-            - "08:18:07:68:71:e3:f9:5f:bd:95:f0:6a:df:a9:47:a2"
+            - "1d:47:cf:2e:ea:7c:15:cf:ec:bb:1f:44:e2:56:16:d3"
 
       - run:
           name: upload

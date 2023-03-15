@@ -28,7 +28,7 @@ from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
-    import sksparse
+    import sksparse  # noqa: F401
     from sksparse.cholmod import cholesky as cholmod
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
@@ -260,7 +260,7 @@ def _get_delta(A, b, c, x, y, z, tau, kappa, gamma, eta, sparse=False,
         # 3. scipy.sparse.linalg.splu
         # 4. scipy.sparse.linalg.lsqr
         solved = False
-        while(not solved):
+        while not solved:
             try:
                 # [4] Equation 8.28
                 p, q = _sym_solve(Dinv, A, c, b, solve)

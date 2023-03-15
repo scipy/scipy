@@ -43,7 +43,7 @@ def filter1d(intp filter_size, with_signature=False):
 
     try:
         capsule = PyCapsule_New(<void *>_filter1d, signature, _destructor)
-        res = PyCapsule_SetContext(capsule, callback_data)
+        PyCapsule_SetContext(capsule, callback_data)
     except:  # noqa: E722
         PyMem_Free(callback_data)
         raise

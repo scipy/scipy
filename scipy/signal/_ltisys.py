@@ -51,7 +51,7 @@ class LinearTimeInvariant:
             raise NotImplementedError('The LinearTimeInvariant class is not '
                                       'meant to be used directly, use `lti` '
                                       'or `dlti` instead.')
-        return super(LinearTimeInvariant, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self):
         """
@@ -219,7 +219,7 @@ class lti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `lti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(lti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system):
         """
@@ -403,7 +403,7 @@ class dlti(LinearTimeInvariant):
                 raise ValueError("`system` needs to be an instance of `dlti` "
                                  "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
-        return super(dlti, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """
@@ -494,7 +494,7 @@ class TransferFunction(LinearTimeInvariant):
     Represents the system as the continuous-time transfer function
     :math:`H(s)=\sum_{i=0}^N b[N-i] s^i / \sum_{j=0}^M a[M-j] s^j` or the
     discrete-time transfer function
-    :math:`H(s)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
+    :math:`H(z)=\sum_{i=0}^N b[N-i] z^i / \sum_{j=0}^M a[M-j] z^j`, where
     :math:`b` are elements of the numerator `num`, :math:`a` are elements of
     the denominator `den`, and ``N == len(b) - 1``, ``M == len(a) - 1``.
     `TransferFunction` systems inherit additional
@@ -583,7 +583,7 @@ class TransferFunction(LinearTimeInvariant):
                     **kwargs)
 
         # No special conversion needed
-        return super(TransferFunction, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space LTI system."""
@@ -601,7 +601,7 @@ class TransferFunction(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{0}(\n{1},\n{2},\ndt: {3}\n)'.format(
+        return '{}(\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.num),
             repr(self.den),
@@ -794,6 +794,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `TransferFunction` system.
@@ -965,7 +966,7 @@ class ZerosPolesGain(LinearTimeInvariant):
                     )
 
         # No special conversion needed
-        return super(ZerosPolesGain, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the zeros, poles, gain system."""
@@ -983,7 +984,7 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)'.format(
+        return '{}(\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
             repr(self.poles),
@@ -1129,6 +1130,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `ZerosPolesGain` system.
@@ -1152,8 +1154,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     Discrete-time Linear Time Invariant system in zeros, poles, gain form.
 
     Represents the system as the discrete-time transfer function
-    :math:`H(s)=k \prod_i (s - z[i]) / \prod_j (s - p[j])`, where :math:`k` is
-    the `gain`, :math:`z` are the `zeros` and :math:`p` are the `poles`.
+    :math:`H(z)=k \prod_i (z - q[i]) / \prod_j (z - p[j])`, where :math:`k` is
+    the `gain`, :math:`q` are the `zeros` and :math:`p` are the `poles`.
     Discrete-time `ZerosPolesGain` systems inherit additional functionality
     from the `dlti` class.
 
@@ -1202,7 +1204,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     )
 
     Construct the transfer function
-    :math:`H(s) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
+    :math:`H(z) = \frac{5(z - 1)(z - 2)}{(z - 3)(z - 4)}` with a sampling time
     of 0.1 seconds:
 
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
@@ -1263,7 +1265,7 @@ class StateSpace(LinearTimeInvariant):
     Examples
     --------
     >>> from scipy import signal
-
+    >>> import numpy as np
     >>> a = np.array([[0, 1], [0, 0]])
     >>> b = np.array([[0], [1]])
     >>> c = np.array([[1, 0]])
@@ -1328,7 +1330,7 @@ class StateSpace(LinearTimeInvariant):
                                                   *system, **kwargs)
 
         # No special conversion needed
-        return super(StateSpace, cls).__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *system, **kwargs):
         """Initialize the state space lti/dlti system."""
@@ -1348,7 +1350,7 @@ class StateSpace(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)'.format(
+        return '{}(\n{},\n{},\n{},\n{},\ndt: {}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
@@ -1683,6 +1685,7 @@ class StateSpaceContinuous(StateSpace, lti):
     )
 
     """
+
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
         Returns the discretized `StateSpace` system.
@@ -1803,6 +1806,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     xout : ndarray
         The time-evolution of the state-vector.
 
+    See Also
+    --------
+    lsim
+
     Notes
     -----
     This function uses `scipy.integrate.odeint` to solve the
@@ -1814,15 +1821,12 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
 
-    See Also
-    --------
-    lsim
-
     Examples
     --------
     We'll use `lsim2` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
 
@@ -2001,6 +2005,7 @@ def lsim(system, U, T, X0=None, interp=True):
     We'll use `lsim` to simulate an analog Bessel filter applied to
     a signal.
 
+    >>> import numpy as np
     >>> from scipy.signal import bessel, lsim
     >>> import matplotlib.pyplot as plt
 
@@ -2389,7 +2394,7 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step2
 
@@ -2468,7 +2473,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     yout : 1D ndarray
         Step response of system.
 
-    See also
+    See Also
     --------
     scipy.signal.step
 
@@ -3160,6 +3165,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
     algorithms.  This is example number 1 from section 4 of the reference KNV
     publication ([1]_):
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3447,6 +3453,7 @@ def dlsim(system, u, t=None, x0=None):
     A simple integrator transfer function with a discrete time step of 1.0
     could be implemented as:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> tf = ([1.0,], [1.0, -1.0], 1.0)
     >>> t_in = [0.0, 1.0, 2.0, 3.0]
@@ -3554,6 +3561,7 @@ def dimpulse(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
@@ -3640,6 +3648,7 @@ def dstep(system, x0=None, t=None, n=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 

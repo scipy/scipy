@@ -5,7 +5,7 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 import numpy as np
 
 # These are in the API for fitpack even if not used in fitpack.py itself.
-from ._fitpack_impl import bisplrep, bisplev, dblint
+from ._fitpack_impl import bisplrep, bisplev, dblint  # noqa: F401
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
 
@@ -63,8 +63,9 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         standard-deviation of y, then a good `s` value should be found in
         the range ``(m-sqrt(2*m),m+sqrt(2*m))``, where m is the number of
         data points in x, y, and w.
-    t : int, optional
-        The knots needed for task=-1.
+    t : array, optional
+        The knots needed for ``task=-1``.
+        There must be at least ``2*k+2`` knots.
     full_output : int, optional
         If non-zero, then return optional outputs.
     nest : int, optional
@@ -77,8 +78,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -214,8 +213,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -332,16 +329,16 @@ def splev(x, tck, der=0, ext=0):
         the points in `x`.  If `tck` was returned from `splprep`, then this
         is a list of arrays representing the curve in an N-D space.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, sproot, spalde, splint
     bisplrep, bisplev
     BSpline
+
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using `BSpline` objects.
 
     References
     ----------
@@ -399,6 +396,12 @@ def splint(a, b, tck, full_output=0):
         defined on the set of knots.
         (Only returned if `full_output` is non-zero)
 
+    See Also
+    --------
+    splprep, splrep, sproot, spalde, splev
+    bisplrep, bisplev
+    BSpline
+
     Notes
     -----
     `splint` silently assumes that the spline function is zero outside the data
@@ -406,12 +409,6 @@ def splint(a, b, tck, full_output=0):
 
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
-
-    See Also
-    --------
-    splprep, splrep, sproot, spalde, splev
-    bisplrep, bisplev
-    BSpline
 
     References
     ----------
@@ -463,17 +460,16 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
     BSpline
 
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using the `BSpline` objects.
 
     References
     ----------
@@ -688,15 +684,15 @@ def splder(tck, n=1):
         A tuple is returned iff the input argument `tck` is a tuple, otherwise
         a BSpline object is constructed and returned.
 
-    Notes
-    -----
-
-    .. versionadded:: 0.13.0
-
     See Also
     --------
     splantider, splev, spalde
     BSpline
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------

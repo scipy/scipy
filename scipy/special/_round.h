@@ -5,8 +5,7 @@
 #ifndef ROUND_H
 #define ROUND_H
 
-#include <numpy/npy_math.h>
-#include "_c99compat.h"
+#include <math.h>
 #include "cephes/dd_idefs.h"
 
 
@@ -14,14 +13,14 @@ double add_round_up(double a, double b)
 {
     double s, err;
 
-    if (sc_isnan(a) || sc_isnan(b)) {
-	return NPY_NAN;
+    if (isnan(a) || isnan(b)) {
+	return NAN;
     }
 
     s = two_sum(a, b, &err);
     if (err > 0) {
 	/* fl(a + b) rounded down */
-	return npy_nextafter(s, NPY_INFINITY);
+	return nextafter(s, INFINITY);
     }
     else {
 	/* fl(a + b) rounded up or didn't round */
@@ -34,13 +33,13 @@ double add_round_down(double a, double b)
 {
     double s, err;
 
-    if (sc_isnan(a) || sc_isnan(b)) {
-	return NPY_NAN;
+    if (isnan(a) || isnan(b)) {
+	return NAN;
     }
 
     s = two_sum(a, b, &err);
     if (err < 0) {
-	return npy_nextafter(s, -NPY_INFINITY);
+	return nextafter(s, -INFINITY);
     }
     else {
 	return s;

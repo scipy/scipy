@@ -695,7 +695,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M = len(indices)
         new_shape = self._swap((M, N))
         if M == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         row_nnz = self.indptr[indices + 1] - self.indptr[indices]
         idx_dtype = self.indices.dtype
@@ -722,7 +722,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M = len(range(start, stop, step))
         new_shape = self._swap((M, N))
         if M == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         # Work out what slices are needed for `row_nnz`
         # start,stop can be -1, only if step is negative
@@ -761,7 +761,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         k = len(idx)
         new_shape = self._swap((M, k))
         if k == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         # pass 1: count idx entries and compute new indptr
         col_offsets = np.zeros(N, dtype=idx_dtype)
@@ -789,7 +789,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         start, stop, step = idx.indices(N)
         N = len(range(start, stop, step))
         if N == 0:
-            return self.__class__(self._swap((M, N)))
+            return self.__class__(self._swap((M, N)), dtype=self.dtype)
         if step == 1:
             return self._get_submatrix(minor=idx, copy=copy)
         # TODO: don't fall back to fancy indexing here
@@ -1187,8 +1187,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into %s blocks. "
-                                 "Got %s" % (self.blocksize, shape))
+                raise ValueError("shape must be divisible into {} blocks. "
+                                 "Got {}".format(self.blocksize, shape))
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape)

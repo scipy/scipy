@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections.abc import Iterable
 import numpy as np
 
@@ -81,8 +80,14 @@ def cossin(X, p=None, q=None, separate=False,
         (``m-q`` x ``m-q``) orthogonal/unitary matrices. If ``separate=True``,
         this contains the tuple of ``(V1H, V2H)``.
 
+    References
+    ----------
+    .. [1] Brian D. Sutton. Computing the complete CS decomposition. Numer.
+           Algorithms, 50(1):33-65, 2009.
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import cossin
     >>> from scipy.stats import unitary_group
     >>> x = unitary_group.rvs(4)
@@ -99,11 +104,6 @@ def cossin(X, p=None, q=None, separate=False,
     []
     >>> np.allclose(x, u @ cs @ vdh)
     True
-
-    References
-    ----------
-    .. [1] : Brian D. Sutton. Computing the complete CS decomposition. Numer.
-           Algorithms, 50(1):33-65, 2009.
 
     """
 
@@ -131,11 +131,11 @@ def cossin(X, p=None, q=None, separate=False,
             raise ValueError("When p and q are None, exactly four arrays"
                              " should be in X, got {}".format(len(X)))
 
-        x11, x12, x21, x22 = [np.atleast_2d(x) for x in X]
+        x11, x12, x21, x22 = (np.atleast_2d(x) for x in X)
         for name, block in zip(["x11", "x12", "x21", "x22"],
                                [x11, x12, x21, x22]):
             if block.shape[1] == 0:
-                raise ValueError("{} can't be empty".format(name))
+                raise ValueError(f"{name} can't be empty")
         p, q = x11.shape
         mmp, mmq = x22.shape
 
@@ -175,7 +175,7 @@ def cossin(X, p=None, q=None, separate=False,
         raise ValueError('illegal value in argument {} of internal {}'
                          .format(-info, method_name))
     if info > 0:
-        raise LinAlgError("{} did not converge: {}".format(method_name, info))
+        raise LinAlgError(f"{method_name} did not converge: {info}")
 
     if separate:
         return (u1, u2), theta, (v1h, v2h)
