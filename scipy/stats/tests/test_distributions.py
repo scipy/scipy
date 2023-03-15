@@ -1476,10 +1476,10 @@ class TestGenLogistic:
     #     c = mp.mpf(c)
     #     return -mp.log((mp.one - x)**(-mp.one/c) - mp.one)
 
-    @pytest.mark.parametrize('q, c, ref', [(0.1, 2, 2.9170587479001764),
-                                           (0.1, 20, 5.243464431637939)])
+    @pytest.mark.parametrize('q, c, ref', [(0.01, 200, 9.898441467379765),
+                                           (0.001, 2, 7.600152115573173)])
     def test_isf(self, q, c, ref):
-        assert_allclose(stats.genlogistic.isf(q, c), ref, rtol=1e-15)
+        assert_allclose(stats.genlogistic.isf(q, c), ref, rtol=5e-16)
 
     # Expected values computed with mpmath with 50 digits of precision
     # from mpmath import mp
@@ -1489,10 +1489,10 @@ class TestGenLogistic:
     #     c = mp.mpf(c)
     #     return -mp.log(x**(-mp.one/c) - mp.one)
 
-    @pytest.mark.parametrize('q, c, ref', [(0.1, 20, 2.10358298091805),
-                                           (0.9, 0.2, 0.3659913776736257)])
+    @pytest.mark.parametrize('q, c, ref', [(0.5, 200, 5.6630969187064615),
+                                           (0.99, 20, 7.595630231412436)])
     def test_ppf(self, q, c, ref):
-        assert_allclose(stats.genlogistic.ppf(q, c), ref, rtol=5e-15)
+        assert_allclose(stats.genlogistic.ppf(q, c), ref, rtol=5e-16)
 
 
 class TestHypergeom:
