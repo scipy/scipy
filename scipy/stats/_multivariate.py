@@ -6420,7 +6420,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         return self._log_norm_factor(dim, kappa) + kappa * dotproducts
 
     def logpdf(self, x, mu=None, kappa=1):
-        """Log of the multivariate normal probability density function.
+        """Log of the von Mises-Fisher probability density function.
 
         Parameters
         ----------
@@ -6428,10 +6428,10 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
             to unit vectors of the same dimension as the distribution.
-        mu : array_like
+        mu : array_like, default None.
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
-        kappa : float
+        kappa : float, default 1.
             Concentration parameter. Must be positive.
 
         Returns
@@ -6445,7 +6445,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         return self._logpdf(x, dim, mu, kappa)
 
     def pdf(self, x, mu=None, kappa=1):
-        """Multivariate normal probability density function.
+        """Von Mises-Fisher probability density function.
 
         Parameters
         ----------
@@ -6475,6 +6475,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         von Mises distribution which can be efficiently sampled by numpy.
         This method is much faster than the general rejection
         sampling based algorithm.
+
         """
         mean_angle = np.arctan2(mu[1], mu[0])
         angle_samples = random_state.vonmises(mean_angle, kappa, size=size)
@@ -6489,6 +6490,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         rotated towards the desired mean direction mu.
         This method is much faster than the general rejection
         sampling based algorithm.
+
         """
         if size is None:
             sample_size = 1
@@ -6510,7 +6512,6 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from a n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
-
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
@@ -6608,8 +6609,12 @@ class vonmises_fisher_gen(multi_rv_generic):
             vector of norm 1.
         kappa : float
             Concentration parameter. Must be positive.
-        size : integer, optional
-            Number of samples to draw (default 1).
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
         random_state : {None, int, np.random.RandomState, np.random.Generator},
                         optional
             Used for drawing random variates.
@@ -6643,10 +6648,10 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        mu : array_like
+        mu : array_like, default None.
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
-        kappa : float
+        kappa : float, default 1.
             Concentration parameter. Must be positive.
 
         Returns
@@ -6659,7 +6664,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         return self._entropy(dim, kappa)
 
     def fit(self, x):
-        """Fit the distribution to data
+        """Fit the von Mises-Fisher distribution to data
 
         Parameters
         ----------
@@ -6739,9 +6744,10 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         """
         Parameters
         ----------
-        mu : array_like, default: ``[0, 0]``
-            Mean direction of the distribution.
-        kappa : concentration parameter.
+        x : array_like
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimension as the distribution.
 
         Returns
         -------
@@ -6755,9 +6761,10 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         """
         Parameters
         ----------
-        mu : array_like, default: ``[0, 0]``
-            Mean direction of the distribution.
-        kappa : concentration parameter.
+        x : array_like
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimension as the distribution.
 
         Returns
         -------
@@ -6772,9 +6779,12 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
         Parameters
         ----------
-        mu : array_like, default: ``[0, 0]``
-            Mean direction of the distribution.
-        kappa : concentration parameter.
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
@@ -6797,11 +6807,16 @@ class vonmises_fisher_frozen(multi_rv_frozen):
 
     def entropy(self):
         """
+        Calculate the differential entropy of the von Mises-Fisher
+        distribution.
+
         Parameters
         ----------
-        mu : array_like, default: ``[0, 0]``
-            Mean direction of the distribution.
-        kappa : concentration parameter.
+        mu : array_like, default None.
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float, default 1.
+            Concentration parameter. Must be positive.
 
         Returns
         -------
