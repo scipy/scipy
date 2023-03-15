@@ -5778,13 +5778,15 @@ class loggamma_gen(rv_continuous):
 
         def asymptotic(c):
             # gammaln(c):
-            # c * ln(c) - c + 0.5 * (-ln(c) + ln(2 * pi)) + 1 / (12 * c)
+            # c*ln(c)-c+0.5*(-ln(c)+ln(2*pi))+1/(12*c)-1/(360*c^3)+1/(1260c^5)
             # digamma(c):
-            # ln(c) - 1 / (2 * c) - 1 / (12 * c ** 2)
-            h = norm._entropy() - 0.5 * np.log(c) + 1 / (6 * c)
+            # ln(c)-1/(2*c)-1/(12*c^2)+1/(120*c^4)-1/(252c^6)
+            term_1 = -0.5 * np.log(c) + (1 / 6) * c ** -1.
+            term_2 = -(1 / 90) * c ** -3. + (1 / 210) * c ** -5.
+            h = norm._entropy() + term_1 + term_2
             return h
 
-        h = _lazywhere(c >= 2100, (c,), f=asymptotic, f2=regular)
+        h = _lazywhere(c >= 45, (c,), f=asymptotic, f2=regular)
         return h
 
 loggamma = loggamma_gen(name='loggamma')

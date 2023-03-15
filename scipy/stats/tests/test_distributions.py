@@ -1666,7 +1666,8 @@ class TestLoggamma:
         assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-14)
 
     @pytest.mark.parametrize("c, ref",
-                            [(2100, -2.405828413571719),
+                            [(50, -0.5337397250497538),
+                             (2100, -2.405828413571719),
                              (10000000000.0, -10.093986931748889),
                              (1e+100, -113.71031611649761)])
     def test_extreme_entropy(self, c, ref):
@@ -1677,7 +1678,7 @@ class TestLoggamma:
         # def entropy(c):
         # h = 0.5 + 0.5 * mp.log(2 * mp.pi) - 0.5 * mp.log(c) + 1 / (6 * c)
         # return float(h)
-        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-14)
+        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-12)
 
 class TestLogistic:
     # gh-6226
