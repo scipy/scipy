@@ -3238,9 +3238,9 @@ class gamma_gen(rv_continuous):
             # plug in above formula the expansions:
             # psi(a) ~ ln(a) - 1/2a - 1/12a^2 + 1/120a^4
             # gammaln(a) ~ a * ln(a) - a - 1/2 * ln(a) + 1/2 ln(2 * pi) +
-            #              1/12a - 1/130a^3
-            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a) -
-                    1/(12 * a**2) - 1/(90 * a**3) + 1/(120 * a**4))
+            #              1/12a - 1/360a^3
+            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
+                    - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
 
         return _lazywhere(a < 250, (a, ), regular_formula,
                           f2=asymptotic_formula)
