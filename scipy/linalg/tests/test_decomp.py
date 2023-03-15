@@ -1816,6 +1816,11 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = qr(a)
+        assert_allclose(a_empty, a)
+
 
 class TestRQ:
 
