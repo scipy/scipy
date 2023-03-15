@@ -26,7 +26,7 @@ class MyCallBack:
         self.ncalls += 1
 
 
-def _check_kkt(res, fun, constraints):
+def _check_kkt(res, constraints):
     # checks KKT conditions, neglecting simple bound constraints
     # https://en.wikipedia.org/wiki/Karush_Kuhn_Tucker_conditions#Matrix_representation  # noqa
     x = res.x
@@ -683,6 +683,9 @@ class TestSLSQP:
 
         # an equality constraint
         # mentioned in gh9839
+
+    def test_kkt_equality(self):
+        # an equality constraint mentioned in gh9839
         def fun(x):
             return np.sum(x ** 2)
 
@@ -692,6 +695,70 @@ class TestSLSQP:
         con = {'fun': con_fun, 'type': 'eq'}
         res = minimize(fun, 3.0, constraints=[con], method='SLSQP')
         assert_allclose(res.kkt['eq'][0], np.array([2.0]))
+
+    def test_kkt_inequality(self):
+        # Test kkt multiplier return with example from GH14394. These are linear
+        # inequality constraints that can be specified either as constraints or
+        # bounds, so we can test both.
+        # To test if dimensions indices of bounds are correctly extracted, adds
+        # a second independent variable to the example from GH14394.
+        def con_fun1(x):
+            return np.array([x[0] - 1.0, 2.0 - x[0]])
+
+        def con_jac1(x):
+            return np.array([[1.0, 0.0], [-1.0, 0.0]])
+
+        def con_fun2(x):
+            return np.array([x[1] - 0.75])
+
+        def con_jac2(x):
+            return np.array([[0.0, 1.0]])
+
+        constraints = [
+            {'type': 'ineq', 'fun': con_fun1, 'jac': con_jac1},
+            {'type': 'ineq', 'fun': con_fun2, 'jac': con_jac2}
+        ]
+
+        # x[0] - 1 >=0 and 2 - x[0] >= 0. Equivalently, 1 <= x[0] <= 2.
+        bounds = [(1.0, 2.0), (0.75, np.inf)]
+
+        x0 = np.array([1.5, 1.5])
+
+        # Test cases for c < 1, 1 < c < 2, and c > 2
+        for c in [0.7, 1.5, 2.3]:
+            def fun(x):
+                return (x[:1] - c) ** 2 + x[1] ** 2
+
+            def jac(x):
+                return np.array([2 * (x[0] - c), 2 * x[1]])
+
+            # Test with constraints specified using constraint keyword
+            res_cons = minimize(fun, x0, method='SLSQP', jac=jac,
+                                constraints=constraints)
+            w_cons = res_cons.kkt['ineq']
+
+            # Test with same constraints specified using bounds keyword
+            res_bounds = minimize(fun, x0, method='SLSQP', jac=jac,
+                                  bounds=bounds)
+            w_bounds = res_bounds.kkt['bounds']
+
+            # Verify results are the same in both setups
+            assert_allclose(res_cons.x, res_bounds.x, atol=1e-12)
+            # Check extra variable bound matches constraint
+            assert_allclose(w_cons[1], w_bounds["lb"][1], rtol=1e-06)
+
+            if c < 1:
+                analytical = 2 - 2 * c
+                assert_allclose(w_cons[0][0], analytical, rtol=1e-06)
+                assert_allclose(w_cons[0][0], w_bounds["lb"][0], rtol=1e-06)
+            elif c > 2:
+                analytical = 2 * c - 4
+                assert_allclose(w_cons[0][1], analytical, rtol=1e-06)
+                assert_allclose(w_cons[0][1], w_bounds["ub"][0], rtol=1e-06)
+            else:
+                assert_allclose(w_cons[0], 0., atol=1e-06, rtol=1e-06)
+                assert_allclose(w_bounds["lb"][0], 0., atol=1e-06, rtol=1e-06)
+                assert_allclose(w_bounds["ub"][0], 0., atol=1e-06, rtol=1e-06)
 
     def test_kkt_constrained_rosen(self):
 
@@ -715,7 +782,7 @@ class TestSLSQP:
         res = minimize(fun, x0, bounds=bounds, constraints=constraints,
                        method='slsqp')
 
-        _check_kkt(res, fun, constraints)
+        _check_kkt(res, constraints)
 
     def test_kkt_constrained_stackexchange(self):
         # Check test with example from:
@@ -740,4 +807,4 @@ class TestSLSQP:
         res = minimize(fun, x0, bounds=bounds, constraints=constraints,
                        method='slsqp')
 
-        _check_kkt(res, fun, constraints)
+        _check_kkt(res, constraints)

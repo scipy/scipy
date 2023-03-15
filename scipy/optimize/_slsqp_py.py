@@ -239,19 +239,48 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
 
+    Returns
+    -------
+    res : OptimizeResult
+        The optimization result represented as an ``OptimizeResult`` object.
+        Important attributes are: ``x`` the solution array, ``success`` a
+        Boolean flag indicating if the optimizer exited successfully,
+        ``message`` which describes the cause of the termination, and ``kkt``
+        which contains the Karush-Kuhn-Tucker (KKT) multipliers for constrained
+        problems as described in the ``Notes`` below. See `OptimizeResult` for a
+        description of other attributes.
+
     Notes
     -----
     The KKT multipliers are returned as a dict in the ``OptimizeResult.kkt``
     attribute. ``kkt['eq']`` and ``kkt['ineq']`` are lists containing the
-    multipliers for the equality and inequality constraints respectively, in
-    the order that they are found in ``constraints``.
-    If new-style `NonlinearConstraint` or `LinearConstraint` were used, then
-    ``minimize`` converts them first to old-style constraint dicts. It's
-    possible for a single new-style constraint to simultaneously contain both
-    inequality and equality constraints. This means that if there is mixing
-    within a single constraint, then the returned list of multipliers is going
-    to appear to be of a different length to the original new-style
-    constraints.
+    multipliers for the equality and inequality constraints respectively, in the
+    order that they are found in ``constraints``. ``kkt['bounds']`` is a dict
+    with two keys, ``'lb'`` and ``'ub'``, whose values are ``ndarray``s with
+    shape ``(n,)`` corresponding to lower and upper bounds specified with the
+    ``bounds`` parameter. Entries with zeros indicate that a bound is inactive
+    or was not provided.
+
+    The KKT multipliers provide first-order necessary conditions for optimality
+    in equality and inequality-constrained optimization problems. Note that
+    ``bounds`` are also associated with KKT multipliers since these are
+    equivalent to simple inequality constraints. See [1]_ pp. 321 or [2]_ for an
+    explanation of how to interpret these multipliers.
+
+    Note that if new-style `NonlinearConstraint` or `LinearConstraint` were
+    used, then ``minimize`` converts them first to old-style constraint dicts.
+    It is possible for a single new-style constraint to simultaneously contain
+    both inequality and equality constraints. This means that if there is mixing
+    within a single constraint, then the returned list of multipliers will have
+    a different length than the original new-style constraints.
+
+    References
+    ----------
+    .. [1] Nocedal, J, and S J Wright. 2006. Numerical Optimization. Springer
+       New York.
+    .. [2] Kraft, D. A software package for sequential quadratic programming.
+       1988. Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace Center -- Institute
+       for Flight Mechanics, Koln, Germany.
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
@@ -468,19 +497,27 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
-    # obtain kkt multipliers from internals of SLSQP.
-    # Alternatively SLSQP needs to be called again to update the internals
-    # of the working array, w, whose first m entries are the multipliers.
+    # Obtain KKT multipliers from internals of SLSQP (see slsqp.slsqp_optmz.f)
     im = 1
     il = im + la
-    ix = il + (n1*n)//2 + 1
-    ir = ix + n - 1
-    _kkt_mult = w[ir: ir + m]
+    ix = il + (n1 * n) // 2 + 1
+    # Start of constraint KKT multipliers in w
+    ir = ix + n
+    # Subtract 1 since fortran indexing starts at 1 but python starts at 0
+    ir -= 1
 
-    # KKT multipliers
-    w_ind = 0
+    _kkt_mult = w[ir:ir + m]
+
+    # Indices for bound constraints (one per variable).
+    # Found by trial and error since documentation is inconsistent
+    iu = ir + n + n + la + n1 # index iu from slsqp.slsqp_optmz.f
+    ib = iu + la + n - 2
+    _kkt_bnds = w[ib:ib + n]
+
     kkt_multiplier = dict()
 
+    # Collect KKT multipliers for equality and inequality constraints
+    w_ind = 0
     for _t, cv in [("eq", _meq_cv), ("ineq", _mieq_cv)]:
         kkt = []
 
@@ -489,6 +526,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             w_ind += dim
 
         kkt_multiplier[_t] = kkt
+
+    # Get KKT multipliers for lower and upper bounds.
+    kkt = np.zeros((n, 2))
+    pos_kkt_bnds = _kkt_bnds > 0.
+    # Lower bound multipliers are positive
+    active_bnds = np.isfinite(xl) & pos_kkt_bnds
+    kkt[active_bnds, 0] = _kkt_bnds[active_bnds]
+    # Upper bound multipliers are originally negative, make positive to be
+    # consistent with sign of multipliers for inequality constraints
+    active_bnds = np.isfinite(xu) & ~pos_kkt_bnds
+    kkt[active_bnds, 1] = -_kkt_bnds[active_bnds]
+    kkt_multiplier["bounds"] = {"lb": kkt[:, 0], "ub": kkt[:, 1]}
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
