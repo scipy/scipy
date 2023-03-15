@@ -1426,8 +1426,17 @@ class chi_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        return (sc.gammaln(.5 * df) +
-                .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df)))
+
+        def regular_formula(df):
+            return (sc.gammaln(.5 * df)
+                    + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
+
+        def asymptotic_formula(df):
+            return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
+                    - 4/45*(df**-3) + (df**-4)/15)
+
+        return _lazywhere(df < 3e2, (df, ), regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -3230,7 +3239,20 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return sc.psi(a)*(1-a) + a + sc.gammaln(a)
+
+        def regular_formula(a):
+            return sc.psi(a) * (1-a) + a + sc.gammaln(a)
+
+        def asymptotic_formula(a):
+            # plug in above formula the expansions:
+            # psi(a) ~ ln(a) - 1/2a - 1/12a^2 + 1/120a^4
+            # gammaln(a) ~ a * ln(a) - a - 1/2 * ln(a) + 1/2 ln(2 * pi) +
+            #              1/12a - 1/360a^3
+            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
+                    - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
+
+        return _lazywhere(a < 250, (a, ), regular_formula,
+                          f2=asymptotic_formula)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
@@ -4361,8 +4383,19 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+        def regular(a):
+            h = a - (a + 1.0) * sc.psi(a) + sc.gammaln(a)
+            return h
 
+        def asymptotic(a):
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
+            # psi(a) ~ ln(a) - 1 / (2 * a)
+            h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
+                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+            return h
+
+        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
+        return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -7067,11 +7100,23 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         if df == np.inf:
             return norm._entropy()
-        half = df/2
-        half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half))
-                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
+        def regular(df):
+            half = df/2
+            half1 = (df + 1)/2
+            return (half1*(sc.digamma(half1) - sc.digamma(half))
+                    + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+
+        def asymptotic(df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2))
+            #  + log(sqrt(d) * beta(d/2, 1/2))"
+            h = (norm._entropy() + 1/df + (df**-2.)/4 - (df**-3.)/6
+                 - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
+            return h
+
+        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
+        return h
 
 t = t_gen(name='t')
 
