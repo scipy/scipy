@@ -614,5 +614,5 @@ class TestCumulativeSimpson:
             y_shape[axis] = slice(1, None)
             int_y = int_y[tuple(y_shape)]
 
-        with pytest.raises(ValueError) as e:
+        with pytest.raises(ValueError):
             cumulative_simpson(y, input_x, dx, axis=axis, initial=initial)
