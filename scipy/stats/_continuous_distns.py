@@ -2762,7 +2762,7 @@ class genlogistic_gen(rv_continuous):
         return -sc.expm1(self._logcdf(x, c))
 
     def _isf(self, q, c):
-        return -np.log(sc.powm1(1 - q, -1.0/c))
+        return self._ppf(1 - q, c)
 
     def _stats(self, c):
         mu = _EULER + sc.psi(c)
