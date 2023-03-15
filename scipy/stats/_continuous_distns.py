@@ -4391,11 +4391,12 @@ class invgamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
-                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+                 + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
         return h
+
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -5845,6 +5846,7 @@ class loggamma_gen(rv_continuous):
 
         h = _lazywhere(c >= 45, (c,), f=asymptotic, f2=regular)
         return h
+
 
 loggamma = loggamma_gen(name='loggamma')
 
