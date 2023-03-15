@@ -9340,14 +9340,14 @@ def friedmanchisquare(*samples):
 
     Examples
     --------
-    For a group of seven students the pulse rate (per minute) was measured
-    before exercise, immediately after exercise and 5 minutes after exercise.
-    Is there evidence to suggest that the pulse rates on the three occasions
-    are similar?
+    In [2]_, the pulse rate (per minute) of a group of seven students was
+    measured before exercise, immediately after exercise and 5 minutes
+    after exercise. Is there evidence to suggest that the pulse rates on
+    these three occasions are similar?
 
     We begin by formulating a null hypothesis :math:`H_0`:
 
-        The pulse rates are identical on the three occasions
+        The pulse rates are identical on these three occasions.
 
     Let's assess the plausibility of this hypothesis with a Friedman test.
 
@@ -9363,7 +9363,7 @@ def friedmanchisquare(*samples):
 
     Using a significance level of 5%, we would reject the null hypothesis in
     favor of the alternative hypothesis: "the pulse rates are different on
-    the three occasions".
+    these three occasions".
 
     """
     k = len(samples)
