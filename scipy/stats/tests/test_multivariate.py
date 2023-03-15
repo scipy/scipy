@@ -3277,21 +3277,21 @@ class TestVonMises_Fisher:
         entropy = vonmises_fisher(mu, kappa).entropy()
         assert_allclose(entropy, reference, rtol=2e-14)
 
-    def test_pdf_logpdf_consistency(self):
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_broadcasting(self, method):
         # test that pdf and logpdf values are correctly broadcasted
         testshape = (2, 2)
         rng = np.random.default_rng(2777937887058094419)
         x = uniform_direction(3).rvs(testshape, random_state=rng)
-        vmf = vonmises_fisher([0, 0, 1], 20)
-        all_pdf = vmf.pdf(x)
-        all_logpdf = vmf.logpdf(x)
-        assert all_pdf.shape == testshape
+        mu = np.full((3, ), 1/np.sqrt(3))
+        kappa = 5
+        result_all = method(x, mu, kappa)
+        assert result_all.shape == testshape
         for i in range(testshape[0]):
             for j in range(testshape[1]):
-                current_pdf = vmf.pdf(x[i, j, :])
-                assert_allclose(current_pdf, all_pdf[i, j])
-                current_logpdf = vmf.logpdf(x[i, j, :])
-                assert_allclose(current_logpdf, all_logpdf[i, j])
+                current_val = method(x[i, j, :], mu, kappa)
+                assert_allclose(current_val, result_all[i, j], rtol=1e-15)
 
     def test_vs_vonmises_2d(self):
         # test that in 2D, von Mises-Fisher yields the same results
