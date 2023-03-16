@@ -6143,6 +6143,26 @@ class TestWeibull:
         assert_allclose(res, ref)
 
 
+class TestDweibull:
+
+    @pytest.mark.parametrize("c, ref",
+                            [(0.3, 1.5502834334489721),
+                             (13, -0.33898771699248414)])
+    def test_entropy(self, c, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 150
+        #
+        # def entropy(c):
+        #     def pdf(x):
+        #         y = C * mp.fabs(x) ** (c - 1) * mp.exp(-mp.fabs(x) ** c) / 2
+        #         return y
+        #
+        #   h = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
+        #   return float(h)
+        assert_allclose(stats.dweibull._entropy(c), ref, rtol=1e-14)
+
+
 class TestTruncWeibull:
 
     def test_pdf_bounds(self):
