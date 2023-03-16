@@ -1009,7 +1009,7 @@ def _moment_result_object(*args):
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -1033,9 +1033,14 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    center : float or None, optional
+       The point about which moments are taken. This can be the sample mean,
+       the origin, or any other be point. If `None` (default) compute the
+       center from the sample.
+
     Returns
     -------
-    n-th central moment : ndarray or float
+    n-th moment about the `center` : ndarray or float
        The appropriate moment along the given axis or over all values if axis
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
@@ -1050,10 +1055,11 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     .. math::
 
-        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i)^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - c)^k
 
-    Where n is the number of samples. This function uses exponentiation by
-    squares [1]_ for efficiency.
+    Where `n` is the number of samples, and `c` is the center around which the
+    moment is calculated. This function uses exponentiation by squares [1]_ for
+    efficiency.
 
     Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
     one element (`moment.size == 1`) is treated the same as scalar `moment`
@@ -1078,19 +1084,19 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.moment(a, moment, axis)
+        return mstats_basic.moment(a, moment, axis, center)
 
+    if center is None:
+        center = a.mean(axis, keepdims=True)
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mean = a.mean(axis, keepdims=True)
-        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        mmnt = [_moment(a, i, axis, center) for i in moment]
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, center)
 
 
-# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
-def _moment(a, moment, axis, *, mean=None):
+def _moment(a, moment, axis, *, center=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
@@ -1122,13 +1128,13 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
-        a_zero_mean = a - mean
+        center = a.mean(axis, keepdims=True) if center is None else center
+        a_zero_center = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
         with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
-                              keepdims=True) / np.abs(mean)
+            rel_diff = np.max(np.abs(a_zero_center), axis=axis,
+                              keepdims=True) / np.abs(center)
         with np.errstate(invalid='ignore'):
             precision_loss = np.any(rel_diff < eps)
         n = a.shape[axis] if axis is not None else a.size
@@ -1139,16 +1145,16 @@ def _moment(a, moment, axis, *, mean=None):
             warnings.warn(message, RuntimeWarning, stacklevel=4)
 
         if n_list[-1] == 1:
-            s = a_zero_mean.copy()
+            s = a_zero_center.copy()
         else:
-            s = a_zero_mean**2
+            s = a_zero_center**2
 
         # Perform multiplications
         for n in n_list[-2::-1]:
             s = s**2
             if n % 2:
-                s *= a_zero_mean
-        return np.mean(s, axis)
+                s *= a_zero_center
+        return np.center(s, axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None):

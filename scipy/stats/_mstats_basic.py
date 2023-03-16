@@ -2593,26 +2593,21 @@ def moment(a, moment=1, axis=0, *, central=None):
         else:
             return ma.array(np.full(out_shape, np.nan, dtype=dtype))
 
-    if central is None:
-        mean = a.mean(axis, keepdims=True)
-    else:
-        mean = central
+    if center is None:
+        center = a.mean(axis, keepdims=True)
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mmnt = [_moment(a, i, axis, mean) for i in moment]
+        mmnt = [_moment(a, i, axis, center) for i in moment]
         return ma.array(mmnt)
     else:
-        return _moment(a, moment, axis, mean)
+        return _moment(a, moment, axis, center)
 
 
-# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
-def _moment(a, moment, axis, *, mean=None):
+def _moment(a, moment, axis, *, center=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
     if moment == 0 or moment == 1:
-        # By definition the zeroth moment about the mean is 1, and the first
-        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
@@ -2634,18 +2629,18 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
-        a_zero_mean = a - mean
+        center = a.mean(axis, keepdims=True) if center is None else center
+        a_zero_center = a - center
         if n_list[-1] == 1:
-            s = a_zero_mean.copy()
+            s = a_zero_center.copy()
         else:
-            s = a_zero_mean**2
+            s = a_zero_center**2
 
         # Perform multiplications
         for n in n_list[-2::-1]:
             s = s**2
             if n % 2:
-                s *= a_zero_mean
+                s *= a_zero_center
         return s.mean(axis)
 
 
