@@ -433,7 +433,7 @@ class _PageL:
         rank_perms = np.array(list(permutations(ranks)))
         # compute Page's L for all possible rows
         Ls = (ranks*rank_perms).sum(axis=1)
-        # count occurences of each L value
+        # count occurrences of each L value
         counts = np.histogram(Ls, np.arange(self.a-0.5, self.b+1.5))[0]
         # factorial(k) is number of possible permutations
         return counts/math.factorial(self.k)

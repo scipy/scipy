@@ -871,7 +871,8 @@ def somersd(x, y=None, alternative='two-sided'):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table, alternative)
+    # The table type is converted to a float to avoid an integer overflow
+    d, p = _somers_d(table.astype(float), alternative)
 
     # add alias for consistency with other correlation functions
     res = SomersDResult(d, p, table)
@@ -1863,6 +1864,10 @@ def tukey_hsd(*args):
 
         confidence_interval(confidence_level=0.95):
             Compute the confidence interval for the specified confidence level.
+
+    See Also
+    --------
+    dunnett : performs comparison of means against a control group.
 
     Notes
     -----

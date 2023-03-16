@@ -1977,7 +1977,7 @@ def _weibull_fit_check(params, x):
             raise ValueError(message)
 
     except (FloatingPointError, ValueError) as e:
-        message = ("An error occured while fitting the Weibull distribution "
+        message = ("An error occurred while fitting the Weibull distribution "
                    "to the data, so `anderson` cannot continue. " + suggestion)
         raise ValueError(message) from e
 
