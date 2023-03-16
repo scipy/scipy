@@ -6146,7 +6146,7 @@ class TestWeibull:
 class TestDweibull:
 
     @pytest.mark.parametrize("c, ref",
-                            [(0.3, 1.5502834334489721),
+                            [(0.3, 1.5502834334489712),
                              (13, -0.33898771699248414)])
     def test_entropy(self, c, ref):
         # The reference values were calculated with mpmath:
