@@ -1675,7 +1675,7 @@ class TestLoggamma:
                              (5.3, 0.6164581314552009)])
     def test_entropy(self, c, ref):
         # Reference values were calculated with the generic method.
-        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-14)
+        assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
     @pytest.mark.parametrize("c, ref",
                             [(50, -0.5337397250497538),
