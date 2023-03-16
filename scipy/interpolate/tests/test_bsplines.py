@@ -592,6 +592,19 @@ class TestBSpline:
                                         bc_type='natural')
         assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
 
+    def test_read_only(self):
+        # BSpline must work on read-only knots and coefficients.
+        t = np.array([0, 1])
+        c = np.array([3.0])
+        t.setflags(write=False)
+        c.setflags(write=False)
+
+        xx = np.linspace(0, 1, 10)
+        xx.setflags(write=False)
+
+        b = BSpline(t=t, c=c, k=0)
+        assert_allclose(b(xx), 3)
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
