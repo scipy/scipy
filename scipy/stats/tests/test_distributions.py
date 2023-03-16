@@ -6160,7 +6160,7 @@ class TestDweibull:
         #
         #   h = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
         #   return float(h)
-        assert_allclose(stats.dweibull._entropy(c), ref, rtol=1e-14)
+        assert_allclose(stats.dweibull.entropy(c), ref, rtol=1e-14)
 
 
 class TestTruncWeibull:

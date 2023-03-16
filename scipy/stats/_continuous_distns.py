@@ -1738,7 +1738,7 @@ class dweibull_gen(rv_continuous):
     def _stats(self, c):
         return 0, None, 0, None
 
-    def entropy(self, c):
+    def _entropy(self, c):
         h = -np.log(c / 2) + (c - 1) * np.euler_gamma / c + 1
         return h
 
