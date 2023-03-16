@@ -6154,8 +6154,10 @@ class TestDweibull:
         # mp.dps = 150
         #
         # def entropy(c):
+        #     c = mp.mpf(c)
         #     def pdf(x):
-        #         y = C * mp.fabs(x) ** (c - 1) * mp.exp(-mp.fabs(x) ** c) / 2
+        #         x = mp.mpf(x)
+        #         y = c * mp.fabs(x) ** (c - mp.one) * mp.exp(-mp.fabs(x) ** c) / mp.mpf(2.)
         #         return y
         #
         #   h = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
