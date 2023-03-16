@@ -5844,7 +5844,7 @@ class loggamma_gen(rv_continuous):
             h = norm._entropy() + term_1 + term_2
             return h
 
-        h = _lazywhere(c >= 45, (c,), f=asymptotic, f2=regular)
+        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
         return h
 
 
