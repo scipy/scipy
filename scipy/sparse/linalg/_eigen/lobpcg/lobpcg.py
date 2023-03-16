@@ -95,7 +95,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
     if blockVectorBV is None:
-        if B:
+        if B is None:
             blockVectorBV = blockVectorV
         else:
             try:
