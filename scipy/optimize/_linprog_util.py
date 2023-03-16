@@ -1416,7 +1416,7 @@ def _postsolve(x, postsolve_args, complete=False):
     return x, fun, slack, con
 
 
-def _check_result(x, fun, status, slack, con, bounds, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message, integrality=None):
     """
     Check the validity of the provided solution.
 
@@ -1489,6 +1489,21 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
         is_feasible = False
     else:
         invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
+
+
+        # in case integrality is 2 or 3, there needs to be an aditional check to see if
+        # the values that are out of bounds are both 0 and with integrality more than 1
+        if np.any(integrality) and invalid_bounds and (integrality > 1).any():
+            # Check if the vals that are out of bounds are all 0 (within tolerance),
+            # if they arent then its done -> invalid_bounds==True. If they are all 0 then
+            # check if those values have integrality > 1
+            out_of_bounds = np.logical_or(x < bounds[:, 0] - tol, x > bounds[:, 1] + tol)
+            if (np.abs(x[out_of_bounds]) < tol).all():
+                invalid_idx = np.where(out_of_bounds)
+                invalid_bounds = not np.isin(invalid_idx,
+                                             np.where(integrality > 1)).all()
+
+
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)

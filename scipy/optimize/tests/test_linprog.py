@@ -2366,6 +2366,42 @@ class TestLinprogHiGHSMIP():
         assert not np.all(gap_diffs == 0)
 
 
+    def test_semi_continuous(self):
+        # See issue #18106. This test if the integrality parameter
+        # is being checked correctly (status returns 0),
+        # when its > 1 it allows values to be 0 even if its out of bounds.
+
+        c = np.array([-1.])
+        A_ub = np.array([[1.]])
+        b_ub = np.array([0.5])
+        A_eq = np.zeros((0, 1), dtype=float)
+        b_eq = np.array([], dtype=float)
+        bounds = np.array([[1., 5.]])
+        integrality = np.array([2])
+
+        res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                      integrality=integrality, method='highs')
+
+        assert np.all(res.x == 0)
+        assert res.status == 0
+
+        c = np.array([-1., -1., 1])
+        A_ub = np.array([[1., 1., 0], [1.,1., 0], [0,0,1]])
+        b_ub = np.array([0.5, 0.5, 1.])
+        A_eq = np.zeros((0, 3), dtype=float)
+        b_eq = np.array([], dtype=float)
+        bounds = np.array([[1., 5.], [1., 5.],  [0.5, 5]])
+        integrality = np.array([2, 2, 0])
+
+        res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
+                      integrality=integrality, method='highs')
+
+        np.testing.assert_allclose(res.x, [0, 0, 0.5])
+        assert res.status == 0
+
+
+
+
 ###########################
 # Autoscale-Specific Tests#
 ###########################
