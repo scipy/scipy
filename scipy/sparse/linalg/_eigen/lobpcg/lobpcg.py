@@ -115,7 +115,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                     f"and changed to {blockVectorBV.shape} "
                     f"after multiplying by the secondary matrix.\n"
                 )
-            
+
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
