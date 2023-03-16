@@ -22,8 +22,9 @@ Implementation Notes (as of 2022-12)
   added to the "See Also" section of each method/property.
 """
 from functools import lru_cache, partial
-from typing import Callable, Dict, Generator, get_args, Literal, Optional, \
-    Tuple, Type, Union
+from typing import Callable, get_args, Literal, Optional, Union
+# Linter does allow to import ``Generator`` from ``typing`` module:
+from collections.abc import Generator
 
 import numpy as np
 
@@ -34,7 +35,7 @@ from .windows import get_window
 try:  # Workaround needed for Numpy versions < 1.21
     from numpy.typing import NDArray
 except ModuleNotFoundError:
-    NDArray: Type = np.ndarray  # type: ignore
+    NDArray: type = np.ndarray  # type: ignore
 
 
 __all__ = ['ShortTimeFFT']
@@ -251,7 +252,7 @@ class ShortTimeFFT:
     # attributes for caching calculated values:
     _fac_mag: Optional[float] = None
     _fac_psd: Optional[float] = None
-    _lower_border_end: Optional[Tuple[int, int]] = None
+    _lower_border_end: Optional[tuple[int, int]] = None
 
     def __init__(self, win: NDArray, hop: int, fs: float,
                  fft_typ: FFT_TYP_TYPE = 'onesided',
@@ -363,7 +364,7 @@ class ShortTimeFFT:
                    phase_shift)
 
     @classmethod
-    def from_window(cls, win_param: Union[str, Tuple, float],
+    def from_window(cls, win_param: Union[str, tuple, float],
                     fs: float, nperseg: int, noverlap: int,
                     symmetric_win: bool = False,
                     fft_typ: FFT_TYP_TYPE = 'onesided',
@@ -378,7 +379,7 @@ class ShortTimeFFT:
 
         Parameters
         ----------
-        win_param: Union[str, Tuple, float],
+        win_param: Union[str, tuple, float],
             Parameters passed to `get_window`. For windows with no parameters,
             it may be a string (e.g., ``'hann'``), for parametrized windows a
             tuple, (e.g., ``('gaussian', 2.)``) or a single float specifying
@@ -721,7 +722,7 @@ class ShortTimeFFT:
         """
         if padding not in (padding_types := get_args(PAD_TYPE)):
             raise ValueError(f"Parameter {padding=} not in {padding_types}!")
-        pad_kws: Dict[str, dict] = {  # possible keywords to pass to np.pad:
+        pad_kws: dict[str, dict] = {  # possible keywords to pass to np.pad:
             'zeros': dict(mode='constant', constant_values=(0, 0)),
             'edge': dict(mode='edge'),
             'even': dict(mode='reflect', reflect_type='even'),
@@ -1162,8 +1163,8 @@ class ShortTimeFFT:
         """
         return self.m_num // 2
 
-    @lru_cache(maxsize=None)
-    def _pre_padding(self) -> Tuple[int, int]:
+    @lru_cache(maxsize=1)
+    def _pre_padding(self) -> tuple[int, int]:
         """Smallest signal index and slice index due to padding.
 
          Since, per convention, for time t=0, n,q is zero, the returned values
@@ -1229,7 +1230,7 @@ class ShortTimeFFT:
         return self._pre_padding()[1]
 
     @lru_cache(maxsize=256)
-    def _post_padding(self, n: int) -> Tuple[int, int]:
+    def _post_padding(self, n: int) -> tuple[int, int]:
         """Largest signal index and slice index due to padding."""
         w2 = self.win.real**2 + self.win.imag**2
         # move window to the right until the overlap for t < t[n] vanishes:
@@ -1307,7 +1308,7 @@ class ShortTimeFFT:
         return self.p_max(n) - self.p_min
 
     @property
-    def lower_border_end(self) -> Tuple[int, int]:
+    def lower_border_end(self) -> tuple[int, int]:
         """First signal index and first slice index unaffected by pre-padding.
 
         Describes the point where the window does not stick out to the left
@@ -1344,7 +1345,7 @@ class ShortTimeFFT:
         return self._lower_border_end
 
     @lru_cache(maxsize=256)
-    def upper_border_begin(self, n: int) -> Tuple[int, int]:
+    def upper_border_begin(self, n: int) -> tuple[int, int]:
         """First signal index and first slice index affected by post-padding.
 
         Describes the point where the window does begin stick out to the right
@@ -1391,7 +1392,7 @@ class ShortTimeFFT:
         return self.T * self.hop
 
     def p_range(self, n: int, p0: Optional[int] = None,
-                p1: Optional[int] = None) -> Tuple[int, int]:
+                p1: Optional[int] = None) -> tuple[int, int]:
         """Determine and validate slice index range.
 
         Parameters
@@ -1615,7 +1616,7 @@ class ShortTimeFFT:
         return np.roll(x, p_s, axis=-1)[:self.m_num]
 
     def extent(self, n: int, axes_seq: Literal['tf', 'ft'] = 'tf',
-               center_bins: bool = False) -> Tuple[float, float, float, float]:
+               center_bins: bool = False) -> tuple[float, float, float, float]:
         """Return minimum and maximum values time-frequency values.
 
         .. currentmodule:: scipy.signal.ShortTimeFFT

@@ -1366,7 +1366,7 @@ simplify Eq. :math:numref:`eq_STFT_MoorePenrose` further, i.e,
 .. math::
     :label: eq_STFT_istftM
 
-    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}\vb{s}_p
+    \vb{x} &= \vb{D}^{-1} \conjT{\vb{G}}\vb{s}
             = \sum_{p=0}^{P-1} \vb{D}^{-1}\conjT{\vb{W}_{\!p}}\,
                                \conjT{\vb{F}}\vb{s}_p
             =  \sum_{p=0}^{P-1} (\conj{\vb{W}_{\!p}\vb{D}^{-1}})^T\,

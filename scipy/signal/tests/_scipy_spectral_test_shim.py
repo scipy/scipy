@@ -17,7 +17,7 @@ as the existing one and delivers comparable results. Furthermore, the
 wrappers highlight the different philosophies of the implementations,
 especially in the border handling.
 """
-from typing import Tuple, cast, Literal, Type
+from typing import cast, Literal
 import platform
 
 import numpy as np
@@ -33,7 +33,7 @@ from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
 try:  # Workaround needed for Numpy versions < 1.21
     from numpy.typing import NDArray
 except ModuleNotFoundError:
-    NDArray: Type = np.ndarray  # type: ignore
+    NDArray: type = np.ndarray  # type: ignore
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -152,7 +152,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
                    nfft=None, input_onesided=True, boundary=True, time_axis=-1,
                    freq_axis=-2, scaling='spectrum') -> \
-        Tuple[NDArray, NDArray, Tuple[int, int]]:
+        tuple[NDArray, NDArray, tuple[int, int]]:
     """Wrapper for the SciPy `istft()` function based on `ShortTimeFFT` for
         unit testing.
 
