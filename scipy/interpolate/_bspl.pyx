@@ -91,7 +91,7 @@ cdef inline int find_interval(const double[::1] t,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             double_or_complex[:, ::1] c,
+             const double_or_complex[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,

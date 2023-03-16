@@ -763,11 +763,12 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         to the Monte Carlo samples drawn from the null-hypothesized
         distribution. The purpose of these `guessed_params` is to be used as
         initial values for the numerical fitting procedure.
-    statistic : {"ad", "ks", "cvm"}, optional
+    statistic : {"ad", "ks", "cvm", "filliben"}, optional
         The statistic used to compare data to a distribution after fitting
         unknown parameters of the distribution family to the data. The
-        Anderson-Darling ("ad"), Kolmogorov-Smirnov ("ks"), and
-        Cramer-von Mises ("cvm") statistics are available [1]_.
+        Anderson-Darling ("ad") [1]_, Kolmogorov-Smirnov ("ks") [1]_,
+        Cramer-von Mises ("cvm") [1]_, and Filliben ("filliben") [7]_
+        statistics are available.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
@@ -932,6 +933,8 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     .. [6] H. W. Lilliefors (1967). "On the Kolmogorov-Smirnov test for
            normality with mean and variance unknown." Journal of the American
            statistical Association 62.318: 399-402.
+    .. [7] Filliben, James J. "The probability plot correlation coefficient
+           test for normality." Technometrics 17.1 (1975): 111-117.
 
     Examples
     --------
@@ -1104,6 +1107,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
     # Define statistic
     fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
     compare_fun = _compare_dict[statistic]
+    alternative = getattr(compare_fun, 'alternative', 'greater')
 
     def statistic_fun(data, axis=-1):
         # Make things simple by always working along the last axis.
@@ -1114,7 +1118,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_mc_samples, axis=-1,
-                                 alternative='greater')
+                                 alternative=alternative)
     opt_res = optimize.OptimizeResult()
     opt_res.success = True
     opt_res.message = "The fit was performed successfully."
@@ -1138,19 +1142,17 @@ def _get_fit_fun(dist, data, guessed_params, fixed_params):
     guessed_shapes = [guessed_params.pop(x, None)
                       for x in shape_names if x in guessed_params]
 
+    if all_fixed:
+        def fit_fun(data):
+            return [fixed_params[name] for name in fparam_names]
     # Define statistic, including fitting distribution to data
-    if dist in _fit_funs:
+    elif dist in _fit_funs:
         def fit_fun(data):
             params = _fit_funs[dist](data, **fixed_params)
             params = np.asarray(np.broadcast_arrays(*params))
             if params.ndim > 1:
                 params = params[..., np.newaxis]
             return params
-
-    elif all_fixed:
-        def fit_fun(data):
-            return [fixed_params[name] for name in fparam_names]
-
     else:
         def fit_fun_1d(data):
             return dist.fit(data, *guessed_shapes, **guessed_params,
@@ -1216,6 +1218,42 @@ def _kolmogorov_smirnov(dist, data):
     return np.maximum(Dplus, Dminus)
 
 
+def _corr(X, M):
+    # Correlation coefficient r, simplified and vectorized as we need it.
+    # See [7] Equation (2). Lemma 1/2 are only for distributions symmetric
+    # about 0.
+    Xm = X.mean(axis=-1, keepdims=True)
+    Mm = M.mean(axis=-1, keepdims=True)
+    num = np.sum((X - Xm) * (M - Mm), axis=-1)
+    den = np.sqrt(np.sum((X - Xm)**2, axis=-1) * np.sum((M - Mm)**2, axis=-1))
+    return num/den
+
+
+def _filliben(dist, data):
+    # [7] Section 8 # 1
+    X = np.sort(data, axis=-1)
+
+    # [7] Section 8 # 2
+    n = data.shape[-1]
+    k = np.arange(1, n+1)
+    # Filliben used an approximation for the uniform distribution order
+    # statistic medians.
+    # m = (k - .3175)/(n + 0.365)
+    # m[-1] = 0.5**(1/n)
+    # m[0] = 1 - m[-1]
+    # We can just as easily use the (theoretically) exact values. See e.g.
+    # https://en.wikipedia.org/wiki/Order_statistic
+    # "Order statistics sampled from a uniform distribution"
+    m = stats.beta(k, n + 1 - k).median()
+
+    # [7] Section 8 # 3
+    M = dist.ppf(m)
+
+    # [7] Section 8 # 4
+    return _corr(X, M)
+_filliben.alternative = 'less'  # type: ignore[attr-defined]
+
+
 def _cramer_von_mises(dist, data):
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
@@ -1226,7 +1264,7 @@ def _cramer_von_mises(dist, data):
 
 
 _compare_dict = {"ad": _anderson_darling, "ks": _kolmogorov_smirnov,
-                 "cvm": _cramer_von_mises}
+                 "cvm": _cramer_von_mises, "filliben": _filliben}
 
 
 def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
@@ -1268,8 +1306,9 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     guessed_rfd_params = fit_params.copy()
     guessed_rfd_params.update(guessed_params)
 
-    statistics = {'ad', 'ks', 'cvm'}
-    if statistic.lower() not in statistics:
+    statistic = statistic.lower()
+    statistics = {'ad', 'ks', 'cvm', 'filliben'}
+    if statistic not in statistics:
         message = f"`statistic` must be one of {statistics}."
         raise ValueError(message)
 
