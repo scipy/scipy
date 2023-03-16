@@ -95,7 +95,9 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
     if blockVectorBV is None:
-        if B is not None:
+        if B:
+            blockVectorBV = blockVectorV
+        else:
             try:
                 blockVectorBV = B(blockVectorV)
             except Exception as e:
@@ -113,8 +115,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                     f"and changed to {blockVectorBV.shape} "
                     f"after multiplying by the secondary matrix.\n"
                 )
-        else:
-            blockVectorBV = blockVectorV  # Shared data!!!
+            
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
