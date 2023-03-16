@@ -5428,7 +5428,7 @@ class levy_gen(rv_continuous):
 
         f(x) = \frac{1}{\sqrt{2\pi x^3}} \exp\left(-\frac{1}{2x}\right)
 
-    for :math:`x >= 0`.
+    for :math:`x > 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=1`.
@@ -5531,7 +5531,7 @@ class levy_l_gen(rv_continuous):
     .. math::
         f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp{ \left(-\frac{1}{2|x|} \right)}
 
-    for :math:`x <= 0`.
+    for :math:`x < 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=-1`.
