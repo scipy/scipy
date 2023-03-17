@@ -21,8 +21,9 @@ class IsotonicInterpolator():
     
     This interpolator first sorts the values of ``y`` according to the order
     given by ``x``. It then fits the isotonic regression, see
-    ``isotonic_regression`` for details. Afterwards it constructs a linear
-    interpolation of the solution of the isotonic regression.
+    ``scipy.optimize.isotonic_regression`` for details. Afterwards it
+    constructs a linear interpolation of the solution of the isotonic
+    regression.
 
     Parameters
     ----------
