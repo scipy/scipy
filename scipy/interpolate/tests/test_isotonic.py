@@ -164,9 +164,6 @@ class TestIsotonicInterpolator:
         assert not iso_str.x_is_numeric
         assert iso_num.x_is_numeric
 
-        print(f"{iso_num.x_=}")
-        print(f"{iso_str.x_=}")
-        print(f"{iso_str.y_=}")
         assert_almost_equal(iso_str.y_, iso_num.y_)
         assert_almost_equal(iso_str(x_str), iso_num(x_num))
         
