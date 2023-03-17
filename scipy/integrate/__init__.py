@@ -20,6 +20,7 @@ Integrating functions, given function object
    quadrature    -- Integrate with given tolerance using Gaussian quadrature
    romberg       -- Integrate func using Romberg integration
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
    AccuracyWarning  -- Warning on issues during quadrature integration
 

@@ -775,8 +775,7 @@ cdef class cKDTree:
         """
 
         cdef:
-            np.intp_t n, i, j
-            int overflown
+            np.intp_t n
             const np.float64_t [:, ::1] xx
             np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
             ckdtree *cself = self.cself
@@ -1546,9 +1545,8 @@ cdef class cKDTree:
 
     def __getstate__(cKDTree self):
         cdef object state
-        cdef np.intp_t size
         cdef ckdtree * cself = self.cself
-        size = cself.tree_buffer.size() * sizeof(ckdtreenode)
+        cdef np.intp_t size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
         cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 

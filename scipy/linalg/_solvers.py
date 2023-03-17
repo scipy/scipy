@@ -778,7 +778,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     """
 
-    if not eq_type.lower() in ('dare', 'care'):
+    if eq_type.lower() not in ("dare", "care"):
         raise ValueError("Equation type unknown. "
                          "Only 'care' and 'dare' is understood")
 

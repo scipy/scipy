@@ -121,9 +121,15 @@ class TestRankData:
         assert_array_equal(r, expected)
 
     def test_rankdata_object_string(self):
-        min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
-        max_rank = lambda a: [sum(i <= j for i in a) for j in a]
-        ordinal_rank = lambda a: min_rank([(x, i) for i, x in enumerate(a)])
+
+        def min_rank(a):
+            return [1 + sum(i < j for i in a) for j in a]
+
+        def max_rank(a):
+            return [sum(i <= j for i in a) for j in a]
+
+        def ordinal_rank(a):
+            return min_rank([(x, i) for i, x in enumerate(a)])
 
         def average_rank(a):
             return [(i + j) / 2.0 for i, j in zip(min_rank(a), max_rank(a))]

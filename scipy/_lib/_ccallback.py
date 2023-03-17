@@ -27,6 +27,26 @@ class LowLevelCallable(tuple):
     """
     Low-level callback function.
 
+    Some functions in SciPy take as arguments callback functions, which
+    can either be python callables or low-level compiled functions. Using
+    compiled callback functions can improve performance somewhat by
+    avoiding wrapping data in Python objects.
+
+    Such low-level functions in SciPy are wrapped in `LowLevelCallable`
+    objects, which can be constructed from function pointers obtained from
+    ctypes, cffi, Cython, or contained in Python `PyCapsule` objects.
+
+    .. seealso::
+
+       Functions accepting low-level callables:
+
+       `scipy.integrate.quad`, `scipy.ndimage.generic_filter`,
+       `scipy.ndimage.generic_filter1d`, `scipy.ndimage.geometric_transform`
+
+       Usage examples:
+
+       :ref:`ndimage-ccallbacks`, :ref:`quad-callbacks`
+
     Parameters
     ----------
     function : {PyCapsule, ctypes function pointer, cffi function pointer}
@@ -88,7 +108,7 @@ class LowLevelCallable(tuple):
         return tuple.__new__(cls, (item, function, user_data))
 
     def __repr__(self):
-        return "LowLevelCallable({!r}, {!r})".format(self.function, self.user_data)
+        return f"LowLevelCallable({self.function!r}, {self.user_data!r})"
 
     @property
     def function(self):
@@ -127,7 +147,7 @@ class LowLevelCallable(tuple):
         except AttributeError as e:
             raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute") from e
         except KeyError as e:
-            raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name)) from e
+            raise ValueError(f"No function {name!r} found in __pyx_capi__ of the module") from e
         return cls(function, user_data, signature)
 
     @classmethod

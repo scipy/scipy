@@ -50,7 +50,7 @@ def upcast(*args):
             _upcast_memo[hash(args)] = t
             return t
 
-    raise TypeError('no supported conversion for types: %r' % (args,))
+    raise TypeError(f'no supported conversion for types: {args!r}')
 
 
 def upcast_char(*args):
@@ -278,9 +278,9 @@ def validateaxis(axis):
         # dimensions, so let's make it explicit that they are not
         # allowed to be passed in
         if axis_type == tuple:
-            raise TypeError(("Tuples are not accepted for the 'axis' "
+            raise TypeError("Tuples are not accepted for the 'axis' "
                              "parameter. Please pass in one of the "
-                             "following: {-2, -1, 0, 1, None}."))
+                             "following: {-2, -1, 0, 1, None}.")
 
         # If not a tuple, check that the provided axis is actually
         # an integer and raise a TypeError similar to NumPy's

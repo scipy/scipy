@@ -153,6 +153,18 @@ Continuous distributions
    weibull_max       -- Maximum Weibull (see Frechet)
    wrapcauchy        -- Wrapped Cauchy
 
+The ``fit`` method of the univariate continuous distributions uses
+maximum likelihood estimation to fit the distribution to a data set.
+The ``fit`` method can accept regular data or *censored data*.
+Censored data is represented with instances of the `CensoredData`
+class.
+
+.. autosummary::
+   :toctree: generated/
+
+   CensoredData
+
+
 Multivariate distributions
 --------------------------
 
@@ -162,6 +174,7 @@ Multivariate distributions
    multivariate_normal    -- Multivariate normal distribution
    matrix_normal          -- Matrix normal distribution
    dirichlet              -- Dirichlet
+   dirichlet_multinomial  -- Dirichlet multinomial distribution
    wishart                -- Wishart
    invwishart             -- Inverse Wishart
    multinomial            -- Multinomial distribution
@@ -209,6 +222,7 @@ Discrete distributions
    zipf                     -- Zipf (Zeta)
    zipfian                  -- Zipfian
 
+
 An overview of statistical functions is given below.  Many of these functions
 have a similar version in `scipy.stats.mstats` which work for masked arrays.
 
@@ -237,6 +251,8 @@ Summary statistics
    tsem              --
    variation         -- Coefficient of variation
    find_repeats
+   rankdata
+   tiecorrect
    trim_mean
    gstd              -- Geometric Standard Deviation
    iqr
@@ -265,76 +281,166 @@ Frequency statistics
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
-Correlation functions
-=====================
+Hypothesis Tests and related functions
+======================================
+SciPy has many functions for performing hypothesis tests that return a
+test statistic and a p-value, and several of them return confidence intervals
+and/or other related information.
+
+The headings below are based on common uses of the functions within, but due to
+the wide variety of statistical procedures, any attempt at coarse-grained
+categorization will be imperfect. Also, note that tests within the same heading
+are not interchangeable in general (e.g. many have different distributional
+assumptions).
+
+One Sample Tests / Paired Sample Tests
+--------------------------------------
+One sample tests are typically used to assess whether a single sample was
+drawn from a specified distribution or a distribution with specified properties
+(e.g. zero mean).
 
 .. autosummary::
    :toctree: generated/
 
-   f_oneway
-   alexandergovern
+   ttest_1samp
+   binomtest
+   skewtest
+   kurtosistest
+   normaltest
+   jarque_bera
+   shapiro
+   anderson
+   cramervonmises
+   ks_1samp
+   goodness_of_fit
+   chisquare
+   power_divergence
+
+Paired sample tests are often used to assess whether two samples were drawn
+from the same distribution; they differ from the independent sample tests below
+in that each observation in one sample is treated as paired with a
+closely-related observation in the other sample (e.g. when environmental
+factors are controlled between observations within a pair but not among pairs).
+They can also be interpreted or used as one-sample tests (e.g. tests on the
+mean or median of *differences* between paired observations).
+
+.. autosummary::
+   :toctree: generated/
+
+   ttest_rel
+   wilcoxon
+
+Association/Correlation Tests
+-----------------------------
+
+These tests are often used to assess whether there is a relationship (e.g.
+linear) between paired observations in multiple samples or among the
+coordinates of multivariate observations.
+
+.. autosummary::
+   :toctree: generated/
+
+   linregress
    pearsonr
    spearmanr
    pointbiserialr
    kendalltau
    weightedtau
    somersd
-   linregress
    siegelslopes
    theilslopes
+   page_trend_test
    multiscale_graphcorr
 
-Statistical tests
-=================
+These association tests and are to work with samples in the form of contingency
+tables. Supporting functions are available in `scipy.stats.contingency`.
 
 .. autosummary::
    :toctree: generated/
 
-   ttest_1samp
-   ttest_ind
+   chi2_contingency
+   fisher_exact
+   barnard_exact
+   boschloo_exact
+
+Independent Sample Tests
+------------------------
+Independent sample tests are typically used to assess whether multiple samples
+were independently drawn from the same distribution or different distributions
+with a shared property (e.g. equal means).
+
+Some tests are specifically for comparing two samples.
+
+.. autosummary::
+   :toctree: generated/
+
    ttest_ind_from_stats
-   ttest_rel
-   chisquare
-   cramervonmises
-   cramervonmises_2samp
-   power_divergence
-   kstest
-   ks_1samp
-   ks_2samp
-   epps_singleton_2samp
-   mannwhitneyu
-   tiecorrect
-   rankdata
-   ranksums
-   wilcoxon
-   kruskal
-   friedmanchisquare
-   brunnermunzel
-   combine_pvalues
-   jarque_bera
-   page_trend_test
-   tukey_hsd
    poisson_means_test
+   ttest_ind
+   mannwhitneyu
+   ranksums
+   brunnermunzel
+   mood
+   ansari
+   cramervonmises_2samp
+   epps_singleton_2samp
+   ks_2samp
+   kstest
+
+Others are generalized to multiple samples.
 
 .. autosummary::
    :toctree: generated/
 
-   ansari
-   bartlett
-   levene
-   shapiro
-   anderson
-   anderson_ksamp
-   binom_test
-   binomtest
+   f_oneway
+   tukey_hsd
+   dunnett
+   kruskal
+   alexandergovern
    fligner
+   levene
+   bartlett
    median_test
-   mood
-   skewtest
-   kurtosistest
-   normaltest
-   goodness_of_fit
+   friedmanchisquare
+   anderson_ksamp
 
+Resampling and Monte Carlo Methods
+----------------------------------
+The following functions can reproduce the p-value and confidence interval
+results of most of the functions above, and often produce accurate results in a
+wider variety of conditions. They can also be used to perform hypothesis tests
+and generate confidence intervals for custom statistics. This flexibility comes
+at the cost of greater computational requirements and stochastic results.
+
+.. autosummary::
+   :toctree: generated/
+
+   monte_carlo_test
+   permutation_test
+   bootstrap
+
+Multiple Hypothesis Testing and Meta-Analysis
+---------------------------------------------
+These functions are for assessing the results of individual tests as a whole.
+Functions for performing specific multiple hypothesis tests (e.g. post hoc
+tests) are listed above.
+
+.. autosummary::
+   :toctree: generated/
+
+   combine_pvalues
+   false_discovery_control
+
+Deprecated and Legacy Functions
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   binom_test
+
+The following functions are related to the tests above but do not belong in the
+above categories.
 
 Quasi-Monte Carlo
 =================
@@ -344,15 +450,13 @@ Quasi-Monte Carlo
 
    stats.qmc
 
-Resampling Methods
+Contingency Tables
 ==================
 
-.. autosummary::
-   :toctree: generated/
+.. toctree::
+   :maxdepth: 4
 
-   bootstrap
-   permutation_test
-   monte_carlo_test
+   stats.contingency
 
 Masked statistics functions
 ===========================
@@ -410,13 +514,14 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
 
-Distribution Fitting
---------------------
+Fitting / Survival Analysis
+---------------------------
 
 .. autosummary::
    :toctree: generated/
 
    fit
+   ecdf
 
 Directional statistical functions
 ---------------------------------
@@ -429,22 +534,13 @@ Directional statistical functions
    circvar
    circstd
 
-Contingency table functions
----------------------------
+Sensitivity Analysis
+--------------------
 
 .. autosummary::
    :toctree: generated/
 
-   chi2_contingency
-   contingency.crosstab
-   contingency.expected_freq
-   contingency.margins
-   contingency.relative_risk
-   contingency.association
-   contingency.odds_ratio
-   fisher_exact
-   barnard_exact
-   boschloo_exact
+   sobol_indices
 
 Plot-tests
 ----------
@@ -477,6 +573,20 @@ Warnings / Errors used in :mod:`scipy.stats`
    NearConstantInputWarning
    FitError
 
+Result classes used in :mod:`scipy.stats`
+-----------------------------------------
+
+.. warning::
+
+    These classes are private, but they are included here because instances
+    of them are returned by other statistical functions. User import and
+    instantiation is not supported.
+
+.. toctree::
+   :maxdepth: 2
+
+   stats._result_classes
+
 """
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
@@ -485,6 +595,7 @@ from ._stats_py import *
 from ._variation import variation
 from .distributions import *
 from ._morestats import *
+from ._multicomp import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
 from ._kde import gaussian_kde
@@ -493,6 +604,7 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
+from ._censored_data import CensoredData  # noqa
 from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
@@ -501,11 +613,14 @@ from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
+from ._sensitivity_analysis import *
+from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
 )
+
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

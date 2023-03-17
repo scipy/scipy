@@ -1,5 +1,5 @@
 import numpy as np
-from typing import (Union, Any, Tuple, List, overload, Callable, NamedTuple,
+from typing import (Union, overload, Callable, NamedTuple,
                     Protocol)
 import numpy.typing as npt
 from scipy._lib._util import SeedType
@@ -9,7 +9,7 @@ import scipy.stats as stats
 ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
 
 
-__all__: List[str]
+__all__: list[str]
 
 
 class UNURANError(RuntimeError):
@@ -20,7 +20,7 @@ class Method:
     @overload
     def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
     @overload
-    def rvs(self, size: int | Tuple[int, ...] = ...) -> np.ndarray: ...
+    def rvs(self, size: int | tuple[int, ...] = ...) -> np.ndarray: ...
     def set_random_state(self, random_state: SeedType) -> None: ...
 
 
@@ -30,7 +30,7 @@ class TDRDist(Protocol):
     @property
     def dpdf(self) -> Callable[..., float]: ...
     @property
-    def support(self) -> Tuple[float, float]: ...
+    def support(self) -> tuple[float, float]: ...
 
 
 class TransformedDensityRejection(Method):
@@ -39,7 +39,7 @@ class TransformedDensityRejection(Method):
                  *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  c: float = ...,
                  construction_points: int | npt.ArrayLike = ...,
                  use_dars: bool = ...,
@@ -59,7 +59,7 @@ class SROUDist(Protocol):
     @property
     def pdf(self) -> Callable[..., float]: ...
     @property
-    def support(self) -> Tuple[float, float]: ...
+    def support(self) -> tuple[float, float]: ...
 
 
 class SimpleRatioUniforms(Method):
@@ -68,13 +68,14 @@ class SimpleRatioUniforms(Method):
                  *,
                  mode: None | float = ...,
                  pdf_area: float = ...,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  cdf_at_mode: float = ...,
                  random_state: SeedType = ...) -> None: ...
 
 
-UError = NamedTuple('UError', [('max_error', float),
-                               ('mean_absolute_error', float)])
+class UError(NamedTuple):
+    max_error: float
+    mean_absolute_error: float
 
 class PINVDist(Protocol):
     @property
@@ -91,7 +92,7 @@ class NumericalInversePolynomial(Method):
                  *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
                  random_state: SeedType = ...) -> None: ...
@@ -107,7 +108,7 @@ class NumericalInversePolynomial(Method):
     def cdf(self, x: npt.ArrayLike) -> np.ndarray: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
     def qrvs(self,
-             size: None | int | Tuple[int, ...] = ...,
+             size: None | int | tuple[int, ...] = ...,
              d: None | int = ...,
              qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
 
@@ -118,14 +119,14 @@ class HINVDist(Protocol):
     @property
     def cdf(self) -> Callable[..., float]: ...
     @property
-    def support(self) -> Tuple[float, float]: ...
+    def support(self) -> tuple[float, float]: ...
 
 
 class NumericalInverseHermite(Method):
     def __init__(self,
                  dist: HINVDist,
                  *,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  order: int= ...,
                  u_resolution: float = ...,
                  construction_points: None | npt.ArrayLike = ...,
@@ -138,7 +139,7 @@ class NumericalInverseHermite(Method):
     @overload
     def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
     def qrvs(self,
-             size: None | int | Tuple[int, ...] = ...,
+             size: None | int | tuple[int, ...] = ...,
              d: None | int = ...,
              qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
@@ -148,13 +149,13 @@ class DAUDist(Protocol):
     @property
     def pmf(self) -> Callable[..., float]: ...
     @property
-    def support(self) -> Tuple[float, float]: ...
+    def support(self) -> tuple[float, float]: ...
 
 class DiscreteAliasUrn(Method):
     def __init__(self,
                  dist: npt.ArrayLike | DAUDist,
                  *,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  urn_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
 
@@ -163,13 +164,13 @@ class DGTDist(Protocol):
     @property
     def pmf(self) -> Callable[..., float]: ...
     @property
-    def support(self) -> Tuple[float, float]: ...
+    def support(self) -> tuple[float, float]: ...
 
 class DiscreteGuideTable(Method):
     def __init__(self,
                  dist: npt.ArrayLike | DGTDist,
                  *,
-                 domain: None | Tuple[float, float] = ...,
+                 domain: None | tuple[float, float] = ...,
                  guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @overload

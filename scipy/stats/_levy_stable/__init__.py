@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 
 import warnings
@@ -1117,8 +1116,8 @@ class levy_stable_gen(rv_continuous):
     def _stats(self, alpha, beta):
         mu = 0 if alpha > 1 else np.nan
         mu2 = 2 if alpha == 2 else np.inf
-        g1 = 0.0 if alpha == 2.0 else np.NaN
-        g2 = 0.0 if alpha == 2.0 else np.NaN
+        g1 = 0.0 if alpha == 2.0 else np.nan
+        g2 = 0.0 if alpha == 2.0 else np.nan
         return mu, mu2, g1, g2
 
 

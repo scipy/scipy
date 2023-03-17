@@ -23,11 +23,12 @@ def _check_points(points):
                 # input is descending, so make it ascending
                 descending_dimensions.append(i)
                 p = np.flip(p)
-                p = np.ascontiguousarray(p)
             else:
                 raise ValueError(
                     "The points in dimension %d must be strictly "
                     "ascending or descending" % i)
+        # see https://github.com/scipy/scipy/issues/17716
+        p = np.ascontiguousarray(p)
         grid.append(p)
     return tuple(grid), tuple(descending_dimensions)
 
@@ -330,7 +331,11 @@ class RegularGridInterpolator:
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
             if (ndim == 2 and hasattr(self.values, 'dtype') and
-                    self.values.ndim == 2):
+                    self.values.ndim == 2 and self.values.flags.writeable and
+                    self.values.dtype in (np.float64, np.complex128) and
+                    self.values.dtype.byteorder == '='):
+                # until cython supports const fused types, the fast path
+                # cannot support non-writeable values
                 # a fast path
                 out = np.empty(indices.shape[1], dtype=self.values.dtype)
                 result = evaluate_linear_2d(self.values,
@@ -553,6 +558,19 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         Interpolated values at `xi`. See notes for behaviour when
         ``xi.ndim == 1``.
 
+    See Also
+    --------
+    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
+                            data in N dimensions
+    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
+                           in N dimensions
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
+    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
+
     Notes
     -----
 
@@ -585,23 +603,6 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> point = np.array([2.21, 3.12, 1.15])
     >>> print(interpn(points, values, point))
     [12.63]
-
-    See Also
-    --------
-    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
-                            data in N dimensions
-
-    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
-                           in N dimensions
-
-    RegularGridInterpolator : interpolation on a regular or rectilinear grid
-                              in arbitrary dimensions (`interpn` wraps this
-                              class).
-
-    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
-
-    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
-                                    (suitable for e.g., N-D image resampling)
 
     """
     # sanity check 'method' kwarg
@@ -642,9 +643,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
-                                                np.all(p <= grid[i][-1])):
+                                  np.all(p <= grid[i][-1])):
                 raise ValueError("One of the requested xi is out of bounds "
-                                "in dimension %d" % i)
+                                 "in dimension %d" % i)
 
     # perform interpolation
     if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:

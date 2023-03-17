@@ -52,7 +52,7 @@ def test_wrightomega_singular():
     for p in pts:
         res = sc.wrightomega(p)
         assert_equal(res, -1.0)
-        assert_(np.signbit(res.imag) == False)
+        assert_(np.signbit(res.imag) == np.bool_(False))
 
 
 @pytest.mark.parametrize('x, desired', [
