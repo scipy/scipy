@@ -10726,7 +10726,8 @@ class rel_breitwigner_gen(rv_continuous):
     :math:`M` [2]_, of a resonance with characteristic mass :math:`M_0` and
     decay-width :math:`\Gamma`, where :math:`M`, :math:`M_0` and :math:`\Gamma`
     are expressed in natural units. In SciPy's parametrization, the shape
-    parameter :math:`\rho` is equal to :math:`M_0/\Gamma`.
+    parameter :math:`\rho` is equal to :math:`M_0/\Gamma` and takes values in
+    :math:`(0, \infty)`.
 
     Equivalently, the relativistic Breit-Wigner distribution is said to give
     the uncertainty in the center-of-mass energy :math:`E_{\text{cm}}`. In

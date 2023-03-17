@@ -4,8 +4,8 @@
 Relativistic Breit-Wigner Distribution
 ======================================
 
-There is a single shape parameter :math:`\rho`. The support is
-:math:`0 \leq x < \infty`
+There is a single shape parameter :math:`\rho` which takes values in :math:`(0, \infty)`.
+The support is :math:`0 \leq x < \infty`.
 
 .. math::
    :nowrap:
@@ -22,6 +22,8 @@ There is a single shape parameter :math:`\rho`. The support is
    \begin{eqnarray*}
        \mu & = & \frac{k}{2\rho} \left[\frac{\pi}{2} + \tan^{-1}\left(\rho\right)\right]\\
        \mu_2 & = & \frac{k\pi}{4} \left[\frac{1 - \rho i}{\sqrt{-1 - \rho i}} + \frac{1 + \rho i}{\sqrt{-1 + \rho i}}\right]\\
+       \mu_3 & = & \infty\\
+       \mu_4 & = & \infty\\
    \end{eqnarray*}
 
 where
