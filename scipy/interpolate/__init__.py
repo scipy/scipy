@@ -25,7 +25,6 @@ Univariate interpolation
    barycentric_interpolate
    krogh_interpolate
    pchip_interpolate
-   isotonic_regression
    IsotonicInterpolator
    CubicHermiteSpline
    PchipInterpolator

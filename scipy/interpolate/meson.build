@@ -182,16 +182,6 @@ else
   )
 endif
 
-_pava_pybind = py3.extension_module('_pava_pybind',
-  ['src/pava_pybind.cpp'],
-  cpp_args: [numpy_nodepr_api],
-  include_directories: 'src/',
-  dependencies: [np_dep, pybind11_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/interpolate'
-)
-
 py3.install_sources([
     '__init__.py',
     '_bsplines.py',
