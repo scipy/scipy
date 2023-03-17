@@ -15,10 +15,10 @@ __all__ = ["IsotonicInterpolator"]
 # TODO: Should this inherit from _Interpolator1D?
 class IsotonicInterpolator():
     """Nonparametric isotonic interpolation via PAVA.
-    
+
     This class provides nonparametric monotonically increasing interpolation
     via the pool adjacent violators algorithm (PAVA).
-    
+
     This interpolator first sorts the values of ``y`` according to the order
     given by ``x``. It then fits the isotonic regression, see
     ``scipy.optimize.isotonic_regression`` for details. Afterwards it
@@ -54,7 +54,13 @@ class IsotonicInterpolator():
     isotonic_regression : Solvevs the isotonic regression via PAVA.
     PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
     """
-    def __init__(self, x, y, weights=None, increasing=True):
+    def __init__(
+            self,
+            x: npt.ArrayLike,
+            y: npt.ArrayLike,
+            weights: npt.ArrayLike | None = None,
+            increasing: bool = True,
+    ):
         # TODO: Should we check np.isfinite(x, y, w)?
         y = np.asarray(y)
         if y.ndim != 1:
@@ -104,7 +110,7 @@ class IsotonicInterpolator():
         # TODO: Maybe this is overkill.
         self.x_is_numeric = np.issubdtype(self.x_.dtype, np.number)
 
-    def __call__(self, x):
+    def __call__(self, x: npt.ArrayLike):
         if self.x_is_numeric:
             return np.interp(x, self.x_, self.y_)
         else:

@@ -32,7 +32,7 @@ class TestIsotonicInterpolator:
         assert_almost_equal(iso(x), y)
         # Check linear interpolation
         assert_almost_equal(iso(x[:-1] + np.diff(x)/2), y[:-1] + np.diff(y)/2)
-    
+
     @pytest.mark.parametrize("seed", list(range(310, 320)))
     @pytest.mark.parametrize("increasing", [True, False])
     def test_strings(self, seed, increasing):
@@ -58,7 +58,7 @@ class TestIsotonicInterpolator:
 
         assert_almost_equal(iso_str.y_, iso_num.y_)
         assert_almost_equal(iso_str(x_str), iso_num(x_num))
-        
+
         if increasing:
             assert np.all(np.diff(iso_str(x_str)) >= 0)
         else:

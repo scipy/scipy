@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -14,7 +14,7 @@ __all__ = ["isotonic_regression"]
 
 def isotonic_regression(
     y: npt.ArrayLike,
-    weights: Optional[npt.ArrayLike] = None,
+    weights: npt.ArrayLike | None = None,
     increasing: bool = True,
 ):
     r"""Nonparametric isotonic regression.
@@ -53,7 +53,7 @@ def isotonic_regression(
 
         \operatorname{argmin}_{x_i} \sum_i w_i (y_i - x_i)^2 \quad
         \text{subject to } x_i \leq x_j \text{ whenever } i \leq j \,.
-    
+
     For every input value :math:`y_i`, it generates an interpolated value
     :math:`x_i` which are increasing. This is accomplished by the PAVA.
     The solution consists of pools or blocks, i.e. neighboring elements of
