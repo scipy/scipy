@@ -6144,25 +6144,18 @@ class TestWeibull:
 
 
 class TestDweibull:
-
-    @pytest.mark.parametrize("c, ref",
-                            [(0.3, 1.5502834334489712),
-                             (13, -0.33898771699248414)])
-    def test_entropy(self, c, ref):
-        # The reference values were calculated with mpmath:
-        # from mpmath import mp
-        # mp.dps = 150
-        #
-        # def entropy(c):
-        #     c = mp.mpf(c)
-        #     def pdf(x):
-        #         x = mp.mpf(x)
-        #         y = c * mp.fabs(x) ** (c - mp.one) * mp.exp(-mp.fabs(x) ** c) / mp.mpf(2.)
-        #         return y
-        #
-        #   h = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [-mp.inf, mp.inf])
-        #   return float(h)
-        assert_allclose(stats.dweibull.entropy(c), ref, rtol=1e-14)
+    def test_entropy(self):
+        # Test that dweibull entropy follows that of weibull_min.
+        # (Generic tests check that the dweibull entropy is consistent
+        #  with its PDF. As for accuracy, dweibull entropy should be just
+        #  as accurate as weibull_min entropy. Checks of accuracy against
+        #  a reference need only be applied to the fundamental distribution -
+        #  weibull_min.)
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=100, size=10)
+        res = stats.dweibull.entropy(c)
+        ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
 
 
 class TestTruncWeibull:
