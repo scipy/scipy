@@ -6143,6 +6143,21 @@ class TestWeibull:
         assert_allclose(res, ref)
 
 
+class TestDweibull:
+    def test_entropy(self):
+        # Test that dweibull entropy follows that of weibull_min.
+        # (Generic tests check that the dweibull entropy is consistent
+        #  with its PDF. As for accuracy, dweibull entropy should be just
+        #  as accurate as weibull_min entropy. Checks of accuracy against
+        #  a reference need only be applied to the fundamental distribution -
+        #  weibull_min.)
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=100, size=10)
+        res = stats.dweibull.entropy(c)
+        ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
+
+
 class TestTruncWeibull:
 
     def test_pdf_bounds(self):

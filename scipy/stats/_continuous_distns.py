@@ -1738,6 +1738,10 @@ class dweibull_gen(rv_continuous):
     def _stats(self, c):
         return 0, None, 0, None
 
+    def _entropy(self, c):
+        h = stats.weibull_min._entropy(c) - np.log(0.5)
+        return h
+
 
 dweibull = dweibull_gen(name='dweibull')
 
