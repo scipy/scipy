@@ -3465,7 +3465,7 @@ class gengamma_gen(rv_continuous):
 
         def asymptotic(a, c):
             # using asymptotic expansions for gammaln and psi (see gh-18093)
-            return ((-np.log(a) + np.log(2) + 1 + np.log(np.pi))/2
+            return (norm._entropy() - np.log(a)/2
                     - np.log(np.abs(c)) + (a**-1.)/6 - (a**-3.)/90
                     + (np.log(a) - (a**-1.)/2 - (a**-2.)/12 + (a**-4.)/120)/c)
 
