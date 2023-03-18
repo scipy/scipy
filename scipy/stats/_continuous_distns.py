@@ -2787,6 +2787,7 @@ class genlogistic_gen(rv_continuous):
                           #   = 1/(2 * c)
                           f2=lambda c: 1/(2 * c) + _EULER + 1)
 
+
 genlogistic = genlogistic_gen(name='genlogistic')
 
 
@@ -3605,7 +3606,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`|b| < a` if :math:`p \ge 0`,
     :math:`|b| \le a` if :math:`p < 0`.
     :math:`K_{p}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`p` (`scipy.special.kn`)
+    kind and order :math:`p` (`scipy.special.kv`)
 
     `genhyperbolic` takes ``p`` as a tail parameter,
     ``a`` as a shape parameter,
@@ -3701,28 +3702,51 @@ class genhyperbolic_gen(rv_continuous):
 
         return _pdf_single(x, p, a, b)
 
+    # np.vectorize isn't currently designed to be used as a decorator,
+    # so use a lambda instead.  This allows us to decorate the function
+    # with `np.vectorize` and still provide the `otypes` parameter.
+    # The first argument to `vectorize` is `func.__get__(object)` for
+    # compatibility with Python 3.9.  In Python 3.10, this can be
+    # simplified to just `func`.
+    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @staticmethod
+    def _integrate_pdf(x0, x1, p, a, b):
+        """
+        Integrate the pdf of the genhyberbolic distribution from x0 to x1.
+        This is a private function used by _cdf() and _sf() only; either x0
+        will be -inf or x1 will be inf.
+        """
+        user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
+        llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf',
+                                           user_data)
+        d = np.sqrt((a + b)*(a - b))
+        mean = b/d * sc.kv(p + 1, d) / sc.kv(p, d)
+        epsrel = 1e-10
+        epsabs = 0
+        if x0 < mean < x1:
+            # If the interval includes the mean, integrate over the two
+            # intervals [x0, mean] and [mean, x1] and add. If we try to do
+            # the integral in one call of quad and the non-infinite endpoint
+            # is far in the tail, quad might return an incorrect result
+            # because it does not "see" the peak of the PDF.
+            intgrl = (integrate.quad(llc, x0, mean,
+                                     epsrel=epsrel, epsabs=epsabs)[0]
+                      + integrate.quad(llc, mean, x1,
+                                       epsrel=epsrel, epsabs=epsabs)[0])
+        else:
+            intgrl = integrate.quad(llc, x0, x1,
+                                    epsrel=epsrel, epsabs=epsabs)[0]
+        if np.isnan(intgrl):
+            msg = ("Infinite values encountered in scipy.special.kve. "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+        return max(0.0, min(1.0, intgrl))
+
     def _cdf(self, x, p, a, b):
+        return self._integrate_pdf(-np.inf, x, p, a, b)
 
-        def _cdf_single(x, p, a, b):
-            user_data = np.array(
-                [p, a, b], float
-                ).ctypes.data_as(ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(
-                _stats, '_genhyperbolic_pdf', user_data
-                )
-
-            t1 = integrate.quad(llc, -np.inf, x)[0]
-
-            if np.isnan(t1):
-                msg = ("Infinite values encountered in scipy.special.kve. "
-                       "Values replaced by NaN to avoid incorrect results.")
-                warnings.warn(msg, RuntimeWarning)
-
-            return t1
-
-        _cdf_vec = np.vectorize(_cdf_single, otypes=[np.float64])
-
-        return _cdf_vec(x, p, a, b)
+    def _sf(self, x, p, a, b):
+        return self._integrate_pdf(x, np.inf, p, a, b)
 
     def _rvs(self, p, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X  has a
