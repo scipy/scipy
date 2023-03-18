@@ -169,7 +169,7 @@ def configuration(parent_package='', top_path=None):
         pybind11.get_include(False),
         get_numpy_include_dirs()]
     ext = config.add_extension('_pava_pybind',
-                               sources=[join('src', 'pava_pybind.cpp')],
+                               sources=[join('_pava', 'pava_pybind.cpp')],
                                depends=[],
                                include_dirs=pava_pybind_includes,
                                language='c++',
