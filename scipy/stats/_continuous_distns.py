@@ -3559,7 +3559,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`|b| < a` if :math:`p \ge 0`,
     :math:`|b| \le a` if :math:`p < 0`.
     :math:`K_{p}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`p` (`scipy.special.kn`)
+    kind and order :math:`p` (`scipy.special.kv`)
 
     `genhyperbolic` takes ``p`` as a tail parameter,
     ``a`` as a shape parameter,
