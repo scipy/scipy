@@ -51,7 +51,7 @@ class IsotonicInterpolator():
 
     See Also
     --------
-    isotonic_regression : Solvevs the isotonic regression via PAVA.
+    scipy.optimize.isotonic_regression : Solves the isotonic regression via PAVA.
     PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
     """
     def __init__(
