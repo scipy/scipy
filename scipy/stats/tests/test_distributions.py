@@ -8611,3 +8611,19 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestJohnsonSU:
+    @pytest.mark.parametrize("case", [  # a, b, loc, scale, m1, m2, g1, g2
+            (-0.01, 1.1, 0.02, 0.0001, 0.02000137427557091,
+             2.1112742956578063e-08, 0.05989781342460999, 20.36324408592951-3),
+            (2.554395574161155, 2.2482281679651965, 0, 1, -1.54215386737391,
+             0.7629882028469993, -1.256656139406788, 6.303058419339775-3)])
+    def test_moment_gh18071(self, case):
+        # gh-18071 reported an IntegrationWarning emitted by johnsonsu.stats
+        # Check that the warning is no longer emitted and that the values
+        # are accurate compared against results from Mathematica.
+        # Reference values from Mathematica, e.g.
+        # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
+        res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
+        assert_allclose(res, case[4:], rtol=1e-14)
