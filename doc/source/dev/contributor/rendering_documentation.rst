@@ -286,6 +286,7 @@ the use of a seed in their program. The consequence is that users cannot
 reproduce the results of the example exactly, so examples using random data
 should not refer to precise numerical values based on random data or rely on
 them to make their point.
+
 Legacy directive
 ~~~~~~~~~~~~~~~~
 
@@ -311,6 +312,15 @@ will create the following output:
 .. legacy::
 
    New code should use :mod:`scipy.fft`.
+
+Finally, if you want to mention a function, method (or any custom object)
+instead of a *submodule*, you can use an optional argument::
+
+    .. legacy:: function
+
+This will create the following output:
+
+.. legacy:: function
 
 
 .. _GitHub: https://github.com/

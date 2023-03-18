@@ -4,12 +4,9 @@ from os.path import relpath, dirname
 import re
 import sys
 import warnings
-<<<<<<< HEAD
 from datetime import date
-=======
 from docutils import nodes
 from docutils.parsers.rst import Directive
->>>>>>> 27a0ea8e0 (DOC: Add legacy directive for documentation)
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -431,6 +428,7 @@ class LegacyDirective(Directive):
     """
     has_content = True
     node_class = nodes.admonition
+    optional_arguments = 1
 
     def run(self):
         try:
@@ -454,7 +452,7 @@ class LegacyDirective(Directive):
                 offset=lineno
             )
         text = '\n'.join(self.content)
-        # Create the admonition node, to be populated by `nested_parse`.
+        # Create the admonition node, to be populated by `nested_parse`
         admonition_node = self.node_class(rawsource=text)
         # Set custom title
         title_text = "Legacy"
@@ -462,7 +460,9 @@ class LegacyDirective(Directive):
         title = nodes.title(title_text, '', *textnodes)
         # Set up admonition node
         admonition_node += title
-        # Parse the directive contents.
+        # Select custom class for CSS styling
+        admonition_node['classes'] = ['admonition-legacy']
+        # Parse the directive contents
         self.state.nested_parse(self.content, self.content_offset,
                                 admonition_node)
         return [admonition_node]
