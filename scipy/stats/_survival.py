@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
 import numpy as np
-from scipy import special, interpolate
+from scipy import special
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
@@ -34,16 +34,8 @@ class EmpiricalDistributionFunction:
         self._d = d
         self._sf = points if kind == 'sf' else 1 - points
         self._kind = kind
-        f0 = 1 if kind == 'sf' else 0  # leftmost function value
-        f1 = 1 - f0
-        # fill_value can't handle edge cases at infinity
-        x = np.insert(x, [0, len(x)], [-np.inf, np.inf])
-        y = np.insert(points, [0, len(points)], [f0, f1])
-        # `or` conditions handle the case of empty x, points
-        self._f = interpolate.interp1d(x, y, kind='previous',
-                                       assume_sorted=True)
 
-    def confidence_interval(self, confidence_level=0.95, method='Greenwood'):
+    def confidence_interval(self, confidence_level=0.95, method='linear'):
         """Compute a confidence interval around the CDF/SF point estimate
 
         Parameters
@@ -51,9 +43,11 @@ class EmpiricalDistributionFunction:
         confidence_level : float, default: 0.95
             Confidence level for the computed confidence interval
 
-        method : str, optional
+        method : str, {"linear", "log-log"}
             Method used to compute the confidence interval. Options are
-            "Greenwood" and "Exponential Greenwood".
+            "linear" for the conventional Greenwood confidence interval
+            (default)  and "log-log" for the "exponential Greenwood",
+            log-negative-log-transformed confidence interval.
 
         Returns
         -------
@@ -64,8 +58,12 @@ class EmpiricalDistributionFunction:
 
         Notes
         -----
-        Confidence intervals are computed according to the Greenwood formula or
-        the more recent "Exponential Greenwood" formula as described in [1]_.
+        Confidence intervals are computed according to the Greenwood formula
+        (``method='linear'') or the more recent "exponential Greenwood" formula
+        (``method='log-log'') as described in [1]_. The conventional Greenwood
+        formula can result in lower confidence limits less than 0 and upper
+        confidence limits greater than 1; these are clipped to the unit
+        interval.
 
         References
         ----------
@@ -74,8 +72,8 @@ class EmpiricalDistributionFunction:
                https://www.math.wustl.edu/~sawyer/handouts/greenwood.pdf
 
         """
-        methods = {'greenwood': self._greenwood_ci,
-                   'exponential greenwood': self._exp_greenwood_ci}
+        methods = {'linear': self._linear_ci,
+                   'log-log': self._loglog_ci}
 
         message = f"`method` must be one of {set(methods)}."
         if method.lower() not in methods:
@@ -90,7 +88,7 @@ class EmpiricalDistributionFunction:
         low, high = method_fun(confidence_level)
         return ConfidenceInterval(np.clip(low, 0, 1), np.clip(high, 0, 1))
 
-    def _greenwood_ci(self, confidence_level):
+    def _linear_ci(self, confidence_level):
         sf, d, n = self._sf, self._d, self._n
         # When n == d, Greenwood's formula divides by zero.
         # When s != 0, this can be ignored: var == inf, and CI is [0, 1]
@@ -99,18 +97,19 @@ class EmpiricalDistributionFunction:
             var = sf ** 2 * np.cumsum(d / (n * (n - d)))
 
         message = ("The variance estimate is undefined at some observations. "
-                   "This is feature of the mathematical formula.")
+                   "This is a feature of the mathematical formula.")
         if np.any(np.isnan(var)):
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
         se = np.sqrt(var)
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
-        low = self.points - z * se
-        high = self.points + z * se
+        z_se = z * se
+        low = self.points - z_se
+        high = self.points + z_se
         return low, high
 
-    def _exp_greenwood_ci(self, confidence_level):
+    def _loglog_ci(self, confidence_level):
         sf, d, n = self._sf, self._d, self._n
 
         var = 1 / np.log(sf) ** 2 * np.cumsum(d / (n * (n - d)))
@@ -119,27 +118,12 @@ class EmpiricalDistributionFunction:
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
         lnl_points = np.log(-np.log(sf))
-        low = np.exp(-np.exp(lnl_points + z * se))
-        high = np.exp(-np.exp(lnl_points - z * se))
+        z_se = z * se
+        low = np.exp(-np.exp(lnl_points + z_se))
+        high = np.exp(-np.exp(lnl_points - z_se))
         if self._kind == "cdf":
             low, high = 1-high, 1-low
         return low, high
-
-    def __call__(self, x):
-        """Evaluate the empirical CDF/SF function at the input.
-
-        Parameters
-        ----------
-        x : ndarray
-            Argument to the CDF/SF
-
-        Returns
-        -------
-        p : ndarray
-            The CDF/SF evaluated at `x`
-
-        """
-        return self._f(x)
 
 
 @dataclass
@@ -200,12 +184,9 @@ def ecdf(sample):
         points : ndarray
             The point estimate of the CDF/SF at the values in `x`.
 
-        And the following methods:
+        And the following method:
 
-        __call__(x) :
-            Evaluate the CDF/SF at the argument.
-
-        proportion_ci(confidence_level=0.95) :
+        confidence_interval(confidence_level=0.95) :
             Compute the confidence interval around the CDF/SF at the values in
             `x`.
 
@@ -267,8 +248,8 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> x = np.insert(res.x, [0, len(res.x)], [res.x[0]-1, res.x[-1]+1])
-    >>> ax.step(x, res.cdf(x), where='post')
+    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.points, 0, 0),
+    ...         where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
@@ -303,8 +284,8 @@ def ecdf(sample):
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> x = np.insert(res.x, [0, len(res.x)], [res.x[0]-1, res.x[-1]+1])
-    >>> ax.step(x, res.sf(x), where='post')
+    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.points, 0, 1),
+    ...         where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()

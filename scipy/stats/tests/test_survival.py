@@ -107,24 +107,6 @@ class TestSurvival:
         assert_equal(res.cdf.points, ref_cdf)
         assert_equal(res.sf.points, ref_sf)
 
-    def test_call_methods(self):
-        # Test CDF and SF call methods
-        rng = np.random.default_rng(1162729143302572461)
-        sample, _, _ = self.get_random_sample(rng, 15)
-        res = stats.ecdf(sample)
-        x = res.x
-        xr = res.x + np.diff(res.x, append=x[-1]+1)/2  # right shifted points
-
-        assert_equal(res.cdf(x), res.cdf.points)
-        assert_equal(res.cdf(xr), res.cdf.points)
-        assert_equal(res.cdf(x[0]-1), 0)  # CDF starts at 0
-        assert_equal(res.cdf([-np.inf, np.inf]), [0, 1])
-
-        assert_equal(res.sf(x), res.sf.points)
-        assert_equal(res.sf(xr), res.sf.points)
-        assert_equal(res.sf(x[0]-1), 1)  # CDF starts at 1
-        assert_equal(res.sf([-np.inf, np.inf]), [1, 0])
-
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
     d1 = [0, 0, 1, 1, 0, 0, 0, 1, 1, 1]  # 1 means deaths (not censored)
@@ -215,8 +197,8 @@ class TestSurvival:
         upper = np.array([0.991983, 0.970995, 0.87378, 0.739467, 0.739467,
                           0.739467, 0.603133, 0.430365, 0.430365, 0.430365])
 
-        sf_ci = res.sf.confidence_interval(method='exponential greenwood')
-        cdf_ci = res.cdf.confidence_interval(method='exponential greenwood')
+        sf_ci = res.sf.confidence_interval(method='log-log')
+        cdf_ci = res.cdf.confidence_interval(method='log-log')
 
         assert_allclose(sf_ci.low, lower, atol=1e-5)
         assert_allclose(sf_ci.high, upper, atol=1e-5)
