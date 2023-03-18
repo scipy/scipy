@@ -105,6 +105,7 @@ __all__ = [
 ]
 
 
+import os
 import warnings
 import numpy as np
 import dataclasses
@@ -2190,6 +2191,20 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
+            # TODO: remove out/w checks when distutils
+            # build system is removed
+            if os.name == "nt" and out is not None:
+                if out.size != (m * (m - 1) / 2):
+                    raise ValueError("Output array has incorrect shape.")
+                if not out.flags["C_CONTIGUOUS"]:
+                    raise ValueError("Output array must be C-contiguous.")
+                if not np.can_cast(X.dtype, out.dtype):
+                    raise ValueError("Wrong out dtype.")
+            if os.name == "nt" and "w" in kwargs:
+                w = kwargs["w"]
+                if w is not None:
+                    if (w < 0).sum() > 0:
+                        raise ValueError("Input weights should be all non-negative")
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2975,6 +2990,21 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
+            # TODO: remove out/w checks when distutils
+            # build system is removed
+            if os.name == "nt" and out is not None:
+                required_shape = (mA, mB)
+                if out.shape != required_shape:
+                    raise ValueError("Output array has incorrect shape.")
+                if not out.flags["C_CONTIGUOUS"]:
+                    raise ValueError("Output array must be C-contiguous.")
+                if not np.can_cast(XA.dtype, out.dtype):
+                    raise ValueError("Wrong out dtype.")
+            if os.name == "nt" and "w" in kwargs:
+                w = kwargs["w"]
+                if w is not None:
+                    if (w < 0).sum() > 0:
+                        raise ValueError("Input weights should be all non-negative")
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
