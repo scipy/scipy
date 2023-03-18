@@ -9674,9 +9674,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the general wasserstein-1 function between two n dimensional
-    ditributions(expressed as histograms).
+    ditributions(histograms).
 
-    The wasserstein distance, also called the Earth mover's distance or the
+    The wasserstein distance, also called the Earth mover distance or the
     optimal transport distance, is defined as a similarity metric between
     two probability distribution. In the discrete case, the wasserstein
     distance can be understood as the cost of an optimal transport plan
@@ -9707,7 +9707,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two samples (histograms), :math:`u` and :math:`v`, the first
+    Given two samples(histograms), :math:`u` and :math:`v`, the first
     Wasserstein distance between the distributions is:
 
     .. math::
@@ -9728,14 +9728,14 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     See [3]_ for a proof of the equivalence of both definitions.
 
-    In the more general (higher dimensional) and discrete case, it is also
+    In the more general(higher dimensional) and discrete case, it is also
     called the optimal transport problem or the Monge problem, which can be
     expressed in this form,
 
     Given :math:`\Gamma` the transport plan, :math:`D` the distance matrix and
     follows,
 
-    .. math::
+    .. math:
 
         x = vec(\Gamma)
         c = vec(D)
@@ -9746,34 +9746,31 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     The Monge problem can be tranformed into a linear programming problem by
     taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
-    target (sum of costs) , where matrix :math:`A` has the form
+    target(sum of costs) , where A is a matrix looks like
 
-    .. math::
+    .. math:
 
-        \begin{array} {rrrr|rrrr|r|rrrr}
-            1 & 1 & \dots & 1 & 0 & 0 & \dots & 0 & \dots & 0 & 0 & \dots &
-                0 \cr
-            0 & 0 & \dots & 0 & 1 & 1 & \dots & 1 & \dots & 0 & 0 &\dots &
-                0 \cr
-            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots
-                & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots  \cr
-            0 & 0 & \dots & 0 & 0 & 0 & \dots & 0 & \dots & 1 & 1 & \dots &
-                1 \cr \hline
+        \begin{array} {rrr|rrr|r|rrr}
+            1 & 1 & \dots & 0 & 0 & \dots & \dots & 0 & 0 & \dots \cr
+            0 & 0 & \dots & 1 & 1 & \dots & \dots & 0 & 0 & \dots \cr
+            \vdots & \vdots & \vdots & \vdots & \vdots & \vdots & \dots
+                & \vdots & \vdots & \vdots  \cr
+            0 & 0 & \dots & 0 & 0 & \dots & \dots & 1 & 1 & \dots \cr \hline
 
-            1 & 0 & \dots & 0 & 1 & 0 & \dots & \dots & \dots & 1 & 0 & \dots &
-                0 \cr
-            0 & 1 & \dots & 0 & 0 & 1 & \dots & \dots & \dots & 0 & 1 & \dots &
-                0 \cr
-            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots &
-                \vdots & \vdots & \vdots & \vdots & \ddots & \vdots \cr
-            0 & 0 & \dots & 1 & 0 & 0 & \dots & 1 & \dots & 0 & 0 & \dots & 1
+            1 & 0 & \dots & 1 & 0 & \dots & \dots & 1 & 0 & \dots \cr
+            0 & 1 & \dots & 0 & 1 & \dots & \dots & 0 & 1 & \dots \cr
+            \vdots & \vdots & \ddots & \vdots & \vdots & \ddots & \dots &
+                \vdots & \vdots & \ddots  \cr
+            \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{0}
+                & \FixWidth{0} & \FixWidth{\dots} & \FixWidth{\dots} &
+                \FixWidth{0} & \FixWidth{0} & \FixWidth{\dots}
         \end{array}
 
-    By solving the dual form of the above linear programming problem (with
-    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)` can
+    By solving the dual form of the above linear programming problem(with
+    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)`can
     be computed as :math:`b^T x^*`.
 
-    The above solution is inspired by Vincent Herrmann's blog [5].For a
+    The above solution is inspired by Vincent Herrmann's blog [5].For a 
     more thorough explanation, see [4]_ .
 
     The input distributions can be empirical, therefore coming from samples
@@ -9836,7 +9833,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
         return np.nan
 
-    # create constraints
+    # creat constraints
     _row_func = np.vectorize(lambda x: np.floor(x/n) if x < m*n else m + x % n)
     row = _row_func(np.arange(m * n * 2))
     col = np.append(np.arange(m * n), np.arange(m * n))
