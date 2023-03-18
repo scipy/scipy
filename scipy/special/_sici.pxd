@@ -7,24 +7,21 @@
 # [2] NIST, "Digital Library of Mathematical Functions",
 #     https://dlmf.nist.gov/
 import cython
+from libc.math cimport M_PI, M_PI_2, NAN, INFINITY
 cimport numpy as np
 
 from . cimport sf_error
 
-cdef extern from "numpy/npy_math.h":
-    double NPY_PI
-    double NPY_PI_2
-    double NPY_EULER
-
 from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
-    inf, nan, zabs, zlog, zpack)
+    zabs, zlog, zpack)
 
 cdef extern from "specfun_wrappers.h":
     np.npy_cdouble cexpi_wrap(np.npy_cdouble) nogil
 
 DEF MAXITER = 100
 DEF TOL = 2.220446092504131e-16
+DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
 cdef inline double complex zexpi(double complex z) nogil:
@@ -66,22 +63,22 @@ cdef inline int csici(double complex z,
     """
     cdef double complex jz, term1, term2
 
-    if z == inf:
-        si[0] = NPY_PI_2
+    if z == INFINITY:
+        si[0] = M_PI_2
         ci[0] = 0
         return 0
-    elif z == -inf:
-        si[0] = -NPY_PI_2
-        ci[0] = 1j*NPY_PI
+    elif z == -INFINITY:
+        si[0] = -M_PI_2
+        ci[0] = 1j*M_PI
         return 0
     elif zabs(z) < 0.8:
         # Use the series to avoid cancellation in si
         power_series(-1, z, si, ci)
         if z == 0:
             sf_error.error("sici", sf_error.DOMAIN, NULL)
-            ci[0] = zpack(-inf, nan)
+            ci[0] = zpack(-INFINITY, NAN)
         else:
-            ci[0] += NPY_EULER + zlog(z)
+            ci[0] += EULER + zlog(z)
         return 0
     
     # DLMF 6.5.5/6.5.6 plus DLMF 6.4.4/6.4.6/6.4.7
@@ -92,17 +89,17 @@ cdef inline int csici(double complex z,
     ci[0] = 0.5*(term1 + term2)
     if z.real == 0:
         if z.imag > 0:
-            ci[0] += 1j*NPY_PI_2
+            ci[0] += 1j*M_PI_2
         elif z.imag < 0:
-            ci[0] -= 1j*NPY_PI_2
+            ci[0] -= 1j*M_PI_2
     elif z.real > 0:
-        si[0] -= NPY_PI_2
+        si[0] -= M_PI_2
     else:
-        si[0] += NPY_PI_2
+        si[0] += M_PI_2
         if z.imag >= 0:
-            ci[0] += 1j*NPY_PI
+            ci[0] += 1j*M_PI
         else:
-            ci[0] -= 1j*NPY_PI
+            ci[0] -= 1j*M_PI
 
     return 0
 
@@ -115,22 +112,22 @@ cdef inline int cshichi(double complex z,
     """
     cdef double complex term1, term2
 
-    if z == inf:
-        shi[0] = inf
-        chi[0] = inf
+    if z == INFINITY:
+        shi[0] = INFINITY
+        chi[0] = INFINITY
         return 0
-    elif z == -inf:
-        shi[0] = -inf
-        chi[0] = inf
+    elif z == -INFINITY:
+        shi[0] = -INFINITY
+        chi[0] = INFINITY
         return 0
     elif zabs(z) < 0.8:
         # Use the series to avoid cancellation in shi
         power_series(1, z, shi, chi)
         if z == 0:
             sf_error.error("shichi", sf_error.DOMAIN, NULL)
-            chi[0] = zpack(-inf, nan)
+            chi[0] = zpack(-INFINITY, NAN)
         else:
-            chi[0] += NPY_EULER + zlog(z)
+            chi[0] += EULER + zlog(z)
         return 0
 
     term1 = zexpi(z)
@@ -138,12 +135,12 @@ cdef inline int cshichi(double complex z,
     shi[0] = 0.5*(term1 - term2)
     chi[0] = 0.5*(term1 + term2)
     if z.imag > 0:
-        shi[0] -= 0.5j*NPY_PI
-        chi[0] += 0.5j*NPY_PI
+        shi[0] -= 0.5j*M_PI
+        chi[0] += 0.5j*M_PI
     elif z.imag < 0:
-        shi[0] += 0.5j*NPY_PI
-        chi[0] -= 0.5j*NPY_PI
+        shi[0] += 0.5j*M_PI
+        chi[0] -= 0.5j*M_PI
     elif z.real < 0:
-        chi[0] += 1j*NPY_PI
+        chi[0] += 1j*M_PI
 
     return 0

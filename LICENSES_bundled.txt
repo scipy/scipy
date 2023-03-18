@@ -237,9 +237,9 @@ License: MIT
   For details, see scipy/optimize/_highs/LICENCE
 
 Name: Boost
-Files: scipy/_lib/boost/*
+Files: scipy/_lib/boost_math/*
 License: Boost Software License - Version 1.0
-  For details, see scipy/_lib/boost/LICENSE_1_0.txt
+  For details, see scipy/_lib/boost_math/LICENSE.txt
 
 Name: Biasedurn
 Files: scipy/stats/biasedurn/*
@@ -250,3 +250,9 @@ Name: UNU.RAN
 Files: scipy/_lib/unuran/*
 License 3-Clause BSD
   For details, see scipy/_lib/unuran/license.txt
+
+Name: NumPy
+Files: scipy/stats/_rcont/[logfactorial.h,logfactorial.c]
+License 3-Clause BSD
+  For details, see header inside scipy/stats/_rcont/logfactorial.h
+  and scipy/stats/_rcont/logfactorial.c

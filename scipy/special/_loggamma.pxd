@@ -16,17 +16,13 @@
 #
 cimport cython
 from . cimport sf_error
-from libc.math cimport M_PI, floor, fabs
+from libc.math cimport M_PI, NAN, floor, fabs, copysign, signbit
 
 from ._complexstuff cimport (
-    nan, zisnan, zabs, zlog, zlog1, zexp, zpack
+    zisnan, zabs, zlog, zlog1, zexp, zpack
 )
 from ._trig cimport sinpi
 from ._evalpoly cimport cevalpoly
-
-cdef extern from "numpy/npy_math.h":
-    double npy_copysign(double x, double y) nogil
-    int npy_signbit(double x) nogil
 
 cdef extern from "cephes.h":
     double lgam(double x) nogil
@@ -41,7 +37,7 @@ DEF TAYLOR_RADIUS = 0.2
 
 cdef inline double loggamma_real(double x) nogil:
     if x < 0.0:
-        return nan
+        return NAN
 
     return lgam(x)
 
@@ -52,10 +48,10 @@ cdef inline double complex loggamma(double complex z) nogil:
     cdef double tmp
 
     if zisnan(z):
-        return zpack(nan, nan)
+        return zpack(NAN, NAN)
     elif z.real <= 0 and z == floor(z.real):
         sf_error.error("loggamma", sf_error.SINGULAR, NULL)
-        return zpack(nan, nan)
+        return zpack(NAN, NAN)
     elif z.real > SMALLX or fabs(z.imag) > SMALLY:
         return loggamma_stirling(z)
     elif zabs(z - 1) <= TAYLOR_RADIUS:
@@ -65,9 +61,9 @@ cdef inline double complex loggamma(double complex z) nogil:
         return zlog1(z - 1) + loggamma_taylor(z - 1)
     elif z.real < 0.1:
         # Reflection formula; see Proposition 3.1 in [1]
-        tmp = npy_copysign(TWOPI, z.imag)*floor(0.5*z.real + 0.25)
+        tmp = copysign(TWOPI, z.imag)*floor(0.5*z.real + 0.25)
         return zpack(LOGPI, tmp) - zlog(sinpi(z)) - loggamma(1 - z)
-    elif npy_signbit(z.imag) == 0:
+    elif signbit(z.imag) == 0:
         # z.imag >= 0 but is not -0.0
         return loggamma_recurrence(z)
     else:
@@ -90,7 +86,7 @@ cdef inline double complex loggamma_recurrence(double complex z) nogil:
     z.real += 1
     while z.real <= SMALLX:
         shiftprod *= z
-        nsb = npy_signbit(shiftprod.imag)
+        nsb = signbit(shiftprod.imag)
         signflips += 1 if nsb != 0 and sb == 0 else 0
         sb = nsb
         z.real += 1
@@ -154,7 +150,7 @@ cdef inline double complex cgamma(double complex z) nogil:
     if z.real <= 0 and z == floor(z.real):
         # Poles
         sf_error.error("gamma", sf_error.SINGULAR, NULL)
-        return nan + 1J*nan
+        return NAN + 1J*NAN
     return zexp(loggamma(z))
 
 

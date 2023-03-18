@@ -12,7 +12,8 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
-                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong, np.single, np.double,
+                    np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
+                    np.single, np.double,
                     np.longdouble, np.csingle, np.cdouble, np.clongdouble]
 
 _upcast_memo = {}
@@ -49,7 +50,7 @@ def upcast(*args):
             _upcast_memo[hash(args)] = t
             return t
 
-    raise TypeError('no supported conversion for types: %r' % (args,))
+    raise TypeError(f'no supported conversion for types: {args!r}')
 
 
 def upcast_char(*args):
@@ -90,7 +91,19 @@ def downcast_intp_index(arr):
 
 
 def to_native(A):
-    return np.asarray(A, dtype=A.dtype.newbyteorder('native'))
+    """
+    Ensure that the data type of the NumPy array `A` has native byte order.
+
+    `A` must be a NumPy array.  If the data type of `A` does not have native
+    byte order, a copy of `A` with a native byte order is returned. Otherwise
+    `A` is returned.
+    """
+    dt = A.dtype
+    if dt.isnative:
+        # Don't call `asarray()` if A is already native, to avoid unnecessarily
+        # creating a view of the input array.
+        return A
+    return np.asarray(A, dtype=dt.newbyteorder('native'))
 
 
 def getdtype(dtype, a=None, default=None):
@@ -156,7 +169,8 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     int32min = np.int32(np.iinfo(np.int32).min)
     int32max = np.int32(np.iinfo(np.int32).max)
 
-    dtype = np.intc
+    # not using intc directly due to misinteractions with pythran
+    dtype = np.int32 if np.intc().itemsize == 4 else np.int64
     if maxval is not None:
         maxval = np.int64(maxval)
         if maxval > int32max:
@@ -264,9 +278,9 @@ def validateaxis(axis):
         # dimensions, so let's make it explicit that they are not
         # allowed to be passed in
         if axis_type == tuple:
-            raise TypeError(("Tuples are not accepted for the 'axis' "
+            raise TypeError("Tuples are not accepted for the 'axis' "
                              "parameter. Please pass in one of the "
-                             "following: {-2, -1, 0, 1, None}."))
+                             "following: {-2, -1, 0, 1, None}.")
 
         # If not a tuple, check that the provided axis is actually
         # an integer and raise a TypeError similar to NumPy's

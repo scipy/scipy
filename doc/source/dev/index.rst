@@ -41,13 +41,14 @@ the organization section.
    contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
-   contributor/runtests
+   contributor/devpy_test
    contributor/benchmarking
    contributor/cython
    contributor/public_cython_api
    contributor/adding_new
    contributor/continuous_integration
    contributor/using_act
+   triage
 
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if

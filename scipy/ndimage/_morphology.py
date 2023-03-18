@@ -2014,6 +2014,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     Distance transform for chamfer type of transforms.
 
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
+
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
     element to each foreground element is returned in a separate array.
@@ -2149,6 +2153,10 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
     Exact Euclidean distance transform.
+
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background

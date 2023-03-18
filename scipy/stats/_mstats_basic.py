@@ -41,7 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
-from scipy._lib._util import _rename_parameter
+from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
@@ -53,6 +53,7 @@ from ._stats_mstats_common import (
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
+
 
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
@@ -83,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " (%s <> %s)" % (na, nb))
+                         " ({} <> {})".format(na, nb))
     return (a, b, na)
 
 
@@ -166,6 +167,19 @@ def find_repeats(arr):
         Array of repeated values.
     counts : ndarray
         Array of counts.
+
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> mstats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+    (array([2.]), array([4]))
+
+    In the above example, 2 repeats 4 times.
+
+    >>> mstats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+    (array([4., 5.]), array([2, 2]))
+
+    In the above example, both 4 and 5 repeat 2 times.
 
     """
     # Make sure we get a copy. ma.compressed promises a "new array", but can
@@ -348,6 +362,8 @@ def _mode(a, axis=0, keepdims=True):
             slices[axis] = 1
             counts = output[tuple(slices)].reshape(newshape)
             output = (modes, counts)
+        else:
+            output = np.moveaxis(output, axis, 0)
 
     return ModeResult(*output)
 
@@ -530,11 +546,9 @@ def pearsonr(x, y):
     if df < 0:
         return (masked, masked)
 
-    return scipy.stats._stats_py.pearsonr(ma.masked_array(x, mask=m).compressed(),
-                                      ma.masked_array(y, mask=m).compressed())
-
-
-SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
+    return scipy.stats._stats_py.pearsonr(
+                ma.masked_array(x, mask=m).compressed(),
+                ma.masked_array(y, mask=m).compressed())
 
 
 def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
@@ -591,10 +605,19 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
     Returns
     -------
-    correlation : float
-        Spearman correlation coefficient
-    pvalue : float
-        2-tailed p-value.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float or ndarray (2-D square)
+            Spearman correlation matrix or correlation coefficient (if only 2
+            variables are given as parameters). Correlation matrix is square
+            with length equal to total number of variables (columns or rows) in
+            ``a`` and ``b`` combined.
+        pvalue : float
+            The p-value for a hypothesis test whose null hypothesis
+            is that two sets of data are linearly uncorrelated. See
+            `alternative` above for alternative hypotheses. `pvalue` has the
+            same shape as `statistic`.
 
     References
     ----------
@@ -629,7 +652,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
         # If either column is entirely NaN or Inf
         if not np.any(x.data):
-            return SpearmanrResult(np.nan, np.nan)
+            res = scipy.stats._stats_py.SignificanceResult(np.nan, np.nan)
+            res.correlation = np.nan
+            return res
 
         m = ma.getmask(x)
         n_obs = x.shape[0]
@@ -651,9 +676,14 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
-            return SpearmanrResult(rs[1, 0], prob[1, 0])
+            res = scipy.stats._stats_py.SignificanceResult(rs[1, 0],
+                                                           prob[1, 0])
+            res.correlation = rs[1, 0]
+            return res
         else:
-            return SpearmanrResult(rs, prob)
+            res = scipy.stats._stats_py.SignificanceResult(rs, prob)
+            res.correlation = rs
+            return res
 
     # Need to do this per pair of variables, otherwise the dropped observations
     # in a third column mess up the result for a pair.
@@ -671,7 +701,9 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
                 prob[var1, var2] = result.pvalue
                 prob[var2, var1] = result.pvalue
 
-        return SpearmanrResult(rs, prob)
+        res = scipy.stats._stats_py.SignificanceResult(rs, prob)
+        res.correlation = rs
+        return res
 
 
 def _kendall_p_exact(n, c, alternative='two-sided'):
@@ -741,9 +773,6 @@ def _kendall_p_exact(n, c, alternative='two-sided'):
     return prob
 
 
-KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
-
-
 def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
                alternative='two-sided'):
     """
@@ -778,10 +807,14 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
 
     Returns
     -------
-    correlation : float
-        The Kendall tau statistic
-    pvalue : float
-        The p-value
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+           The tau statistic.
+        pvalue : float
+           The p-value for a hypothesis test whose null hypothesis is
+           an absence of association, tau = 0.
 
     References
     ----------
@@ -801,7 +834,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         n -= int(m.sum())
 
     if n < 2:
-        return KendalltauResult(np.nan, np.nan)
+        res = scipy.stats._stats_py.SignificanceResult(np.nan, np.nan)
+        res.correlation = np.nan
+        return res
 
     rx = ma.masked_equal(rankdata(x, use_missing=use_missing), 0)
     ry = ma.masked_equal(rankdata(y, use_missing=use_missing), 0)
@@ -838,8 +873,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         if use_ties:
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items()])
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items()])
-            v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
-                 np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
+            v1 = (np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *
+                  np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float))
             v1 /= 2.*n*(n-1)
             if n > 2:
                 v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
@@ -860,7 +895,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
 
-    return KendalltauResult(tau, prob)
+    res = scipy.stats._stats_py.SignificanceResult(tau, prob)
+    res.correlation = tau
+    return res
 
 
 def kendalltau_seasonal(x):
@@ -895,7 +932,7 @@ def kendalltau_seasonal(x):
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
-                               for i in range(n))
+                         for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
             K[k,j] = K[j,k]
@@ -1088,7 +1125,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     else:
         x = ma.asarray(x).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -1145,7 +1182,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = ma.asarray(x).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -2484,7 +2521,7 @@ def winsorize(a, limits=None, inclusive=(True, True), inplace=False,
                 a[idx[upidx:]] = a[idx[upidx - 1]]
         return a
 
-    contains_nan, nan_policy = scipy.stats._stats_py._contains_nan(a, nan_policy)
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
     # We are going to modify a: better make a copy
     a = ma.array(a, copy=np.logical_not(inplace))
 
@@ -2547,7 +2584,7 @@ def moment(a, moment=1, axis=0):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -2560,6 +2597,7 @@ def moment(a, moment=1, axis=0):
         return ma.array(mmnt)
     else:
         return _moment(a, moment, axis)
+
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, moment, axis, *, mean=None):

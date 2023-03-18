@@ -82,8 +82,8 @@ double iv(double v, double x)
     int sign;
     double t, ax, res;
 
-    if (npy_isnan(v) || npy_isnan(x)) {
-      return NPY_NAN;
+    if (isnan(v) || isnan(x)) {
+      return NAN;
     }
 
     /* If v is a negative integer, invoke symmetry */
@@ -99,7 +99,7 @@ double iv(double v, double x)
     if (x < 0.0) {
 	if (t != v) {
 	    sf_error("iv", SF_ERROR_DOMAIN, NULL);
-	    return (NPY_NAN);
+	    return (NAN);
 	}
 	if (v != 2.0 * floor(v / 2.0)) {
 	    sign = -1;
@@ -113,7 +113,7 @@ double iv(double v, double x)
 	}
 	if (v < 0.0) {
 	    sf_error("iv", SF_ERROR_OVERFLOW, NULL);
-	    return NPY_INFINITY;
+	    return INFINITY;
 	}
 	else
 	    return 0.0;
@@ -148,9 +148,9 @@ static double iv_asymptotic(double v, double x)
     double sum, term, prefactor, factor;
     int k;
 
-    prefactor = exp(x) / sqrt(2 * NPY_PI * x);
+    prefactor = exp(x) / sqrt(2 * M_PI * x);
 
-    if (prefactor == NPY_INFINITY) {
+    if (prefactor == INFINITY) {
 	return prefactor;
     }
 
@@ -266,10 +266,10 @@ static void ikv_asymptotic_uniform(double v, double x,
     t2 = t * t;
     eta = sqrt(1 + z * z) + log(z / (1 + 1 / t));
 
-    i_prefactor = sqrt(t / (2 * NPY_PI * v)) * exp(v * eta);
+    i_prefactor = sqrt(t / (2 * M_PI * v)) * exp(v * eta);
     i_sum = 1.0;
 
-    k_prefactor = sqrt(NPY_PI * t / (2 * v)) * exp(-v * eta);
+    k_prefactor = sqrt(M_PI * t / (2 * v)) * exp(-v * eta);
     k_sum = 1.0;
 
     divisor = v;
@@ -325,7 +325,7 @@ static void ikv_asymptotic_uniform(double v, double x,
 	else {
 	    /* (AMS 9.6.2) */
 	    *i_value = (i_prefactor * i_sum
-			+ (2 / NPY_PI) * sin(NPY_PI * v) * k_prefactor * k_sum);
+			+ (2 / M_PI) * sin(M_PI * v) * k_prefactor * k_sum);
 	}
     }
 }
@@ -371,9 +371,9 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
     a = log(x / 2);
     b = exp(v * a);
     sigma = -a * v;
-    c = fabs(v) < MACHEP ? 1 : sin(NPY_PI * v) / (v * NPY_PI);
+    c = fabs(v) < MACHEP ? 1 : sin(M_PI * v) / (v * M_PI);
     d = fabs(sigma) < MACHEP ? 1 : sinh(sigma) / sigma;
-    gamma1 = fabs(v) < MACHEP ? -NPY_EULER : (0.5f / v) * (gp - gm) * c;
+    gamma1 = fabs(v) < MACHEP ? -SCIPY_EULER : (0.5f / v) * (gp - gm) * c;
     gamma2 = (2 + gp + gm) * c / 2;
 
     /* initial values */
@@ -513,7 +513,7 @@ static int CF2_ik(double v, double x, double *Kv, double *Kv1)
 	sf_error("ikv_temme(CF2_ik)", SF_ERROR_NO_RESULT, NULL);
     }
 
-    *Kv = sqrt(NPY_PI / (2 * x)) * exp(-x) / S;
+    *Kv = sqrt(M_PI / (2 * x)) * exp(-x) / S;
     *Kv1 = *Kv * (0.5f + v + x + (v * v - 0.25f) * f) / x;
 
     return 0;
@@ -557,9 +557,9 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 
     if (x < 0) {
 	if (Iv_p != NULL)
-	    *Iv_p = NPY_NAN;
+	    *Iv_p = NAN;
 	if (Kv_p != NULL)
-	    *Kv_p = NPY_NAN;
+	    *Kv_p = NAN;
 	sf_error("ikv_temme", SF_ERROR_DOMAIN, NULL);
 	return;
     }
@@ -567,17 +567,17 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	Iv = (v == 0) ? 1 : 0;
 	if (kind & need_k) {
 	    sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
-	    Kv = NPY_INFINITY;
+	    Kv = INFINITY;
 	}
 	else {
-	    Kv = NPY_NAN;	/* any value will do */
+	    Kv = NAN;	/* any value will do */
 	}
 
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
 
-	    Iv = sin((double)NPY_PI * z) == 0 ? Iv : NPY_INFINITY;
-	    if (Iv == NPY_INFINITY || Iv == -NPY_INFINITY) {
+	    Iv = sin((double)M_PI * z) == 0 ? Iv : INFINITY;
+	    if (Iv == INFINITY || Iv == -INFINITY) {
 		sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    }
 	}
@@ -629,14 +629,14 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	}
     }
     else {
-	Iv = NPY_NAN;		/* any value will do */
+	Iv = NAN;		/* any value will do */
     }
 
     if (reflect) {
 	double z = (u + n % 2);
 
 	if (Iv_p != NULL) {
-	    *Iv_p = Iv + (2 / NPY_PI) * sin(NPY_PI * z) * Kv;	/* reflection formula */
+	    *Iv_p = Iv + (2 / M_PI) * sin(M_PI * z) * Kv;	/* reflection formula */
 	}
 	if (Kv_p != NULL) {
 	    *Kv_p = Kv;

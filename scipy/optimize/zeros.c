@@ -6,7 +6,6 @@
 
 #include "Python.h"
 #include <setjmp.h>
-#include <numpy/npy_math.h>
 #include "Zeros/zeros.h"
 
 /*

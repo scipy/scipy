@@ -753,6 +753,7 @@ def write(filename, rate, data):
     Write to 16-bit PCM, Mono.
 
     >>> from scipy.io.wavfile import write
+    >>> import numpy as np
     >>> samplerate = 44100; fs = 100
     >>> t = np.linspace(0., 1., samplerate)
     >>> amplitude = np.iinfo(np.int16).max

@@ -34,7 +34,6 @@ extern double ellpe(double x);
 extern int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph);
 extern double ellpk(double x);
 extern double exp10(double x);
-extern double exp1m(double x);
 extern double exp2(double x);
 
 extern double expn(int n, double x);

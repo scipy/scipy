@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_,
+from numpy.testing import (assert_equal,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
@@ -251,8 +251,10 @@ class TestQuad:
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
             return x0 + x1 + t0 + t1
-        g = lambda x: x
-        h = lambda x: 2 * x
+        def g(x):
+            return x
+        def h(x):
+            return 2 * x
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
 
@@ -503,6 +505,39 @@ class TestQuad:
             error_tolerance=6e-8
         )
 
+    def test_complex(self):
+        def tfunc(x):
+            return np.exp(1j*x)
+
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
+
+        # We consider a divergent case in order to force quadpack
+        # to return an error message.  The output is compared
+        # against what is returned by explicit integration
+        # of the parts.
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
+        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
+
+        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+
+        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+
 
 class TestNQuad:
     def test_fixed_limits(self):
@@ -515,10 +550,10 @@ class TestNQuad:
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}], full_output=True)
-        assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+                    opts=[opts_basic, {}, {}, {}])
+        assert_quad(res, 1.5267454070738635)
+        assert res.neval > 0 and res.neval < 4e5
+
     def test_variable_limits(self):
         scale = .1
 
@@ -637,6 +672,26 @@ class TestNQuad:
     def test_dict_as_opts(self):
         try:
             nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
-        except(TypeError):
+        except TypeError:
             assert False
 
+    def test_result_object(self):
+        # Check that result object contains attributes `integral`, `abserr`,
+        # and `neval`. During the `full_output` deprecation period, also check
+        # that specifying `full_output` produces a warning and that values
+        # are the same whether `full_output` is True, False, or unspecified.
+        def func(x):
+            return x**2 + 1
+
+        res = nquad(func, ranges=[[0, 4]])
+        with np.testing.assert_warns(DeprecationWarning):
+            res2 = nquad(func, ranges=[[0, 4]], full_output=False)
+        with np.testing.assert_warns(DeprecationWarning):
+            res3 = nquad(func, ranges=[[0, 4]], full_output=True)
+
+        assert_equal(res, res2)
+        assert res.integral == res2.integral
+        assert res.abserr == res2.abserr
+
+        assert_equal(res, res3[:2])
+        assert_equal(res.neval, res3[2]['neval'])

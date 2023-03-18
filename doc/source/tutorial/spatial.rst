@@ -26,6 +26,7 @@ Delaunay triangulation can be computed using `scipy.spatial` as follows:
    :alt: "This code generates an X-Y plot with four green points annotated 0 through 3 roughly in the shape of a box. The box is outlined with a diagonal line between points 0 and 3 forming two adjacent triangles. The top triangle is annotated as #1 and the bottom triangle is annotated as #0."
 
    >>> from scipy.spatial import Delaunay
+   >>> import numpy as np
    >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
    >>> tri = Delaunay(points)
 

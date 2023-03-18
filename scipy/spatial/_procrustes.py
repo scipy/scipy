@@ -84,6 +84,7 @@ def procrustes(data1, data2):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.spatial import procrustes
 
     The matrix ``b`` is a rotated, shifted, scaled and mirrored version of

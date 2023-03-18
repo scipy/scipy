@@ -18,9 +18,9 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
 
     Options
     -------
-    initial_tr_radius : float
+    initial_trust_radius : float
         Initial trust-region radius.
-    max_tr_radius : float
+    max_trust_radius : float
         Maximum value of the trust-region radius. No steps that are longer
         than this value will be proposed.
     eta : float
@@ -242,7 +242,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.dimension = len(self.hess)
         self.hess_gershgorin_lb,\
             self.hess_gershgorin_ub = gershgorin_bounds(self.hess)
-        self.hess_inf = norm(self.hess, np.Inf)
+        self.hess_inf = norm(self.hess, np.inf)
         self.hess_fro = norm(self.hess, 'fro')
 
         # A constant such that for vectors smaler than that

@@ -1,4 +1,3 @@
-
 def _svds_arpack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                      maxiter=None, return_singular_vectors=True,
                      solver='arpack', random_state=None):
@@ -253,9 +252,11 @@ def _svds_lobpcg_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular vectors are also orthogonal.
+
     >>> (np.allclose(u3.T @ u3, np.eye(5)) and
     ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
+
     """
     pass
 
@@ -346,7 +347,7 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     .. [1] Larsen, Rasmus Munk. "PROPACK-Software for large and sparse SVD
        calculations." Available online. URL
-       http://sun. stanford. edu/rmunk/PROPACK (2004): 2008-2009.
+       http://sun.stanford.edu/~rmunk/PROPACK (2004): 2008-2009.
 
     Examples
     --------
@@ -387,8 +388,10 @@ def _svds_propack_doc(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     The singular vectors are also orthogonal.
+
     >>> (np.allclose(u3.T @ u3, np.eye(5)) and
     ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
     True
+
     """
     pass

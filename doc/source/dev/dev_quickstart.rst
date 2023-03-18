@@ -75,29 +75,33 @@ Next, set up your development environment.
         .. code:: bash
 
             # Create the virtual environment
-            python -m venv scipy-dev
+            python -m venv $HOME/.venvs/scipy-dev
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-Finally, build SciPy for development and run the test suite to make sure your
-installation is successful. On Linux and OSX, you should use::
+Finally, build SciPy for development. On Linux and OSX, you should use::
 
-    python dev.py
-
-This builds SciPy first, so the first time it may take some time.
+    python dev.py build
 
 If you run into a build issue, or need more detailed build documentation
 including building on Windows, see :ref:`building`.
 
+Otherwise, if the build has finished successfully, you should now be able
+to run the SciPy tests. You can run the full test suite running::
+
+    python dev.py test
+
+Notice that this will take some time, so you might want to test only the
+part of SciPy you will be working on. For details on how to do that and
+a more complete setup walkthrough, see :ref:`development-workflow`.
+
 Some of the tests in SciPy are very slow and need to be separately
 enabled. See :ref:`the-dev-py-interface` for details.
-
-For a complete setup walkthrough, see :ref:`development-workflow`.
 
 Other workflows
 ===============

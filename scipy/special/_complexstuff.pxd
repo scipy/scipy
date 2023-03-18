@@ -5,7 +5,9 @@
 
 import cython
 cimport numpy as np
-cimport libc.math
+from libc.math cimport (
+    isnan, isinf, isfinite, log1p, fabs, exp, log, sin, cos, sqrt, pow
+)
 
 cdef extern from "_complexstuff.h":
     double npy_cabs(np.npy_cdouble z) nogil
@@ -16,13 +18,6 @@ cdef extern from "_complexstuff.h":
     np.npy_cdouble npy_ccos(np.npy_cdouble z) nogil
     np.npy_cdouble npy_csqrt(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
-    double npy_log1p(double x) nogil
-    int npy_isnan(double x) nogil
-    int npy_isinf(double x) nogil
-    int npy_isfinite(double x) nogil
-    double inf "NPY_INFINITY"
-    double pi "NPY_PI"
-    double nan "NPY_NAN"
 
 DEF tol = 2.220446092504131e-16
 
@@ -50,21 +45,21 @@ cdef inline double_complex double_complex_from_npy_cdouble(
 
 cdef inline bint zisnan(number_t x) nogil:
     if number_t is double_complex:
-        return npy_isnan(x.real) or npy_isnan(x.imag)
+        return isnan(x.real) or isnan(x.imag)
     else:
-        return npy_isnan(x)
+        return isnan(x)
 
 cdef inline bint zisfinite(number_t x) nogil:
     if number_t is double_complex:
-        return npy_isfinite(x.real) and npy_isfinite(x.imag)
+        return isfinite(x.real) and isfinite(x.imag)
     else:
-        return npy_isfinite(x)
+        return isfinite(x)
 
 cdef inline bint zisinf(number_t x) nogil:
     if number_t is double_complex:
         return not zisnan(x) and not zisfinite(x)
     else:
-        return npy_isinf(x)
+        return isinf(x)
 
 cdef inline double zreal(number_t x) nogil:
     if number_t is double_complex:
@@ -76,7 +71,7 @@ cdef inline double zabs(number_t x) nogil:
     if number_t is double_complex:
         return npy_cabs(npy_cdouble_from_double_complex(x))
     else:
-        return libc.math.fabs(x)
+        return fabs(x)
 
 cdef inline double zarg(double complex x) nogil:
     return npy_carg(npy_cdouble_from_double_complex(x))
@@ -87,7 +82,7 @@ cdef inline number_t zlog(number_t x) nogil:
         r = npy_clog(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.log(x)
+        return log(x)
 
 cdef inline number_t zexp(number_t x) nogil:
     cdef np.npy_cdouble r
@@ -95,7 +90,7 @@ cdef inline number_t zexp(number_t x) nogil:
         r = npy_cexp(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.exp(x)
+        return exp(x)
 
 cdef inline number_t zsin(number_t x) nogil:
     cdef np.npy_cdouble r
@@ -103,7 +98,7 @@ cdef inline number_t zsin(number_t x) nogil:
         r = npy_csin(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.sin(x)
+        return sin(x)
 
 cdef inline number_t zcos(number_t x) nogil:
     cdef np.npy_cdouble r
@@ -111,7 +106,7 @@ cdef inline number_t zcos(number_t x) nogil:
         r = npy_ccos(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.cos(x)
+        return cos(x)
 
 cdef inline number_t zsqrt(number_t x) nogil:
     cdef np.npy_cdouble r
@@ -119,7 +114,7 @@ cdef inline number_t zsqrt(number_t x) nogil:
         r = npy_csqrt(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.sqrt(x)
+        return sqrt(x)
 
 cdef inline number_t zpow(number_t x, double y) nogil:
     cdef np.npy_cdouble r, z
@@ -130,7 +125,7 @@ cdef inline number_t zpow(number_t x, double y) nogil:
         r = npy_cpow(npy_cdouble_from_double_complex(x), z)
         return double_complex_from_npy_cdouble(r)
     else:
-        return libc.math.pow(x, y)
+        return pow(x, y)
 
 cdef inline double_complex zpack(double zr, double zi) nogil:
     cdef np.npy_cdouble z

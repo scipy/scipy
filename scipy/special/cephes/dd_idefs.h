@@ -41,7 +41,7 @@ extern "C" {
 */
 
 /* Computes fl(a+b) and err(a+b).  Assumes |a| >= |b|. */
-static NPY_INLINE double
+static inline double
 quick_two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
@@ -51,7 +51,7 @@ quick_two_sum(double a, double b, double *err)
 }
 
 /* Computes fl(a-b) and err(a-b).  Assumes |a| >= |b| */
-static NPY_INLINE double
+static inline double
 quick_two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
@@ -61,7 +61,7 @@ quick_two_diff(double a, double b, double *err)
 }
 
 /* Computes fl(a+b) and err(a+b).  */
-static NPY_INLINE double
+static inline double
 two_sum(double a, double b, double *err)
 {
     volatile double s = a + b;
@@ -73,7 +73,7 @@ two_sum(double a, double b, double *err)
 }
 
 /* Computes fl(a-b) and err(a-b).  */
-static NPY_INLINE double
+static inline double
 two_diff(double a, double b, double *err)
 {
     volatile double s = a - b;
@@ -85,7 +85,7 @@ two_diff(double a, double b, double *err)
 }
 
 /* Computes high word and lo word of a */
-static NPY_INLINE void
+static inline void
 two_split(double a, double *hi, double *lo)
 {
     volatile double temp, tempma;
@@ -107,7 +107,7 @@ two_split(double a, double *hi, double *lo)
 }
 
 /* Computes fl(a*b) and err(a*b). */
-static NPY_INLINE double
+static inline double
 two_prod(double a, double b, double *err)
 {
 #ifdef DD_FMS
@@ -128,7 +128,7 @@ two_prod(double a, double b, double *err)
 }
 
 /* Computes fl(a*a) and err(a*a).  Faster than the above method. */
-static NPY_INLINE double
+static inline double
 two_sqr(double a, double *err)
 {
 #ifdef DD_FMS
@@ -146,7 +146,7 @@ two_sqr(double a, double *err)
 #endif /* DD_FMS */
 }
 
-static NPY_INLINE double
+static inline double
 two_div(double a, double b, double *err)
 {
     volatile double q1, q2;
@@ -167,7 +167,7 @@ two_div(double a, double b, double *err)
 }
 
 /* Computes the nearest integer to d. */
-static NPY_INLINE double
+static inline double
 two_nint(double d)
 {
     if (d == floor(d)) {
@@ -177,7 +177,7 @@ two_nint(double d)
 }
 
 /* Computes the truncated integer. */
-static NPY_INLINE double
+static inline double
 two_aint(double d)
 {
     return (d >= 0.0 ? floor(d) : ceil(d));
@@ -185,7 +185,7 @@ two_aint(double d)
 
 
 /* Compare a and b */
-static NPY_INLINE int
+static inline int
 two_comp(const double a, const double b)
 {
     /* Works for non-NAN inputs */

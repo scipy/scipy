@@ -25,8 +25,6 @@
 #include "trlib_private.h"
 #include "trlib.h"
 
-#include "_c99compat.h"
-
 trlib_int_t trlib_eigen_inverse(
         trlib_int_t n, trlib_flt_t *diag, trlib_flt_t *offdiag, 
         trlib_flt_t lam_init, trlib_int_t itmax, trlib_flt_t tol_abs,

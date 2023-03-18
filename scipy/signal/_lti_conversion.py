@@ -384,10 +384,26 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     approximation is based on [2]_ and [3]_, the First-Order Hold (foh) method
     is based on [4]_.
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
+
+    .. [2] http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
+
+    .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
+        bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
+        2009.
+        (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
+
+    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control
+        of dynamic systems, 3rd ed. Menlo Park, Calif: Addison-Wesley,
+        pp. 204-206, 1998.
+
     Examples
     --------
     We can transform a continuous state-space system to a discrete one:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cont2discrete, lti, dlti, dstep
 
@@ -413,21 +429,6 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
     >>> ax.legend(loc='best')
     >>> fig.tight_layout()
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Discretization#Discretization_of_linear_state_space_models
-
-    .. [2] http://techteach.no/publications/discretetime_signals_systems/discrete.pdf
-
-    .. [3] G. Zhang, X. Chen, and T. Chen, Digital redesign via the generalized
-        bilinear transformation, Int. J. Control, vol. 82, no. 4, pp. 741-754,
-        2009.
-        (https://www.mypolyuweb.hk/~magzhang/Research/ZCC09_IJC.pdf)
-
-    .. [4] G. F. Franklin, J. D. Powell, and M. L. Workman, Digital control
-        of dynamic systems, 3rd ed. Menlo Park, Calif: Addison-Wesley,
-        pp. 204-206, 1998.
 
     """
     if len(system) == 1:

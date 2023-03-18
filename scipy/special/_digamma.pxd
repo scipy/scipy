@@ -11,8 +11,8 @@
 #
 
 import cython
-from libc.math cimport ceil, fabs, M_PI
-from ._complexstuff cimport number_t, nan, zlog, zabs
+from libc.math cimport ceil, fabs, M_PI, NAN
+from ._complexstuff cimport number_t, zlog, zabs
 from ._trig cimport sinpi, cospi
 from ._cephes cimport zeta, psi
 from . cimport sf_error
@@ -73,7 +73,7 @@ cdef inline double complex cdigamma(double complex z) nogil:
     if z.real <= 0 and ceil(z.real) == z:
         # Poles
         sf_error.error("digamma", sf_error.SINGULAR, NULL)
-        return nan + 1j*nan
+        return NAN + 1j*NAN
     elif zabs(z - negroot) < 0.3:
         # First negative root
         return zeta_series(z, negroot, negrootval)
