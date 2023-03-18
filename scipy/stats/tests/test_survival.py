@@ -169,7 +169,7 @@ class TestSurvival:
         assert_allclose(res[2], ref.sf.points, rtol=1e-14)
 
     def test_right_censored_ci(self):
-        # test "greenwood" confidence interval against example 5 (URL above).
+        # test "greenwood" confidence interval against example 4 (URL above).
         times, died = self.t4, self.d4
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
@@ -187,7 +187,26 @@ class TestSurvival:
         assert_allclose(cdf_ci.low, np.clip(res.cdf.points - allowance, 0, 1))
         assert_allclose(cdf_ci.high, np.clip(res.cdf.points + allowance, 0, 1))
 
-    def test_right_censored_exponential_greenwood_ci(self):
+        # test "log-log" confidence interval against Mathematica
+        # e = {24, 3, 11, 19, 24, 13, 14, 2, 18, 17, 24, 21, 12, 1, 10, 23, 6, 5,
+        #      9, 17}
+        # ci = {1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0}
+        # R = EventData[e, ci]
+        # S = SurvivalModelFit[R]
+        # S["PointwiseIntervals", ConfidenceLevel->0.95,
+        #   ConfidenceTransform->"LogLog"]
+
+        ref_low = [0.694743, 0.694743, 0.647529, 0.591142, 0.591142, 0.591142,
+                   0.591142, 0.591142, 0.591142, 0.591142, 0.464605, 0.370359,
+                   0.370359, 0.370359, 0.370359, 0.160489, 0.160489]
+        ref_high = [0.992802, 0.992802, 0.973299, 0.947073, 0.947073, 0.947073,
+                    0.947073, 0.947073, 0.947073, 0.947073, 0.906422, 0.856521,
+                    0.856521, 0.856521, 0.856521, 0.776724, 0.776724]
+        sf_ci = res.sf.confidence_interval(method='log-log')
+        assert_allclose(sf_ci.low, ref_low, atol=1e-6)
+        assert_allclose(sf_ci.high, ref_high, atol=1e-6)
+
+    def test_right_censored_ci_example_5(self):
         # test "exponential greenwood" confidence interval against example 5
         times, died = self.t5, self.d5
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
@@ -205,8 +224,40 @@ class TestSurvival:
         assert_allclose(cdf_ci.low, 1-upper, atol=1e-5)
         assert_allclose(cdf_ci.high, 1-lower, atol=1e-5)
 
+        # Test against R's `survival` library `survfit` function, 90%CI
+        # library(survival)
+        # options(digits=16)
+        # time = c(3, 5, 8, 10, 5, 5, 8, 12, 15, 14, 2, 11, 10, 9, 12, 5, 8, 11)
+        # status = c(1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1)
+        # res = survfit(Surv(time, status)
+        # ~1, conf.type = "log-log", conf.int = 0.90)
+        # res$time; res$lower; res$upper
+        low = [0.74366748406861172, 0.68582332289196246, 0.50596835651480121,
+               0.32913131413336727, 0.32913131413336727, 0.32913131413336727,
+               0.15986912028781664, 0.04499539918147757, 0.04499539918147757,
+               0.04499539918147757]
+        high = [0.9890291867238429, 0.9638835422144144, 0.8560366823086629,
+                0.7130167643978450, 0.7130167643978450, 0.7130167643978450,
+                0.5678602982997164, 0.3887616766886558, 0.3887616766886558,
+                0.3887616766886558]
+        sf_ci = res.sf.confidence_interval(method='log-log',
+                                           confidence_level=0.9)
+        assert_allclose(sf_ci.low, low)
+        assert_allclose(sf_ci.high, high)
+
+        # And with conf.type = "plain"
+        low = [0.8556383113628162, 0.7670478794850761, 0.5485720663578469,
+               0.3441515412527123, 0.3441515412527123, 0.3441515412527123,
+               0.1449184105424544, 0., 0., 0.]
+        high = [1., 1., 0.8958723780865975, 0.7391817920806210,
+                0.7391817920806210, 0.7391817920806210, 0.5773038116797676,
+                0.3642270254596720, 0.3642270254596720, 0.3642270254596720]
+        sf_ci = res.sf.confidence_interval(confidence_level=0.9)
+        assert_allclose(sf_ci.low, low)
+        assert_allclose(sf_ci.high, high)
+
     def test_right_censored_ci_nans(self):
-        # test `ecdf` confidence interval (with NaNs) against Matlab
+        # test `ecdf` confidence interval on a problem that results in NaNs
         times, died = self.t1, self.d1
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
@@ -216,29 +267,61 @@ class TestSurvival:
         # t = [37 43 47 56 60 62 71 77 80 81];
         # d = [0 0 1 1 0 0 0 1 1 1];
         # censored = ~d1;
-        # [f, x, flo, fup] = ecdf(t, 'Censoring', censored, 'Function',
-        #                        'survivor', 'Alpha', 0.05);
-        x = [37, 47, 56, 77, 80, 81]
-        flo = [np.nan, 0.64582769623, 0.449943020228, 0.05270146407, 0, np.nan]
-        fup = [np.nan, 1.0, 1.0, 0.947298535929289, 0.662388873768210, np.nan]
-        i = np.searchsorted(res.x, x)
-
-        message = "The variance estimate is undefined at some observations"
-        with pytest.warns(RuntimeWarning, match=message):
-            ci = res.sf.confidence_interval()
-
-        # Matlab gives NaN as the first element of the CIs. It makes some
-        # sense, but it's not what the formula gives, so skip it.
-        assert_allclose(ci.low[i][1:], flo[1:])
-        assert_allclose(ci.high[i][1:], fup[1:])
-
         # [f, x, flo, fup] = ecdf(t, 'Censoring', censored, 'Alpha', 0.05);
+        x = [37, 47, 56, 77, 80, 81]
         flo = [np.nan, 0, 0, 0.052701464070711, 0.337611126231790, np.nan]
         fup = [np.nan, 0.35417230377, 0.5500569798, 0.9472985359, 1.0, np.nan]
         i = np.searchsorted(res.x, x)
 
+        message = "The confidence interval is undefined at some observations"
         with pytest.warns(RuntimeWarning, match=message):
             ci = res.cdf.confidence_interval()
 
+        # Matlab gives NaN as the first element of the CIs. Mathematica agrees,
+        # but R's survfit does not. It makes some sense, but it's not what the
+        # formula gives, so skip that element.
         assert_allclose(ci.low[i][1:], flo[1:])
         assert_allclose(ci.high[i][1:], fup[1:])
+
+        # [f, x, flo, fup] = ecdf(t, 'Censoring', censored, 'Function',
+        #                        'survivor', 'Alpha', 0.05);
+        flo = [np.nan, 0.64582769623, 0.449943020228, 0.05270146407, 0, np.nan]
+        fup = [np.nan, 1.0, 1.0, 0.947298535929289, 0.662388873768210, np.nan]
+        i = np.searchsorted(res.x, x)
+
+        with pytest.warns(RuntimeWarning, match=message):
+            ci = res.sf.confidence_interval()
+
+        assert_allclose(ci.low[i][1:], flo[1:])
+        assert_allclose(ci.high[i][1:], fup[1:])
+
+        # With the same data, R's `survival` library `survfit` function
+        # doesn't produce the leading NaN
+        # library(survival)
+        # options(digits=16)
+        # time = c(37, 43, 47, 56, 60, 62, 71, 77, 80, 81)
+        # status = c(0, 0, 1, 1, 0, 0, 0, 1, 1, 1)
+        # res = survfit(Surv(time, status)
+        # ~1, conf.type = "plain", conf.int = 0.95)
+        # res$time
+        # res$lower
+        # res$upper
+        low = [1., 1., 0.64582769623233816, 0.44994302022779326,
+               0.44994302022779326, 0.44994302022779326, 0.44994302022779326,
+               0.05270146407071086, 0., np.nan]
+        high = [1., 1., 1., 1., 1., 1., 1., 0.9472985359292891,
+                0.6623888737682101, np.nan]
+        assert_allclose(ci.low, low)
+        assert_allclose(ci.high, high)
+
+        # It does with conf.type="log-log", as do we
+        with pytest.warns(RuntimeWarning, match=message):
+            ci = res.sf.confidence_interval(method='log-log')
+        low = [np.nan, np.nan, 0.38700001403202522, 0.31480711370551911,
+               0.31480711370551911, 0.31480711370551911, 0.31480711370551911,
+               0.08048821148507734, 0.01049958986680601, np.nan]
+        high = [np.nan, np.nan, 0.9813929658789660, 0.9308983170906275,
+                0.9308983170906275, 0.9308983170906275, 0.9308983170906275,
+                0.8263946341076415, 0.6558775085110887, np.nan]
+        assert_allclose(ci.low, low)
+        assert_allclose(ci.high, high)

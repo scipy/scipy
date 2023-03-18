@@ -59,11 +59,12 @@ class EmpiricalDistributionFunction:
         Notes
         -----
         Confidence intervals are computed according to the Greenwood formula
-        (``method='linear'') or the more recent "exponential Greenwood" formula
-        (``method='log-log'') as described in [1]_. The conventional Greenwood
-        formula can result in lower confidence limits less than 0 and upper
-        confidence limits greater than 1; these are clipped to the unit
-        interval.
+        (``method='linear'``) or the more recent "exponential Greenwood"
+        formula (``method='log-log'``) as described in [1]_. The conventional
+        Greenwood formula can result in lower confidence limits less than 0
+        and upper confidence limits greater than 1; these are clipped to the
+        unit interval. NaNs may be produced by either method; these are
+        features of the formulas.
 
         References
         ----------
@@ -86,6 +87,13 @@ class EmpiricalDistributionFunction:
 
         method_fun = methods[method.lower()]
         low, high = method_fun(confidence_level)
+
+        message = ("The confidence interval is undefined at some observations."
+                   " This is a feature of the mathematical formula used, not"
+                   " an error in its implementation.")
+        if np.any(np.isnan(low) | np.isnan(high)):
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+
         return ConfidenceInterval(np.clip(low, 0, 1), np.clip(high, 0, 1))
 
     def _linear_ci(self, confidence_level):
@@ -96,33 +104,33 @@ class EmpiricalDistributionFunction:
         with np.errstate(divide='ignore', invalid='ignore'):
             var = sf ** 2 * np.cumsum(d / (n * (n - d)))
 
-        message = ("The variance estimate is undefined at some observations. "
-                   "This is a feature of the mathematical formula.")
-        if np.any(np.isnan(var)):
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
         se = np.sqrt(var)
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
         z_se = z * se
         low = self.points - z_se
         high = self.points + z_se
+
         return low, high
 
     def _loglog_ci(self, confidence_level):
         sf, d, n = self._sf, self._d, self._n
 
-        var = 1 / np.log(sf) ** 2 * np.cumsum(d / (n * (n - d)))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            var = 1 / np.log(sf) ** 2 * np.cumsum(d / (n * (n - d)))
 
         se = np.sqrt(var)
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
-        lnl_points = np.log(-np.log(sf))
+        with np.errstate(divide='ignore'):
+            lnl_points = np.log(-np.log(sf))
+
         z_se = z * se
         low = np.exp(-np.exp(lnl_points + z_se))
         high = np.exp(-np.exp(lnl_points - z_se))
         if self._kind == "cdf":
             low, high = 1-high, 1-low
+
         return low, high
 
 
