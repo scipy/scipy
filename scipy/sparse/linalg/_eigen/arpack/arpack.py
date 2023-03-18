@@ -1543,7 +1543,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     References
     ----------
-    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [1] ARPACK Software, https://github.com/opencollab/arpack-ng
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
