@@ -61,7 +61,7 @@ void pava(
                 wb += w[i];
                 xb = sb / wb;
             }
-            while (b > 0 and x[b - 1] >= xb) {  // 22: repair down violations (>= instead of >)
+            while (b > 0 && x[b - 1] >= xb) {  // 22: repair down violations (>= instead of >)
                 b--;
                 sb += w[b] * x[b];
                 wb += w[b];
