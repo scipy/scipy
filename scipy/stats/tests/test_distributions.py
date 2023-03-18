@@ -198,6 +198,29 @@ class TestVonMises:
         assert_allclose(np.angle(res), loc % (2*np.pi))
         assert np.issubdtype(res.dtype, np.complexfloating)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_shape", [1, 100])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_shape', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_shape,
+                                    fix_loc, fix_shape):
+        if fix_shape and fix_loc:
+            pytest.skip("Nothing to fit.")
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises.rvs(rvs_shape, size=1000, loc=rvs_loc,
+                                  random_state=rng)
+
+        kwds = {'fscale': 1}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      stats.vonmises.nnlf, **kwds)
+
     @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
     @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
     def test_vonmises_fit_all(self, kappa, loc):
@@ -2763,7 +2786,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_loc,rvs_scale", [(-5, 10),
                                                    (10, 5),
                                                    (0.5, 0.2)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -3812,8 +3835,8 @@ class TestLognorm:
                              [e for e in product((False, True), repeat=3)
                               if False in e])
     @np.errstate(invalid="ignore")
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
                                  loc=rvs_loc, random_state=rng)
 
@@ -6183,6 +6206,21 @@ class TestWeibull:
         assert_allclose(res, ref)
 
 
+class TestDweibull:
+    def test_entropy(self):
+        # Test that dweibull entropy follows that of weibull_min.
+        # (Generic tests check that the dweibull entropy is consistent
+        #  with its PDF. As for accuracy, dweibull entropy should be just
+        #  as accurate as weibull_min entropy. Checks of accuracy against
+        #  a reference need only be applied to the fundamental distribution -
+        #  weibull_min.)
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=100, size=10)
+        res = stats.dweibull.entropy(c)
+        ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
+
+
 class TestTruncWeibull:
 
     def test_pdf_bounds(self):
@@ -6984,6 +7022,24 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+@pytest.mark.parametrize("a, c, ref, tol",
+                         [(1500000.0, 1, 8.529426144018633, 1e-15),
+                          (1e+30, 1, 35.95771492811536, 1e-15),
+                          (1e+100, 1, 116.54819318290696, 1e-15),
+                          (3e3, 1, 5.422011196659015, 1e-13),
+                          (3e6, -1e100, -236.29663213396054, 1e-15),
+                          (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
+def test_gengamma_extreme_entropy(a, c, ref, tol):
+    # The reference values were calculated with mpmath:
+    # from mpmath import mp
+    # mp.dps = 500
+    #
+    # def gen_entropy(a, c):
+    #     a, c = mp.mpf(a), mp.mpf(c)
+    #     val = mp.digamma(a)
+    #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
+    #     return float(h)
+    assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
 
 def test_gengamma_endpoint_with_neg_c():
     p = stats.gengamma.pdf(0, 1, -1)
