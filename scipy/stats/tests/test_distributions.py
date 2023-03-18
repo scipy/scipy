@@ -2888,6 +2888,66 @@ class TestPowerlaw:
             _assert_less_or_close_loglike(dist, data)
 
 
+class TestPowerLogNorm:
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 80
+    # def powerlognorm_sf_mp(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     return mp.ncdf(-mp.log(x) / s)**c
+    #
+    # def powerlognormal_cdf_mp(x, c, s):
+    #     return mp.one - powerlognorm_sf_mp(x, c, s)
+    #
+    # x, c, s = 100, 20, 1
+    # print(float(powerlognorm_sf_mp(x, c, s)))
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(100, 20, 1, 1.9057100820561928e-114),
+                              (1e-3, 20, 1, 0.9999999999507617),
+                              (1e-3, 0.02, 1, 0.9999999999999508),
+                              (1e22, 0.02, 1, 6.50744044621611e-12)])
+    def test_sf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.sf(x, c, s), ref, rtol=1e-13)
+
+    # reference values were computed via mpmath using the survival
+    # function above (passing in `ref` and getting `q`).
+    @pytest.mark.parametrize("q, c, s, ref",
+                             [(0.9999999587870905, 0.02, 1, 0.01),
+                              (6.690376686108851e-233, 20, 1, 1000)])
+    def test_isf(self, q, c, s, ref):
+        assert_allclose(stats.powerlognorm.isf(q, c, s), ref, rtol=5e-11)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e25, 0.02, 1, 0.9999999999999963),
+                              (1e-6, 0.02, 1, 2.054921078040843e-45),
+                              (1e-6, 200, 1, 2.0549210780408428e-41),
+                              (0.3, 200, 1, 0.9999999999713368)])
+    def test_cdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.cdf(x, c, s), ref, rtol=3e-14)
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def powerlognorm_pdf_mpmath(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     res = (c/(x * s) * mp.npdf(mp.log(x)/s) *
+    #            mp.ncdf(-mp.log(x)/s)**(c - mp.one))
+    #     return float(res)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e22, 0.02, 1, 6.5954987852335016e-34),
+                              (1e20, 1e-3, 1, 1.588073750563988e-22),
+                              (1e40, 1e-3, 1, 1.3179391812506349e-43)])
+    def test_pdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref, rtol=3e-12)
+
+
 class TestPowerNorm:
 
     # survival function references were computed with mpmath via
