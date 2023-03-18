@@ -2897,7 +2897,13 @@ class TestPowerLogNorm:
     #     x = mp.mpf(x)
     #     c = mp.mpf(c)
     #     s = mp.mpf(s)
-    #     return float(mp.ncdf(-mp.log(x) / s)**c)
+    #     return mp.ncdf(-mp.log(x) / s)**c
+    #
+    # def powerlognormal_cdf_mp(x, c, s):
+    #     return 1 - powerlognorm_sf_mp(x, c, s)
+    #
+    # x, c, s = 100, 20, 1
+    # print(float(powerlognorm_sf_mp(x, c, s)))
 
     @pytest.mark.parametrize("x, c, s, ref",
                              [(100, 20, 1, 1.9057100820561928e-114),
@@ -2908,22 +2914,12 @@ class TestPowerLogNorm:
         assert_allclose(stats.powerlognorm.sf(x, c, s), ref, rtol=1e-13)
 
     # reference values were computed via mpmath using the survival
-    # function above. For inverse sf, we just have to reverse q / ref
-
+    # function above (passing in `ref` and getting `q`).
     @pytest.mark.parametrize("q, c, s, ref",
                              [(0.9999999587870905, 0.02, 1, 0.01),
                               (6.690376686108851e-233, 20, 1, 1000)])
     def test_isf(self, q, c, s, ref):
         assert_allclose(stats.powerlognorm.isf(q, c, s), ref, rtol=5e-11)
-
-    # reference values were computed via mpmath
-    # from mpmath import mp
-    # def powerlognormal_cdf_mp(x, c, s):
-    #     mp.dps = 200
-    #     x = mp.mpf(x)
-    #     c = mp.mpf(c)
-    #     s = mp.mpf(s)
-    #     return float(mp.one - mp.ncdf(-mp.log(x) / s)**c)
 
     @pytest.mark.parametrize("x, c, s, ref",
                              [(1e25, 0.02, 1, 0.9999999999999963),
