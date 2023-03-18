@@ -490,7 +490,7 @@ class alpha_gen(rv_continuous):
         return _norm_cdf(a-1.0/x) / _norm_cdf(a)
 
     def _ppf(self, q, a):
-        return 1.0/np.asarray(a-sc.ndtri(q*_norm_cdf(a)))
+        return 1.0/np.asarray(a - _norm_ppf(q*_norm_cdf(a)))
 
     def _stats(self, a):
         return [np.inf]*2 + [np.nan]*2
@@ -853,12 +853,27 @@ class betaprime_gen(rv_continuous):
     for :math:`x >= 0`, :math:`a > 0`, :math:`b > 0`, where
     :math:`\beta(a, b)` is the beta function (see `scipy.special.beta`).
 
+    `betaprime` takes ``a`` and ``b`` as shape parameters.
+
     The distribution is related to the `beta` distribution as follows:
     If :math:`X` follows a beta distribution with parameters :math:`a, b`,
     then :math:`Y = X/(1-X)` has a beta prime distribution with
     parameters :math:`a, b` ([1]_).
 
-    `betaprime` takes ``a`` and ``b`` as shape parameters.
+    The beta prime distribution is a reparametrized version of the
+    F distribution.  The beta prime distribution with shape parameters
+    ``a`` and ``b`` and ``scale = s`` is equivalent to the F distribution
+    with parameters ``d1 = 2*a``, ``d2 = 2*b`` and ``scale = (a/b)*s``.
+    For example,
+
+    >>> from scipy.stats import betaprime, f
+    >>> x = [1, 2, 5, 10]
+    >>> a = 12
+    >>> b = 5
+    >>> betaprime.pdf(x, a, b, scale=2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
+    >>> f.pdf(x, 2*a, 2*b, scale=(a/b)*2)
+    array([0.00541179, 0.08331299, 0.14669185, 0.03150079])
 
     %(after_notes)s
 
@@ -1411,8 +1426,17 @@ class chi_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        return (sc.gammaln(.5 * df) +
-                .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df)))
+
+        def regular_formula(df):
+            return (sc.gammaln(.5 * df)
+                    + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
+
+        def asymptotic_formula(df):
+            return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
+                    - 4/45*(df**-3) + (df**-4)/15)
+
+        return _lazywhere(df < 3e2, (df, ), regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -1713,6 +1737,10 @@ class dweibull_gen(rv_continuous):
     # so overall we're saving one or two gamma function evaluations here.
     def _stats(self, c):
         return 0, None, 0, None
+
+    def _entropy(self, c):
+        h = stats.weibull_min._entropy(c) - np.log(0.5)
+        return h
 
 
 dweibull = dweibull_gen(name='dweibull')
@@ -2088,14 +2116,14 @@ class fatiguelife_gen(rv_continuous):
         return _norm_cdf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _ppf(self, q, c):
-        tmp = c*sc.ndtri(q)
+        tmp = c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _sf(self, x, c):
         return _norm_sf(1.0 / c * (np.sqrt(x) - 1.0/np.sqrt(x)))
 
     def _isf(self, q, c):
-        tmp = -c*sc.ndtri(q)
+        tmp = -c * _norm_ppf(q)
         return 0.25 * (tmp + np.sqrt(tmp**2 + 4))**2
 
     def _stats(self, c):
@@ -2728,9 +2756,17 @@ class genlogistic_gen(rv_continuous):
         Cx = (1+np.exp(-x))**(-c)
         return Cx
 
+    def _logcdf(self, x, c):
+        return -c * np.log1p(np.exp(-x))
+
     def _ppf(self, q, c):
-        vals = -np.log(pow(q, -1.0/c)-1)
-        return vals
+        return -np.log(sc.powm1(q, -1.0/c))
+
+    def _sf(self, x, c):
+        return -sc.expm1(self._logcdf(x, c))
+
+    def _isf(self, q, c):
+        return self._ppf(1 - q, c)
 
     def _stats(self, c):
         mu = _EULER + sc.psi(c)
@@ -2750,6 +2786,7 @@ class genlogistic_gen(rv_continuous):
                           #   ~ -log(c) + log(c) - 1/(2 * c) + 1/c
                           #   = 1/(2 * c)
                           f2=lambda c: 1/(2 * c) + _EULER + 1)
+
 
 genlogistic = genlogistic_gen(name='genlogistic')
 
@@ -3215,7 +3252,20 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return sc.psi(a)*(1-a) + a + sc.gammaln(a)
+
+        def regular_formula(a):
+            return sc.psi(a) * (1-a) + a + sc.gammaln(a)
+
+        def asymptotic_formula(a):
+            # plug in above formula the expansions:
+            # psi(a) ~ ln(a) - 1/2a - 1/12a^2 + 1/120a^4
+            # gammaln(a) ~ a * ln(a) - a - 1/2 * ln(a) + 1/2 ln(2 * pi) +
+            #              1/12a - 1/360a^3
+            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
+                    - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
+
+        return _lazywhere(a < 250, (a, ), regular_formula,
+                          f2=asymptotic_formula)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
@@ -3456,8 +3506,21 @@ class gengamma_gen(rv_continuous):
         return sc.poch(a, n*1.0/c)
 
     def _entropy(self, a, c):
-        val = sc.psi(a)
-        return a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+        def regular(a, c):
+            val = sc.psi(a)
+            A = a * (1 - val) + val / c
+            B = sc.gammaln(a) - np.log(abs(c))
+            h = A + B
+            return h
+
+        def asymptotic(a, c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            return (norm._entropy() - np.log(a)/2
+                    - np.log(np.abs(c)) + (a**-1.)/6 - (a**-3.)/90
+                    + (np.log(a) - (a**-1.)/2 - (a**-2.)/12 + (a**-4.)/120)/c)
+
+        h = _lazywhere(a >= 2e2, (a, c), f=asymptotic, f2=regular)
+        return h
 
 
 gengamma = gengamma_gen(a=0.0, name='gengamma')
@@ -3533,7 +3596,7 @@ class genhyperbolic_gen(rv_continuous):
 
         f(x, p, a, b) =
             \frac{(a^2 - b^2)^{p/2}}
-            {\sqrt{2\pi}a^{p-0.5}
+            {\sqrt{2\pi}a^{p-1/2}
             K_p\Big(\sqrt{a^2 - b^2}\Big)}
             e^{bx} \times \frac{K_{p - 1/2}
             (a \sqrt{1 + x^2})}
@@ -3543,7 +3606,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`|b| < a` if :math:`p \ge 0`,
     :math:`|b| \le a` if :math:`p < 0`.
     :math:`K_{p}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`p` (`scipy.special.kn`)
+    kind and order :math:`p` (`scipy.special.kv`)
 
     `genhyperbolic` takes ``p`` as a tail parameter,
     ``a`` as a shape parameter,
@@ -3639,28 +3702,51 @@ class genhyperbolic_gen(rv_continuous):
 
         return _pdf_single(x, p, a, b)
 
+    # np.vectorize isn't currently designed to be used as a decorator,
+    # so use a lambda instead.  This allows us to decorate the function
+    # with `np.vectorize` and still provide the `otypes` parameter.
+    # The first argument to `vectorize` is `func.__get__(object)` for
+    # compatibility with Python 3.9.  In Python 3.10, this can be
+    # simplified to just `func`.
+    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @staticmethod
+    def _integrate_pdf(x0, x1, p, a, b):
+        """
+        Integrate the pdf of the genhyberbolic distribution from x0 to x1.
+        This is a private function used by _cdf() and _sf() only; either x0
+        will be -inf or x1 will be inf.
+        """
+        user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
+        llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf',
+                                           user_data)
+        d = np.sqrt((a + b)*(a - b))
+        mean = b/d * sc.kv(p + 1, d) / sc.kv(p, d)
+        epsrel = 1e-10
+        epsabs = 0
+        if x0 < mean < x1:
+            # If the interval includes the mean, integrate over the two
+            # intervals [x0, mean] and [mean, x1] and add. If we try to do
+            # the integral in one call of quad and the non-infinite endpoint
+            # is far in the tail, quad might return an incorrect result
+            # because it does not "see" the peak of the PDF.
+            intgrl = (integrate.quad(llc, x0, mean,
+                                     epsrel=epsrel, epsabs=epsabs)[0]
+                      + integrate.quad(llc, mean, x1,
+                                       epsrel=epsrel, epsabs=epsabs)[0])
+        else:
+            intgrl = integrate.quad(llc, x0, x1,
+                                    epsrel=epsrel, epsabs=epsabs)[0]
+        if np.isnan(intgrl):
+            msg = ("Infinite values encountered in scipy.special.kve. "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+        return max(0.0, min(1.0, intgrl))
+
     def _cdf(self, x, p, a, b):
+        return self._integrate_pdf(-np.inf, x, p, a, b)
 
-        def _cdf_single(x, p, a, b):
-            user_data = np.array(
-                [p, a, b], float
-                ).ctypes.data_as(ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(
-                _stats, '_genhyperbolic_pdf', user_data
-                )
-
-            t1 = integrate.quad(llc, -np.inf, x)[0]
-
-            if np.isnan(t1):
-                msg = ("Infinite values encountered in scipy.special.kve. "
-                       "Values replaced by NaN to avoid incorrect results.")
-                warnings.warn(msg, RuntimeWarning)
-
-            return t1
-
-        _cdf_vec = np.vectorize(_cdf_single, otypes=[np.float64])
-
-        return _cdf_vec(x, p, a, b)
+    def _sf(self, x, p, a, b):
+        return self._integrate_pdf(x, np.inf, p, a, b)
 
     def _rvs(self, p, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X  has a
@@ -4151,13 +4237,13 @@ class halfnorm_gen(rv_continuous):
         return sc.erf(x / np.sqrt(2))
 
     def _ppf(self, q):
-        return sc.ndtri((1+q)/2.0)
+        return _norm_ppf((1+q)/2.0)
 
     def _sf(self, x):
         return 2 * _norm_sf(x)
 
     def _isf(self, p):
-        return -sc.ndtri(p/2)
+        return  _norm_isf(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -4346,8 +4432,19 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+        def regular(a):
+            h = a - (a + 1.0) * sc.psi(a) + sc.gammaln(a)
+            return h
 
+        def asymptotic(a):
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
+            # psi(a) ~ ln(a) - 1 / (2 * a)
+            h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
+                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+            return h
+
+        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
+        return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -5109,7 +5206,15 @@ class johnsonsu_gen(rv_continuous):
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
 
+    The first four central moments are calculated according to the formulas
+    in [1]_.
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Taylor Enterprises. "Johnson Family of Distributions".
+       https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
 
     %(example)s
 
@@ -5140,6 +5245,35 @@ class johnsonsu_gen(rv_continuous):
 
     def _isf(self, x, a, b):
         return np.sinh((_norm_isf(x) - a) / b)
+
+    def _stats(self, a, b, moments='mv'):
+        # Naive implementation of first and second moment to address gh-18071.
+        # https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
+        # Numerical improvements left to future enhancements.
+        mu, mu2, g1, g2 = None, None, None, None
+
+        bn2 = b**-2
+        expbn2 = np.exp(bn2)
+        a_b = a / b
+
+        if 'm' in moments:
+            mu = -expbn2**0.5 * np.sinh(a_b)
+        if 'v' in moments:
+            mu2 = 0.5*sc.expm1(bn2)*(expbn2*np.cosh(2*a_b) + 1)
+        if 's' in moments:
+            t1 = expbn2**.5 * sc.expm1(bn2)**0.5
+            t2 = 3*np.sinh(a_b)
+            t3 = expbn2 * (expbn2 + 2) * np.sinh(3*a_b)
+            denom = np.sqrt(2) * (1 + expbn2 * np.cosh(2*a_b))**(3/2)
+            g1 = -t1 * (t2 + t3) / denom
+        if 'k' in moments:
+            t1 = 3 + 6*expbn2
+            t2 = 4*expbn2**2 * (expbn2 + 2) * np.cosh(2*a_b)
+            t3 = expbn2**2 * np.cosh(4*a_b)
+            t4 = -3 + 3*expbn2**2 + 2*expbn2**3 + expbn2**4
+            denom = 2*(1 + expbn2*np.cosh(2*a_b))**2
+            g2 = (t1 + t2 + t3*t4) / denom - 3
+        return mu, mu2, g1, g2
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
@@ -5380,7 +5514,7 @@ class levy_gen(rv_continuous):
 
         f(x) = \frac{1}{\sqrt{2\pi x^3}} \exp\left(-\frac{1}{2x}\right)
 
-    for :math:`x >= 0`.
+    for :math:`x > 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=1`.
@@ -5454,7 +5588,7 @@ class levy_gen(rv_continuous):
 
     def _ppf(self, q):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
-        val = -sc.ndtri(q/2)
+        val = _norm_isf(q/2)
         return 1.0 / (val * val)
 
     def _isf(self, p):
@@ -5483,7 +5617,7 @@ class levy_l_gen(rv_continuous):
     .. math::
         f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp{ \left(-\frac{1}{2|x|} \right)}
 
-    for :math:`x <= 0`.
+    for :math:`x < 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=-1`.
@@ -7052,11 +7186,23 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         if df == np.inf:
             return norm._entropy()
-        half = df/2
-        half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half))
-                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
+        def regular(df):
+            half = df/2
+            half1 = (df + 1)/2
+            return (half1*(sc.digamma(half1) - sc.digamma(half))
+                    + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+
+        def asymptotic(df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2))
+            #  + log(sqrt(d) * beta(d/2, 1/2))"
+            h = (norm._entropy() + 1/df + (df**-2.)/4 - (df**-3.)/6
+                 - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
+            return h
+
+        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
+        return h
 
 t = t_gen(name='t')
 
@@ -7855,16 +8001,27 @@ class powerlognorm_gen(rv_continuous):
         return [ic, i_s]
 
     def _pdf(self, x, c, s):
-        # powerlognorm.pdf(x, c, s) = c / (x*s) * phi(log(x)/s) *
-        #                                         (Phi(-log(x)/s))**(c-1),
-        return (c/(x*s) * _norm_pdf(np.log(x)/s) *
-                pow(_norm_cdf(-np.log(x)/s), c*1.0-1.0))
+        return np.exp(self._logpdf(x, c, s))
+
+    def _logpdf(self, x, c, s):
+        return (np.log(c) - np.log(x) - np.log(s) +
+                _norm_logpdf(np.log(x) / s) +
+                _norm_logcdf(-np.log(x) / s) * (c - 1.))
 
     def _cdf(self, x, c, s):
-        return 1.0 - pow(_norm_cdf(-np.log(x)/s), c*1.0)
+        return -sc.expm1(self._logsf(x, c, s))
 
     def _ppf(self, q, c, s):
-        return np.exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
+        return self._isf(1 - q, c, s)
+
+    def _sf(self, x, c, s):
+        return np.exp(self._logsf(x, c, s))
+
+    def _logsf(self, x, c, s):
+        return _norm_logcdf(-np.log(x) / s) * c
+
+    def _isf(self, q, c, s):
+        return np.exp(-_norm_ppf(q**(1/c)) * s)
 
 
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
@@ -7884,11 +8041,16 @@ class powernorm_gen(rv_continuous):
         f(x, c) = c \phi(x) (\Phi(-x))^{c-1}
 
     where :math:`\phi` is the normal pdf, :math:`\Phi` is the normal cdf,
-    :math:`x` is any real, and :math:`c > 0`.
+    :math:`x` is any real, and :math:`c > 0` [1]_.
 
     `powernorm` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] NIST Engineering Statistics Handbook, Section 1.3.6.6.13,
+           https://www.itl.nist.gov/div898/handbook//eda/section3/eda366d.htm
 
     %(example)s
 
@@ -8948,7 +9110,7 @@ def _log_gauss_mass(a, b):
     case_central = ~(case_left | case_right)
 
     def mass_case_left(a, b):
-        return _log_diff(sc.log_ndtr(b), sc.log_ndtr(a))
+        return _log_diff(_norm_logcdf(b), _norm_logcdf(a))
 
     def mass_case_right(a, b):
         return mass_case_left(-b, -a)
@@ -8964,7 +9126,7 @@ def _log_gauss_mass(a, b):
         # underflows, it was insignificant; if both terms underflow,
         # the result can't accurately be represented in logspace anyway
         # because sc.log1p(x) ~ x for small x.
-        return sc.log1p(-sc.ndtr(a) - sc.ndtr(-b))
+        return sc.log1p(-_norm_cdf(a) - _norm_cdf(-b))
 
     # _lazyselect not working; don't care to debug it
     out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
@@ -9058,12 +9220,12 @@ class truncnorm_gen(rv_continuous):
         case_right = ~case_left
 
         def ppf_left(q, a, b):
-            log_Phi_x = _log_sum(sc.log_ndtr(a),
+            log_Phi_x = _log_sum(_norm_logcdf(a),
                                  np.log(q) + _log_gauss_mass(a, b))
             return sc.ndtri_exp(log_Phi_x)
 
         def ppf_right(q, a, b):
-            log_Phi_x = _log_sum(sc.log_ndtr(-b),
+            log_Phi_x = _log_sum(_norm_logcdf(-b),
                                  np.log1p(-q) + _log_gauss_mass(a, b))
             return -sc.ndtri_exp(log_Phi_x)
 
@@ -9087,12 +9249,12 @@ class truncnorm_gen(rv_continuous):
         case_right = ~case_left
 
         def isf_left(q, a, b):
-            log_Phi_x = _log_diff(sc.log_ndtr(b),
+            log_Phi_x = _log_diff(_norm_logcdf(b),
                                   np.log(q) + _log_gauss_mass(a, b))
             return sc.ndtri_exp(np.real(log_Phi_x))
 
         def isf_right(q, a, b):
-            log_Phi_x = _log_diff(sc.log_ndtr(-a),
+            log_Phi_x = _log_diff(_norm_logcdf(-a),
                                   np.log1p(-q) + _log_gauss_mass(a, b))
             return -sc.ndtri_exp(np.real(log_Phi_x))
 
@@ -9625,13 +9787,15 @@ class vonmises_gen(rv_continuous):
         def find_mu(data):
             return stats.circmean(data)
 
-        def find_kappa(data):
-            # kappa is the solution to
-            # r = I[1](kappa)/I[0](kappa)
-            #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
-            #   = sc.i1e(kappa)/sc.i0e(kappa)
-            # where r = mean resultant length
-            r = 1 - stats.circvar(data)
+        def find_kappa(data, loc):
+            # Usually, sources list the following as the equation to solve for
+            # the MLE of the shape parameter:
+            # r = I[1](kappa)/I[0](kappa), where r = mean resultant length
+            # This is valid when the location is the MLE of location.
+            # More generally, when the location may be fixed at an arbitrary
+            # value, r should be defined as follows:
+            r = np.sum(np.cos(loc - data))/len(data)
+            # See gh-18128 for more information.
 
             def solve_for_kappa(kappa):
                 return sc.i1e(kappa)/sc.i0e(kappa) - r
@@ -9640,14 +9804,13 @@ class vonmises_gen(rv_continuous):
                                    bracket=(1e-8, 1e12))
             return root_res.root
 
-        if floc is None:
-            floc = find_mu(data)
-            fshape = find_kappa(data)
-        else:
-            fshape = find_kappa(data)
+        # location likelihood equation has a solution independent of kappa
+        loc = floc if floc is not None else find_mu(data)
+        # shape likelihood equation depends on location
+        shape = fshape if fshape is not None else find_kappa(data, loc)
 
-        floc = np.mod(floc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
-        return fshape, floc, 1  # scale is not handled
+        loc = np.mod(loc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
+        return shape, loc, 1  # scale is not handled
 
 
 vonmises = vonmises_gen(name='vonmises')
