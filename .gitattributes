@@ -12,7 +12,6 @@ ci/* export-ignore
 *.yaml export-ignore
 .mailmap export-ignore
 MANIFEST.in export-ignore
-pavement.py export-ignore
 tools/ci/* export-ignore
 tools/docker_dev/* export-ignore
 

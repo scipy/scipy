@@ -3272,11 +3272,11 @@ class multinomial_gen(multi_rv_generic):
         # replace values for which x was out of the domain; broadcast
         # xcond to the right shape
         xcond_ = xcond | np.zeros(npcond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
+        result = self._checkresult(result, xcond_, -np.inf)
 
         # replace values bad for n or p; broadcast npcond to the right shape
         npcond_ = npcond | np.zeros(xcond.shape, dtype=np.bool_)
-        return self._checkresult(result, npcond_, np.NAN)
+        return self._checkresult(result, npcond_, np.nan)
 
     def pmf(self, x, n, p):
         """Multinomial probability mass function.
@@ -3312,7 +3312,7 @@ class multinomial_gen(multi_rv_generic):
         """
         n, p, npcond = self._process_parameters(n, p)
         result = n[..., np.newaxis]*p
-        return self._checkresult(result, npcond, np.NAN)
+        return self._checkresult(result, npcond, np.nan)
 
     def cov(self, n, p):
         """Covariance matrix of the multinomial distribution.
@@ -5005,7 +5005,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # replace values for which x was out of the domain; broadcast
         # xcond to the right shape
         xcond_ = xcond_reduced | np.zeros(mncond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
+        result = self._checkresult(result, xcond_, -np.inf)
 
         # replace values bad for n or m; broadcast
         # mncond to the right shape

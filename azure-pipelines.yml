@@ -21,7 +21,7 @@ pr:
 # the version of OpenBLAS used is currently 0.3.21
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.21
+    openblas_version: 0.3.21.dev
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -36,7 +36,7 @@ stages:
   jobs:
     - job: Skip
       pool:
-        vmImage: 'ubuntu-20.04'
+        vmImage: 'ubuntu-22.04'
       variables:
         DECODE_PERCENTS: 'false'
         RET: 'true'
@@ -58,7 +58,7 @@ stages:
   - job: prerelease_deps_coverage_64bit_blas
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -75,7 +75,7 @@ stages:
   - job: refguide_asv_check
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -85,14 +85,14 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.21.5"
+        numpy_spec: "numpy==1.23.5"
         refguide_check: true
         asv_check: true
         use_wheel: true
   - job: source_distribution
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -102,12 +102,12 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.19.5"
+        numpy_spec: "numpy==1.21.6"
         use_sdist: true
   - job: wheel_optimized_gcc8
     timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-20.04'  # 22.04 does not have gfortran-8
     variables:
       # The following is needed for optimized "-OO" test run but since we use
       # pytest-xdist plugin for load scheduling its workers don't pick up the
@@ -125,18 +125,18 @@ stages:
       displayName: 'Install GCC 8'
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.19.5"
+        numpy_spec: "numpy==1.21.6"
         use_wheel: true
   - job: Lint
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
@@ -159,11 +159,11 @@ stages:
         tools/check_test_name.py
       displayName: 'Run Lint Checks'
       failOnStderr: true
-  - job: Linux_Python_38_32bit_full
+  - job: Linux_Python_39_32bit_full
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'ubuntu-20.04'
+      vmImage: 'ubuntu-22.04'  # vm does not matter as we use docker
     steps:
     - script: |
         git submodule update --init
@@ -175,31 +175,32 @@ stages:
             # the unusual install method. For the bug report about missing .pc
             # files: https://github.com/MacPython/openblas-libs/issues/74
             set -euo pipefail
-            docker pull i386/ubuntu:bionic
-            docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
+            docker pull i386/ubuntu:focal
+            docker run -v $(pwd):/scipy i386/ubuntu:focal /usr/bin/linux32 /bin/bash -c "cd scipy && \
+            export DEBIAN_FRONTEND=noninteractive && \
             apt-get -y update && \
-            apt-get -y install curl python3.8-dev python3.8 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
+            apt-get -y install curl python3.9-dev python3.9 python3-distutils pkg-config libpng-dev libjpeg8-dev libfreetype6-dev && \
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-            python3.8 get-pip.py && \
+            python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.19.5 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
-            apt-get -y install gcc-8 g++-8 gfortran-8 wget && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            apt-get -y install build-essential gfortran wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
-            target=\$(python3.8 ../scipy/tools/openblas_support.py) && \
+            target=\$(python3.9 ../scipy/tools/openblas_support.py) && \
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-8 CXX=g++-8 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
-            python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
-            python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
+            python3.9 setup.py install && \
+            python3.9 tools/openblas_support.py --check_version $(openblas_version) && \
+            python3.9 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
       inputs:
         testResultsFiles: '**/test-*.xml'
         failTaskOnFailedTests: true
-        testRunTitle: 'Publish test results for Python 3.8-32 bit full Linux'
+        testRunTitle: 'Publish test results for Python 3.9-32 bit full Linux'
     - task: PublishCodeCoverageResults@1
       inputs:
         codeCoverageTool: Cobertura
@@ -217,28 +218,28 @@ stages:
     strategy:
       maxParallel: 4
       matrix:
-          Python38-32bit-fast:
-            PYTHON_VERSION: '3.8'
+          Python39-32bit-fast:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x86'
             TEST_MODE: fast
             BITS: 32
             SCIPY_USE_PYTHRAN: 1
-          Python38-64bit-full:
-            PYTHON_VERSION: '3.8'
+          Python39-64bit-full:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python310-64bit-full-ilp64:
-            PYTHON_VERSION: '3.10'
+          Python311-64bit-full-ilp64:
+            PYTHON_VERSION: '3.11'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-fast:
-            PYTHON_VERSION: '3.9'
+          Python310-64bit-fast:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: fast
             BITS: 64
@@ -299,10 +300,10 @@ stages:
 
     - script: >-
         python -m pip install
-        cython==0.29.24
+        cython==0.29.33
         matplotlib
         mpmath
-        numpy==1.21.4
+        numpy==1.23.5
         Pillow
         pybind11
         pythran==0.12.0
@@ -315,7 +316,7 @@ stages:
         pooch
       displayName: 'Install dependencies'
     # DLL resolution mechanics were changed in
-    # Python 3.8: https://bugs.python.org/issue36085
+    # Python 3.9: https://bugs.python.org/issue36085
     # While we normally leave adjustment of _distributor_init.py
     # up to the specific distributors of SciPy builds, we
     # are the primary providers of the SciPy wheels available
@@ -330,7 +331,7 @@ stages:
         rm scipy/_distributor_init.py
         mv scipy-wheels/_distributor_init.py scipy/
       displayName: 'Copy in _distributor_init.py'
-      condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.8'))
+      condition: and(succeeded(), eq(variables['PYTHON_VERSION'], '3.9'))
     - powershell: |
         # The below lines ensure exit status of every line in this step is checked
         Set-StrictMode -Version Latest

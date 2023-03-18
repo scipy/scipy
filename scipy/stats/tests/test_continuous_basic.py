@@ -117,7 +117,8 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'powerlaw', 'rdist', 'reciprocal', 'rice',
                'skewnorm', 't', 'truncweibull_min',
                'tukeylambda', 'vonmises', 'vonmises_line',
-               'rv_histogram_instance', 'truncnorm', 'studentized_range'}
+               'rv_histogram_instance', 'truncnorm', 'studentized_range',
+               'johnsonsb', 'halflogistic'}
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
@@ -144,7 +145,6 @@ def cases_test_cont_basic():
             yield distname, arg
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 @pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
 def test_cont_basic(distname, arg, sn, n_fit_samples):
@@ -258,18 +258,20 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set()
     fail_higher = {'ncf'}
+    fail_moment = {'johnsonsu'}  # generic `munp` is inaccurate for johnsonsu
 
     for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
 
         if distname in distxslow_test_moments:
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason="too slow"))
             continue
 
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
+        cond3 = distname not in fail_moment
 
         marks = list()
         # Currently unused, `marks` can be used to add a timeout to a test of
@@ -280,20 +282,22 @@ def cases_test_moments():
         #     if distname == 'skewnorm':
         #         marks.append(pytest.mark.timeout(300))
 
-        yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
+        yield pytest.param(distname, arg, cond1, cond2, cond3,
+                           False, marks=marks)
 
-        if not cond1 or not cond2:
+        if not cond1 or not cond2 or not cond3:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=[pytest.mark.xfail] + marks)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,moment_ok,'
                          'is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
+                 is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -322,7 +326,9 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
                 check_kurt_expect(distfn, arg, m, v, k, distname)
 
         check_loc_scale(distfn, arg, m, v, distname)
-        check_moment(distfn, arg, m, v, distname)
+
+        if moment_ok:
+            check_moment(distfn, arg, m, v, distname)
 
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
@@ -737,7 +743,6 @@ def check_fit_args_fix(distfn, arg, rvs, method):
             npt.assert_(vals5[2] == arg[2])
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
 @pytest.mark.parametrize('distname, args', distcont)

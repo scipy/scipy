@@ -331,6 +331,10 @@ plot_rcparams = {
 # -----------------------------------------------------------------------------
 # Source code links
 # -----------------------------------------------------------------------------
+
+# Not the same as from sphinx.util import inspect and needed here
+import inspect  # noqa: E402
+
 for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     try:
         __import__(name)

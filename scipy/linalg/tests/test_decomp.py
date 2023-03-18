@@ -46,7 +46,10 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
-
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -2043,12 +2046,22 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
+
+
 class TestQZ:
     def setup_method(self):
         seed(12345)
 
-    @pytest.mark.xfail(sys.platform == 'darwin',
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+    @pytest.mark.xfail(
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < "0.3.21.dev",
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
+    )
     def test_qz_single(self):
         n = 5
         A = random([n, n]).astype(float32)
