@@ -2900,7 +2900,7 @@ class TestPowerLogNorm:
     #     return mp.ncdf(-mp.log(x) / s)**c
     #
     # def powerlognormal_cdf_mp(x, c, s):
-    #     return 1 - powerlognorm_sf_mp(x, c, s)
+    #     return mp.one - powerlognorm_sf_mp(x, c, s)
     #
     # x, c, s = 100, 20, 1
     # print(float(powerlognorm_sf_mp(x, c, s)))
