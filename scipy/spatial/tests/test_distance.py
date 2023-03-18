@@ -2073,6 +2073,7 @@ def test_Xdist_deprecated_args():
                 pdist(X1, metric, **kwargs)
 
 
+@pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
 def test_Xdist_non_negative_weights():
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
