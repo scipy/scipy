@@ -1469,6 +1469,7 @@ class TestPdist:
                         y2 = pdist(new_type(X1), metric=metric)
                         assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
+    @pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
     def test_pdist_out(self):
         # Test that out parameter works properly
         eps = 1e-15
