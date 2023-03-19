@@ -1409,7 +1409,7 @@ class Test_bounding_box:
     def test_bounding_box02(self):
         data = np.zeros([], dtype=int)
         out = ndimage.bounding_box(data)
-        assert_(out == None)
+        assert_(out is None)
 
     def test_bounding_box03(self):
         data = np.ones([1], dtype=int)
