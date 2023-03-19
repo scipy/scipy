@@ -9459,12 +9459,6 @@ class truncpareto_gen(rv_continuous):
 
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fb, fc, floc, fscale = parameters
-
-        if floc is None and fscale is None:
-            # Based on testing in gh-16782, the following methods are only
-            # reliable if either `floc` or `fscale` are provided.
-            fallback(data, *args, **kwds)
-
         mn, mx = data.min(), data.max()
         mn_inf = np.nextafter(mn, -np.inf)
 
@@ -9614,8 +9608,21 @@ class truncpareto_gen(rv_continuous):
             c = np.nextafter(c, np.inf)
 
         if not (np.all(self._argcheck(b, c)) and (scale > 0)):
-            fallback(data, *args, **kwds)
-        return b, c, loc, scale
+            return fallback(data, *args, **kwds)
+
+        params_override = b, c, loc, scale
+        if floc is None and fscale is None:
+            # Based on testing in gh-16782, the following methods are only
+            # reliable if either `floc` or `fscale` are provided. They are
+            # fast, though, so might as well see if they are better than the
+            # generic method.
+            params_super = fallback(data, *args, **kwds)
+            nllf_override = self.nnlf(params_override, data)
+            nllf_super = self.nnlf(params_super, data)
+            if nllf_super < nllf_override:
+                return params_super
+
+        return params_override
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')

@@ -8680,8 +8680,6 @@ class TestTruncPareto:
     @pytest.mark.parametrize('fix_b', [True, False])
     @pytest.mark.parametrize('fix_c', [True, False])
     def test_fit(self, fix_loc, fix_scale, fix_b, fix_c):
-        if not (fix_scale or fix_loc):
-            pytest.skip("Falls back to generic fit; no need to test.")
 
         rng = np.random.default_rng(6747363148258237171)
         b, c, loc, scale = 1.8, 5.3, 1, 2.5
