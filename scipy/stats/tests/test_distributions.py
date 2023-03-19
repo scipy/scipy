@@ -8664,3 +8664,29 @@ class TestJohnsonSU:
         # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
         res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
         assert_allclose(res, case[4:], rtol=1e-14)
+
+
+class TestTruncPareto:
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    @pytest.mark.parametrize('fix_b', [True, False])
+    @pytest.mark.parametrize('fix_c', [True, False])
+    def test_fit(self, fix_loc, fix_scale, fix_b, fix_c):
+        if not (fix_scale or fix_loc):
+            pytest.skip("Falls back to generic fit; no need to test.")
+
+        rng = np.random.default_rng(6747363148258237171)
+        b, c, loc, scale = 1.8, 5.3, 0, 1
+        data = stats.truncpareto.rvs(b, c, size=500, random_state=rng)
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['f0'] = scale
+        if fix_b:
+            kwds['f0'] = b
+        if fix_c:
+            kwds['f1'] = c
+
+        _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)

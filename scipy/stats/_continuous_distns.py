@@ -9459,6 +9459,12 @@ class truncpareto_gen(rv_continuous):
 
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fb, fc, floc, fscale = parameters
+
+        if floc is None and fscale is None:
+            # Based on testing in gh-16782, the following methods are only
+            # reliable if either `floc` or `fscale` are provided.
+            fallback(data, *args, **kwds)
+
         mn, mx = data.min(), data.max()
         mn_inf = np.nextafter(mn, -np.inf)
 
