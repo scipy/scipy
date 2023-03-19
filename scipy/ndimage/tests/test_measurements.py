@@ -4,12 +4,13 @@ import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_array_equal,
                            suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 
 import scipy.ndimage as ndimage
 
 
-from . import types
+from . import types, float_types, complex_types
 
 
 class Test_measurements_stats:
@@ -1390,3 +1391,130 @@ class TestWatershedIft:
         expected = [[1, 1],
                     [1, 1]]
         assert_array_almost_equal(out, expected)
+
+
+class Test_bounding_box:
+    '''
+    supported dtypes are all `types` in __init__.py, plus: 
+    np.float16, np.complex256, and bool.
+    bool is tested separately.
+    '''
+    supported_types = types + [np.float16, np.complex256]
+    
+    def test_bounding_box01(self):
+        data = np.ones([], dtype=int)
+        out = ndimage.bounding_box(data)
+        assert_(out == ())
+
+    def test_bounding_box02(self):
+        data = np.zeros([], dtype=int)
+        out = ndimage.bounding_box(data)
+        assert_(out == None)
+
+    def test_bounding_box03(self):
+        data = np.ones([1], dtype=int)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(0, 1, None),))
+
+    def test_bounding_box04(self):
+        data = np.zeros([1], dtype=int)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, None)
+
+    def test_bounding_box05(self):
+        data = np.ones([5], dtype=int)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(0, 5, None),))
+
+    @pytest.mark.parametrize('type', types)
+    def test_bounding_box06(self, type):
+        data = np.array([1, 0, 2, 2, 0, 3], dtype=type)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(0, 6, None),))
+
+    @pytest.mark.parametrize('type', types)
+    def test_bounding_box07(self, type):
+        data = np.array([[0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0]], dtype=type)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, None)
+
+    @pytest.mark.parametrize('type', types)
+    def test_bounding_box08(self, type):
+        data = np.array([[0, 0, 0, 0, 0, 0],
+                        [0, 0, 1, 1, 0, 0],
+                        [0, 0, 1, 1, 1, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0]],dtype=type)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None)))
+
+    @pytest.mark.parametrize('type', types)
+    def test_bounding_box09(self, type):
+        data = np.array([[1, 0, 0, 0, 0, 0],
+                        [0, 0, 2, 2, 0, 0],
+                        [0, 0, 2, 2, 2, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0, 0],
+                        [0, 0, 0, 4, 4, 0]],dtype=type)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(0, 6, None), slice(0, 5, None)))
+
+    @pytest.mark.parametrize("type", types)
+    def test_bounding_box10(self, type):
+        data = np.zeros([5,5,5],dtype=type)
+        data[1:3,2:5,2:5] = 2
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None)))
+
+    @pytest.mark.parametrize("type", types)
+    def test_bounding_box11(self, type):
+        data = np.zeros([6,6,6,6],dtype=type)
+        data[1:3,2:5,2:5,...] = 2
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 6, None)))
+
+    @pytest.mark.parametrize("type", types)
+    def test_bounding_box12(self, type):
+        data = np.zeros([5,5,5,5],dtype=type)
+        data[1:3,2:5,2:5,0] = 2
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
+
+    @pytest.mark.parametrize("type", complex_types)
+    def test_bounding_box13(self, type):
+        ''' testing complex data types specifically - with only imaginary part '''
+        data = np.zeros([5,5,5,5],dtype=type)
+        data[1:3,2:5,2:5,0] = 1j
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
+
+    @pytest.mark.parametrize("type", float_types+[np.float16])
+    def test_bounding_box14(self, type):
+        ''' test floating point data types specifically - with only small values '''
+        data = np.zeros([5,5,5,5],dtype=type)
+        data[1:3,2:5,2:5,0] = 0.01
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
+
+    def test_bounding_box15(self):
+        ''' test boolean data type specifically '''
+        data = np.zeros([5,5,5,5], dtype=bool)
+        data[1:3,2:5,2:5,0] = True
+        print("data dtype: ", data.dtype)
+        out = ndimage.bounding_box(data)
+        assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
+
+    @pytest.mark.parametrize("type", [np.float128,])
+    def test_bounding_box16(self, type):
+        ''' assert ValueError is raised when input dtype is not supported '''
+        data = np.zeros([5,5,5,5], dtype=type)
+        data[1:3,2:5,2:5,0] = 1
+        msg = "data type not supported"
+        with assert_raises(RuntimeError, match=msg):
+            _ = ndimage.bounding_box(data)

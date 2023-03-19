@@ -38,7 +38,7 @@ from . import _morphology
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',
            'variance', 'standard_deviation', 'minimum', 'maximum', 'median',
            'minimum_position', 'maximum_position', 'extrema', 'center_of_mass',
-           'histogram', 'watershed_ift', 'sum_labels', 'value_indices']
+           'histogram', 'watershed_ift', 'sum_labels', 'value_indices', 'bounding_box']
 
 
 def label(input, structure=None, output=None):
@@ -261,7 +261,7 @@ def find_objects(input, max_label=0):
 
     See Also
     --------
-    label, center_of_mass
+    label, center_of_mass, bounding_box
 
     Notes
     -----
@@ -1673,3 +1673,50 @@ def watershed_ift(input, markers, structure=None, output=None):
     output = _ni_support._get_output(output, input)
     _nd_image.watershed_ift(input, markers, structure, output)
     return output
+
+
+def bounding_box(input):
+    """
+    Return the bounding box of the non-zero values of the input.
+
+    Equivalent to ``find_objects(image!=0)[0]``
+
+    Parameters
+    ----------
+    input : ndarray
+        N-d input array.
+
+    Returns
+    -------
+    bbox : tuple of slices
+        A tuple containing N slices (with N the dimension of the input array).
+        Slices correspond to the minimal paralleliped that contains the object.
+        If there are no non-zero values in the input, the slices are all None.
+
+    See also
+    --------
+    find_objects
+
+    Notes
+    -----
+    This function is equivalent to ``find_objects(image!=0,max_label=1)[0]``, but
+    faster and more memory efficient. Speedup is due to running in-place, whereas
+    using ``find_objects`` requires allocating a temporary array for the binary
+    comparison (``image!=0``).
+
+    .. versionadded:: 1.11.0
+
+    Examples
+    --------
+    >>> from scipy import ndimage
+    >>> a = np.array([[0, 0, 0, 0, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 1, 1, 1, 0],
+    ...               [0, 0, 0, 0, 0]])
+    >>> ndimage.bounding_box(a)
+    (slice(1, 3, None), slice(1, 4, None))
+
+    """
+    input = numpy.asarray(input)
+    
+    return _nd_image.bounding_box(input)
