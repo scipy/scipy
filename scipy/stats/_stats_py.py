@@ -9813,7 +9813,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     References
     ----------
     .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
-    .. [2] Lili Weng, "What is Wasserstein distance?", Lil'log, 
+    .. [2] Lili Weng, "What is Wasserstein distance?", Lil'log,
            https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-
            wasserstein-distance.
     .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and
