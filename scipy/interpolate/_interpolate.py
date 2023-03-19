@@ -383,9 +383,9 @@ def _do_extrapolate(fill_value):
 
 class interp1d(_Interpolator1D):
     """
-    .. legacy:: function
-
     Interpolate a 1-D function.
+
+    .. legacy:: function
 
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses

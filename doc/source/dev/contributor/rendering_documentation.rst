@@ -322,6 +322,7 @@ This will create the following output:
 
 .. legacy:: function
 
+---
 
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
