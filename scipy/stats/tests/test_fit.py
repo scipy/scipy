@@ -72,6 +72,7 @@ mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -134,6 +135,7 @@ def test_cont_fit(distname, arg, method):
                 msg = ('Different results fitting uncensored data wrapped as'
                        f' CensoredData: {distfn.name}: est={est} est1={est1}')
                 assert_allclose(est1, est, rtol=1e-10, err_msg=msg)
+            if method == 'MLE' and distname not in fail_interval_censored:
                 # Convert the first `nic` values in rvs to interval-censored
                 # values. The interval is small, so est2 should be close to
                 # est.

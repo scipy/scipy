@@ -8667,6 +8667,14 @@ class TestJohnsonSU:
 
 
 class TestTruncPareto:
+    def test_pdf(self):
+        # PDF is that of the truncated pareto distribution
+        b, c = 1.8, 5.3
+        x = np.linspace(1.8, 5.3)
+        res = stats.truncpareto(b, c).pdf(x)
+        ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
+        assert_allclose(res, ref)
+
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_scale', [True, False])
     @pytest.mark.parametrize('fix_b', [True, False])
@@ -8676,17 +8684,23 @@ class TestTruncPareto:
             pytest.skip("Falls back to generic fit; no need to test.")
 
         rng = np.random.default_rng(6747363148258237171)
-        b, c, loc, scale = 1.8, 5.3, 0, 1
-        data = stats.truncpareto.rvs(b, c, size=500, random_state=rng)
+        b, c, loc, scale = 1.8, 5.3, 1, 2.5
+        dist = stats.truncpareto(b, c, loc=loc, scale=scale)
+        data = dist.rvs(size=500, random_state=rng)
 
         kwds = {}
         if fix_loc:
             kwds['floc'] = loc
         if fix_scale:
-            kwds['f0'] = scale
+            kwds['fscale'] = scale
         if fix_b:
             kwds['f0'] = b
         if fix_c:
             kwds['f1'] = c
 
-        _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
+        if fix_loc and fix_scale and fix_b and fix_c:
+            message = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(RuntimeError, match=message):
+                stats.truncpareto.fit(data, **kwds)
+        else:
+            _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
