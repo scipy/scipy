@@ -119,8 +119,7 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     int      i, j, k, iptr, jcol, n, ldb, nrhs;
     float   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void sprint_soln();
-
+    void sprint_soln(int n, int nrhs, float *soln);
     /* Test input parameters ... */
     *info = 0;
     Bstore = B->Store;
