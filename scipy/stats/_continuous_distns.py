@@ -8257,6 +8257,11 @@ class reciprocal_gen(rv_continuous):
     def _get_support(self, a, b):
         return a, b
 
+    def _rvs(self, a, b, size=1, random_state=None):
+        u = random_state.uniform(size=size)
+        x = np.exp(u * (np.log(b) - np.log(a)) + np.log(a))
+        return x
+
     def _pdf(self, x, a, b):
         # reciprocal.pdf(x, a, b) = 1 / (x*(log(b) - log(a)))
         return np.exp(self._logpdf(x, a, b))

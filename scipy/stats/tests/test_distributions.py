@@ -8127,6 +8127,13 @@ class TestLogUniform:
         mean = (b - a)/(np.log(b) - np.log(a))
         assert_allclose(dist.mean(), mean)
 
+    def test_rvs(self):
+        a = 0.3
+        b = 1.7
+        X = stats.loguniform.rvs(a, b, size=10000)
+        m = stats.loguniform.mean(a, b)
+        assert_allclose(m, np.sum(X) / len(X), rtol=1e-2)
+
 
 class TestArgus:
     def test_argus_rvs_large_chi(self):
