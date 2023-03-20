@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -69,7 +70,9 @@ class DunnettResult:
             )
         return s
 
-    def _allowance(self, confidence_level: DecimalNumber = 0.95) -> float:
+    def _allowance(
+        self, confidence_level: DecimalNumber = 0.95, tol: DecimalNumber = 1e-4
+    ) -> float:
         """Allowance.
 
         It is the quantity to add/substract from the observed difference
@@ -81,6 +84,9 @@ class DunnettResult:
         confidence_level : float, optional
             Confidence level for the computed confidence interval
             of the estimated proportion. Default is .95.
+        tol : float, optional
+            Tolerance to optimize the critical value with respect to the
+            `confidence_level`. Default is 1e-4.
 
         Returns
         -------
@@ -98,10 +104,17 @@ class DunnettResult:
             )
             return abs(sf - alpha)
 
-        res = minimize_scalar(pvalue_from_stat, method='brent', tol=1e-4)
+        res = minimize_scalar(pvalue_from_stat, method='brent', tol=tol)
         critical_value = res.x
 
-        allowance = critical_value*self._std*np.sqrt(2/len(self.pvalue))
+        # validation
+        if res.success is False or res.fun >= tol:
+            warnings.warn(
+                "The computation of the confidence interval did not converge.",
+                stacklevel=3
+            )
+
+        allowance = critical_value*self._std*np.sqrt(2/self.pvalue.size)
         return abs(allowance)
 
     def confidence_interval(

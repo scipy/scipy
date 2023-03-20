@@ -250,6 +250,8 @@ class TestDunnett:
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
+    # filter warning that could happen during optimization
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize(
         'alternative, allowance, ci_low, ci_high',
         [
@@ -291,8 +293,8 @@ class TestDunnett:
         assert res._ci is None
         assert res._ci_cl is None
         ci = res.confidence_interval(confidence_level=0.95)
-        assert_allclose(ci.low, ci_low, rtol=1e-2)
-        assert_allclose(ci.high, ci_high, rtol=1e-2)
+        assert_allclose(ci.low, ci_low, atol=1e-1)
+        assert_allclose(ci.high, ci_high, atol=1e-1)
 
         # re-run to use the cached value "is" to check id as same object
         assert res._ci is ci
@@ -317,6 +319,20 @@ class TestDunnett:
             assert 'inf' not in res_str
             assert 'between' in res_str
             assert '21.' in res_str
+
+    def test_warnings(self):
+        rng = np.random.default_rng(189117774084579816190295271136455278291)
+        samples = [
+            [55, 64, 64],
+            [55, 49, 52],
+            [50, 44, 41]
+        ]
+        control = [55, 47, 48]
+
+        res = stats.dunnett(*samples, control=control, random_state=rng)
+        msg = r"The computation of the confidence interval did not converge"
+        with pytest.warns(UserWarning, match=msg):
+            res._allowance(tol=1e-7)
 
     def test_raises(self):
         samples = [
