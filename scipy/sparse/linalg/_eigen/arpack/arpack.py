@@ -2,7 +2,7 @@
 Find a few eigenvectors and eigenvalues of a matrix.
 
 
-Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
+Uses ARPACK: https://github.com/opencollab/arpack-ng
 
 """
 # Wrapper implementation notes
