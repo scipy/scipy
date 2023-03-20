@@ -300,7 +300,7 @@ def test_api_importable():
         raise AssertionError("Modules in the public API that cannot be "
                              "imported: {}".format(module_names))
 
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.filterwarnings('always', category=DeprecationWarning)
         warnings.filterwarnings('always', category=ImportWarning)
         for module_name in PRIVATE_BUT_PRESENT_MODULES:

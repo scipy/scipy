@@ -322,7 +322,7 @@ def _read_record(f):
 
     _skip_bytes(f, 4)
 
-    if not record['rectype'] in RECTYPE_DICT:
+    if record['rectype'] not in RECTYPE_DICT:
         raise Exception("Unknown RECTYPE: %i" % record['rectype'])
 
     record['rectype'] = RECTYPE_DICT[record['rectype']]
@@ -534,7 +534,7 @@ def _read_structdesc(f):
 
     else:
 
-        if not structdesc['name'] in STRUCT_DICT:
+        if structdesc['name'] not in STRUCT_DICT:
             raise Exception("PREDEF=1 but can't find definition")
 
         structdesc = STRUCT_DICT[structdesc['name']]
@@ -903,7 +903,7 @@ def readsav(file_name, idict=None, python_dict=False,
         if 'VARIABLE' in rectypes:
             print("Available variables:")
             for var in variables:
-                print(" - %s [%s]" % (var, type(variables[var])))
+                print(f" - {var} [{type(variables[var])}]")
             print("-"*50)
 
     if idict:

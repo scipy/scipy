@@ -17,7 +17,7 @@ def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
     phi0 = phi(0)
     derphi0 = derphi(0)
     derphi1 = derphi(s)
-    msg = "s = %s; phi(0) = %s; phi(s) = %s; phi'(0) = %s; phi'(s) = %s; %s" % (
+    msg = "s = {}; phi(0) = {}; phi(s) = {}; phi'(0) = {}; phi'(s) = {}; {}".format(
         s, phi0, phi1, derphi0, derphi1, err_msg)
 
     assert phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: " + msg
@@ -30,7 +30,7 @@ def assert_armijo(s, phi, c1=1e-4, err_msg=""):
     """
     phi1 = phi(s)
     phi0 = phi(0)
-    msg = "s = %s; phi(0) = %s; phi(s) = %s; %s" % (s, phi0, phi1, err_msg)
+    msg = f"s = {s}; phi(0) = {phi0}; phi(s) = {phi1}; {err_msg}"
     assert phi1 <= (1 - c1*s)*phi0, msg
 
 
@@ -48,7 +48,7 @@ def assert_fp_equal(x, y, err_msg="", nulp=50):
     try:
         assert_array_almost_equal_nulp(x, y, nulp)
     except AssertionError as e:
-        raise AssertionError("%s\n%s" % (e, err_msg)) from e
+        raise AssertionError(f"{e}\n{err_msg}") from e
 
 
 class TestLineSearch:
@@ -150,7 +150,7 @@ class TestLineSearch:
             assert_fp_equal(phi1, phi(s), name)
             if derphi1 is not None:
                 assert_fp_equal(derphi1, derphi(s), name)
-            assert_wolfe(s, phi, derphi, err_msg="%s %g" % (name, old_phi0))
+            assert_wolfe(s, phi, derphi, err_msg=f"{name} {old_phi0:g}")
 
     def test_scalar_search_wolfe2_with_low_amax(self):
         def phi(alpha):
@@ -187,7 +187,7 @@ class TestLineSearch:
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1 = ls.scalar_search_armijo(phi, phi(0), derphi(0))
             assert_fp_equal(phi1, phi(s), name)
-            assert_armijo(s, phi, err_msg="%s %g" % (name, old_phi0))
+            assert_armijo(s, phi, err_msg=f"{name} {old_phi0:g}")
 
     # -- Generic line searches
 
@@ -244,8 +244,10 @@ class TestLineSearch:
         # For this f and p, starting at a point on axis 0, the strong Wolfe
         # condition 2 is met if and only if the step length s satisfies
         # |x + s| <= c2 * |x|
-        f = lambda x: np.dot(x, x)
-        fp = lambda x: 2 * x
+        def f(x):
+            return np.dot(x, x)
+        def fp(x):
+            return 2 * x
         p = np.array([1, 0])
 
         # Smallest s satisfying strong Wolfe conditions for these arguments is 30

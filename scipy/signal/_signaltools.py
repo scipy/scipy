@@ -445,7 +445,7 @@ def _init_freq_conv_axes(in1, in2, mode, axes, sorted_axes=False):
     if not all(s1[a] == s2[a] or s1[a] == 1 or s2[a] == 1
                for a in range(in1.ndim) if a not in axes):
         raise ValueError("incompatible shapes for in1 and in2:"
-                         " {0} and {1}".format(s1, s2))
+                         " {} and {}".format(s1, s2))
 
     # Check that input sizes are compatible with 'valid' mode.
     if _inputs_swap_needed(mode, s1, s2, axes=axes):

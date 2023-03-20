@@ -91,9 +91,9 @@ Building SciPy
             sudo apt install -y python3-venv
 
           Change the directory to your home folder and create a directory ``.venvs`` there.
-          Create the virtualenvironment::
+          Create the virtual environment within ``$HOME/.venvs``::
 
-            python3 -m venv scipy-dev
+            python3 -m venv $HOME/.venvs/scipy-dev
 
           To activate the environment, use ::
 
@@ -109,7 +109,7 @@ Building SciPy
 
     Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-      python -m pip install numpy pytest cython pythran pybind11 meson ninja
+      python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
     Note that when the virtual environment is active, the system-wide names ``pip3``
     and ``python3`` are aliased to ``pip`` and ``python``, respectively.

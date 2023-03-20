@@ -45,7 +45,7 @@ def prepare_input(x, y, axis, dydx=None):
     if x.shape[0] < 2:
         raise ValueError("`x` must contain at least 2 elements.")
     if x.shape[0] != y.shape[axis]:
-        raise ValueError("The length of `y` along `axis`={0} doesn't "
+        raise ValueError("The length of `y` along `axis`={} doesn't "
                          "match the length of `x`".format(axis))
 
     if not np.all(np.isfinite(x)):
@@ -227,7 +227,6 @@ class PchipInterpolator(CubicHermiteSpline):
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
            :doi:`10.1137/1.9780898717952`
 
-
     """
 
     def __init__(self, x, y, axis=0, extrapolate=None):
@@ -328,14 +327,14 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
-    See Also
-    --------
-    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
-
     Returns
     -------
     y : scalar or array_like
-        The result, of length R or length M or M by R,
+        The result, of length R or length M or M by R.
+
+    See Also
+    --------
+    PchipInterpolator : PCHIP 1-D monotonic cubic interpolator.
 
     Examples
     --------
@@ -836,7 +835,7 @@ class CubicSpline(CubicHermiteSpline):
                 elif bc in ['not-a-knot', 'periodic']:
                     validated_bc.append(bc)
                 else:
-                    raise ValueError("bc_type={} is not allowed.".format(bc))
+                    raise ValueError(f"bc_type={bc} is not allowed.")
             else:
                 try:
                     deriv_order, deriv_value = bc

@@ -792,7 +792,7 @@ class rv_generic:
             tempdict['shapes_'] += ','
 
         if self.shapes:
-            tempdict['set_vals_stmt'] = '>>> %s = %s' % (self.shapes, vals)
+            tempdict['set_vals_stmt'] = f'>>> {self.shapes} = {vals}'
         else:
             tempdict['set_vals_stmt'] = ''
 
@@ -820,7 +820,7 @@ class rv_generic:
         """Construct instance docstring from the default template."""
         if longname is None:
             longname = 'A'
-        self.__doc__ = ''.join(['%s %s random variable.' % (longname, discrete),
+        self.__doc__ = ''.join([f'{longname} {discrete} random variable.',
                                 '\n\n%(before_notes)s\n', docheaders['notes'],
                                 '\n%(example)s'])
         self._construct_doc(docdict)
@@ -927,8 +927,7 @@ class rv_generic:
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. %s, %s, %s" % (size, size_,
-                                                             bcast_shape))
+                             f"the parameters. {size}, {size_}, {bcast_shape}")
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -2411,7 +2410,7 @@ class rv_continuous(rv_generic):
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
-            raise ValueError("Method '{0}' not available; must be one of {1}"
+            raise ValueError("Method '{}' not available; must be one of {}"
                              .format(method, methods))
 
         if len(fixedn) == 0:
@@ -2461,10 +2460,9 @@ class rv_continuous(rv_generic):
         Likelihood Estimation (MLE), but Method of Moments (MM)
         is also available.
 
-        Starting estimates for
-        the fit are given by input arguments; for any arguments not provided
-        with starting estimates, ``self._fitstart(data)`` is called to generate
-        such.
+        Starting estimates for the fit are given by input arguments;
+        for any arguments not provided with starting estimates,
+        ``self._fitstart(data)`` is called to generate such.
 
         One can hold some parameters fixed to specific values by passing in
         keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters)
@@ -3166,10 +3164,10 @@ class rv_discrete(rv_generic):
 
         if values is not None:
             # dispatch to a subclass
-            return super(rv_discrete, cls).__new__(rv_sample)
+            return super().__new__(rv_sample)
         else:
             # business as usual
-            return super(rv_discrete, cls).__new__(cls)
+            return super().__new__(cls)
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
@@ -3366,7 +3364,7 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
         if not isinstance(self, rv_sample):
@@ -3404,7 +3402,7 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k <= _b)
         if not isinstance(self, rv_sample):
@@ -3443,7 +3441,7 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k >= _b)
@@ -3485,7 +3483,7 @@ class rv_discrete(rv_generic):
         k, loc = map(asarray, (k, loc))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        k = asarray((k-loc))
+        k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k >= _b)

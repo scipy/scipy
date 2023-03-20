@@ -21,10 +21,10 @@ from scipy._lib._util import check_random_state
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg import LinAlgError
 
-from ._propack import _spropack  # type: ignore
-from ._propack import _dpropack
-from ._propack import _cpropack
-from ._propack import _zpropack
+from ._propack import _spropack  # type: ignore[attr-defined]
+from ._propack import _dpropack  # type: ignore[attr-defined]
+from ._propack import _cpropack  # type: ignore[attr-defined]
+from ._propack import _zpropack  # type: ignore[attr-defined]
 
 
 _lansvd_dict = {

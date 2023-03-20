@@ -143,9 +143,12 @@ console_theme = Theme({
     "cmd": "italic gray50",
 })
 
-
-class EMOJI:
-    cmd = ":computer:"
+if sys.platform == 'win32':
+    class EMOJI:
+        cmd = ">"
+else:
+    class EMOJI:
+        cmd = ":computer:"
 
 
 rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
@@ -436,6 +439,13 @@ class Build(Task):
                 raise RuntimeError("Can't build into non-empty directory "
                                    f"'{build_dir.absolute()}'")
 
+        if sys.platform == "cygwin":
+            # Cygwin only has netlib lapack, but can link against
+            # OpenBLAS rather than netlib blas at runtime.  There is
+            # no libopenblas-devel to enable linking against
+            # openblas-specific functions or OpenBLAS Lapack
+            cmd.extend(["-Dlapack=lapack", "-Dblas=blas"])
+
         build_options_file = (
             build_dir / "meson-info" / "intro-buildoptions.json")
         if build_options_file.exists():
@@ -546,6 +556,11 @@ class Build(Task):
         # ignore everything in the install directory.
         with open(dirs.installed / ".gitignore", "w") as f:
             f.write("*")
+
+        if sys.platform == "cygwin":
+            rebase_cmd = ["/usr/bin/rebase", "--database", "--oblivious"]
+            rebase_cmd.extend(Path(dirs.installed).glob("**/*.dll"))
+            subprocess.check_call(rebase_cmd)
 
         print("Installation OK")
         return
@@ -881,7 +896,12 @@ class Bench(Task):
 # linters
 
 def emit_cmdstr(cmd):
-    """Print the command that's being run to stdout"""
+    """Print the command that's being run to stdout
+
+    Note: cannot use this in the below tasks (yet), because as is these command
+    strings are always echoed to the console, even if the command isn't run
+    (but for example the `build` command is run).
+    """
     console = Console(theme=console_theme)
     # The [cmd] square brackets controls the font styling, typically in italics
     # to differentiate it from other stdout content
@@ -891,7 +911,7 @@ def emit_cmdstr(cmd):
 def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
-    emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
         'basename': 'lint',
         'actions': [str(Dirs().root / 'tools' / 'lint.py') +
@@ -901,7 +921,7 @@ def task_lint():
 
 
 def task_unicode_check():
-    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -911,7 +931,7 @@ def task_unicode_check():
 
 
 def task_check_test_name():
-    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
+    # emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
         "basename": "check-testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],

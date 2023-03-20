@@ -1,9 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Callable, Dict, Tuple, Any, cast
-import functools
+from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
 import math
-import types
 import warnings
 from collections import namedtuple
 
@@ -149,7 +147,7 @@ if TYPE_CHECKING:
     from typing import Protocol
 
     class CacheAttributes(Protocol):
-        cache: Dict[int, Tuple[Any, Any]]
+        cache: dict[int, tuple[Any, Any]]
 else:
     CacheAttributes = Callable
 
@@ -1306,7 +1304,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.00018441088533413305, 1.1255608140911588e-07)
+    (0.00018443143881633162, 4.709434153066518e-08)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
@@ -1314,7 +1312,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> t = stats.t(df=n_estimates-1, loc=res.integral,
     ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018401699720722663, 0.00018480477346103947)
+    (0.00018426663295474533, 0.0001845962446779179)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
@@ -1325,6 +1323,37 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     """
     args = _qmc_quad_iv(func, a, b, n_points, n_estimates, qrng, log)
     func, a, b, n_points, n_estimates, qrng, rng, log, stats = args
+
+    def sum_product(integrands, dA, log=False):
+        if log:
+            return logsumexp(integrands) + np.log(dA)
+        else:
+            return np.sum(integrands * dA)
+
+    def mean(estimates, log=False):
+        if log:
+            return logsumexp(estimates) - np.log(n_estimates)
+        else:
+            return np.mean(estimates)
+
+    def std(estimates, m=None, ddof=0, log=False):
+        m = m or mean(estimates, log)
+        if log:
+            estimates, m = np.broadcast_arrays(estimates, m)
+            temp = np.vstack((estimates, m + np.pi * 1j))
+            diff = logsumexp(temp, axis=0)
+            return np.real(0.5 * (logsumexp(2 * diff)
+                                  - np.log(n_estimates - ddof)))
+        else:
+            return np.std(estimates, ddof=ddof)
+
+    def sem(estimates, m=None, s=None, log=False):
+        m = m or mean(estimates, log)
+        s = s or std(estimates, m, ddof=1, log=log)
+        if log:
+            return s - 0.5*np.log(n_estimates)
+        else:
+            return s / np.sqrt(n_estimates)
 
     # The sign of the integral depends on the order of the limits. Fix this by
     # ensuring that lower bounds are indeed lower and setting sign of resulting
@@ -1352,16 +1381,12 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
         # with the `xx` array passed into the `scipy.integrate.nquad` `func`.
         x = stats.qmc.scale(sample, a, b).T  # (n_dim, n_points)
         integrands = func(x)
-        if log:
-            estimate = logsumexp(integrands) + np.log(dA)
-        else:
-            estimate = np.sum(integrands * dA)
-        estimates[i] = estimate
+        estimates[i] = sum_product(integrands, dA, log)
 
         # Get a new, independently-scrambled QRNG for next time
         qrng = type(qrng)(seed=rngs[i], **qrng._init_quad)
 
-    integral = np.mean(estimates)
+    integral = mean(estimates, log)
+    standard_error = sem(estimates, m=integral, log=log)
     integral = integral + np.pi*1j if (log and sign < 0) else integral*sign
-    standard_error = stats.sem(estimates)
     return QMCQuadResult(integral, standard_error)

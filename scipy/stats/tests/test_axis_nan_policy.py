@@ -37,6 +37,8 @@ axis_nan_policy_cases = [
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -76,6 +78,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
+
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -617,17 +620,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
         # yield all possible combinations of small samples
         gens = [small_sample_generator(n_dims) for i in range(n_samples)]
-        for i in product(*gens):
-            yield i
+        yield from product(*gens)
 
     n_dims = [2, 3]
     for samples in small_data_generator(n_samples, n_dims):
 
         # this test is only for arrays of zero size
-        if not any((sample.size == 0 for sample in samples)):
+        if not any(sample.size == 0 for sample in samples):
             continue
 
-        max_axis = max((sample.ndim for sample in samples))
+        max_axis = max(sample.ndim for sample in samples)
 
         # need to test for all valid values of `axis` parameter, too
         for axis in range(-max_axis, max_axis):
@@ -1050,3 +1052,24 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     if weighted_fun_name not in {'pmean', 'gmean'}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+
+
+def test_raise_invalid_args_g17713():
+    # other cases are handled in:
+    # test_axis_nan_policy_decorated_positional_axis - multiple values for arg
+    # test_axis_nan_policy_decorated_positional_args - unexpected kwd arg
+    message = "got an unexpected keyword argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], invalid_arg=True)
+
+    message = " got multiple values for argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], a=True)
+
+    message = "missing 1 required positional argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean()
+
+    message = "takes from 1 to 4 positional arguments but 5 were given"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)

@@ -116,8 +116,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     if show:
         print(first + 'Solution of symmetric Ax = b')
-        print(first + 'n      =  %3g     shift  =  %23.14e' % (n,shift))
-        print(first + 'itnlim =  %3g     rtol   =  %11.2e' % (maxiter,tol))
+        print(first + f'n      =  {n:3g}     shift  =  {shift:23.14e}')
+        print(first + f'itnlim =  {maxiter:3g}     rtol   =  {tol:11.2e}')
         print()
 
     istop = 0
@@ -341,9 +341,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
             prnt = True
 
         if show and prnt:
-            str1 = '%6g %12.5e %10.3e' % (itn, x[0], test1)
-            str2 = ' %10.3e' % (test2,)
-            str3 = ' %8.1e %8.1e %8.1e' % (Anorm, Acond, gbar/Anorm)
+            str1 = f'{itn:6g} {x[0]:12.5e} {test1:10.3e}'
+            str2 = f' {test2:10.3e}'
+            str3 = f' {Anorm:8.1e} {Acond:8.1e} {gbar/Anorm:8.1e}'
 
             print(str1 + str2 + str3)
 
@@ -358,10 +358,10 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     if show:
         print()
-        print(last + ' istop   =  %3g               itn   =%5g' % (istop,itn))
-        print(last + ' Anorm   =  %12.4e      Acond =  %12.4e' % (Anorm,Acond))
-        print(last + ' rnorm   =  %12.4e      ynorm =  %12.4e' % (rnorm,ynorm))
-        print(last + ' Arnorm  =  %12.4e' % (Arnorm,))
+        print(last + f' istop   =  {istop:3g}               itn   ={itn:5g}')
+        print(last + f' Anorm   =  {Anorm:12.4e}      Acond =  {Acond:12.4e}')
+        print(last + f' rnorm   =  {rnorm:12.4e}      ynorm =  {ynorm:12.4e}')
+        print(last + f' Arnorm  =  {Arnorm:12.4e}')
         print(last + msg[istop+1])
 
     if istop == 6:
@@ -370,23 +370,3 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         info = 0
 
     return (postprocess(x),info)
-
-
-if __name__ == '__main__':
-    from numpy import arange
-    from scipy.sparse import spdiags
-
-    n = 10
-
-    residuals = []
-
-    def cb(x):
-        residuals.append(norm(b - A@x))
-
-    # A = poisson((10,),format='csr')
-    A = spdiags([arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
-    A.psolve = M.matvec
-    b = zeros(A.shape[0])
-    x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
-    # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]

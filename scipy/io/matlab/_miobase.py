@@ -5,8 +5,6 @@ Base classes for MATLAB file stream reading.
 
 MATLAB is a registered trademark of the Mathworks inc.
 """
-import operator
-import functools
 
 import numpy as np
 from scipy._lib import doccer
