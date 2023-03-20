@@ -9335,6 +9335,35 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
+    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
+           Methods, Third Edition". Chapter 6, Section 6.3.2.
+
+    Examples
+    --------
+    In [2]_, the pulse rate (per minute) of a group of seven students was
+    measured before exercise, immediately after exercise and 5 minutes
+    after exercise. Is there evidence to suggest that the pulse rates on
+    these three occasions are similar?
+
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The pulse rates are identical on these three occasions.
+
+    Let's assess the plausibility of this hypothesis with a Friedman test.
+
+    >>> from scipy.stats import friedmanchisquare
+    >>> before = [72, 96, 88, 92, 74, 76, 82]
+    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
+    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
+    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> res.statistic
+    10.57142857142857
+    >>> res.pvalue
+    0.005063414171757498
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the pulse rates are different on
+    these three occasions".
 
     """
     k = len(samples)
