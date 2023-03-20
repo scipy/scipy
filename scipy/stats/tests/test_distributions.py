@@ -1670,27 +1670,21 @@ class TestLoggamma:
         assert ci.low < 0.5 < ci.high
 
     @pytest.mark.parametrize("c, ref",
-                            [(3, 0.9247941752645439),
-                             (0.001, 7.908754457315668),
-                             (5.3, 0.6164581314552009)])
+                             [(1e-8, 19.420680753952364),
+                              (1, 1.5772156649015328),
+                              (1e4, -3.186214986116763),
+                              (1e10, -10.093986931748889),
+                              (1e100, -113.71031611649761)])
     def test_entropy(self, c, ref):
-        # Reference values were calculated with the generic method.
-        assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
-
-    @pytest.mark.parametrize("c, ref",
-                            [(50, -0.5337397250497538),
-                             (2100, -2.405828413571719),
-                             (10000000000.0, -10.093986931748889),
-                             (1e+100, -113.71031611649761)])
-    def test_extreme_entropy(self, c, ref):
-        # Reference values were calculated with mpmath:
+    
+        # Reference values were calculated with mpmath
         # from mpmath import mp
         # mp.dps = 500
-        #
-        # def entropy(c):
-        # h = 0.5 + 0.5 * mp.log(2 * mp.pi) - 0.5 * mp.log(c) + 1 / (6 * c)
-        # return float(h)
-        assert_allclose(stats.loggamma._entropy(c), ref, rtol=1e-12)
+        # def loggamma_entropy_mpmath(c):
+        #     c = mp.mpf(c)
+        #     return float(mp.log(mp.gamma(c)) + c * (mp.one - mp.digamma(c)))
+        
+        assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
 
 class TestJohnsonsu:
