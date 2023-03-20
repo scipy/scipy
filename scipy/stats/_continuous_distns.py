@@ -7408,7 +7408,7 @@ class pareto_gen(rv_continuous):
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them. Use user supplied
             # guess or default 1.
-            brack_start = kwds.get('scale', 1)
+            brack_start = float(kwds.get('scale', 1))
             lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
@@ -9379,7 +9379,7 @@ class truncpareto_gen(rv_continuous):
         return [ib, ic]
 
     def _argcheck(self, b, c):
-        return (b > 0) & (c > 1)
+        return (b > 0.) & (c > 1.)
 
     def _get_support(self, b, c):
         return self.a, c
@@ -9388,7 +9388,8 @@ class truncpareto_gen(rv_continuous):
         return b * x**-(b+1) / (1 - c**-b)
 
     def _logpdf(self, x, b, c):
-        return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
         return (1 - x**-b) / (1 - c**-b)
@@ -9424,6 +9425,228 @@ class truncpareto_gen(rv_continuous):
         b, loc, scale = pareto.fit(data)
         c = (max(data) - loc)/scale
         return b, c, loc, scale
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
+
+        def log_mean(x):
+            return np.mean(np.log(x))
+
+        def harm_mean(x):
+            return 1/np.mean(1/x)
+
+        def get_b(c, loc, scale):
+            u = (data-loc)/scale
+            harm_m = harm_mean(u)
+            log_m = log_mean(u)
+            quot = (harm_m-1)/log_m
+            return (1 - (quot-1) / (quot - (1 - 1/c)*harm_m/np.log(c)))/log_m
+
+        def get_c(loc, scale):
+            return (mx - loc)/scale
+
+        def get_loc(fc, fscale):
+            if fscale:  # (fscale and fc) or (fscale and not fc)
+                loc = mn - fscale
+                return loc
+            if fc:
+                loc = (fc*mn - mx)/(fc - 1)
+                return loc
+
+        def get_scale(loc):
+            return mn - loc
+
+        # Functions used for optimisation; partial derivatives of
+        # the Lagrangian, set to equal 0.
+
+        def dL_dLoc(loc, b_=None):
+            # Partial derivative wrt location.
+            # Optimised upon when no parameters, or only b, are fixed.
+            scale = get_scale(loc)
+            c = get_c(loc, scale)
+            b = get_b(c, loc, scale) if b_ is None else b_
+            harm_m = harm_mean((data - loc)/scale)
+            return 1 - (1 + (c - 1)/(c**(b+1) - c)) * (1 - 1/(b+1)) * harm_m
+
+        def dL_dB(b, logc, logm):
+            # Partial derivative wrt b.
+            # Optimised upon whenever at least one parameter but b is fixed,
+            # and b is free.
+            return b - np.log1p(b*logc / (1 - b*logm)) / logc
+
+        def fallback(data, *args, **kwargs):
+            # Should any issue arise, default to the general fit method.
+            return super(truncpareto_gen, self).fit(data, *args, **kwargs)
+
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fb, fc, floc, fscale = parameters
+        mn, mx = data.min(), data.max()
+        mn_inf = np.nextafter(mn, -np.inf)
+
+        if (fb is not None
+                and fc is not None
+                and floc is not None
+                and fscale is not None):
+            raise ValueError("All parameters fixed."
+                             "There is nothing to optimize.")
+        elif fc is None and floc is None and fscale is None:
+            if fb is None:
+                def cond_b(loc):
+                    # b is positive only if this function is positive
+                    scale = get_scale(loc)
+                    c = get_c(loc, scale)
+                    harm_m = harm_mean((data - loc)/scale)
+                    return (1 + 1/(c-1)) * np.log(c) / harm_m - 1
+
+                # This gives an upper bound on loc allowing for a positive b.
+                # Iteratively look for a bracket for root_scalar.
+                mn_inf = np.nextafter(mn, -np.inf)
+                rbrack = mn_inf
+                i = 0
+                lbrack = rbrack - 1
+                while ((lbrack > -np.inf)
+                       and (cond_b(lbrack)*cond_b(rbrack) >= 0)):
+                    i += 1
+                    lbrack = rbrack - np.power(2., i)
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(cond_b, bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+
+                # Determine the MLE for loc.
+                # Iteratively look for a bracket for root_scalar.
+                rbrack = res.root - 1e-3  # grad_loc is numerically ill-behaved
+                lbrack = rbrack - 1
+                i = 0
+                while ((lbrack > -np.inf)
+                       and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                    i += 1
+                    lbrack = rbrack - np.power(2., i)
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+                loc = res.root
+                scale = get_scale(loc)
+                c = get_c(loc, scale)
+                b = get_b(c, loc, scale)
+
+                std_data = (data - loc)/scale
+                # The expression of b relies on b being bounded above.
+                up_bound_b = min(1/log_mean(std_data),
+                                 1/(harm_mean(std_data)-1))
+                if not (b < up_bound_b):
+                    return fallback(data, *args, **kwds)
+            else:
+                # We know b is positive (or a FitError will be triggered)
+                # so we let loc get close to min(data).
+                rbrack = mn_inf
+                lbrack = mn_inf - 1
+                i = 0
+                # Iteratively look for a bracket for root_scalar.
+                while (lbrack > -np.inf
+                       and (dL_dLoc(lbrack, fb)
+                            * dL_dLoc(rbrack, fb) >= 0)):
+                    i += 1
+                    lbrack = rbrack - 2**i
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, (fb,),
+                                  bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+                loc = res.root
+                scale = get_scale(loc)
+                c = get_c(loc, scale)
+                b = fb
+        else:
+            # At least one of the parameters determining the support is fixed;
+            # the others then have analytical expressions from the constraints.
+            # The completely determined case (fixed c, loc and scale)
+            # has to be checked for not overflowing the support.
+            # If not fixed, b has to be determined numerically.
+            loc = floc if floc is not None else get_loc(fc, fscale)
+            scale = fscale or get_scale(loc)
+            c = fc or get_c(loc, scale)
+
+            # Unscaled, translated values should be positive when the location
+            # is fixed. If it is not the case, we end up with negative `scale`
+            # and `c`, which would trigger a FitError before exiting the
+            # method.
+            if floc is not None and data.min() - floc < 0:
+                raise FitDataError("truncpareto", lower=1, upper=c)
+
+            # Standardised values should be within the distribution support
+            # when all parameters controlling it are fixed. If it not the case,
+            # `fc` is overidden by `c` determined from `floc` and `fscale` when
+            # raising the exception.
+            if fc and (floc is not None) and fscale:
+                if data.max() > fc*fscale + floc:
+                    raise FitDataError("truncpareto", lower=1,
+                                       upper=get_c(loc, scale))
+
+            # The other constraints should be automatically satisfied
+            # from the analytical expressions of the parameters.
+            # If fc or fscale are respectively less than one or less than 0,
+            # a FitError is triggered before exiting the method.
+
+            if fb is None:
+                std_data = (data - loc)/scale
+                logm = log_mean(std_data)
+                logc = np.log(c)
+                # Condition for a positive root to exist.
+                if not (2*logm < logc):
+                    return fallback(data, *args, **kwds)
+
+                lbrack = 1/logm + 1/(logm - logc)
+                rbrack = np.nextafter(1/logm, 0)
+                try:
+                    res = root_scalar(dL_dB, (logc, logm),
+                                      bracket=(lbrack, rbrack))
+                    # we should then never get there
+                    if not res.converged:
+                        return fallback(data, *args, **kwds)
+                    b = res.root
+                except ValueError:
+                    b = rbrack
+            else:
+                b = fb
+
+        # The distribution requires that `scale+loc <= data <= c*scale+loc`.
+        # To avoid numerical issues, some tuning may be necessary.
+        # We adjust `scale` to satisfy the lower bound, and we adjust
+        # `c` to satisfy the upper bound.
+        if not (scale+loc) < mn:
+            if fscale:
+                loc = np.nextafter(loc, -np.inf)
+            else:
+                scale = get_scale(loc)
+                scale = np.nextafter(scale, 0)
+        if not (c*scale+loc) > mx:
+            c = get_c(loc, scale)
+            c = np.nextafter(c, np.inf)
+
+        if not (np.all(self._argcheck(b, c)) and (scale > 0)):
+            return fallback(data, *args, **kwds)
+
+        params_override = b, c, loc, scale
+        if floc is None and fscale is None:
+            # Based on testing in gh-16782, the following methods are only
+            # reliable if either `floc` or `fscale` are provided. They are
+            # fast, though, so might as well see if they are better than the
+            # generic method.
+            params_super = fallback(data, *args, **kwds)
+            nllf_override = self.nnlf(params_override, data)
+            nllf_super = self.nnlf(params_super, data)
+            if nllf_super < nllf_override:
+                return params_super
+
+        return params_override
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
