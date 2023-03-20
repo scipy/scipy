@@ -253,13 +253,26 @@ class TestDunnett:
     @pytest.mark.parametrize(
         'alternative, allowance, ci_low, ci_high',
         [
-            ('two-sided', 11, [0, -9, -16], [22, 13, 6]),
-            ('less', 9, [2, -7, -14], [np.inf, np.inf, np.inf]),
-            ('greater', 9, [-np.inf, -np.inf, -np.inf], [20, 11, 4])
+            (
+                'two-sided', 11,
+                [0.7529028025053, -8.2470971974947, -15.2470971974947],
+                [21.2470971974947, 12.2470971974947, 5.2470971974947]
+             ),
+            (
+                'less', 9,
+                [2.4023682323149, -6.5976317676851, -13.5976317676851],
+                [np.inf, np.inf, np.inf]
+            ),
+            (
+                'greater', 9,
+                [-np.inf, -np.inf, -np.inf],
+                [19.5984402363662, 10.5984402363662, 3.5984402363662]
+            )
         ]
     )
     def test_allowance(self, alternative, allowance, ci_low, ci_high):
-        # Example (a) from Dunnett1995
+        # Example (a) from Dunnett1995 using R multcomp `glht`
+        # Same as above with confint(test) and the corresponding alternative
         rng = np.random.default_rng(189117774084579816190295271136455278291)
         samples = [
             [55, 64, 64],
@@ -278,8 +291,8 @@ class TestDunnett:
         assert res._ci is None
         assert res._ci_cl is None
         ci = res.confidence_interval(confidence_level=0.95)
-        assert_allclose(ci.low, ci_low, atol=1)
-        assert_allclose(ci.high, ci_high, atol=1)
+        assert_allclose(ci.low, ci_low, rtol=1e-2)
+        assert_allclose(ci.high, ci_high, rtol=1e-2)
 
         # re-run to use the cached value "is" to check id as same object
         assert res._ci is ci
