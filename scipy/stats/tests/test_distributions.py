@@ -8387,6 +8387,7 @@ class TestAnglit:
         #     y = float(mp.quad(lambda z: pdf(z), [t, mp.pi / 4]))
         #     return y
         assert_allclose(stats.anglit.sf(t), ref, rtol=1e-14)
+        assert_allclose(1 - stats.anglit.cdf(t), ref, rtol=1e-14)
 
 
 class TestWrapCauchy:
