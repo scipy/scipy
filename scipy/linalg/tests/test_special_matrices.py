@@ -322,6 +322,11 @@ class TestKron:
                           [33, 44]])
         assert_array_equal(a, expected)
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = kron(a,a)
+        assert_allclose(a_empty, a)
+
 
 class TestHelmert:
 
