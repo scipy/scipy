@@ -9736,8 +9736,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two samples (histograms), :math:`u` and :math:`v`, the first
-    Wasserstein distance between the distributions is:
+    Given two samples (expressed as histograms), :math:`u` and :math:`v`,
+    the first Wasserstein distance between the distributions is:
 
     .. math::
 
@@ -9800,9 +9800,9 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     By solving the dual form of the above linear programming problem (with
     solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)` can
-    be computed as :math:`b^T x^*`.
+    be computed as :math:`b^T y^*`.
 
-    The above solution is inspired by Vincent Herrmann's blog [5]_ .For a
+    The above solution is inspired by Vincent Herrmann's blog [5]_ . For a
     more thorough explanation, see [4]_ .
 
     The input distributions can be empirical, therefore coming from samples
