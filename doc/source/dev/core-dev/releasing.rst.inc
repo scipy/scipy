@@ -152,31 +152,21 @@ by running ``python dev.py notes`` (with tags, see ``python dev.py notes
 after you've created the signed tag locally.  If this completes without issues,
 push the release commit (not the tag, see section above) to the scipy repo.
 
-To build wheels, push a commit to a branch used for the current release at
-https://github.com/MacPython/scipy-wheels . This triggers builds for all needed
-Python versions on TravisCI.  Update and check the ``.travis.yml`` and ``appveyor.yml``
-config files what commit to build, and what Python and NumPy are used for the
-builds (it needs to be the lowest supported NumPy version for each Python
-version). See the README file in the scipy-wheels repo for more details. Note that
-because several months may pass between ``SciPy`` releases, it is sometimes necessary
-to update the versions of the ``gfortran-install`` and ``multibuild`` submodules
-used for wheel builds. If the wheels builds reveal issues that need to be fixed
+To build wheels, push a commit containing the text ``[wheel build]`` to the branch
+used for the current release. This triggers ``cibuildwheel`` builds for all needed
+Python versions and platforms. The appropriate version pins for NumPy and other
+dependencies should have been updated in ``pyproject.toml`` prior to branching.
+If the wheel builds reveal issues that need to be fixed
 with backports on the maintenance branch, you may remove the local tags (for example
 ``git tag -d v1.2.0rc1``) and restart with tagging above on the new candidate commit.
 
-The TravisCI and Appveyor builds run the tests from the built wheels and if they pass,
-upload the wheels to a container pointed to at https://github.com/MacPython/scipy-wheels
-Once there are successful wheel builds, it is recommended to create a versioned branch
-in the ``scipy-wheels`` repo, which will for example be adjusted to point to different
-maintenance branch commits if there are multiple release candidates.
+The ``cibuildwheel`` infrastructure runs the tests from the built wheels and if they pass,
+uploads the wheels to https://anaconda.org/multibuild-wheels-staging/scipy.
 
 From there you can download them for uploading to PyPI. This can be
 done in an automated fashion using ``tools/download-wheels.py``::
 
   $ python tools/download-wheels.py 1.5.0rc1 -w REPO_ROOT/release/installers
-
-The correct URL to use is shown in https://github.com/MacPython/scipy-wheels
-and should agree with the above one.
 
 After this, we want to regenerate the README file, in order to have the MD5 and
 SHA256 checksums of the just downloaded wheels in it.  Run ``python dev.py
@@ -190,7 +180,7 @@ For a release there are currently five places on the web to upload things to:
 - PyPI (sdist, wheels)
 - GitHub Releases (sdist, release notes, Changelog)
 - scipy.org (an announcement of the release)
-- docs.scipy.org (html/pdf docs)
+- docs.scipy.org (html docs)
 
 **PyPI:**
 

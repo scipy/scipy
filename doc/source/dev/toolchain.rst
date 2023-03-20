@@ -125,13 +125,13 @@ Currently, SciPy wheels are being built as follows:
  Platform          Azure Base Image [5]_     Compilers                    Comment
 ================  ========================  ===========================  ==============================
 Linux (nightly)    ``ubuntu-20.04``          GCC 6.5                      See ``azure-pipelines.yml``
-Linux (release)    ``ubuntu-22.04``          GCC 8                        Built in separate repo [6]_
-OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
-Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_
+Linux (release)    ``ubuntu-22.04``          GCC 8                        ``cibuildwheel``
+OSX                ``macOS-10.15``           LLVM 12.0.0                  ``cibuildwheel``
+Windows            ``windows-2019``          Visual Studio 2019 (vc142)   ``cibuildwheel``
 ================  ========================  ===========================  ==============================
 
-Note that the OSX wheels additionally vendor gfortran 4.9,
-see submodule ``gfortran-install`` in [6]_.
+Note that the OSX wheels additionally vendor gfortran 11.3.0,
+see ``tools/wheels/cibw_before_build_macos.sh``.
 
 
 C Compilers
@@ -448,7 +448,6 @@ References
 .. [3] https://scipy.github.io/devdocs/release.html
 .. [4] https://github.com/scipy/oldest-supported-numpy
 .. [5] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
-.. [6] https://github.com/MacPython/scipy-wheels
 .. [7] https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-in-visual-studio
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
