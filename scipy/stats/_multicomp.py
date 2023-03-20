@@ -33,6 +33,7 @@ class DunnettResult:
     _std: float
     _mean_samples: np.ndarray
     _mean_control: np.ndarray
+    _rng: SeedType
     _ci: ConfidenceInterval | None = None
     _ci_cl: DecimalNumber | None = None
 
@@ -71,7 +72,7 @@ class DunnettResult:
         return s
 
     def _allowance(
-        self, confidence_level: DecimalNumber = 0.95, tol: DecimalNumber = 1e-4
+        self, confidence_level: DecimalNumber = 0.95, tol: DecimalNumber = 1e-3
     ) -> float:
         """Allowance.
 
@@ -86,7 +87,7 @@ class DunnettResult:
             of the estimated proportion. Default is .95.
         tol : float, optional
             Tolerance to optimize the critical value with respect to the
-            `confidence_level`. Default is 1e-4.
+            `confidence_level`. Default is 1e-3.
 
         Returns
         -------
@@ -100,15 +101,17 @@ class DunnettResult:
             statistic = np.array(statistic)
             sf = _pvalue_dunnett(
                 rho=self._rho, df=self._df,
-                statistic=statistic, alternative=self._alternative
+                statistic=statistic, alternative=self._alternative,
+                rng=self._rng
             )
-            return abs(sf - alpha)
+            return abs(sf - alpha)/alpha
 
         res = minimize_scalar(pvalue_from_stat, method='brent', tol=tol)
         critical_value = res.x
 
         # validation
-        if res.success is False or res.fun >= tol:
+        # tol*10 because tol=1e-3 means we tolerate a 1% change at most
+        if res.success is False or res.fun >= tol*10:
             warnings.warn(
                 "The computation of the confidence interval did not converge.",
                 stacklevel=3
@@ -326,7 +329,8 @@ def dunnett(
         _alternative=alternative,
         _rho=rho, _df=df, _std=std,
         _mean_samples=mean_samples,
-        _mean_control=mean_control
+        _mean_control=mean_control,
+        _rng=rng
     )
 
 
