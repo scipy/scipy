@@ -2209,7 +2209,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
-            _extra_windows_error_checks(X, out, (m * (m - 1) / 2), **kwargs)
+            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
