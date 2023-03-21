@@ -2399,8 +2399,6 @@ class TestLinprogHiGHSMIP():
         assert res.status == 0
 
 
-
-
 ###########################
 # Autoscale-Specific Tests#
 ###########################
