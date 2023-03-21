@@ -35,7 +35,7 @@ class EmpiricalDistributionFunction:
         self._sf = points if kind == 'sf' else 1 - points
         self._kind = kind
 
-    def confidence_interval(self, confidence_level=0.95, method='linear'):
+    def confidence_interval(self, confidence_level=0.95, *, method='linear'):
         """Compute a confidence interval around the CDF/SF point estimate
 
         Parameters
