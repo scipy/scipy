@@ -8141,19 +8141,3 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
-
-
-types = [np.int32, np.int64, int, np.float32, np.float64, float]
-# This is for debugging a CI issue; remove before merge
-@pytest.mark.parametrize("repeats_dtype", types)
-@pytest.mark.parametrize("a_dtype", types)
-def test_repeat(a_dtype, repeats_dtype):
-    a = [1, 2, 3, 4]
-    a = np.array(a, dtype=a_dtype)
-    a = a.tolist() if a_dtype in {int, float} else a
-    repeats = [2, 1, 2, 1]
-    repeats = np.array(repeats, dtype=repeats_dtype)
-    repeats = repeats.tolist() if repeats_dtype in {int, float} else repeats
-    repeated = np.repeat(a, repeats)
-    reference = np.concatenate([[i]*int(j) for i, j in zip(a, repeats)])
-    assert_allclose(repeated, reference)
