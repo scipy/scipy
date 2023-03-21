@@ -123,21 +123,13 @@ from ..special import rel_entr
 from . import _distance_pybind
 
 
-def _extra_windows_error_checks(x, out, func, **kwargs):
+def _extra_windows_error_checks(x, out, required_shape, **kwargs):
     # TODO: remove this function when distutils
     # build system is removed because pybind11 error
     # handling should suffice per gh-18108
     if os.name == "nt" and out is not None:
-        if func == "pdist":
-            m = kwargs["m"]
-            if out.shape != (m * (m - 1) / 2,):
-                raise ValueError("Output array has incorrect shape.")
-        else:
-            mA = kwargs["mA"]
-            mB = kwargs["mB"]
-            required_shape = (mA, mB)
-            if out.shape != required_shape:
-                raise ValueError("Output array has incorrect shape.")
+        if out.shape != required_shape:
+            raise ValueError("Output array has incorrect shape.")
         if not out.flags["C_CONTIGUOUS"]:
             raise ValueError("Output array must be C-contiguous.")
         if not np.can_cast(x.dtype, out.dtype):
@@ -2217,7 +2209,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
-            _extra_windows_error_checks(X, out, "pdist", m=m, **kwargs)
+            _extra_windows_error_checks(X, out, (m * (m - 1) / 2), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -3003,7 +2995,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
-            _extra_windows_error_checks(XA, out, "cdist", mA=mA, mB=mB, **kwargs)
+            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
