@@ -5787,19 +5787,13 @@ class logistic_gen(rv_continuous):
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
-        # Note: gh-18176 reported data for which the reported MLE had
-        # `scale < 0`. To fix the bug, we'll use abs(scale). This is not
-        # expected to cause convergence issues because a) `dl_dscale` is an
-        # even function, b) dl_dloc appears to be approximately even at the
-        # solution, and c) in 10k randomly-generated tests, the fit override
-        # always outperformed the generic fit. Ideally, though, we would
-        # *constrain* `scale` to be positive.
+
         def dl_dloc(loc, scale=fscale):
-            c = (data - loc) / abs(scale)
+            c = (data - loc) / scale
             return np.sum(sc.expit(c)) - n/2
 
         def dl_dscale(scale, loc=floc):
-            c = (data - loc) / abs(scale)
+            c = (data - loc) / scale
             return np.sum(c*np.tanh(c/2)) - n
 
         def func(params):
@@ -5818,6 +5812,10 @@ class logistic_gen(rv_continuous):
             res = optimize.root(func, (loc, scale))
             loc, scale = res.x
 
+        # Note: gh-18176 reported data for which the reported MLE had
+        # `scale < 0`. To fix the bug, we return abs(scale). This is OK because
+        # `dl_dscale` and `dl_dloc` are even and odd functions of `scale`,
+        # respectively, so if `-scale` is a solution, so is `scale`.
         scale = abs(scale)
         return ((loc, scale) if res.success
                 else super().fit(data, *args, **kwds))
