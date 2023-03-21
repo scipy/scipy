@@ -2365,7 +2365,6 @@ class TestLinprogHiGHSMIP():
         assert np.all(gap_diffs >= 0)
         assert not np.all(gap_diffs == 0)
 
-
     def test_semi_continuous(self):
         # See issue #18106. This test if the integrality parameter
         # is being checked correctly (status returns 0),
