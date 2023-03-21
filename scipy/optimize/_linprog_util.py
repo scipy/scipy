@@ -1502,7 +1502,6 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message, integrality=
                 invalid_bounds = not np.isin(invalid_idx,
                                              np.where(integrality > 1)).all()
 
-
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
