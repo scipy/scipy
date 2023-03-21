@@ -1203,7 +1203,7 @@ def authors(ctx_obj, revision_args):
 
 
 @cli.cls_cmd('ci-local')
-class CILocal(Task):
+class CILocal():
     """:flashlight: A tool which provides a handy way to run GitHub Actions locally using Docker
 
     Installation guide :arrow_down:
@@ -1213,9 +1213,9 @@ class CILocal(Task):
         * Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
     Options available:
-    - list (lists all the workflows present)
-    - run-job (runs a particular workflow)
-    - reuse (reuse the containers in act to maintain state)
+        * list (lists all the workflows present)
+        * run-job (runs a particular workflow)
+        * reuse (reuse the containers in act to maintain state)
 
     Examples (verbose logging enabled by default):
 
@@ -1223,15 +1223,14 @@ class CILocal(Task):
     $ python dev.py ci-local run-job test_meson
     $ python dev.py ci-local reuse test_meson
     """
-    ctx = CONTEXT
     args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
 
     @classmethod
-    def task_meta(cls, args):
+    def run(cls, args):
         cmd = ['act']
+        print("arguments passed", args)
         if len(args)==1:
             if args[0] == 'list':
-                print(args)
                 cmd += ['-l']
         elif len(args)==2:
             if args[0] == 'run-job':
@@ -1244,9 +1243,7 @@ class CILocal(Task):
         cmd_str = ' '.join(cmd)
         click.echo(cmd_str)
 
-        return {
-            'actions': [f'{cmd_str}']
-        }
+        return subprocess.call(cmd)
 
 
 if __name__ == '__main__':
