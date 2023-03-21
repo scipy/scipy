@@ -1490,7 +1490,6 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message, integrality=
     else:
         invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
 
-
         # in case integrality is 2 or 3, there needs to be an aditional check to see if
         # the values that are out of bounds are both 0 and with integrality more than 1
         if np.any(integrality) and invalid_bounds and (integrality > 1).any():
