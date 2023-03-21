@@ -236,7 +236,7 @@ class BSpline:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
             raise ValueError("Need at least %d knots for degree %d" %
-                    (2*k + 2, k))
+                             (2*k + 2, k))
         if (np.diff(self.t) < 0).any():
             raise ValueError("Knots must be in a non-decreasing order.")
         if len(np.unique(self.t[k:n+1])) < 2:
@@ -510,7 +510,7 @@ class BSpline:
 
     def _evaluate(self, xp, nu, extrapolate, out):
         _bspl.evaluate_spline(self.t, self.c.reshape(self.c.shape[0], -1),
-                self.k, xp, nu, extrapolate, out)
+                              self.k, xp, nu, extrapolate, out)
 
     def _ensure_c_contiguous(self):
         """
@@ -549,7 +549,7 @@ class BSpline:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splder((self.t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate,
-                                    axis=self.axis)
+                                   axis=self.axis)
 
     def antiderivative(self, nu=1):
         """Return a B-spline representing the antiderivative.
@@ -876,6 +876,7 @@ def _process_deriv_spec(deriv):
         ords, vals = [], []
     return np.atleast_1d(ords, vals)
 
+
 def _woodbury_algorithm(A, ur, ll, b, k):
     '''
     Solve a cyclic banded linear system with upper right
@@ -885,7 +886,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     Parameters
     ----------
     A : 2-D array, shape(k, n)
-        Matrix of diagonals of original matrix(see 
+        Matrix of diagonals of original matrix (see
         ``solve_banded`` documentation).
     ur : 2-D array, shape(bs, bs)
         Upper right block matrix.
@@ -944,11 +945,11 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     U = np.zeros((n - 1, k_mod))
     VT = np.zeros((k_mod, n - 1))  # V transpose
 
-    # upper right block 
+    # upper right block
     U[:bs, :bs] = ur
     VT[np.arange(bs), np.arange(bs) - bs] = 1
 
-    # lower left block 
+    # lower left block
     U[-bs:, -bs:] = ll
     VT[np.arange(bs) - bs, np.arange(bs)] = 1
 
@@ -961,6 +962,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
 
     return c
 
+
 def _periodic_knots(x, k):
     '''
     returns vector of nodes on circle
@@ -969,7 +971,7 @@ def _periodic_knots(x, k):
     n = len(xc)
     if k % 2 == 0:
         dx = np.diff(xc)
-        xc[1: -1] -= dx[:-1] / 2 
+        xc[1: -1] -= dx[:-1] / 2
     dx = np.diff(xc)
     t = np.zeros(n + 2 * k)
     t[k: -k] = xc
@@ -1042,6 +1044,7 @@ def _make_interp_per_full_matr(x, y, t, k):
 
     c = solve(matr, b)
     return c
+
 
 def _make_periodic_spline(x, y, t, k, axis):
     '''
@@ -1131,6 +1134,7 @@ def _make_periodic_spline(x, y, t, k, axis):
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
+
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
@@ -1179,6 +1183,14 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     Returns
     -------
     b : a BSpline object of the degree ``k`` and with knots ``t``.
+
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    CubicSpline : a cubic spline in the polynomial basis
+    make_lsq_spline : a similar factory function for spline fitting
+    UnivariateSpline : a wrapper over FITPACK spline fitting routines
+    splrep : a wrapper over FITPACK spline fitting routines
 
     Examples
     --------
@@ -1253,14 +1265,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> ax.scatter3D(x, *y, color='red')
     >>> plt.show()
 
-    See Also
-    --------
-    BSpline : base class representing the B-spline objects
-    CubicSpline : a cubic spline in the polynomial basis
-    make_lsq_spline : a similar factory function for spline fitting
-    UnivariateSpline : a wrapper over FITPACK spline fitting routines
-    splrep : a wrapper over FITPACK spline fitting routines
-
     """
     # convert string aliases for the boundary conditions
     if bc_type is None or bc_type == 'not-a-knot' or bc_type == 'periodic':
@@ -1317,7 +1321,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if bc_type == 'periodic' and t is not None:
         raise NotImplementedError("For periodic case t is constructed "
-                         "automatically and can not be passed manually")
+                                  "automatically and can not be passed "
+                                  "manually")
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -1329,8 +1334,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                 # 2nd and 2nd-to-last points, a la not-a-knot
                 t = (x[1:] + x[:-1]) / 2.
                 t = np.r_[(x[0],)*(k+1),
-                           t[1:-1],
-                           (x[-1],)*(k+1)]
+                          t[1:-1],
+                          (x[-1],)*(k+1)]
             else:
                 t = _not_a_knot(x, k)
         else:
@@ -1366,7 +1371,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
+                         "match: expected {}, got {}+{}".format(nt-n, nleft, nright))
 
     # bail out if the `y` array is zero-sized
     if y.size == 0:
@@ -1381,7 +1386,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
     if nright > 0:
         _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
-                                offset=nt-nright)
+                                      offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
     extradim = prod(y.shape[1:])
@@ -1397,7 +1402,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         ab, rhs = map(np.asarray_chkfinite, (ab, rhs))
     gbsv, = get_lapack_funcs(('gbsv',), (ab, rhs))
     lu, piv, c, info = gbsv(kl, ku, ab, rhs,
-            overwrite_ab=True, overwrite_b=True)
+                            overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
         raise LinAlgError("Collocation matrix is singular.")
@@ -1450,6 +1455,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     Returns
     -------
     b : a BSpline object of the degree ``k`` with knots ``t``.
+
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    make_interp_spline : a similar factory function for interpolating splines
+    LSQUnivariateSpline : a FITPACK-based spline fitting routine
+    splrep : a FITPACK-based fitting routine
 
     Notes
     -----
@@ -1507,13 +1519,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     Notice the need to replace a ``nan`` by a numerical value (precise value
     does not matter as long as the corresponding weight is zero.)
 
-    See Also
-    --------
-    BSpline : base class representing the B-spline objects
-    make_interp_spline : a similar factory function for interpolating splines
-    LSQUnivariateSpline : a FITPACK-based spline fitting routine
-    splrep : a FITPACK-based fitting routine
-
     """
     x = _as_float_array(x, check_finite)
     y = _as_float_array(y, check_finite)
@@ -1555,9 +1560,9 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     ab = np.zeros((k+1, n), dtype=np.float_, order='F')
     rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
     _bspl._norm_eq_lsq(x, t, k,
-                      y.reshape(-1, extradim),
-                      w,
-                      ab, rhs)
+                       y.reshape(-1, extradim),
+                       w,
+                       ab, rhs)
     rhs = rhs.reshape((n,) + y.shape[1:])
 
     # have observation matrix & rhs, can solve the LSQ problem

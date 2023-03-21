@@ -9,7 +9,7 @@ every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
 .. note:: Before submitting or updating your PR, please ensure that you tested
-          your changes locally. See :ref:`pr-checklist` and :ref:`runtests`.
+          your changes locally. See :ref:`pr-checklist` and :ref:`devpy-test`.
 
 Workflows
 =========

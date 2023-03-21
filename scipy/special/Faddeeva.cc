@@ -20,6 +20,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
  */
 
+#include <Python.h>
 #include "Faddeeva.hh"
 
 /* Available at: http://ab-initio.mit.edu/Faddeeva
@@ -117,7 +118,6 @@
 		       file Faddeeva.hh.
 */
 
-#include <Python.h>
 #include <cfloat>
 #include <cmath>
 

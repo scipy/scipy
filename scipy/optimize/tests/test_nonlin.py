@@ -341,7 +341,7 @@ class TestJacobianDotSolve:
             d = abs(a - b).max()
             f = tol + abs(b).max()*tol
             if d > f:
-                raise AssertionError('%s: err %g' % (msg, d))
+                raise AssertionError(f'{msg}: err {d:g}')
 
         self.A = rand(N, N)
 

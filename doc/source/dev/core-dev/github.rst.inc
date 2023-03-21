@@ -42,7 +42,8 @@ Dealing with pull requests
 
 - When merging contributions, a committer is responsible for ensuring that
   those meet the requirements outlined in `Contributing to SciPy
-  <https://github.com/scipy/scipy/blob/main/HACKING.rst.txt>`_. Also check
+  <https://github.com/scipy/scipy/blob/main/doc/source/dev/HACKING.rst>`_.
+  Also check
   that new features and backwards compatibility breaks were discussed on the
   scipy-dev mailing list.
 - New code goes in via a pull request (PR).

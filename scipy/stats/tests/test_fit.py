@@ -21,27 +21,37 @@ thresh_percent = 0.25  # percent of true parameters for fail cut-off
 thresh_min = 0.75  # minimum difference estimate - true to fail test
 
 mle_failing_fits = [
-        'burr',
-        'chi2',
         'gausshyper',
         'genexpon',
         'gengamma',
         'kappa4',
         'ksone',
         'kstwo',
-        'mielke',
         'ncf',
         'ncx2',
-        'pearson3',
-        'powerlognorm',
         'truncexpon',
-        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
         'trapezoid',
         'truncweibull_min',
         'studentized_range',
+]
+
+# The MLE fit method of these distributions doesn't perform well when all
+# parameters are fit, so test them with the location fixed at 0.
+mle_use_floc0 = [
+    'burr',
+    'chi',
+    'chi2',
+    'mielke',
+    'pearson3',
+    'genhalflogistic',
+    'rdist',
+    'pareto',
+    'powerlaw',  # distfn.nnlf(est2, rvs) > distfn.nnlf(est1, rvs) otherwise
+    'powerlognorm',
+    'wrapcauchy',
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
@@ -62,6 +72,7 @@ mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -109,7 +120,35 @@ def test_cont_fit(distname, arg, method):
 
         with np.errstate(all='ignore'):
             rvs = distfn.rvs(size=fit_size, *arg)
-            est = distfn.fit(rvs, method=method)  # start with default values
+            if method == 'MLE' and distfn.name in mle_use_floc0:
+                kwds = {'floc': 0}
+            else:
+                kwds = {}
+            # start with default values
+            est = distfn.fit(rvs, method=method, **kwds)
+            if method == 'MLE':
+                # Trivial test of the use of CensoredData.  The fit() method
+                # will check that data contains no actual censored data, and
+                # do a regular uncensored fit.
+                data1 = stats.CensoredData(rvs)
+                est1 = distfn.fit(data1, **kwds)
+                msg = ('Different results fitting uncensored data wrapped as'
+                       f' CensoredData: {distfn.name}: est={est} est1={est1}')
+                assert_allclose(est1, est, rtol=1e-10, err_msg=msg)
+            if method == 'MLE' and distname not in fail_interval_censored:
+                # Convert the first `nic` values in rvs to interval-censored
+                # values. The interval is small, so est2 should be close to
+                # est.
+                nic = 15
+                interval = np.column_stack((rvs, rvs))
+                interval[:nic, 0] *= 0.99
+                interval[:nic, 1] *= 1.01
+                interval.sort(axis=1)
+                data2 = stats.CensoredData(interval=interval)
+                est2 = distfn.fit(data2, **kwds)
+                msg = ('Different results fitting interval-censored'
+                       f' data: {distfn.name}: est={est} est2={est2}')
+                assert_allclose(est2, est, rtol=0.05, err_msg=msg)
 
         diff = est - truearg
 
@@ -777,6 +816,74 @@ class TestGoodnessOfFit:
         ref = stats.anderson(x, dist='gumbel_r')
         assert_allclose(res.statistic, ref.critical_values[0])
         assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+
+    def test_against_filliben_norm(self):
+        # Test against `stats.fit` ref. [7] Section 8 "Example"
+        rng = np.random.default_rng(8024266430745011915)
+        y = [6, 1, -4, 8, -2, 5, 0]
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, y, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        # Slight discrepancy presumably due to roundoff in Filliben's
+        # calculation. Using exact order statistic medians instead of
+        # Filliben's approximation doesn't account for it.
+        assert_allclose(res.statistic, 0.98538, atol=1e-4)
+        assert 0.75 < res.pvalue < 0.9
+
+        # Using R's ppcc library:
+        # library(ppcc)
+        # options(digits=16)
+        # x < - c(6, 1, -4, 8, -2, 5, 0)
+        # set.seed(100)
+        # ppccTest(x, "qnorm", ppos="Filliben")
+        # Discrepancy with
+        assert_allclose(res.statistic, 0.98540957187084, rtol=2e-5)
+        assert_allclose(res.pvalue, 0.8875, rtol=2e-3)
+
+    def test_filliben_property(self):
+        # Filliben's statistic should be independent of data location and scale
+        rng = np.random.default_rng(8535677809395478813)
+        x = rng.normal(loc=10, scale=0.5, size=100)
+        res = stats.goodness_of_fit(stats.norm, x,
+                                    statistic="filliben", random_state=rng)
+        known_params = {'loc': 0, 'scale': 1}
+        ref = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+
+    @pytest.mark.parametrize('case', [(25, [.928, .937, .950, .958, .966]),
+                                      (50, [.959, .965, .972, .977, .981]),
+                                      (95, [.977, .979, .983, .986, .989])])
+    def test_against_filliben_norm_table(self, case):
+        # Test against `stats.fit` ref. [7] Table 1
+        rng = np.random.default_rng(504569995557928957)
+        n, ref = case
+        x = rng.random(n)
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        percentiles = np.array([0.005, 0.01, 0.025, 0.05, 0.1])
+        res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
+        assert_allclose(res, ref, atol=2e-3)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('case', [(5, 0.95772790260469, 0.4755),
+                                      (6, 0.95398832257958, 0.3848),
+                                      (7, 0.9432692889277, 0.2328)])
+    def test_against_ppcc(self, case):
+        # Test against R ppcc, e.g.
+        # library(ppcc)
+        # options(digits=16)
+        # x < - c(0.52325412, 1.06907699, -0.36084066, 0.15305959, 0.99093194)
+        # set.seed(100)
+        # ppccTest(x, "qrayleigh", ppos="Filliben")
+        n, ref_statistic, ref_pvalue = case
+        rng = np.random.default_rng(7777775561439803116)
+        x = rng.normal(size=n)
+        res = stats.goodness_of_fit(stats.rayleigh, x, statistic="filliben",
+                                    random_state=rng)
+        assert_allclose(res.statistic, ref_statistic, rtol=1e-4)
+        assert_allclose(res.pvalue, ref_pvalue, atol=1.5e-2)
 
     def test_params_effects(self):
         # Ensure that `guessed_params`, `fit_params`, and `known_params` have

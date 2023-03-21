@@ -1111,8 +1111,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1150,8 +1150,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1184,8 +1184,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1213,8 +1213,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),

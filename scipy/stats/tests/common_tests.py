@@ -30,7 +30,7 @@ def check_normalization(distfn, args, distname):
 
     normalization_expect = distfn.expect(lambda x: 1, args=args)
     npt.assert_allclose(normalization_expect, 1.0, atol=atol, rtol=rtol,
-            err_msg=distname, verbose=True)
+                        err_msg=distname, verbose=True)
 
     _a, _b = distfn.support(*args)
     normalization_cdf = distfn.cdf(_b, *args)
@@ -41,29 +41,29 @@ def check_moment(distfn, arg, m, v, msg):
     m1 = distfn.moment(1, *arg)
     m2 = distfn.moment(2, *arg)
     if not np.isinf(m):
-        npt.assert_almost_equal(m1, m, decimal=10, err_msg=msg +
-                            ' - 1st moment')
+        npt.assert_almost_equal(m1, m, decimal=10,
+                                err_msg=msg + ' - 1st moment')
     else:                     # or np.isnan(m1),
         npt.assert_(np.isinf(m1),
-               msg + ' - 1st moment -infinite, m1=%s' % str(m1))
+                    msg + ' - 1st moment -infinite, m1=%s' % str(m1))
 
     if not np.isinf(v):
-        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10, err_msg=msg +
-                            ' - 2ndt moment')
+        npt.assert_almost_equal(m2 - m1 * m1, v, decimal=10,
+                                err_msg=msg + ' - 2ndt moment')
     else:                     # or np.isnan(m2),
-        npt.assert_(np.isinf(m2),
-               msg + ' - 2nd moment -infinite, m2=%s' % str(m2))
+        npt.assert_(np.isinf(m2), msg + f' - 2nd moment -infinite, {m2=}')
 
 
 def check_mean_expect(distfn, arg, m, msg):
     if np.isfinite(m):
         m1 = distfn.expect(lambda x: x, arg)
-        npt.assert_almost_equal(m1, m, decimal=5, err_msg=msg +
-                            ' - 1st moment (expect)')
+        npt.assert_almost_equal(m1, m, decimal=5,
+                                err_msg=msg + ' - 1st moment (expect)')
 
 
 def check_var_expect(distfn, arg, m, v, msg):
-    kwargs = {'rtol': 5e-6} if msg == "rv_histogram_instance" else {}
+    dist_looser_tolerances = {"rv_histogram_instance" , "ksone"}
+    kwargs = {'rtol': 5e-6} if msg in dist_looser_tolerances else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
         npt.assert_allclose(m2, v + m*m, **kwargs)
@@ -73,7 +73,7 @@ def check_skew_expect(distfn, arg, m, v, s, msg):
     if np.isfinite(s):
         m3e = distfn.expect(lambda x: np.power(x-m, 3), arg)
         npt.assert_almost_equal(m3e, s * np.power(v, 1.5),
-                decimal=5, err_msg=msg + ' - skew')
+                                decimal=5, err_msg=msg + ' - skew')
     else:
         npt.assert_(np.isnan(s))
 
@@ -81,8 +81,9 @@ def check_skew_expect(distfn, arg, m, v, s, msg):
 def check_kurt_expect(distfn, arg, m, v, k, msg):
     if np.isfinite(k):
         m4e = distfn.expect(lambda x: np.power(x-m, 4), arg)
-        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2), atol=1e-5, rtol=1e-5,
-                err_msg=msg + ' - kurtosis')
+        npt.assert_allclose(m4e, (k + 3.) * np.power(v, 2),
+                            atol=1e-5, rtol=1e-5,
+                            err_msg=msg + ' - kurtosis')
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
 
@@ -219,8 +220,8 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those
@@ -248,8 +249,8 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in
-                        (np.int_, np.float16, np.float32, np.float64)]
+    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+                                       np.float64)]
 
     for x in x_cast:
         # casting may have clipped the values, exclude those

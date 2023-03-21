@@ -37,50 +37,112 @@ endif
 thread_dep = dependency('threads', required: false)
 
 # NumPy include directory - needed in all submodules
-incdir_numpy = run_command(py3,
-  [
-    '-c',
-    'import os; os.chdir(".."); import numpy; print(numpy.get_include())'
-  ],
-  check: true
-).stdout().strip()
+# The chdir is needed because within numpy there's an `import signal`
+# statement, and we don't want that to pick up scipy's signal module rather
+# than the stdlib module. The try-except is needed because when things are
+# split across drives on Windows, there is no relative path and an exception
+# gets raised. There may be other such cases, so add a catch-all and switch to
+# an absolute path. Relative paths are needed when for example a virtualenv is
+# placed inside the source tree; Meson rejects absolute paths to places inside
+# the source tree.
+# For cross-compilation it is often not possible to run the Python interpreter
+# in order to retrieve numpy's include directory. It can be specified in the
+# cross file instead:
+#   [properties]
+#   numpy-include-dir = /abspath/to/host-pythons/site-packages/numpy/core/include
+#
+# This uses the path as is, and avoids running the interpreter.
+incdir_numpy = meson.get_external_property('numpy-include-dir', 'not-given')
+if incdir_numpy == 'not-given'
+  incdir_numpy = run_command(py3,
+    [
+      '-c',
+      '''import os
+os.chdir(os.path.join("..", "tools"))
+import numpy as np
+try:
+  incdir = os.path.relpath(np.get_include())
+except Exception:
+  incdir = np.get_include()
+print(incdir)
+  '''
+    ],
+    check: true
+  ).stdout().strip()
 
+  # We do need an absolute path to feed to `cc.find_library` below
+  _incdir_numpy_abs = run_command(py3,
+    ['-c', 'import os; os.chdir(".."); import numpy; print(numpy.get_include())'],
+    check: true
+  ).stdout().strip()
+else
+  _incdir_numpy_abs = incdir_numpy
+endif
 inc_np = include_directories(incdir_numpy)
+np_dep = declare_dependency(include_directories: inc_np)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
 fortranobject_c = incdir_f2py / 'fortranobject.c'
 
-cc = meson.get_compiler('c')
-npymath_path = incdir_numpy / '..' / 'lib'
+npymath_path = _incdir_numpy_abs / '..' / 'lib'
+npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
-npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-# Note: `required: false` can be removed once numpy 1.19 is the minimum version
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path, required: false)
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
 # pybind11 include directory - needed in several submodules
-incdir_pybind11 = run_command(py3,
-  [
-    '-c',
-    'import pybind11; print(pybind11.get_include())'
-  ],
-  check: true
-).stdout().strip()
-
-inc_pybind11 = include_directories(incdir_pybind11)
+#
+# first check if the user specified a path in a cross file
+incdir_pybind11 = meson.get_external_property('pybind11-include-dir', 'not-given')
+if incdir_pybind11 == 'not-given'
+  # in meson 1.1.0, this will find the pyproject.toml build-requires version
+  pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
+  if not pybind11_dep.found()
+    incdir_pybind11 = run_command(py3,
+      [
+        '-c',
+        '''from os.path import relpath
+import pybind11
+try:
+  incdir = relpath(pybind11.get_include())
+except Exception:
+  incdir = pybind11.get_include()
+print(incdir)
+'''
+      ],
+      check: true
+    ).stdout().strip()
+    pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+  endif
+else
+  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
+endif
 
 # Pythran include directory and build flags
 if use_pythran
-  incdir_pythran = run_command(py3,
-    [
-      '-c',
-      'import os; os.chdir(".."); import pythran; print(os.path.dirname(pythran.__file__));'
-    ],
-    check: true
-  ).stdout().strip()
-  inc_pythran = include_directories(incdir_pythran)
+  # This external-property may not be needed if we can use the native include
+  # dir, see https://github.com/serge-sans-paille/pythran/issues/1394
+  incdir_pythran = meson.get_external_property('pythran-include-dir', 'not-given')
+  if incdir_pythran == 'not-given'
+    incdir_pythran = run_command(py3,
+      [
+        '-c',
+      '''import os
+os.chdir(os.path.join("..", "tools"))
+import pythran
+try:
+  incdir = os.path.relpath(pythran.get_include())
+except Exception:
+  incdir = pythran.get_include()
+print(incdir)
+'''
+      ],
+      check: true
+    ).stdout().strip()
+  endif
+  pythran_dep = declare_dependency(include_directories: incdir_pythran)
 else
-  inc_pythran = []
+  pythran_dep = []
 endif
 
 # Note: warning flags are added to this further down
@@ -134,6 +196,12 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
+# TODO: Add `pybind11` when available as a dependency
+dependency_map = {
+  'BLAS': blas,
+  'LAPACK': lapack,
+}
+
 # FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
 #        This needs work on gh-16200 to make MKL robust. We should be
 #        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
@@ -148,16 +216,7 @@ else
   g77_abi_wrappers = files('_build_utils/src/wrap_dummy_g77_abi.f')
 endif
 
-generate_config = custom_target(
-  'generate-config',
-  install: true,
-  build_always_stale: true,
-  build_by_default: true,
-  output: '__config__.py',
-  input: '../tools/config_utils.py',
-  command: [py3, '@INPUT@', '@OUTPUT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
-)
+scipy_dir = py3.get_install_dir() / 'scipy'
 
 generate_version = custom_target(
   'generate-version',
@@ -167,7 +226,7 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: py3.get_install_dir() / 'scipy'
+  install_dir: scipy_dir
 )
 
 python_sources = [
@@ -200,15 +259,16 @@ _cython_tree = [
   fs.copyfile('special.pxd'),
 ]
 
-cython_cli = find_program('_build_utils/cythoner.py')
+cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+cython_cplus_args = ['--cplus'] + cython_args
 
-cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : _cython_tree)
 
-cython_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
@@ -292,11 +352,114 @@ else
   use_math_defines = []
 endif
 
+# Determine whether it is necessary to link libatomic. This could be the case
+# e.g. on 32-bit platforms when atomic operations are used on 64-bit types.
+# The check is copied from Mesa <https://www.mesa3d.org/>.
+# Note that this dependency is not desired, it came in with a HiGHS update.
+# We should try to get rid of it. For discussion, see gh-17777.
+null_dep = dependency('', required : false)
+atomic_dep = null_dep
+code_non_lockfree = '''
+  #include <stdint.h>
+  int main() {
+   struct {
+     uint64_t *v;
+   } x;
+   return (int)__atomic_load_n(x.v, __ATOMIC_ACQUIRE) &
+          (int)__atomic_add_fetch(x.v, (uint64_t)1, __ATOMIC_ACQ_REL);
+  }
+'''
+if cc.get_id() != 'msvc'
+  if not cc.links(
+      code_non_lockfree,
+      name : 'Check atomic builtins without -latomic'
+    )
+    atomic_dep = cc.find_library('atomic', required: false)
+    if atomic_dep.found()
+      # We're not sure that with `-latomic` things will work for all compilers,
+      # so verify and only keep libatomic as a dependency if this works. It is
+      # possible the build will fail later otherwise - unclear under what
+      # circumstances (compilers, runtimes, etc.) exactly.
+      if not cc.links(
+          code_non_lockfree,
+          dependencies: atomic_dep,
+          name : 'Check atomic builtins with -latomic'
+        )
+        atomic_dep = null_dep
+      endif
+    endif
+  endif
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
 cython_c_args += [_cpp_Wno_cpp, use_math_defines]
 cython_cpp_args = cython_c_args
+
+compilers = {
+  'C': cc,
+  'CPP': cpp,
+  'CYTHON': meson.get_compiler('cython'),
+  'FORTRAN': meson.get_compiler('fortran')
+}
+
+machines = {
+  'HOST': host_machine,
+  'BUILD': build_machine,
+}
+
+conf_data = configuration_data()
+
+# Set compiler information
+foreach name, compiler : compilers
+  # conf_data.set(name + '_COMP_CMD_ARRAY', compiler.cmd_array())
+  conf_data.set(name + '_COMP_CMD_ARRAY', compiler.get_id())
+  conf_data.set(name + '_COMP', compiler.get_id())
+  conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
+  conf_data.set(name + '_COMP_VERSION', compiler.version())
+  conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+endforeach
+# Add `pythran` information if present
+if use_pythran
+  conf_data.set('PYTHRAN_VERSION', pythran.version())
+  conf_data.set('PYTHRAN_INCDIR', incdir_pythran)
+endif
+
+# Machines CPU and system information
+foreach name, machine : machines
+  conf_data.set(name + '_CPU', machine.cpu())
+  conf_data.set(name + '_CPU_FAMILY', machine.cpu_family())
+  conf_data.set(name + '_CPU_ENDIAN', machine.endian())
+  conf_data.set(name + '_CPU_SYSTEM', machine.system())
+endforeach
+
+conf_data.set('CROSS_COMPILED', meson.is_cross_build())
+
+# Python information
+conf_data.set('PYTHON_PATH', py3.full_path())
+conf_data.set('PYTHON_VERSION', py3.language_version())
+
+# Dependencies information
+foreach name, dep : dependency_map
+  conf_data.set(name + '_NAME', dep.name())
+  conf_data.set(name + '_FOUND', dep.found())
+  if dep.found()
+    conf_data.set(name + '_VERSION', dep.version())
+    conf_data.set(name + '_TYPE_NAME', dep.type_name())
+    conf_data.set(name + '_INCLUDEDIR', dep.get_variable('includedir', default_value: 'unknown'))
+    conf_data.set(name + '_LIBDIR', dep.get_variable('libdir', default_value: 'unknown'))
+    conf_data.set(name + '_OPENBLAS_CONFIG', dep.get_variable('openblas_config', default_value: 'unknown'))
+    conf_data.set(name + '_PCFILEDIR', dep.get_variable('pcfiledir', default_value: 'unknown'))
+  endif
+endforeach
+
+configure_file(
+  input: '__config__.py.in',
+  output: '__config__.py',
+  configuration : conf_data,
+  install_dir: scipy_dir,
+)
 
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
