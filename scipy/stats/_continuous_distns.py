@@ -530,7 +530,7 @@ class anglit_gen(rv_continuous):
         return np.sin(x+np.pi/4)**2.0
 
     def _sf(self, x):
-        return -(np.sin(2 * x) - 1) / 2
+        return np.cos(x + np.pi / 4) ** 2.0
 
     def _ppf(self, q):
         return np.arcsin(np.sqrt(q))-np.pi/4
