@@ -300,8 +300,8 @@ following output:
 .. legacy::
 
 
-If you need to include a custom message, such as a new API to replace the old
-one, this message will be appended to the default message::
+We strongly recommend that you also add a custom message, such as a new API to
+replace the old one. This message will be appended to the default message::
 
    .. legacy::
 

@@ -418,6 +418,8 @@ def linkcode_resolve(domain, info):
 SphinxDocString._str_examples = _rng_html_rewrite(
     SphinxDocString._str_examples
 )
+
+
 class LegacyDirective(Directive):
     """
     Adapted from docutils/parsers/rst/directives/admonitions.py
@@ -436,8 +438,9 @@ class LegacyDirective(Directive):
         except IndexError:
             # Argument is empty; use default text
             obj = "submodule"
-        text = (f"This {obj} is now considered legacy and will no longer "
-                "receive updates.")
+        text = (f"This {obj} is considered legacy and will no longer receive "
+                "updates. This could also mean it will be removed in future "
+                "SciPy versions.")
 
         try:
             self.content[0] = text+" "+self.content[0]

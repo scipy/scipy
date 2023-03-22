@@ -385,7 +385,7 @@ class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
 
-    .. legacy:: function
+    .. legacy:: class
 
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
