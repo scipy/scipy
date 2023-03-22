@@ -1892,6 +1892,14 @@ class TestLogistic:
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
 
+    def test_fit_gh_18176(self):
+        # logistic.fit returned `scale < 0` for this data. Check that this has
+        # been fixed.
+        data = np.array([-459, 37, 43, 45, 45, 48, 54, 55, 58]
+                        + [59] * 3 + [61] * 9)
+        # If scale were negative, NLLF would be infinite, so this would fail
+        _assert_less_or_close_loglike(stats.logistic, data)
+
 
 class TestLogser:
     def setup_method(self):
