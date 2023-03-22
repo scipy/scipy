@@ -12,6 +12,7 @@ from scipy.stats._common import ConfidenceInterval
 
 if TYPE_CHECKING:
     import numpy.typing as npt
+    from typing import Literal
 
 
 __all__ = ['ecdf', 'log_rank']
@@ -386,11 +387,11 @@ def _ecdf_right_censored(sample):
 
 @dataclass
 class LogRankResult:
-    statistics: np.ndarray
+    statistic: np.ndarray
     pvalue: np.ndarray
 
 
-def at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
+def _at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
     """Times need to be sorted."""
     at_risk = []
     n_times = len(times)
@@ -402,6 +403,7 @@ def at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
 
 def log_rank(
     sample: CensoredData, control: CensoredData,
+    alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
     """Log Rank test.
 
@@ -410,6 +412,20 @@ def log_rank(
     sample, control : CensoredData
         Sample and control data to compare based on their survival functions.
         The order does not matter, `sample` and `control` can be interverted.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+
+        The null hypothesis is that the survival functions underlying
+        sample and control are equal. The following alternative
+        hypotheses are available (default is 'two-sided'):
+
+        * 'two-sided': the survival functions underlying the sample
+          and control are unequal.
+        * 'less': the survival functions underlying the sample
+          is less than the survival function underlying the control.
+        * 'greater': the survival functions underlying the
+          sample is greater than the survival function underlying
+          the control.
 
     Returns
     -------
@@ -453,7 +469,7 @@ def log_rank(
     >>> plt.show()
 
     >>> res = stats.log_rank(sample=sample, control=control)
-    >>> res.statistics
+    >>> res.statistic
     6.148087536256203
     >>> res.pvalue
     0.013155428547469983
@@ -473,18 +489,25 @@ def log_rank(
     n_died_control = control._uncensored.size
 
     times = np.sort(np.concatenate((sample._uncensored, sample._right)))
-    at_risk_sample = at_risk(times, times_sample_tot)
+    at_risk_sample = _at_risk(times, times_sample_tot)
 
     times = np.sort(np.concatenate((control._uncensored, control._right)))
-    at_risk_control = at_risk(times, times_sample_tot)
+    at_risk_control = _at_risk(times, times_sample_tot)
 
     sum_exp_event_sample = np.sum(at_risk_sample * (dead_per_times/at_risk_sample_tot))
     sum_exp_event_control = np.sum(at_risk_control * (dead_per_times/at_risk_sample_tot))
 
-    statistics = (
+    statistic = (
         (n_died_sample - sum_exp_event_sample)**2/sum_exp_event_sample
         + (n_died_control - sum_exp_event_control)**2/sum_exp_event_control
     )
-    pvalue = 1 - chi2(df=1).cdf(statistics)
 
-    return LogRankResult(statistics=statistics, pvalue=pvalue)
+    dist = chi2(df=1)
+    if alternative == "two-sided":
+        pvalue = 1 - dist.cdf(statistic, lower_limit=-statistic)
+    elif alternative == "greater":
+        pvalue = 1 - dist.cdf(statistic, lower_limit=-np.inf)
+    else:
+        pvalue = 1 - dist.cdf(np.inf, lower_limit=statistic)
+
+    return LogRankResult(statistic=statistic, pvalue=pvalue)
