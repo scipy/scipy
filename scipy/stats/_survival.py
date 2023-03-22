@@ -401,10 +401,7 @@ def _at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
     return np.array(at_risk)
 
 
-def log_rank(
-    sample: CensoredData, control: CensoredData,
-    alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
-) -> LogRankResult:
+def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
     """Log Rank test.
 
     Parameters
@@ -412,20 +409,6 @@ def log_rank(
     sample, control : CensoredData
         Sample and control data to compare based on their survival functions.
         The order does not matter, `sample` and `control` can be interverted.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-
-        The null hypothesis is that the survival functions underlying
-        sample and control are equal. The following alternative
-        hypotheses are available (default is 'two-sided'):
-
-        * 'two-sided': the survival functions underlying the sample
-          and control are unequal.
-        * 'less': the survival functions underlying the sample
-          is less than the survival function underlying the control.
-        * 'greater': the survival functions underlying the
-          sample is greater than the survival function underlying
-          the control.
 
     Returns
     -------
@@ -502,12 +485,6 @@ def log_rank(
         + (n_died_control - sum_exp_event_control)**2/sum_exp_event_control
     )
 
-    dist = chi2(df=1)
-    if alternative == "two-sided":
-        pvalue = 1 - dist.cdf(statistic, lower_limit=-statistic)
-    elif alternative == "greater":
-        pvalue = 1 - dist.cdf(statistic, lower_limit=-np.inf)
-    else:
-        pvalue = 1 - dist.cdf(np.inf, lower_limit=statistic)
+    pvalue = 1 - chi2(df=1).cdf(statistic)
 
     return LogRankResult(statistic=statistic, pvalue=pvalue)
