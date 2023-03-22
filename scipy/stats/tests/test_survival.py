@@ -325,3 +325,15 @@ class TestSurvival:
                 0.8263946341076415, 0.6558775085110887, np.nan]
         assert_allclose(ci.low, low)
         assert_allclose(ci.high, high)
+
+    def test_right_censored_against_uncensored(self):
+        rng = np.random.default_rng(7463952748044886637)
+        sample = rng.integers(10, 100, size=1000)
+        censored = np.zeros_like(sample)
+        censored[np.argmax(sample)] = True
+        res = stats.ecdf(sample)
+        ref = stats.ecdf(stats.CensoredData.right_censored(sample, censored))
+        assert_equal(res.sf._x, ref.sf._x)
+        assert_equal(res.sf._n, ref.sf._n)
+        assert_equal(res.sf._d[:-1], ref.sf._d[:-1])  # difference @ [-1]
+        assert_allclose(res.sf._sf[:-1], ref.sf._sf[:-1], rtol=1e-14)
