@@ -254,9 +254,8 @@ class TestVonMises:
         loc = -0.5 * np.pi
         kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
         assert kappa_fit == np.finfo(float).tiny
-        kwds = {'fscale': 1, 'floc': loc}
         _assert_less_or_close_loglike(stats.vonmises, data,
-                                      stats.vonmises.nnlf, **kwds)
+                                      stats.vonmises.nnlf, fscale=1, floc=loc)
 
     @pytest.mark.parametrize('sign', [-1, 1])
     def test_vonmises_fit_unwrapped_data(self, sign):
