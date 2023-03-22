@@ -498,20 +498,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         majiter_prev = int(majiter)
 
     # Obtain KKT multipliers from internals of SLSQP (see slsqp.slsqp_optmz.f)
-    im = 1
-    il = im + la
-    ix = il + (n1 * n) // 2 + 1
-    # Start of constraint KKT multipliers in w
+    im = 0  # fortran indexing starts at 1 but python starts at 0
+    il = im + m
+    ix = il + (n1*n)//2 + 1
     ir = ix + n
-    # Subtract 1 since fortran indexing starts at 1 but python starts at 0
-    ir -= 1
 
     _kkt_mult = w[ir:ir + m]
 
     # Indices for bound constraints (one per variable).
-    # Found by trial and error since documentation is inconsistent
-    iu = ir + n + n + la + n1 # index iu from slsqp.slsqp_optmz.f
-    ib = iu + la + n - 2
+    # Found with trial and error since documentation is unclear
+    ib = ir + m + 4*n + 2
     _kkt_bnds = w[ib:ib + n]
 
     kkt_multiplier = dict()
@@ -529,15 +525,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         kkt_multiplier[_t] = kkt
 
     # Get KKT multipliers for lower and upper bounds.
-    kkt = np.zeros((n, 2))
-    pos_kkt_bnds = _kkt_bnds > 0.
-    # Lower bound multipliers are positive
-    active_bnds = np.isfinite(xl) & pos_kkt_bnds
-    kkt[active_bnds, 0] = _kkt_bnds[active_bnds]
-    # Upper bound multipliers are originally negative, make positive to be
-    # consistent with sign of multipliers for inequality constraints
-    active_bnds = np.isfinite(xu) & ~pos_kkt_bnds
-    kkt[active_bnds, 1] = -_kkt_bnds[active_bnds]
+    kkt = zeros((n, 2))
+    if bounds is not None and len(bounds) > 0:
+        pos_kkt_bnds = _kkt_bnds > 0.
+        # Lower bound multipliers are positive
+        active_bnds = ~infbnd[:, 0] & pos_kkt_bnds
+        kkt[active_bnds, 0] = _kkt_bnds[active_bnds]
+        # Upper bound multipliers are originally negative, make positive to be
+        # consistent with sign of multipliers for inequality constraints
+        active_bnds = ~infbnd[:, 1] & ~pos_kkt_bnds
+        kkt[active_bnds, 1] = np.abs(_kkt_bnds[active_bnds])
     kkt_multiplier["bounds"] = {"lb": kkt[:, 0], "ub": kkt[:, 1]}
 
     # Optimization loop complete. Print status if requested

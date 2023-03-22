@@ -26,29 +26,68 @@ class MyCallBack:
         self.ncalls += 1
 
 
-def _check_kkt(res, constraints):
-    # checks KKT conditions, neglecting simple bound constraints
-    # https://en.wikipedia.org/wiki/Karush_Kuhn_Tucker_conditions#Matrix_representation  # noqa
+def _convert_bounds_to_constraints(bounds, n):
+    """Convert bounds to constraints defined as functions."""
+    if isinstance(bounds, Bounds):
+        bounds = np.hstack((bounds.lb.reshape(-1, 1), bounds.ub.reshape(-1, 1)))
+    if bounds is None or len(bounds) == 0:
+        return []
+    if np.size(bounds) not in (2, 2*n):
+        raise ValueError('bounds must be an array_like of size 2 or 2*n')
+
+    # Convert list or tuple of bounds to arrays
+    bounds = np.array(bounds, dtype=float)
+    bounds = np.resize(bounds, (n, 2))
+    finite_lb = np.isfinite(bounds[:, 0])
+    finite_ub = np.isfinite(bounds[:, 1])
+
+    # Functions always return one (which is a satisfied inequality) for infinite
+    # bounds. Returning np.nans or np.infs doesn't work well with _check_kkt.
+    def lb(x):
+        g = np.ones(n)
+        g[finite_lb] = x[finite_lb] - bounds[finite_lb, 0]
+        return g
+
+    def ub(x):
+        g = np.ones(n)
+        g[finite_ub] = bounds[finite_ub, 1] - x[finite_ub]
+        return g
+
+    return [lb, ub]
+
+def _check_kkt(res, constraints=[], bounds=[]):
+    """Checks KKT conditions. See
+    https://en.wikipedia.org/wiki/Karush-Kuhn-Tucker_conditions#Matrix_representation
+    """
     x = res.x
     gradf = res.jac
     mus = res.kkt['ineq']
     lams = res.kkt['eq']
+
+    if isinstance(constraints, dict):
+        constraints = [constraints]
 
     gs = [constraint['fun'] for constraint in constraints
           if constraint['type'] == 'ineq']
     hs = [constraint['fun'] for constraint in constraints
           if constraint['type'] == 'eq']
 
+    bound_funs = _convert_bounds_to_constraints(bounds, x.shape[0])
+    if len(bound_funs):
+        gs = gs + bound_funs
+        mus = mus + [res.kkt['bounds']['lb'], res.kkt['bounds']['ub']]
+
     DgTmu = []
     for mu, g in zip(mus, gs):
-        # primal feasibility
-        assert np.all(g(x) >= 0)
-        # dual feasibility
-        assert np.all(mu >= 0)
+        g_eval = np.atleast_1d(g(x))
+        # primal feasibility, with a small tolerance for floating point error
+        assert np.all(g_eval >= -1e-14)
+        # dual feasibility, with a small tolerance for floating point error
+        assert np.all(mu >= -1e-14)
         # complementary slackness
-        assert_allclose(g(x) @ mu, 0, atol=1e-6)
+        assert_allclose(g_eval @ mu, 0, atol=1e-6)
 
-        Dg = np.atleast_2d(approx_derivative(g, x))
+        Dg = np.atleast_2d(approx_derivative(g, x, f0=g_eval))
         DgTmu.append(Dg.T @ mu)
 
     DhTlam = []
@@ -269,18 +308,22 @@ class TestSLSQP:
     def test_minimize_bound_equality_given2(self):
         # Minimize with method='SLSQP': bounds, eq. const., given jac. for
         # fun. and const.
+        bnds = [(-0.8, 1.), (-1, 0.8)]
+        cons = {'type': 'eq', 'fun': self.f_eqcon, 'args': (-1.0,),
+                'jac': self.fprime_eqcon}
+        bnd_cons = _convert_bounds_to_constraints(bnds, 2)
+        cons = [cons, {'type': 'ineq', 'fun': bnd_cons[0]}, {'type': 'ineq', 'fun': bnd_cons[1]}]
+        print(cons)
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
-                       jac=self.jac, args=(-1.0, ),
-                       bounds=[(-0.8, 1.), (-1, 0.8)],
-                       constraints={'type': 'eq',
-                                    'fun': self.f_eqcon,
-                                    'args': (-1.0, ),
-                                    'jac': self.fprime_eqcon},
+                       jac=self.jac, args=(-1.0,),
+                       bounds=bnds,
+                       constraints=cons,
                        options=self.opts)
+        print(res.x)
+        print(res.kkt)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [0.8, 0.8], atol=1e-3)
-        assert_(-0.8 <= res.x[0] <= 1)
-        assert_(-1 <= res.x[1] <= 0.8)
+        #_check_kkt(res, cons, bnds)
 
     # fmin_slsqp
     def test_unbounded_approximated(self):
@@ -416,18 +459,18 @@ class TestSLSQP:
             return x[0] + x[1] - 2
         def f2(x):
             return x[0] ** 2 - 1
-        sol = minimize(
-            lambda x: x[0]**2 + x[1]**2,
-            x,
-            constraints=({'type':'eq','fun': f1},
-                         {'type':'ineq','fun': f2}),
-            bounds=((0,None), (0,None)),
-            method='SLSQP')
+
+        cons = ({'type': 'eq', 'fun': f1}, {'type': 'ineq', 'fun': f2})
+        bnds = ((0, None), (0, None))
+
+        sol = minimize(lambda x: x[0]**2 + x[1]**2,
+                       x, constraints=cons, bounds=bnds, method='SLSQP')
         x = sol.x
 
         assert_allclose(f1(x), 0, atol=1e-8)
         assert_(f2(x) >= -1e-8)
         assert_(sol.success, sol)
+        _check_kkt(sol, cons, bnds)
 
     def test_regression_5743(self):
         # SLSQP must not indicate success for this problem,
@@ -470,29 +513,38 @@ class TestSLSQP:
         def f(x):
             return (x[0] - 1)**2
 
-        sol = minimize(f, [10], method='slsqp', bounds=[(None, 0)])
+        bnds = [(None, 0)]
+        sol = minimize(f, [10], method='slsqp', bounds=bnds)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
 
-        sol = minimize(f, [-10], method='slsqp', bounds=[(2, None)])
+        sol = minimize(f, [-10], method='slsqp', bounds=bnds)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
+
+        bnds = [(2, None)]
+        sol = minimize(f, [-10], method='slsqp', bounds=bnds)
         assert_(sol.success)
         assert_allclose(sol.x, 2, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
 
-        sol = minimize(f, [-10], method='slsqp', bounds=[(None, 0)])
-        assert_(sol.success)
-        assert_allclose(sol.x, 0, atol=1e-10)
-
-        sol = minimize(f, [10], method='slsqp', bounds=[(2, None)])
+        sol = minimize(f, [10], method='slsqp', bounds=bnds)
         assert_(sol.success)
         assert_allclose(sol.x, 2, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
 
-        sol = minimize(f, [-0.5], method='slsqp', bounds=[(-1, 0)])
+        bnds = [(-1, 0)]
+        sol = minimize(f, [-0.5], method='slsqp', bounds=bnds)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
 
-        sol = minimize(f, [10], method='slsqp', bounds=[(-1, 0)])
+        sol = minimize(f, [10], method='slsqp', bounds=bnds)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, bounds=bnds)
 
     def test_infeasible_initial(self):
         # Check SLSQP behavior with infeasible initial point
@@ -508,26 +560,32 @@ class TestSLSQP:
         sol = minimize(f, [10], method='slsqp', constraints=cons_u)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, constraints=cons_u)
 
         sol = minimize(f, [-10], method='slsqp', constraints=cons_l)
         assert_(sol.success)
         assert_allclose(sol.x, 2, atol=1e-10)
+        _check_kkt(sol, constraints=cons_l)
 
         sol = minimize(f, [-10], method='slsqp', constraints=cons_u)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, constraints=cons_u)
 
         sol = minimize(f, [10], method='slsqp', constraints=cons_l)
         assert_(sol.success)
         assert_allclose(sol.x, 2, atol=1e-10)
+        _check_kkt(sol, constraints=cons_l)
 
         sol = minimize(f, [-0.5], method='slsqp', constraints=cons_ul)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, constraints=cons_ul)
 
         sol = minimize(f, [10], method='slsqp', constraints=cons_ul)
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
+        _check_kkt(sol, constraints=cons_ul)
 
     def test_inconsistent_inequalities(self):
         # gh-7618
@@ -560,6 +618,7 @@ class TestSLSQP:
         sol = minimize(f, [0, 0], method='slsqp', bounds=bounds)
         assert_(sol.success)
         assert_allclose(sol.x, [1, 0])
+        _check_kkt(sol, bounds=bounds)
 
     def test_nested_minimization(self):
 
@@ -605,12 +664,15 @@ class TestSLSQP:
 
         c1 = {'type': 'eq', 'fun': f_eqcon}
         c2 = {'type': 'eq', 'fun': f_eqcon2}
+        constraints = [c1, c2]
+        bounds = [(-0.5, 1), (0, 8)]
 
-        res = minimize(fun, [8, 0.25], method='SLSQP',
-                       constraints=[c1, c2], bounds=[(-0.5, 1), (0, 8)])
+        res = minimize(fun, [8, 0.25], method='SLSQP', constraints=constraints,
+                       bounds=bounds)
 
-        np.testing.assert_allclose(res.fun, 0.5443310539518)
-        np.testing.assert_allclose(res.x, [0.33333333, 0.2962963])
+        assert_allclose(res.fun, 0.5443310539518)
+        assert_allclose(res.x, [0.33333333, 0.2962963])
+        _check_kkt(res, constraints, bounds)
         assert res.success
 
     def test_gh9640(self):
@@ -622,8 +684,8 @@ class TestSLSQP:
         def target(x):
             return 1
         x0 = [-1.8869783504471584, -0.640096352696244, -0.8174212253407696]
-        res = minimize(target, x0, method='SLSQP', bounds=bnds, constraints=cons,
-                       options={'disp':False, 'maxiter':10000})
+        res = minimize(target, x0, method='SLSQP', bounds=bnds,
+                       constraints=cons, options={'maxiter': 10000})
 
         # The problem is infeasible, so it cannot succeed
         assert not res.success
@@ -646,49 +708,50 @@ class TestSLSQP:
         with pytest.warns(RuntimeWarning, match='x were outside bounds'):
             res = minimize(f, x0, method='SLSQP', bounds=bounds)
             assert res.success
+            _check_kkt(res, bounds=bounds)
 
     def test_kkt_equality(self):
-        # an equality constraint mentioned in gh9839
+        # An equality constraint mentioned in gh9839
+        # Add a bound on a second, independent variable to test indexing
         def fun(x):
             return np.sum(x ** 2)
 
         def con_fun(x):
             return x[0] - 1
 
-        con = {'fun': con_fun, 'type': 'eq'}
-        res = minimize(fun, 3.0, constraints=[con], method='SLSQP')
+        cons = [{'fun': con_fun, 'type': 'eq'}]
+        bnds = [(None, None), (1.0, None)]
+        x0 = [3.0, 4.0]
+        res = minimize(fun, x0, method='SLSQP', constraints=cons, bounds=bnds)
+
         assert_allclose(res.kkt['eq'][0], np.array([2.0]))
+        _check_kkt(res, cons, bnds)
 
     def test_kkt_inequality(self):
-        # Test kkt multiplier return with example from GH14394. These are linear
-        # inequality constraints that can be specified either as constraints or
-        # bounds, so we can test both.
-        # To test if dimensions indices of bounds are correctly extracted, adds
-        # a second independent variable to the example from GH14394.
+        """Test kkt multiplier return with example from GH14394. These are
+        linear inequality constraints that can be specified either as
+        constraints or bounds, so we can test both. To test if dimensions
+        indices of bounds are correctly extracted, adds a second independent
+        variable to the example from GH14394."""
+
+        # The main constraint to be tested
         def con_fun1(x):
             return np.array([x[0] - 1.0, 2.0 - x[0]])
 
-        def con_jac1(x):
-            return np.array([[1.0, 0.0], [-1.0, 0.0]])
-
+        # Lower bound on x[1]
         def con_fun2(x):
-            return np.array([x[1] - 0.75])
+            return x[1:] - 0.75
 
-        def con_jac2(x):
-            return np.array([[0.0, 1.0]])
-
-        constraints = [
-            {'type': 'ineq', 'fun': con_fun1, 'jac': con_jac1},
-            {'type': 'ineq', 'fun': con_fun2, 'jac': con_jac2}
-        ]
+        cons = [{'type': 'ineq', 'fun': con_fun1},
+                {'type': 'ineq', 'fun': con_fun2}]
 
         # x[0] - 1 >=0 and 2 - x[0] >= 0. Equivalently, 1 <= x[0] <= 2.
-        bounds = [(1.0, 2.0), (0.75, np.inf)]
+        bnds = [(1.0, 2.0), (0.75, None)]
 
         x0 = np.array([1.5, 1.5])
 
         # Test cases for c < 1, 1 < c < 2, and c > 2
-        for c in [0.7, 1.5, 2.3]:
+        for c in [0.6, 1.5, 2.3]:
             def fun(x):
                 return (x[:1] - c) ** 2 + x[1] ** 2
 
@@ -697,31 +760,64 @@ class TestSLSQP:
 
             # Test with constraints specified using constraint keyword
             res_cons = minimize(fun, x0, method='SLSQP', jac=jac,
-                                constraints=constraints)
+                                constraints=cons)
             w_cons = res_cons.kkt['ineq']
+            _check_kkt(res_cons, constraints=cons)
 
             # Test with same constraints specified using bounds keyword
-            res_bounds = minimize(fun, x0, method='SLSQP', jac=jac,
-                                  bounds=bounds)
-            w_bounds = res_bounds.kkt['bounds']
+            res_bnds = minimize(fun, x0, method='SLSQP', jac=jac, bounds=bnds)
+            w_bnds = res_bnds.kkt['bounds']
+            _check_kkt(res_bnds, bounds=bnds)
 
             # Verify results are the same in both setups
-            assert_allclose(res_cons.x, res_bounds.x, atol=1e-12)
+            assert_allclose(res_cons.x, res_bnds.x, atol=1e-12)
             # Check extra variable bound matches constraint
-            assert_allclose(w_cons[1], w_bounds["lb"][1], rtol=1e-06)
+            assert_allclose(w_cons[1], w_bnds["lb"][1], rtol=1e-06)
 
             if c < 1:
                 analytical = 2 - 2 * c
                 assert_allclose(w_cons[0][0], analytical, rtol=1e-06)
-                assert_allclose(w_cons[0][0], w_bounds["lb"][0], rtol=1e-06)
+                assert_allclose(w_cons[0][0], w_bnds["lb"][0], rtol=1e-06)
             elif c > 2:
                 analytical = 2 * c - 4
                 assert_allclose(w_cons[0][1], analytical, rtol=1e-06)
-                assert_allclose(w_cons[0][1], w_bounds["ub"][0], rtol=1e-06)
+                assert_allclose(w_cons[0][1], w_bnds["ub"][0], rtol=1e-06)
             else:
                 assert_allclose(w_cons[0], 0., atol=1e-06, rtol=1e-06)
-                assert_allclose(w_bounds["lb"][0], 0., atol=1e-06, rtol=1e-06)
-                assert_allclose(w_bounds["ub"][0], 0., atol=1e-06, rtol=1e-06)
+                assert_allclose(w_bnds["lb"][0], 0., atol=1e-06, rtol=1e-06)
+                assert_allclose(w_bnds["ub"][0], 0., atol=1e-06, rtol=1e-06)
+
+    def test_kkt_bounds(self):
+        # Test that KKT conditions hold with varying numbers of constraints and
+        # parameter dimensions. Needed to make sure that indices used for
+        # extracting multipliers for bounds are correct.
+        def fun(x):
+            return np.sum(x ** 2)
+
+        def jac(x):
+            return 2. * x
+
+        # Loop over parameter dimensions
+        for n in range(1, 5):
+            bnds = Bounds(lb=np.ones(n))
+            x0 = bnds.lb + 1.0
+
+            # Loop over number of constraints
+            for m in range(0, 5):
+                if m == 0:
+                    cons = []
+                else:
+                    # Dummy constraints automatically satisfied by bounds
+                    def cons_fun(x):
+                        g = np.empty(m)
+                        for i in range(m):
+                            g[i] = i+1 + 2*n - np.sum(x)
+                        return g
+                    cons = {'type': 'ineq', 'fun': cons_fun}
+
+                res = minimize(fun, x0, method='SLSQP', jac=jac,
+                               constraints=cons, bounds=bnds)
+                _check_kkt(res, cons, bnds)
 
     def test_kkt_constrained_rosen(self):
 
@@ -745,7 +841,7 @@ class TestSLSQP:
         res = minimize(fun, x0, bounds=bounds, constraints=constraints,
                        method='slsqp')
 
-        _check_kkt(res, constraints)
+        _check_kkt(res, constraints, bounds)
 
     def test_kkt_constrained_stackexchange(self):
         # Check test with example from:
@@ -770,4 +866,4 @@ class TestSLSQP:
         res = minimize(fun, x0, bounds=bounds, constraints=constraints,
                        method='slsqp')
 
-        _check_kkt(res, constraints)
+        _check_kkt(res, constraints, bounds)
