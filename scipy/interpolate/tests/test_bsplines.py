@@ -1560,6 +1560,13 @@ class TestSmoothingSpline:
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
 
+        # x and y length must be larger than 5
+        x = np.arange(4)
+        y = np.ones(4)
+        exception_message = "``x`` and ``y`` length must be larger than 5"
+        with pytest.raises(ValueError, match=exception_message):
+            make_smoothing_spline(x, y)
+
     def test_compare_with_GCVSPL(self):
         """
         Data is generated in the following way:
