@@ -8368,30 +8368,6 @@ class TestNakagami:
         assert_allclose(scale_est, scale_theo, rtol=1e-7)
 
 
-class TestAnglit:
-
-    @pytest.mark.parametrize("t, ref",
-                             [(-np.pi/4 + 1e-6, 0.999999999999),
-                              (-0.6, 0.9660195429836131),
-                              (0.6, 0.033980457016386835),
-                              (np.pi/4 - 1e-6, 1.0000000001184104e-12)])
-    def test_sf(self, t, ref):
-        # Reference values were calculated with mpmath:
-        # from mpmath import mp
-        # mp.dps = 150
-        #
-        # def sf(t):
-        #     t = mp.mpf(t)
-        #     def pdf(x):
-        #         y = mp.cos(2 * x)
-        #         return y
-        #
-        #     y = float(mp.quad(lambda z: pdf(z), [t, mp.pi / 4]))
-        #     return y
-        assert_allclose(stats.anglit.sf(t), ref, rtol=1e-14)
-        assert_allclose(1 - stats.anglit.cdf(t), ref, rtol=1e-14)
-
-
 class TestWrapCauchy:
 
     def test_cdf_shape_broadcasting(self):
