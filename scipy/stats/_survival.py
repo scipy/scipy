@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import bisect
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
@@ -6,13 +8,12 @@ import warnings
 import numpy as np
 
 from scipy import special
-from scipy.stats import chi2
+from scipy.stats import chi2  # type: ignore[attr-defined]
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from typing import Literal
 
 
 __all__ = ['ecdf', 'log_rank']
@@ -168,7 +169,7 @@ class ECDFResult:
         self.sf = EmpiricalDistributionFunction(x, sf, n, d, "sf")
 
 
-def ecdf(sample):
+def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
     The empirical cumulative distribution function (ECDF) is a step function
@@ -391,14 +392,26 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
-def _at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
+def _at_risk(times: np.ndarray, all_times: np.ndarray) -> np.ndarray:
     """Times need to be sorted."""
     at_risk = []
     n_times = len(times)
     for x in all_times:
-        idx_ = bisect.bisect_left(times, x)
+        idx_ = bisect.bisect_left(times, x)  # type: ignore[call-overload]
         at_risk.append(n_times-idx_)
     return np.array(at_risk)
+
+
+def _iv_log_rank(
+    sample: CensoredData, control: CensoredData,
+) -> tuple[CensoredData, CensoredData]:
+    if not (isinstance(sample, CensoredData) and
+            isinstance(control, CensoredData)):
+        raise ValueError(
+            ""
+        )
+
+    return sample, control
 
 
 def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
@@ -458,6 +471,8 @@ def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
     0.013155428547469983
 
     """
+    sample, control = _iv_log_rank(sample=sample, control=control)
+
     sample_tot = CensoredData(
         uncensored=np.concatenate((sample._uncensored, control._uncensored)),
         right=np.concatenate((sample._right, control._right))
