@@ -1,6 +1,9 @@
-import warnings
+import bisect
 from dataclasses import dataclass, field
+import warnings
+
 import numpy as np
+
 from scipy import special
 from scipy.stats import chi
 from scipy.stats._censored_data import CensoredData
@@ -377,58 +380,51 @@ def _ecdf_right_censored(sample):
     return t, cdf, sf, n, d
 
 
-def _kaplan_meier(sample):
-    tod = sample._uncensored  # time of "death"
-    tol = sample._right  # time of "loss"
-    times = np.concatenate((tod, tol))
-    died = np.asarray([1]*tod.size + [0]*tol.size)
-
-    # sort by times
-    i = np.argsort(times)
-    times = times[i]
-    died = died[i]
-    at_risk = np.arange(times.size, 0, -1)
-    return times, died, at_risk
+@dataclass
+class LogRankResult:
+    statistics: np.ndarray
+    pvalue: np.ndarray
 
 
-def _log_rank(sample):
-    times, died, at_risk = _kaplan_meier(sample)
-
-    idx_died = died.astype(bool)
-    times = times[idx_died]
-    at_risk = at_risk[idx_died]
-    return times, died, at_risk
+def at_risk(times, all_times):
+    """Times need to be sorted."""
+    at_risk = []
+    n_times = len(times)
+    for x in all_times:
+        idx_ = bisect.bisect_left(times, x)
+        at_risk.append(n_times-idx_)
+    return np.array(at_risk)
 
 
 def log_rank(t_sample, t_control, e_sample, e_control):
 
+    # TODO accept CensoredData instead
+    # would be interesting to be able to merge two CensoredData
     sample = CensoredData.right_censored(t_sample, np.logical_not(e_sample))
     control = CensoredData.right_censored(t_control, np.logical_not(e_control))
-
     sample_tot = CensoredData.right_censored(t_sample+t_control, np.logical_not(e_sample+e_control))
 
-    times_sample, died_sample, at_risk_sample = _log_rank(sample)
-    times_control, died_control, at_risk_control = _log_rank(control)
-    times_sample_tot, _, at_risk_sample_tot = _log_rank(sample_tot)
+    res = ecdf(sample_tot)
+    times_sample_tot = res.x[res.sf._d.astype(bool)]
+    at_risk_sample_tot = res.sf._n[res.sf._d.astype(bool)]
+    _, dead_per_times = np.unique(sample_tot._uncensored, return_counts=True)
 
-    at_risk_ = at_risk_sample_tot.copy()
+    n_died_sample = sample._uncensored.size
+    n_died_control = control._uncensored.size
 
-    idx = np.searchsorted(times_sample_tot, times_sample)
-    at_risk_[idx] = at_risk_sample_tot[idx] - at_risk_sample
-    idx = np.searchsorted(times_sample_tot, times_control)
-    at_risk_[idx] = at_risk_control
+    times = np.sort(np.concatenate((sample._uncensored, sample._right)))
+    at_risk_sample = at_risk(times, times_sample_tot)
 
-    at_risk_control = at_risk_
-    at_risk_sample = at_risk_sample_tot - at_risk_
+    times = np.sort(np.concatenate((control._uncensored, control._right)))
+    at_risk_control = at_risk(times, times_sample_tot)
 
-    sum_exp_event_sample = np.sum(at_risk_sample * (1/at_risk_sample_tot))
-    sum_exp_event_control = np.sum(at_risk_control * (1/at_risk_sample_tot))
+    sum_exp_event_sample = np.sum(at_risk_sample * (dead_per_times/at_risk_sample_tot))
+    sum_exp_event_control = np.sum(at_risk_control * (dead_per_times/at_risk_sample_tot))
 
     statistics = (
-        (np.sum(died_sample) - sum_exp_event_sample)**2/sum_exp_event_sample
-        + (np.sum(died_control) - sum_exp_event_control)**2/sum_exp_event_control
+        (n_died_sample - sum_exp_event_sample)**2/sum_exp_event_sample
+        + (n_died_control - sum_exp_event_control)**2/sum_exp_event_control
     )
-
     pvalue = 1 - chi(df=1).cdf(statistics)
 
-    return statistics, pvalue
+    return LogRankResult(statistics=statistics, pvalue=pvalue)
