@@ -10029,9 +10029,17 @@ class vonmises_gen(rv_continuous):
             def solve_for_kappa(kappa):
                 return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-            root_res = root_scalar(solve_for_kappa, method="brentq",
+            try:
+                root_res = root_scalar(solve_for_kappa, method="brentq",
                                    bracket=(1e-8, 1e12))
-            return root_res.root
+                return root_res.root
+            # if the provided floc is very far from the circular mean,
+            # the likelihood equation does not have a solution.
+            # In that case, the best kappa is 0, practically the uniform
+            # distribution on the circle. As vonmises is defined for
+            # kappa > 0, return the smallest floating point value
+            except ValueError:
+                return np.finfo(float).tiny
 
         # location likelihood equation has a solution independent of kappa
         loc = floc if floc is not None else find_mu(data)
