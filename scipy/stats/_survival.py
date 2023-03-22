@@ -396,13 +396,12 @@ def at_risk(times, all_times):
     return np.array(at_risk)
 
 
-def log_rank(t_sample, t_control, e_sample, e_control):
+def log_rank(sample: CensoredData, control: CensoredData):
 
-    # TODO accept CensoredData instead
-    # would be interesting to be able to merge two CensoredData
-    sample = CensoredData.right_censored(t_sample, np.logical_not(e_sample))
-    control = CensoredData.right_censored(t_control, np.logical_not(e_control))
-    sample_tot = CensoredData.right_censored(t_sample+t_control, np.logical_not(e_sample+e_control))
+    sample_tot = CensoredData(
+        uncensored=np.concatenate((sample._uncensored, control._uncensored)),
+        right=np.concatenate((sample._right, control._right))
+    )
 
     res = ecdf(sample_tot)
     times_sample_tot = res.x[res.sf._d.astype(bool)]
