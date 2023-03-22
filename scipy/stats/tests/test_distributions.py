@@ -8371,10 +8371,10 @@ class TestNakagami:
 class TestAnglit:
 
     @pytest.mark.parametrize("t, ref",
-                            [(-np.pi/4 + 1e-6, 0.999999999999),
-                             (-0.6, 0.9660195429836131),
-                             (0.6, 0.033980457016386835),
-                             (np.pi/4 - 1e-6, 1.0000000001184104e-12)])
+                             [(-np.pi/4 + 1e-6, 0.999999999999),
+                              (-0.6, 0.9660195429836131),
+                              (0.6, 0.033980457016386835),
+                              (np.pi/4 - 1e-6, 1.0000000001184104e-12)])
     def test_sf(self, t, ref):
         # Reference values were calculated with mpmath:
         # from mpmath import mp
