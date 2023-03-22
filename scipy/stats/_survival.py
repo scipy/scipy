@@ -1,13 +1,17 @@
 import bisect
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 import warnings
 
 import numpy as np
 
 from scipy import special
-from scipy.stats import chi
+from scipy.stats import chi2
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 __all__ = ['ecdf', 'log_rank']
@@ -386,7 +390,7 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
-def at_risk(times, all_times):
+def at_risk(times: npt.ArrayLike, all_times: npt.ArrayLike) -> np.ndarray:
     """Times need to be sorted."""
     at_risk = []
     n_times = len(times)
@@ -396,8 +400,65 @@ def at_risk(times, all_times):
     return np.array(at_risk)
 
 
-def log_rank(sample: CensoredData, control: CensoredData):
+def log_rank(
+    sample: CensoredData, control: CensoredData,
+) -> LogRankResult:
+    """Log Rank test.
 
+    Parameters
+    ----------
+    sample, control : CensoredData
+        Sample and control data to compare based on their survival functions.
+        The order does not matter, `sample` and `control` can be interverted.
+
+    Returns
+    -------
+    res : LogRankResult
+        An object containing attributes:
+
+        statistic : float ndarray
+            The computed statistic of the test.
+        pvalue : float ndarray
+            The computed p-value of the test.
+
+    References
+    ----------
+    .. [1] ...
+
+    Examples
+    --------
+
+    >>> from scipy import stats
+    >>> sample = stats.CensoredData(
+    ...     uncensored=[ 8., 12., 26., 14., 21., 27.],
+    ...     right=[ 8., 32., 20., 40.]
+    ... )
+    >>> control = stats.CensoredData(
+    ...     uncensored=[33., 28., 41.],
+    ...     right=[48., 48., 25., 37., 48., 25., 43.]
+    ... )
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> ax = plt.subplot()
+    >>> ecdf_sample = stats.ecdf(sample)
+    >>> ax.step(np.insert(ecdf_sample.x, 0, 0), np.insert(ecdf_sample.sf.points, 0, 1),
+    ...         where='post', label='sample')
+    >>> ecdf_control = stats.ecdf(control)
+    >>> ax.step(np.insert(ecdf_control.x, 0, 0), np.insert(ecdf_control.sf.points, 0, 1),
+    ...         ls='-.', where='post', label='control')
+    >>> ax.set_xlabel('Time (months)')
+    >>> ax.set_ylabel('Empirical CDF')
+    >>> plt.legend()
+    >>> plt.show()
+
+    >>> res = stats.log_rank(sample=sample, control=control)
+    >>> res.statistics
+    6.148087536256203
+    >>> res.pvalue
+    0.013155428547469983
+
+    """
     sample_tot = CensoredData(
         uncensored=np.concatenate((sample._uncensored, control._uncensored)),
         right=np.concatenate((sample._right, control._right))
@@ -424,6 +485,6 @@ def log_rank(sample: CensoredData, control: CensoredData):
         (n_died_sample - sum_exp_event_sample)**2/sum_exp_event_sample
         + (n_died_control - sum_exp_event_control)**2/sum_exp_event_control
     )
-    pvalue = 1 - chi(df=1).cdf(statistics)
+    pvalue = 1 - chi2(df=1).cdf(statistics)
 
     return LogRankResult(statistics=statistics, pvalue=pvalue)
