@@ -351,6 +351,12 @@ class TestLogRank:
               6.148087536256203
          ),
          (
+              # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
+              [[19, 6, 5, 4], [20, 19, 17, 14]],
+              [[16, 21, 7], [21, 15, 18, 18, 5]],
+              0.726
+         ),
+         (
               # Bland, Altman, "The logrank test", BMJ, 2004
               [[6, 13, 21, 30, 37, 38, 49, 50, 63, 79, 86, 98, 202, 219],
                [31, 47, 80, 82, 82, 149]],
@@ -371,7 +377,7 @@ class TestLogRank:
         )
         res = stats.log_rank(x=x, y=y)
 
-        assert_allclose(res.statistic, statistic, rtol=1e-3)
+        assert_allclose(res.statistic, statistic, rtol=2e-3)
 
     def test_raises(self):
         sample = stats.CensoredData([1, 2])
