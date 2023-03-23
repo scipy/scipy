@@ -463,7 +463,7 @@ def log_rank(
     >>> plt.legend()
     >>> plt.show()
 
-    >>> res = stats.log_rank(x=x,y=y)
+    >>> res = stats.log_rank(x=x, y=y)
     >>> res.statistic
     6.148087536256203
     >>> res.pvalue
