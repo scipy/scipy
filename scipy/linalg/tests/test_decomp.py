@@ -13,6 +13,7 @@ import platform
 import sys
 
 import numpy as np
+
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_, assert_allclose)
@@ -147,8 +148,9 @@ class TestEigVals:
 
     def test_empty(self):
         a = np.array([]).reshape((0,0))
-        a_empty = eig(a)
-        assert_allclose(a_empty, a)
+        b = np.array([])
+        a_empty = eigvals(a)
+        assert_equal(a_empty, (b,a))
 
 
 class TestEig:
@@ -370,8 +372,9 @@ class TestEig:
 
     def test_empty(self):
         a = np.array([]).reshape((0,0))
+        b = np.array([])
         a_empty = eig(a)
-        assert_allclose(a_empty, a)
+        assert_equal(a_empty, (b,a))
 
 
 class TestEigBanded:
@@ -924,8 +927,11 @@ class TestEigh:
 
     def test_empty(self):
         a = np.array([]).reshape((0,0))
-        a_empty = eig(a)
-        assert_allclose(a_empty, a)
+        b = np.array([])
+        goal = (b,a)
+        a_empty = eigh(a)
+        for i in range(len(a_empty)):
+            assert_allclose(a_empty[i], goal[i])
 
 
 class TestLU:
@@ -1216,8 +1222,12 @@ class TestSVD_GESDD:
 
     def test_empty(self):
         a = np.array([]).reshape((0,0))
+        b = np.array([])
+        goal = (a,b,a)
         a_empty = svd(a)
-        assert_allclose(a_empty, a)
+        for i in range(len(a_empty)):
+            assert_allclose(a_empty[i], goal[i])
+
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -1831,10 +1841,10 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
-    def test_empty(self):
+    def test_empty_matrix(self):
         a = np.array([]).reshape((0,0))
         a_empty = qr(a)
-        assert_allclose(a_empty, a)
+        assert_allclose(a_empty, (a,a))
 
 
 class TestRQ:

@@ -1358,7 +1358,7 @@ class TestPinv:
 
     def test_empty(self):
         a = np.array([]).reshape((0,0))
-        a_empty = inv(a)
+        a_empty = pinv(a)
         assert_allclose(a_empty, a)
 
 

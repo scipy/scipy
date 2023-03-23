@@ -932,9 +932,9 @@ def inv(a, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
 
-    # accomadate empty arrays
+    # accommodate empty square matrices
     if a1.size == 0:
-        return np.asfortranarray(a.copy())
+        return a1.copy()
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     # XXX: I found no advantage or disadvantage of using finv.
@@ -1020,7 +1020,8 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
      
-    # handle empty array, determinate of empty array (identity array) is 1.
+    # accommodate square empty matrix, determinate of empty matrix is 1.
+    # See: https://www.researchgate.net/publication/234783851_An_empty_exercise
     if a1.size == 0:
         return 1.0
 
@@ -1358,9 +1359,9 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     """
     a = _asarray_validated(a, check_finite=check_finite)
 
-    # accomadate empty arrays
+    # accommodate empty matrices
     if a.size == 0:
-        return np.asfortranarray(a.copy())
+        return a.copy()
 
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()

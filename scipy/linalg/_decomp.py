@@ -214,9 +214,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
 
-    # Quick return for square empty matrix
+    # accommodate square empty matrix
     if a1.size == 0:
-        return a1.copy()
+        return (numpy.array([]), a1.copy())
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
@@ -466,9 +466,9 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
 
-    # Quick return for square empty matrix
+    # accommodate square empty matrix
     if a1.size == 0:
-        return a1.copy()
+        return (numpy.array([]), a1.copy())
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     cplx = True if iscomplexobj(a1) else False

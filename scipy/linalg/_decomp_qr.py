@@ -131,9 +131,9 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
     
-    # Quick return for square empty array
+    # accommodate square empty matrix
     if a1.size == 0:
-        return a1.copy()
+        return (a1.copy(), a1.copy())
 
     M, N = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))

@@ -109,7 +109,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
 
-    # Quick return for square empty array
+    # accommodate square empty matrix
     if a1.size == 0:
         return a1.copy()
 
