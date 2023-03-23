@@ -568,7 +568,6 @@ class TestCdist:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                         assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
     def test_cdist_out(self):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1469,7 +1468,6 @@ class TestPdist:
                         y2 = pdist(new_type(X1), metric=metric)
                         assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
     def test_pdist_out(self):
         # Test that out parameter works properly
         eps = 1e-15
@@ -2073,7 +2071,6 @@ def test_Xdist_deprecated_args():
                 pdist(X1, metric, **kwargs)
 
 
-@pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
 def test_Xdist_non_negative_weights():
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
