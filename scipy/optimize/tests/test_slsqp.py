@@ -55,7 +55,7 @@ def _convert_bounds_to_constraints(bounds, n):
 
     return [lb, ub]
 
-def _check_kkt(res, constraints=[], bounds=[]):
+def _check_kkt(res, constraints=[], bounds=[], atol=1e-06):
     """Checks KKT conditions. See
     https://en.wikipedia.org/wiki/Karush-Kuhn-Tucker_conditions#Matrix_representation
     """
@@ -85,7 +85,7 @@ def _check_kkt(res, constraints=[], bounds=[]):
         # dual feasibility, with a small tolerance for floating point error
         assert np.all(mu >= -1e-14)
         # complementary slackness
-        assert_allclose(g_eval @ mu, 0, atol=1e-6)
+        assert_allclose(g_eval @ mu, 0, atol=atol)
 
         Dg = np.atleast_2d(approx_derivative(g, x, f0=g_eval))
         DgTmu.append(Dg.T @ mu)
@@ -93,14 +93,14 @@ def _check_kkt(res, constraints=[], bounds=[]):
     DhTlam = []
     for lam, h in zip(lams, hs):
         # primal feasibility
-        assert_allclose(h(x), 0, atol=1e-6)
+        assert_allclose(h(x), 0, atol=atol)
 
         Dh = np.atleast_2d(approx_derivative(h, x))
         DhTlam.append(Dh.T @ lam)
 
     # stationarity
     assert_allclose(gradf - np.sum(DgTmu, axis=0) - np.sum(DhTlam, axis=0),
-                    0, atol=1e-6)
+                    0, atol=atol)
 
 
 class TestSLSQP:
@@ -197,16 +197,16 @@ class TestSLSQP:
     def test_minimize_bounded_approximated(self):
         # Minimize, method='SLSQP': bounded, approximated jacobian.
         jacs = [None, False, '2-point', '3-point']
+        bnds = ((2.5, None), (None, 0.5))
         for jac in jacs:
             with np.errstate(invalid='ignore'):
                 res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                                jac=jac,
-                               bounds=((2.5, None), (None, 0.5)),
+                               bounds=bnds,
                                method='SLSQP', options=self.opts)
             assert_(res['success'], res['message'])
             assert_allclose(res.x, [2.5, 0.5])
-            assert_(2.5 <= res.x[0])
-            assert_(res.x[1] <= 0.5)
+            _check_kkt(res, bounds=bnds)
 
     def test_minimize_unbounded_combined(self):
         # Minimize, method='SLSQP': unbounded, combined function and Jacobian.
@@ -218,74 +218,76 @@ class TestSLSQP:
     def test_minimize_equality_approximated(self):
         # Minimize with method='SLSQP': equality constraint, approx. jacobian.
         jacs = [None, False, '2-point', '3-point']
+        cons = {'type': 'eq', 'fun': self.f_eqcon, 'args': (-1.0,)}
         for jac in jacs:
             res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                            jac=jac,
-                           constraints={'type': 'eq',
-                                        'fun': self.f_eqcon,
-                                        'args': (-1.0, )},
+                           constraints=cons,
                            method='SLSQP', options=self.opts)
             assert_(res['success'], res['message'])
             assert_allclose(res.x, [1, 1])
+            _check_kkt(res, constraints=cons)
 
     def test_minimize_equality_given(self):
         # Minimize with method='SLSQP': equality constraint, given Jacobian.
+        cons = {'type': 'eq', 'fun':self.f_eqcon, 'args': (-1.0,)}
         res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
                        method='SLSQP', args=(-1.0,),
-                       constraints={'type': 'eq', 'fun':self.f_eqcon,
-                                    'args': (-1.0, )},
+                       constraints=cons,
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [1, 1])
+        _check_kkt(res, constraints=cons)
 
     def test_minimize_equality_given2(self):
         # Minimize with method='SLSQP': equality constraint, given Jacobian
         # for fun and const.
+        cons = {'type': 'eq', 'fun': self.f_eqcon, 'args': (-1.0,),
+                'jac': self.fprime_eqcon}
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0,),
-                       constraints={'type': 'eq',
-                                    'fun': self.f_eqcon,
-                                    'args': (-1.0, ),
-                                    'jac': self.fprime_eqcon},
+                       constraints=cons,
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [1, 1])
+        _check_kkt(res, constraints=cons)
 
     def test_minimize_equality_given_cons_scalar(self):
         # Minimize with method='SLSQP': scalar equality constraint, given
         # Jacobian for fun and const.
+        cons = {'type': 'eq', 'fun': self.f_eqcon_scalar, 'args': (-1.0,),
+                'jac': self.fprime_eqcon_scalar}
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0,),
-                       constraints={'type': 'eq',
-                                    'fun': self.f_eqcon_scalar,
-                                    'args': (-1.0, ),
-                                    'jac': self.fprime_eqcon_scalar},
+                       constraints=cons,
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [1, 1])
+        _check_kkt(res, constraints=cons)
 
     def test_minimize_inequality_given(self):
         # Minimize with method='SLSQP': inequality constraint, given Jacobian.
+        cons = {'type': 'ineq', 'fun': self.f_ieqcon, 'args': (-1.0,)}
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0, ),
-                       constraints={'type': 'ineq',
-                                    'fun': self.f_ieqcon,
-                                    'args': (-1.0, )},
+                       constraints=cons,
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1], atol=1e-3)
+        _check_kkt(res, constraints=cons, atol=1e-03)
 
     def test_minimize_inequality_given_vector_constraints(self):
         # Minimize with method='SLSQP': vector inequality constraint, given
         # Jacobian.
+        cons = {'type': 'ineq', 'fun': self.f_ieqcon2,
+                'jac': self.fprime_ieqcon2}
         res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
                        method='SLSQP', args=(-1.0,),
-                       constraints={'type': 'ineq',
-                                    'fun': self.f_ieqcon2,
-                                    'jac': self.fprime_ieqcon2},
+                       constraints=cons,
                        options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
+        _check_kkt(res, constraints=cons)
 
     def test_minimize_bounded_constraint(self):
         # when the constraint makes the solver go up against a parameter

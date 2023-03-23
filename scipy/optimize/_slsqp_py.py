@@ -535,6 +535,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         # consistent with sign of multipliers for inequality constraints
         active_bnds = ~infbnd[:, 1] & ~pos_kkt_bnds
         kkt[active_bnds, 1] = np.abs(_kkt_bnds[active_bnds])
+
     kkt_multiplier["bounds"] = {"lb": kkt[:, 0], "ub": kkt[:, 1]}
 
     # Optimization loop complete. Print status if requested
