@@ -380,30 +380,6 @@ class TestLogRank:
 
         assert_allclose(res.statistic, statistic, rtol=2e-3)
 
-    def test_at_risk(self):
-
-        def simple_at_risk(times, all_times):
-            return [np.where(times >= x)[0].size for x in all_times]
-
-        times = np.array([8,  8, 12, 14, 20, 21, 26, 27, 32, 40])
-        all_times = np.array([8, 12, 14, 21, 26, 27, 28, 33, 41])
-        ref = [10, 8, 7, 5, 4, 3, 2, 1, 0]
-
-        res = simple_at_risk(times=times, all_times=all_times)
-        assert_equal(ref, res)
-
-        res = _survival._at_risk(times=times, all_times=all_times)
-        assert_equal(ref, res)
-
-        # larger samples, unknown ref values
-        rng = np.random.default_rng(15342432432)
-        times = np.sort(rng.integers(0, 100, size=10_000))
-        all_times = np.sort(rng.integers(0, 100, size=10_000))
-
-        ref = simple_at_risk(times=times, all_times=all_times)
-        res = _survival._at_risk(times=times, all_times=all_times)
-        assert_equal(ref, res)
-
     def test_raises(self):
         sample = stats.CensoredData([1, 2])
 
