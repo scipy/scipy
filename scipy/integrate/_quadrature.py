@@ -761,16 +761,16 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
         If None (default), use spacing `dx` between consecutive elements in `y`.
     dx : scalar | array_like, optional
         Spacing between elements of `y`. Only used if `x` is None. Can either be
-        a float, or an array with the same shape as `y`, but size 1 along `axis`.
+        a float, or an array with the same shape as `y`, but size 1 along `axis`. 
     axis : int, optional
         Specifies the axis to integrate along. Default is -1 (last axis).
     initial : scalar | array_like, optional
         If given, insert this value at the beginning of the returned result,
-        and add it to the rest of the result. Typically this value should be 0.
-        Default is None, which means no value at ``x[0]`` is returned and `res`
+        and add it to the rest of the result. Typically this value should be 0. 
+        Default is None, which means no value at ``x[0]`` is returned and `res` 
         has one element less than `y` along the axis of integration.
-        Can either be a float, or an array with the same shape as `y`,
-        but size 1 along `axis`.
+        Can either be a float, or an array with the same shape as `y`, 
+        but size 1 along `axis`. 
 
     Returns
     -------
@@ -1514,7 +1514,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.00018441088533413305, 1.1255608140911588e-07)
+    (0.00018443143881633162, 4.709434153066518e-08)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
@@ -1522,7 +1522,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> t = stats.t(df=n_estimates-1, loc=res.integral,
     ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018401699720722663, 0.00018480477346103947)
+    (0.00018426663295474533, 0.0001845962446779179)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
