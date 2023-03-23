@@ -287,6 +287,43 @@ reproduce the results of the example exactly, so examples using random data
 should not refer to precise numerical values based on random data or rely on
 them to make their point.
 
+Legacy directive
+~~~~~~~~~~~~~~~~
+
+If a function, module or API is in *legacy* mode, meaning that it is kept around
+for backwards compatibility reasons, but is not recommended to use in new code,
+you can use the ``.. legacy::`` directive.
+
+By default, if used with no arguments, the legacy directive will generate the
+following output:
+
+.. legacy::
+
+
+We strongly recommend that you also add a custom message, such as a new API to
+replace the old one. This message will be appended to the default message::
+
+   .. legacy::
+
+      New code should use :mod:`scipy.fft`.
+
+will create the following output:
+
+.. legacy::
+
+   New code should use :mod:`scipy.fft`.
+
+Finally, if you want to mention a function, method (or any custom object)
+instead of a *submodule*, you can use an optional argument::
+
+    .. legacy:: function
+
+This will create the following output:
+
+.. legacy:: function
+
+---
+
 .. _GitHub: https://github.com/
 .. _CircleCI: https://circleci.com/vcs-authorize/
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
