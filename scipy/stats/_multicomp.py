@@ -33,6 +33,8 @@ class DunnettResult:
     _std: float
     _mean_samples: np.ndarray
     _mean_control: np.ndarray
+    _n_samples: np.ndarray
+    _n_control: int
     _rng: SeedType
     _ci: ConfidenceInterval | None = None
     _ci_cl: DecimalNumber | None = None
@@ -128,7 +130,10 @@ class DunnettResult:
                 stacklevel=3
             )
 
-        allowance = critical_value*self._std*np.sqrt(2/self.pvalue.size)
+        # From [1] p. 1101 between (1) and (3)
+        allowance = critical_value*self._std*np.sqrt(
+            1/self._n_samples + 1/self._n_control
+        )
         return abs(allowance)
 
     def confidence_interval(
@@ -326,9 +331,13 @@ def dunnett(
         alternative=alternative, random_state=random_state
     )
 
-    rho, df, n_group = _params_dunnett(samples=samples_, control=control_)
+    rho, df, n_group, n_samples, n_control = _params_dunnett(
+        samples=samples_, control=control_
+    )
 
-    statistic, std, mean_control, mean_samples = _statistic_dunnett(samples_, control_, df)
+    statistic, std, mean_control, mean_samples = _statistic_dunnett(
+        samples_, control_, df, n_samples, n_control
+    )
 
     pvalue = _pvalue_dunnett(
         rho=rho, df=df, statistic=statistic, alternative=alternative, rng=rng
@@ -340,6 +349,8 @@ def dunnett(
         _rho=rho, _df=df, _std=std,
         _mean_samples=mean_samples,
         _mean_control=mean_control,
+        _n_samples=n_samples,
+        _n_control=n_control,
         _rng=rng
     )
 
@@ -378,7 +389,7 @@ def _iv_dunnett(
 
 def _params_dunnett(
     samples: list[np.ndarray], control: np.ndarray
-) -> tuple[np.ndarray, int, int]:
+) -> tuple[np.ndarray, int, int, np.ndarray, int]:
     """Specific parameters for Dunnett's test.
 
     Degree of freedom is the number of observations minus the number of groups
@@ -398,18 +409,17 @@ def _params_dunnett(
     rho = 1/np.sqrt(rho[:, None] * rho[None, :])
     np.fill_diagonal(rho, 1)
 
-    return rho, df, n_groups
+    return rho, df, n_groups, n_samples, n_control
 
 
 def _statistic_dunnett(
-    samples: list[np.ndarray], control: np.ndarray, df: int
+    samples: list[np.ndarray], control: np.ndarray, df: int,
+    n_samples: np.ndarray, n_control: int
 ) -> tuple[np.ndarray, float, np.ndarray, np.ndarray]:
     """Statistic of Dunnett's test.
 
     Computation based on the original single-step test from [1].
     """
-    n_control = control.size
-    n_samples = np.array([sample.size for sample in samples])
     mean_control = np.mean(control)
     mean_samples = np.array([np.mean(sample) for sample in samples])
     all_samples = [control] + samples
