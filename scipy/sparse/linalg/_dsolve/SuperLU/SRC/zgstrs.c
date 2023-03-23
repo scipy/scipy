@@ -120,8 +120,7 @@ zgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     int      i, j, k, iptr, jcol, n, ldb, nrhs;
     doublecomplex   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void zprint_soln();
-
+    void zprint_soln(int n, int nrhs, doublecomplex *soln);
     /* Test input parameters ... */
     *info = 0;
     Bstore = B->Store;
