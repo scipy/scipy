@@ -868,3 +868,35 @@ class TestSLSQP:
                        method='slsqp')
 
         _check_kkt(res, constraints, bounds)
+
+    def test_example(self):
+        # Verify the example given in the `minimize` documentation
+        def fun(x):
+            return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2
+
+        cons = ({'type': 'ineq', 'fun': lambda x: x[0] - 2 * x[1] + 2},
+                {'type': 'ineq', 'fun': lambda x: -x[0] - 2 * x[1] + 6},
+                {'type': 'ineq', 'fun': lambda x: -x[0] + 2 * x[1] + 2})
+
+        bnds = ((0, None), (0, None))
+
+        res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+                       constraints = cons)
+
+        kkt0 = res.kkt['ineq'][0]
+        f0 = res.fun
+
+        assert_allclose(res.x, [1.4, 1.7])
+        assert_allclose(kkt0, 0.8)
+        _check_kkt(res, cons, bnds)
+
+        # Loosen the constraints by a small amount eps
+        eps = 0.01
+        cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+
+        res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+                       constraints=cons)
+
+        f1 = res.fun
+        assert_allclose(f1 - f0, eps * kkt0, atol=eps**2)
+        _check_kkt(res, cons, bnds)

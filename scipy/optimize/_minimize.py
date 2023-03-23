@@ -519,13 +519,42 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     >>> bnds = ((0, None), (0, None))
 
-    The optimization problem is solved using the SLSQP method as:
+    The optimization problem is solved using the *SLSQP* method as:
 
     >>> res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
     ...                constraints=cons)
 
-    It should converge to the theoretical solution (1.4 ,1.7).
+    It should converge to the theoretical solution (1.4 ,1.7). *SLSQP* also
+    returns the Karush-Kuhn-Tucker (KKT) multipliers, which are a generalization
+    of Lagrange multipliers to inequality-constrained optimization problems.
+    Notice that at solution, the first constraint is active:
 
+    >>> cons[0]['fun'](res.x)
+    1.4901229139496763e-09
+
+    and has a non-zero KKT multiplier:
+
+    >>> res.kkt['ineq'][0]
+    array([0.8])
+
+    This can be understood as the local sensitivity of the optimal value of the
+    objective function with respect to changes in the first constraint. If we
+    loosen the constraint by a small amount ``eps``:
+
+    >>> eps = 0.01
+    ... cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
+
+    we expect the change in the optimal value of the objective function to be
+    approximately ``eps * res.kkt['ineq'][0]``:
+
+    >>> eps * res.kkt['ineq'][0] # Expected change in f0
+    array([0.008])
+    >>> f0 = res.fun # Keep track of the previous optimal value
+    ... res = minimize(fun, (2, 0), method='SLSQP', bounds=bnds,
+    ...                constraints=cons)
+    ... f1 = res.fun # New optimal value
+    ... f1 - f0
+    0.008019998807906381
     """
     x0 = np.atleast_1d(np.asarray(x0))
 
