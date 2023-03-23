@@ -496,6 +496,6 @@ def log_rank(
         + (n_died_y - sum_exp_event_control)**2/sum_exp_event_control
     )
 
-    pvalue = 1 - chi2(df=1).cdf(statistic)
+    pvalue = chi2(df=1).sf(statistic)
 
     return LogRankResult(statistic=statistic, pvalue=pvalue)

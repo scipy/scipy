@@ -337,3 +337,38 @@ class TestSurvival:
         assert_equal(res.sf._n, ref.sf._n)
         assert_equal(res.sf._d[:-1], ref.sf._d[:-1])  # difference @ [-1]
         assert_allclose(res.sf._sf[:-1], ref.sf._sf[:-1], rtol=1e-14)
+
+
+class TestLogRank:
+
+    @pytest.mark.parametrize(
+        "x, y, statistic",
+        # uncensored, censored
+        [(
+              # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
+              [[8, 12, 26, 14, 21, 27], [8, 32, 20, 40]],
+              [[33, 28, 41], [48, 48, 25, 37, 48, 25, 43]],
+              6.148087536256203
+         ),
+         (
+              # Bland, Altman, "The logrank test", BMJ, 2004
+              [[6, 13, 21, 30, 37, 38, 49, 50, 63, 79, 86, 98, 202, 219],
+               [31, 47, 80, 82, 82, 149]],
+              [[10, 10, 12, 13, 14, 15, 16, 17, 18, 20, 24, 24, 25, 28, 30,
+                33, 35, 37, 40, 40, 46, 48, 76, 81, 82, 91, 112, 181],
+               [34, 40, 70]],
+              6.88
+         )]
+    )
+    def test_log_rank(self, x, y, statistic):
+        x = stats.CensoredData(
+            uncensored=x[0],
+            right=x[1]
+        )
+        y = stats.CensoredData(
+            uncensored=y[0],
+            right=y[1]
+        )
+        res = stats.log_rank(x=x, y=y)
+
+        assert_allclose(res.statistic, statistic, rtol=1e-3)
