@@ -313,17 +313,16 @@ class TestSLSQP:
                 'jac': self.fprime_eqcon}
         bnd_cons = _convert_bounds_to_constraints(bnds, 2)
         cons = [cons, {'type': 'ineq', 'fun': bnd_cons[0]}, {'type': 'ineq', 'fun': bnd_cons[1]}]
-        print(cons)
+
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
                        jac=self.jac, args=(-1.0,),
                        bounds=bnds,
                        constraints=cons,
                        options=self.opts)
-        print(res.x)
-        print(res.kkt)
+
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [0.8, 0.8], atol=1e-3)
-        #_check_kkt(res, cons, bnds)
+        _check_kkt(res, cons, bnds)
 
     # fmin_slsqp
     def test_unbounded_approximated(self):
