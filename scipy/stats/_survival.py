@@ -169,6 +169,17 @@ class ECDFResult:
         self.sf = EmpiricalDistributionFunction(x, sf, n, d, "sf")
 
 
+def _iv_CensoredData(sample: npt.ArrayLike | CensoredData) -> CensoredData:
+    """Attempt to convert `sample` to `CensoredData`."""
+    if not isinstance(sample, CensoredData):
+        try:  # takes care of input standardization/validation
+            sample = CensoredData(uncensored=sample)
+        except ValueError as e:
+            message = str(e).replace('uncensored', 'sample')
+            raise type(e)(message) from e
+    return sample
+
+
 def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     """Empirical cumulative distribution function of a sample.
 
@@ -309,12 +320,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
     >>> plt.show()
 
     """
-    if not isinstance(sample, CensoredData):
-        try:  # takes care of input standardization/validation
-            sample = CensoredData(uncensored=sample)
-        except ValueError as e:
-            message = str(e).replace('uncensored', 'sample')
-            raise type(e)(message) from e
+    sample = _iv_CensoredData(sample)
 
     if sample.num_censored() == 0:
         res = _ecdf_uncensored(sample._uncensor())
@@ -402,26 +408,16 @@ def _at_risk(times: np.ndarray, all_times: np.ndarray) -> np.ndarray:
     return np.array(at_risk)
 
 
-def _iv_log_rank(
-    sample: CensoredData, control: CensoredData,
-) -> tuple[CensoredData, CensoredData]:
-    if not (isinstance(sample, CensoredData) and
-            isinstance(control, CensoredData)):
-        raise ValueError(
-            ""
-        )
-
-    return sample, control
-
-
-def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
+def log_rank(
+    x: npt.ArrayLike | CensoredData,
+    y: npt.ArrayLike | CensoredData
+) -> LogRankResult:
     """Compare the survival distributions of two samples via the logrank test.
 
     Parameters
     ----------
-    sample, control : CensoredData
-        Sample and control data to compare based on their survival functions.
-        The order does not matter, `sample` and `control` can be interverted.
+    x, y : array_like or CensoredData
+        Samples to compare based on their survival functions.
 
     Returns
     -------
@@ -442,11 +438,11 @@ def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
     --------
 
     >>> from scipy import stats
-    >>> sample = stats.CensoredData(
+    >>> x = stats.CensoredData(
     ...     uncensored=[8, 12, 26, 14, 21, 27],
     ...     right=[8, 32, 20, 40]
     ... )
-    >>> control = stats.CensoredData(
+    >>> y = stats.CensoredData(
     ...     uncensored=[33, 28, 41],
     ...     right=[48, 48, 25, 37, 48, 25, 43]
     ... )
@@ -454,10 +450,10 @@ def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ecdf_sample = stats.ecdf(sample)
+    >>> ecdf_sample = stats.ecdf(x)
     >>> ax.step(np.insert(ecdf_sample.x, 0, 0), np.insert(ecdf_sample.sf.points, 0, 1),
     ...         where='post', label='sample')
-    >>> ecdf_control = stats.ecdf(control)
+    >>> ecdf_control = stats.ecdf(y)
     >>> ax.step(np.insert(ecdf_control.x, 0, 0), np.insert(ecdf_control.sf.points, 0, 1),
     ...         ls='-.', where='post', label='control')
     >>> ax.set_xlabel('Time (months)')
@@ -465,40 +461,39 @@ def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
     >>> plt.legend()
     >>> plt.show()
 
-    >>> res = stats.log_rank(sample=sample, control=control)
+    >>> res = stats.log_rank(x=x,y=y)
     >>> res.statistic
     6.148087536256203
     >>> res.pvalue
     0.013155428547469983
 
     """
-    sample, control = _iv_log_rank(sample=sample, control=control)
+    x, y = _iv_CensoredData(sample=x), _iv_CensoredData(sample=y)
 
-    sample_tot = CensoredData(
-        uncensored=np.concatenate((sample._uncensored, control._uncensored)),
-        right=np.concatenate((sample._right, control._right))
+    xy = CensoredData(
+        uncensored=np.concatenate((x._uncensored, y._uncensored)),
+        right=np.concatenate((x._right, y._right))
     )
 
-    res = ecdf(sample_tot)
-    times_sample_tot = res.x[res.sf._d.astype(bool)]
-    at_risk_sample_tot = res.sf._n[res.sf._d.astype(bool)]
-    _, dead_per_times = np.unique(sample_tot._uncensored, return_counts=True)
+    res = ecdf(xy)
+    idx = res.sf._d.astype(bool)  # events were observed (not censored)
+    times_xy = res.x[idx]
+    at_risk_xy = res.sf._n[idx]
+    deaths_xy = res.sf._d[idx]
 
-    n_died_sample = sample._uncensored.size
-    n_died_control = control._uncensored.size
+    n_died_x = x._uncensored.size
+    n_died_y = y._uncensored.size
 
-    times = np.sort(np.concatenate((sample._uncensored, sample._right)))
-    at_risk_sample = _at_risk(times, times_sample_tot)
+    times = np.sort(np.concatenate((x._uncensored, x._right)))
+    at_risk_x = _at_risk(times, times_xy)
+    at_risk_y = at_risk_xy - at_risk_x
 
-    times = np.sort(np.concatenate((control._uncensored, control._right)))
-    at_risk_control = _at_risk(times, times_sample_tot)
-
-    sum_exp_event_sample = np.sum(at_risk_sample * (dead_per_times/at_risk_sample_tot))
-    sum_exp_event_control = np.sum(at_risk_control * (dead_per_times/at_risk_sample_tot))
+    sum_exp_event_sample = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
+    sum_exp_event_control = np.sum(at_risk_y * (deaths_xy/at_risk_xy))
 
     statistic = (
-        (n_died_sample - sum_exp_event_sample)**2/sum_exp_event_sample
-        + (n_died_control - sum_exp_event_control)**2/sum_exp_event_control
+        (n_died_x - sum_exp_event_sample)**2/sum_exp_event_sample
+        + (n_died_y - sum_exp_event_control)**2/sum_exp_event_control
     )
 
     pvalue = 1 - chi2(df=1).cdf(statistic)
