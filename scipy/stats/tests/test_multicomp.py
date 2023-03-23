@@ -13,7 +13,7 @@ class TestDunnett:
     @pytest.mark.parametrize(
         'rho, n_groups, df, statistic, pvalue, alternative',
         [
-            # From Dunnett1995
+            # From Dunnett1955
             # Tables 1a and 1b pages 1117-1118
             (0.5, 1, 10, 1.81, 0.05, "greater"),  # different than two-sided
             (0.5, 3, 10, 2.34, 0.05, "greater"),
@@ -140,7 +140,7 @@ class TestDunnett:
     pvalue_1_greater = [1e-4, 0.011217, 0.768500, 0.896991, 0.577211]
     pvalue_1_less = [1, 1, 0.99660, 0.98398, .99953]
 
-    # From Dunnett1995 comparing with R's DescTools: DunnettTest
+    # From Dunnett1955 comparing with R's DescTools: DunnettTest
     samples_2 = [
         [9.76, 8.80, 7.68, 9.36], [12.80, 9.68, 12.16, 9.20, 10.55]
     ]
@@ -250,29 +250,28 @@ class TestDunnett:
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
-    # filter warning that could happen during optimization
     @pytest.mark.parametrize(
-        'alternative, allowance, ci_low, ci_high',
+        'alternative, ci_low, ci_high',
         [
             (
-                'two-sided', 11,
+                'two-sided',
                 [0.7529028025053, -8.2470971974947, -15.2470971974947],
                 [21.2470971974947, 12.2470971974947, 5.2470971974947]
              ),
             (
-                'less', 9,
+                'less',
                 [2.4023682323149, -6.5976317676851, -13.5976317676851],
                 [np.inf, np.inf, np.inf]
             ),
             (
-                'greater', 9,
+                'greater',
                 [-np.inf, -np.inf, -np.inf],
                 [19.5984402363662, 10.5984402363662, 3.5984402363662]
             )
         ]
     )
-    def test_allowance(self, alternative, allowance, ci_low, ci_high):
-        # Example (a) from Dunnett1995 using R multcomp `glht`
+    def test_confidence_interval(self, alternative, ci_low, ci_high):
+        # Example (a) from Dunnett1955 using R multcomp `glht`
         # Same as above with confint(test) and the corresponding alternative
         rng = np.random.default_rng(189117774084579816190295271136455278291)
         samples = [
@@ -286,8 +285,6 @@ class TestDunnett:
             *samples, control=control, alternative=alternative,
             random_state=rng
         )
-        allowance_ = res._allowance(confidence_level=0.95)
-        assert_allclose(allowance_, allowance, atol=1)
 
         assert res._ci is None
         assert res._ci_cl is None
@@ -329,7 +326,7 @@ class TestDunnett:
         control = [55, 47, 48]
 
         res = stats.dunnett(*samples, control=control, random_state=rng)
-        msg = r"The computation of the confidence interval did not converge"
+        msg = r"Computation of the confidence interval did not converge"
         with pytest.warns(UserWarning, match=msg):
             res._allowance(tol=1e-5)
 

@@ -124,7 +124,7 @@ class DunnettResult:
             warnings.warn(
                 "Computation of the confidence interval did not converge to "
                 "the desired level. The confidence level corresponding with "
-                f"the returned interval is approximately {alpha*(1+res.fun)}."
+                f"the returned interval is approximately {alpha*(1+res.fun)}.",
                 stacklevel=3
             )
 
@@ -156,8 +156,7 @@ class DunnettResult:
         """
         # check to see if the supplied confidence level matches that of the
         # previously computed CI.
-        if (self._ci is not None and self._ci_cl is not None and
-                confidence_level == self._ci_cl):
+        if (self._ci is not None) and (confidence_level == self._ci_cl):
             return self._ci
 
         if not (0 < confidence_level < 1):
