@@ -288,7 +288,7 @@ For example, the Hessian when :math:`N=5` is
 
 .. math::
 
-    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{bmatrix}.
+    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}+2\mkern-2em\\&1200x_{1}^{2}+202\mkern-2em\\&&1200x_{1}^{2}+202\mkern-2em\\&&&1200x_{3}^{2}+202\mkern-1em\\&&&&200\end{bmatrix}-400\begin{bmatrix} x_1 & x_0 \\ x_0 & x_2 & x_1 \\ & x_1 & x_3 & x_2\\ & & x_2 & x_4 & x_3 \\ & & & x_3 & 0\end{bmatrix}.
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
@@ -336,16 +336,7 @@ elements:
 
 .. math::
 
-    \mathbf{H}=
-\begin{bmatrix}1200x_{0}^{2}+2\mkern-2em\\
-    &1200x_{1}^{2}+202\mkern-2em\\
-    &&1200x_{1}^{2}+202\mkern-2em\\
-    &&&1200x_{3}^{2}+202\mkern-1em\\
-    &&&&200
-\end{bmatrix}
--400\begin{bmatrix}
-x_1&x_0 \\x_0&x_2&x_1 \\&x_1&x_3&x_2\\&&x_2&x_4&x_3\\&&&x_3&0
-\end{bmatrix}.
+    \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\begin{bmatrix} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{bmatrix}.
 
 Code which makes use of this Hessian product to minimize the
 Rosenbrock function using :func:`minimize` follows:
