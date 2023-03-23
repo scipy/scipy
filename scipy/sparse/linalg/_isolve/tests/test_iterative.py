@@ -49,7 +49,6 @@ class IterativeParams:
         solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
-        real_solvers = [minres]
 
         self.solvers = solvers
 
@@ -65,25 +64,19 @@ class IterativeParams:
         Poisson1D = spdiags(data, [0,-1,1], N, N, format='csr')
         self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
-        # note: minres fails for single precision
-        self.cases.append(Case("poisson1d", Poisson1D.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("poisson1d", Poisson1D.astype('f')))
 
         # Symmetric and Negative Definite
         self.cases.append(Case("neg-poisson1d", -Poisson1D,
                                skip=posdef_solvers))
-        # note: minres fails for single precision
         self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
-                               skip=posdef_solvers + [minres]))
+                               skip=posdef_solvers))
 
         # 2-dimensional Poisson equations
         Poisson2D = kronsum(Poisson1D, Poisson1D)
         self.Poisson2D = Case("poisson2d", Poisson2D)
-        # note: minres fails for 2-d poisson problem, it will be fixed in the future PR
-        self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
-        # note: minres fails for single precision
-        self.cases.append(Case("poisson2d", Poisson2D.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("poisson2d", Poisson2D))
+        self.cases.append(Case("poisson2d", Poisson2D.astype('f')))
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
@@ -112,34 +105,31 @@ class IterativeParams:
         data = np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
-        # note: minres fails for single precision
-        self.cases.append(Case("rand-sym-pd", data.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("rand-sym-pd", data.astype('f')))
 
         # Random complex-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
         self.cases.append(Case("rand-cmplx", data,
-                               skip=posdef_solvers+sym_solvers+real_solvers))
+                               skip=posdef_solvers+sym_solvers))
         self.cases.append(Case("rand-cmplx", data.astype('F'),
-                               skip=posdef_solvers+sym_solvers+real_solvers))
+                               skip=posdef_solvers+sym_solvers))
 
         # Random hermitian complex-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
-                               skip=posdef_solvers+real_solvers))
+                               skip=posdef_solvers))
         self.cases.append(Case("rand-cmplx-herm", data.astype('F'),
-                               skip=posdef_solvers+real_solvers))
+                               skip=posdef_solvers))
 
         # Random pos-def hermitian complex-valued
         np.random.seed(1234)
         data = np.random.rand(9, 9) + 1j*np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
-        self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
-        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
-                               skip=real_solvers))
+        self.cases.append(Case("rand-cmplx-sym-pd", data))
+        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F')))
 
         # Non-symmetric and Positive Definite
         #
