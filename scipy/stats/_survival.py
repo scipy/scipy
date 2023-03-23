@@ -169,13 +169,15 @@ class ECDFResult:
         self.sf = EmpiricalDistributionFunction(x, sf, n, d, "sf")
 
 
-def _iv_CensoredData(sample: npt.ArrayLike | CensoredData) -> CensoredData:
+def _iv_CensoredData(
+    sample: npt.ArrayLike | CensoredData, param_name: str = 'sample'
+) -> CensoredData:
     """Attempt to convert `sample` to `CensoredData`."""
     if not isinstance(sample, CensoredData):
         try:  # takes care of input standardization/validation
             sample = CensoredData(uncensored=sample)
         except ValueError as e:
-            message = str(e).replace('uncensored', 'sample')
+            message = str(e).replace('uncensored', param_name)
             raise type(e)(message) from e
     return sample
 
@@ -468,7 +470,8 @@ def log_rank(
     0.013155428547469983
 
     """
-    x, y = _iv_CensoredData(sample=x), _iv_CensoredData(sample=y)
+    x = _iv_CensoredData(sample=x, param_name='x')
+    y = _iv_CensoredData(sample=y, param_name='y')
 
     xy = CensoredData(
         uncensored=np.concatenate((x._uncensored, y._uncensored)),

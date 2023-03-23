@@ -372,3 +372,14 @@ class TestLogRank:
         res = stats.log_rank(x=x, y=y)
 
         assert_allclose(res.statistic, statistic, rtol=1e-3)
+
+    def test_raises(self):
+        sample = stats.CensoredData([1, 2])
+
+        msg = r"`y` must be"
+        with pytest.raises(ValueError, match=msg):
+            stats.log_rank(x=sample, y=[[1, 2]])
+
+        msg = r"`x` must be"
+        with pytest.raises(ValueError, match=msg):
+            stats.log_rank(x=[[1, 2]], y=sample)
