@@ -415,7 +415,7 @@ def _iv_log_rank(
 
 
 def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
-    """Log Rank test.
+    """Compare the survival distributions of two samples via the logrank test.
 
     Parameters
     ----------
@@ -435,19 +435,20 @@ def log_rank(sample: CensoredData, control: CensoredData) -> LogRankResult:
 
     References
     ----------
-    .. [1] ...
+    .. [1] Peto, Richard and Peto, Julian. "Asymptotically Efficient Rank
+           Invariant Test Procedures." J. R. Statist. Soc. A, 185 (1972)
 
     Examples
     --------
 
     >>> from scipy import stats
     >>> sample = stats.CensoredData(
-    ...     uncensored=[ 8., 12., 26., 14., 21., 27.],
-    ...     right=[ 8., 32., 20., 40.]
+    ...     uncensored=[8, 12, 26, 14, 21, 27],
+    ...     right=[8, 32, 20, 40]
     ... )
     >>> control = stats.CensoredData(
-    ...     uncensored=[33., 28., 41.],
-    ...     right=[48., 48., 25., 37., 48., 25., 43.]
+    ...     uncensored=[33, 28, 41],
+    ...     right=[48, 48, 25, 37, 48, 25, 43]
     ... )
 
     >>> import numpy as np
