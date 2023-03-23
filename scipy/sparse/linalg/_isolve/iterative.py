@@ -9,7 +9,7 @@ import numpy as np
 from . import _iterative
 
 from scipy.sparse.linalg._interface import LinearOperator
-from .utils import make_system
+from .utils import make_system, id
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
 
@@ -801,26 +801,54 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     A_ = A
     A, M, x, b, postprocess = make_system(A, None, x0, b)
 
+    # Check and deal with the left and/or right preconditioner
+    def left_psolve(b):
+        return A_.psolve(b, 'left')
+
+    def right_psolve(b):
+        return A_.psolve(b, 'right')
+
+    def left_rpsolve(b):
+        return A_.rpsolve(b, 'left')
+
+    def right_rpsolve(b):
+        return A_.rpsolve(b, 'right')
+
     if M1 is None and M2 is None:
-        if hasattr(A_,'psolve'):
-            def left_psolve(b):
-                return A_.psolve(b,'left')
-
-            def right_psolve(b):
-                return A_.psolve(b,'right')
-
-            def left_rpsolve(b):
-                return A_.rpsolve(b,'left')
-
-            def right_rpsolve(b):
-                return A_.rpsolve(b,'right')
-            M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=left_rpsolve)
-            M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=right_rpsolve)
+        if hasattr(A_, 'psolve') and not hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=id)
+            M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=id)
+        elif not hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape, matvec=id, rmatvec=left_rpsolve)
+            M2 = LinearOperator(A.shape, matvec=id, rmatvec=right_rpsolve)
+        elif hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape,
+                                matvec=left_psolve, rmatvec=left_rpsolve)
+            M2 = LinearOperator(A.shape,
+                                matvec=right_psolve, rmatvec=right_rpsolve)
         else:
-            def id(b):
-                return b
             M1 = LinearOperator(A.shape, matvec=id, rmatvec=id)
             M2 = LinearOperator(A.shape, matvec=id, rmatvec=id)
+    elif M1 is not None and M2 is None:
+        if hasattr(A_, 'psolve') and not hasattr(A_, 'rpsolve'):
+            M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=id)
+        elif not hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M2 = LinearOperator(A.shape, matvec=id, rmatvec=right_rpsolve)
+        elif hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M2 = LinearOperator(A.shape,
+                                matvec=right_psolve, rmatvec=right_rpsolve)
+        else:
+            M2 = LinearOperator(A.shape, matvec=id, rmatvec=id)
+    elif M1 is None and M2 is not None:
+        if hasattr(A_, 'psolve') and not hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=id)
+        elif not hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape, matvec=id, rmatvec=left_rpsolve)
+        elif hasattr(A_, 'psolve') and hasattr(A_, 'rpsolve'):
+            M1 = LinearOperator(A.shape,
+                                matvec=left_psolve, rmatvec=left_rpsolve)
+        else:
+            M1 = LinearOperator(A.shape, matvec=id, rmatvec=id)
 
     n = len(b)
     if maxiter is None:
