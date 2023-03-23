@@ -329,7 +329,15 @@ class TestDunnett:
         ci_ = res.confidence_interval(confidence_level=0.95)
         assert ci_ is ci
 
-    def toto(self):
+    @pytest.mark.parametrize('alternative', ["two-sided", "less", "greater"])
+    def test_str(self, alternative):
+        rng = np.random.default_rng(189117774084579816190295271136455278291)
+
+        res = stats.dunnett(
+            *self.samples_3, control=self.control_3, alternative=alternative,
+            random_state=rng
+        )
+
         # check some str output
         res_str = str(res)
         assert '(Sample 2 - Control)' in res_str
@@ -350,53 +358,44 @@ class TestDunnett:
 
     def test_warnings(self):
         rng = np.random.default_rng(189117774084579816190295271136455278291)
-        samples = [
-            [55, 64, 64],
-            [55, 49, 52],
-            [50, 44, 41]
-        ]
-        control = [55, 47, 48]
 
-        res = stats.dunnett(*samples, control=control, random_state=rng)
+        res = stats.dunnett(
+            *self.samples_3, control=self.control_3, random_state=rng
+        )
         msg = r"Computation of the confidence interval did not converge"
         with pytest.warns(UserWarning, match=msg):
             res._allowance(tol=1e-5)
 
     def test_raises(self):
-        samples = [
-            [55, 64, 64],
-            [55, 49, 52],
-            [50, 44, 41]
-        ]
-        control = [55, 47, 48]
-
         # alternative
         with pytest.raises(ValueError, match="alternative must be"):
-            stats.dunnett(*samples, control=control, alternative='bob')
+            stats.dunnett(
+                *self.samples_3, control=self.control_3, alternative='bob'
+            )
 
         # 2D for a sample
-        samples_ = copy.deepcopy(samples)
+        samples_ = copy.deepcopy(self.samples_3)
         samples_[0] = [samples_[0]]
         with pytest.raises(ValueError, match="must be 1D arrays"):
-            stats.dunnett(*samples_, control=control)
+            stats.dunnett(*samples_, control=self.control_3)
 
         # 2D for control
-        control_ = copy.deepcopy(control)
+        control_ = copy.deepcopy(self.control_3)
         control_ = [control_]
         with pytest.raises(ValueError, match="must be 1D arrays"):
-            stats.dunnett(*samples, control=control_)
+            stats.dunnett(*self.samples_3, control=control_)
 
         # No obs in a sample
-        samples_ = copy.deepcopy(samples)
+        samples_ = copy.deepcopy(self.samples_3)
         samples_[1] = []
         with pytest.raises(ValueError, match="at least 1 observation"):
-            stats.dunnett(*samples_, control=control)
+            stats.dunnett(*samples_, control=self.control_3)
 
         # No obs in control
         control_ = []
         with pytest.raises(ValueError, match="at least 1 observation"):
-            stats.dunnett(*samples, control=control_)
+            stats.dunnett(*self.samples_3, control=control_)
 
-        res = stats.dunnett(*samples, control=control)
+        res = stats.dunnett(*self.samples_3, control=self.control_3)
         with pytest.raises(ValueError, match="Confidence level must"):
             res.confidence_interval(confidence_level=3)
