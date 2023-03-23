@@ -107,11 +107,12 @@ __all__ = [
 ]
 
 
+import os
 import warnings
 import numpy as np
 import dataclasses
 
-from typing import List, Optional, Set, Callable
+from typing import Optional, Callable
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
@@ -124,6 +125,24 @@ from ..special import rel_entr
 from . import _distance_pybind
 
 from .._lib.deprecation import _deprecated
+
+def _extra_windows_error_checks(x, out, required_shape, **kwargs):
+    # TODO: remove this function when distutils
+    # build system is removed because pybind11 error
+    # handling should suffice per gh-18108
+    if os.name == "nt" and out is not None:
+        if out.shape != required_shape:
+            raise ValueError("Output array has incorrect shape.")
+        if not out.flags["C_CONTIGUOUS"]:
+            raise ValueError("Output array must be C-contiguous.")
+        if not np.can_cast(x.dtype, out.dtype):
+            raise ValueError("Wrong out dtype.")
+    if os.name == "nt" and "w" in kwargs:
+        w = kwargs["w"]
+        if w is not None:
+            if (w < 0).sum() > 0:
+                raise ValueError("Input weights should be all non-negative")
+
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -1749,7 +1768,7 @@ class MetricInfo:
     # Name of python distance function
     canonical_name: str
     # All aliases, including canonical_name
-    aka: Set[str]
+    aka: set[str]
     # unvectorized distance function
     dist_func: Callable
     # Optimized cdist function
@@ -1762,7 +1781,7 @@ class MetricInfo:
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
-    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    types: list[str] = dataclasses.field(default_factory=lambda: ['double'])
     # true if out array must be C-contiguous
     requires_contiguous_out: bool = True
 
@@ -2239,6 +2258,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
+            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2936,6 +2956,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
+            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
