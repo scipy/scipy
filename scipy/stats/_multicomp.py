@@ -76,18 +76,21 @@ class DunnettResult:
     ) -> float:
         """Allowance.
 
-        It is the quantity to add/substract from the observed difference
+        It is the quantity to add/subtract from the observed difference
         between the means of observed groups and the mean of the control
         group. The result gives confidence limits.
 
         Parameters
         ----------
         confidence_level : float, optional
-            Confidence level for the computed confidence interval
-            of the estimated proportion. Default is .95.
+            Confidence level for the computed confidence interval.
+            Default is .95.
         tol : float, optional
-            Tolerance to optimize the critical value with respect to the
-            `confidence_level`. Default is 1e-3.
+            A tolerance for numerical optimization: the allowance will produce
+            a confidence within ``10*tol*(1 - confidence_level)`` of the
+            specified level, or a warning will be emitted. Tight tolerances
+            may be impractical due to noisy evaluation of the objective.
+            Default is 1e-3.
 
         Returns
         -------
@@ -106,6 +109,12 @@ class DunnettResult:
             )
             return abs(sf - alpha)/alpha
 
+        # Evaluation of `pvalue_from_stat` is noisy due to the use of RQMC to
+        # evaluate `multivariate_t.cdf`. `minimize_scalar` is not designed
+        # to tolerate a noisy objective function and may fail to find the 
+        # minimum accurately. We mitigate this possibility with the validation
+        # step below, but implementation of a noise-tolerant root finder or
+        # minimizer would be a welcome enhancement. See gh-18150.
         res = minimize_scalar(pvalue_from_stat, method='brent', tol=tol)
         critical_value = res.x
 
@@ -113,7 +122,9 @@ class DunnettResult:
         # tol*10 because tol=1e-3 means we tolerate a 1% change at most
         if res.success is False or res.fun >= tol*10:
             warnings.warn(
-                "The computation of the confidence interval did not converge.",
+                "Computation of the confidence interval did not converge to "
+                "the desired level. The confidence level corresponding with "
+                f"the returned interval is approximately {alpha*(1+res.fun)}."
                 stacklevel=3
             )
 
@@ -149,7 +160,7 @@ class DunnettResult:
                 confidence_level == self._ci_cl):
             return self._ci
 
-        if not 0 < confidence_level < 1:
+        if not (0 < confidence_level < 1):
             raise ValueError("Confidence level must be between 0 and 1.")
 
         allowance = self._allowance(confidence_level=confidence_level)
