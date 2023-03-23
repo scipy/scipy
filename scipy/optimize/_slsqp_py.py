@@ -515,7 +515,6 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     # Collect KKT multipliers for equality and inequality constraints
     w_ind = 0
     for _t, cv in [("eq", _meq_cv), ("ineq", _mieq_cv)]:
-
         kkt = []
 
         for dim in cv:
@@ -526,6 +525,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Get KKT multipliers for lower and upper bounds.
     kkt = zeros((n, 2))
+
     if bounds is not None and len(bounds) > 0:
         pos_kkt_bnds = _kkt_bnds > 0.
         # Lower bound multipliers are positive
