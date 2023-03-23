@@ -1279,7 +1279,7 @@ def _order_statistic_evs(dist, n):
         variable = dist.logpdf(x) + (r-1)*dist.logcdf(x) + (n-r)*dist.logsf(x)
         return x * np.exp(constant + variable)
 
-    res = integrate.quad_vec(integrand, -np.inf, np.inf)
+    res = integrate.quad_vec(integrand, *dist.support())
     return res[0]
 
 
@@ -1287,7 +1287,13 @@ def _shapiro_francia(dist, data):
     n = data.shape[-1]
     M = _order_statistic_evs(dist, n)
     X = np.sort(data, axis=-1)
-    return _corr(X, M)**2
+
+    Xm = X.mean(axis=-1, keepdims=True)
+    Mm = M.mean(axis=-1, keepdims=True)
+    num = np.sum(X * (M - Mm), axis=-1)**2
+    den = np.sum((X - Xm)**2, axis=-1) * np.sum((M - Mm)**2, axis=-1)
+
+    return num/den
 _shapiro_francia.alternative = 'less'  # type: ignore[attr-defined]
 
 
@@ -1359,7 +1365,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
         message = ("All parameters of the null hypothesized distribution must "
                    "be specified in `known_params` to use the Shapiro-Francia "
                    "statistic.")
-        if set(known_params) != {'loc', 'scale'}.union(dist._shape_info()):
+        if set(known_params) != {'loc', 'scale'}.union(dist.shapes or []):
             raise NotImplementedError(message)
 
     random_state = check_random_state(random_state)
