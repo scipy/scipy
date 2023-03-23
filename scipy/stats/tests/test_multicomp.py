@@ -351,35 +351,35 @@ class TestDunnett:
             res._allowance(tol=1e-5)
 
     def test_raises(self):
+        samples, control = self.samples_3, self.control_3
+
         # alternative
         with pytest.raises(ValueError, match="alternative must be"):
-            stats.dunnett(
-                *self.samples_3, control=self.control_3, alternative='bob'
-            )
+            stats.dunnett(*samples, control=control, alternative='bob')
 
         # 2D for a sample
-        samples_ = copy.deepcopy(self.samples_3)
+        samples_ = copy.deepcopy(samples)
         samples_[0] = [samples_[0]]
         with pytest.raises(ValueError, match="must be 1D arrays"):
-            stats.dunnett(*samples_, control=self.control_3)
+            stats.dunnett(*samples_, control=control)
 
         # 2D for control
-        control_ = copy.deepcopy(self.control_3)
+        control_ = copy.deepcopy(control)
         control_ = [control_]
         with pytest.raises(ValueError, match="must be 1D arrays"):
-            stats.dunnett(*self.samples_3, control=control_)
+            stats.dunnett(*samples, control=control_)
 
         # No obs in a sample
-        samples_ = copy.deepcopy(self.samples_3)
+        samples_ = copy.deepcopy(samples)
         samples_[1] = []
         with pytest.raises(ValueError, match="at least 1 observation"):
-            stats.dunnett(*samples_, control=self.control_3)
+            stats.dunnett(*samples_, control=control)
 
         # No obs in control
         control_ = []
         with pytest.raises(ValueError, match="at least 1 observation"):
-            stats.dunnett(*self.samples_3, control=control_)
+            stats.dunnett(*samples, control=control_)
 
-        res = stats.dunnett(*self.samples_3, control=self.control_3)
+        res = stats.dunnett(*samples, control=control)
         with pytest.raises(ValueError, match="Confidence level must"):
             res.confidence_interval(confidence_level=3)
