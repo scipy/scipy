@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import bisect
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 import warnings
@@ -400,16 +399,6 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
-def _at_risk(times: np.ndarray, all_times: np.ndarray) -> np.ndarray:
-    """Times need to be sorted."""
-    at_risk = []
-    n_times = len(times)
-    for x in all_times:
-        idx_ = bisect.bisect_left(times, x)  # type: ignore[call-overload]
-        at_risk.append(n_times-idx_)
-    return np.array(at_risk)
-
-
 def log_rank(
     x: npt.ArrayLike | CensoredData,
     y: npt.ArrayLike | CensoredData
@@ -487,8 +476,9 @@ def log_rank(
     n_died_x = x._uncensored.size
     n_died_y = y._uncensored.size
 
-    times = np.sort(np.concatenate((x._uncensored, x._right)))
-    at_risk_x = _at_risk(times, times_xy)
+    res_x = ecdf(x)
+    i = np.searchsorted(res_x.x, times_xy)  # or use `interpolate_1d`
+    at_risk_x = np.append(res_x.sf._n, 0)[i]  # 0 at risk after last x time
     at_risk_y = at_risk_xy - at_risk_x
 
     sum_exp_event_sample = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
