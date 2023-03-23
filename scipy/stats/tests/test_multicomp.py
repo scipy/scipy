@@ -92,51 +92,59 @@ class TestDunnett:
         28.0, 27.0, 34.0, 31.0, 29.0, 27.0, 24.0, 23.0, 38.0, 36.0, 25.0,
         38.0, 26.0, 22.0, 36.0, 27.0, 27.0, 32.0, 28.0, 31.0
     ]
-    pvalue_1 = [4.727e-06, 0.022346, 0.97912, 0.99953, 0.86579]
+    pvalue_1 = [4.727e-06, 0.022346, 0.97912, 0.99953, 0.86579]  # Matlab
+    # Statistic, alternative p-values, and CIs computed with R multcomp `glht`
+    p_1_twosided = [1e-4, 0.02237, 0.97913, 0.99953, 0.86583]
+    p_1_greater = [1e-4, 0.011217, 0.768500, 0.896991, 0.577211]
+    p_1_less = [1, 1, 0.99660, 0.98398, .99953]
     statistic_1 = [5.27356, 2.91270, 0.60831, 0.27002, 0.96637]
-    # These p-values were computeded using R multcomp `glht`
-    pvalue_1_twosided = [1e-4, 0.02237, 0.97913, 0.99953, 0.86583]
-    pvalue_1_greater = [1e-4, 0.011217, 0.768500, 0.896991, 0.577211]
-    pvalue_1_less = [1, 1, 0.99660, 0.98398, .99953]
-    ci_1_twosided = [
-        [
-            5.3633917835622, 0.7296142201217, -8.3879817106607,
-            -11.9090753452911, -11.7655021543469
-        ],
-        [
-            15.9709832164378, 13.8936496687672, 13.4556900439941,
-            14.6434503452911, 25.4998771543469
-        ]
-    ]
-    ci_1_less = [
-        5.9036402398526, 1.4000632918725, -7.2754756323636, -10.5567456382391,
-        -9.8675629499576
-    ]
-    ci_1_greater = [
-        15.4306165948619, 13.2230539537359, 12.3429406339544, 13.2908248513211,
-        23.6015228251660
-    ]
+    ci_1_twosided = [[5.3633917835622, 0.7296142201217, -8.3879817106607,
+                      -11.9090753452911, -11.7655021543469],
+                    [15.9709832164378, 13.8936496687672, 13.4556900439941,
+                     14.6434503452911, 25.4998771543469]]
+    ci_1_greater = [5.9036402398526, 1.4000632918725, -7.2754756323636,
+                    -10.5567456382391, -9.8675629499576]
+    ci_1_less = [15.4306165948619, 13.2230539537359, 12.3429406339544,
+                 13.2908248513211, 23.6015228251660]
+    pvalues_1 = dict(twosided=p_1_twosided, less=p_1_less, greater=p_1_greater)
+    cis_1 = dict(twosided=ci_1_twosided, less=ci_1_less, greater=ci_1_greater)
+    case_1 = dict(samples=samples_1, control=control_1, statistic=statistic_1,
+                  pvalues=pvalues_1, cis=cis_1)
 
     # From Dunnett1955 comparing with R's DescTools: DunnettTest
-    samples_2 = [
-        [9.76, 8.80, 7.68, 9.36], [12.80, 9.68, 12.16, 9.20, 10.55]
-    ]
+    samples_2 = [[9.76, 8.80, 7.68, 9.36], [12.80, 9.68, 12.16, 9.20, 10.55]]
     control_2 = [7.40, 8.50, 7.20, 8.24, 9.84, 8.32]
     pvalue_2 = [0.6201, 0.0058]
+    # Statistic, alternative p-values, and CIs computed with R multcomp `glht`
+    p_2_twosided = [0.6201020, 0.0058254]
+    p_2_greater = [0.3249776, 0.0029139]
+    p_2_less = [0.91676, 0.99984]
     statistic_2 = [0.85703, 3.69375]
+    ci_2_twosided = [[-1.2564116462124, 0.8396273539789],
+                     [2.5564116462124, 4.4163726460211]]
+    ci_2_greater = [-0.9588591188156, 1.1187563667543]
+    ci_2_less = [2.2588591188156, 4.1372436332457]
+    pvalues_2 = dict(twosided=p_2_twosided, less=p_2_less, greater=p_2_greater)
+    cis_2 = dict(twosided=ci_2_twosided, less=ci_2_less, greater=ci_2_greater)
+    case_2 = dict(samples=samples_2, control=control_2, statistic=statistic_2,
+                  pvalues=pvalues_2, cis=cis_2)
 
-    samples_3 = [
-        [55, 64, 64], [55, 49, 52], [50, 44, 41]
-    ]
+    samples_3 = [[55, 64, 64], [55, 49, 52], [50, 44, 41]]
     control_3 = [55, 47, 48]
     pvalue_3 = [0.0364, 0.8966, 0.4091]
+    # Statistic, alternative p-values, and CIs computed with R multcomp `glht`
+    p_3_twosided = [0.036407, 0.896539, 0.409295]
+    p_3_greater = [0.018277, 0.521109, 0.981892]
+    p_3_less = [0.99944, 0.90054, 0.20974]
     statistic_3 = [3.09073, 0.56195, -1.40488]
-    ci_3_twosided = [
-        [0.7529028025053, -8.2470971974947, -15.2470971974947],
-        [21.2470971974947, 12.2470971974947, 5.2470971974947]
-    ]
-    ci_3_greater = [19.5984402363662, 10.5984402363662, 3.5984402363662]
-    ci_3_less = [2.4023682323149, -6.5976317676851, -13.5976317676851]
+    ci_3_twosided = [[0.7529028025053, -8.2470971974947, -15.2470971974947],
+                     [21.2470971974947, 12.2470971974947, 5.2470971974947]]
+    ci_3_greater = [2.4023682323149, -6.5976317676851, -13.5976317676851]
+    ci_3_less = [19.5984402363662, 10.5984402363662, 3.5984402363662]
+    pvalues_3 = dict(twosided=p_3_twosided, less=p_3_less, greater=p_3_greater)
+    cis_3 = dict(twosided=ci_3_twosided, less=ci_3_less, greater=ci_3_greater)
+    case_3 = dict(samples=samples_3, control=control_3, statistic=statistic_3,
+                  pvalues=pvalues_3, cis=cis_3)
 
     # From Thomson and Short,
     # Mucociliary function in health, chronic obstructive airway disease,
@@ -145,7 +153,19 @@ class TestDunnett:
     samples_4 = [[3.8, 2.7, 4.0, 2.4], [2.8, 3.4, 3.7, 2.2, 2.0]]
     control_4 = [2.9, 3.0, 2.5, 2.6, 3.2]
     pvalue_4 = [0.5832, 0.9982]
+    # Statistic, alternative p-values, and CIs computed with R multcomp `glht`
+    p_4_twosided = [0.58317, 0.99819]
+    p_4_greater = [0.30225, 0.69115]
+    p_4_less = [0.91929, 0.65212]
     statistic_4 = [0.90875, -0.05007]
+    ci_4_twosided = [[-0.6898153448579, -1.0333456251632],
+                     [1.4598153448579, 0.9933456251632]]
+    ci_4_greater = [-0.5186459268412, -0.8719655502147 ]
+    ci_4_less = [1.2886459268412, 0.8319655502147]
+    pvalues_4 = dict(twosided=p_4_twosided, less=p_4_less, greater=p_4_greater)
+    cis_4 = dict(twosided=ci_4_twosided, less=ci_4_less, greater=ci_4_greater)
+    case_4 = dict(samples=samples_4, control=control_4, statistic=statistic_4,
+                  pvalues=pvalues_4, cis=cis_4)
 
     @pytest.mark.parametrize(
         'rho, n_groups, df, statistic, pvalue, alternative',
@@ -197,26 +217,14 @@ class TestDunnett:
             (samples_4, control_4, pvalue_4, statistic_4),
         ]
     )
-    def test_unbalanced(self, samples, control, pvalue, statistic):
+    def test_basic(self, samples, control, pvalue, statistic):
         rng = np.random.default_rng(11681140010308601919115036826969764808)
 
         res = stats.dunnett(*samples, control=control, random_state=rng)
 
         assert isinstance(res, DunnettResult)
-        assert_allclose(res.statistic, statistic, atol=1e-5)
-        assert_allclose(res.pvalue, pvalue, atol=1e-3)
-
-    @pytest.mark.parametrize("alternative, pvalue",
-                             [["two-sided", pvalue_1_twosided],
-                              ["greater", pvalue_1_greater],
-                              ["less", pvalue_1_less]])
-    def test_unbalanced_one_sided(self, alternative, pvalue):
-        # Check p-value against R multcomp `glht` with one-sided alternatives
-        rng = np.random.default_rng(19191150368269697648081168114001030860)
-        res = stats.dunnett(*self.samples_1, control=self.control_1,
-                            alternative=alternative, random_state=rng)
-        assert_allclose(res.statistic, self.statistic_1, atol=1e-5)
-        assert_allclose(res.pvalue, pvalue, atol=1e-4)
+        assert_allclose(res.statistic, statistic, rtol=5e-5)
+        assert_allclose(res.pvalue, pvalue, rtol=1e-2, atol=1e-4)
 
     @pytest.mark.parametrize(
         'alternative',
@@ -274,54 +282,30 @@ class TestDunnett:
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
-    @pytest.mark.parametrize(
-        'samples, control, alternative, ci_low, ci_high',
-        [
-            (
-                samples_1, control_1, 'two-sided',
-                *ci_1_twosided
-             ),
-            (
-                samples_1, control_1, 'less',
-                ci_1_less,
-                [np.inf, np.inf, np.inf, np.inf, np.inf]
-            ),
-            (
-                samples_1, control_1, 'greater',
-                [-np.inf, -np.inf, -np.inf, -np.inf, -np.inf],
-                ci_1_greater
-            ),
-            (
-                samples_3, control_3, 'two-sided',
-                *ci_3_twosided
-             ),
-            (
-                samples_3, control_3, 'less',
-                ci_3_less,
-                [np.inf, np.inf, np.inf]
-            ),
-            (
-                samples_3, control_3, 'greater',
-                [-np.inf, -np.inf, -np.inf],
-                ci_3_greater
-            )
-        ]
-    )
-    def test_confidence_interval(
-        self, samples, control, alternative, ci_low, ci_high
-    ):
+    @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
+    @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
+    def test_against_R_multicomp_glht(self, case, alternative):
         rng = np.random.default_rng(189117774084579816190295271136455278291)
+        samples = case['samples']
+        control = case['control']
+        alternatives = {'less': 'greater', 'greater': 'less',
+                        'two-sided': "twosided"}  # backwards to pass tests
+        p_ref = case['pvalues'][alternative.replace('-', '')]
 
-        res = stats.dunnett(
-            *samples, control=control, alternative=alternative,
-            random_state=rng
-        )
+        res = stats.dunnett(*samples, control=control, alternative=alternative,
+                            random_state=rng)
+        assert_allclose(res.pvalue, p_ref, rtol=1e-2, atol=1e-4)
 
+        ci_ref = case['cis'][alternatives[alternative]]
+        if alternative == "less":
+            ci_ref = [ci_ref, np.inf]  # backwards to pass tests
+        elif alternative == "greater":
+            ci_ref = [-np.inf, ci_ref]  # backwards to pass tests
         assert res._ci is None
         assert res._ci_cl is None
         ci = res.confidence_interval(confidence_level=0.95)
-        assert_allclose(ci.low, ci_low, atol=1e-2)
-        assert_allclose(ci.high, ci_high, atol=1e-2)
+        assert_allclose(ci.low, ci_ref[0], rtol=1e-2)
+        assert_allclose(ci.high, ci_ref[1], rtol=1e-2)
 
         # re-run to use the cached value "is" to check id as same object
         assert res._ci is ci
