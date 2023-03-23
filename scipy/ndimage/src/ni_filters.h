@@ -38,6 +38,8 @@ int NI_Correlate(PyArrayObject*, PyArrayObject*, PyArrayObject*,
                  NI_ExtendMode, double, npy_intp*);
 int NI_UniformFilter1D(PyArrayObject*, npy_intp, int, PyArrayObject*,
                        NI_ExtendMode, double, npy_intp);
+int NI_UniformFilter1D_NaN(PyArrayObject*, npy_intp, int, PyArrayObject*,
+                       NI_ExtendMode, double, npy_intp);
 int NI_MinOrMaxFilter1D(PyArrayObject*, npy_intp, int, PyArrayObject*,
                         NI_ExtendMode, double, npy_intp, int);
 int NI_MinOrMaxFilter(PyArrayObject*, PyArrayObject*, PyArrayObject*,
