@@ -422,6 +422,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
@@ -577,6 +578,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     tplquad : triple integrals
     romb : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
     ode : ODE integrators
     odeint : ODE integrators
 
@@ -748,7 +750,7 @@ def _cumulative_simpson_unequal_intervals(
 
 def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     """
-    Cumulatively integrate y(x) using the Composite Simpson's rule. The integral of the samples
+    Cumulatively integrate y(x) using Simpson's 1/3 rule. The integral of the samples
     at every point is calculated by assuming a quadratic relationship between each point and two
     other adjacent points.
 
