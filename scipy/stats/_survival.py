@@ -487,9 +487,12 @@ def log_rank(
     #     (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
     #     + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
     # )
-
-    sum_var = np.sum(at_risk_x * at_risk_y * (at_risk_xy - deaths_xy)
-                     / (at_risk_xy**2 * (at_risk_xy - 1)))
+    # warning occurs when multiple deaths at same time
+    with np.errstate(invalid='ignore'):
+        sum_var = np.nansum(
+            at_risk_x*at_risk_y*deaths_xy*(at_risk_xy - deaths_xy)
+            / (at_risk_xy**2*(at_risk_xy - 1))
+        )
     statistic = (n_died_x - sum_exp_deaths_x)**2/sum_var
 
     pvalue = norm.sf(np.sqrt(statistic))*2
