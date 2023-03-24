@@ -8777,7 +8777,8 @@ class TestRelativisticBW:
         fit = stats.rel_breitwigner.fit(data, floc=0, fscale=gamma)
         assert_allclose(fit[0], rho, rtol=1e-2)
         assert (fit[1], fit[2]) == (0, gamma)
-=======
+
+
 class TestJohnsonSU:
     @pytest.mark.parametrize("case", [  # a, b, loc, scale, m1, m2, g1, g2
             (-0.01, 1.1, 0.02, 0.0001, 0.02000137427557091,
@@ -8792,4 +8793,3 @@ class TestJohnsonSU:
         # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
         res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
         assert_allclose(res, case[4:], rtol=1e-14)
->>>>>>> main
