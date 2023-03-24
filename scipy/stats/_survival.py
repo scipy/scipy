@@ -424,39 +424,62 @@ def log_rank(
     ----------
     .. [1] Peto, Richard and Peto, Julian. "Asymptotically Efficient Rank
            Invariant Test Procedures." J. R. Statist. Soc. A, 185 (1972)
+    .. [2] Bland, Altman, "The logrank test", BMJ, 328:1073,
+           :doi:`10.1136/bmj.328.7447.1073`, 2004
 
     Examples
     --------
+    In [2]_, the survival of two different group of patient with recurrent
+    malignant gliomas was investigated. The two groups are characterized by
+    a different type of tumor. The week to death of 51 adults was recorded.
 
     >>> from scipy import stats
     >>> x = stats.CensoredData(
-    ...     uncensored=[8, 12, 26, 14, 21, 27],
-    ...     right=[8, 32, 20, 40]
+    ...     uncensored=[6, 13, 21, 30, 37, 38, 49, 50,
+    ...                 63, 79, 86, 98, 202, 219],
+    ...     right=[31, 47, 80, 82, 82, 149]
     ... )
     >>> y = stats.CensoredData(
-    ...     uncensored=[33, 28, 41],
-    ...     right=[48, 48, 25, 37, 48, 25, 43]
+    ...     uncensored=[10, 10, 12, 13, 14, 15, 16, 17, 18, 20, 24, 24,
+    ...                 25, 28,30, 33, 35, 37, 40, 40, 46, 48, 76, 81,
+    ...                 82, 91, 112, 181],
+    ...     right=[34, 40, 70]
     ... )
+
+    We can calculate and visualize the empirical survival functions
+    of both groups as follows.
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ecdf_sample = stats.ecdf(x)
-    >>> ax.step(np.insert(ecdf_sample.x, 0, 0), np.insert(ecdf_sample.sf.points, 0, 1),
-    ...         where='post', label='sample')
-    >>> ecdf_control = stats.ecdf(y)
-    >>> ax.step(np.insert(ecdf_control.x, 0, 0), np.insert(ecdf_control.sf.points, 0, 1),
-    ...         ls='-.', where='post', label='control')
-    >>> ax.set_xlabel('Time (months)')
-    >>> ax.set_ylabel('Empirical CDF')
+    >>> ecdf_x = stats.ecdf(x)
+    >>> ax.step(np.insert(ecdf_x.x, 0, 0),
+    ...         np.insert(ecdf_x.sf.points, 0, 1),
+    ...         where='post', label='Astrocytoma')
+    >>> ecdf_y = stats.ecdf(y)
+    >>> ax.step(np.insert(ecdf_y.x, 0, 0),
+    ...         np.insert(ecdf_y.sf.points, 0, 1),
+    ...         ls='-.', where='post', label='Glioblastoma')
+    >>> ax.set_xlabel('Time to death (weeks)')
+    >>> ax.set_ylabel('Empirical SF')
     >>> plt.legend()
     >>> plt.show()
 
+    Based on a visual inspection of the survival functions, we see a difference
+    but cannot conclude about its significance.
+
+    Next, we will use the logrank test to assess wether the difference
+    between the two survival functions is significant.
+
     >>> res = stats.log_rank(x=x, y=y)
     >>> res.statistic
-    6.148087536256203
+    7.49659416854
     >>> res.pvalue
-    0.013155428547469983
+    0.006181578637
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "there is a difference between the
+    two survival functions".
 
     """
     x = _iv_CensoredData(sample=x, param_name='x')
@@ -482,7 +505,7 @@ def log_rank(
 
     sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
 
-    # equivalent
+    # equivalent: formulation with the mean
     # statistic = (
     #     (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
     #     + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
