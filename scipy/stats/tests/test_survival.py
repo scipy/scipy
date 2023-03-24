@@ -368,14 +368,8 @@ class TestLogRank:
          )]
     )
     def test_log_rank(self, x, y, statistic):
-        x = stats.CensoredData(
-            uncensored=x[0],
-            right=x[1]
-        )
-        y = stats.CensoredData(
-            uncensored=y[0],
-            right=y[1]
-        )
+        x = stats.CensoredData(uncensored=x[0], right=x[1])
+        y = stats.CensoredData(uncensored=y[0], right=y[1])
         res = stats.log_rank(x=x, y=y)
 
         assert_allclose(res.statistic, statistic, rtol=2e-3)

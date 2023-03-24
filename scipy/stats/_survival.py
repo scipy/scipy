@@ -481,8 +481,8 @@ def log_rank(
     at_risk_x = np.append(res_x.sf._n, 0)[i]  # 0 at risk after last x time
     at_risk_y = at_risk_xy - at_risk_x
 
-    sum_exp_event_sample = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
-    sum_exp_event_control = np.sum(at_risk_y * (deaths_xy/at_risk_xy))
+    sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
+    sum_exp_deaths_y = np.sum(at_risk_y * (deaths_xy/at_risk_xy))
 
     statistic = (
         (n_died_x - sum_exp_event_sample)**2/sum_exp_event_sample
