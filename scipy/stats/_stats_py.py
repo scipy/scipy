@@ -1131,7 +1131,8 @@ def _moment(a, moment, axis, *, mean=None):
                               keepdims=True) / np.abs(mean)
         with np.errstate(invalid='ignore'):
             precision_loss = np.any(rel_diff < eps)
-        if precision_loss:
+        n = a.shape[axis] if axis is not None else a.size
+        if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophic cancellation. This occurs when the data "
                        "are nearly identical. Results may be unreliable.")
@@ -6963,6 +6964,14 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
 
 
 def _equal_var_ttest_denom(v1, n1, v2, n2):
+    # If there is a single observation in one sample, this formula for pooled
+    # variance breaks down because the variance of that sample is undefined.
+    # The pooled variance is still defined, though, because the (n-1) in the
+    # numerator should cancel with the (n-1) in the denominator, leaving only
+    # the sum of squared differences from the mean: zero.
+    v1 = np.where(n1 == 1, 0, v1)[()]
+    v2 = np.where(n2 == 1, 0, v2)[()]
+
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
@@ -7423,8 +7432,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
+            if equal_var:
+                old_errstate = np.geterr()
+                np.seterr(divide='ignore', invalid='ignore')
             v1 = _var(a, axis, ddof=1)
             v2 = _var(b, axis, ddof=1)
+            if equal_var:
+                np.seterr(**old_errstate)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -7436,6 +7450,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
         res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+
     return Ttest_indResult(*res)
 
 
@@ -9320,6 +9335,35 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
+    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
+           Methods, Third Edition". Chapter 6, Section 6.3.2.
+
+    Examples
+    --------
+    In [2]_, the pulse rate (per minute) of a group of seven students was
+    measured before exercise, immediately after exercise and 5 minutes
+    after exercise. Is there evidence to suggest that the pulse rates on
+    these three occasions are similar?
+
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The pulse rates are identical on these three occasions.
+
+    Let's assess the plausibility of this hypothesis with a Friedman test.
+
+    >>> from scipy.stats import friedmanchisquare
+    >>> before = [72, 96, 88, 92, 74, 76, 82]
+    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
+    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
+    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> res.statistic
+    10.57142857142857
+    >>> res.pvalue
+    0.005063414171757498
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the pulse rates are different on
+    these three occasions".
 
     """
     k = len(samples)
