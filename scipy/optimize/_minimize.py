@@ -539,12 +539,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     This can be understood as the local sensitivity of the optimal value of the
     objective function with respect to changes in the first constraint. If we
-    loosen the constraint by a small amount ``eps``:
+    tighten the constraint by a small amount ``eps``:
 
     >>> eps = 0.01
     ... cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
 
-    we expect the change in the optimal value of the objective function to be
+    we expect the optimal value of the objective function to increase by
     approximately ``eps * res.kkt['ineq'][0]``:
 
     >>> eps * res.kkt['ineq'][0] # Expected change in f0

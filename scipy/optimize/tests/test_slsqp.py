@@ -890,7 +890,7 @@ class TestSLSQP:
         assert_allclose(kkt0, 0.8)
         _check_kkt(res, cons, bnds)
 
-        # Loosen the constraints by a small amount eps
+        # Tighten the constraints by a small amount eps
         eps = 0.01
         cons[0]['fun'] = lambda x: x[0] - 2 * x[1] + 2 - eps
 
