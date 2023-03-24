@@ -1892,6 +1892,14 @@ class TestLogistic:
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
 
+    def test_fit_gh_18176(self):
+        # logistic.fit returned `scale < 0` for this data. Check that this has
+        # been fixed.
+        data = np.array([-459, 37, 43, 45, 45, 48, 54, 55, 58]
+                        + [59] * 3 + [61] * 9)
+        # If scale were negative, NLLF would be infinite, so this would fail
+        _assert_less_or_close_loglike(stats.logistic, data)
+
 
 class TestLogser:
     def setup_method(self):
@@ -8793,3 +8801,41 @@ class TestJohnsonSU:
         # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
         res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
         assert_allclose(res, case[4:], rtol=1e-14)
+
+
+class TestTruncPareto:
+    def test_pdf(self):
+        # PDF is that of the truncated pareto distribution
+        b, c = 1.8, 5.3
+        x = np.linspace(1.8, 5.3)
+        res = stats.truncpareto(b, c).pdf(x)
+        ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    @pytest.mark.parametrize('fix_b', [True, False])
+    @pytest.mark.parametrize('fix_c', [True, False])
+    def test_fit(self, fix_loc, fix_scale, fix_b, fix_c):
+
+        rng = np.random.default_rng(6747363148258237171)
+        b, c, loc, scale = 1.8, 5.3, 1, 2.5
+        dist = stats.truncpareto(b, c, loc=loc, scale=scale)
+        data = dist.rvs(size=500, random_state=rng)
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['fscale'] = scale
+        if fix_b:
+            kwds['f0'] = b
+        if fix_c:
+            kwds['f1'] = c
+
+        if fix_loc and fix_scale and fix_b and fix_c:
+            message = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(RuntimeError, match=message):
+                stats.truncpareto.fit(data, **kwds)
+        else:
+            _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)

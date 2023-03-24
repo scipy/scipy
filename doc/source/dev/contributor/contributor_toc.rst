@@ -88,3 +88,30 @@ Compiled code
 .. _Cython: https://cython.org/
 
 .. |*| replace:: \ :sup:`*` \
+
+.. toctree::
+    :hidden:
+
+    conda_guide
+    ubuntu_guide
+    quickstart_docker
+    quickstart_gitpod
+    development_workflow
+    building
+    meson
+    pep8
+    ../gitwash/gitwash
+    ../../reference/index
+    reviewing_prs
+    ../triage
+    adding_new
+    ../core-dev/index
+    ../missing-bits
+    NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
+    devpy_test
+    How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
+    rendering_documentation
+    benchmarking
+    cython
+    compiled_code
+    public_cython_api
