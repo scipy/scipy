@@ -361,19 +361,18 @@ class TestLogRank:
         # rx <- c(rx_1, rx_2)
         #
         # survdiff(formula = Surv(futime, fustat) ~ rx)
-        # No precision on statistic
         [(
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
               # uncensored, censored
               [[8, 12, 26, 14, 21, 27], [8, 32, 20, 40]],
               [[33, 28, 41], [48, 48, 25, 37, 48, 25, 43]],
-              6.9, 0.008542873404
+              6.91598157449, 0.008542873404
          ),
          (
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
               [[19, 6, 5, 4], [20, 19, 17, 14]],
               [[16, 21, 7], [21, 15, 18, 18, 5]],
-              0.8, 0.3608293039
+              0.835004855038, 0.3608293039
          ),
          (
               # Bland, Altman, "The logrank test", BMJ, 2004
@@ -383,7 +382,7 @@ class TestLogRank:
               [[10, 10, 12, 13, 14, 15, 16, 17, 18, 20, 24, 24, 25, 28, 30,
                 33, 35, 37, 40, 40, 46, 48, 76, 81, 82, 91, 112, 181],
                [34, 40, 70]],
-              7.5, 0.006181578637
+              7.49659416854, 0.006181578637
          )]
     )
     def test_log_rank(self, x, y, statistic, pvalue):
@@ -391,7 +390,7 @@ class TestLogRank:
         y = stats.CensoredData(uncensored=y[0], right=y[1])
         res = stats.log_rank(x=x, y=y)
 
-        assert_allclose(res.statistic, statistic, atol=1e-1)
+        assert_allclose(res.statistic, statistic, atol=1e-10)
         assert_allclose(res.pvalue, pvalue, atol=1e-10)
 
     def test_raises(self):

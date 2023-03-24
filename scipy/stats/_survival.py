@@ -482,7 +482,7 @@ def log_rank(
 
     sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
 
-    # more conservative
+    # equivalent
     # statistic = (
     #     (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
     #     + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
