@@ -485,8 +485,8 @@ def log_rank(
     sum_exp_deaths_y = np.sum(at_risk_y * (deaths_xy/at_risk_xy))
 
     statistic = (
-        (n_died_x - sum_exp_event_sample)**2/sum_exp_event_sample
-        + (n_died_y - sum_exp_event_control)**2/sum_exp_event_control
+        (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
+        + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
     )
 
     pvalue = chi2(df=1).sf(statistic)
