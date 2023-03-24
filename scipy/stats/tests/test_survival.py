@@ -342,19 +342,38 @@ class TestSurvival:
 class TestLogRank:
 
     @pytest.mark.parametrize(
-        "x, y, statistic",
-        # uncensored, censored
+        "x, y, statistic, pvalue",
+        # Results validate with R
+        # library(survival)
+        # options(digits=16)
+        #
+        # futime_1 <- c(8, 12, 26, 14, 21, 27, 8, 32, 20, 40)
+        # fustat_1 <- c(1, 1, 1, 1, 1, 1, 0, 0, 0, 0)
+        # rx_1 <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        #
+        #
+        # futime_2 <- c(33, 28, 41, 48, 48, 25, 37, 48, 25, 43)
+        # fustat_2 <- c(1, 1, 1, 0, 0, 0, 0, 0, 0, 0)
+        # rx_2 <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        #
+        # futime <- c(futime_1, futime_2)
+        # fustat <- c(fustat_1, fustat_2)
+        # rx <- c(rx_1, rx_2)
+        #
+        # survdiff(formula = Surv(futime, fustat) ~ rx)
+        # No precision on statistic
         [(
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
+              # uncensored, censored
               [[8, 12, 26, 14, 21, 27], [8, 32, 20, 40]],
               [[33, 28, 41], [48, 48, 25, 37, 48, 25, 43]],
-              6.148087536256203
+              6.9, 0.008542873404
          ),
          (
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
               [[19, 6, 5, 4], [20, 19, 17, 14]],
               [[16, 21, 7], [21, 15, 18, 18, 5]],
-              0.726
+              0.8, 0.3608293039
          ),
          (
               # Bland, Altman, "The logrank test", BMJ, 2004
@@ -364,15 +383,16 @@ class TestLogRank:
               [[10, 10, 12, 13, 14, 15, 16, 17, 18, 20, 24, 24, 25, 28, 30,
                 33, 35, 37, 40, 40, 46, 48, 76, 81, 82, 91, 112, 181],
                [34, 40, 70]],
-              6.88
+              7.5, 0.006181578637
          )]
     )
-    def test_log_rank(self, x, y, statistic):
+    def test_log_rank(self, x, y, statistic, pvalue):
         x = stats.CensoredData(uncensored=x[0], right=x[1])
         y = stats.CensoredData(uncensored=y[0], right=y[1])
         res = stats.log_rank(x=x, y=y)
 
-        assert_allclose(res.statistic, statistic, rtol=2e-3)
+        assert_allclose(res.statistic, statistic, atol=1e-1)
+        assert_allclose(res.pvalue, pvalue, atol=1e-10)
 
     def test_raises(self):
         sample = stats.CensoredData([1, 2])

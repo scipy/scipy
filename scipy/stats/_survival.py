@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 
 from scipy import special
-from scipy.stats import chi2  # type: ignore[attr-defined]
+from scipy.stats import chi2, norm  # type: ignore[attr-defined]
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
@@ -474,7 +474,6 @@ def log_rank(
     deaths_xy = res.sf._d[idx]
 
     n_died_x = x._uncensored.size
-    n_died_y = y._uncensored.size
 
     res_x = ecdf(x)
     i = np.searchsorted(res_x.x, times_xy)  # or use `interpolate_1d`
@@ -482,13 +481,18 @@ def log_rank(
     at_risk_y = at_risk_xy - at_risk_x
 
     sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
-    sum_exp_deaths_y = np.sum(at_risk_y * (deaths_xy/at_risk_xy))
 
-    statistic = (
-        (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
-        + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
-    )
+    # more conservative
+    # statistic = (
+    #     (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
+    #     + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
+    # )
 
-    pvalue = chi2(df=1).sf(statistic)
+    sum_var = np.sum(at_risk_x * at_risk_y * (at_risk_xy - deaths_xy)
+                     / (at_risk_xy**2 * (at_risk_xy - 1)))
+    statistic = (n_died_x - sum_exp_deaths_x)**2/sum_var
+
+    pvalue = norm.sf(np.sqrt(statistic))*2
+    # equivalent to chi2(df=1).sf(statistic) but allow alternative
 
     return LogRankResult(statistic=statistic, pvalue=pvalue)
