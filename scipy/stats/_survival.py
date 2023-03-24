@@ -420,6 +420,10 @@ def log_rank(
         pvalue : float ndarray
             The computed p-value of the test.
 
+    See Also
+    --------
+    scipy.stats.ecdf
+
     References
     ----------
     .. [1] Peto, Richard and Peto, Julian. "Asymptotically Efficient Rank
