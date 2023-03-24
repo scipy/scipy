@@ -689,7 +689,7 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
-            raise ValueError("Expected `quat` to have shape (4,) or (N x 4), "
+            raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
                              "got {}.".format(quat.shape))
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
@@ -2766,12 +2766,8 @@ class Slerp:
 
     """
     def __init__(self, times, rotations):
-        if rotations.single:
-            raise ValueError("`rotations` must be a sequence of rotations.")
-
-        if len(rotations) == 1:
-                raise ValueError("`rotations` must contain at least 2 "
-                                 "rotations.")
+        if rotations.single or len(rotations) == 1:
+            raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         times = np.asarray(times)
         if times.ndim != 1:
@@ -2791,7 +2787,6 @@ class Slerp:
             raise ValueError("Times must be in strictly increasing order.")
 
         self.rotations = rotations[:-1]
-        self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
 
     def __call__(self, times):
         """Interpolate rotations.
@@ -2836,3 +2831,7 @@ class Slerp:
             result = result[0]
 
         return result
+
+    @property
+    def rotvecs(self):
+        return (self.rotations.inv() * rotations[1:]).as_rotvec()
