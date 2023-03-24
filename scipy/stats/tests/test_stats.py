@@ -1368,6 +1368,24 @@ def test_kendalltau_dep_initial_lexsort():
         stats.kendalltau([], [], initial_lexsort=True)
 
 
+def test_kendalltau_gh18139_overflow():
+    # gh-18139 reported an overflow in `kendalltau` that appeared after
+    # SciPy 0.15.1. Check that this particular overflow does not occur.
+    # (Test would fail if warning were emitted.)
+    import random
+    random.seed(6272161)
+    classes = [1, 2, 3, 4, 5, 6, 7]
+    n_samples = 2 * 10 ** 5
+    x = random.choices(classes, k=n_samples)
+    y = random.choices(classes, k=n_samples)
+    res = stats.kendalltau(x, y)
+    # Reference value from SciPy 0.15.1
+    assert_allclose(res.statistic, 0.0011816493905730343)
+    # Reference p-value from `permutation_test` w/ n_resamples=9999 (default).
+    # Expected to be accurate to at least two digits.
+    assert_allclose(res.pvalue, 0.4894, atol=2e-3)
+
+
 class TestKendallTauAlternative:
     def test_kendalltau_alternative_asymptotic(self):
         # Test alternative parameter, asymptotic method (due to tie)
