@@ -155,7 +155,7 @@ push the release commit (not the tag, see section above) to the scipy repo.
 To build wheels, push a commit containing the text ``[wheel build]`` to the branch
 used for the current release. This triggers ``cibuildwheel`` builds for all needed
 Python versions and platforms. The appropriate version pins for NumPy and other
-dependencies should have been updated in ``pyproject.toml`` prior to branching.
+dependencies should have been updated in ``pyproject.toml`` just after branching.
 If the wheel builds reveal issues that need to be fixed
 with backports on the maintenance branch, you may remove the local tags (for example
 ``git tag -d v1.2.0rc1``) and restart with tagging above on the new candidate commit.
