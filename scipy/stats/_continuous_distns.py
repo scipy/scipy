@@ -10026,19 +10026,23 @@ class vonmises_gen(rv_continuous):
             r = np.sum(np.cos(loc - data))/len(data)
             # See gh-18128 for more information.
 
-            def solve_for_kappa(kappa):
-                return sc.i1e(kappa)/sc.i0e(kappa) - r
+            if r > 0:
+                def solve_for_kappa(kappa):
+                    return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-            try:
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                   bracket=(1e-8, 1e12))
+                                    bracket=(1e-8, 1e12))
                 return root_res.root
-            # if the provided floc is very far from the circular mean,
-            # the likelihood equation does not have a solution.
-            # In that case, the best kappa is 0, practically the uniform
-            # distribution on the circle. As vonmises is defined for
-            # kappa > 0, return the smallest floating point value
-            except ValueError:
+            else:
+                # if the provided floc is very far from the circular mean,
+                # the mean resultant length r can become negative.
+                # In that case, the equation
+                # I[1](kappa)/I[0](kappa) = r does not have a solution.
+                # The maximum likelihood kappa is then 0 which practically
+                # results in the uniform distribution on the circle. As
+                # vonmises is defined for kappa > 0, return instead the
+                # smallest floating point value.
+                # See gh-18190 for more information
                 return np.finfo(float).tiny
 
         # location likelihood equation has a solution independent of kappa
