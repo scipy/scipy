@@ -571,6 +571,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
+    >>> from scipy.interpolate import BarycentricInterpolator
     >>> xi = np.random.rand(6) * np.pi/2
     >>> f, f_d1, f_d2, f_d3, f_d4 = np.sin, np.cos, lambda x: -np.sin(x), lambda x: -np.cos(x), np.sin
     >>> P = BarycentricInterpolator(xi, f(xi))
