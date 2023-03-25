@@ -528,7 +528,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
 
 
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
-    """The interpolating polynomial for a set of points
+    r"""The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points.
     Allows evaluation of the polynomial, efficient changing of the y
@@ -566,8 +566,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     Examples
     --------
     To produce a quintic barycentric interpolant approximating the function
-    :math:`sin x`, and its first four derivatives, using six randomly-spaced
-    nodes in :math:`(0, \frac{pi}{2})`:
+    :math:`\sin x`, and its first four derivatives, using six randomly-spaced
+    nodes in :math:`(0, \frac{\pi}{2})`:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
