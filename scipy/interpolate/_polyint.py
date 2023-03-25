@@ -581,7 +581,6 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> axs[1].plot(x, f_d1(x), 'k--', xi, f_d1(xi), '.k', x, P.derivative(x), 'r:')
     >>> axs[2].plot(x, f_d2(x), 'k--', xi, f_d2(xi), '.k', x, P.derivative(x, 2), 'r:')
     >>> axs[3].plot(x, f_d3(x), 'k--', xi, f_d3(xi), '.k', x, P.derivative(x, 3), 'r:')
-    >>> axs[3].plot(x, f_d3(x), 'k--', xi, f_d3(xi), '.k', x, P.derivative(x, 3), 'r:')
     >>> axs[4].plot(x, f_d4(x), 'k--', xi, f_d4(xi), '.k', x, P.derivative(x, 4), 'r:')
     >>> axs[0].set_xlim(0, np.pi)
     >>> axs[4].set_xlabel(r"$x$")
