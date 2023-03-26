@@ -487,7 +487,7 @@ class TestCurveFit:
         def f(x, a, b):
             return a*x + b
 
-        for method in ['lm', 'trf', 'dogbox']:
+        for method in ['lm', 'trf', 'dogbox', "least_squares_lm"]:
             popt, pcov = curve_fit(f, xdata, ydata, p0=[2, 0], sigma=sigma,
                                    method=method)
             perr_scaled = np.sqrt(np.diag(pcov))
@@ -586,7 +586,8 @@ class TestCurveFit:
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 
-    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    @pytest.mark.parametrize('method',
+                             ["lm", "trf", "dogbox", "least_squares_lm"])
     def test_nan_policy_1d(self, method):
         def f(x, a, b):
             return a*x + b
@@ -599,7 +600,8 @@ class TestCurveFit:
         self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
                                ydata_with_nan, ydata_without_nan, method)
 
-    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    @pytest.mark.parametrize('method',
+                             ["lm", "trf", "dogbox", "least_squares_lm"])
     def test_nan_policy_2d(self, method):
         def f(x, a, b):
             x1 = x[0, :]
@@ -616,7 +618,8 @@ class TestCurveFit:
                                ydata_with_nan, ydata_without_nan, method)
 
     @pytest.mark.parametrize('n', [2, 3])
-    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    @pytest.mark.parametrize('method',
+                             ["lm", "trf", "dogbox", "least_squares_lm"])
     def test_nan_policy_2_3d(self, n, method):
         def f(x, a, b):
             x1 = x[..., 0, :].squeeze()
@@ -651,38 +654,40 @@ class TestCurveFit:
                                None, 2 * np.arange(10))
         assert_allclose(popt, [2.])
 
-    def test_method_argument(self):
+    @pytest.mark.parametrize('method',
+                             ["lm", "trf", "dogbox", "least_squares_lm"])
+    def test_method_argument(self, method):
         def f(x, a, b):
             return a * np.exp(-b*x)
 
         xdata = np.linspace(0, 1, 11)
         ydata = f(xdata, 2., 2.)
 
-        for method in ['trf', 'dogbox', 'lm', None]:
-            popt, pcov = curve_fit(f, xdata, ydata, method=method)
-            assert_allclose(popt, [2., 2.])
+        popt, pcov = curve_fit(f, xdata, ydata, method=method)
+        assert_allclose(popt, [2., 2.])
 
         assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
 
-    def test_full_output(self):
+    @pytest.mark.parametrize('method',
+                             ["lm", "trf", "dogbox", "least_squares_lm"])
+    def test_full_output(self, method):
         def f(x, a, b):
             return a * np.exp(-b * x)
 
         xdata = np.linspace(0, 1, 11)
         ydata = f(xdata, 2., 2.)
 
-        for method in ['trf', 'dogbox', 'lm', None]:
-            popt, pcov, infodict, errmsg, ier = curve_fit(
-                f, xdata, ydata, method=method, full_output=True)
-            assert_allclose(popt, [2., 2.])
-            assert "nfev" in infodict
-            assert "fvec" in infodict
-            if method == 'lm' or method is None:
-                assert "fjac" in infodict
-                assert "ipvt" in infodict
-                assert "qtf" in infodict
-            assert isinstance(errmsg, str)
-            assert ier in (1, 2, 3, 4)
+        popt, pcov, infodict, errmsg, ier = curve_fit(
+            f, xdata, ydata, method=method, full_output=True)
+        assert_allclose(popt, [2., 2.])
+        assert "nfev" in infodict
+        assert "fvec" in infodict
+        if method == 'lm' or method is None:
+            assert "fjac" in infodict
+            assert "ipvt" in infodict
+            assert "qtf" in infodict
+        assert isinstance(errmsg, str)
+        assert ier in (1, 2, 3, 4)
 
     def test_bounds(self):
         def f(x, a, b):
@@ -714,9 +719,12 @@ class TestCurveFit:
                                bounds=([0., 0], [0.6, np.inf]))
         assert_allclose(popt[0], 0.6)
 
-        # method='lm' doesn't support bounds.
-        assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
-                      method='lm')
+        # method='lm' and 'least_squares_lm' doesn't support bounds.
+        msg = r"Method 'lm' and `least_squares_lm' only works for " \
+              r"unconstrained problems."
+        for method in ['lm', 'least_squares_lm']:
+            with pytest.raises(ValueError, match=msg):
+                curve_fit(f, xdata, ydata, method=method, bounds=bounds)
 
     def test_bounds_p0(self):
         # This test is for issue #5719. The problem was that an initial guess
@@ -754,9 +762,14 @@ class TestCurveFit:
                 popt, pcov = curve_fit(f, xdata, ydata, jac=scheme,
                                        method=method)
                 assert_allclose(popt, [2, 2])
+        # least_squares_lm only supports 2-point scheme.
+        # Other schemes raises an UserWarning.
+        popt, pcov = curve_fit(f, xdata, ydata, jac="2-point",
+                               method="least_squares_lm")
+        assert_allclose(popt, [2, 2])
 
         # Test the analytic option.
-        for method in ['lm', 'trf', 'dogbox']:
+        for method in ['lm', 'trf', 'dogbox', 'least_squares_lm']:
             popt, pcov = curve_fit(f, xdata, ydata, method=method, jac=jac)
             assert_allclose(popt, [2, 2])
 
@@ -764,7 +777,7 @@ class TestCurveFit:
         ydata[5] = 100
         sigma = np.ones(xdata.shape[0])
         sigma[5] = 200
-        for method in ['lm', 'trf', 'dogbox']:
+        for method in ['lm', 'trf', 'dogbox', 'least_squares_lm']:
             popt, pcov = curve_fit(f, xdata, ydata, sigma=sigma, method=method,
                                    jac=jac)
             # Still the optimization process is influenced somehow,
@@ -861,7 +874,7 @@ class TestCurveFit:
         def func(x, a, b):
             return a*x + b
 
-        for method in ['lm', 'trf', 'dogbox']:
+        for method in ['lm', 'trf', 'dogbox', 'least_squares_lm']:
             for dtx in [np.float32, np.float64]:
                 for dty in [np.float32, np.float64]:
                     x = x.astype(dtx)
@@ -907,7 +920,7 @@ class TestCurveFit:
         target = 4.7 * xdata ** 2 + 3.5 * xdata + np.random.rand(len(xdata))
         def fit_func(x, a, b):
             return a * x ** 2 + b * x - target
-        for method in ['lm', 'trf', 'dogbox']:
+        for method in ['lm', 'trf', 'dogbox', 'least_squares_lm']:
             popt0, pcov0 = curve_fit(fit_func,
                                      xdata=xdata,
                                      ydata=np.zeros_like(xdata),

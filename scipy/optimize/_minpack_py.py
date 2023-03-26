@@ -641,12 +641,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               parameters). Use ``np.inf`` with an appropriate sign to disable
               bounds on all or some parameters.
 
-    method : {'lm', 'trf', 'dogbox'}, optional
+    method : {'lm', 'trf', 'dogbox', `least_squares_lm`}, optional
         Method to use for optimization. See `least_squares` for more details.
         Default is 'lm' for unconstrained problems and 'trf' if `bounds` are
         provided. The method 'lm' won't work when the number of observations
         is less than the number of variables, use 'trf' or 'dogbox' in this
-        case.
+        case. `least_squares_lm` uses `least_squares` with 'lm' method.
 
         .. versionadded:: 0.17
     jac : callable, string or None, optional
@@ -876,8 +876,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         else:
             method = 'lm'
 
-    if method == 'lm' and bounded_problem:
-        raise ValueError("Method 'lm' only works for unconstrained problems. "
+    if (method == 'lm' or method == "least_squares_lm") and bounded_problem:
+        raise ValueError("Method 'lm' and `least_squares_lm' only works for "
+                         "unconstrained problems."
                          "Use 'trf' or 'dogbox' instead.")
 
     if check_finite is None:
@@ -967,6 +968,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
+        if method == "least_squares_lm":
+            method = "lm"  # using "lm" of `least_squares`, not `leastsq`.
         # Rename maxfev (leastsq) to max_nfev (least_squares), if specified.
         if 'max_nfev' not in kwargs:
             kwargs['max_nfev'] = kwargs.pop('maxfev', None)
