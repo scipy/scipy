@@ -750,9 +750,10 @@ def _cumulative_simpson_unequal_intervals(
 
 def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     """
-    Cumulatively integrate y(x) using Simpson's 1/3 rule. The integral of the samples
-    at every point is calculated by assuming a quadratic relationship between each point and two
-    other adjacent points.
+    Cumulatively integrate y(x) using Simpson's 1/3 rule.
+    
+    The integral of the samples at every point is calculated by assuming a quadratic
+    relationship between each point and the two adjacent points.
 
     Parameters
     ----------
@@ -823,7 +824,7 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
 
     if y.shape[axis] < 3:
         raise ValueError(
-            "Minimum of 3 points are required along the axis of integration "
+            "At least 3 points are required along the axis of integration "
             "to use the compsite Simpson's method."
         )
 
