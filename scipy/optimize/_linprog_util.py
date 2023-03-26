@@ -1416,7 +1416,8 @@ def _postsolve(x, postsolve_args, complete=False):
     return x, fun, slack, con
 
 
-def _check_result(x, fun, status, slack, con, bounds, tol, message):
+def _check_result(x, fun, status, slack, con, bounds, tol, message,
+                  integrality):
     """
     Check the validity of the provided solution.
 
@@ -1488,7 +1489,13 @@ def _check_result(x, fun, status, slack, con, bounds, tol, message):
     if contains_nans:
         is_feasible = False
     else:
-        invalid_bounds = (x < bounds[:, 0] - tol).any() or (x > bounds[:, 1] + tol).any()
+        if integrality is None:
+            integrality = 0
+        valid_bounds = (x >= bounds[:, 0] - tol) & (x <= bounds[:, 1] + tol)
+        # When integrality is 2 or 3, x must be within bounds OR take value 0
+        valid_bounds |= (integrality > 1) & np.isclose(x, 0, atol=tol)
+        invalid_bounds = not np.all(valid_bounds)
+
         invalid_slack = status != 3 and (slack < -tol).any()
         invalid_con = status != 3 and (np.abs(con) > tol).any()
         is_feasible = not (invalid_bounds or invalid_slack or invalid_con)
