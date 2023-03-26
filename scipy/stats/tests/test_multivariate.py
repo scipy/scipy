@@ -3158,8 +3158,9 @@ class TestVonMises_Fisher:
                                         vonmises_fisher.logpdf])
     def test_invalid_shapes_pdf_logpdf(self, method):
         x = np.array([1., 0., 0])
-        msg = ("Dimension of last axis of 'x' must match "
-               "the dimension of the von Mises Fisher distribution.")
+        msg = ("The dimensionality of the last axis of 'x' must "
+               "match the dimensionality of the von Mises Fisher "
+               "distribution.")
         with pytest.raises(ValueError, match=msg):
             method(x, [1, 0], 1)
 
@@ -3177,10 +3178,10 @@ class TestVonMises_Fisher:
     # mp.dps = 50
     # def logpdf_mpmath(x, mu, kappa):
     #     dim = mu.size
-    #     halfdim = mpmath.mpf(0.5 * dim)
-    #     kappa = mpmath.mpf(kappa)
-    #     const = (kappa**(halfdim -1)/((2*mpmath.pi)**halfdim * \
-    #             mpmath.besseli(halfdim -1, kappa)))
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     kappa = mp.mpf(kappa)
+    #     const = (kappa**(halfdim - mp.one)/((2*mp.pi)**halfdim * \
+    #              mp.besseli(halfdim -mp.one, kappa)))
     #     return float(const * mp.exp(kappa*mp.fdot(x, mu)))
 
     @pytest.mark.parametrize('x, mu, kappa, reference',
@@ -3218,10 +3219,11 @@ class TestVonMises_Fisher:
     # mp.dps = 50
     # def logpdf_mpmath(x, mu, kappa):
     #     dim = mu.size
-    #     halfdim = mpmath.mpf(0.5 * dim)
-    #     kappa = mpmath.mpf(kappa)
-    #     const = (kappa**(halfdim -1)/((2*mpmath.pi)**halfdim * \
-    #             mpmath.besseli(halfdim -1, kappa)))
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     kappa = mp.mpf(kappa)
+    #     two = mp.mpf(2.)
+    #     const = (kappa**(halfdim - mp.one)/((two*mp.pi)**halfdim * \
+    #              mp.besseli(halfdim - mp.one, kappa)))
     #     return float(mp.log(const * mp.exp(kappa*mp.fdot(x, mu))))
 
     @pytest.mark.parametrize('x, mu, kappa, reference',
@@ -3261,9 +3263,9 @@ class TestVonMises_Fisher:
     #     mu = np.full((dim, ), 1/np.sqrt(dim))
     #     kappa = mp.mpf(kappa)
     #     halfdim = mp.mpf(0.5 * dim)
-    #     logconstant = mp.log(kappa**(halfdim -1)/
-    #                     ((2*mp.pi)**halfdim *\
-    #                     mp.besseli(halfdim -1, kappa)))
+    #     logconstant = (mp.log(kappa**(halfdim - mp.one)
+    #                    /((2*mp.pi)**halfdim
+    #                    * mp.besseli(halfdim -mp.one, kappa)))
     #     return float(-logconstant - kappa * mp.besseli(halfdim, kappa)/
     #             mp.besseli(halfdim -1, kappa))
 

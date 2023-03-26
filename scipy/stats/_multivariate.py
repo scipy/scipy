@@ -6386,9 +6386,9 @@ class vonmises_fisher_gen(multi_rv_generic):
 
     def _check_data_vs_dist(self, x, dim):
         if not x.shape[-1] == dim:
-            raise ValueError("Dimension of last axis of 'x' must match "
-                             "the dimension of the von Mises Fisher "
-                             "distribution.")
+            raise ValueError("The dimensionality of the last axis of 'x' must "
+                             "match the dimensionality of the "
+                             "von Mises Fisher distribution.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
             msg = "'x' must be unit vectors of norm 1 along last dimension."
             raise ValueError(msg)
@@ -6427,7 +6427,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         x : array_like
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
-            to unit vectors of the same dimension as the distribution.
+            to unit vectors of the same dimensionality as the distribution.
         mu : array_like, default None.
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
@@ -6452,7 +6452,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         x : array_like
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
-            to unit vectors of the same dimension as the distribution.
+            to unit vectors of the same dimensionality as the distribution.
         mu : array_like
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
@@ -6670,7 +6670,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         ----------
         x : array-like
             Data the distribution is fitted to. The last axis of `x` must
-            correspond to unit vectors of norm 1.
+            be unit vectors of norm 1.
 
         Returns
         -------
@@ -6747,7 +6747,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         x : array_like
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
-            to unit vectors of the same dimension as the distribution.
+            to unit vectors of the same dimensionality as the distribution.
 
         Returns
         -------
@@ -6764,7 +6764,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         x : array_like
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
-            to unit vectors of the same dimension as the distribution.
+            to unit vectors of the same dimensionality as the distribution.
 
         Returns
         -------
@@ -6809,14 +6809,6 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         """
         Calculate the differential entropy of the von Mises-Fisher
         distribution.
-
-        Parameters
-        ----------
-        mu : array_like, default None.
-            Mean direction of the distribution. Must be a one-dimensional unit
-            vector of norm 1.
-        kappa : float, default 1.
-            Concentration parameter. Must be positive.
 
         Returns
         -------
