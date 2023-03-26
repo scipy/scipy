@@ -442,7 +442,7 @@ class TestCumulativeSimpson:
             ),
             (
                 lambda y: y**2,
-                np.array([[0, 2, 3, 4], [0, 2, 4, 8], [0, 2, 4, 8]]),
+                np.array([[0, 2, 3], [0, 2, 4], [0, 2, 4]]),
                 None,
                 -1,
                 lambda y: y**3 / 3,
@@ -543,7 +543,8 @@ class TestCumulativeSimpson:
                 ),
             ),
             (
-                # Multi dimensional values for initial and dx with non-default axis
+                # Multi dimensional values for initial and dx with non-default axis,
+                # and mixture of int and float inputs
                 np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
                 [[1.0, 2.0, 1.0, 5.0]],
                 [[0, 0, 0, 1]],
@@ -599,6 +600,15 @@ class TestCumulativeSimpson:
                 None,
                 None,
                 0,
+                lambda y: y**3 / 3,
+            ),
+            (
+                # Less than 3 points along axis of integration
+                lambda y: y**2,
+                np.array([[1, 2], [1, 2], [1, 2]]),
+                None,
+                None,
+                -1,
                 lambda y: y**3 / 3,
             ),
         ],
