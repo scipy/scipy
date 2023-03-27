@@ -20,7 +20,7 @@ ERROR_MESSAGES = (
     "maxfun is too large",
     "Initialization failed",
     "There was an error in the creation of the sample points",
-    "An error occured while the function was sampled",
+    "An error occurred while the function was sampled",
     "Maximum number of levels has been reached.",
     "Forced stop",
     "Invalid arguments",

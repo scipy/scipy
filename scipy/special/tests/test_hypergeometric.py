@@ -35,7 +35,7 @@ class TestHyp1f1:
         assert np.isnan(sc.hyp1f1(a, b, x))
 
     def test_poles(self):
-        assert_equal(sc.hyp1f1(1, [0, -1, -2, -3, -4], 0.5), np.infty)
+        assert_equal(sc.hyp1f1(1, [0, -1, -2, -3, -4], 0.5), np.inf)
 
     @pytest.mark.parametrize('a, b, x, result', [
         (-1, 1, 0.5, 0.5),

@@ -6,9 +6,8 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
-from typing import Dict
 
-docdict: Dict[str, str] = {}
+docdict: dict[str, str] = {}
 
 
 def get(name):
@@ -13043,8 +13042,38 @@ add_newdoc("xlogy",
 
     Notes
     -----
+    The log function used in the computation is the natural log.
 
     .. versionadded:: 0.13.0
+
+    Examples
+    --------
+    We can use this function to calculate the binary logistic loss also
+    known as the binary cross entropy. This loss function is used for
+    binary classification problems and is defined as:
+
+    .. math::
+        L = 1/n * \\sum_{i=0}^n -(y_i*log(y\\_pred_i) + (1-y_i)*log(1-y\\_pred_i))
+
+    We can define the parameters `x` and `y` as y and y_pred respectively.
+    y is the array of the actual labels which over here can be either 0 or 1.
+    y_pred is the array of the predicted probabilities with respect to
+    the positive class (1).
+
+    >>> import numpy as np
+    >>> from scipy.special import xlogy
+    >>> y = np.array([0, 1, 0, 1, 1, 0])
+    >>> y_pred = np.array([0.3, 0.8, 0.4, 0.7, 0.9, 0.2])
+    >>> n = len(y)
+    >>> loss = -(xlogy(y, y_pred) + xlogy(1 - y, 1 - y_pred)).sum()
+    >>> loss /= n
+    >>> loss
+    0.29597052165495025
+
+    A lower loss is usually better as it indicates that the predictions are
+    similar to the actual labels. In this example since our predicted
+    probabilties are close to the actual labels, we get an overall loss
+    that is reasonably low and appropriate.
 
     """)
 
@@ -13072,6 +13101,43 @@ add_newdoc("xlog1py",
     -----
 
     .. versionadded:: 0.13.0
+
+    Examples
+    --------
+    This example shows how the function can be used to calculate the log of
+    the probability mass function for a geometric discrete random variable.
+    The probability mass function of the geometric distribution is defined
+    as follows:
+
+    .. math:: f(k) = (1-p)^{k-1} p
+
+    where :math:`p` is the probability of a single success
+    and :math:`1-p` is the probability of a single failure
+    and :math:`k` is the number of trials to get the first success.
+
+    >>> import numpy as np
+    >>> from scipy.special import xlog1py
+    >>> p = 0.5
+    >>> k = 100
+    >>> _pmf = np.power(1 - p, k - 1) * p
+    >>> _pmf
+    7.888609052210118e-31
+
+    If we take k as a relatively large number the value of the probability
+    mass function can become very low. In such cases taking the log of the
+    pmf would be more suitable as the log function can change the values
+    to a scale that is more appropriate to work with.
+
+    >>> _log_pmf = xlog1py(k - 1, -p) + np.log(p)
+    >>> _log_pmf
+    -69.31471805599453
+
+    We can confirm that we get a value close to the original pmf value by
+    taking the exponential of the log pmf.
+
+    >>> _orig_pmf = np.exp(_log_pmf)
+    >>> np.isclose(_pmf, _orig_pmf)
+    True
 
     """)
 
