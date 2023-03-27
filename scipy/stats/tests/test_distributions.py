@@ -51,23 +51,13 @@ skip_test_support_gh13294_regression = ['tukeylambda', 'pearson3']
 
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
-        msg = '%s does not have attribute %s' % (a, b)
+        msg = f'{a} does not have attribute {b}'
     assert_(hasattr(a, b), msg=msg)
 
 
 def test_api_regression():
     # https://github.com/scipy/scipy/issues/3802
     _assert_hasattr(scipy.stats.distributions, 'f_gen')
-
-
-def check_vonmises_pdf_periodic(k, L, s, x):
-    vm = stats.vonmises(k, loc=L, scale=s)
-    assert_almost_equal(vm.pdf(x), vm.pdf(x % (2*numpy.pi*s)))
-
-
-def check_vonmises_cdf_periodic(k, L, s, x):
-    vm = stats.vonmises(k, loc=L, scale=s)
-    assert_almost_equal(vm.cdf(x) % 1, vm.cdf(x % (2*numpy.pi*s)) % 1)
 
 
 def test_distributions_submodule():
@@ -82,120 +72,229 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
-    # gilbrat is deprecated and no longer in distcont
-    actual.remove('gilbrat')
-
     assert actual == expected
 
 
-def test_vonmises_pdf_periodic():
-    for k in [0.1, 1, 101]:
-        for x in [0, 1, numpy.pi, 10, 100]:
-            check_vonmises_pdf_periodic(k, 0, 1, x)
-            check_vonmises_pdf_periodic(k, 1, 1, x)
-            check_vonmises_pdf_periodic(k, 0, 10, x)
+class TestVonMises:
+    @pytest.mark.parametrize('k', [0.1, 1, 101])
+    @pytest.mark.parametrize('x', [0, 1, np.pi, 10, 100])
+    def test_vonmises_periodic(self, k, x):
+        def check_vonmises_pdf_periodic(k, L, s, x):
+            vm = stats.vonmises(k, loc=L, scale=s)
+            assert_almost_equal(vm.pdf(x), vm.pdf(x % (2 * np.pi * s)))
 
-            check_vonmises_cdf_periodic(k, 0, 1, x)
-            check_vonmises_cdf_periodic(k, 1, 1, x)
-            check_vonmises_cdf_periodic(k, 0, 10, x)
+        def check_vonmises_cdf_periodic(k, L, s, x):
+            vm = stats.vonmises(k, loc=L, scale=s)
+            assert_almost_equal(vm.cdf(x) % 1,
+                                vm.cdf(x % (2 * np.pi * s)) % 1)
+
+        check_vonmises_pdf_periodic(k, 0, 1, x)
+        check_vonmises_pdf_periodic(k, 1, 1, x)
+        check_vonmises_pdf_periodic(k, 0, 10, x)
+
+        check_vonmises_cdf_periodic(k, 0, 1, x)
+        check_vonmises_cdf_periodic(k, 1, 1, x)
+        check_vonmises_cdf_periodic(k, 0, 10, x)
+
+    def test_vonmises_line_support(self):
+        assert_equal(stats.vonmises_line.a, -np.pi)
+        assert_equal(stats.vonmises_line.b, np.pi)
+
+    def test_vonmises_numerical(self):
+        vm = stats.vonmises(800)
+        assert_almost_equal(vm.cdf(0), 0.5)
+
+    # Expected values of the vonmises PDF were computed using
+    # mpmath with 50 digits of precision:
+    #
+    # def vmpdf_mp(x, kappa):
+    #     x = mpmath.mpf(x)
+    #     kappa = mpmath.mpf(kappa)
+    #     num = mpmath.exp(kappa*mpmath.cos(x))
+    #     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
+    #     return num/den
+
+    @pytest.mark.parametrize('x, kappa, expected_pdf',
+                             [(0.1, 0.01, 0.16074242744907072),
+                              (0.1, 25.0, 1.7515464099118245),
+                              (0.1, 800, 0.2073272544458798),
+                              (2.0, 0.01, 0.15849003875385817),
+                              (2.0, 25.0, 8.356882934278192e-16),
+                              (2.0, 800, 0.0)])
+    def test_vonmises_pdf(self, x, kappa, expected_pdf):
+        pdf = stats.vonmises.pdf(x, kappa)
+        assert_allclose(pdf, expected_pdf, rtol=1e-15)
+
+    # Expected values of the vonmises entropy were computed using
+    # mpmath with 50 digits of precision:
+    #
+    # def vonmises_entropy(kappa):
+    #     kappa = mpmath.mpf(kappa)
+    #     return (-kappa * mpmath.besseli(1, kappa) /
+    #             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
+    #             mpmath.besseli(0, kappa)))
+    # >>> float(vonmises_entropy(kappa))
+
+    @pytest.mark.parametrize('kappa, expected_entropy',
+                             [(1, 1.6274014590199897),
+                              (5, 0.6756431570114528),
+                              (100, -0.8811275441649473),
+                              (1000, -2.03468891852547),
+                              (2000, -2.3813876496587847)])
+    def test_vonmises_entropy(self, kappa, expected_entropy):
+        entropy = stats.vonmises.entropy(kappa)
+        assert_allclose(entropy, expected_entropy, rtol=1e-13)
+
+    def test_vonmises_rvs_gh4598(self):
+        # check that random variates wrap around as discussed in gh-4598
+        seed = abs(hash('von_mises_rvs'))
+        rng1 = np.random.default_rng(seed)
+        rng2 = np.random.default_rng(seed)
+        rng3 = np.random.default_rng(seed)
+        rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+        rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+        rvs3 = stats.vonmises(1, loc=0,
+                              scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
+        assert_allclose(rvs1, rvs2, atol=1e-15)
+        assert_allclose(rvs1, rvs3, atol=1e-15)
+
+    # Expected values of the vonmises LOGPDF were computed
+    # using wolfram alpha:
+    # kappa * cos(x) - log(2*pi*I0(kappa))
+    @pytest.mark.parametrize('x, kappa, expected_logpdf',
+                             [(0.1, 0.01, -1.8279520246003170),
+                              (0.1, 25.0, 0.5604990605420549),
+                              (0.1, 800, -1.5734567947337514),
+                              (2.0, 0.01, -1.8420635346185686),
+                              (2.0, 25.0, -34.7182759850871489),
+                              (2.0, 800, -1130.4942582548682739)])
+    def test_vonmises_logpdf(self, x, kappa, expected_logpdf):
+        logpdf = stats.vonmises.logpdf(x, kappa)
+        assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
+
+    def test_vonmises_expect(self):
+        """
+        Test that the vonmises expectation values are
+        computed correctly.  This test checks that the
+        numeric integration estimates the correct normalization
+        (1) and mean angle (loc).  These expectations are
+        independent of the chosen 2pi interval.
+        """
+        rng = np.random.default_rng(6762668991392531563)
+
+        loc, kappa, lb = rng.random(3) * 10
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1)
+        assert_allclose(res, 1)
+        assert np.issubdtype(res.dtype, np.floating)
+
+        bounds = lb, lb + 2 * np.pi
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: 1, *bounds)
+        assert_allclose(res, 1)
+        assert np.issubdtype(res.dtype, np.floating)
+
+        bounds = lb, lb + 2 * np.pi
+        res = stats.vonmises(loc=loc, kappa=kappa).expect(lambda x: np.exp(1j*x),
+                                                          *bounds, complex_func=1)
+        assert_allclose(np.angle(res), loc % (2*np.pi))
+        assert np.issubdtype(res.dtype, np.complexfloating)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize("rvs_loc", [0, 2])
+    @pytest.mark.parametrize("rvs_shape", [1, 100])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_shape', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_shape,
+                                    fix_loc, fix_shape):
+        if fix_shape and fix_loc:
+            pytest.skip("Nothing to fit.")
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises.rvs(rvs_shape, size=1000, loc=rvs_loc,
+                                  random_state=rng)
+
+        kwds = {'fscale': 1}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      stats.vonmises.nnlf, **kwds)
+
+    @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
+    @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
+    def test_vonmises_fit_all(self, kappa, loc):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+        assert scale_fit == 1
+        loc_vec = np.array([np.cos(loc), np.sin(loc)])
+        loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
+        angle = np.arccos(loc_vec.dot(loc_fit_vec))
+        assert_allclose(angle, 0, atol=1e-2, rtol=0)
+        assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+    def test_vonmises_fit_shape(self):
+        rng = np.random.default_rng(6762668991392531563)
+        loc = 0.25*np.pi
+        kappa = 10
+        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
+        assert loc_fit == loc
+        assert scale_fit == 1
+        assert_allclose(kappa, kappa_fit, rtol=1e-2)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
+    def test_vonmises_fit_bad_floc(self, loc):
+        data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
+                -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
+                3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
+                -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
+        data = np.asarray(data)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
+        assert kappa_fit == np.finfo(float).tiny
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      stats.vonmises.nnlf, fscale=1, floc=loc)
+
+    @pytest.mark.parametrize('sign', [-1, 1])
+    def test_vonmises_fit_unwrapped_data(self, sign):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.vonmises(loc=sign*0.5*np.pi, kappa=10).rvs(100000,
+                                                                random_state=rng)
+        shifted_data = data + 4*np.pi
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
+        kappa_fit_shifted, loc_fit_shifted, _ = stats.vonmises.fit(shifted_data)
+        assert_allclose(loc_fit, loc_fit_shifted)
+        assert_allclose(kappa_fit, kappa_fit_shifted)
+        assert scale_fit == 1
+        assert -np.pi < loc_fit < np.pi
 
 
-def test_vonmises_line_support():
-    assert_equal(stats.vonmises_line.a, -np.pi)
-    assert_equal(stats.vonmises_line.b, np.pi)
-
-
-def test_vonmises_numerical():
-    vm = stats.vonmises(800)
-    assert_almost_equal(vm.cdf(0), 0.5)
-
-
-# Expected values of the vonmises PDF were computed using
-# mpmath with 50 digits of precision:
-#
-# def vmpdf_mp(x, kappa):
-#     x = mpmath.mpf(x)
-#     kappa = mpmath.mpf(kappa)
-#     num = mpmath.exp(kappa*mpmath.cos(x))
-#     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
-#     return num/den
-
-@pytest.mark.parametrize('x, kappa, expected_pdf',
-                         [(0.1, 0.01, 0.16074242744907072),
-                          (0.1, 25.0, 1.7515464099118245),
-                          (0.1, 800, 0.2073272544458798),
-                          (2.0, 0.01, 0.15849003875385817),
-                          (2.0, 25.0, 8.356882934278192e-16),
-                          (2.0, 800, 0.0)])
-def test_vonmises_pdf(x, kappa, expected_pdf):
-    pdf = stats.vonmises.pdf(x, kappa)
-    assert_allclose(pdf, expected_pdf, rtol=1e-15)
-
-
-# Expected values of the vonmises entropy were computed using
-# mpmath with 50 digits of precision:
-#
-# def vonmises_entropy(kappa):
-#     kappa = mpmath.mpf(kappa)
-#     return (-kappa * mpmath.besseli(1, kappa) /
-#             mpmath.besseli(0, kappa) + mpmath.log(2 * mpmath.pi *
-#             mpmath.besseli(0, kappa)))
-# >>> float(vonmises_entropy(kappa))
-
-@pytest.mark.parametrize('kappa, expected_entropy',
-                         [(1, 1.6274014590199897),
-                          (5, 0.6756431570114528),
-                          (100, -0.8811275441649473),
-                          (1000, -2.03468891852547),
-                          (2000, -2.3813876496587847)])
-def test_vonmises_entropy(kappa, expected_entropy):
-    entropy = stats.vonmises.entropy(kappa)
-    assert_allclose(entropy, expected_entropy, rtol=1e-13)
-
-
-def test_vonmises_rvs_gh4598():
-    # check that random variates wrap around as discussed in gh-4598
-    seed = abs(hash('von_mises_rvs'))
-    rng1 = np.random.default_rng(seed)
-    rng2 = np.random.default_rng(seed)
-    rng3 = np.random.default_rng(seed)
-    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
-    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
-    rvs3 = stats.vonmises(1, loc=0,
-                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
-    assert_allclose(rvs1, rvs2, atol=1e-15)
-    assert_allclose(rvs1, rvs3, atol=1e-15)
-
-
-# Expected values of the vonmises LOGPDF were computed
-# using wolfram alpha:
-# kappa * cos(x) - log(2*pi*I0(kappa))
-@pytest.mark.parametrize('x, kappa, expected_logpdf',
-                         [(0.1, 0.01, -1.8279520246003170),
-                          (0.1, 25.0, 0.5604990605420549),
-                          (0.1, 800, -1.5734567947337514),
-                          (2.0, 0.01, -1.8420635346185686),
-                          (2.0, 25.0, -34.7182759850871489),
-                          (2.0, 800, -1130.4942582548682739)])
-def test_vonmises_logpdf(x, kappa, expected_logpdf):
-    logpdf = stats.vonmises.logpdf(x, kappa)
-    assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
-
-
-def _assert_less_or_close_loglike(dist, data, func, **kwds):
+def _assert_less_or_close_loglike(dist, data, func=None, **kwds):
     """
-    This utility function checks that the log-likelihood (computed by
-    func) of the result computed using dist.fit() is less than or equal
+    This utility function checks that the negative log-likelihood function
+    (or `func`) of the result computed using dist.fit() is less than or equal
     to the result computed using the generic fit method.  Because of
     normal numerical imprecision, the "equality" check is made using
     `np.allclose` with a relative tolerance of 1e-15.
     """
+    if func is None:
+        func = dist.nnlf
+
     mle_analytical = dist.fit(data, **kwds)
     numerical_opt = super(type(dist), dist).fit(data, **kwds)
     ll_mle_analytical = func(mle_analytical, data)
     ll_numerical_opt = func(numerical_opt, data)
     assert (ll_mle_analytical <= ll_numerical_opt or
             np.allclose(ll_mle_analytical, ll_numerical_opt, rtol=1e-15))
+
+    # Ideally we'd check that shapes are correctly fixed, too, but that is
+    # complicated by the many ways of fixing them (e.g. f0, fix_a, fa).
+    if 'floc' in kwds:
+        assert mle_analytical[-2] == kwds['floc']
+    if 'fscale' in kwds:
+        assert mle_analytical[-1] == kwds['fscale']
 
 
 def assert_fit_warnings(dist):
@@ -315,6 +414,34 @@ class TestBinom:
             assert_equal(stats.binom(n=2, p=0).mean(), 0)
             assert_equal(stats.binom(n=2, p=0).std(), 0)
 
+    def test_ppf_p1(self):
+        # Check that gh-17388 is resolved: PPF == n when p = 1
+        n = 4
+        assert stats.binom.ppf(q=0.3, n=n, p=1.0) == n
+
+    def test_pmf_poisson(self):
+        # Check that gh-17146 is resolved: binom -> poisson
+        n = 1541096362225563.0
+        p = 1.0477878413173978e-18
+        x = np.arange(3)
+        res = stats.binom.pmf(x, n=n, p=p)
+        ref = stats.poisson.pmf(x, n * p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_cdf(self):
+        # Check that gh-17809 is resolved: binom.pmf(0) ~ binom.cdf(0)
+        n = 25.0 * 10 ** 21
+        p = 1.0 * 10 ** -21
+        r = 0
+        res = stats.binom.pmf(r, n, p)
+        ref = stats.binom.cdf(r, n, p)
+        assert_allclose(res, ref, atol=1e-16)
+
+    def test_pmf_gh15101(self):
+        # Check that gh-15101 is resolved (no divide warnings when p~1, n~oo)
+        res = stats.binom.pmf(3, 2000, 0.999)
+        assert_allclose(res, 0, atol=1e-16)
+
 
 class TestArcsine:
 
@@ -386,6 +513,25 @@ class TestChi:
     def test_mean(self):
         x = stats.chi.mean(df=1000)
         assert_allclose(x, self.CHI_MEAN_1000, rtol=1e-12)
+
+    # Entropy references values were computed with the following mpmath code
+    # from mpmath import mp
+    # mp.dps = 50
+    # def chi_entropy_mpmath(df):
+    #     df = mp.mpf(df)
+    #     half_df = 0.5 * df
+    #     entropy = mp.log(mp.gamma(half_df)) + 0.5 * \
+    #               (df - mp.log(2) - (df - mp.one) * mp.digamma(half_df))
+    #     return float(entropy)
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1e-4, -9989.7316027504),
+                              (1, 0.7257913526447274),
+                              (1e3, 1.0721981095025448),
+                              (1e10, 1.0723649429080335),
+                              (1e100, 1.0723649429247002)])
+    def test_entropy(self, df, ref):
+        assert_allclose(stats.chi(df).entropy(), ref, rtol=1e-15)
 
 
 class TestNBinom:
@@ -538,6 +684,45 @@ class TestGenHyperbolic:
 
         assert_allclose(gh.cdf(x), vals_R, atol=0, rtol=1e-6)
 
+    # The reference values were computed by implementing the PDF with mpmath
+    # and integrating it with mp.quad.  The values were computed with
+    # mp.dps=250, and then again with mp.dps=400 to ensure the full 64 bit
+    # precision was computed.
+    @pytest.mark.parametrize(
+        'x, p, a, b, loc, scale, ref',
+        [(-15, 2, 3, 1.5, 0.5, 1.5, 4.770036428808252e-20),
+         (-15, 10, 1.5, 0.25, 1, 5, 0.03282964575089294),
+         (-15, 10, 1.5, 1.375, 0, 1, 3.3711159600215594e-23),
+         (-15, 0.125, 1.5, 1.49995, 0, 1, 4.729401428898605e-23),
+         (-1, 0.125, 1.5, 1.49995, 0, 1, 0.0003565725914786859),
+         (5, -0.125, 1.5, 1.49995, 0, 1, 0.2600651974023352),
+         (5, -0.125, 1000, 999, 0, 1, 5.923270556517253e-28),
+         (20, -0.125, 1000, 999, 0, 1, 0.23452293711665634),
+         (40, -0.125, 1000, 999, 0, 1, 0.9999648749561968),
+         (60, -0.125, 1000, 999, 0, 1, 0.9999999999975475)]
+    )
+    def test_cdf_mpmath(self, x, p, a, b, loc, scale, ref):
+        cdf = stats.genhyperbolic.cdf(x, p, a, b, loc=loc, scale=scale)
+        assert_allclose(cdf, ref, rtol=5e-12)
+
+    # The reference values were computed by implementing the PDF with mpmath
+    # and integrating it with mp.quad.  The values were computed with
+    # mp.dps=250, and then again with mp.dps=400 to ensure the full 64 bit
+    # precision was computed.
+    @pytest.mark.parametrize(
+        'x, p, a, b, loc, scale, ref',
+        [(0, 1e-6, 12, -1, 0, 1, 0.38520358671350524),
+         (-1, 3, 2.5, 2.375, 1, 3, 0.9999901774267577),
+         (-20, 3, 2.5, 2.375, 1, 3, 1.0),
+         (25, 2, 3, 1.5, 0.5, 1.5, 8.593419916523976e-10),
+         (300, 10, 1.5, 0.25, 1, 5, 6.137415609872158e-24),
+         (60, -0.125, 1000, 999, 0, 1, 2.4524915075944173e-12),
+         (75, -0.125, 1000, 999, 0, 1, 2.9435194886214633e-18)]
+    )
+    def test_sf_mpmath(self, x, p, a, b, loc, scale, ref):
+        sf = stats.genhyperbolic.sf(x, p, a, b, loc=loc, scale=scale)
+        assert_allclose(sf, ref, rtol=5e-12)
+
     def test_moments_r(self):
         # test against R package GeneralizedHyperbolic
         # sapply(1:4,
@@ -562,7 +747,7 @@ class TestGenHyperbolic:
         assert_allclose(vals_us, vals_R, atol=0, rtol=1e-13)
 
     def test_rvs(self):
-        # Kolmogorov-Smirnov test to ensure alignemnt
+        # Kolmogorov-Smirnov test to ensure alignment
         # of analytical and empirical cdfs
 
         lmbda, alpha, beta = 2, 2, 1
@@ -874,6 +1059,131 @@ class TestGennorm:
         assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
 
 
+class TestGibrat:
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def gibrat_sf(x):
+    #       return 1 - mp.ncdf(mp.log(x))
+    #
+    # E.g.
+    #
+    #   >>> float(gibrat_sf(1.5))
+    #   0.3425678305148459
+    #
+    @pytest.mark.parametrize('x, sfx', [(1.5, 0.3425678305148459),
+                                        (5000, 8.173334352522493e-18)])
+    def test_sf_isf(self, x, sfx):
+        assert_allclose(stats.gibrat.sf(x), sfx, rtol=2e-14)
+        assert_allclose(stats.gibrat.isf(sfx), x, rtol=2e-14)
+
+
+class TestGompertz:
+
+    def test_gompertz_accuracy(self):
+        # Regression test for gh-4031
+        p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100, 1), 1)
+        assert_allclose(p, 1e-100)
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def gompertz_sf(x, c):
+    #       reurn mp.exp(-c*mp.expm1(x))
+    #
+    # E.g.
+    #
+    #   >>> float(gompertz_sf(1, 2.5))
+    #   0.013626967146253437
+    #
+    @pytest.mark.parametrize('x, c, sfx', [(1, 2.5, 0.013626967146253437),
+                                           (3, 2.5, 1.8973243273704087e-21),
+                                           (0.05, 5, 0.7738668242570479),
+                                           (2.25, 5, 3.707795833465481e-19)])
+    def test_sf_isf(self, x, c, sfx):
+        assert_allclose(stats.gompertz.sf(x, c), sfx, rtol=1e-14)
+        assert_allclose(stats.gompertz.isf(sfx, c), x, rtol=1e-14)
+
+    # reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 100
+    # def gompertz_entropy(c):
+    #     c = mp.mpf(c)
+    #     return float(mp.one - mp.log(c) - mp.exp(c)*mp.e1(c))
+
+    @pytest.mark.parametrize('c, ref', [(1e-4, 1.5762523017634573),
+                                        (1, 0.4036526376768059),
+                                        (1000, -5.908754280976161),
+                                        (1e10, -22.025850930040455)])
+    def test_entropy(self, c, ref):
+        assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
+
+
+class TestHalfNorm:
+
+    # sfx is sf(x).  The values were computed with mpmath:
+    #
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_sf(x):
+    #       reurn 2*(1 - mp.ncdf(x))
+    #
+    # E.g.
+    #
+    #   >>> float(halfnorm_sf(1))
+    #   0.3173105078629141
+    #
+    @pytest.mark.parametrize('x, sfx', [(1, 0.3173105078629141),
+                                        (10, 1.523970604832105e-23)])
+    def test_sf_isf(self, x, sfx):
+        assert_allclose(stats.halfnorm.sf(x), sfx, rtol=1e-14)
+        assert_allclose(stats.halfnorm.isf(sfx), x, rtol=1e-14)
+
+    #   reference values were computed via mpmath
+    #   from mpmath import mp
+    #   mp.dps = 100
+    #   def halfnorm_cdf_mpmath(x):
+    #       x = mp.mpf(x)
+    #       return float(mp.erf(x/mp.sqrt(2.)))
+
+    @pytest.mark.parametrize('x, ref', [(1e-40, 7.978845608028653e-41),
+                                        (1e-18, 7.978845608028654e-19),
+                                        (8, 0.9999999999999988)])
+    def test_cdf(self, x, ref):
+        assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
+
+
+class TestHalfLogistic:
+    # survival function reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def sf_mpmath(x):
+    #     x = mp.mpf(x)
+    #     return float(mp.mpf(2.)/(mp.exp(x) + mp.one))
+
+    @pytest.mark.parametrize('x, ref', [(100, 7.440151952041672e-44),
+                                        (200, 2.767793053473475e-87)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.halflogistic.sf(x), ref, rtol=1e-15)
+
+    # inverse survival function reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 200
+    # def isf_mpmath(x):
+    #     halfx = mp.mpf(x)/2
+    #     return float(-mp.log(halfx/(mp.one - halfx)))
+
+    @pytest.mark.parametrize('q, ref', [(7.440151952041672e-44, 100),
+                                        (2.767793053473475e-87, 200),
+                                        (1-1e-9, 1.999999943436137e-09),
+                                        (1-1e-15, 1.9984014443252818e-15)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
+
+
 class TestHalfgennorm:
     def test_expon(self):
         # test against exponential (special case for beta=1)
@@ -935,6 +1245,44 @@ class TestLaplaceasymmetric:
 class TestTruncnorm:
     def setup_method(self):
         np.random.seed(1234)
+
+    @pytest.mark.parametrize("a, b, ref",
+                             [(0, 100, 0.7257913526447274),
+                             (0.6, 0.7, -2.3027610681852573),
+                             (1e-06, 2e-06, -13.815510557964274)])
+    def test_entropy(self, a, b, ref):
+        # All reference values were calculated with mpmath:
+        # import numpy as np
+        # from mpmath import mp
+        # mp.dps = 50
+        # def entropy_trun(a, b):
+        #     a, b = mp.mpf(a), mp.mpf(b)
+        #     Z = mp.ncdf(b) - mp.ncdf(a)
+        #
+        #     def pdf(x):
+        #         return mp.npdf(x) / Z
+        #
+        #     res = -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)), [a, b])
+        #     return np.float64(res)
+        assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-10)
+
+    @pytest.mark.parametrize("a, b, ref",
+                             [(1e-11, 10000000000.0, 0.725791352640738),
+                             (1e-100, 1e+100, 0.7257913526447274),
+                             (-1e-100, 1e+100, 0.7257913526447274),
+                             (-1e+100, 1e+100, 1.4189385332046727)])
+    def test_extreme_entropy(self, a, b, ref):
+        # The reference values were calculated with mpmath
+        # import numpy as np
+        # from mpmath import mp
+        # mp.dps = 50
+        # def trunc_norm_entropy(a, b):
+        #     a, b = mp.mpf(a), mp.mpf(b)
+        #     Z = mp.ncdf(b) - mp.ncdf(a)
+        #     A = mp.log(mp.sqrt(2 * mp.pi * mp.e) * Z)
+        #     B = (a * mp.npdf(a) - b * mp.npdf(b)) / (2 * Z)
+        #     return np.float64(A + B)
+        assert_allclose(stats.truncnorm.entropy(a, b), ref, rtol=1e-14)
 
     def test_ppf_ticket1131(self):
         vals = stats.truncnorm.ppf([-0.5, 0, 1e-4, 0.5, 1-1e-4, 1, 2], -1., 1.,
@@ -1069,14 +1417,6 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
                         0.9163220907327540)
 
-    def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
-        m0, v0, s0, k0 = expected[:4]
-        m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_allclose(m, m0)
-        assert_allclose(v, v0)
-        assert_allclose(s, s0, rtol=rtol)
-        assert_allclose(k, k0, rtol=rtol)
-
     # Test data for the truncnorm stats() method.
     # The data in each row is:
     #   a, b, mean, variance, skewness, excess kurtosis. Generated using
@@ -1175,6 +1515,56 @@ class TestGenLogistic:
         c = 1.5
         logp = stats.genlogistic.logpdf(x, c)
         assert_allclose(logp, expected, rtol=1e-13)
+
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 50
+    # def entropy_mp(c):
+    #     c = mp.mpf(c)
+    #     return float(-mp.log(c)+mp.one+mp.digamma(c + mp.one) + mp.euler)
+
+    @pytest.mark.parametrize('c, ref', [(1e-100, 231.25850929940458),
+                                        (1e-4, 10.21050485336338),
+                                        (1e8, 1.577215669901533),
+                                        (1e100, 1.5772156649015328)])
+    def test_entropy(self, c, ref):
+        assert_allclose(stats.genlogistic.entropy(c), ref, rtol=5e-15)
+
+    # Expected values computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 1000
+    #
+    # def genlogistic_cdf_mp(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return (mp.one + mp.exp(-x)) ** (-c)
+    #
+    # def genlogistic_sf_mp(x, c):
+    #     return mp.one - genlogistic_cdf_mp(x, c)
+    #
+    # x, c, ref = 100, 0.02, -7.440151952041672e-466
+    # print(float(mp.log(genlogistic_cdf_mp(x, c))))
+    # ppf/isf reference values generated by passing in `ref` (`q` is produced)
+
+    @pytest.mark.parametrize('x, c, ref', [(200, 10, 1.3838965267367375e-86),
+                                           (500, 20, 1.424915281348257e-216)])
+    def test_sf(self, x, c, ref):
+        assert_allclose(stats.genlogistic.sf(x, c), ref, rtol=1e-14)
+
+    @pytest.mark.parametrize('q, c, ref', [(0.01, 200, 9.898441467379765),
+                                           (0.001, 2, 7.600152115573173)])
+    def test_isf(self, q, c, ref):
+        assert_allclose(stats.genlogistic.isf(q, c), ref, rtol=5e-16)
+
+    @pytest.mark.parametrize('q, c, ref', [(0.5, 200, 5.6630969187064615),
+                                           (0.99, 20, 7.595630231412436)])
+    def test_ppf(self, q, c, ref):
+        assert_allclose(stats.genlogistic.ppf(q, c), ref, rtol=5e-16)
+
+    @pytest.mark.parametrize('x, c, ref', [(100, 0.02, -7.440151952041672e-46),
+                                           (50, 20, -3.857499695927835e-21)])
+    def test_logcdf(self, x, c, ref):
+        assert_allclose(stats.genlogistic.logcdf(x, c), ref, rtol=1e-15)
 
 
 class TestHypergeom:
@@ -1320,18 +1710,39 @@ class TestHypergeom:
 
 class TestLoggamma:
 
+    # Expected cdf values were computed with mpmath. For given x and c,
+    #     x = mpmath.mpf(x)
+    #     c = mpmath.mpf(c)
+    #     cdf = mpmath.gammainc(c, 0, mpmath.exp(x),
+    #                           regularized=True)
+    @pytest.mark.parametrize('x, c, cdf',
+                             [(1, 2, 0.7546378854206702),
+                              (-1, 14, 6.768116452566383e-18),
+                              (-745.1, 0.001, 0.4749605142005238),
+                              (-800, 0.001, 0.44958802911019136),
+                              (-725, 0.1, 3.4301205868273265e-32),
+                              (-740, 0.75, 1.0074360436599631e-241)])
+    def test_cdf_ppf(self, x, c, cdf):
+        p = stats.loggamma.cdf(x, c)
+        assert_allclose(p, cdf, rtol=1e-13)
+        y = stats.loggamma.ppf(cdf, c)
+        assert_allclose(y, x, rtol=1e-13)
+
     # Expected sf values were computed with mpmath. For given x and c,
     #     x = mpmath.mpf(x)
     #     c = mpmath.mpf(c)
     #     sf = mpmath.gammainc(c, mpmath.exp(x), mpmath.inf,
     #                          regularized=True)
-    @pytest.mark.parametrize('x, c, sf', [(4, 1.5, 1.6341528919488565e-23),
-                                          (6, 100, 8.23836829202024e-74)])
+    @pytest.mark.parametrize('x, c, sf',
+                             [(4, 1.5, 1.6341528919488565e-23),
+                              (6, 100, 8.23836829202024e-74),
+                              (-800, 0.001, 0.5504119708898086),
+                              (-743, 0.0025, 0.8437131370024089)])
     def test_sf_isf(self, x, c, sf):
         s = stats.loggamma.sf(x, c)
-        assert_allclose(s, sf, rtol=1e-12)
-        y = stats.loggamma.isf(s, c)
-        assert_allclose(y, x, rtol=1e-12)
+        assert_allclose(s, sf, rtol=1e-13)
+        y = stats.loggamma.isf(sf, c)
+        assert_allclose(y, x, rtol=1e-13)
 
     def test_logpdf(self):
         # Test logpdf with x=-500, c=2.  ln(gamma(2)) = 0, and
@@ -1369,6 +1780,50 @@ class TestLoggamma:
         btest = stats.binomtest(np.count_nonzero(x < med), len(x))
         ci = btest.proportion_ci(confidence_level=0.999)
         assert ci.low < 0.5 < ci.high
+
+
+class TestJohnsonsu:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonsu_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x + mp.sqrt(x*x + 1)))))
+    # Order is x, a, b, sf, isf tol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(-500, 1, 1, 0.9999999982660072, 1e-8),
+             (2000, 1, 1, 7.426351000595343e-21, 5e-14),
+             (100000, 1, 1, 4.046923979269977e-40, 5e-14)]
+
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsu.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsu.isf(sf, a, b), x, rtol=tol)
+
+
+class TestJohnsonb:
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def johnsonb_sf(x, a, b):
+    #     x = mp.mpf(x)
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     return float(mp.ncdf(-(a + b * mp.log(x/(mp.one - x)))))
+    # Order is x, a, b, sf, isf atol
+    # (Can't expect full precision when the ISF input is very nearly 1)
+    cases = [(1e-4, 1, 1, 0.9999999999999999, 1e-7),
+             (0.9999, 1, 1, 8.921114313932308e-25, 5e-14),
+             (0.999999, 1, 1, 5.815197487181902e-50, 5e-14)]
+
+    @pytest.mark.parametrize("case", cases)
+    def test_sf_isf(self, case):
+        x, a, b, sf, tol = case
+        assert_allclose(stats.johnsonsb.sf(x, a, b), sf, rtol=5e-14)
+        assert_allclose(stats.johnsonsb.isf(sf, a, b), x, atol=tol)
 
 
 class TestLogistic:
@@ -1432,14 +1887,9 @@ class TestLogistic:
 
     def test_fit_comp_optimizer(self):
         data = stats.logistic.rvs(size=100, loc=0.5, scale=2)
-
-        # obtain objective function to compare results of the fit methods
-        args = [data, (stats.logistic._fitstart(data),)]
-        func = stats.logistic._reduce_func(args, {})[1]
-
-        _assert_less_or_close_loglike(stats.logistic, data, func)
-        _assert_less_or_close_loglike(stats.logistic, data, func, floc=1)
-        _assert_less_or_close_loglike(stats.logistic, data, func, fscale=1)
+        _assert_less_or_close_loglike(stats.logistic, data)
+        _assert_less_or_close_loglike(stats.logistic, data, floc=1)
+        _assert_less_or_close_loglike(stats.logistic, data, fscale=1)
 
     @pytest.mark.parametrize('testlogcdf', [True, False])
     def test_logcdfsf_tails(self, testlogcdf):
@@ -1454,6 +1904,14 @@ class TestLogistic:
         expected = [-10000.0, -800.0, -4.139937633089748e-08,
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
+
+    def test_fit_gh_18176(self):
+        # logistic.fit returned `scale < 0` for this data. Check that this has
+        # been fixed.
+        data = np.array([-459, 37, 43, 45, 45, 48, 54, 55, 58]
+                        + [59] * 3 + [61] * 9)
+        # If scale were negative, NLLF would be infinite, so this would fail
+        _assert_less_or_close_loglike(stats.logistic, data)
 
 
 class TestLogser:
@@ -1511,9 +1969,6 @@ class TestGumbel_r_l:
         data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
                         random_state=rng)
 
-        # obtain objective function to compare results of the fit methods
-        args = [data, (dist._fitstart(data),)]
-        func = dist._reduce_func(args, {})[1]
 
         kwds = dict()
         # the fixed location and scales are arbitrarily modified to not be
@@ -1524,7 +1979,7 @@ class TestGumbel_r_l:
             kwds['fscale'] = scale_rvs * 2
 
         # test that the gumbel_* fit method is better than super method
-        _assert_less_or_close_loglike(dist, data, func, **kwds)
+        _assert_less_or_close_loglike(dist, data, **kwds)
 
     @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
                                            (stats.gumbel_l, -1)])
@@ -1649,8 +2104,6 @@ class TestPareto:
                                     fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
-        args = [data, (stats.pareto._fitstart(data), )]
-        func = stats.pareto._reduce_func(args, {})[1]
 
         kwds = {}
         if fix_shape:
@@ -1660,7 +2113,7 @@ class TestPareto:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.pareto, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.pareto, data, **kwds)
 
     @np.errstate(invalid="ignore")
     def test_fit_known_bad_seed(self):
@@ -1670,9 +2123,7 @@ class TestPareto:
         shape, location, scale = 1, 0, 1
         data = stats.pareto.rvs(shape, location, scale, size=100,
                                 random_state=np.random.default_rng(2535619))
-        args = [data, (stats.pareto._fitstart(data), )]
-        func = stats.pareto._reduce_func(args, {})[1]
-        _assert_less_or_close_loglike(stats.pareto, data, func)
+        _assert_less_or_close_loglike(stats.pareto, data)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)
@@ -2252,27 +2703,22 @@ class TestInvgauss:
         invgauss_fit = stats.invgauss.fit(data, floc=0, fmu=2)
         assert_equal(super_fitted, invgauss_fit)
 
-        # obtain log-likelihood objective function to compare results
-        args = [data, (stats.invgauss._fitstart(data), )]
-        func = stats.invgauss._reduce_func(args, {})[1]
-
         # fixed `floc` uses analytical formula and provides better fit than
         # super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc)
 
         # fixed `floc` not resulting in invalid data < 0 uses analytical
         # formulas and provides a better fit than the super method
         assert np.all((data - (rvs_loc - 1)) > 0)
-        _assert_less_or_close_loglike(stats.invgauss, data, func,
-                                      floc=rvs_loc - 1)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc - 1)
 
         # fixed `floc` to an arbitrary number, 0, still provides a better fit
         # than the super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=0)
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=0)
 
         # fixed `fscale` to an arbitrary number still provides a better fit
         # than the super method
-        _assert_less_or_close_loglike(stats.invgauss, data, func, floc=rvs_loc,
+        _assert_less_or_close_loglike(stats.invgauss, data, floc=rvs_loc,
                                       fscale=np.random.rand(1)[0])
 
     def test_fit_raise_errors(self):
@@ -2334,6 +2780,19 @@ class TestInvgauss:
         logsf = stats.invgauss.logsf(110, 1.05)
         assert_allclose(logsf, -56.1467092416426)
 
+    # from mpmath import mp
+    # mp.dps = 100
+    # mu = mp.mpf(1e-2)
+    # ref = (1/2 * mp.log(2 * mp.pi * mp.e * mu**3)
+    #        - 3/2* mp.exp(2/mu) * mp.e1(2/mu))
+    @pytest.mark.parametrize("mu, ref", [(2e-8, -25.172361826883957),
+                                         (1e-3, -8.943444010642972),
+                                         (1e-2, -5.4962796152622335),
+                                         (1e8, 3.3244822568873476),
+                                         (1e100, 3.32448280139689)])
+    def test_entropy(self, mu, ref):
+        assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
+
 
 class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
@@ -2381,9 +2840,9 @@ class TestLaplace:
         assert_raises(ValueError, stats.laplace.fit, [np.nan])
         assert_raises(ValueError, stats.laplace.fit, [np.inf])
 
-    @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
-                                                   (5, 10),
-                                                   (.2, .5)])
+    @pytest.mark.parametrize("rvs_loc,rvs_scale", [(-5, 10),
+                                                   (10, 5),
+                                                   (0.5, 0.2)])
     def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
@@ -2443,7 +2902,15 @@ class TestLaplace:
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
 
-class TestPowerlaw(object):
+class TestPowerlaw:
+
+    # In the following data, `sf` was computed with mpmath.
+    @pytest.mark.parametrize('x, a, sf',
+                             [(0.25, 2.0, 0.9375),
+                              (0.99609375, 1/256, 1.528855235208108e-05)])
+    def test_sf(self, x, a, sf):
+        assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
+
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
@@ -2459,9 +2926,6 @@ class TestPowerlaw(object):
         data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
                                   scale=rvs_scale, random_state=rng)
 
-        args = [data, (stats.powerlaw._fitstart(data), )]
-        func = stats.powerlaw._reduce_func(args, {})[1]
-
         kwds = dict()
         if fix_shape:
             kwds['f0'] = rvs_shape
@@ -2469,7 +2933,7 @@ class TestPowerlaw(object):
             kwds['floc'] = np.nextafter(data.min(), -np.inf)
         if fix_scale:
             kwds['fscale'] = rvs_scale
-        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
     def test_problem_case(self):
         # An observed problem with the test method indicated that some fixed
@@ -2482,10 +2946,8 @@ class TestPowerlaw(object):
                                   random_state=np.random.default_rng(5))
 
         kwds = {'fscale': data.ptp() * 2}
-        args = [data, (stats.powerlaw._fitstart(data), )]
-        func = stats.powerlaw._reduce_func(args, {})[1]
 
-        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
@@ -2513,6 +2975,125 @@ class TestPowerlaw(object):
         msg = r"`fscale` must be greater than the range of data."
         with assert_raises(ValueError, match=msg):
             stats.powerlaw.fit([1, 2, 4], fscale=3)
+
+    def test_minimum_data_zero_gh17801(self):
+        # gh-17801 reported an overflow error when the minimum value of the
+        # data is zero. Check that this problem is resolved.
+        data = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 6]
+        dist = stats.powerlaw
+        with np.errstate(over='ignore'):
+            _assert_less_or_close_loglike(dist, data)
+
+
+class TestPowerLogNorm:
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 80
+    # def powerlognorm_sf_mp(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     return mp.ncdf(-mp.log(x) / s)**c
+    #
+    # def powerlognormal_cdf_mp(x, c, s):
+    #     return mp.one - powerlognorm_sf_mp(x, c, s)
+    #
+    # x, c, s = 100, 20, 1
+    # print(float(powerlognorm_sf_mp(x, c, s)))
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(100, 20, 1, 1.9057100820561928e-114),
+                              (1e-3, 20, 1, 0.9999999999507617),
+                              (1e-3, 0.02, 1, 0.9999999999999508),
+                              (1e22, 0.02, 1, 6.50744044621611e-12)])
+    def test_sf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.sf(x, c, s), ref, rtol=1e-13)
+
+    # reference values were computed via mpmath using the survival
+    # function above (passing in `ref` and getting `q`).
+    @pytest.mark.parametrize("q, c, s, ref",
+                             [(0.9999999587870905, 0.02, 1, 0.01),
+                              (6.690376686108851e-233, 20, 1, 1000)])
+    def test_isf(self, q, c, s, ref):
+        assert_allclose(stats.powerlognorm.isf(q, c, s), ref, rtol=5e-11)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e25, 0.02, 1, 0.9999999999999963),
+                              (1e-6, 0.02, 1, 2.054921078040843e-45),
+                              (1e-6, 200, 1, 2.0549210780408428e-41),
+                              (0.3, 200, 1, 0.9999999999713368)])
+    def test_cdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.cdf(x, c, s), ref, rtol=3e-14)
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def powerlognorm_pdf_mpmath(x, c, s):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     s = mp.mpf(s)
+    #     res = (c/(x * s) * mp.npdf(mp.log(x)/s) *
+    #            mp.ncdf(-mp.log(x)/s)**(c - mp.one))
+    #     return float(res)
+
+    @pytest.mark.parametrize("x, c, s, ref",
+                             [(1e22, 0.02, 1, 6.5954987852335016e-34),
+                              (1e20, 1e-3, 1, 1.588073750563988e-22),
+                              (1e40, 1e-3, 1, 1.3179391812506349e-43)])
+    def test_pdf(self, x, c, s, ref):
+        assert_allclose(stats.powerlognorm.pdf(x, c, s), ref, rtol=3e-12)
+
+
+class TestPowerNorm:
+
+    # survival function references were computed with mpmath via
+    # from mpmath import mp
+    # x = mp.mpf(x)
+    # c = mp.mpf(x)
+    # float(mp.ncdf(-x)**c)
+
+    @pytest.mark.parametrize("x, c, ref",
+                             [(9, 1, 1.1285884059538405e-19),
+                              (20, 2, 7.582445786569958e-178),
+                              (100, 0.02, 3.330957891903866e-44),
+                              (200, 0.01, 1.3004759092324774e-87)])
+    def test_sf(self, x, c, ref):
+        assert_allclose(stats.powernorm.sf(x, c), ref, rtol=1e-13)
+
+    # inverse survival function references were computed with mpmath via
+    # from mpmath import mp
+    # def isf_mp(q, c):
+    #     q = mp.mpf(q)
+    #     c = mp.mpf(c)
+    #     arg = q**(mp.one / c)
+    #     return float(-mp.sqrt(2) * mp.erfinv(mp.mpf(2.) * arg - mp.one))
+
+    @pytest.mark.parametrize("q, c, ref",
+                             [(1e-5, 20, -0.15690800666514138),
+                              (0.99999, 100, -5.19933666203545),
+                              (0.9999, 0.02, -2.576676052143387),
+                              (5e-2, 0.02, 17.089518110222244),
+                              (1e-18, 2, 5.9978070150076865),
+                              (1e-50, 5, 6.361340902404057)])
+    def test_isf(self, q, c, ref):
+        assert_allclose(stats.powernorm.isf(q, c), ref, rtol=5e-12)
+
+    # CDF reference values were computed with mpmath via
+    # from mpmath import mp
+    # def cdf_mp(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.one - mp.ncdf(-x)**c)
+
+    @pytest.mark.parametrize("x, c, ref",
+                             [(-12, 9, 1.598833900869911e-32),
+                              (2, 9, 0.9999999999999983),
+                              (-20, 9, 2.4782617067456103e-88),
+                              (-5, 0.02, 5.733032242841443e-09),
+                              (-20, 0.02, 5.507248237212467e-91)])
+    def test_cdf(self, x, c, ref):
+        assert_allclose(stats.powernorm.cdf(x, c), ref, rtol=5e-14)
 
 
 class TestInvGamma:
@@ -2554,6 +3135,20 @@ class TestInvGamma:
         y = stats.invgamma.sf(x, 1)
         xx = stats.invgamma.isf(y, 1)
         assert_allclose(x, xx, rtol=1.0)
+
+    @pytest.mark.parametrize("a, ref",
+                             [(100000000.0, -26.21208257605721),
+                              (1e+100, -343.9688254159022)])
+    def test_large_entropy(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+
+        # def invgamma_entropy(a):
+        #     a = mp.mpf(a)
+        #     h = a + mp.loggamma(a) - (mp.one + a) * mp.digamma(a)
+        #     return float(h)
+        assert_allclose(stats.invgamma.entropy(a), ref, rtol=1e-15)
 
 
 class TestF:
@@ -2627,6 +3222,22 @@ def test_t_entropy():
                 1.459327578078393, 1.4289633653182439]
     assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
+@pytest.mark.parametrize("v, ref",
+                         [(100, 1.4289633653182439),
+                          (1e+100, 1.4189385332046727)])
+def test_t_extreme_entropy(v, ref):
+    # Reference values were calculated with mpmath:
+    # from mpmath import mp
+    # mp.dps = 500
+    #
+    # def t_entropy(v):
+    #   v = mp.mpf(v)
+    #   C = (v + mp.one) / 2
+    #   A = C * (mp.digamma(C) - mp.digamma(v / 2))
+    #   B = 0.5 * mp.log(v) + mp.log(mp.beta(v / 2, mp.one / 2))
+    #   h = A + B
+    #   return float(h)
+    assert_allclose(stats.t.entropy(v), ref, rtol=1e-14)
 
 @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
                                       "ppf", "sf", "isf"])
@@ -2833,20 +3444,6 @@ class TestRvDiscrete:
         # also check the second moment
         assert_allclose(rv.expect(lambda x: x**2),
                         sum(v**2 * w for v, w in zip(y, py)), atol=1e-14)
-
-    def test_rv_count_subclassing(self):
-        # gh-8057: rv_discrete(values=(xk, pk)) cannot be subclassed easily
-        class S(stats.rv_count):
-            def extra(self):
-                return 42
-
-        s = S(xk=[1, 2, 3], pk=[0.2, 0.7, 0.1])
-        assert_allclose(s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
-        assert s.extra() == 42
-
-        # make sure subclass freezes correctly
-        frozen_s = s()
-        assert_allclose(frozen_s.pmf([2, 3, 1]), [0.7, 0.1, 0.2], atol=1e-15)
 
 
 class TestSkewCauchy:
@@ -3075,6 +3672,19 @@ class TestNorm:
         x = [1, 2, 3]
         assert_raises(TypeError, stats.norm.fit, x, plate="shrimp")
 
+    @pytest.mark.parametrize('loc', [0, 1])
+    def test_delta_cdf(self, loc):
+        # The expected value is computed with mpmath:
+        # >>> import mpmath
+        # >>> mpmath.mp.dps = 60
+        # >>> float(mpmath.ncdf(12) - mpmath.ncdf(11))
+        # 1.910641809677555e-28
+        expected = 1.910641809677555e-28
+        delta = stats.norm._delta_cdf(11+loc, 12+loc, loc=loc)
+        assert_allclose(delta, expected, rtol=1e-13)
+        delta = stats.norm._delta_cdf(-(12+loc), -(11+loc), loc=-loc)
+        assert_allclose(delta, expected, rtol=1e-13)
+
 
 class TestUniform:
     """gh-10300"""
@@ -3219,19 +3829,42 @@ class TestGenExpon:
         cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
 
-    def test_sf_tail(self):
-        # Expected value computed with mpmath. This script
-        #     import mpmath
-        #     mpmath.mp.dps = 80
-        #     x = mpmath.mpf('15.0')
-        #     a = mpmath.mpf('1.0')
-        #     b = mpmath.mpf('2.0')
-        #     c = mpmath.mpf('1.5')
-        #     print(float(mpmath.exp((-a-b)*x + (b/c)*-mpmath.expm1(-c*x))))
-        # prints
-        #     1.0859444834514553e-19
-        s = stats.genexpon.sf(15, 1, 2, 1.5)
-        assert_allclose(s, 1.0859444834514553e-19, rtol=1e-13)
+    # The values of p in the following data were computed with mpmath.
+    # E.g. the script
+    #     from mpmath import mp
+    #     mp.dps = 80
+    #     x = mp.mpf('15.0')
+    #     a = mp.mpf('1.0')
+    #     b = mp.mpf('2.0')
+    #     c = mp.mpf('1.5')
+    #     print(float(mp.exp((-a-b)*x + (b/c)*-mp.expm1(-c*x))))
+    # prints
+    #     1.0859444834514553e-19
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(15, 1.0859444834514553e-19, 1, 2, 1.5),
+                              (0.25, 0.7609068232534623, 0.5, 2, 3),
+                              (0.25, 0.09026661397565876, 9.5, 2, 0.5),
+                              (0.01, 0.9753038265071597, 2.5, 0.25, 0.5),
+                              (3.25, 0.0001962824553094492, 2.5, 0.25, 0.5),
+                              (0.125, 0.9508674287164001, 0.25, 5, 0.5)])
+    def test_sf_isf(self, x, p, a, b, c):
+        sf = stats.genexpon.sf(x, a, b, c)
+        assert_allclose(sf, p, rtol=1e-14)
+        isf = stats.genexpon.isf(p, a, b, c)
+        assert_allclose(isf, x, rtol=1e-14)
+
+    # The values of p in the following data were computed with mpmath.
+    @pytest.mark.parametrize('x, p, a, b, c',
+                             [(0.25, 0.2390931767465377, 0.5, 2, 3),
+                              (0.25, 0.9097333860243412, 9.5, 2, 0.5),
+                              (0.01, 0.0246961734928403, 2.5, 0.25, 0.5),
+                              (3.25, 0.9998037175446906, 2.5, 0.25, 0.5),
+                              (0.125, 0.04913257128359998, 0.25, 5, 0.5)])
+    def test_cdf_ppf(self, x, p, a, b, c):
+        cdf = stats.genexpon.cdf(x, a, b, c)
+        assert_allclose(cdf, p, rtol=1e-14)
+        ppf = stats.genexpon.ppf(p, a, b, c)
+        assert_allclose(ppf, x, rtol=1e-14)
 
 
 class TestExponpow:
@@ -3263,7 +3896,6 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.pmf(k, mu1, mu2), skpmfR, decimal=15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_cdf(self):
         # comparison to R, only 5 decimals
         k = numpy.arange(-10, 15)
@@ -3285,6 +3917,12 @@ class TestSkellam:
 
         assert_almost_equal(stats.skellam.cdf(k, mu1, mu2), skcdfR, decimal=5)
 
+    def test_extreme_mu2(self):
+        # check that crash reported by gh-17916 large mu2 is resolved
+        x, mu1, mu2 = 0, 1, 4820232647677555.0
+        assert_allclose(stats.skellam.pmf(x, mu1, mu2), 0, atol=1e-16)
+        assert_allclose(stats.skellam.cdf(x, mu1, mu2), 1, atol=1e-16)
+
 
 class TestLognorm:
     def test_pdf(self):
@@ -3302,6 +3940,32 @@ class TestLognorm:
                         stats.norm.sf(np.log(x2-mu)/sigma))
         assert_allclose(stats.lognorm.logsf(x2-mu, s=sigma),
                         stats.norm.logsf(np.log(x2-mu)/sigma))
+
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
+
+    @pytest.mark.parametrize("rvs_shape", [.1, 2])
+    @pytest.mark.parametrize("rvs_loc", [-2, 0, 2])
+    @pytest.mark.parametrize("rvs_scale", [.2, 1, 5])
+    @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             [e for e in product((False, True), repeat=3)
+                              if False in e])
+    @np.errstate(invalid="ignore")
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
+                                    fix_shape, fix_loc, fix_scale, rng):
+        data = stats.lognorm.rvs(size=100, s=rvs_shape, scale=rvs_scale,
+                                 loc=rvs_loc, random_state=rng)
+
+        kwds = {}
+        if fix_shape:
+            kwds['f0'] = rvs_shape
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.lognorm, data, **kwds)
 
 
 class TestBeta:
@@ -3413,8 +4077,54 @@ class TestBeta:
             # this try-except wrapper and just call the function.
             pass
 
+    # entropy accuracy was confirmed using the following mpmath function
+    # from mpmath import mp
+    # mp.dps = 50
+    # def beta_entropy_mpmath(a, b):
+    #     a = mp.mpf(a)
+    #     b = mp.mpf(b)
+    #     entropy = mp.log(mp.beta(a, b)) - (a - 1) * mp.digamma(a) -\
+    #              (b - 1) * mp.digamma(b) + (a + b -2) * mp.digamma(a + b)
+    #     return float(entropy)
+
+    @pytest.mark.parametrize('a, b, ref',
+                             [(0.5, 0.5, -0.24156447527049044),
+                              (0.001, 1, -992.0922447210179),
+                              (1, 10000, -8.210440371976183),
+                              (100000, 100000, -5.377247470132859)])
+    def test_entropy(self, a, b, ref):
+        assert_allclose(stats.beta(a, b).entropy(), ref)
+
 
 class TestBetaPrime:
+    # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
+    # They are computed with mpmath. Example:
+    # from mpmath import mp
+    # mp.dps = 50
+    # a, b = mp.mpf(0.05), mp.mpf(0.1)
+    # x = mp.mpf(1e22)
+    # float(mp.betainc(a, b, 0.0, x/(1+x), regularized=True))
+    # note: we use the values computed by the cdf to test whether
+    # ppf(cdf(x)) == x (up to a small tolerance)
+    # since the ppf can be very sensitive to small variations of the input,
+    # it can be required to generate the test case for the ppf separately,
+    # see self.test_ppf
+    cdf_vals = [
+        (1e22, 100.0, 0.05, 0.8973027435427167),
+        (1e10, 100.0, 0.05, 0.5911548582766262),
+        (1e8, 0.05, 0.1, 0.9467768090820048),
+        (1e8, 100.0, 0.05, 0.4852944858726726),
+        (1e-10, 0.05, 0.1, 0.21238845427095),
+        (1e-10, 1.5, 1.5, 1.697652726007973e-15),
+        (1e-10, 0.05, 100.0, 0.40884514172337383),
+        (1e-22, 0.05, 0.1, 0.053349567649287326),
+        (1e-22, 1.5, 1.5, 1.6976527263135503e-33),
+        (1e-22, 0.05, 100.0, 0.10269725645728331),
+        (1e-100, 0.05, 0.1, 6.7163126421919795e-06),
+        (1e-100, 1.5, 1.5, 1.6976527263135503e-150),
+        (1e-100, 0.05, 100.0, 1.2928818587561651e-05),
+    ]
+
     def test_logpdf(self):
         alpha, beta = 267, 1472
         x = np.array([0.2, 0.5, 0.6])
@@ -3437,6 +4147,59 @@ class TestBetaPrime:
         gen_cdf = stats.rv_continuous._cdf_single
         cdfs_g = [gen_cdf(stats.betaprime, val, alpha, beta) for val in x]
         assert_allclose(cdfs, cdfs_g, atol=0, rtol=2e-12)
+
+    # The expected values for test_ppf() were computed with mpmath, e.g.
+    #
+    #   from mpmath import mp
+    #   mp.dps = 125
+    #   p = 0.01
+    #   a, b = 1.25, 2.5
+    #   x = mp.findroot(lambda t: mp.betainc(a, b, x1=0, x2=t/(1+t),
+    #                                        regularized=True) - p,
+    #                   x0=(0.01, 0.011), method='secant')
+    #   print(float(x))
+    #
+    # prints
+    #
+    #   0.01080162700956614
+    #
+    @pytest.mark.parametrize(
+        'p, a, b, expected',
+        [(0.010, 1.25, 2.5, 0.01080162700956614),
+         (1e-12, 1.25, 2.5, 1.0610141996279122e-10),
+         (1e-18, 1.25, 2.5, 1.6815941817974941e-15),
+         (1e-17, 0.25, 7.0, 1.0179194531881782e-69),
+         (0.375, 0.25, 7.0, 0.002036820346115211),
+         (0.9978811466052919, 0.05, 0.1, 1.0000000000001218e22),]
+    )
+    def test_ppf(self, p, a, b, expected):
+        x = stats.betaprime.ppf(p, a, b)
+        assert_allclose(x, expected, rtol=1e-14)
+
+    @pytest.mark.parametrize('x, a, b, p', cdf_vals)
+    def test_ppf_gh_17631(self, x, a, b, p):
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=1e-14)
+
+    @pytest.mark.parametrize(
+        'x, a, b, expected',
+        cdf_vals + [
+            (1e10, 1.5, 1.5, 0.9999999999999983),
+            (1e10, 0.05, 0.1, 0.9664184367890859),
+            (1e22, 0.05, 0.1, 0.9978811466052919),
+        ])
+    def test_cdf_gh_17631(self, x, a, b, expected):
+        assert_allclose(stats.betaprime.cdf(x, a, b), expected, rtol=1e-14)
+
+    @pytest.mark.parametrize(
+        'x, a, b, expected',
+        [(1e50, 0.05, 0.1, 0.9999966641709545),
+         (1e50, 100.0, 0.05, 0.995925162631006)])
+    def test_cdf_extreme_tails(self, x, a, b, expected):
+        # for even more extreme values, we only get a few correct digits
+        # results are still < 1
+        y = stats.betaprime.cdf(x, a, b)
+        assert y < 1.0
+        assert_allclose(y, expected, rtol=2e-5)
 
 
 class TestGamma:
@@ -3480,6 +4243,119 @@ class TestGamma:
         assert np.isclose(stats.gamma.isf(1e-50, 100),
                           330.6557590436547, atol=1e-13)
 
+    @pytest.mark.parametrize('scale', [1.0, 5.0])
+    def test_delta_cdf(self, scale):
+        # Expected value computed with mpmath:
+        #
+        # >>> import mpmath
+        # >>> mpmath.mp.dps = 150
+        # >>> cdf1 = mpmath.gammainc(3, 0, 245, regularized=True)
+        # >>> cdf2 = mpmath.gammainc(3, 0, 250, regularized=True)
+        # >>> float(cdf2 - cdf1)
+        # 1.1902609356171962e-102
+        #
+        delta = stats.gamma._delta_cdf(scale*245, scale*250, 3, scale=scale)
+        assert_allclose(delta, 1.1902609356171962e-102, rtol=1e-13)
+
+    @pytest.mark.parametrize('a, ref, rtol',
+                             [(1e-4, -9990.366610819761, 1e-15),
+                              (2, 1.5772156649015328, 1e-15),
+                              (100, 3.7181819485047463, 1e-13),
+                              (1e4, 6.024075385026086, 1e-15),
+                              (1e18, 22.142204370151084, 1e-15),
+                              (1e100, 116.54819318290696, 1e-15)])
+    def test_entropy(self, a, ref, rtol):
+        # expected value computed with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        # def gamma_entropy_reference(x):
+        #     x = mp.mpf(x)
+        #     return float(mp.digamma(x) * (mp.one - x) + x + mp.loggamma(x))
+
+        assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
+
+
+class TestDgamma:
+    def test_pdf(self):
+        rng = np.random.default_rng(3791303244302340058)
+        size = 10  # number of points to check
+        x = rng.normal(scale=10, size=size)
+        a = rng.uniform(high=10, size=size)
+        res = stats.dgamma.pdf(x, a)
+        ref = stats.gamma.pdf(np.abs(x), a) / 2
+        assert_allclose(res, ref)
+
+        dist = stats.dgamma(a)
+        assert_equal(dist.pdf(x), res)
+
+    # mpmath was used to compute the expected values.
+    # For x < 0, cdf(x, a) is mp.gammainc(a, -x, mp.inf, regularized=True)/2
+    # For x > 0, cdf(x, a) is (1 + mp.gammainc(a, 0, x, regularized=True))/2
+    # E.g.
+    #    from mpmath import mp
+    #    mp.dps = 50
+    #    print(float(mp.gammainc(1, 20, mp.inf, regularized=True)/2))
+    # prints
+    #    1.030576811219279e-09
+    @pytest.mark.parametrize('x, a, expected',
+                             [(-20, 1, 1.030576811219279e-09),
+                              (-40, 1, 2.1241771276457944e-18),
+                              (-50, 5, 2.7248509914602648e-17),
+                              (-25, 0.125, 5.333071920958156e-14),
+                              (5, 1, 0.9966310265004573)])
+    def test_cdf_ppf_sf_isf_tail(self, x, a, expected):
+        cdf = stats.dgamma.cdf(x, a)
+        assert_allclose(cdf, expected, rtol=5e-15)
+        ppf = stats.dgamma.ppf(expected, a)
+        assert_allclose(ppf, x, rtol=5e-15)
+        sf = stats.dgamma.sf(-x, a)
+        assert_allclose(sf, expected, rtol=5e-15)
+        isf = stats.dgamma.isf(expected, a)
+        assert_allclose(isf, -x, rtol=5e-15)
+
+    @pytest.mark.parametrize("a, ref",
+                             [(1.5, 2.0541199559354117),
+                             (1.3, 1.9357296377121247),
+                             (1.1, 1.7856502333412134)])
+    def test_entropy(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # def entropy_dgamma(a):
+        #    def pdf(x):
+        #        A = mp.one / (mp.mpf(2.) * mp.gamma(a))
+        #        B = mp.fabs(x) ** (a - mp.one)
+        #        C = mp.exp(-mp.fabs(x))
+        #        h = A * B * C
+        #        return h
+        #
+        #    return -mp.quad(lambda t: pdf(t) * mp.log(pdf(t)),
+        #                    [-mp.inf, mp.inf])
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-14)
+
+    @pytest.mark.parametrize("a, ref",
+                             [(1e-100, -1e+100),
+                             (1e-10, -9999999975.858217),
+                             (1e-5, -99987.37111657023),
+                             (1e4, 6.717222565586032),
+                             (1000000000000000.0, 19.38147391121996),
+                             (1e+100, 117.2413403634669)])
+    def test_entropy_entreme_values(self, a, ref):
+        # The reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        # def second_dgamma(a):
+        #     a = mp.mpf(a)
+        #     x_1 = a + mp.log(2) + mp.loggamma(a)
+        #     x_2 = (mp.one - a) * mp.digamma(a)
+        #     h = x_1 + x_2
+        #     return h
+        assert_allclose(stats.dgamma.entropy(a), ref, rtol=1e-10)
+
+    def test_entropy_array_input(self):
+        x = np.array([1, 5, 1e20, 1e-5])
+        y = stats.dgamma.entropy(x)
+        for i in range(len(y)):
+            assert y[i] == stats.dgamma.entropy(x[i])
+
 
 class TestChi2:
     # regression tests after precision improvements, ticket:1041, not verified
@@ -3502,6 +4378,25 @@ class TestChi2:
         assert_allclose(x, 1.0106330688195199050507943e-11, rtol=1e-10)
         x = stats.chi2.ppf(0.1, df)
         assert_allclose(x, 7.041504580095461859307179763, rtol=1e-10)
+
+    # Entropy references values were computed with the following mpmath code
+    # from mpmath import mp
+    # mp.dps = 50
+    # def chisq_entropy_mpmath(df):
+    #     df = mp.mpf(df)
+    #     half_df = 0.5 * df
+    #     entropy = (half_df + mp.log(2) + mp.log(mp.gamma(half_df)) +
+    #                (mp.one - half_df) * mp.digamma(half_df))
+    #     return float(entropy)
+
+    @pytest.mark.parametrize('df, ref',
+                             [(1e-4, -19988.980448690163),
+                              (1, 0.7837571104739337),
+                              (100, 4.061397128938114),
+                              (251, 4.525577254045129),
+                              (1e15, 19.034900320939986)])
+    def test_entropy(self, df, ref):
+        assert_allclose(stats.chi2(df).entropy(), ref, rtol=1e-13)
 
 
 class TestGumbelL:
@@ -3915,7 +4810,7 @@ class TestLevyStable:
             ],
             # for small alpha very slightly reduced accuracy
             [
-                'piecewise', 5e-11, lambda r: (
+                'piecewise', 2.5e-10, lambda r: (
                     np.isin(r['pct'], pct_range) &
                     np.isin(r['alpha'], alpha_range) &
                     np.isin(r['beta'], beta_range) &
@@ -4019,7 +4914,7 @@ class TestLevyStable:
         tests = [
             # piecewise generally good accuracy
             [
-                'piecewise', 1e-12, lambda r: (
+                'piecewise', 2e-12, lambda r: (
                     np.isin(r['pct'], pct_range) &
                     np.isin(r['alpha'], alpha_range) &
                     np.isin(r['beta'], beta_range) &
@@ -4141,6 +5036,14 @@ class TestLevyStable:
     ):
         """Tests for pdf and cdf where loc, scale are different from 0, 1
         """
+
+        uname = platform.uname()
+        is_linux_32 = uname.system == 'Linux' and "32bit" in platform.architecture()[0]
+        # Test seems to be unstable (see gh-17839 for a bug report on Debian
+        # i386), so skip it.
+        if is_linux_32 and case == 'pdf':
+            pytest.skip("Test unstable on some platforms; see gh-17839, 17859")
+
         data = nolan_loc_scale_sample_data
         # We only test against piecewise as location/scale transforms
         # are same for other methods.
@@ -4202,7 +5105,7 @@ class TestLevyStable:
     @pytest.mark.parametrize(
         "params,expected",
         [
-            [(1.48, -.22, 0, 1), (0, np.inf, np.NaN, np.NaN)],
+            [(1.48, -.22, 0, 1), (0, np.inf, np.nan, np.nan)],
             [(2, .9, 10, 1.5), (10, 4.5, 0, 0)]
         ]
     )
@@ -4284,20 +5187,20 @@ class TestDocstring:
         stats.rv_discrete()
 
 
-def TestArgsreduce():
+def test_args_reduce():
     a = array([1, 3, 2, 1, 2, 3, 3])
     b, c = argsreduce(a > 1, a, 2)
 
     assert_array_equal(b, [3, 2, 2, 3, 3])
-    assert_array_equal(c, [2, 2, 2, 2, 2])
+    assert_array_equal(c, [2])
 
     b, c = argsreduce(2 > 1, a, 2)
-    assert_array_equal(b, a[0])
-    assert_array_equal(c, [2])
+    assert_array_equal(b, a)
+    assert_array_equal(c, [2] * np.size(a))
 
     b, c = argsreduce(a > 0, a, 2)
     assert_array_equal(b, a)
-    assert_array_equal(c, [2] * numpy.size(a))
+    assert_array_equal(c, [2] * np.size(a))
 
 
 class TestFitMethod:
@@ -4887,7 +5790,6 @@ class TestExpect:
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_skellam(self):
         # Use a discrete distribution w/ bi-infinite support. Compute two first
         # moments and compare to known values (cf skellam.stats)
@@ -5017,6 +5919,10 @@ class TestNct:
         expected_stats = [2.0000150001562518, 1.0000400011500288]
         assert_allclose(nct_mean, expected_stats[0], rtol=1e-10)
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
+
+    def test_cdf_large_nc(self):
+        # gh-17916 reported a crash with large `nc` values
+        assert_allclose(stats.nct.cdf(2, 2, float(2**16)), 0)
 
 
 class TestRecipInvGauss:
@@ -5197,12 +6103,7 @@ class TestRayleigh:
         # test that the objective function result of the analytical MLEs is
         # less than or equal to that of the numerically optimized estimate
         data = stats.rayleigh.rvs(size=250, loc=rvs_loc, scale=rvs_scale)
-
-        # obtain objective function with same method as `rv_continuous.fit`
-        args = [data, (stats.rayleigh._fitstart(data), )]
-        func = stats.rayleigh._reduce_func(args, {})[1]
-
-        _assert_less_or_close_loglike(stats.rayleigh, data, func)
+        _assert_less_or_close_loglike(stats.rayleigh, data)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.rayleigh)
@@ -5378,6 +6279,27 @@ class TestWeibull:
         ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
+    @pytest.mark.parametrize('scale', [1.0, 0.1])
+    def test_delta_cdf(self, scale):
+        # Expected value computed with mpmath:
+        #
+        # def weibull_min_sf(x, k, scale):
+        #     x = mpmath.mpf(x)
+        #     k = mpmath.mpf(k)
+        #     scale =mpmath.mpf(scale)
+        #     return mpmath.exp(-(x/scale)**k)
+        #
+        # >>> import mpmath
+        # >>> mpmath.mp.dps = 60
+        # >>> sf1 = weibull_min_sf(7.5, 3, 1)
+        # >>> sf2 = weibull_min_sf(8.0, 3, 1)
+        # >>> float(sf1 - sf2)
+        # 6.053624060118734e-184
+        #
+        delta = stats.weibull_min._delta_cdf(scale*7.5, scale*8, 3,
+                                             scale=scale)
+        assert_allclose(delta, 6.053624060118734e-184)
+
     def test_fit_min(self):
         rng = np.random.default_rng(5985959307161735394)
 
@@ -5402,7 +6324,22 @@ class TestWeibull:
         assert_allclose(res, ref)
 
 
-class TestTruncWeibull(object):
+class TestDweibull:
+    def test_entropy(self):
+        # Test that dweibull entropy follows that of weibull_min.
+        # (Generic tests check that the dweibull entropy is consistent
+        #  with its PDF. As for accuracy, dweibull entropy should be just
+        #  as accurate as weibull_min entropy. Checks of accuracy against
+        #  a reference need only be applied to the fundamental distribution -
+        #  weibull_min.)
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=100, size=10)
+        res = stats.dweibull.entropy(c)
+        ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
+
+
+class TestTruncWeibull:
 
     def test_pdf_bounds(self):
         # test bounds
@@ -5673,6 +6610,28 @@ class TestTriang:
             assert_equal(stats.triang.cdf(1., 1.), 1)
 
 
+class TestMaxwell:
+
+    # reference values were computed with wolfram alpha
+    # erfc(x/sqrt(2)) + sqrt(2/pi) * x * e^(-x^2/2)
+
+    @pytest.mark.parametrize("x, ref",
+                             [(20, 2.2138865931011177e-86),
+                              (0.01, 0.999999734046458435)])
+    def test_sf(self, x, ref):
+        assert_allclose(stats.maxwell.sf(x), ref, rtol=1e-14)
+
+    # reference values were computed with wolfram alpha
+    # sqrt(2) * sqrt(Q^(-1)(3/2, q))
+
+    @pytest.mark.parametrize("q, ref",
+                             [(0.001, 4.033142223656157022),
+                              (0.9999847412109375, 0.0385743284050381),
+                              (2**-55, 8.95564974719481)])
+    def test_isf(self, q, ref):
+        assert_allclose(stats.maxwell.isf(q), ref, rtol=1e-15)
+
+
 class TestMielke:
     def test_moments(self):
         k, s = 4.642, 0.597
@@ -5762,6 +6721,32 @@ class TestBurr:
         assert_(np.isfinite(e4))
 
 
+class TestBurr12:
+
+    @pytest.mark.parametrize('scale, expected',
+                             [(1.0, 2.3283064359965952e-170),
+                              (3.5, 5.987114417447875e-153)])
+    def test_delta_cdf(self, scale, expected):
+        # Expected value computed with mpmath:
+        #
+        # def burr12sf(x, c, d, scale):
+        #     x = mpmath.mpf(x)
+        #     c = mpmath.mpf(c)
+        #     d = mpmath.mpf(d)
+        #     scale = mpmath.mpf(scale)
+        #     return (mpmath.mp.one + (x/scale)**c)**(-d)
+        #
+        # >>> import mpmath
+        # >>> mpmath.mp.dps = 60
+        # >>> float(burr12sf(2e5, 4, 8, 1) - burr12sf(4e5, 4, 8, 1))
+        # 2.3283064359965952e-170
+        # >>> float(burr12sf(2e5, 4, 8, 3.5) - burr12sf(4e5, 4, 8, 3.5))
+        # 5.987114417447875e-153
+        #
+        delta = stats.burr12._delta_cdf(2e5, 4e5, 4, 8, scale=scale)
+        assert_allclose(delta, expected, rtol=1e-13)
+
+
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
     # v = [1, 3, 10, 20, 120, inf], a Q was picked from each table for
@@ -5820,7 +6805,7 @@ class TestStudentizedRange:
 
     path_prefix = os.path.dirname(__file__)
     relative_path = "data/studentized_range_mpmath_ref.json"
-    with open(os.path.join(path_prefix, relative_path), "r") as file:
+    with open(os.path.join(path_prefix, relative_path)) as file:
         pregenerated_data = json.load(file)
 
     @pytest.mark.parametrize("case_result", pregenerated_data["cdf_data"])
@@ -5968,12 +6953,6 @@ def test_540_567():
                                        scale=0.204423758009),
                         0.98353464004309321,
                         decimal=10, err_msg='test_540_567')
-
-
-def test_regression_ticket_1316():
-    # The following was raising an exception, because _construct_default_doc()
-    # did not handle the default keyword extradoc=None.  See ticket #1316.
-    stats._continuous_distns.gamma_gen(name='gamma')
 
 
 def test_regression_ticket_1326():
@@ -6161,6 +7140,24 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+@pytest.mark.parametrize("a, c, ref, tol",
+                         [(1500000.0, 1, 8.529426144018633, 1e-15),
+                          (1e+30, 1, 35.95771492811536, 1e-15),
+                          (1e+100, 1, 116.54819318290696, 1e-15),
+                          (3e3, 1, 5.422011196659015, 1e-13),
+                          (3e6, -1e100, -236.29663213396054, 1e-15),
+                          (3e60, 1e-100, 1.3925371786831085e+102, 1e-15)])
+def test_gengamma_extreme_entropy(a, c, ref, tol):
+    # The reference values were calculated with mpmath:
+    # from mpmath import mp
+    # mp.dps = 500
+    #
+    # def gen_entropy(a, c):
+    #     a, c = mp.mpf(a), mp.mpf(c)
+    #     val = mp.digamma(a)
+    #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
+    #     return float(h)
+    assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
 
 def test_gengamma_endpoint_with_neg_c():
     p = stats.gengamma.pdf(0, 1, -1)
@@ -6361,7 +7358,6 @@ def test_distribution_too_many_args():
     stats.ncf.pdf(x, 3, 4, 5, 6, 1.0)  # 3 args, plus loc/scale
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_tails_ticket_955():
     # Trac #955 -- check that the cdf computed by special functions
     # matches the integrated pdf
@@ -6415,14 +7411,12 @@ def test_ncx2_zero_nc_rvs():
     assert_allclose(result, expected, atol=1e-15)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh12731():
     # test that gh-12731 is resolved; previously these were all 0.5
     nc = 10**np.arange(5, 10)
     assert_equal(stats.ncx2.cdf(1e4, df=1, nc=nc), 0)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 def test_ncx2_gh8665():
     # test that gh-8665 is resolved; previously this tended to nonzero value
     x = np.array([4.99515382e+00, 1.07617327e+01, 2.31854502e+01,
@@ -6465,10 +7459,86 @@ def test_ncx2_gh11777():
     assert_allclose(ncx2_pdf, gauss_approx, atol=1e-4)
 
 
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldcauchy_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.one - (mp.atan(x - c) + mp.atan(x + c))/mp.pi
+#
+# E.g.
+#
+#    >>> float(foldcauchy_sf(2, 1))
+#    0.35241638234956674
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.35241638234956674),
+                          (2, 2, 0.5779791303773694),
+                          (1e13, 1, 6.366197723675813e-14),
+                          (2e16, 1, 3.183098861837907e-17),
+                          (1e13, 2e11, 6.368745221764519e-14),
+                          (0.125, 200, 0.999998010612169)])
+def test_foldcauchy_sf(x, c, expected):
+    sf = stats.foldcauchy.sf(x, c)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# The same mpmath code shown in the comments above test_foldcauchy_sf()
+# is used to create these expected values.
+@pytest.mark.parametrize('x, expected',
+                         [(2, 0.2951672353008665),
+                          (1e13, 6.366197723675813e-14),
+                          (2e16, 3.183098861837907e-17),
+                          (5e80, 1.2732395447351629e-81)])
+def test_halfcauchy_sf(x, expected):
+    sf = stats.halfcauchy.sf(x)
+    assert_allclose(sf, expected, 2e-15)
+
+
+# Expected value computed with mpmath:
+#     expected = mp.cot(mp.pi*p/2)
+@pytest.mark.parametrize('p, expected',
+                         [(0.9999995, 7.853981633329977e-07),
+                          (0.975, 0.039290107007669675),
+                          (0.5, 1.0),
+                          (0.01, 63.65674116287158),
+                          (1e-14, 63661977236758.13),
+                          (5e-80, 1.2732395447351627e+79)])
+def test_halfcauchy_isf(p, expected):
+    x = stats.halfcauchy.isf(p)
+    assert_allclose(x, expected)
+
+
 def test_foldnorm_zero():
     # Parameter value c=0 was not enabled, see gh-2399.
     rv = stats.foldnorm(0, scale=1)
     assert_equal(rv.cdf(0), 0)  # rv.cdf(0) previously resulted in: nan
+
+
+# Expected values for foldnorm.sf were computed with mpmath:
+#
+#    from mpmath import mp
+#    mp.dps = 60
+#    def foldnorm_sf(x, c):
+#        x = mp.mpf(x)
+#        c = mp.mpf(c)
+#        return mp.ncdf(-x+c) + mp.ncdf(-x-c)
+#
+# E.g.
+#
+#    >>> float(foldnorm_sf(2, 1))
+#    0.16000515196308715
+#
+@pytest.mark.parametrize('x, c, expected',
+                         [(2, 1, 0.16000515196308715),
+                          (20, 1, 8.527223952630977e-81),
+                          (10, 15, 0.9999997133484281),
+                          (25, 15, 7.619853024160525e-24)])
+def test_foldnorm_sf(x, c, expected):
+    sf = stats.foldnorm.sf(x, c)
+    assert_allclose(sf, expected, 1e-14)
 
 
 def test_stats_shapes_argcheck():
@@ -6508,7 +7578,7 @@ class _distr3_gen(stats.rv_continuous):
 
     def _cdf(self, x, a):
         # Different # of shape params from _pdf, to be able to check that
-        # inspection catches the inconsistency."""
+        # inspection catches the inconsistency.
         return 42 * a + x
 
 
@@ -6631,7 +7701,7 @@ class TestSubclassingExplicitShapes:
         dist = _distr_gen(shapes='extra_kwarg')
         assert_equal(dist.pdf(1, extra_kwarg=3), stats.norm.pdf(1))
 
-    def shapes_empty_string(self):
+    def test_shapes_empty_string(self):
         # shapes='' is equivalent to shapes=None
         class _dist_gen(stats.rv_continuous):
             def _pdf(self, x):
@@ -6718,12 +7788,6 @@ def test_infinite_input():
 def test_lomax_accuracy():
     # regression test for gh-4033
     p = stats.lomax.ppf(stats.lomax.cdf(1e-100, 1), 1)
-    assert_allclose(p, 1e-100)
-
-
-def test_gompertz_accuracy():
-    # Regression test for gh-4031
-    p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100, 1), 1)
     assert_allclose(p, 1e-100)
 
 
@@ -7222,6 +8286,28 @@ class TestLogUniform:
         a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
         assert scale == 2
 
+    def test_overflow(self):
+        # original formulation had overflow issues; check that this is resolved
+        # Extensive accuracy tests elsewhere, no need to test all methods
+        rng = np.random.default_rng(7136519550773909093)
+        a, b = 1e-200, 1e200
+        dist = stats.loguniform(a, b)
+
+        # test roundtrip error
+        cdf = rng.uniform(0, 1, size=1000)
+        assert_allclose(dist.cdf(dist.ppf(cdf)), cdf)
+        rvs = dist.rvs(size=1000)
+        assert_allclose(dist.ppf(dist.cdf(rvs)), rvs)
+
+        # test a property of the pdf (and that there is no overflow)
+        x = 10.**np.arange(-200, 200)
+        pdf = dist.pdf(x)  # no overflow
+        assert_allclose(pdf[:-1]/pdf[1:], 10)
+
+        # check munp against wikipedia reference
+        mean = (b - a)/(np.log(b) - np.log(a))
+        assert_allclose(dist.mean(), mean)
+
 
 class TestArgus:
     def test_argus_rvs_large_chi(self):
@@ -7381,6 +8467,35 @@ class TestNakagami:
         # Check round trip back to x0.
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
+
+    @pytest.mark.parametrize("m, ref",
+        [(5, -0.097341814372152),
+        (0.5, 0.7257913526447274),
+        (10, -0.43426184310934907)])
+    def test_entropy(self, m, ref):
+        # from sympy import *
+        # from mpmath import mp
+        # import numpy as np
+        # v, x = symbols('v, x', real=True, positive=True)
+        # pdf = 2 * v ** v / gamma(v) * x ** (2 * v - 1) * exp(-v * x ** 2)
+        # h = simplify(simplify(integrate(-pdf * log(pdf), (x, 0, oo))))
+        # entropy = lambdify(v, h, 'mpmath')
+        # mp.dps = 200
+        # nu = 5
+        # ref = np.float64(entropy(mp.mpf(nu)))
+        # print(ref)
+        assert_allclose(stats.nakagami.entropy(m), ref, rtol=1.1e-14)
+
+    @pytest.mark.parametrize("m, ref",
+        [(1e-100, -5.0e+99), (1e-10, -4999999965.442979),
+         (9.999e6, -7.333206478668433), (1.001e7, -7.3337562313259825),
+         (1e10, -10.787134112333835), (1e100, -114.40346329705756)])
+    def test_extreme_nu(self, m, ref):
+        assert_allclose(stats.nakagami.entropy(m), ref)
+
+    def test_entropy_overflow(self):
+        assert np.isfinite(stats.nakagami._entropy(1e100))
+        assert np.isfinite(stats.nakagami._entropy(1e-100))
 
     @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
@@ -7594,3 +8709,57 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestJohnsonSU:
+    @pytest.mark.parametrize("case", [  # a, b, loc, scale, m1, m2, g1, g2
+            (-0.01, 1.1, 0.02, 0.0001, 0.02000137427557091,
+             2.1112742956578063e-08, 0.05989781342460999, 20.36324408592951-3),
+            (2.554395574161155, 2.2482281679651965, 0, 1, -1.54215386737391,
+             0.7629882028469993, -1.256656139406788, 6.303058419339775-3)])
+    def test_moment_gh18071(self, case):
+        # gh-18071 reported an IntegrationWarning emitted by johnsonsu.stats
+        # Check that the warning is no longer emitted and that the values
+        # are accurate compared against results from Mathematica.
+        # Reference values from Mathematica, e.g.
+        # Mean[JohnsonDistribution["SU",-0.01, 1.1, 0.02, 0.0001]]
+        res = stats.johnsonsu.stats(*case[:4], moments='mvsk')
+        assert_allclose(res, case[4:], rtol=1e-14)
+
+
+class TestTruncPareto:
+    def test_pdf(self):
+        # PDF is that of the truncated pareto distribution
+        b, c = 1.8, 5.3
+        x = np.linspace(1.8, 5.3)
+        res = stats.truncpareto(b, c).pdf(x)
+        ref = stats.pareto(b).pdf(x) / stats.pareto(b).cdf(c)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    @pytest.mark.parametrize('fix_b', [True, False])
+    @pytest.mark.parametrize('fix_c', [True, False])
+    def test_fit(self, fix_loc, fix_scale, fix_b, fix_c):
+
+        rng = np.random.default_rng(6747363148258237171)
+        b, c, loc, scale = 1.8, 5.3, 1, 2.5
+        dist = stats.truncpareto(b, c, loc=loc, scale=scale)
+        data = dist.rvs(size=500, random_state=rng)
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['fscale'] = scale
+        if fix_b:
+            kwds['f0'] = b
+        if fix_c:
+            kwds['f1'] = c
+
+        if fix_loc and fix_scale and fix_b and fix_c:
+            message = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(RuntimeError, match=message):
+                stats.truncpareto.fit(data, **kwds)
+        else:
+            _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)

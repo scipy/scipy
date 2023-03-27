@@ -41,6 +41,7 @@ Editing SciPy
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API; if you are going to import other SciPy code, read this first
 - :ref:`reviewing-prs` explains how to review another author's SciPy code locally
+- :ref:`triaging` explains how to curate issues and PRs, as well as how GitHub team permissions work for SciPy
 - :ref:`adding-new` has information on how to add new methods, functions and classes
 - :ref:`core-dev-guide` has background information including how decisions are made and how a release is prepared; it's geared toward :ref:`Core Developers <governance>`, but contains useful information for all contributors
 - :ref:`missing-bits` - code and documentation style guide
@@ -51,7 +52,7 @@ Editing SciPy
 Unit tests
 ----------
 - :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of NumPy or SciPy code (part of the NumPy documentation)
-- :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally
+- :ref:`devpy-test` documents ``dev.py test``, the command to build SciPy and run tests locally
 
 .. _docs:
 
@@ -87,3 +88,30 @@ Compiled code
 .. _Cython: https://cython.org/
 
 .. |*| replace:: \ :sup:`*` \
+
+.. toctree::
+    :hidden:
+
+    conda_guide
+    ubuntu_guide
+    quickstart_docker
+    quickstart_gitpod
+    development_workflow
+    building
+    meson
+    pep8
+    ../gitwash/gitwash
+    ../../reference/index
+    reviewing_prs
+    ../triage
+    adding_new
+    ../core-dev/index
+    ../missing-bits
+    NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
+    devpy_test
+    How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
+    rendering_documentation
+    benchmarking
+    cython
+    compiled_code
+    public_cython_api

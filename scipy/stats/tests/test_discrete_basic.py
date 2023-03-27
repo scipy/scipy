@@ -5,20 +5,19 @@ import numpy as np
 import pytest
 
 from scipy import stats
-from .common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment,
+                           check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast, check_freezing,
-                           check_deprecation_warning_gh5982_moment,
-                           check_deprecation_warning_gh5982_interval)
+                           check_pickling, check_rvs_broadcast,
+                           check_freezing,)
 from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
-distdiscrete += [[stats.rv_discrete(values=vals), ()],
-                 [stats.rv_count(xk=vals[0], pk=vals[1]), ()]]
+distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
 # For these distributions, test_discrete_basic only runs with test mode full
 distslow = {'zipfian', 'nhypergeom'}
@@ -34,7 +33,6 @@ def cases_test_discrete_basic():
         seen.add(distname)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
 def test_discrete_basic(distname, arg, first_case):
     try:
@@ -51,12 +49,10 @@ def test_discrete_basic(distname, arg, first_case):
     check_pmf_cdf(distfn, arg, distname)
     check_oth(distfn, arg, supp, distname + ' oth')
     check_edge_support(distfn, arg)
-    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
-    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
-           distname + ' chisquare')
+                             distname + ' chisquare')
 
     if first_case:
         locscale_defaults = (0,)
@@ -80,7 +76,6 @@ def test_discrete_basic(distname, arg, first_case):
             check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize('distname,arg', distdiscrete)
 def test_moments(distname, arg):
     try:
@@ -123,7 +118,7 @@ def test_rvs_broadcast(dist, shape_args):
         distfunc = getattr(stats, dist)
     except TypeError:
         distfunc = dist
-        dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
+        dist = f'rv_discrete(values=({dist.xk!r}, {dist.pk!r}))'
     loc = np.zeros(2)
     nargs = distfunc.numargs
     allargs = []
@@ -193,8 +188,8 @@ def check_cdf_ppf(distfn, arg, supp, msg):
     cdf_supp = distfn.cdf(supp, *arg)
     # In very rare cases, the finite precision calculation of ppf(cdf(supp))
     # can produce an array in which an element is off by one.  We nudge the
-    # CDF values down by 10 ULPs help to avoid this.
-    cdf_supp0 = cdf_supp - 10*np.spacing(cdf_supp)
+    # CDF values down by 15 ULPs help to avoid this.
+    cdf_supp0 = cdf_supp - 15*np.spacing(cdf_supp)
     npt.assert_array_equal(distfn.ppf(cdf_supp0, *arg),
                            supp, msg + '-roundtrip')
     # Repeat the same calculation, but with the CDF values decreased by 1e-8.

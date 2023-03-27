@@ -79,7 +79,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             ew = zexp(-w)
             wewz = w - z*ew
             wn = w - wewz/(w + 1 - (w + 2)*wewz/(2*w + 2))
-            if zabs(wn - w) < tol*zabs(wn):
+            if zabs(wn - w) <= tol*zabs(wn):
                 return wn
             else:
                 w = wn
@@ -89,7 +89,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
             wew = w*ew
             wewz = wew - z
             wn = w - wewz/(wew + ew - (w + 2)*wewz/(2*w + 2))
-            if zabs(wn - w) < tol*zabs(wn):
+            if zabs(wn - w) <= tol*zabs(wn):
                 return wn
             else:
                 w = wn

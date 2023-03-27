@@ -1,5 +1,5 @@
 fs = import('fs')
-if not fs.exists('boost/README.rst')
+if not fs.exists('boost_math/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('highs/README.md')
@@ -17,8 +17,8 @@ _lib_pxd = [
 ]
 
 # Cython pyx -> c generator with _lib_pxd dependency
-lib_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+lib_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 

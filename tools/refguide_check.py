@@ -52,7 +52,6 @@ from sphinx.directives.other import SeeAlso, Only
 directives.register_directive('seealso', SeeAlso)
 directives.register_directive('only', Only)
 
-
 BASE_MODULE = "scipy"
 
 PUBLIC_SUBMODULES = [
@@ -143,7 +142,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
-    r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
     r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
     r'scipy\.stats\.F_onewayConstantInputWarning',  # have
@@ -342,7 +340,7 @@ def validate_rst_syntax(text, name, dots=True):
         return False, "ERROR: %s: no documentation" % (name,)
 
     ok_unknown_items = set([
-        'mod', 'currentmodule', 'autosummary', 'data',
+        'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'

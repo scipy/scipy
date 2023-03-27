@@ -3,10 +3,16 @@ basinhopping: The basinhopping global optimization algorithm
 """
 import numpy as np
 import math
+import inspect
 import scipy.optimize
 from scipy._lib._util import check_random_state
 
 __all__ = ['basinhopping']
+
+
+_params = (inspect.Parameter('res_new', kind=inspect.Parameter.KEYWORD_ONLY),
+           inspect.Parameter('res_old', kind=inspect.Parameter.KEYWORD_ONLY))
+_new_accept_test_signature = inspect.Signature(parameters=_params)
 
 
 class Storage:
@@ -21,7 +27,8 @@ class Storage:
         self.minres.x = np.copy(minres.x)
 
     def update(self, minres):
-        if minres.fun < self.minres.fun:
+        if minres.success and (minres.fun < self.minres.fun
+                               or not self.minres.success):
             self._add(minres)
             return True
         else:
@@ -75,6 +82,7 @@ class BasinHoppingRunner:
                 print("warning: basinhopping: local minimization failure")
         self.x = np.copy(minres.x)
         self.energy = minres.fun
+        self.incumbent_minres = minres  # best minimize result found so far
         if self.disp:
             print("basinhopping step %d: f %g" % (self.nstep, self.energy))
 
@@ -107,7 +115,6 @@ class BasinHoppingRunner:
             self.res.minimization_failures += 1
             if self.disp:
                 print("warning: basinhopping: local minimization failure")
-
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
         if hasattr(minres, "njev"):
@@ -122,8 +129,12 @@ class BasinHoppingRunner:
         # steps are not sufficient.
         accept = True
         for test in self.accept_tests:
-            testres = test(f_new=energy_after_quench, x_new=x_after_quench,
-                           f_old=self.energy, x_old=self.x)
+            if inspect.signature(test) == _new_accept_test_signature:
+                testres = test(res_new=minres, res_old=self.incumbent_minres)
+            else:
+                testres = test(f_new=energy_after_quench, x_new=x_after_quench,
+                               f_old=self.energy, x_old=self.x)
+
             if testres == 'force accept':
                 accept = True
                 break
@@ -153,6 +164,7 @@ class BasinHoppingRunner:
         if accept:
             self.energy = minres.fun
             self.x = np.copy(minres.x)
+            self.incumbent_minres = minres  # best minimize result found so far
             new_global_min = self.storage.update(minres)
 
         # print some information
@@ -226,8 +238,8 @@ class AdaptiveStepsize:
             # We're not accepting enough steps. Take smaller steps.
             self.takestep.stepsize *= self.factor
         if self.verbose:
-            print("adaptive stepsize: acceptance rate %f target %f new "
-                  "stepsize %g old stepsize %g" % (accept_rate,
+            print("adaptive stepsize: acceptance rate {:f} target {:f} new "
+                  "stepsize {:g} old stepsize {:g}".format(accept_rate,
                   self.target_accept_rate, self.takestep.stepsize,
                   old_stepsize))
 
@@ -318,8 +330,9 @@ class Metropolis:
         self.beta = 1.0 / T if T != 0 else float('inf')
         self.random_gen = check_random_state(random_gen)
 
-    def accept_reject(self, energy_new, energy_old):
+    def accept_reject(self, res_new, res_old):
         """
+        Assuming the local search underlying res_new was successful:
         If new energy is lower than old, it will always be accepted.
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
@@ -333,18 +346,17 @@ class Metropolis:
             #
             # Ignore this warning so when the algorithm is on a flat plane, it always
             # accepts the step, to try to move off the plane.
-            prod = -(energy_new - energy_old) * self.beta
+            prod = -(res_new.fun - res_old.fun) * self.beta
             w = math.exp(min(0, prod))
 
         rand = self.random_gen.uniform()
-        return w >= rand
+        return w >= rand and (res_new.success or not res_old.success)
 
-    def __call__(self, **kwargs):
+    def __call__(self, *, res_new, res_old):
         """
         f_new and f_old are mandatory in kwargs
         """
-        return bool(self.accept_reject(kwargs["f_new"],
-                    kwargs["f_old"]))
+        return bool(self.accept_reject(res_new, res_old))
 
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,

@@ -2,13 +2,12 @@ import warnings
 from . import _minpack
 
 import numpy as np
-from numpy import (atleast_1d, dot, take, triu, shape, eye,
-                   transpose, zeros, prod, greater,
+from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,
                    asarray, inf,
                    finfo, inexact, issubdtype, dtype)
 from scipy import linalg
-from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError, inv
-from scipy._lib._util import _asarray_validated, _lazywhere
+from scipy.linalg import svd, cholesky, solve_triangular, LinAlgError
+from scipy._lib._util import _asarray_validated, _lazywhere, _contains_nan
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
@@ -29,14 +28,14 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
             if len(output_shape) > 1:
                 if output_shape[1] == 1:
                     return shape(res)
-            msg = "%s: there is a mismatch between the input and output " \
-                  "shape of the '%s' argument" % (checker, argname)
+            msg = "{}: there is a mismatch between the input and output " \
+                  "shape of the '{}' argument".format(checker, argname)
             func_name = getattr(thefunc, '__name__', None)
             if func_name:
                 msg += " '%s'." % func_name
             else:
                 msg += "."
-            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
+            msg += f'Shape should be {output_shape} but it is {shape(res)}.'
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -163,8 +162,8 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     res = _root_hybr(func, x0, args, jac=fprime, **options)
     if full_output:
         x = res['x']
-        info = dict((k, res.get(k))
-                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res)
+        info = {k: res.get(k)
+                    for k in ('nfev', 'njev', 'fjac', 'r', 'qtf') if k in res}
         info['fvec'] = res['fun']
         return x, info, res['status'], res['message']
     else:
@@ -279,8 +278,8 @@ LEASTSQ_SUCCESS = [1, 2, 3, 4]
 LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
-def leastsq(func, x0, args=(), Dfun=None, full_output=0,
-            col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
+def leastsq(func, x0, args=(), Dfun=None, full_output=False,
+            col_deriv=False, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
     Minimize the sum of squares of a set of equations.
@@ -304,9 +303,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
     full_output : bool, optional
-        non-zero to return all optional outputs.
+        If ``True``, return all optional outputs (not just `x` and `ier`).
     col_deriv : bool, optional
-        non-zero to specify that the Jacobian function computes derivatives
+        If ``True``, specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
     ftol : float, optional
         Relative error desired in the sum of squares.
@@ -341,7 +340,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the Hessian. A value of None indicates a singular matrix,
         which means the curvature in parameters `x` is numerically flat. To
         obtain the covariance matrix of the parameters `x`, `cov_x` must be
-        multiplied by the variance of the residuals -- see curve_fit.
+        multiplied by the variance of the residuals -- see curve_fit. Only
+        returned if `full_output` is ``True``.
     infodict : dict
         a dictionary of optional outputs with the keys:
 
@@ -365,8 +365,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         ``qtf``
             The vector (transpose(q) * fvec).
 
+        Only returned if `full_output` is ``True``.
     mesg : str
         A string message giving information about the cause of failure.
+        Only returned if `full_output` is ``True``.
     ier : int
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
@@ -442,9 +444,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
               2: ["The relative error between two consecutive "
                   "iterates is at most %f" % xtol, None],
               3: ["Both actual and predicted relative reductions in "
-                  "the sum of squares\n  are at most %f and the "
+                  "the sum of squares\n  are at most {:f} and the "
                   "relative error between two consecutive "
-                  "iterates is at \n  most %f" % (ftol, xtol), None],
+                  "iterates is at \n  most {:f}".format(ftol, xtol), None],
               4: ["The cosine of the angle between func(x) and any "
                   "column of the\n  Jacobian is at most %f in "
                   "absolute value" % gtol, None],
@@ -493,6 +495,26 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         elif info == 0:
             raise errors[info][1](errors[info][0])
         return retval[0], info
+
+
+def _lightweight_memoizer(f):
+    # very shallow memoization - only remember the first set of parameters
+    # and corresponding function value to address gh-13670
+    def _memoized_func(params):
+        if np.all(_memoized_func.last_params == params):
+            return _memoized_func.last_val
+
+        val = f(params)
+
+        if _memoized_func.last_params is None:
+            _memoized_func.last_params = np.copy(params)
+            _memoized_func.last_val = val
+
+        return val
+
+    _memoized_func.last_params = None
+    _memoized_func.last_val = None
+    return _memoized_func
 
 
 def _wrap_func(func, xdata, ydata, transform):
@@ -547,8 +569,9 @@ def _initialize_feasible(lb, ub):
 
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
-              check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, *, full_output=False, **kwargs):
+              check_finite=None, bounds=(-np.inf, np.inf), method=None,
+              jac=None, *, full_output=False, nan_policy=None,
+              **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -604,7 +627,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True.
+        do contain nans. Default is True if `nan_policy` is not specified
+        explicitly and False otherwise.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -639,6 +663,20 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
+    nan_policy : {'raise', 'omit', None}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is None):
+
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
+          * None: no special handling of NaNs is performed
+            (except what is done by check_finite); the behavior when NaNs
+            are present is implementation-dependent and may change.
+
+        Note that if this value is specified explicitly (not None),
+        `check_finite` will be set as False.
+
+        .. versionadded:: 1.11
     **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -649,9 +687,14 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Optimal values for the parameters so that the sum of the squared
         residuals of ``f(xdata, *popt) - ydata`` is minimized.
     pcov : 2-D array
-        The estimated covariance of popt. The diagonals provide the variance
-        of the parameter estimate. To compute one standard deviation errors
-        on the parameters use ``perr = np.sqrt(np.diag(pcov))``.
+        The estimated approximate covariance of popt. The diagonals provide
+        the variance of the parameter estimate. To compute one standard
+        deviation errors on the parameters, use
+        ``perr = np.sqrt(np.diag(pcov))``. Note that the relationship between
+        `cov` and parameter error estimates is derived based on a linear
+        approximation to the model function around the optimum [1].
+        When this approximation becomes inaccurate, `cov` may not provide an
+        accurate measure of uncertainty.
 
         How the `sigma` parameter affects the estimated covariance
         depends on `absolute_sigma` argument, as described above.
@@ -659,7 +702,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If the Jacobian matrix at the solution doesn't have a full rank, then
         'lm' method returns a matrix filled with ``np.inf``, on the other hand
         'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
-        the covariance matrix.
+        the covariance matrix. Covariance matrices with large condition numbers
+        (e.g. computed with `numpy.linalg.cond`) may indicate that results are
+        unreliable.
     infodict : dict (returned only if `full_output` is True)
         a dictionary of optional outputs with the keys:
 
@@ -668,7 +713,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             count function calls for numerical Jacobian approximation,
             as opposed to 'lm' method.
         ``fvec``
-            The function values evaluated at the solution.
+            The residual values evaluated at the solution, for a 1-D `sigma`
+            this is ``(f(x, *popt) - ydata)/sigma``.
         ``fjac``
             A permutation of the R matrix of a QR
             factorization of the final approximate
@@ -730,6 +776,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
 
+    References
+    ----------
+    [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
+        regression in groundwater flow: Three case studies. Water Resources
+        Research, Vol. 43, W03423, :doi:`10.1029/2005WR004804`
+
     Examples
     --------
     >>> import numpy as np
@@ -770,7 +822,35 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> plt.legend()
     >>> plt.show()
 
-    """
+    For reliable results, the model `func` should not be overparametrized;
+    redundant parameters can cause unreliable covariance matrices and, in some
+    cases, poorer quality fits. As a quick check of whether the model may be
+    overparameterized, calculate the condition number of the covariance matrix:
+
+    >>> np.linalg.cond(pcov)
+    34.571092161547405  # may vary
+
+    The value is small, so it does not raise much concern. If, however, we were
+    to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
+
+    >>> def func(x, a, b, c, d):
+    ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
+    >>> popt, pcov = curve_fit(func, xdata, ydata)
+    >>> np.linalg.cond(pcov)
+    1.13250718925596e+32  # may vary
+
+    Such a large value is cause for concern. The diagonal elements of the
+    covariance matrix, which is related to uncertainty of the fit, gives more
+    information:
+
+    >>> np.diag(pcov)
+    array([1.48814742e+29, 3.78596560e-02, 5.39253738e-03, 2.76417220e+28])  # may vary
+
+    Note that the first and last terms are much larger than the other elements,
+    suggesting that the optimal values of these parameters are ambiguous and
+    that only one of these parameters is needed in the model.
+
+    """  # noqa
     if p0 is None:
         # determine number of parameters by inspecting the function
         sig = _getfullargspec(f)
@@ -800,9 +880,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         raise ValueError("Method 'lm' only works for unconstrained problems. "
                          "Use 'trf' or 'dogbox' instead.")
 
-    # optimization may produce garbage for float32 inputs, cast them to float64
+    if check_finite is None:
+        check_finite = True if nan_policy is None else False
 
-    # NaNs cannot be handled
+    # optimization may produce garbage for float32 inputs, cast them to float64
     if check_finite:
         ydata = np.asarray_chkfinite(ydata, float)
     else:
@@ -818,6 +899,28 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     if ydata.size == 0:
         raise ValueError("`ydata` must not be empty!")
+
+    # nan handling is needed only if check_finite is False because if True,
+    # the x-y data are already checked, and they don't contain nans.
+    if not check_finite and nan_policy is not None:
+        if nan_policy == "propagate":
+            raise ValueError("`nan_policy='propagate'` is not supported "
+                             "by this function.")
+
+        policies = [None, 'raise', 'omit']
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
+                                                   policies=policies)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
+                                                   policies=policies)
+
+        if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
+            # ignore NaNs for N dimensional arrays
+            has_nan = np.isnan(xdata)
+            has_nan = has_nan.any(axis=tuple(range(has_nan.ndim-1)))
+            has_nan |= np.isnan(ydata)
+
+            xdata = xdata[..., ~has_nan]
+            ydata = ydata[~has_nan]
 
     # Determine type of sigma
     if sigma is not None:
@@ -839,9 +942,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     else:
         transform = None
 
-    func = _wrap_func(f, xdata, ydata, transform)
+    func = _lightweight_memoizer(_wrap_func(f, xdata, ydata, transform))
+
     if callable(jac):
-        jac = _wrap_jac(jac, xdata, transform)
+        jac = _lightweight_memoizer(_wrap_jac(jac, xdata, transform))
     elif jac is None and method != 'lm':
         jac = '2-point'
 
@@ -889,7 +993,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         pcov = np.dot(VT.T / s**2, VT)
 
     warn_cov = False
-    if pcov is None:
+    if pcov is None or np.isnan(pcov).any():
         # indeterminate covariance
         pcov = zeros((len(popt), len(popt)), dtype=float)
         pcov.fill(inf)
