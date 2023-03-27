@@ -388,9 +388,12 @@ class TestLogRank:
     def test_log_rank(self, x, y, statistic, pvalue):
         x = stats.CensoredData(uncensored=x[0], right=x[1])
         y = stats.CensoredData(uncensored=y[0], right=y[1])
-        res = stats.log_rank(x=x, y=y)
+        res = stats.logrank(x=x, y=y)
 
-        assert_allclose(res.statistic, statistic, atol=1e-10)
+        # we return z and use the normal distribution while other framework
+        # return z**2. The p-value are directly comparable, but we have to
+        # square the statistic
+        assert_allclose(res.statistic**2, statistic, atol=1e-10)
         assert_allclose(res.pvalue, pvalue, atol=1e-10)
 
     def test_raises(self):
@@ -398,8 +401,8 @@ class TestLogRank:
 
         msg = r"`y` must be"
         with pytest.raises(ValueError, match=msg):
-            stats.log_rank(x=sample, y=[[1, 2]])
+            stats.logrank(x=sample, y=[[1, 2]])
 
         msg = r"`x` must be"
         with pytest.raises(ValueError, match=msg):
-            stats.log_rank(x=[[1, 2]], y=sample)
+            stats.logrank(x=[[1, 2]], y=sample)

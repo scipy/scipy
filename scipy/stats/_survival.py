@@ -7,15 +7,16 @@ import warnings
 import numpy as np
 
 from scipy import special
-from scipy.stats import chi2, norm  # type: ignore[attr-defined]
+from scipy import stats
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
 if TYPE_CHECKING:
+    from typing import Literal
     import numpy.typing as npt
 
 
-__all__ = ['ecdf', 'log_rank']
+__all__ = ['ecdf', 'logrank']
 
 
 @dataclass
@@ -399,9 +400,10 @@ class LogRankResult:
     pvalue: np.ndarray
 
 
-def log_rank(
+def logrank(
     x: npt.ArrayLike | CensoredData,
-    y: npt.ArrayLike | CensoredData
+    y: npt.ArrayLike | CensoredData,
+    alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
     """Compare the survival distributions of two samples via the logrank test.
 
@@ -409,6 +411,20 @@ def log_rank(
     ----------
     x, y : array_like or CensoredData
         Samples to compare based on their survival functions.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+
+        The null hypothesis is that the survival functions underlying
+        `x` and `y` are equal. The following alternative
+        hypotheses are available (default is 'two-sided'):
+
+        * 'two-sided': the survival functions underlying `x` and `y`
+          are unequal.
+        * 'less': the survival functions underlying `x`
+          is less than the survival function underlying `y`.
+        * 'greater': the survival functions underlying `x`
+          is greater than the survival function underlying
+          `y`.
 
     Returns
     -------
@@ -424,6 +440,10 @@ def log_rank(
     --------
     scipy.stats.ecdf
 
+    Notes
+    -----
+
+
     References
     ----------
     .. [1] Peto, Richard and Peto, Julian. "Asymptotically Efficient Rank
@@ -433,9 +453,10 @@ def log_rank(
 
     Examples
     --------
-    In [2]_, the survival of two different group of patient with recurrent
+    In [2]_, the survival of two different groups of patients with recurrent
     malignant gliomas was investigated. The two groups are characterized by
-    a different type of tumor. The week to death of 51 adults was recorded.
+    a different type of tumor. The number of weekw to death of 51 adults
+    was recorded.
 
     >>> from scipy import stats
     >>> x = stats.CensoredData(
@@ -475,13 +496,13 @@ def log_rank(
     Next, we will use the logrank test to assess wether the difference
     between the two survival functions is significant.
 
-    >>> res = stats.log_rank(x=x, y=y)
+    >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
-    7.49659416854
+    -2.73799...
     >>> res.pvalue
-    0.006181578637
+    0.00618...
 
-    Using a significance level of 5%, we would reject the null hypothesis in
+    Using a significance level of 5%, we could reject the null hypothesis in
     favor of the alternative hypothesis: "there is a difference between the
     two survival functions".
 
@@ -509,20 +530,19 @@ def log_rank(
 
     sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
 
-    # equivalent: formulation with the mean
-    # statistic = (
-    #     (n_died_x - sum_exp_deaths_x)**2/sum_exp_deaths_x
-    #     + (n_died_y - sum_exp_deaths_y)**2/sum_exp_deaths_y
-    # )
-    # warning occurs when multiple deaths at same time
+    # warning occurs when `at_risk_xy == 1`. Effectively, we have
+    # `(at_risk_xy -1)` in the numerator and denominator. Simplifying the
+    # fraction symbolically, we would always find the term to be zero.
     with np.errstate(invalid='ignore'):
         sum_var = np.nansum(
             at_risk_x*at_risk_y*deaths_xy*(at_risk_xy - deaths_xy)
             / (at_risk_xy**2*(at_risk_xy - 1))
         )
-    statistic = (n_died_x - sum_exp_deaths_x)**2/sum_var
+    statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
-    pvalue = norm.sf(np.sqrt(statistic))*2
-    # equivalent to chi2(df=1).sf(statistic) but allow alternative
+    # equivalent to chi2(df=1).sf(statistic**2) but allow alternative
+    _, pvalue = stats._stats_py._normtest_finish(
+        z=statistic, alternative="two-sided"
+    )
 
     return LogRankResult(statistic=statistic, pvalue=pvalue)
