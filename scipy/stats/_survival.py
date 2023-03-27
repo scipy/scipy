@@ -405,7 +405,7 @@ def logrank(
     y: npt.ArrayLike | CensoredData,
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided"
 ) -> LogRankResult:
-    """Compare the survival distributions of two samples via the logrank test.
+    r"""Compare the survival distributions of two samples via the logrank test.
 
     Parameters
     ----------
@@ -442,14 +442,39 @@ def logrank(
 
     Notes
     -----
+    The logrank test [1]_ compares the expected events that occured at
+    times with respect to expected events if both survival curves where the
+    same
 
+    .. math::
+
+        Z_i = \frac{\sum_{j=1}^J(O_{i,j}-E_{i,j})}{\sqrt{\sum_{j=1}^J V_{i,j}}}
+        \rightarrow \mathcal{N}(0,1)
+        \\
+        E_{i,j} = O_j \frac{N_{i,j}}{N_j}
+        \qquad
+        V_{i,j} = E_{i,j} \left(\frac{N_j-O_j}{N_j}\right)
+        \left(\frac{N_j-N_{i,j}}{N_j-1}\right)
+
+    with ``i`` the group-here either `x` or `y`-, ``j`` the number of unique
+    times an event occured, ``N`` the number of subjects at risk (of the event
+    occuring) and ``O`` are the number of observed events.
+
+    The ``statistic`` which is returned by `logrank` is to be linked to a
+    normal distribution instead of a chi-distribution. i.e. z and not z**2.
+    z**2 is traditionally seen in other software and linked to the chi-squared
+    distribution. Using the version which converges to the standard normal
+    distribution allows to provide altenatives.
 
     References
     ----------
-    .. [1] Peto, Richard and Peto, Julian. "Asymptotically Efficient Rank
-           Invariant Test Procedures." J. R. Statist. Soc. A, 185 (1972)
+    .. [1] Mantel N. "Evaluation of survival data and two new rank order
+           statistics arising in its consideration."
+           Cancer Chemotherapy Reports, 50(3):163-170, PMID: 5910392, 1966
     .. [2] Bland, Altman, "The logrank test", BMJ, 328:1073,
            :doi:`10.1136/bmj.328.7447.1073`, 2004
+    .. [3] "Logrank test", Wikipedia,
+           https://en.wikipedia.org/wiki/Logrank_test
 
     Examples
     --------
@@ -515,6 +540,8 @@ def logrank(
         right=np.concatenate((x._right, y._right))
     )
 
+    # consider all samples to get all unique times at risk (times_xy) and the
+    # total number of subjects at risk (at_risk_xy) and all events (deaths_xy)
     res = ecdf(xy)
     idx = res.sf._d.astype(bool)  # events were observed (not censored)
     times_xy = res.x[idx]
@@ -523,6 +550,9 @@ def logrank(
 
     n_died_x = x._uncensored.size
 
+    # then we need to get the number at risk for a given sample (at_risk_x)
+    # since we have only 2 samples, we can subtract from at_risk_xy to get
+    # at_risk_y
     res_x = ecdf(x)
     i = np.searchsorted(res_x.x, times_xy)  # or use `interpolate_1d`
     at_risk_x = np.append(res_x.sf._n, 0)[i]  # 0 at risk after last x time
@@ -542,7 +572,7 @@ def logrank(
 
     # equivalent to chi2(df=1).sf(statistic**2) but allow alternative
     _, pvalue = stats._stats_py._normtest_finish(
-        z=statistic, alternative="two-sided"
+        z=statistic, alternative=alternative
     )
 
     return LogRankResult(statistic=statistic, pvalue=pvalue)
