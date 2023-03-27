@@ -174,13 +174,17 @@ class TestLinearOperator:
              'rmatmat': lambda x: np.dot(self.A.T.conj(), x),
              'matmat': lambda x: np.dot(self.A, x)}
         A = interface.LinearOperator(**D)
-        B = np.array([[1, 2, 3],
+        B = np.array([[1 + 1j, 2, 3],
                       [4, 5, 6],
                       [7, 8, 9]])
         b = B[0]
 
         assert_equal(operator.matmul(A, b), A * b)
+        assert_equal(operator.matmul(A, b.reshape(-1, 1)), A * b.reshape(-1, 1))
         assert_equal(operator.matmul(A, B), A * B)
+        assert_equal(operator.matmul(b, A.H), b * A.H)
+        assert_equal(operator.matmul(b.reshape(1, -1), A.H), b.reshape(1, -1) * A.H)
+        assert_equal(operator.matmul(B, A.H), B * A.H)
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
 

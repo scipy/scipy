@@ -26,10 +26,12 @@ implementations on conda-forge), use::
 
 Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl`` and ``blis``. Note that using
-``pip install`` or ``pip wheel`` doesn't work (as of Jan'23) because we need
-two ``setup-args`` flags for specifying both ``blas`` and ``lapack`` here, and
-``pip`` does not yet support specifying ``--config-settings`` with the same key
-twice, while ``build`` does support that.
+``pip install`` or ``pip wheel`` doesn't work (pending release of the fix for
+`pip#11681 <https://github.com/pypa/pip/issues/11681>`__, likely in Pip
+23.1.0) because we need two ``setup-args`` flags for specifying both ``blas``
+and ``lapack`` here, and ``pip`` does not yet support specifying
+``--config-settings`` with the same key twice, while ``build`` does support
+that.
 
 .. note::
 
@@ -60,6 +62,32 @@ twice, while ``build`` does support that.
         -L/path/to/library-dir -larmpl_lp64
         $ pkg-config --cflags armpl_lp64
         -I/path/to/include-dir
+
+
+Cross compilation
+=================
+
+Cross compilation is a complex topic, we only add some hopefully helpful hints
+here (for now). Please see
+`Meson's documentation on cross compilation <https://mesonbuild.com/Cross-compilation.html>`__
+for context.
+
+One common hiccup is that ``numpy``, ``pybind11`` and ``pythran`` require
+running Python code in order to obtain their include directories. This tends to
+not work well, either accidentally picking up the packages from the build
+(native) Python rather than the host (cross) Python or requiring ``crossenv``
+or QEMU to run the host Python. To avoid this problem, specify the paths to the
+relevant directories in your *cross file*:
+
+.. code:: ini
+
+    [constants]
+    sitepkg = '/abspath/to/host-pythons/site-packages/'
+
+    [properties]
+    numpy-include-dir = sitepkg + 'numpy/core/include'
+    pybind11-include-dir = sitepkg + 'pybind11/include'
+    pythran-include-dir = sitepkg + 'pythran'
 
 
 Use different build types with Meson
