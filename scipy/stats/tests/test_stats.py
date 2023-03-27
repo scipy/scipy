@@ -3001,6 +3001,27 @@ class TestMoments:
             dtype = expect.dtype
         assert actual.dtype == dtype
 
+    def test_moment_center(self):
+        # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
+        y = stats.moment(self.testcase, 1, center=0)
+        assert_approx_equal(y, 2.5)
+        y = stats.moment(self.testcase, 1, center=2)
+        assert_approx_equal(y, 0.5)
+        y = stats.moment(self.testcase, 2, center=0)
+        assert_approx_equal(y, 7.5)
+        y = stats.moment(self.testcase, 2, center=1)
+        assert_approx_equal(y, 3.5)
+        y = stats.moment(self.testcase, 3, center=1)
+        assert_approx_equal(y, 9)
+        y = stats.moment(self.testcase, 3, center=2)
+        assert_approx_equal(y, 2)
+        # Compare against the naive np.sum implementation:
+        x = self.testmathworks
+        y = stats.moment(x, 3, center=0)
+        assert_approx_equal(y, np.sum(x**3)/len(x))
+        y = stats.moment(x, 2, center=0)
+        assert_approx_equal(y, np.sum(x**2)/len(x))
+
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
         y = stats.moment(self.scalar_testcase)
