@@ -944,8 +944,9 @@ class _BivariateSplineBase:
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
 
-            Note that the axis ordering is inverted relative to
-            the default output of meshgrid.
+            The ordering of axes is consistent with 
+            np.meshgrid(..., indexing="ij") and inconsistent with the
+            default ordering np.meshgrid(..., indexing="xy").
         dx : int
             Order of x-derivative
 
@@ -1182,8 +1183,9 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-            Note that the axis ordering is inverted relative to
-            the default output of meshgrid.
+            The ordering of axes is consistent with 
+            np.meshgrid(..., indexing="ij") and inconsistent with the
+            default ordering np.meshgrid(..., indexing="xy").
         dx : int, optional
             Order of x-derivative
 
@@ -1652,8 +1654,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
-            Note that the axis ordering is inverted relative to
-            the default output of meshgrid.
+            The ordering of axes is consistent with 
+            np.meshgrid(..., indexing="ij") and inconsistent with the
+            default ordering np.meshgrid(..., indexing="xy").
         dtheta : int, optional
             Order of theta-derivative
 
@@ -1727,8 +1730,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         ----------
         theta, phi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-            Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            The ordering of axes is consistent with 
+            np.meshgrid(..., indexing="ij") and inconsistent with the
+            default ordering np.meshgrid(..., indexing="xy").
         dtheta : int, optional
             Order of theta-derivative
 
