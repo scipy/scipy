@@ -52,9 +52,8 @@ class Rotation:
 
 class Slerp:
     times: np.ndarray
-    rotations: Rotation
     timedelta: np.ndarray
+    rotations: Rotation
+    rotvecs: np.ndarray
     def __init__(self, times: npt.ArrayLike, rotations: Rotation) -> None: ...
     def __call__(self, times: npt.ArrayLike) -> Rotation: ...
-    @property
-    def rotvecs(self) -> np.ndarray: ...

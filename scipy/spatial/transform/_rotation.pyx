@@ -2786,7 +2786,8 @@ class Slerp:
         if np.any(self.timedelta <= 0):
             raise ValueError("Times must be in strictly increasing order.")
 
-        self.rotations, self._final_rotation = rotations[:-1], rotations[-1]
+        self.rotations = rotations[:-1]
+        self.rotvecs = (self.rotations.inv() * rotations[1:]).as_rotvec()
 
     def __call__(self, times):
         """Interpolate rotations.
@@ -2831,7 +2832,3 @@ class Slerp:
             result = result[0]
 
         return result
-
-    @property
-    def rotvecs(self):
-        return (self.rotations.inv() * Rotation.concatenate((self.rotations[1:], self._final_rotation))).as_rotvec()
