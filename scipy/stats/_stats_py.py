@@ -1036,7 +1036,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     center : float or None, optional
        The point about which moments are taken. This can be the sample mean,
        the origin, or any other be point. If `None` (default) compute the
-       center from the sample.
+       center as the sample mean.
 
     Returns
     -------
