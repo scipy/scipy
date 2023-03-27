@@ -405,7 +405,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
         nonzero derivatives (that is, a number equal to the number
         of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
-axis : int, optional
+    axis : int, optional
         Axis in the `yi` array corresponding to the x-coordinate values.
 
     Returns
@@ -528,7 +528,7 @@ def approximate_taylor_polynomial(f,x,degree,scale,order=None):
 
 
 class BarycentricInterpolator(_Interpolator1DWithDerivatives):
-    r"""The interpolating polynomial for a set of points
+    r"""Interpolating polynomial for a set of points.
 
     Constructs a polynomial that passes through a given set of points.
     Allows evaluation of the polynomial and all its derivatives,
