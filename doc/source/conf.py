@@ -152,12 +152,6 @@ for key in (
 warnings.filterwarnings(  # matplotlib<->pyparsing issue
     'ignore', message="Exception creating Regex for oneOf.*",
     category=SyntaxWarning)
-warnings.filterwarnings(  # docutils warning when using notebooks
-    'ignore', message="The frontend.OptionParser class will be replaced",
-    category=DeprecationWarning)
-warnings.filterwarnings(
-    'ignore', message="The frontend.Option class will be removed in Docutils 0.21 or later.",
-    category=DeprecationWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (
@@ -172,6 +166,13 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# docutils warnings when using notebooks (see gh-17322)
+# these will hopefully be removed in the near future
+for key in (
+    r"The frontend.OptionParser class will be replaced",
+    r"The frontend.Option class will be removed",
+    ):
+    warnings.filterwarnings('ignore', message=key, category=DeprecationWarning)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -341,7 +342,7 @@ plot_rcparams = {
 # Notebook tutorials with MyST-NB
 # -----------------------------------------------------------------------------
 
-nb_execution_mode = "force"
+nb_execution_mode = "auto"
 
 # -----------------------------------------------------------------------------
 # Source code links

@@ -19,7 +19,12 @@ This notebook contains three sets of demonstrations:
 - recommended replacements for {class}`scipy.interpolate.interp2d` for use in new code;
 - a demonstration of failure modes of 2D FITPACK-based linear interpolation and recommended replacements.
 
-+++
+**Note:** Since this notebook shows usage of `interp2d` (which is marked for deprecation), we will silence deprecation warnings for simplicity:
+
+```{code-cell} ipython3
+import warnings
+warnings.filterwarnings('ignore')
+```
 
 ## 1. How to transition away from using  `interp2d`
 
