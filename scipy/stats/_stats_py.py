@@ -5821,9 +5821,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
-        return ((cnt * (cnt - 1) // 2).sum(),
-                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+        # Python ints to avoid overflow down the line
+        return (int((cnt * (cnt - 1) // 2).sum()),
+                int((cnt * (cnt - 1.) * (cnt - 2)).sum()),
+                int((cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -5840,7 +5841,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
 
-    ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
+    ntie = int((cnt * (cnt - 1) // 2).sum())  # joint ties
     xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
     ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
