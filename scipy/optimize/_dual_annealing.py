@@ -419,7 +419,10 @@ class LocalSearchWrapper:
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
-        mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
+        if 'fun' in self.kwargs:
+            mres = self.minimizer(x0=x, **self.kwargs)
+        else:
+            mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
         if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
         if 'nhev' in mres:
