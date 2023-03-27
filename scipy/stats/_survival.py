@@ -410,21 +410,20 @@ def logrank(
     Parameters
     ----------
     x, y : array_like or CensoredData
-        Samples to compare based on their survival functions.
+        Samples to compare based on their empirical survival functions.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
 
-        The null hypothesis is that the survival functions underlying
-        `x` and `y` are equal. The following alternative
+        The null hypothesis is that the survival functions of the distributions
+        underlying `x` and `y` are identical. The following alternative
         hypotheses are available (default is 'two-sided'):
 
         * 'two-sided': the survival functions underlying `x` and `y`
           are unequal.
-        * 'less': the survival functions underlying `x`
-          is less than the survival function underlying `y`.
-        * 'greater': the survival functions underlying `x`
-          is greater than the survival function underlying
-          `y`.
+        * 'less': the survival function underlying `x` tends to be less
+          than the survival function underlying `y`.
+        * 'greater': the survival function underlying `x` tends to be greater
+          than the survival function underlying `y`.
 
     Returns
     -------
@@ -432,7 +431,9 @@ def logrank(
         An object containing attributes:
 
         statistic : float ndarray
-            The computed statistic of the test.
+            The computed statistic (defined below). Its magnitude is the
+            square root of the magnitude returned by most other logrank test
+            implementations.
         pvalue : float ndarray
             The computed p-value of the test.
 
@@ -442,29 +443,39 @@ def logrank(
 
     Notes
     -----
-    The logrank test [1]_ compares the expected events that occured at
-    times with respect to expected events if both survival curves where the
-    same
+    The logrank test [1]_ compares the observed number of events to
+    the expected number of events under the null hypothesis that the two
+    samples were drawn from the same distribution. The statistic is
 
     .. math::
 
         Z_i = \frac{\sum_{j=1}^J(O_{i,j}-E_{i,j})}{\sqrt{\sum_{j=1}^J V_{i,j}}}
         \rightarrow \mathcal{N}(0,1)
-        \\
-        E_{i,j} = O_j \frac{N_{i,j}}{N_j}
+
+    where
+
+    .. math::
+
+        E_{i,j} = O_j \frac{N_{i,j}}{N_j},
         \qquad
         V_{i,j} = E_{i,j} \left(\frac{N_j-O_j}{N_j}\right)
-        \left(\frac{N_j-N_{i,j}}{N_j-1}\right)
+        \left(\frac{N_j-N_{i,j}}{N_j-1}\right),
 
-    with ``i`` the group-here either `x` or `y`-, ``j`` the number of unique
-    times an event occured, ``N`` the number of subjects at risk (of the event
-    occuring) and ``O`` are the number of observed events.
+    :math:`i` denotes the group (i.e. it may assume values :math:`x` or
+    :math:`y`, or it may be omitted to refer to the combined sample)
+    :math:`j` denotes the time (at which an event occured),
+    :math:`N` is the number of subjects at risk just before an event occured,
+    and :math:`O` is the observed number of events at that time.
 
-    The ``statistic`` which is returned by `logrank` is to be linked to a
-    normal distribution instead of a chi-distribution. i.e. z and not z**2.
-    z**2 is traditionally seen in other software and linked to the chi-squared
-    distribution. Using the version which converges to the standard normal
-    distribution allows to provide altenatives.
+    The ``statistic`` $Z_x$ returned by `logrank` is the (positive or negative)
+    square root of the statistic returned by many other implementations. Under
+    the null hypothesis, $Z_x**2$ is asymptotically distributed according to
+    the chi-squared distribution with one degree of freedom. Consequently,
+    $Z_x$ is asymptotically distributed according to the standard normal
+    distribution. The advantage of using $Z_x$ is that the sign information
+    (i.e. whether the observed number of events tends to be less than or
+    greater than the number expected under the null hypothesis) is preserved,
+    allowing `scipy.stats.logrank` to offer one-sided alternative hypotheses.
 
     References
     ----------
@@ -478,10 +489,13 @@ def logrank(
 
     Examples
     --------
-    In [2]_, the survival of two different groups of patients with recurrent
-    malignant gliomas was investigated. The two groups are characterized by
-    a different type of tumor. The number of weekw to death of 51 adults
-    was recorded.
+    Reference [2]_ compared the survival times of patients with two different
+    types of recurrent malignant gliomas. The samples below record the time
+    (number of weeks) for which each patient participated in the study. The
+    `scipy.stats.CensoredData` class is used because the data is
+    right-censored: the uncensored observations correspond with observed deaths
+    whereas the censored observations correspond with the patient leaving the
+    study for another reason.
 
     >>> from scipy import stats
     >>> x = stats.CensoredData(
@@ -515,11 +529,10 @@ def logrank(
     >>> plt.legend()
     >>> plt.show()
 
-    Based on a visual inspection of the survival functions, we see a difference
-    but cannot conclude about its significance.
-
-    Next, we will use the logrank test to assess wether the difference
-    between the two survival functions is significant.
+    Visual inspection of the empirical survival functions suggests that the
+    survival times tend to be different between the two groups. To formally
+    assess whether the difference is significant at the 1% level, we use the
+    logrank test.
 
     >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
@@ -527,50 +540,54 @@ def logrank(
     >>> res.pvalue
     0.00618...
 
-    Using a significance level of 5%, we could reject the null hypothesis in
-    favor of the alternative hypothesis: "there is a difference between the
-    two survival functions".
+    The p-value is less than 1%, so we can consider the data to be evidence
+    against the null hypothesis in favor of the alternative that there is a
+    difference between the two survival functions.
 
     """
+    # Input validation. `alternative` IV handled in `_normtest_finish` below.
     x = _iv_CensoredData(sample=x, param_name='x')
     y = _iv_CensoredData(sample=y, param_name='y')
 
+    # Combined sample. (Under H0, the two groups are identical.)
     xy = CensoredData(
         uncensored=np.concatenate((x._uncensored, y._uncensored)),
         right=np.concatenate((x._right, y._right))
     )
 
-    # consider all samples to get all unique times at risk (times_xy) and the
-    # total number of subjects at risk (at_risk_xy) and all events (deaths_xy)
+    # Extract data from the combined sample
     res = ecdf(xy)
-    idx = res.sf._d.astype(bool)  # events were observed (not censored)
-    times_xy = res.x[idx]
-    at_risk_xy = res.sf._n[idx]
-    deaths_xy = res.sf._d[idx]
+    idx = res.sf._d.astype(bool)  # indices of observed events
+    times_xy = res.x[idx]  # unique times at which events were observed
+    at_risk_xy = res.sf._n[idx]  # combined number of subjects at risk
+    deaths_xy = res.sf._d[idx]  # combined number of events
 
-    n_died_x = x._uncensored.size
-
-    # then we need to get the number at risk for a given sample (at_risk_x)
-    # since we have only 2 samples, we can subtract from at_risk_xy to get
-    # at_risk_y
+    # Get the number at risk within each sample.
+    # First compute the number at risk in group X at each of the `times_xy`.
+    # Could use `interpolate_1d`, but this is more compact.
     res_x = ecdf(x)
-    i = np.searchsorted(res_x.x, times_xy)  # or use `interpolate_1d`
-    at_risk_x = np.append(res_x.sf._n, 0)[i]  # 0 at risk after last x time
+    i = np.searchsorted(res_x.x, times_xy)
+    at_risk_x = np.append(res_x.sf._n, 0)[i]  # 0 at risk after last time
+    # Subtract from the combined number at risk to get number at risk in Y
     at_risk_y = at_risk_xy - at_risk_x
 
+    # Compute the variance.
+    num = at_risk_x * at_risk_y * deaths_xy * (at_risk_xy - deaths_xy)
+    den = at_risk_xy**2 * (at_risk_xy - 1)
+    # Note: when `at_risk_xy == 1`, we would have `at_risk_xy - 1 == 0` in the
+    # numerator and denominator. Simplifying the fraction symbolically, we
+    # would always find the overall quotient to be zero, so don't compute it.
+    i = at_risk_xy > 1
+    sum_var = np.sum(num[i]/den[i])
+
+    # Get the observed and expected number of deaths in group X
+    n_died_x = x._uncensored.size
     sum_exp_deaths_x = np.sum(at_risk_x * (deaths_xy/at_risk_xy))
 
-    # warning occurs when `at_risk_xy == 1`. Effectively, we have
-    # `(at_risk_xy -1)` in the numerator and denominator. Simplifying the
-    # fraction symbolically, we would always find the term to be zero.
-    with np.errstate(invalid='ignore'):
-        sum_var = np.nansum(
-            at_risk_x*at_risk_y*deaths_xy*(at_risk_xy - deaths_xy)
-            / (at_risk_xy**2*(at_risk_xy - 1))
-        )
+    # Compute the statistic. This is the square root of that in references.
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
-    # equivalent to chi2(df=1).sf(statistic**2) but allow alternative
+    # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
     _, pvalue = stats._stats_py._normtest_finish(
         z=statistic, alternative=alternative
     )
