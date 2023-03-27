@@ -205,11 +205,11 @@ class TestKrogh:
         P = KroghInterpolator(self.xs, ys, axis=0)
         D = P.derivatives(self.test_xs)
         for i in range(D.shape[0]):
-            assert_almost_equal(np.stack((poly1.deriv(i)(self.test_xs),
-                                          poly2.deriv(i)(self.test_xs),
-                                          poly3.deriv(i)(self.test_xs)),
-                                         axis=-1),
-                                D[i])
+            assert_allclose(D[i],
+                            np.stack((poly1.deriv(i)(self.test_xs),
+                                      poly2.deriv(i)(self.test_xs),
+                                      poly3.deriv(i)(self.test_xs)),
+                                     axis=-1))
 
     def test_ndim_derivative(self):
         poly1 = self.true_poly
@@ -219,11 +219,11 @@ class TestKrogh:
 
         P = KroghInterpolator(self.xs, ys, axis=0)
         for i in range(P.n):
-            assert_almost_equal(np.stack((poly1.deriv(i)(self.test_xs),
-                                          poly2.deriv(i)(self.test_xs),
-                                          poly3.deriv(i)(self.test_xs)),
-                                         axis=-1),
-                                P.derivative(self.test_xs, i))
+            assert_allclose(P.derivative(self.test_xs, i),
+                            np.stack((poly1.deriv(i)(self.test_xs),
+                                      poly2.deriv(i)(self.test_xs),
+                                      poly3.deriv(i)(self.test_xs)),
+                                     axis=-1))
 
     def test_hermite(self):
         P = KroghInterpolator(self.xs,self.ys)
@@ -335,37 +335,39 @@ class TestBarycentric:
 
     def test_lagrange(self):
         P = BarycentricInterpolator(self.xs, self.ys)
-        assert_almost_equal(self.true_poly(self.test_xs), P(self.test_xs))
+        assert_allclose(P(self.test_xs), self.true_poly(self.test_xs))
 
     def test_scalar(self):
         P = BarycentricInterpolator(self.xs, self.ys)
-        assert_almost_equal(self.true_poly(7), P(7))
-        assert_almost_equal(self.true_poly(np.array(7)), P(np.array(7)))
+        assert_allclose(P(7), self.true_poly(7))
+        assert_allclose(P(np.array(7)), self.true_poly(np.array(7)))
 
     def test_derivatives(self):
         P = BarycentricInterpolator(self.xs, self.ys)
         D = P.derivatives(self.test_xs)
         for i in range(D.shape[0]):
-            assert_almost_equal(self.true_poly.deriv(i)(self.test_xs), D[i])
+            assert_allclose(self.true_poly.deriv(i)(self.test_xs), D[i])
 
     def test_low_derivatives(self):
         P = BarycentricInterpolator(self.xs, self.ys)
         D = P.derivatives(self.test_xs, len(self.xs)+2)
         for i in range(D.shape[0]):
-            assert_almost_equal(self.true_poly.deriv(i)(self.test_xs), D[i])
+            assert_allclose(self.true_poly.deriv(i)(self.test_xs),
+                            D[i],
+                            atol=1e-12)
 
     def test_derivative(self):
         P = BarycentricInterpolator(self.xs, self.ys)
         m = 10
         r = P.derivatives(self.test_xs, m)
         for i in range(m):
-            assert_almost_equal(P.derivative(self.test_xs, i), r[i])
+            assert_allclose(P.derivative(self.test_xs, i), r[i])
 
     def test_high_derivative(self):
         P = BarycentricInterpolator(self.xs, self.ys)
-        for i in range(len(self.xs), 2*len(self.xs)):
-            assert_almost_equal(P.derivative(self.test_xs, i),
-                                np.zeros(len(self.test_xs)))
+        for i in range(len(self.xs), 5*len(self.xs)):
+            assert_allclose(P.derivative(self.test_xs, i),
+                            np.zeros(len(self.test_xs)))
 
     def test_ndim_derivatives(self):
         poly1 = self.true_poly
@@ -376,11 +378,12 @@ class TestBarycentric:
         P = BarycentricInterpolator(self.xs, ys, axis=0)
         D = P.derivatives(self.test_xs)
         for i in range(D.shape[0]):
-            assert_almost_equal(np.stack((poly1.deriv(i)(self.test_xs),
-                                          poly2.deriv(i)(self.test_xs),
-                                          poly3.deriv(i)(self.test_xs)),
-                                         axis=-1),
-                                D[i])
+            assert_allclose(D[i],
+                            np.stack((poly1.deriv(i)(self.test_xs),
+                                      poly2.deriv(i)(self.test_xs),
+                                      poly3.deriv(i)(self.test_xs)),
+                                     axis=-1),
+                            atol=1e-12)
 
     def test_ndim_derivative(self):
         poly1 = self.true_poly
@@ -390,11 +393,12 @@ class TestBarycentric:
 
         P = BarycentricInterpolator(self.xs, ys, axis=0)
         for i in range(P.n):
-            assert_almost_equal(np.stack((poly1.deriv(i)(self.test_xs),
-                                          poly2.deriv(i)(self.test_xs),
-                                          poly3.deriv(i)(self.test_xs)),
-                                         axis=-1),
-                                P.derivative(self.test_xs, i))
+            assert_allclose(P.derivative(self.test_xs, i),
+                            np.stack((poly1.deriv(i)(self.test_xs),
+                                      poly2.deriv(i)(self.test_xs),
+                                      poly3.deriv(i)(self.test_xs)),
+                                     axis=-1),
+                            atol=1e-12)
 
     def test_delayed(self):
         P = BarycentricInterpolator(self.xs)
@@ -453,10 +457,10 @@ class TestBarycentric:
     def test_wrapper(self):
         P = BarycentricInterpolator(self.xs, self.ys)
         bi = barycentric_interpolate
-        assert_almost_equal(P(self.test_xs), bi(self.xs, self.ys, self.test_xs))
-        assert_almost_equal(P.derivative(self.test_xs, 2),
+        assert_allclose(P(self.test_xs), bi(self.xs, self.ys, self.test_xs))
+        assert_allclose(P.derivative(self.test_xs, 2),
                             bi(self.xs, self.ys, self.test_xs, der=2))
-        assert_almost_equal(P.derivatives(self.test_xs, 2),
+        assert_allclose(P.derivatives(self.test_xs, 2),
                             bi(self.xs, self.ys, self.test_xs, der=[0, 1]))
 
     def test_int_input(self):
@@ -500,6 +504,14 @@ class TestBarycentric:
         # Check if the interpolated values match the input values
         # at the nodes
         assert_almost_equal(yi, P.yi.ravel())
+
+    def test_repeated_node(self):
+        # check that a repeated node raises a ValueError
+        # (computing the weights requires division by xi[i] - xi[j])
+        xis = np.array([0.1, 0.5, 0.9, 0.5])
+        ys = np.array([1, 2, 3, 4])
+        with pytest.raises(ValueError):
+            BarycentricInterpolator(xis, ys)
 
 
 class TestPCHIP:

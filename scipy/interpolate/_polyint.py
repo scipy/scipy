@@ -62,13 +62,13 @@ class _Interpolator1D:
         Parameters
         ----------
         x : array_like
-            Points to evaluate the interpolant at.
+            Point or points at which to evaluate the interpolant.
 
         Returns
         -------
         y : array_like
             Interpolated values. Shape is determined by replacing
-            the interpolation axis in the original array with the shape of x.
+            the interpolation axis in the original array with the shape of `x`.
 
         Notes
         -----
@@ -143,26 +143,26 @@ class _Interpolator1D:
 class _Interpolator1DWithDerivatives(_Interpolator1D):
     def derivatives(self, x, der=None):
         """
-        Evaluate many derivatives of the polynomial at the point x
+        Evaluate several derivatives of the polynomial at the point `x`
 
-        Produce an array of all derivative values at the point x.
+        Produce an array of derivatives evaluated at the point `x`.
 
         Parameters
         ----------
         x : array_like
             Point or points at which to evaluate the derivatives
-        der : int or None, optional
-            How many derivatives to extract; None for all potentially
-            nonzero derivatives (that is a number equal to the number
-            of points). This number includes the function value as 0th
-            derivative.
+        der : int or list or None, optional
+            How many derivatives to evaluate, or None for all potentially
+            nonzero derivatives (that is, a number equal to the number
+            of points), or a list of derivatives to evaluate. This number
+            includes the function value as the '0th' derivative.
 
         Returns
         -------
         d : ndarray
-            Array with derivatives; d[j] contains the jth derivative.
-            Shape of d[j] is determined by replacing the interpolation
-            axis in the original array with the shape of x.
+            Array with derivatives; `d[j]` contains the jth derivative.
+            Shape of `d[j]` is determined by replacing the interpolation
+            axis in the original array with the shape of `x`.
 
         Examples
         --------
@@ -190,7 +190,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
     def derivative(self, x, der=1):
         """
-        Evaluate one derivative of the polynomial at the point x
+        Evaluate a single derivative of the polynomial at the point x.
 
         Parameters
         ----------
@@ -198,15 +198,15 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
             Point or points at which to evaluate the derivatives
 
         der : integer, optional
-            Which derivative to extract. This number includes the
-            function value as 0th derivative.
+            Which derivative to evaluate (default: first derivative).
+            This number includes the function value as 0th derivative.
 
         Returns
         -------
         d : ndarray
-            Derivative interpolated at the x-points. Shape of d is
+            Derivative interpolated at the x-points. Shape of `d` is
             determined by replacing the interpolation axis in the
-            original array with the shape of x.
+            original array with the shape of `x`.
 
         Notes
         -----
@@ -226,14 +226,14 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         ----------
         x : array_like
             1D array of points at which to evaluate the derivatives
-        der: integer, optional
+        der : integer, optional
             The number of derivatives to evaluate, from 'order 0' (der=1) to order der-1.
             If omitted, return all possibly-non-zero derivatives, ie 0 to order n-1.
 
         Returns
         -------
         d : ndarray
-            Array of shape ``(der, x.size, self.yi.shape[1])`` containing
+            Array of shape `(der, x.size, self.yi.shape[1])` containing
             the derivatives from 0 to der-1
         """
         raise NotImplementedError()
@@ -243,10 +243,10 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     """
     Interpolating polynomial for a set of points.
 
-    The polynomial passes through all the pairs (xi,yi). One may
-    additionally specify a number of derivatives at each point xi;
-    this is done by repeating the value xi and specifying the
-    derivatives as successive yi values.
+    The polynomial passes through all the pairs `(xi, yi)`. One may
+    additionally specify a number of derivatives at each point `xi`;
+    this is done by repeating the value `xi` and specifying the
+    derivatives as successive `yi` values.
 
     Allows evaluation of the polynomial and all its derivatives.
     For reasons of numerical stability, this function does not compute
@@ -259,10 +259,10 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         Interpolation points (known x-coordinates). Must be sorted
         in increasing order.
     yi : array_like
-        Known y-coordinates. When an xi occurs two or more times in
-        a row, the corresponding yi's represent derivative values.
+        Known y-coordinates. When an `xi` occurs two or more times in
+        a row, the corresponding `yi`'s represent derivative values.
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values.
 
     Notes
     -----
@@ -290,11 +290,11 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     >>> from scipy.interpolate import KroghInterpolator
     >>> KroghInterpolator([0,0,1],[0,2,0])
 
-    This constructs the quadratic 2*X**2-2*X. The derivative condition
-    is indicated by the repeated zero in the xi array; the corresponding
+    This constructs the quadratic :math:`2x^2-2x`. The derivative condition
+    is indicated by the repeated zero in the `xi` array; the corresponding
     yi values are 0, the function value, and 2, the derivative value.
 
-    For another example, given xi, yi, and a derivative ypi for each
+    For another example, given `xi`, `yi`, and a derivative `ypi` for each
     point, appropriate arrays can be constructed as:
 
     >>> import numpy as np
@@ -305,7 +305,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     >>> KroghInterpolator(xi_k, yi_k)
 
     To produce a vector-valued polynomial, supply a higher-dimensional
-    array for yi:
+    array for `yi`:
 
     >>> KroghInterpolator([0,1],[[2,3],[4,5]])
 
@@ -396,17 +396,17 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     xi : array_like
         Interpolation points (known x-coordinates).
     yi : array_like
-        Known y-coordinates, of shape ``(xi.size, R)``. Interpreted as
+        Known y-coordinates, of shape `(xi.size, R)`. Interpreted as
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
-    der : int or list, optional
-        How many derivatives to extract: `None` for all potentially
+    der : int or list or None, optional
+        How many derivatives to evaluate, or None for all potentially
         nonzero derivatives (that is, a number equal to the number
-        of points), or a list of derivatives to extract. This number
+        of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
-    axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+axis : int, optional
+        Axis in the `yi` array corresponding to the x-coordinate values.
 
     Returns
     -------
@@ -428,7 +428,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
 
     Examples
     --------
-    We can interpolate 2D observed data using krogh interpolation:
+    We can interpolate 2D observed data using Krogh interpolation:
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -531,25 +531,32 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     r"""The interpolating polynomial for a set of points
 
     Constructs a polynomial that passes through a given set of points.
-    Allows evaluation of the polynomial, efficient changing of the y
-    values to be interpolated, and updating by adding more x values.
+    Allows evaluation of the polynomial and all its derivatives,
+    efficient changing of the y-values to be interpolated,
+    and updating by adding more x- and y-values.
+
     For reasons of numerical stability, this function does not compute
     the coefficients of the polynomial.
 
-    The values yi need to be provided before the function is
+    The values `yi` need to be provided before the function is
     evaluated, but none of the preprocessing depends on them, so rapid
     updates are possible.
 
     Parameters
     ----------
     xi : array_like
-        Interpolation points; a 1-D array of the x coordinates of the points
-        the polynomial should pass through.
+        Interpolation points; a 1-D array of the x-coordinates of the points
+        the polynomial will pass through.
     yi : array_like, optional
-        The y coordinates of the points the polynomial should pass through.
+        The y-coordinates of the points the polynomial will pass through.
         If None, the y values will be supplied later via the `set_y` method.
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values.
+    wi : array_like, optional
+        The barycentric weights for the chosen interpolation points `xi`.
+        If absent or None, the weights will be computed from `xi` (default).
+        This allows for the re-use of the weights `wi` if several interpolants
+        are being calculated using the same nodes `xi`, without re-computation.
 
     Notes
     -----
@@ -575,28 +582,30 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> xi = np.random.rand(6) * np.pi/2
     >>> f, f_d1, f_d2, f_d3, f_d4 = np.sin, np.cos, lambda x: -np.sin(x), lambda x: -np.cos(x), np.sin
     >>> P = BarycentricInterpolator(xi, f(xi))
-    >>> fig, axs = plt.subplots(5, 1, sharex=True, layout='constrained', figsize=(6,10))
+    >>> fig, axs = plt.subplots(5, 1, sharex=True, layout='constrained', figsize=(7,10))
     >>> x = np.linspace(0, np.pi, 100)
-    >>> axs[0].plot(x, f(x), 'k--', xi, f(xi), '.k', x, P(x), 'r:')
-    >>> axs[1].plot(x, f_d1(x), 'k--', xi, f_d1(xi), '.k', x, P.derivative(x), 'r:')
-    >>> axs[2].plot(x, f_d2(x), 'k--', xi, f_d2(xi), '.k', x, P.derivative(x, 2), 'r:')
-    >>> axs[3].plot(x, f_d3(x), 'k--', xi, f_d3(xi), '.k', x, P.derivative(x, 3), 'r:')
-    >>> axs[4].plot(x, f_d4(x), 'k--', xi, f_d4(xi), '.k', x, P.derivative(x, 4), 'r:')
+    >>> axs[0].plot(x, P(x), 'r:', x, f(x), 'k--', xi, f(xi), 'xk')
+    >>> axs[1].plot(x, P.derivative(x), 'r:', x, f_d1(x), 'k--', xi, f_d1(xi), 'xk')
+    >>> axs[2].plot(x, P.derivative(x, 2), 'r:', x, f_d2(x), 'k--', xi, f_d2(xi), 'xk')
+    >>> axs[3].plot(x, P.derivative(x, 3), 'r:', x, f_d3(x), 'k--', xi, f_d3(xi), 'xk')
+    >>> axs[4].plot(x, P.derivative(x, 4), 'r:', x, f_d4(x), 'k--', xi, f_d4(xi), 'xk')
     >>> axs[0].set_xlim(0, np.pi)
     >>> axs[4].set_xlabel(r"$x$")
+    >>> axs[4].set_xticks([i * np.pi / 4 for i in range(5)],
+    ...                   ["0", r"$\frac{\pi}{4}$", r"$\frac{\pi}{2}$", r"$\frac{3\pi}{4}$", r"$\pi$"])
     >>> axs[0].set_ylabel("$f(x)$")
     >>> axs[1].set_ylabel("$f'(x)$")
     >>> axs[2].set_ylabel("$f''(x)$")
     >>> axs[3].set_ylabel("$f^{(3)}(x)$")
     >>> axs[4].set_ylabel("$f^{(4)}(x)$")
-    >>> labels = ['True function $f$', 'Interpolation nodes', 'Barycentric interpolation']
-    >>> axs[0].legend(axs[0].get_lines(), labels, bbox_to_anchor=(0., 1.02, 1., .102),
+    >>> labels = ['Interpolation nodes', 'True function $f$', 'Barycentric interpolation']
+    >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.tight_layout()
     >>> plt.show()
     """
 
-    def __init__(self, xi, yi=None, axis=0, wi=None):
+    def __init__(self, xi, yi=None, axis=0, *, wi=None):
         _Interpolator1DWithDerivatives.__init__(self, xi, yi, axis)
 
         self.xi = np.asfarray(xi)
@@ -636,16 +645,16 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         Update the y values to be interpolated
 
         The barycentric interpolation algorithm requires the calculation
-        of weights, but these depend only on the xi. The yi can be changed
+        of weights, but these depend only on the `xi`. The `yi` can be changed
         at any time.
 
         Parameters
         ----------
         yi : array_like
-            The y coordinates of the points the polynomial should pass through.
-            If None, the y values will be supplied later.
+            The y-coordinates of the points the polynomial will pass through.
+            If None, the y values must be supplied later.
         axis : int, optional
-            Axis in the yi array corresponding to the x-coordinate values.
+            Axis in the `yi` array corresponding to the x-coordinate values.
 
         """
         if yi is None:
@@ -675,7 +684,6 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             If `yi` is not given, the y values will be supplied later. `yi`
             should be given if and only if the interpolator has y values
             specified.
-
         """
         if yi is not None:
             if self.yi is None:
@@ -707,19 +715,19 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         Parameters
         ----------
         x : array_like
-            Points to evaluate the interpolant at.
+            Point or points at which to evaluate the interpolant.
 
         Returns
         -------
         y : array_like
             Interpolated values. Shape is determined by replacing
-            the interpolation axis in the original array with the shape of x.
+            the interpolation axis in the original array with the shape of `x`.
 
         Notes
         -----
-        Currently the code computes an outer product between x and the
+        Currently the code computes an outer product between `x` and the
         weights, that is, it constructs an intermediate array of size
-        N by len(x), where N is the degree of the polynomial.
+        ``(N, len(x))``, where N is the degree of the polynomial.
         """
         return _Interpolator1D.__call__(self, x)
 
@@ -744,22 +752,22 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     def derivative(self, x, der=1):
         """
-        Evaluate one derivative of the polynomial at the point x
+        Evaluate a single derivative of the polynomial at the point x.
 
         Parameters
         ----------
         x : array_like
             Point or points at which to evaluate the derivatives
         der : integer, optional
-            Which derivative to extract. This number includes the
-            function value as 0th derivative.
+            Which derivative to evaluate (default: first derivative).
+            This number includes the function value as 0th derivative.
 
         Returns
         -------
         d : ndarray
-            Derivative interpolated at the x-points. Shape of d is
+            Derivative interpolated at the x-points. Shape of `d` is
             determined by replacing the interpolation axis in the
-            original array with the shape of x.
+            original array with the shape of `x`.
         """
         x, x_shape = self._prepare_x(x)
         y = self._evaluate_derivatives(x, der+1, all_lower=False)
@@ -778,6 +786,9 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
         if (not all_lower) and der == 1:
             return self._evaluate(x)
+
+        if (not all_lower) and (der > self.n):
+            return np.zeros((len(x), self.r), dtype=self.dtype)
 
         if der is None:
             der = self.n
@@ -809,7 +820,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
         if self._diff_baryint is None:
             # initialise and cache derivative interpolator and cijs;
-            # reuse weights (which depend only on interpolation points xi)
+            # reuse weights wi (which depend only on interpolation points xi),
             # to avoid unnecessary re-computation
             self._diff_baryint = BarycentricInterpolator(xi=self.xi, yi=self._diff_cij @ self.yi, wi=self.wi)
             self._diff_baryint._diff_cij = self._diff_cij
@@ -826,7 +837,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         return self._diff_baryint._evaluate_derivatives(x, der-1, all_lower=False)
 
 
-def barycentric_interpolate(xi, yi, x, der=0, axis=0):
+def barycentric_interpolate(xi, yi, x, axis=0, *, der=0):
     """
     Convenience function for polynomial interpolation.
 
@@ -850,20 +861,20 @@ def barycentric_interpolate(xi, yi, x, der=0, axis=0):
     yi : array_like
         The y coordinates of the points the polynomial should pass through.
     x : scalar or array_like
-        Points to evaluate the interpolator at.
-    der : int or list, optional
-        How many derivatives to extract: `None` for all potentially
+        Point or points at which to evaluate the interpolant.
+    der : int or list or None, optional
+        How many derivatives to evaluate, or None for all potentially
         nonzero derivatives (that is, a number equal to the number
-        of points), or a list of derivatives to extract. This number
+        of points), or a list of derivatives to evaluate. This number
         includes the function value as the '0th' derivative.
     axis : int, optional
-        Axis in the yi array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values.
 
     Returns
     -------
     y : scalar or array_like
         Interpolated values. Shape is determined by replacing
-        the interpolation axis in the original array with the shape of x.
+        the interpolation axis in the original array with the shape of `x`.
 
     See Also
     --------
