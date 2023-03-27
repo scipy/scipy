@@ -38,7 +38,6 @@ dependencies:
   - matplotlib
   - pydata-sphinx-theme==0.9.0
   - sphinx-design
-  - docutils<0.18.1
   - jupytext
   - myst-nb
   # For linting

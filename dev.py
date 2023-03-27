@@ -987,6 +987,10 @@ TARGETS: Sphinx build targets [default: 'html']
         make_params = [f'PYTHON="{sys.executable}"']
         if parallel:
             make_params.append(f'SPHINXOPTS="-j{parallel}"')
+        # Environment variables needed for notebooks
+        
+        make_params.append('SQLALCHEMY_SILENCE_UBER_WARNING=1')
+        make_params.append('JUPYTER_PLATFORM_DIRS=1')
 
         return {
             'actions': [

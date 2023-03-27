@@ -156,6 +156,12 @@ for key in (
 warnings.filterwarnings(  # matplotlib<->pyparsing issue
     'ignore', message="Exception creating Regex for oneOf.*",
     category=SyntaxWarning)
+warnings.filterwarnings(  # docutils warning when using notebooks
+    'ignore', message="The frontend.OptionParser class will be replaced",
+    category=DeprecationWarning)
+warnings.filterwarnings(
+    'ignore', message="The frontend.Option class will be removed in Docutils 0.21 or later.",
+    category=DeprecationWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (
