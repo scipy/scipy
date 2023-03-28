@@ -2348,7 +2348,8 @@ class foldnorm_gen(rv_continuous):
         return _norm_pdf(x + c) + _norm_pdf(x-c)
 
     def _cdf(self, x, c):
-        return _norm_cdf(x-c) + _norm_cdf(x+c) - 1.0
+        sqrt_two = np.sqrt(2)
+        return 0.5 * (sc.erf((x - c)/sqrt_two) + sc.erf((x + c)/sqrt_two))
 
     def _sf(self, x, c):
         return _norm_sf(x - c) + _norm_sf(x + c)

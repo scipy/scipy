@@ -1122,6 +1122,19 @@ class TestGompertz:
         assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
 
 
+class TestFoldNorm:
+
+    # reference values were computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 50
+    # mp.mpf(0.5) * (mp.erf((x - c)/mp.sqrt(2)) + mp.erf((x + c)/mp.sqrt(2)))
+
+    @pytest.mark.parametrize('x, c, ref', [(1e-4, 1e-8, 7.978845594730578e-05),
+                                           (1e-4, 1e-4, 7.97884555483635e-05)])
+    def test_cdf(self, x, c, ref):
+        assert_allclose(stats.foldnorm.cdf(x, c), ref, rtol=1e-15)
+
+
 class TestHalfNorm:
 
     # sfx is sf(x).  The values were computed with mpmath:
