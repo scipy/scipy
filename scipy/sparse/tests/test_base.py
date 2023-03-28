@@ -1302,6 +1302,10 @@ class _TestCommon:
         S = self.spmatrix(D)
         if hasattr(S, 'data'):
             S.data.flags.writeable = False
+        if hasattr(S, 'indptr'):
+            S.indptr.flags.writeable = False
+        if hasattr(S, 'indices'):
+            S.indices.flags.writeable = False
         for x in supported_dtypes:
             D_casted = D.astype(x)
             S_casted = S.astype(x)
