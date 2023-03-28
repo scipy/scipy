@@ -113,7 +113,7 @@ class DunnettResult:
 
         # Evaluation of `pvalue_from_stat` is noisy due to the use of RQMC to
         # evaluate `multivariate_t.cdf`. `minimize_scalar` is not designed
-        # to tolerate a noisy objective function and may fail to find the 
+        # to tolerate a noisy objective function and may fail to find the
         # minimum accurately. We mitigate this possibility with the validation
         # step below, but implementation of a noise-tolerant root finder or
         # minimizer would be a welcome enhancement. See gh-18150.
@@ -187,7 +187,7 @@ class DunnettResult:
 
 
 def dunnett(
-    *samples: npt.ArrayLike,
+    *samples: npt.ArrayLike,  # noqa: D417
     control: npt.ArrayLike,
     alternative: Literal['two-sided', 'less', 'greater'] = "two-sided",
     random_state: SeedType = None
