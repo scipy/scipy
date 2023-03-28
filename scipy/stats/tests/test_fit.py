@@ -220,8 +220,7 @@ def test_nnlf_and_related_methods(dist, params):
 def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'rel_breitwigner'}
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
@@ -239,7 +238,7 @@ def cases_test_fit_mle():
                        'truncnorm', 'powerlognorm', 'beta',
                        'loguniform', 'reciprocal', 'trapezoid', 'nct',
                        'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
-                       'burr', 'triang'}
+                       'burr', 'triang', 'rel_breitwigner'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -263,8 +262,7 @@ def cases_test_fit_mse():
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'argus',  # close, but doesn't meet tolerance
-                      'vonmises',  # can have negative CDF; doesn't play nice
-                      'rel_breitwigner'}  # fit fails when loc not fixed
+                      'vonmises'}  # can have negative CDF; doesn't play nice
     slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
                       'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
                       'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
@@ -285,7 +283,8 @@ def cases_test_fit_mse():
                        'loguniform', 'betaprime', 'rice', 'gennorm',
                        'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
                        'beta', 'genexpon', 'tukeylambda', 'zipfian',
-                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
+                       'nchypergeom_wallenius', 'nchypergeom_fisher',
+                       'rel_breitwigner'}
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
     for dist in dict(distdiscrete + distcont):
