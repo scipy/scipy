@@ -7162,7 +7162,8 @@ def _ttest_nans(a, b, axis, namedtuple_type):
     return namedtuple_type(t, p)
 
 
-@_axis_nan_policy_factory(Ttest_indResult, n_samples=2)
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
               trim=0):
@@ -7394,9 +7395,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
     if a.size == 0 or b.size == 0:
-        return _ttest_nans(a, b, axis, Ttest_indResult)
+        t, prob = _ttest_nans(a, b, axis, Ttest_indResult)
+        df, denom, estimate = np.nan, np.nan, np.nan
 
-    if permutations is not None and permutations != 0:
+    elif permutations is not None and permutations != 0:
         if trim != 0:
             raise ValueError("Permutations are currently not supported "
                              "with trimming.")
@@ -7404,11 +7406,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                 int(permutations) != permutations):
             raise ValueError("Permutations must be a non-negative integer.")
 
-        res = _permutation_ttest(a, b, permutations=permutations,
-                                 axis=axis, equal_var=equal_var,
-                                 nan_policy=nan_policy,
-                                 random_state=random_state,
-                                 alternative=alternative)
+        t, prob = _permutation_ttest(a, b, permutations=permutations,
+                                    axis=axis, equal_var=equal_var,
+                                    nan_policy=nan_policy,
+                                    random_state=random_state,
+                                    alternative=alternative)
+        df, denom, estimate = np.nan, np.nan, np.nan
 
     else:
         n1 = a.shape[axis]
@@ -7432,9 +7435,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-    return Ttest_indResult(*res)
+        # when nan_policy='omit', `df` can be different for different axis-slices
+        df = np.broadcast_to(df, t.shape)[()]
+        estimate = m1-m2
+
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=estimate)
 
 
 def _ttest_trim_var_mean_len(a, trim, axis):

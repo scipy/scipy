@@ -5170,10 +5170,10 @@ def test_ttest_ind_nan_2nd_arg():
 
 
 def test_ttest_ind_empty_1d_returns_nan():
-    # Two empty inputs should return a Ttest_indResult containing nan
+    # Two empty inputs should return a TtestResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -5186,7 +5186,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -5200,7 +5200,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -5214,7 +5214,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
