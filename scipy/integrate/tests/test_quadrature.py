@@ -155,10 +155,12 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, even='last'), 14)
 
         # `even='cart'`
-        # integral should be 21.0 exactly
+        # integral should be exactly 21
         f = lambda x: x ** 2
         assert_allclose(simpson(f(x), x=x, even='cart'), 21.0)
         assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
+
+        # integral should be exactly 114
         x = np.linspace(1, 7, 4)
         assert_allclose(simpson(f(x), dx=2.0, even='cart'), 114)
         assert_allclose(simpson(f(x), dx=2.0, even='avg'), 115 + 1/3)
