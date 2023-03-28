@@ -529,6 +529,9 @@ class anglit_gen(rv_continuous):
     def _cdf(self, x):
         return np.sin(x+np.pi/4)**2.0
 
+    def _sf(self, x):
+        return np.cos(x + np.pi / 4) ** 2.0
+
     def _ppf(self, q):
         return np.arcsin(np.sqrt(q))-np.pi/4
 
@@ -1426,8 +1429,17 @@ class chi_gen(rv_continuous):
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
-        return (sc.gammaln(.5 * df) +
-                .5 * (df - np.log(2) - (df - 1) * sc.digamma(.5 * df)))
+
+        def regular_formula(df):
+            return (sc.gammaln(.5 * df)
+                    + 0.5 * (df - np.log(2) - (df - 1) * sc.digamma(0.5 * df)))
+
+        def asymptotic_formula(df):
+            return (0.5 + np.log(np.pi)/2 - (df**-1)/6 - (df**-2)/6
+                    - 4/45*(df**-3) + (df**-4)/15)
+
+        return _lazywhere(df < 3e2, (df, ), regular_formula,
+                          f2=asymptotic_formula)
 
 
 chi = chi_gen(a=0.0, name='chi')
@@ -1728,6 +1740,10 @@ class dweibull_gen(rv_continuous):
     # so overall we're saving one or two gamma function evaluations here.
     def _stats(self, c):
         return 0, None, 0, None
+
+    def _entropy(self, c):
+        h = stats.weibull_min._entropy(c) - np.log(0.5)
+        return h
 
 
 dweibull = dweibull_gen(name='dweibull')
@@ -2743,9 +2759,17 @@ class genlogistic_gen(rv_continuous):
         Cx = (1+np.exp(-x))**(-c)
         return Cx
 
+    def _logcdf(self, x, c):
+        return -c * np.log1p(np.exp(-x))
+
     def _ppf(self, q, c):
-        vals = -np.log(pow(q, -1.0/c)-1)
-        return vals
+        return -np.log(sc.powm1(q, -1.0/c))
+
+    def _sf(self, x, c):
+        return -sc.expm1(self._logcdf(x, c))
+
+    def _isf(self, q, c):
+        return self._ppf(1 - q, c)
 
     def _stats(self, c):
         mu = _EULER + sc.psi(c)
@@ -2765,6 +2789,7 @@ class genlogistic_gen(rv_continuous):
                           #   ~ -log(c) + log(c) - 1/(2 * c) + 1/c
                           #   = 1/(2 * c)
                           f2=lambda c: 1/(2 * c) + _EULER + 1)
+
 
 genlogistic = genlogistic_gen(name='genlogistic')
 
@@ -3230,7 +3255,20 @@ class gamma_gen(rv_continuous):
         return a, a, 2.0/np.sqrt(a), 6.0/a
 
     def _entropy(self, a):
-        return sc.psi(a)*(1-a) + a + sc.gammaln(a)
+
+        def regular_formula(a):
+            return sc.psi(a) * (1-a) + a + sc.gammaln(a)
+
+        def asymptotic_formula(a):
+            # plug in above formula the expansions:
+            # psi(a) ~ ln(a) - 1/2a - 1/12a^2 + 1/120a^4
+            # gammaln(a) ~ a * ln(a) - a - 1/2 * ln(a) + 1/2 ln(2 * pi) +
+            #              1/12a - 1/360a^3
+            return (0.5 * (1. + np.log(2*np.pi) + np.log(a)) - 1/(3 * a)
+                    - (a**-2.)/12 - (a**-3.)/90 + (a**-4.)/120)
+
+        return _lazywhere(a < 250, (a, ), regular_formula,
+                          f2=asymptotic_formula)
 
     def _fitstart(self, data):
         # The skewness of the gamma distribution is `2 / np.sqrt(a)`.
@@ -3471,8 +3509,21 @@ class gengamma_gen(rv_continuous):
         return sc.poch(a, n*1.0/c)
 
     def _entropy(self, a, c):
-        val = sc.psi(a)
-        return a*(1-val) + 1.0/c*val + sc.gammaln(a) - np.log(abs(c))
+        def regular(a, c):
+            val = sc.psi(a)
+            A = a * (1 - val) + val / c
+            B = sc.gammaln(a) - np.log(abs(c))
+            h = A + B
+            return h
+
+        def asymptotic(a, c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            return (norm._entropy() - np.log(a)/2
+                    - np.log(np.abs(c)) + (a**-1.)/6 - (a**-3.)/90
+                    + (np.log(a) - (a**-1.)/2 - (a**-2.)/12 + (a**-4.)/120)/c)
+
+        h = _lazywhere(a >= 2e2, (a, c), f=asymptotic, f2=regular)
+        return h
 
 
 gengamma = gengamma_gen(a=0.0, name='gengamma')
@@ -3558,7 +3609,7 @@ class genhyperbolic_gen(rv_continuous):
     :math:`|b| < a` if :math:`p \ge 0`,
     :math:`|b| \le a` if :math:`p < 0`.
     :math:`K_{p}(.)` denotes the modified Bessel function of the second
-    kind and order :math:`p` (`scipy.special.kn`)
+    kind and order :math:`p` (`scipy.special.kv`)
 
     `genhyperbolic` takes ``p`` as a tail parameter,
     ``a`` as a shape parameter,
@@ -3654,28 +3705,51 @@ class genhyperbolic_gen(rv_continuous):
 
         return _pdf_single(x, p, a, b)
 
+    # np.vectorize isn't currently designed to be used as a decorator,
+    # so use a lambda instead.  This allows us to decorate the function
+    # with `np.vectorize` and still provide the `otypes` parameter.
+    # The first argument to `vectorize` is `func.__get__(object)` for
+    # compatibility with Python 3.9.  In Python 3.10, this can be
+    # simplified to just `func`.
+    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @staticmethod
+    def _integrate_pdf(x0, x1, p, a, b):
+        """
+        Integrate the pdf of the genhyberbolic distribution from x0 to x1.
+        This is a private function used by _cdf() and _sf() only; either x0
+        will be -inf or x1 will be inf.
+        """
+        user_data = np.array([p, a, b], float).ctypes.data_as(ctypes.c_void_p)
+        llc = LowLevelCallable.from_cython(_stats, '_genhyperbolic_pdf',
+                                           user_data)
+        d = np.sqrt((a + b)*(a - b))
+        mean = b/d * sc.kv(p + 1, d) / sc.kv(p, d)
+        epsrel = 1e-10
+        epsabs = 0
+        if x0 < mean < x1:
+            # If the interval includes the mean, integrate over the two
+            # intervals [x0, mean] and [mean, x1] and add. If we try to do
+            # the integral in one call of quad and the non-infinite endpoint
+            # is far in the tail, quad might return an incorrect result
+            # because it does not "see" the peak of the PDF.
+            intgrl = (integrate.quad(llc, x0, mean,
+                                     epsrel=epsrel, epsabs=epsabs)[0]
+                      + integrate.quad(llc, mean, x1,
+                                       epsrel=epsrel, epsabs=epsabs)[0])
+        else:
+            intgrl = integrate.quad(llc, x0, x1,
+                                    epsrel=epsrel, epsabs=epsabs)[0]
+        if np.isnan(intgrl):
+            msg = ("Infinite values encountered in scipy.special.kve. "
+                   "Values replaced by NaN to avoid incorrect results.")
+            warnings.warn(msg, RuntimeWarning)
+        return max(0.0, min(1.0, intgrl))
+
     def _cdf(self, x, p, a, b):
+        return self._integrate_pdf(-np.inf, x, p, a, b)
 
-        def _cdf_single(x, p, a, b):
-            user_data = np.array(
-                [p, a, b], float
-                ).ctypes.data_as(ctypes.c_void_p)
-            llc = LowLevelCallable.from_cython(
-                _stats, '_genhyperbolic_pdf', user_data
-                )
-
-            t1 = integrate.quad(llc, -np.inf, x)[0]
-
-            if np.isnan(t1):
-                msg = ("Infinite values encountered in scipy.special.kve. "
-                       "Values replaced by NaN to avoid incorrect results.")
-                warnings.warn(msg, RuntimeWarning)
-
-            return t1
-
-        _cdf_vec = np.vectorize(_cdf_single, otypes=[np.float64])
-
-        return _cdf_vec(x, p, a, b)
+    def _sf(self, x, p, a, b):
+        return self._integrate_pdf(x, np.inf, p, a, b)
 
     def _rvs(self, p, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X  has a
@@ -4361,8 +4435,19 @@ class invgamma_gen(rv_continuous):
         return m1, m2, g1, g2
 
     def _entropy(self, a):
-        return a - (a+1.0) * sc.psi(a) + sc.gammaln(a)
+        def regular(a):
+            h = a - (a + 1.0) * sc.psi(a) + sc.gammaln(a)
+            return h
 
+        def asymptotic(a):
+            # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
+            # psi(a) ~ ln(a) - 1 / (2 * a)
+            h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
+                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+            return h
+
+        h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
+        return h
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -5124,7 +5209,15 @@ class johnsonsu_gen(rv_continuous):
 
     `johnsonsu` takes :math:`a` and :math:`b` as shape parameters.
 
+    The first four central moments are calculated according to the formulas
+    in [1]_.
+
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Taylor Enterprises. "Johnson Family of Distributions".
+       https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
 
     %(example)s
 
@@ -5155,6 +5248,35 @@ class johnsonsu_gen(rv_continuous):
 
     def _isf(self, x, a, b):
         return np.sinh((_norm_isf(x) - a) / b)
+
+    def _stats(self, a, b, moments='mv'):
+        # Naive implementation of first and second moment to address gh-18071.
+        # https://variation.com/wp-content/distribution_analyzer_help/hs126.htm
+        # Numerical improvements left to future enhancements.
+        mu, mu2, g1, g2 = None, None, None, None
+
+        bn2 = b**-2
+        expbn2 = np.exp(bn2)
+        a_b = a / b
+
+        if 'm' in moments:
+            mu = -expbn2**0.5 * np.sinh(a_b)
+        if 'v' in moments:
+            mu2 = 0.5*sc.expm1(bn2)*(expbn2*np.cosh(2*a_b) + 1)
+        if 's' in moments:
+            t1 = expbn2**.5 * sc.expm1(bn2)**0.5
+            t2 = 3*np.sinh(a_b)
+            t3 = expbn2 * (expbn2 + 2) * np.sinh(3*a_b)
+            denom = np.sqrt(2) * (1 + expbn2 * np.cosh(2*a_b))**(3/2)
+            g1 = -t1 * (t2 + t3) / denom
+        if 'k' in moments:
+            t1 = 3 + 6*expbn2
+            t2 = 4*expbn2**2 * (expbn2 + 2) * np.cosh(2*a_b)
+            t3 = expbn2**2 * np.cosh(4*a_b)
+            t4 = -3 + 3*expbn2**2 + 2*expbn2**3 + expbn2**4
+            denom = 2*(1 + expbn2*np.cosh(2*a_b))**2
+            g2 = (t1 + t2 + t3*t4) / denom - 3
+        return mu, mu2, g1, g2
 
 
 johnsonsu = johnsonsu_gen(name='johnsonsu')
@@ -5395,7 +5517,7 @@ class levy_gen(rv_continuous):
 
         f(x) = \frac{1}{\sqrt{2\pi x^3}} \exp\left(-\frac{1}{2x}\right)
 
-    for :math:`x >= 0`.
+    for :math:`x > 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=1`.
@@ -5498,7 +5620,7 @@ class levy_l_gen(rv_continuous):
     .. math::
         f(x) = \frac{1}{|x| \sqrt{2\pi |x|}} \exp{ \left(-\frac{1}{2|x|} \right)}
 
-    for :math:`x <= 0`.
+    for :math:`x < 0`.
 
     This is the same as the Levy-stable distribution with :math:`a=1/2` and
     :math:`b=-1`.
@@ -5668,6 +5790,7 @@ class logistic_gen(rv_continuous):
         # scale parameters are roots of the two equations described in `func`.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings, and
         # Peacock (2000), Page 130
+
         def dl_dloc(loc, scale=fscale):
             c = (data - loc) / scale
             return np.sum(sc.expit(c)) - n/2
@@ -5692,6 +5815,11 @@ class logistic_gen(rv_continuous):
             res = optimize.root(func, (loc, scale))
             loc, scale = res.x
 
+        # Note: gh-18176 reported data for which the reported MLE had
+        # `scale < 0`. To fix the bug, we return abs(scale). This is OK because
+        # `dl_dscale` and `dl_dloc` are even and odd functions of `scale`,
+        # respectively, so if `-scale` is a solution, so is `scale`.
+        scale = abs(scale)
         return ((loc, scale) if res.success
                 else super().fit(data, *args, **kwds))
 
@@ -7067,11 +7195,23 @@ class t_gen(rv_continuous):
     def _entropy(self, df):
         if df == np.inf:
             return norm._entropy()
-        half = df/2
-        half1 = (df + 1)/2
-        return (half1*(sc.digamma(half1) - sc.digamma(half))
-                + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
 
+        def regular(df):
+            half = df/2
+            half1 = (df + 1)/2
+            return (half1*(sc.digamma(half1) - sc.digamma(half))
+                    + np.log(np.sqrt(df)*sc.beta(half, 0.5)))
+
+        def asymptotic(df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion (d+1)/2 * (digamma((d+1)/2) - digamma(d/2))
+            #  + log(sqrt(d) * beta(d/2, 1/2))"
+            h = (norm._entropy() + 1/df + (df**-2.)/4 - (df**-3.)/6
+                 - (df**-4.)/8 + 3/10*(df**-5.) + (df**-6.)/4)
+            return h
+
+        h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
+        return h
 
 t = t_gen(name='t')
 
@@ -7277,7 +7417,7 @@ class pareto_gen(rv_continuous):
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them. Use user supplied
             # guess or default 1.
-            brack_start = kwds.get('scale', 1)
+            brack_start = float(kwds.get('scale', 1))
             lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
@@ -7870,16 +8010,27 @@ class powerlognorm_gen(rv_continuous):
         return [ic, i_s]
 
     def _pdf(self, x, c, s):
-        # powerlognorm.pdf(x, c, s) = c / (x*s) * phi(log(x)/s) *
-        #                                         (Phi(-log(x)/s))**(c-1),
-        return (c/(x*s) * _norm_pdf(np.log(x)/s) *
-                pow(_norm_cdf(-np.log(x)/s), c*1.0-1.0))
+        return np.exp(self._logpdf(x, c, s))
+
+    def _logpdf(self, x, c, s):
+        return (np.log(c) - np.log(x) - np.log(s) +
+                _norm_logpdf(np.log(x) / s) +
+                _norm_logcdf(-np.log(x) / s) * (c - 1.))
 
     def _cdf(self, x, c, s):
-        return 1.0 - pow(_norm_cdf(-np.log(x)/s), c*1.0)
+        return -sc.expm1(self._logsf(x, c, s))
 
     def _ppf(self, q, c, s):
-        return np.exp(-s * _norm_ppf(pow(1.0 - q, 1.0 / c)))
+        return self._isf(1 - q, c, s)
+
+    def _sf(self, x, c, s):
+        return np.exp(self._logsf(x, c, s))
+
+    def _logsf(self, x, c, s):
+        return _norm_logcdf(-np.log(x) / s) * c
+
+    def _isf(self, q, c, s):
+        return np.exp(-_norm_ppf(q**(1/c)) * s)
 
 
 powerlognorm = powerlognorm_gen(a=0.0, name="powerlognorm")
@@ -9237,7 +9388,7 @@ class truncpareto_gen(rv_continuous):
         return [ib, ic]
 
     def _argcheck(self, b, c):
-        return (b > 0) & (c > 1)
+        return (b > 0.) & (c > 1.)
 
     def _get_support(self, b, c):
         return self.a, c
@@ -9246,7 +9397,8 @@ class truncpareto_gen(rv_continuous):
         return b * x**-(b+1) / (1 - c**-b)
 
     def _logpdf(self, x, b, c):
-        return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        # return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+        return np.log(b) - np.log(-np.expm1(-b*np.log(c))) - (b+1)*np.log(x)
 
     def _cdf(self, x, b, c):
         return (1 - x**-b) / (1 - c**-b)
@@ -9282,6 +9434,228 @@ class truncpareto_gen(rv_continuous):
         b, loc, scale = pareto.fit(data)
         c = (max(data) - loc)/scale
         return b, c, loc, scale
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop("superfit", False):
+            return super().fit(data, *args, **kwds)
+
+        def log_mean(x):
+            return np.mean(np.log(x))
+
+        def harm_mean(x):
+            return 1/np.mean(1/x)
+
+        def get_b(c, loc, scale):
+            u = (data-loc)/scale
+            harm_m = harm_mean(u)
+            log_m = log_mean(u)
+            quot = (harm_m-1)/log_m
+            return (1 - (quot-1) / (quot - (1 - 1/c)*harm_m/np.log(c)))/log_m
+
+        def get_c(loc, scale):
+            return (mx - loc)/scale
+
+        def get_loc(fc, fscale):
+            if fscale:  # (fscale and fc) or (fscale and not fc)
+                loc = mn - fscale
+                return loc
+            if fc:
+                loc = (fc*mn - mx)/(fc - 1)
+                return loc
+
+        def get_scale(loc):
+            return mn - loc
+
+        # Functions used for optimisation; partial derivatives of
+        # the Lagrangian, set to equal 0.
+
+        def dL_dLoc(loc, b_=None):
+            # Partial derivative wrt location.
+            # Optimised upon when no parameters, or only b, are fixed.
+            scale = get_scale(loc)
+            c = get_c(loc, scale)
+            b = get_b(c, loc, scale) if b_ is None else b_
+            harm_m = harm_mean((data - loc)/scale)
+            return 1 - (1 + (c - 1)/(c**(b+1) - c)) * (1 - 1/(b+1)) * harm_m
+
+        def dL_dB(b, logc, logm):
+            # Partial derivative wrt b.
+            # Optimised upon whenever at least one parameter but b is fixed,
+            # and b is free.
+            return b - np.log1p(b*logc / (1 - b*logm)) / logc
+
+        def fallback(data, *args, **kwargs):
+            # Should any issue arise, default to the general fit method.
+            return super(truncpareto_gen, self).fit(data, *args, **kwargs)
+
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fb, fc, floc, fscale = parameters
+        mn, mx = data.min(), data.max()
+        mn_inf = np.nextafter(mn, -np.inf)
+
+        if (fb is not None
+                and fc is not None
+                and floc is not None
+                and fscale is not None):
+            raise ValueError("All parameters fixed."
+                             "There is nothing to optimize.")
+        elif fc is None and floc is None and fscale is None:
+            if fb is None:
+                def cond_b(loc):
+                    # b is positive only if this function is positive
+                    scale = get_scale(loc)
+                    c = get_c(loc, scale)
+                    harm_m = harm_mean((data - loc)/scale)
+                    return (1 + 1/(c-1)) * np.log(c) / harm_m - 1
+
+                # This gives an upper bound on loc allowing for a positive b.
+                # Iteratively look for a bracket for root_scalar.
+                mn_inf = np.nextafter(mn, -np.inf)
+                rbrack = mn_inf
+                i = 0
+                lbrack = rbrack - 1
+                while ((lbrack > -np.inf)
+                       and (cond_b(lbrack)*cond_b(rbrack) >= 0)):
+                    i += 1
+                    lbrack = rbrack - np.power(2., i)
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(cond_b, bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+
+                # Determine the MLE for loc.
+                # Iteratively look for a bracket for root_scalar.
+                rbrack = res.root - 1e-3  # grad_loc is numerically ill-behaved
+                lbrack = rbrack - 1
+                i = 0
+                while ((lbrack > -np.inf)
+                       and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                    i += 1
+                    lbrack = rbrack - np.power(2., i)
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+                loc = res.root
+                scale = get_scale(loc)
+                c = get_c(loc, scale)
+                b = get_b(c, loc, scale)
+
+                std_data = (data - loc)/scale
+                # The expression of b relies on b being bounded above.
+                up_bound_b = min(1/log_mean(std_data),
+                                 1/(harm_mean(std_data)-1))
+                if not (b < up_bound_b):
+                    return fallback(data, *args, **kwds)
+            else:
+                # We know b is positive (or a FitError will be triggered)
+                # so we let loc get close to min(data).
+                rbrack = mn_inf
+                lbrack = mn_inf - 1
+                i = 0
+                # Iteratively look for a bracket for root_scalar.
+                while (lbrack > -np.inf
+                       and (dL_dLoc(lbrack, fb)
+                            * dL_dLoc(rbrack, fb) >= 0)):
+                    i += 1
+                    lbrack = rbrack - 2**i
+                if not lbrack > -np.inf:
+                    return fallback(data, *args, **kwds)
+                res = root_scalar(dL_dLoc, (fb,),
+                                  bracket=(lbrack, rbrack))
+                if not res.converged:
+                    return fallback(data, *args, **kwds)
+                loc = res.root
+                scale = get_scale(loc)
+                c = get_c(loc, scale)
+                b = fb
+        else:
+            # At least one of the parameters determining the support is fixed;
+            # the others then have analytical expressions from the constraints.
+            # The completely determined case (fixed c, loc and scale)
+            # has to be checked for not overflowing the support.
+            # If not fixed, b has to be determined numerically.
+            loc = floc if floc is not None else get_loc(fc, fscale)
+            scale = fscale or get_scale(loc)
+            c = fc or get_c(loc, scale)
+
+            # Unscaled, translated values should be positive when the location
+            # is fixed. If it is not the case, we end up with negative `scale`
+            # and `c`, which would trigger a FitError before exiting the
+            # method.
+            if floc is not None and data.min() - floc < 0:
+                raise FitDataError("truncpareto", lower=1, upper=c)
+
+            # Standardised values should be within the distribution support
+            # when all parameters controlling it are fixed. If it not the case,
+            # `fc` is overidden by `c` determined from `floc` and `fscale` when
+            # raising the exception.
+            if fc and (floc is not None) and fscale:
+                if data.max() > fc*fscale + floc:
+                    raise FitDataError("truncpareto", lower=1,
+                                       upper=get_c(loc, scale))
+
+            # The other constraints should be automatically satisfied
+            # from the analytical expressions of the parameters.
+            # If fc or fscale are respectively less than one or less than 0,
+            # a FitError is triggered before exiting the method.
+
+            if fb is None:
+                std_data = (data - loc)/scale
+                logm = log_mean(std_data)
+                logc = np.log(c)
+                # Condition for a positive root to exist.
+                if not (2*logm < logc):
+                    return fallback(data, *args, **kwds)
+
+                lbrack = 1/logm + 1/(logm - logc)
+                rbrack = np.nextafter(1/logm, 0)
+                try:
+                    res = root_scalar(dL_dB, (logc, logm),
+                                      bracket=(lbrack, rbrack))
+                    # we should then never get there
+                    if not res.converged:
+                        return fallback(data, *args, **kwds)
+                    b = res.root
+                except ValueError:
+                    b = rbrack
+            else:
+                b = fb
+
+        # The distribution requires that `scale+loc <= data <= c*scale+loc`.
+        # To avoid numerical issues, some tuning may be necessary.
+        # We adjust `scale` to satisfy the lower bound, and we adjust
+        # `c` to satisfy the upper bound.
+        if not (scale+loc) < mn:
+            if fscale:
+                loc = np.nextafter(loc, -np.inf)
+            else:
+                scale = get_scale(loc)
+                scale = np.nextafter(scale, 0)
+        if not (c*scale+loc) > mx:
+            c = get_c(loc, scale)
+            c = np.nextafter(c, np.inf)
+
+        if not (np.all(self._argcheck(b, c)) and (scale > 0)):
+            return fallback(data, *args, **kwds)
+
+        params_override = b, c, loc, scale
+        if floc is None and fscale is None:
+            # Based on testing in gh-16782, the following methods are only
+            # reliable if either `floc` or `fscale` are provided. They are
+            # fast, though, so might as well see if they are better than the
+            # generic method.
+            params_super = fallback(data, *args, **kwds)
+            nllf_override = self.nnlf(params_override, data)
+            nllf_super = self.nnlf(params_super, data)
+            if nllf_super < nllf_override:
+                return params_super
+
+        return params_override
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
@@ -9645,29 +10019,42 @@ class vonmises_gen(rv_continuous):
         def find_mu(data):
             return stats.circmean(data)
 
-        def find_kappa(data):
-            # kappa is the solution to
-            # r = I[1](kappa)/I[0](kappa)
-            #   = I[1](kappa) * exp(-kappa)/(I[0](kappa) * exp(-kappa))
-            #   = sc.i1e(kappa)/sc.i0e(kappa)
-            # where r = mean resultant length
-            r = 1 - stats.circvar(data)
+        def find_kappa(data, loc):
+            # Usually, sources list the following as the equation to solve for
+            # the MLE of the shape parameter:
+            # r = I[1](kappa)/I[0](kappa), where r = mean resultant length
+            # This is valid when the location is the MLE of location.
+            # More generally, when the location may be fixed at an arbitrary
+            # value, r should be defined as follows:
+            r = np.sum(np.cos(loc - data))/len(data)
+            # See gh-18128 for more information.
 
-            def solve_for_kappa(kappa):
-                return sc.i1e(kappa)/sc.i0e(kappa) - r
+            if r > 0:
+                def solve_for_kappa(kappa):
+                    return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-            root_res = root_scalar(solve_for_kappa, method="brentq",
-                                   bracket=(1e-8, 1e12))
-            return root_res.root
+                root_res = root_scalar(solve_for_kappa, method="brentq",
+                                    bracket=(1e-8, 1e12))
+                return root_res.root
+            else:
+                # if the provided floc is very far from the circular mean,
+                # the mean resultant length r can become negative.
+                # In that case, the equation
+                # I[1](kappa)/I[0](kappa) = r does not have a solution.
+                # The maximum likelihood kappa is then 0 which practically
+                # results in the uniform distribution on the circle. As
+                # vonmises is defined for kappa > 0, return instead the
+                # smallest floating point value.
+                # See gh-18190 for more information
+                return np.finfo(float).tiny
 
-        if floc is None:
-            floc = find_mu(data)
-            fshape = find_kappa(data)
-        else:
-            fshape = find_kappa(data)
+        # location likelihood equation has a solution independent of kappa
+        loc = floc if floc is not None else find_mu(data)
+        # shape likelihood equation depends on location
+        shape = fshape if fshape is not None else find_kappa(data, loc)
 
-        floc = np.mod(floc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
-        return fshape, floc, 1  # scale is not handled
+        loc = np.mod(loc + np.pi, 2 * np.pi) - np.pi  # ensure in [-pi, pi]
+        return shape, loc, 1  # scale is not handled
 
 
 vonmises = vonmises_gen(name='vonmises')
