@@ -423,6 +423,10 @@ class LocalSearchWrapper:
             mres = self.minimizer(x0=x, **self.kwargs)
         else:
             mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
+        
+        if 'fun' in self.kwargs and 'nfev' in mres:
+            self.func_wrapper.nfev += mres.nfev
+
         if 'njev' in mres:
             self.func_wrapper.ngev += mres.njev
         if 'nhev' in mres:
