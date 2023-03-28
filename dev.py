@@ -1219,9 +1219,10 @@ class CILocal():
 
     Examples (verbose logging enabled by default):
 
-    $ python dev.py ci-local list
-    $ python dev.py ci-local run-job test_meson
-    $ python dev.py ci-local reuse test_meson
+    $ python dev.py ci-local list \b
+    $ python dev.py ci-local run-job test_meson \b
+    $ python dev.py ci-local reuse test_meson \b
+
     """
     args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
 
