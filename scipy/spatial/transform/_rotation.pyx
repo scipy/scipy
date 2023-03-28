@@ -690,7 +690,7 @@ cdef class Rotation:
 
         if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
             raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
-                             "got {}.".format(quat.shape))
+                             f"got {quat.shape}.")
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
