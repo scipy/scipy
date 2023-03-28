@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -27,17 +27,17 @@ __all__ = [
 class DunnettResult:
     statistic: np.ndarray
     pvalue: np.ndarray
-    _alternative: Literal['two-sided', 'less', 'greater']
-    _rho: np.ndarray
-    _df: int
-    _std: float
-    _mean_samples: np.ndarray
-    _mean_control: np.ndarray
-    _n_samples: np.ndarray
-    _n_control: int
-    _rng: SeedType
-    _ci: ConfidenceInterval | None = None
-    _ci_cl: DecimalNumber | None = None
+    _alternative: Literal['two-sided', 'less', 'greater'] = field(repr=False)
+    _rho: np.ndarray = field(repr=False)
+    _df: int = field(repr=False)
+    _std: float = field(repr=False)
+    _mean_samples: np.ndarray = field(repr=False)
+    _mean_control: np.ndarray = field(repr=False)
+    _n_samples: np.ndarray = field(repr=False)
+    _n_control: int = field(repr=False)
+    _rng: SeedType = field(repr=False)
+    _ci: ConfidenceInterval | None = field(default=None, repr=False)
+    _ci_cl: DecimalNumber | None = field(default=None, repr=False)
 
     def __str__(self):
         # Note: `__str__` prints the confidence intervals from the most
@@ -228,7 +228,7 @@ def dunnett(
 
     Returns
     -------
-    res : DunnettResult
+    res : `~scipy.stats._result_classes.DunnettResult`
         An object containing attributes:
 
         statistic : float ndarray
@@ -239,6 +239,12 @@ def dunnett(
             The computed p-value of the test for each comparison. The element
             at index ``i`` is the p-value for the comparison between
             group ``i`` and the control.
+
+        And the following method:
+
+        confidence_interval(confidence_level=0.95) :
+            Compute the difference in means of the groups
+            with the control +- the allowance.
 
     See Also
     --------
