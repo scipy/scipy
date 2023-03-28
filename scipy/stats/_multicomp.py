@@ -56,14 +56,14 @@ class DunnettResult:
                   f"{self._ci.low[i]:>10.3f}"
                   f"{self._ci.high[i]:>10.3f}\n")
 
-        if self._alternative == 'less':
-            s += (
-                "\nOne-sided alternative (less): sample i's mean exceed "
-                "the control's mean by an amount at least Lower CI"
-            )
-        elif self._alternative == 'greater':
+        if self._alternative == 'greater':
             s += (
                 "\nOne-sided alternative (greater): sample i's mean exceed "
+                "the control's mean by an amount at least Lower CI"
+            )
+        elif self._alternative == 'less':
+            s += (
+                "\nOne-sided alternative (less): sample i's mean exceed "
                 "the control's mean by an amount at most Upper CI"
             )
         else:
@@ -102,7 +102,6 @@ class DunnettResult:
         alpha = 1 - confidence_level
 
         def pvalue_from_stat(statistic):
-            # two-sided to have +- bounds
             statistic = np.array(statistic)
             sf = _pvalue_dunnett(
                 rho=self._rho, df=self._df,
@@ -173,9 +172,9 @@ class DunnettResult:
         low = diff_means-allowance
         high = diff_means+allowance
 
-        if self._alternative == 'less':
+        if self._alternative == 'greater':
             high = [np.inf] * len(diff_means)
-        elif self._alternative == 'greater':
+        elif self._alternative == 'less':
             low = [-np.inf] * len(diff_means)
 
         self._ci_cl = confidence_level

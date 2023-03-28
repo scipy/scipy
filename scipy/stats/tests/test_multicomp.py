@@ -288,8 +288,8 @@ class TestDunnett:
         rng = np.random.default_rng(189117774084579816190295271136455278291)
         samples = case['samples']
         control = case['control']
-        alternatives = {'less': 'greater', 'greater': 'less',
-                        'two-sided': "twosided"}  # backwards to pass tests
+        alternatives = {'less': 'less', 'greater': 'greater',
+                        'two-sided': 'twosided'}
         p_ref = case['pvalues'][alternative.replace('-', '')]
 
         res = stats.dunnett(*samples, control=control, alternative=alternative,
@@ -297,10 +297,10 @@ class TestDunnett:
         assert_allclose(res.pvalue, p_ref, rtol=1e-2, atol=1e-4)
 
         ci_ref = case['cis'][alternatives[alternative]]
-        if alternative == "less":
-            ci_ref = [ci_ref, np.inf]  # backwards to pass tests
-        elif alternative == "greater":
-            ci_ref = [-np.inf, ci_ref]  # backwards to pass tests
+        if alternative == "greater":
+            ci_ref = [ci_ref, np.inf]
+        elif alternative == "less":
+            ci_ref = [-np.inf, ci_ref]
         assert res._ci is None
         assert res._ci_cl is None
         ci = res.confidence_interval(confidence_level=0.95)
@@ -328,13 +328,13 @@ class TestDunnett:
         assert '95.0%' in res_str
 
         if alternative == 'less':
-            assert 'inf' in res_str
-            assert 'at least Lower' in res_str
-            assert '-13.' in res_str
-        elif alternative == 'greater':
             assert '-inf' in res_str
             assert 'at most Upper' in res_str
             assert '19.' in res_str
+        elif alternative == 'greater':
+            assert 'inf' in res_str
+            assert 'at least Lower' in res_str
+            assert '-13.' in res_str
         else:
             assert 'inf' not in res_str
             assert 'between' in res_str
