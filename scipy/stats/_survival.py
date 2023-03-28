@@ -420,10 +420,10 @@ def logrank(
 
         * 'two-sided': the survival functions underlying `x` and `y`
           are unequal.
-        * 'less': the survival function underlying `x` tends to be less
-          than the survival function underlying `y`.
-        * 'greater': the survival function underlying `x` tends to be greater
-          than the survival function underlying `y`.
+        * 'less': the survival function underlying `y` tends to be less
+          than the survival function underlying `x`.
+        * 'greater': the survival function underlying `y` tends to be greater
+          than the survival function underlying `x`.
 
     Returns
     -------

@@ -351,7 +351,6 @@ class TestLogRank:
         # fustat_1 <- c(1, 1, 1, 1, 1, 1, 0, 0, 0, 0)
         # rx_1 <- c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         #
-        #
         # futime_2 <- c(33, 28, 41, 48, 48, 25, 37, 48, 25, 43)
         # fustat_2 <- c(1, 1, 1, 0, 0, 0, 0, 0, 0, 0)
         # rx_2 <- c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
@@ -361,18 +360,26 @@ class TestLogRank:
         # rx <- c(rx_1, rx_2)
         #
         # survdiff(formula = Surv(futime, fustat) ~ rx)
+        #
+        # Also check against another library which handle alternatives
+        # library(nph)
+        # logrank.test(futime, fustat, rx, alternative = "two.sided")
+        # res["test"]
         [(
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
               # uncensored, censored
               [[8, 12, 26, 14, 21, 27], [8, 32, 20, 40]],
               [[33, 28, 41], [48, 48, 25, 37, 48, 25, 43]],
-              6.91598157449, 0.008542873404
+              # chi2, ["two-sided", "less", "greater"]
+              6.91598157449,
+              [0.008542873404, 0.9957285632979385, 0.004271436702061537]
          ),
          (
               # https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_survival/BS704_Survival5.html  # noqa
               [[19, 6, 5, 4], [20, 19, 17, 14]],
               [[16, 21, 7], [21, 15, 18, 18, 5]],
-              0.835004855038, 0.3608293039
+              0.835004855038,
+              [0.3608293039, 0.8195853480676912, 0.1804146519323088]
          ),
          (
               # Bland, Altman, "The logrank test", BMJ, 2004
@@ -382,19 +389,22 @@ class TestLogRank:
               [[10, 10, 12, 13, 14, 15, 16, 17, 18, 20, 24, 24, 25, 28, 30,
                 33, 35, 37, 40, 40, 46, 48, 76, 81, 82, 91, 112, 181],
                [34, 40, 70]],
-              7.49659416854, 0.006181578637
+              7.49659416854,
+              [0.006181578637, 0.003090789318730882, 0.9969092106812691]
          )]
     )
     def test_log_rank(self, x, y, statistic, pvalue):
         x = stats.CensoredData(uncensored=x[0], right=x[1])
         y = stats.CensoredData(uncensored=y[0], right=y[1])
-        res = stats.logrank(x=x, y=y)
 
-        # we return z and use the normal distribution while other framework
-        # return z**2. The p-value are directly comparable, but we have to
-        # square the statistic
-        assert_allclose(res.statistic**2, statistic, atol=1e-10)
-        assert_allclose(res.pvalue, pvalue, atol=1e-10)
+        for i, alternative in enumerate(["two-sided", "less", "greater"]):
+            res = stats.logrank(x=x, y=y, alternative=alternative)
+
+            # we return z and use the normal distribution while other framework
+            # return z**2. The p-value are directly comparable, but we have to
+            # square the statistic
+            assert_allclose(res.statistic**2, statistic, atol=1e-10)
+            assert_allclose(res.pvalue, pvalue[i], atol=1e-10)
 
     def test_raises(self):
         sample = stats.CensoredData([1, 2])
