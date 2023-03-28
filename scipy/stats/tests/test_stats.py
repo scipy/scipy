@@ -4804,7 +4804,7 @@ class Test_ttest_ind_permutations():
             stats.ttest_ind(self.a2, self.b2, permutations=1.5)
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
-                            random_state='hello')
+                            random_state='hello', axis=1)
 
     def test_ttest_ind_permutation_check_p_values(self):
         # p-values should never be exactly zero
@@ -5012,9 +5012,6 @@ class Test_ttest_trim:
         match = "Permutations are currently not supported with trimming."
         with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
-        match = ("not supported by permutation tests or trimmed tests.")
-        with assert_raises(ValueError, match=match):
-            stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
     def test_trim_bounds_error(self, trim):
