@@ -2766,6 +2766,9 @@ class Slerp:
 
     """
     def __init__(self, times, rotations):
+        if not isinstance(rotations, Rotation):
+            raise TypeError("`rotations` must be a `Rotation` instance.")
+
         if rotations.single or len(rotations) == 1:
             raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
