@@ -50,7 +50,7 @@ class DunnettResult:
             f" ({self._ci_cl*100:.1f}% Confidence Interval)\n"
             "Comparison               Statistic  p-value  Lower CI  Upper CI\n"
         )
-        for i in range(self.pvalue.shape[0]):
+        for i in range(self.pvalue.size):
             s += (f" (Sample {i} - Control) {self.statistic[i]:>10.3f}"
                   f"{self.pvalue[i]:>10.3f}"
                   f"{self._ci.low[i]:>10.3f}"
@@ -461,4 +461,4 @@ def _pvalue_dunnett(
     else:
         pvalue = 1 - mvt.cdf(np.inf, lower_limit=statistic)
 
-    return pvalue
+    return np.atleast_1d(pvalue)
