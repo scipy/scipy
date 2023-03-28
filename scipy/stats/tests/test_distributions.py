@@ -244,6 +244,19 @@ class TestVonMises:
         assert scale_fit == 1
         assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
+    def test_vonmises_fit_bad_floc(self, loc):
+        data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
+                -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
+                3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
+                -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
+        data = np.asarray(data)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
+        assert kappa_fit == np.finfo(float).tiny
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      stats.vonmises.nnlf, fscale=1, floc=loc)
+
     @pytest.mark.parametrize('sign', [-1, 1])
     def test_vonmises_fit_unwrapped_data(self, sign):
         rng = np.random.default_rng(6762668991392531563)
