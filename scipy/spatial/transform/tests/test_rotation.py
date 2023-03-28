@@ -1305,7 +1305,8 @@ def test_slerp():
 
 
 def test_slerp_single_rot():
-    with pytest.raises(ValueError, match="must be a sequence of at least 2 rotations"):
+    msg = "must be a sequence of at least 2 rotations"
+    with pytest.raises(ValueError, match=msg):
         r = Rotation.from_quat([1, 2, 3, 4])
         Slerp([1], r)
 
