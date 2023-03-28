@@ -630,11 +630,40 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     if N % 2 == 0:
         val = 0.0
         result = 0.0
+        slice_all = (slice(None),) * nd
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
-        if even not in ['avg', 'last', 'first']:
+        if even not in ['avg', 'last', 'first', 'cart']:
             raise ValueError("Parameter 'even' must be "
                              "'avg', 'last', or 'first'.")
+        if even == 'cart':
+            # use Simpson's rule on first intervals
+            result = _basic_simpson(y, 0, N-3, x, dx, axis)
+
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
+            slice3 = tupleset(slice_all, axis, -3)
+            hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
+            hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
+
+            h = [dx, dx]
+            if x is not None:
+                # grab the last two spacings
+                diffs = np.float64(np.diff(x, axis=axis))
+                h = [np.squeeze(diffs[hm2], axis=axis),
+                     np.squeeze(diffs[hm1], axis=axis)]
+
+            alpha = 2*h[1]**2 + 3*h[0]*h[1]
+            alpha /= 6*(h[1] + h[0])
+
+            beta = h[1]**2 + 3*h[0]*h[1]
+            beta /= 6 * h[0]
+
+            nu = h[1] ** 3
+            nu /= 6*h[0]*(h[0] + h[1])
+
+            result += alpha*y[slice1] + beta*y[slice2] - nu*y[slice3]
+
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
             slice1 = tupleset(slice1, axis, -1)
