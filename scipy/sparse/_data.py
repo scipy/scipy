@@ -9,7 +9,7 @@
 import numpy as np
 
 from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
-from ._sputils import isscalarlike, validateaxis, matrix
+from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
 
@@ -250,7 +250,7 @@ class _minmax_mixin:
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
-        return matrix(ret)
+        return self._ascontainer(ret)
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:
