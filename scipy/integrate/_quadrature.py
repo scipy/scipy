@@ -531,7 +531,7 @@ def simps(y, x=None, dx=1.0, axis=-1, **kwds):
     return simpson(y, x=x, dx=dx, axis=axis, **kwds)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
+def simpson(y, x=None, dx=1.0, axis=-1, even=None):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -577,8 +577,8 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
             accurate in most situations.
 
         .. deprecated:: 1.11.0
-            Parameter `even` is deprecated and will be removed in a future
-            version of scipy.
+            Parameter `even` is deprecated and will be removed in SciPy
+            1.13.0.
 
     Returns
     -------
@@ -655,8 +655,9 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
     # even keyword parameter is deprecated
     if 'even' in kwds:
         warnings.warn(
-            "The 'even' keyword will be removed in a future release of scipy",
-            DeprecationWarning
+            "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
+            "removed in SciPy 1.13.0",
+            DeprecationWarning, stacklevel=2
         )
 
     if N % 2 == 0:
