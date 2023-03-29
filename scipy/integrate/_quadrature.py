@@ -566,7 +566,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
 
         'simpson' : Use Simpson's rule for the first N-2 intervals with the
                   addition of a 3-point parabolic segment for the last
-                  interval using equations outlined by Cartwright [1]_
+                  interval using equations outlined by Cartwright [1]_.
                   If the axis to be integrated over only has two points then
                   the integration falls back to a trapezoidal integration.
 
