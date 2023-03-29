@@ -7118,50 +7118,6 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-def _ttest_nans(a, b, axis, namedtuple_type):
-    """
-    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
-
-    This function is used by ttest_ind and ttest_rel to create the return
-    value when one of the inputs has size 0.
-
-    The shapes of the arrays are determined by dropping `axis` from the
-    shapes of `a` and `b` and broadcasting what is left.
-
-    The return value is a named tuple of the type given in `namedtuple_type`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a = np.zeros((9, 2))
-    >>> b = np.zeros((5, 1))
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
-
-    >>> a = np.zeros((3, 0, 9))
-    >>> b = np.zeros((1, 10))
-    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
-    >>> stat
-    array([], shape=(3, 0), dtype=float64)
-    >>> p
-    array([], shape=(3, 0), dtype=float64)
-
-    >>> a = np.zeros(10)
-    >>> b = np.zeros(7)
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=nan, pvalue=nan)
-
-    """
-    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
-    if len(shp) == 0:
-        t = np.nan
-        p = np.nan
-    else:
-        t = np.full(shp, fill_value=np.nan)
-        p = t.copy()
-    return namedtuple_type(t, p)
-
-
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
@@ -7395,10 +7351,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
     if a.size == 0 or b.size == 0:
-        t, prob = _ttest_nans(a, b, axis, Ttest_indResult)
-        df, denom, estimate = np.nan, np.nan, np.nan
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
+                           standard_error=np.nan, estimate=np.nan)
 
-    elif permutations is not None and permutations != 0:
+    if permutations is not None and permutations != 0:
         if trim != 0:
             raise ValueError("Permutations are currently not supported "
                              "with trimming.")
