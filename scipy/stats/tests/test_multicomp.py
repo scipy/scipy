@@ -251,6 +251,8 @@ class TestDunnett:
             assert_allclose(res.statistic, ref.statistic, atol=1e-3)
             assert_allclose(res.pvalue, ref.pvalue, atol=1e-3)
 
+    # filter warning that could happen during optimization
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize(
         'alternative, statistic, pvalue',
         [
@@ -272,15 +274,26 @@ class TestDunnett:
             if statistic == 'high':
                 sample = sample_2
                 control = sample_1
+                ci_ref = 60
             else:
                 sample = sample_1
                 control = sample_2
+                ci_ref = -60
 
             res = stats.dunnett(
                 sample, control=control,
                 alternative=alternative, random_state=rng
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
+
+            ci_ = res.confidence_interval()
+            # two-sided is comparable for high/low
+            ci_ = ci_.high if alternative == 'less' else ci_.low
+
+            if statistic == 'high':
+                assert ci_ > ci_ref
+            else:
+                assert ci_ < ci_ref
 
     @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
