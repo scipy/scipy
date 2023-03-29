@@ -56,21 +56,6 @@ class DunnettResult:
                   f"{self._ci.low[i]:>10.3f}"
                   f"{self._ci.high[i]:>10.3f}\n")
 
-        if self._alternative == 'greater':
-            s += (
-                "\nOne-sided alternative (greater): sample i's mean exceed "
-                "the control's mean by an amount at least Lower CI"
-            )
-        elif self._alternative == 'less':
-            s += (
-                "\nOne-sided alternative (less): sample i's mean exceed "
-                "the control's mean by an amount at most Upper CI"
-            )
-        else:
-            s += (
-                "\nTwo-sided alternative: sample i's mean exceed the "
-                "control's mean by an amount between Lower CI and Upper CI"
-            )
         return s
 
     def _allowance(

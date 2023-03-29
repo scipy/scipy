@@ -248,8 +248,8 @@ class TestDunnett:
                 alternative=alternative, random_state=rng
             )
 
-            assert_allclose(res.statistic, ref.statistic, atol=1e-3)
-            assert_allclose(res.pvalue, ref.pvalue, atol=1e-3)
+            assert_allclose(res.statistic, ref.statistic, rtol=1e-3, atol=1e-5)
+            assert_allclose(res.pvalue, ref.pvalue, rtol=1e-3, atol=1e-5)
 
     @pytest.mark.parametrize(
         'alternative, pvalue',
@@ -262,25 +262,33 @@ class TestDunnett:
     def test_alternatives(self, alternative, pvalue):
         rng = np.random.default_rng(114184017807316971636137493526995620351)
 
-        for _ in range(10):
-            # width of 20 and min diff between samples/control is 60
-            # and maximal diff would be 100
-            sample_less = rng.integers(0, 20, size=(10,))
-            control = rng.integers(80, 100, size=(10,))
-            sample_greater = rng.integers(160, 180, size=(10,))
+        # width of 20 and min diff between samples/control is 60
+        # and maximal diff would be 100
+        sample_less = rng.integers(0, 20, size=(10,))
+        control = rng.integers(80, 100, size=(10,))
+        sample_greater = rng.integers(160, 180, size=(10,))
 
-            res = stats.dunnett(
-                sample_less, sample_greater, control=control,
-                alternative=alternative, random_state=rng
-            )
-            assert_allclose(res.pvalue, pvalue, atol=1e-7)
+        res = stats.dunnett(
+            sample_less, sample_greater, control=control,
+            alternative=alternative, random_state=rng
+        )
+        assert_allclose(res.pvalue, pvalue, atol=1e-7)
 
-            ci_ = res.confidence_interval()
-            # two-sided is comparable for high/low
-            ci_ = ci_.high if alternative == 'less' else ci_.low
-
-            assert -100 < ci_[0] < -60
-            assert 60 < ci_[1] < 100
+        ci = res.confidence_interval()
+        # two-sided is comparable for high/low
+        if alternative == 'less':
+            assert np.isneginf(ci.low).all()
+            assert -100 < ci.high[0] < -60
+            assert 60 < ci.high[1] < 100
+        elif alternative == 'greater':
+            assert -100 < ci.low[0] < -60
+            assert 60 < ci.low[1] < 100
+            assert np.isposinf(ci.high).all()
+        elif alternative == 'two-sided':
+            assert -100 < ci.low[0] < -60
+            assert 60 < ci.low[1] < 100
+            assert -100 < ci.high[0] < -60
+            assert 60 < ci.high[1] < 100
 
     @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
@@ -294,7 +302,8 @@ class TestDunnett:
 
         res = stats.dunnett(*samples, control=control, alternative=alternative,
                             random_state=rng)
-        assert_allclose(res.pvalue, p_ref, rtol=1e-2, atol=1e-4)
+        # atol can't be tighter because R reports some pvalues as "< 1e-4"
+        assert_allclose(res.pvalue, p_ref, rtol=5e-3, atol=1e-4)
 
         ci_ref = case['cis'][alternatives[alternative]]
         if alternative == "greater":
@@ -304,8 +313,8 @@ class TestDunnett:
         assert res._ci is None
         assert res._ci_cl is None
         ci = res.confidence_interval(confidence_level=0.95)
-        assert_allclose(ci.low, ci_ref[0], rtol=1e-2)
-        assert_allclose(ci.high, ci_ref[1], rtol=1e-2)
+        assert_allclose(ci.low, ci_ref[0], rtol=5e-3, atol=1e-5)
+        assert_allclose(ci.high, ci_ref[1], rtol=5e-3, atol=1e-5)
 
         # re-run to use the cached value "is" to check id as same object
         assert res._ci is ci
@@ -329,15 +338,12 @@ class TestDunnett:
 
         if alternative == 'less':
             assert '-inf' in res_str
-            assert 'at most Upper' in res_str
             assert '19.' in res_str
         elif alternative == 'greater':
             assert 'inf' in res_str
-            assert 'at least Lower' in res_str
             assert '-13.' in res_str
         else:
             assert 'inf' not in res_str
-            assert 'between' in res_str
             assert '21.' in res_str
 
     def test_warnings(self):
@@ -383,3 +389,15 @@ class TestDunnett:
         res = stats.dunnett(*samples, control=control)
         with pytest.raises(ValueError, match="Confidence level must"):
             res.confidence_interval(confidence_level=3)
+
+    @pytest.mark.parametrize('n_samples', [1, 2, 3])
+    def test_shapes(self, n_samples):
+        rng = np.random.default_rng(689448934110805334)
+        samples = rng.normal(size=(n_samples, 10))
+        control = rng.normal(size=10)
+        res = stats.dunnett(*samples, control=control)
+        assert res.statistic.shape == (n_samples,)
+        assert res.pvalue.shape == (n_samples,)
+        ci = res.confidence_interval()
+        assert ci.low.shape == (n_samples,)
+        assert ci.high.shape == (n_samples,)
