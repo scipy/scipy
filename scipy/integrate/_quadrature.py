@@ -609,7 +609,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
     ----------
     .. [1] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
            MS Excel and Irregularly-spaced Data. Journal of Mathematical
-           Sciences and Mathematics Education. 12 (2): 1–9
+           Sciences and Mathematics Education. 12 (2): 1-9
 
     Examples
     --------
