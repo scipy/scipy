@@ -522,13 +522,13 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, **kwds):
+def simps(y, x=None, dx=1.0, axis=-1, even=None):
     """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
     """
-    return simpson(y, x=x, dx=dx, axis=axis, **kwds)
+    return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
 def simpson(y, x=None, dx=1.0, axis=-1, even=None):
@@ -551,7 +551,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : str {'simpson', 'avg', 'first', 'last'}, optional
+    even : {None, 'simpson', 'avg', 'first', 'last'}, optional
         'avg' : Average two results:
             1) use the first N-2 intervals with
                a trapezoidal rule on the last interval and
@@ -564,13 +564,15 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
         'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
 
+        None : equivalent to 'simpson' (default)
+
         'simpson' : Use Simpson's rule for the first N-2 intervals with the
                   addition of a 3-point parabolic segment for the last
                   interval using equations outlined by Cartwright [1]_.
                   If the axis to be integrated over only has two points then
                   the integration falls back to a trapezoidal integration.
 
-                  .. versionadded:: 1.11
+                  .. versionadded:: 1.11.0
 
         .. versionchanged:: 1.11.0
             The newly added 'simpson' option is now the default as it is more
@@ -578,7 +580,8 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
 
         .. deprecated:: 1.11.0
             Parameter `even` is deprecated and will be removed in SciPy
-            1.13.0.
+            1.13.0. After this time the behaviour for an even number of
+            points will follow that of `even='simpson'`.
 
     Returns
     -------
@@ -653,7 +656,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
                              "same as y.")
 
     # even keyword parameter is deprecated
-    if 'even' in kwds:
+    if 'even' is not None:
         warnings.warn(
             "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
             "removed in SciPy 1.13.0",
@@ -665,7 +668,9 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
         result = 0.0
         slice_all = (slice(None),) * nd
 
-        even = kwds.get('even', 'simpson')
+        # default is 'simpson'
+        even = even if even is not None else "simpson"
+
         if even not in ['avg', 'last', 'first', 'simpson']:
             raise ValueError(
                 "Parameter 'even' must be 'simpson', "
@@ -682,7 +687,8 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
                 last_dx = x[slice1] - x[slice2]
             val += 0.5 * last_dx * (y[slice1] + y[slice2])
 
-            # calculation is finished.
+            # calculation is finished. Set `even` to None to skip other
+            # scenarios
             even = None
 
         if even == 'simpson':

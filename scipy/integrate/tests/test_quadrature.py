@@ -231,6 +231,12 @@ class TestQuadrature:
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
+    def test_simpson_even_is_deprecated(self):
+        x = np.linspace(0, 3, 4)
+        y = x**2
+        with pytest.deprecated_call():
+            simpson(y, x=x, even='first')
+
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):
         # The inputs are 2d integer arrays.  The results should be
