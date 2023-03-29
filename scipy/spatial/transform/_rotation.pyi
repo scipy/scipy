@@ -51,5 +51,9 @@ class Rotation:
                       return_sensitivity: bool = ...) -> tuple[Rotation, float] | tuple[Rotation, float, np.ndarray]:...
 
 class Slerp:
+    times: np.ndarray
+    timedelta: np.ndarray
+    rotations: Rotation
+    rotvecs: np.ndarray
     def __init__(self, times: npt.ArrayLike, rotations: Rotation) -> None: ...
     def __call__(self, times: npt.ArrayLike) -> Rotation: ...
