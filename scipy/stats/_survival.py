@@ -15,21 +15,24 @@ class EmpiricalDistributionFunction:
 
     Attributes
     ----------
+    q : ndarray
+        The unique values of the sample from which the
+        `EmpiricalDistributionFunction` was estimated.
     p : ndarray
-        The point estimate of the cumulative distribution function (CDF) or its
-        complement, the survival function (SF), at unique values of the sample.
+        The point estimates of the cumulative distribution function (CDF) or
+        its complement, the survival function (SF), corresponding with `q`.
     """
+    q: np.ndarray
     p: np.ndarray
     # Exclude these from __str__
-    _x: np.ndarray = field(repr=False)  # points at which function is estimated
     _n: np.ndarray = field(repr=False)  # number "at risk"
     _d: np.ndarray = field(repr=False)  # number of "deaths"
     _sf: np.ndarray = field(repr=False)  # survival function for var estimate
     _kind: str = field(repr=False)  # type of function: "cdf" or "sf"
 
-    def __init__(self, x, p, n, d, kind):
+    def __init__(self, q, p, n, d, kind):
         self.p = p
-        self._x = x
+        self.q = q
         self._n = n
         self._d = d
         self._sf = p if kind == 'sf' else 1 - p
@@ -140,23 +143,18 @@ class ECDFResult:
 
     Attributes
     ----------
-    x : ndarray
-        The unique values of the sample processed by `scipy.stats.ecdf`.
     cdf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
         An object representing the empirical cumulative distribution function.
     sf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
         An object representing the complement of the empirical cumulative
         distribution function.
     """
-    x: np.ndarray
     cdf: EmpiricalDistributionFunction
     sf: EmpiricalDistributionFunction
 
-    def __init__(self, x, cdf, sf, n, d):
-        self.x = x
-        # Both CDF and SF results need SF for variance est.
-        self.cdf = EmpiricalDistributionFunction(x, cdf, n, d, "cdf")
-        self.sf = EmpiricalDistributionFunction(x, sf, n, d, "sf")
+    def __init__(self, q, cdf, sf, n, d):
+        self.cdf = EmpiricalDistributionFunction(q, cdf, n, d, "cdf")
+        self.sf = EmpiricalDistributionFunction(q, sf, n, d, "sf")
 
 
 def ecdf(sample):
@@ -180,23 +178,24 @@ def ecdf(sample):
     res : `~scipy.stats._result_classes.ECDFResult`
         An object with the following attributes.
 
-        x : ndarray
-            The unique values in the sample.
         cdf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
-            An object representing the empirical cumulative distribution function.
+            An object representing the empirical cumulative distribution
+            function.
         sf : `~scipy.stats._result_classes.EmpiricalDistributionFunction`
             An object representing the empirical survival function.
 
         The `cdf` and `sf` attributes themselves have the following attributes.
 
+        q : ndarray
+            The unique values in the sample.
         p : ndarray
-            The point estimate of the CDF/SF at the values in `x`.
+            The point estimates of the probability corresponding with `q`.
 
         And the following method:
 
         confidence_interval(confidence_level=0.95) :
             Compute the confidence interval around the CDF/SF at the values in
-            `x`.
+            `q`.
 
     Notes
     -----
@@ -246,7 +245,7 @@ def ecdf(sample):
 
     >>> from scipy import stats
     >>> res = stats.ecdf(sample)
-    >>> res.x
+    >>> res.cdf.q
     array([5.2 , 5.58, 6.23, 6.42, 7.06])
     >>> res.cdf.p
     array([0.2, 0.4, 0.6, 0.8, 1. ])
@@ -256,7 +255,7 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.p, 0, 0),
+    >>> ax.step(np.insert(res.cdf.q, 0, 4), np.insert(res.cdf.p, 0, 0),
     ...         where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
@@ -284,7 +283,7 @@ def ecdf(sample):
     The empirical survival function is calculated as follows.
 
     >>> res = stats.ecdf(sample)
-    >>> res.x
+    >>> res.sf.q
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
     >>> res.sf.p
     array([1.   , 1.   , 0.875, 0.75 , 0.75 , 0.75 , 0.75 , 0.5  , 0.25 , 0.   ])
@@ -292,7 +291,7 @@ def ecdf(sample):
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.p, 0, 1),
+    >>> ax.step(np.insert(res.sf.q, 0, 30), np.insert(res.sf.p, 0, 1),
     ...         where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')

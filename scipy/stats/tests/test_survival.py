@@ -78,11 +78,11 @@ class TestSurvival:
 
     def test_edge_cases(self):
         res = stats.ecdf([])
-        assert_equal(res.x, [])
+        assert_equal(res.cdf.q, [])
         assert_equal(res.cdf.p, [])
 
         res = stats.ecdf([1])
-        assert_equal(res.x, [1])
+        assert_equal(res.cdf.q, [1])
         assert_equal(res.cdf.p, [1])
 
     def test_unique(self):
@@ -92,8 +92,9 @@ class TestSurvival:
         ref_x = np.sort(np.unique(sample))
         ref_cdf = np.arange(1, 6) / 5
         ref_sf = 1 - ref_cdf
-        assert_equal(res.x, ref_x)
+        assert_equal(res.cdf.q, ref_x)
         assert_equal(res.cdf.p, ref_cdf)
+        assert_equal(res.sf.q, ref_x)
         assert_equal(res.sf.p, ref_sf)
 
     def test_nonunique(self):
@@ -103,8 +104,9 @@ class TestSurvival:
         ref_x = np.sort(np.unique(sample))
         ref_cdf = np.array([1/6, 2/6, 4/6, 5/6, 1])
         ref_sf = 1 - ref_cdf
-        assert_equal(res.x, ref_x)
+        assert_equal(res.cdf.q, ref_x)
         assert_equal(res.cdf.p, ref_cdf)
+        assert_equal(res.sf.q, ref_x)
         assert_equal(res.sf.p, ref_sf)
 
     # ref. [1] page 91
@@ -140,7 +142,7 @@ class TestSurvival:
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
         assert_allclose(res.sf.p, ref, atol=1e-3)
-        assert_equal(res.x, np.sort(np.unique(times)))
+        assert_equal(res.sf.q, np.sort(np.unique(times)))
 
         # test reference implementation against other implementations
         res = _kaplan_meier_reference(times, np.logical_not(died))
@@ -156,7 +158,7 @@ class TestSurvival:
         sample, times, censored = self.get_random_sample(rng, n_unique)
         res = stats.ecdf(sample)
         ref = _kaplan_meier_reference(times, censored)
-        assert_allclose(res.x, ref[0])
+        assert_allclose(res.sf.q, ref[0])
         assert_allclose(res.sf.p, ref[1])
 
         # If all observations are uncensored, the KM estimate should match
@@ -164,7 +166,7 @@ class TestSurvival:
         sample = stats.CensoredData(uncensored=times)
         res = _survival._ecdf_right_censored(sample)  # force Kaplan-Meier
         ref = stats.ecdf(times)
-        assert_equal(res[0], ref.x)
+        assert_equal(res[0], ref.sf.q)
         assert_allclose(res[1], ref.cdf.p, rtol=1e-14)
         assert_allclose(res[2], ref.sf.p, rtol=1e-14)
 
@@ -271,7 +273,7 @@ class TestSurvival:
         x = [37, 47, 56, 77, 80, 81]
         flo = [np.nan, 0, 0, 0.052701464070711, 0.337611126231790, np.nan]
         fup = [np.nan, 0.35417230377, 0.5500569798, 0.9472985359, 1.0, np.nan]
-        i = np.searchsorted(res.x, x)
+        i = np.searchsorted(res.cdf.q, x)
 
         message = "The confidence interval is undefined at some observations"
         with pytest.warns(RuntimeWarning, match=message):
@@ -287,7 +289,7 @@ class TestSurvival:
         #                        'survivor', 'Alpha', 0.05);
         flo = [np.nan, 0.64582769623, 0.449943020228, 0.05270146407, 0, np.nan]
         fup = [np.nan, 1.0, 1.0, 0.947298535929289, 0.662388873768210, np.nan]
-        i = np.searchsorted(res.x, x)
+        i = np.searchsorted(res.cdf.q, x)
 
         with pytest.warns(RuntimeWarning, match=message):
             ci = res.sf.confidence_interval()
@@ -333,7 +335,7 @@ class TestSurvival:
         censored[np.argmax(sample)] = True
         res = stats.ecdf(sample)
         ref = stats.ecdf(stats.CensoredData.right_censored(sample, censored))
-        assert_equal(res.sf._x, ref.sf._x)
+        assert_equal(res.sf.q, ref.sf.q)
         assert_equal(res.sf._n, ref.sf._n)
         assert_equal(res.sf._d[:-1], ref.sf._d[:-1])  # difference @ [-1]
         assert_allclose(res.sf._sf[:-1], ref.sf._sf[:-1], rtol=1e-14)
