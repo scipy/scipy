@@ -314,12 +314,11 @@ class lil_matrix(spmatrix, IndexMixin):
         if isinstance(key, tuple) and len(key) == 2:
             row, col = key
             # Fast path for simple (int, int) indexing.
-            if (isinstance(row, INT_TYPES) and
-                isinstance(col, INT_TYPES)):
-            x = self.dtype.type(x)
-            if x.size > 1:
-                raise ValueError("Trying to assign a sequence to an item")
-            return self._set_intXint(row, col, x)
+            if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    raise ValueError("Trying to assign a sequence to an item")
+                return self._set_intXint(row, col, x)
             # Fast path for full-matrix sparse assignment.
             if (isinstance(row, slice) and isinstance(col, slice) and
                     row == slice(None) and col == slice(None) and
