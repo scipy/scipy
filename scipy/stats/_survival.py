@@ -79,9 +79,10 @@ class EmpiricalDistributionFunction:
         Returns
         -------
         ci : ``ConfidenceInterval``
-            An object with attributes ``low`` and ``high``: arrays of the
-            lower and upper bounds of the confidence interval at unique values
-            of the sample.
+            An object with attributes ``low`` and ``high``, instances of
+            `~scipy.stats._result_classes.EmpiricalDistributionFunction` that
+            represent the lower and upper bounds (respectively) of the
+            confidence interval.
 
         Notes
         -----
@@ -100,6 +101,11 @@ class EmpiricalDistributionFunction:
                https://www.math.wustl.edu/~sawyer/handouts/greenwood.pdf
 
         """
+        message = ("Confidence interval bounds do not implement a "
+                   "`confidence_interval` method.")
+        if self._n is None:
+            raise NotImplementedError(message)
+
         methods = {'linear': self._linear_ci,
                    'log-log': self._loglog_ci}
 
@@ -121,7 +127,11 @@ class EmpiricalDistributionFunction:
         if np.any(np.isnan(low) | np.isnan(high)):
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        return ConfidenceInterval(np.clip(low, 0, 1), np.clip(high, 0, 1))
+        low = EmpiricalDistributionFunction(self.q, np.clip(low, 0, 1),
+                                            None, None, self._kind)
+        high = EmpiricalDistributionFunction(self.q, np.clip(high, 0, 1),
+                                            None, None, self._kind)
+        return ConfidenceInterval(low, high)
 
     def _linear_ci(self, confidence_level):
         sf, d, n = self._sf, self._d, self._n

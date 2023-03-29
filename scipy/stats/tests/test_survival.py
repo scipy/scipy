@@ -76,6 +76,16 @@ class TestSurvival:
         with pytest.raises(ValueError, match=message):
             res.sf.confidence_interval([0.5, 0.6])
 
+        message = 'The confidence interval is undefined at some observations.'
+        with pytest.warns(RuntimeWarning, match=message):
+            ci = res.cdf.confidence_interval()
+
+        message = 'Confidence interval bounds do not implement...'
+        with pytest.raises(NotImplementedError, match=message):
+            ci.low.confidence_interval()
+        with pytest.raises(NotImplementedError, match=message):
+            ci.high.confidence_interval()
+
     def test_edge_cases(self):
         res = stats.ecdf([])
         assert_equal(res.cdf.q, [])
@@ -199,13 +209,13 @@ class TestSurvival:
 
         sf_ci = res.sf.confidence_interval()
         cdf_ci = res.cdf.confidence_interval()
-        allowance = res.sf.p - sf_ci.low
+        allowance = res.sf.p - sf_ci.low.p
 
         assert_allclose(allowance, ref_allowance, atol=1e-3)
-        assert_allclose(sf_ci.low, np.clip(res.sf.p - allowance, 0, 1))
-        assert_allclose(sf_ci.high, np.clip(res.sf.p + allowance, 0, 1))
-        assert_allclose(cdf_ci.low, np.clip(res.cdf.p - allowance, 0, 1))
-        assert_allclose(cdf_ci.high, np.clip(res.cdf.p + allowance, 0, 1))
+        assert_allclose(sf_ci.low.p, np.clip(res.sf.p - allowance, 0, 1))
+        assert_allclose(sf_ci.high.p, np.clip(res.sf.p + allowance, 0, 1))
+        assert_allclose(cdf_ci.low.p, np.clip(res.cdf.p - allowance, 0, 1))
+        assert_allclose(cdf_ci.high.p, np.clip(res.cdf.p + allowance, 0, 1))
 
         # test "log-log" confidence interval against Mathematica
         # e = {24, 3, 11, 19, 24, 13, 14, 2, 18, 17, 24, 21, 12, 1, 10, 23, 6, 5,
@@ -223,8 +233,8 @@ class TestSurvival:
                     0.947073, 0.947073, 0.947073, 0.947073, 0.906422, 0.856521,
                     0.856521, 0.856521, 0.856521, 0.776724, 0.776724]
         sf_ci = res.sf.confidence_interval(method='log-log')
-        assert_allclose(sf_ci.low, ref_low, atol=1e-6)
-        assert_allclose(sf_ci.high, ref_high, atol=1e-6)
+        assert_allclose(sf_ci.low.p, ref_low, atol=1e-6)
+        assert_allclose(sf_ci.high.p, ref_high, atol=1e-6)
 
     def test_right_censored_ci_example_5(self):
         # test "exponential greenwood" confidence interval against example 5
@@ -239,10 +249,10 @@ class TestSurvival:
         sf_ci = res.sf.confidence_interval(method='log-log')
         cdf_ci = res.cdf.confidence_interval(method='log-log')
 
-        assert_allclose(sf_ci.low, lower, atol=1e-5)
-        assert_allclose(sf_ci.high, upper, atol=1e-5)
-        assert_allclose(cdf_ci.low, 1-upper, atol=1e-5)
-        assert_allclose(cdf_ci.high, 1-lower, atol=1e-5)
+        assert_allclose(sf_ci.low.p, lower, atol=1e-5)
+        assert_allclose(sf_ci.high.p, upper, atol=1e-5)
+        assert_allclose(cdf_ci.low.p, 1-upper, atol=1e-5)
+        assert_allclose(cdf_ci.high.p, 1-lower, atol=1e-5)
 
         # Test against R's `survival` library `survfit` function, 90%CI
         # library(survival)
@@ -262,8 +272,8 @@ class TestSurvival:
                 0.3887616766886558]
         sf_ci = res.sf.confidence_interval(method='log-log',
                                            confidence_level=0.9)
-        assert_allclose(sf_ci.low, low)
-        assert_allclose(sf_ci.high, high)
+        assert_allclose(sf_ci.low.p, low)
+        assert_allclose(sf_ci.high.p, high)
 
         # And with conf.type = "plain"
         low = [0.8556383113628162, 0.7670478794850761, 0.5485720663578469,
@@ -273,8 +283,8 @@ class TestSurvival:
                 0.7391817920806210, 0.7391817920806210, 0.5773038116797676,
                 0.3642270254596720, 0.3642270254596720, 0.3642270254596720]
         sf_ci = res.sf.confidence_interval(confidence_level=0.9)
-        assert_allclose(sf_ci.low, low)
-        assert_allclose(sf_ci.high, high)
+        assert_allclose(sf_ci.low.p, low)
+        assert_allclose(sf_ci.high.p, high)
 
     def test_right_censored_ci_nans(self):
         # test `ecdf` confidence interval on a problem that results in NaNs
@@ -300,8 +310,8 @@ class TestSurvival:
         # Matlab gives NaN as the first element of the CIs. Mathematica agrees,
         # but R's survfit does not. It makes some sense, but it's not what the
         # formula gives, so skip that element.
-        assert_allclose(ci.low[i][1:], flo[1:])
-        assert_allclose(ci.high[i][1:], fup[1:])
+        assert_allclose(ci.low.p[i][1:], flo[1:])
+        assert_allclose(ci.high.p[i][1:], fup[1:])
 
         # [f, x, flo, fup] = ecdf(t, 'Censoring', censored, 'Function',
         #                        'survivor', 'Alpha', 0.05);
@@ -312,8 +322,8 @@ class TestSurvival:
         with pytest.warns(RuntimeWarning, match=message):
             ci = res.sf.confidence_interval()
 
-        assert_allclose(ci.low[i][1:], flo[1:])
-        assert_allclose(ci.high[i][1:], fup[1:])
+        assert_allclose(ci.low.p[i][1:], flo[1:])
+        assert_allclose(ci.high.p[i][1:], fup[1:])
 
         # With the same data, R's `survival` library `survfit` function
         # doesn't produce the leading NaN
@@ -331,8 +341,8 @@ class TestSurvival:
                0.05270146407071086, 0., np.nan]
         high = [1., 1., 1., 1., 1., 1., 1., 0.9472985359292891,
                 0.6623888737682101, np.nan]
-        assert_allclose(ci.low, low)
-        assert_allclose(ci.high, high)
+        assert_allclose(ci.low.p, low)
+        assert_allclose(ci.high.p, high)
 
         # It does with conf.type="log-log", as do we
         with pytest.warns(RuntimeWarning, match=message):
@@ -343,8 +353,8 @@ class TestSurvival:
         high = [np.nan, np.nan, 0.9813929658789660, 0.9308983170906275,
                 0.9308983170906275, 0.9308983170906275, 0.9308983170906275,
                 0.8263946341076415, 0.6558775085110887, np.nan]
-        assert_allclose(ci.low, low)
-        assert_allclose(ci.high, high)
+        assert_allclose(ci.low.p, low)
+        assert_allclose(ci.high.p, high)
 
     def test_right_censored_against_uncensored(self):
         rng = np.random.default_rng(7463952748044886637)
