@@ -100,8 +100,8 @@ class TestDunnett:
     statistic_1 = [5.27356, 2.91270, 0.60831, 0.27002, 0.96637]
     ci_1_twosided = [[5.3633917835622, 0.7296142201217, -8.3879817106607,
                       -11.9090753452911, -11.7655021543469],
-                    [15.9709832164378, 13.8936496687672, 13.4556900439941,
-                     14.6434503452911, 25.4998771543469]]
+                     [15.9709832164378, 13.8936496687672, 13.4556900439941,
+                      14.6434503452911, 25.4998771543469]]
     ci_1_greater = [5.9036402398526, 1.4000632918725, -7.2754756323636,
                     -10.5567456382391, -9.8675629499576]
     ci_1_less = [15.4306165948619, 13.2230539537359, 12.3429406339544,
@@ -251,37 +251,26 @@ class TestDunnett:
             assert_allclose(res.statistic, ref.statistic, atol=1e-3)
             assert_allclose(res.pvalue, ref.pvalue, atol=1e-3)
 
-    # filter warning that could happen during optimization
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize(
-        'alternative, statistic, pvalue',
+        'alternative, pvalue',
         [
-            ('less', 'low', 0),
-            ('less', 'high', 1),
-            ('greater', 'low', 1),
-            ('greater', 'high', 0),
-            ('two-sided', 'low', 0),
-            ('two-sided', 'high', 0)
+            ('less', [0, 1]),
+            ('greater', [1, 0]),
+            ('two-sided', [0, 0]),
         ]
     )
-    def test_alternatives(self, alternative, statistic, pvalue):
+    def test_alternatives(self, alternative, pvalue):
         rng = np.random.default_rng(114184017807316971636137493526995620351)
 
         for _ in range(10):
-            sample_1 = rng.integers(0, 20, size=(10,))
-            sample_2 = rng.integers(80, 100, size=(10,))
-
-            if statistic == 'high':
-                sample = sample_2
-                control = sample_1
-                ci_ref = 60
-            else:
-                sample = sample_1
-                control = sample_2
-                ci_ref = -60
+            # width of 20 and min diff between samples/control is 60
+            # and maximal diff would be 100
+            sample_less = rng.integers(0, 20, size=(10,))
+            control = rng.integers(80, 100, size=(10,))
+            sample_greater = rng.integers(160, 180, size=(10,))
 
             res = stats.dunnett(
-                sample, control=control,
+                sample_less, sample_greater, control=control,
                 alternative=alternative, random_state=rng
             )
             assert_allclose(res.pvalue, pvalue, atol=1e-7)
@@ -290,10 +279,8 @@ class TestDunnett:
             # two-sided is comparable for high/low
             ci_ = ci_.high if alternative == 'less' else ci_.low
 
-            if statistic == 'high':
-                assert ci_ > ci_ref
-            else:
-                assert ci_ < ci_ref
+            assert -100 < ci_[0] < -60
+            assert 60 < ci_[1] < 100
 
     @pytest.mark.parametrize("case", [case_1, case_2, case_3, case_4])
     @pytest.mark.parametrize("alternative", ['less', 'greater', 'two-sided'])
