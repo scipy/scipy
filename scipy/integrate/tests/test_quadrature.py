@@ -159,7 +159,9 @@ class TestQuadrature:
         # `even='simpson'`
         # integral should be exactly 21
         x = np.linspace(1, 4, 4)
-        f = lambda x: x ** 2
+        def f(x):
+            return x**2
+
         assert_allclose(simpson(f(x), x=x, even='simpson'), 21.0)
         assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
 

@@ -611,7 +611,6 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
            MS Excel and Irregularly-spaced Data. Journal of Mathematical
            Sciences and Mathematics Education. 12 (2): 1–9
 
-    ..
     Examples
     --------
     >>> from scipy import integrate
@@ -624,7 +623,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
 
     >>> y = np.power(x, 3)
     >>> integrate.simpson(y, x)
-    1642.5
+    1640.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
 
@@ -693,7 +692,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = [dx, dx]
+            h = np.asfarray([dx, dx])
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
@@ -722,7 +721,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
                 where=den != 0
             )
 
-            num = h[1] ** 2 + 3 * h[0] * h[1]
+            num = h[1] ** 2 + 3.0 * h[0] * h[1]
             den = 6 * h[0]
             beta = np.true_divide(
                 num,
@@ -731,7 +730,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
                 where=den != 0
             )
 
-            num = h[1] ** 3
+            num = 1 * h[1] ** 3
             den = 6 * h[0] * (h[0] + h[1])
             eta = np.true_divide(
                 num,
