@@ -7208,10 +7208,30 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Returns
     -------
-    statistic : float or array
-        The calculated t-statistic.
-    pvalue : float or array
-        The p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or ndarray
+            The t-statistic.
+        pvalue : float or ndarray
+            The p-value associated with the given alternative.
+        df : float or ndarray
+            The number of degrees of freedom used in calculation of the
+            t-statistic. This is always NaN for a permutation t-test.
+
+            .. versionadded:: 1.11.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the difference in
+            population means for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields ``low`` and ``high``.
+            When a permutation t-test is performed, the confidence interval
+            is not computed, and fields ``low`` and ``high`` contain NaN.
+
+            .. versionadded:: 1.11.0
 
     Notes
     -----
@@ -7364,10 +7384,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             raise ValueError("Permutations must be a non-negative integer.")
 
         t, prob = _permutation_ttest(a, b, permutations=permutations,
-                                    axis=axis, equal_var=equal_var,
-                                    nan_policy=nan_policy,
-                                    random_state=random_state,
-                                    alternative=alternative)
+                                     axis=axis, equal_var=equal_var,
+                                     nan_policy=nan_policy,
+                                     random_state=random_state,
+                                     alternative=alternative)
         df, denom, estimate = np.nan, np.nan, np.nan
 
     else:
