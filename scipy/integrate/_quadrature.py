@@ -531,7 +531,7 @@ def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
+def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -551,16 +551,34 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : str {'avg', 'first', 'last'}, optional
-        'avg' : Average two results:1) use the first N-2 intervals with
-                  a trapezoidal rule on the last interval and 2) use the last
-                  N-2 intervals with a trapezoidal rule on the first interval.
+    even : str {'simpson', 'avg', 'first', 'last'}, optional
+        'avg' : Average two results:
+            1) use the first N-2 intervals with
+               a trapezoidal rule on the last interval and
+            2) use the last
+               N-2 intervals with a trapezoidal rule on the first interval.
 
         'first' : Use Simpson's rule for the first N-2 intervals with
                 a trapezoidal rule on the last interval.
 
         'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
+
+        'simpson' : Use Simpson's rule for the first N-2 intervals with the
+                  addition of a 3-point parabolic segment for the last
+                  interval.
+                  If the axis to be integrated over only has two points then
+                  the integration falls back to a trapezoidal integration.
+
+                  .. versionadded:: 1.11
+
+        .. versionchanged:: 1.11.0
+            The newly added 'simpson' option is now the default as it is more
+            accurate in most situations.
+
+        .. deprecated:: 1.11.0
+            Parameter `even` is deprecated and will be removed in a future
+            version of scipy.
 
     Returns
     -------
@@ -587,6 +605,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
+    ..
     Examples
     --------
     >>> from scipy import integrate
@@ -627,16 +646,34 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
                              "same as y.")
+
+    # even keyword parameter is deprecated
+    if 'even' in kwds:
+        warnings.warn(
+            "The 'even' keyword will be removed in a future release of scipy",
+            DeprecationWarning
+        )
+
     if N % 2 == 0:
         val = 0.0
         result = 0.0
         slice_all = (slice(None),) * nd
         slice1 = (slice(None),)*nd
         slice2 = (slice(None),)*nd
-        if even not in ['avg', 'last', 'first', 'cart']:
-            raise ValueError("Parameter 'even' must be "
-                             "'avg', 'last', or 'first'.")
-        if even == 'cart':
+
+        even = kwds.get('even', 'simpson')
+        if even not in ['avg', 'last', 'first', 'simpson']:
+            raise ValueError(
+                "Parameter 'even' must be 'simpson', "
+                "'avg', 'last', or 'first'."
+            )
+        if N == 2:
+            # need at least 3 points in integration axis to form parabolic
+            # segment. If there are two points then any of 'avg', 'first',
+            # 'last' should give the same result.
+            even = 'first'
+
+        if even == 'simpson':
             # use Simpson's rule on first intervals
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
 

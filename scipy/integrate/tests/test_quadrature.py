@@ -154,24 +154,45 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, even='first'), 13.75)
         assert_equal(simpson(y, x=x, even='last'), 14)
 
-        # `even='cart'`
+        # `even='simpson'`
         # integral should be exactly 21
         f = lambda x: x ** 2
-        assert_allclose(simpson(f(x), x=x, even='cart'), 21.0)
+        assert_allclose(simpson(f(x), x=x, even='simpson'), 21.0)
         assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
 
         # integral should be exactly 114
         x = np.linspace(1, 7, 4)
-        assert_allclose(simpson(f(x), dx=2.0, even='cart'), 114)
+        assert_allclose(simpson(f(x), dx=2.0, even='simpson'), 114)
         assert_allclose(simpson(f(x), dx=2.0, even='avg'), 115 + 1/3)
 
-        # `even='cart'`, test multi-axis behaviour
+        # `even='simpson'`, test multi-axis behaviour
         a = np.arange(16).reshape(4, 4)
         x = np.arange(64.).reshape(4, 4, 4)
         y = f(x)
-
         for i in range(3):
-            r = simpson(y, x=x, even='cart', axis=i)
+            r = simpson(y, x=x, even='simpson', axis=i)
+            it = np.nditer(a, flags=['multi_index'])
+            for _ in it:
+                idx = list(it.multi_index)
+                idx.insert(i, slice(None))
+                integral = x[tuple(idx)][-1]**3 / 3 - x[tuple(idx)][0]**3 / 3
+                assert_allclose(r[it.multi_index], integral)
+
+        # test when integration axis only has two points
+        x = np.arange(16).reshape(8, 2)
+        y = f(x)
+        for even in ['simpson', 'avg', 'first', 'last']:
+            r = simpson(y, x=x, even=even, axis=-1)
+
+            integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[, 0])
+            assert_allclose(r, integral)
+
+        # odd points, test multi-axis behaviour
+        a = np.arange(25).reshape(5, 5)
+        x = np.arange(125).reshape(5, 5, 5)
+        y = f(x)
+        for i in range(3):
+            r = simpson(y, x=x, axis=i)
             it = np.nditer(a, flags=['multi_index'])
             for _ in it:
                 idx = list(it.multi_index)
