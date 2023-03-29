@@ -656,7 +656,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
                              "same as y.")
 
     # even keyword parameter is deprecated
-    if 'even' is not None:
+    if even is not None:
         warnings.warn(
             "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
             "removed in SciPy 1.13.0",
