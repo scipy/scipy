@@ -109,6 +109,24 @@ class TestSurvival:
         assert_equal(res.sf.q, ref_x)
         assert_equal(res.sf.p, ref_sf)
 
+    def test_evaluate_methods(self):
+        # Test CDF and SF `evaluate` methods
+        rng = np.random.default_rng(1162729143302572461)
+        sample, _, _ = self.get_random_sample(rng, 15)
+        res = stats.ecdf(sample)
+        x = res.cdf.q
+        xr = x + np.diff(x, append=x[-1]+1)/2  # right shifted points
+
+        assert_equal(res.cdf.evaluate(x), res.cdf.p)
+        assert_equal(res.cdf.evaluate(xr), res.cdf.p)
+        assert_equal(res.cdf.evaluate(x[0]-1), 0)  # CDF starts at 0
+        assert_equal(res.cdf.evaluate([-np.inf, np.inf]), [0, 1])
+
+        assert_equal(res.sf.evaluate(x), res.sf.p)
+        assert_equal(res.sf.evaluate(xr), res.sf.p)
+        assert_equal(res.sf.evaluate(x[0]-1), 1)  # SF starts at 1
+        assert_equal(res.sf.evaluate([-np.inf, np.inf]), [1, 0])
+
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
     d1 = [0, 0, 1, 1, 0, 0, 0, 1, 1, 1]  # 1 means deaths (not censored)

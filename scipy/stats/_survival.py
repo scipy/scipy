@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, field
 import numpy as np
-from scipy import special
+from scipy import special, interpolate
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
 
@@ -37,6 +37,30 @@ class EmpiricalDistributionFunction:
         self._d = d
         self._sf = p if kind == 'sf' else 1 - p
         self._kind = kind
+
+        f0 = 1 if kind == 'sf' else 0  # leftmost function value
+        f1 = 1 - f0
+        # fill_value can't handle edge cases at infinity
+        x = np.insert(q, [0, len(q)], [-np.inf, np.inf])
+        y = np.insert(p, [0, len(p)], [f0, f1])
+        # `or` conditions handle the case of empty x, points
+        self._f = interpolate.interp1d(x, y, kind='previous',
+                                       assume_sorted=True)
+
+    def evaluate(self, x):
+        """Evaluate the empirical CDF/SF function at the input.
+
+        Parameters
+        ----------
+        x : ndarray
+            Argument to the CDF/SF
+
+        Returns
+        -------
+        y : ndarray
+            The CDF/SF evaluated at the input
+        """
+        return self._f(x)
 
     def confidence_interval(self, confidence_level=0.95, *, method='linear'):
         """Compute a confidence interval around the CDF/SF point estimate
@@ -191,7 +215,10 @@ def ecdf(sample):
         p : ndarray
             The point estimates of the probability corresponding with `q`.
 
-        And the following method:
+        And the following methods:
+
+        evaluate(q) :
+            Evaluate the CDF/SF at the argument.
 
         confidence_interval(confidence_level=0.95) :
             Compute the confidence interval around the CDF/SF at the values in
@@ -252,11 +279,10 @@ def ecdf(sample):
 
     To plot the result as a step function:
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.cdf.q, 0, 4), np.insert(res.cdf.p, 0, 0),
-    ...         where='post')
+    >>> x = [res.cdf.q[0]-1] + list(res.cdf.q) + [res.cdf.q[-1] + 1]
+    >>> ax.step(x, res.cdf.evaluate(x), where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
@@ -291,8 +317,8 @@ def ecdf(sample):
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.sf.q, 0, 30), np.insert(res.sf.p, 0, 1),
-    ...         where='post')
+    >>> x = [res.sf.q[0] - 1] + list(res.sf.q) + [res.sf.q[-1] + 1]
+    >>> ax.step(x, res.sf.evaluate(x), where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
