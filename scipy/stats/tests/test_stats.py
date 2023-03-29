@@ -5020,6 +5020,64 @@ class Test_ttest_trim:
             stats.ttest_ind([1, 2], [2, 1], trim=trim)
 
 
+class Test_ttest_CI:
+    # indices in order [alternative={two-sided, less, greater},
+    #                   equal_var={False, True}, trim={0, 0.2}]
+    # reference values in order `statistic, df, pvalue, low, high`
+    # equal_var=False reference values computed with R PairedData yuen.t.test:
+    #
+    # library(PairedData)
+    # options(digits=16)
+    # a < - c(0.88236329, 0.97318744, 0.4549262, 0.97893335, 0.0606677,
+    #         0.44013366, 0.55806018, 0.40151434, 0.14453315, 0.25860601,
+    #         0.20202162)
+    # b < - c(0.93455277, 0.42680603, 0.49751939, 0.14152846, 0.711435,
+    #         0.77669667, 0.20507578, 0.78702772, 0.94691855, 0.32464958,
+    #         0.3873582, 0.35187468, 0.21731811)
+    # yuen.t.test(a, b, tr=0, conf.level = 0.9, alternative = 'l')
+    #
+    # equal_var=True reference values computed with R multicon yuenContrast:
+
+    r = np.empty(shape=(3, 2, 2, 5))
+    r[0, 0, 0] = [-0.2314607, 19.894435, 0.8193209, -0.247220294, 0.188729943]
+    r[1, 0, 0] = [-0.2314607, 19.894435, 0.40966045, -np.inf, 0.1382426469]
+    r[2, 0, 0] = [-0.2314607, 19.894435, 0.5903395, -0.1967329982, np.inf]
+    r[0, 0, 1] = [-0.2452886, 11.427896, 0.8105823, -0.34057446, 0.25847383]
+    r[1, 0, 1] = [-0.2452886, 11.427896, 0.40529115, -np.inf, 0.1865829074]
+    r[2, 0, 1] = [-0.2452886, 11.427896, 0.5947089, -0.268683541, np.inf]
+    # confidence interval not available for equal_var=True
+    r[0, 1, 0] = [-0.2345625322555006, 22, 0.8167175905643815, None, None]
+    r[1, 1, 0] = [-0.2345625322555006, 22, 0.4083587952821908, None, None]
+    r[2, 1, 0] = [-0.2345625322555006, 22, 0.5916412047178092, None, None]
+    r[0, 1, 1] = [-0.2505369406507428, 14, 0.8058115135702835, None, None]
+    r[1, 1, 1] = [-0.2505369406507428, 14, 0.4029057567851417, None, None]
+    r[2, 1, 1] = [-0.2505369406507428, 14, 0.5970942432148583, None, None]
+    @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
+    @pytest.mark.parametrize('equal_var', [False, True])
+    @pytest.mark.parametrize('trim', [0, 0.2])
+    def test_confidence_interval(self, alternative, equal_var, trim):
+        if equal_var and trim:
+            pytest.xfail('Discrepancy in `main`; needs further investigation.')
+
+        rng = np.random.default_rng(3810954496107292580)
+        x = rng.random(11)
+        y = rng.random(13)
+
+        res = stats.ttest_ind(x, y, alternative=alternative,
+                              equal_var=equal_var, trim=trim)
+
+        alternatives = {'two-sided': 0, 'less': 1, 'greater': 2}
+        ref = self.r[alternatives[alternative], int(equal_var), int(np.ceil(trim))]
+        statistic, df, pvalue, low, high = ref
+        assert_allclose(res.statistic, statistic)
+        assert_allclose(res.df, df)
+        assert_allclose(res.pvalue, pvalue)
+        if not equal_var:
+            ci = res.confidence_interval(0.9)
+            assert_allclose(ci.low, low)
+            assert_allclose(ci.high, high)
+
+
 def test__broadcast_concatenate():
     # test that _broadcast_concatenate properly broadcasts arrays along all
     # axes except `axis`, then concatenates along axis
