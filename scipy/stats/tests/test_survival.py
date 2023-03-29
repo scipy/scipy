@@ -79,11 +79,11 @@ class TestSurvival:
     def test_edge_cases(self):
         res = stats.ecdf([])
         assert_equal(res.x, [])
-        assert_equal(res.cdf.points, [])
+        assert_equal(res.cdf.p, [])
 
         res = stats.ecdf([1])
         assert_equal(res.x, [1])
-        assert_equal(res.cdf.points, [1])
+        assert_equal(res.cdf.p, [1])
 
     def test_unique(self):
         # Example with unique observations; `stats.ecdf` ref. [1] page 80
@@ -93,8 +93,8 @@ class TestSurvival:
         ref_cdf = np.arange(1, 6) / 5
         ref_sf = 1 - ref_cdf
         assert_equal(res.x, ref_x)
-        assert_equal(res.cdf.points, ref_cdf)
-        assert_equal(res.sf.points, ref_sf)
+        assert_equal(res.cdf.p, ref_cdf)
+        assert_equal(res.sf.p, ref_sf)
 
     def test_nonunique(self):
         # Example with non-unique observations; `stats.ecdf` ref. [1] page 82
@@ -104,8 +104,8 @@ class TestSurvival:
         ref_cdf = np.array([1/6, 2/6, 4/6, 5/6, 1])
         ref_sf = 1 - ref_cdf
         assert_equal(res.x, ref_x)
-        assert_equal(res.cdf.points, ref_cdf)
-        assert_equal(res.sf.points, ref_sf)
+        assert_equal(res.cdf.p, ref_cdf)
+        assert_equal(res.sf.p, ref_sf)
 
     # ref. [1] page 91
     t1 = [37, 43, 47, 56, 60, 62, 71, 77, 80, 81]  # times
@@ -139,7 +139,7 @@ class TestSurvival:
         times, died, ref = case
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
-        assert_allclose(res.sf.points, ref, atol=1e-3)
+        assert_allclose(res.sf.p, ref, atol=1e-3)
         assert_equal(res.x, np.sort(np.unique(times)))
 
         # test reference implementation against other implementations
@@ -157,7 +157,7 @@ class TestSurvival:
         res = stats.ecdf(sample)
         ref = _kaplan_meier_reference(times, censored)
         assert_allclose(res.x, ref[0])
-        assert_allclose(res.sf.points, ref[1])
+        assert_allclose(res.sf.p, ref[1])
 
         # If all observations are uncensored, the KM estimate should match
         # the usual estimate for uncensored data
@@ -165,8 +165,8 @@ class TestSurvival:
         res = _survival._ecdf_right_censored(sample)  # force Kaplan-Meier
         ref = stats.ecdf(times)
         assert_equal(res[0], ref.x)
-        assert_allclose(res[1], ref.cdf.points, rtol=1e-14)
-        assert_allclose(res[2], ref.sf.points, rtol=1e-14)
+        assert_allclose(res[1], ref.cdf.p, rtol=1e-14)
+        assert_allclose(res[2], ref.sf.p, rtol=1e-14)
 
     def test_right_censored_ci(self):
         # test "greenwood" confidence interval against example 4 (URL above).
@@ -179,13 +179,13 @@ class TestSurvival:
 
         sf_ci = res.sf.confidence_interval()
         cdf_ci = res.cdf.confidence_interval()
-        allowance = res.sf.points - sf_ci.low
+        allowance = res.sf.p - sf_ci.low
 
         assert_allclose(allowance, ref_allowance, atol=1e-3)
-        assert_allclose(sf_ci.low, np.clip(res.sf.points - allowance, 0, 1))
-        assert_allclose(sf_ci.high, np.clip(res.sf.points + allowance, 0, 1))
-        assert_allclose(cdf_ci.low, np.clip(res.cdf.points - allowance, 0, 1))
-        assert_allclose(cdf_ci.high, np.clip(res.cdf.points + allowance, 0, 1))
+        assert_allclose(sf_ci.low, np.clip(res.sf.p - allowance, 0, 1))
+        assert_allclose(sf_ci.high, np.clip(res.sf.p + allowance, 0, 1))
+        assert_allclose(cdf_ci.low, np.clip(res.cdf.p - allowance, 0, 1))
+        assert_allclose(cdf_ci.high, np.clip(res.cdf.p + allowance, 0, 1))
 
         # test "log-log" confidence interval against Mathematica
         # e = {24, 3, 11, 19, 24, 13, 14, 2, 18, 17, 24, 21, 12, 1, 10, 23, 6, 5,

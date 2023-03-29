@@ -15,11 +15,11 @@ class EmpiricalDistributionFunction:
 
     Attributes
     ----------
-    points : ndarray
+    p : ndarray
         The point estimate of the cumulative distribution function (CDF) or its
         complement, the survival function (SF), at unique values of the sample.
     """
-    points: np.ndarray
+    p: np.ndarray
     # Exclude these from __str__
     _x: np.ndarray = field(repr=False)  # points at which function is estimated
     _n: np.ndarray = field(repr=False)  # number "at risk"
@@ -27,12 +27,12 @@ class EmpiricalDistributionFunction:
     _sf: np.ndarray = field(repr=False)  # survival function for var estimate
     _kind: str = field(repr=False)  # type of function: "cdf" or "sf"
 
-    def __init__(self, x, points, n, d, kind):
-        self.points = points
+    def __init__(self, x, p, n, d, kind):
+        self.p = p
         self._x = x
         self._n = n
         self._d = d
-        self._sf = points if kind == 'sf' else 1 - points
+        self._sf = p if kind == 'sf' else 1 - p
         self._kind = kind
 
     def confidence_interval(self, confidence_level=0.95, *, method='linear'):
@@ -108,8 +108,8 @@ class EmpiricalDistributionFunction:
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
         z_se = z * se
-        low = self.points - z_se
-        high = self.points + z_se
+        low = self.p - z_se
+        high = self.p + z_se
 
         return low, high
 
@@ -189,7 +189,7 @@ def ecdf(sample):
 
         The `cdf` and `sf` attributes themselves have the following attributes.
 
-        points : ndarray
+        p : ndarray
             The point estimate of the CDF/SF at the values in `x`.
 
         And the following method:
@@ -248,7 +248,7 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([5.2 , 5.58, 6.23, 6.42, 7.06])
-    >>> res.cdf.points
+    >>> res.cdf.p
     array([0.2, 0.4, 0.6, 0.8, 1. ])
 
     To plot the result as a step function:
@@ -256,7 +256,7 @@ def ecdf(sample):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.points, 0, 0),
+    >>> ax.step(np.insert(res.x, 0, 4), np.insert(res.cdf.p, 0, 0),
     ...         where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
@@ -286,13 +286,13 @@ def ecdf(sample):
     >>> res = stats.ecdf(sample)
     >>> res.x
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
-    >>> res.sf.points
+    >>> res.sf.p
     array([1.   , 1.   , 0.875, 0.75 , 0.75 , 0.75 , 0.75 , 0.5  , 0.25 , 0.   ])
 
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.points, 0, 1),
+    >>> ax.step(np.insert(res.x, 0, 30), np.insert(res.sf.p, 0, 1),
     ...         where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
