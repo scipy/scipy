@@ -522,13 +522,13 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
+def simps(y, x=None, dx=1.0, axis=-1, **kwds):
     """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
     """
-    return simpson(y, x=x, dx=dx, axis=axis, even=even)
+    return simpson(y, x=x, dx=dx, axis=axis, **kwds)
 
 
 def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
@@ -566,7 +566,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
 
         'simpson' : Use Simpson's rule for the first N-2 intervals with the
                   addition of a 3-point parabolic segment for the last
-                  interval.
+                  interval using equations outlined by Cartwright [1]_
                   If the axis to be integrated over only has two points then
                   the integration falls back to a trapezoidal integration.
 
@@ -604,6 +604,12 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
     exact if the function is a polynomial of order 3 or less. If
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
+
+    References
+    ----------
+    .. [1] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+           MS Excel and Irregularly-spaced Data. Journal of Mathematical
+           Sciences and Mathematics Education. 12 (2): 1–9
 
     ..
     Examples
@@ -658,8 +664,6 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
         val = 0.0
         result = 0.0
         slice_all = (slice(None),) * nd
-        slice1 = (slice(None),)*nd
-        slice2 = (slice(None),)*nd
 
         even = kwds.get('even', 'simpson')
         if even not in ['avg', 'last', 'first', 'simpson']:
@@ -667,11 +671,19 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
                 "Parameter 'even' must be 'simpson', "
                 "'avg', 'last', or 'first'."
             )
+
         if N == 2:
             # need at least 3 points in integration axis to form parabolic
             # segment. If there are two points then any of 'avg', 'first',
             # 'last' should give the same result.
-            even = 'first'
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
+            if x is not None:
+                last_dx = x[slice1] - x[slice2]
+            val += 0.5 * last_dx * (y[slice1] + y[slice2])
+
+            # calculation is finished.
+            even = None
 
         if even == 'simpson':
             # use Simpson's rule on first intervals
@@ -680,39 +692,71 @@ def simpson(y, x=None, dx=1.0, axis=-1, **kwds):
             slice1 = tupleset(slice_all, axis, -1)
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
-            hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
-            hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
 
             h = [dx, dx]
             if x is not None:
-                # grab the last two spacings
+                # grab the last two spacings from the appropriate axis
+                hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
+                hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
+
                 diffs = np.float64(np.diff(x, axis=axis))
                 h = [np.squeeze(diffs[hm2], axis=axis),
                      np.squeeze(diffs[hm1], axis=axis)]
 
-            alpha = 2*h[1]**2 + 3*h[0]*h[1]
-            alpha /= 6*(h[1] + h[0])
+            # This is the correction for the last interval according to
+            # Cartwright.
+            # However, I used the equations given at
+            # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
+            # A footnote on Wikipedia says:
+            # Cartwright 2017, Equation 8. The equation in Cartwright is
+            # calculating the first interval whereas the equations in the
+            # Wikipedia article are adjusting for the last integral. If the
+            # proper algebraic substitutions are made, the equation results in
+            # the values shown.
+            num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
+            den = 6 * (h[1] + h[0])
+            alpha = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
-            beta = h[1]**2 + 3*h[0]*h[1]
-            beta /= 6 * h[0]
+            num = h[1] ** 2 + 3 * h[0] * h[1]
+            den = 6 * h[0]
+            beta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
-            nu = h[1] ** 3
-            nu /= 6*h[0]*(h[0] + h[1])
+            num = h[1] ** 3
+            den = 6 * h[0] * (h[0] + h[1])
+            eta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
 
-            result += alpha*y[slice1] + beta*y[slice2] - nu*y[slice3]
+            result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
+
+        # The following code (down to result=result+val) can be removed
+        # once the 'even' keyword is removed.
 
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
-            slice1 = tupleset(slice1, axis, -1)
-            slice2 = tupleset(slice2, axis, -2)
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
-            slice1 = tupleset(slice1, axis, 0)
-            slice2 = tupleset(slice2, axis, 1)
+            slice1 = tupleset(slice_all, axis, 0)
+            slice2 = tupleset(slice_all, axis, 1)
             if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
