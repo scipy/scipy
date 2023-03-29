@@ -671,25 +671,41 @@ def _cumulative_simpson_equal_intervals(
     y = y.swapaxes(0, axis)
     dx = dx.swapaxes(0, axis)
 
-    sub_integrals_fwd = dx[:-1] / 3 * \
+    # Consider a quadratic interpolation over any 3 adjacent points, 
+    # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2 
+    # (in this case, h1 = h2 = dx)
+    
+    # Calculate integral over subinterval h1 for every set of 3 points.
+    # Calculate for all but last subinterval of y.
+    sub_integrals_h1 = dx[:-1] / 3 * \
         (5 * y[:-2] / 4 + 2 * y[1:-1] - y[2:] / 4)
-    sub_integrals_bwd = dx[:-1] / 3 * \
+
+    # Calculate integral over subinterval h2 for every set of 3 points.
+    # Calculate for all but first subinterval of y.
+    sub_integrals_h2 = dx[:-1] / 3 * \
         (-y[:-2] / 4 + 2 * y[1:-1] + 5 * y[2:] / 4)
 
-    if sub_integrals_fwd.shape[0] == 3:
+    # Addition of above formulae gives Simpson's 1/3 rule, see 
+    # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_1/3_rule
+
+    if sub_integrals_h1.shape[0] == 3:
         sub_integrals = np.concatenate(
             [
-                sub_integrals_fwd[0:1],
-                sub_integrals_bwd[-1:],
+                sub_integrals_h1[0:1],
+                sub_integrals_h2[-1:],
             ],
             axis=0,
         )
     else:
         sub_integrals = np.concatenate(
             [
-                sub_integrals_fwd[0:1],
-                (sub_integrals_fwd[1:] + sub_integrals_bwd[:-1]) / 2,
-                sub_integrals_bwd[-1:],
+                # Integral over first subinterval can only be calculated from formula for h1
+                sub_integrals_h1[0:1],
+                # For subintegrals that can be calculated with formulae for h1 or h2,
+                # average the result
+                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]) / 2,
+                # Integral over last subinterval can only be calculated from formula for h2
+                sub_integrals_h2[-1:],
             ],
             axis=0,
         )
@@ -702,6 +718,7 @@ def _cumulative_simpson_equal_intervals(
 def _cumulative_simpson_unequal_intervals(
     y: np.ndarray, x: np.ndarray, axis: int
 ) -> np.ndarray:
+
     y = y.swapaxes(0, axis)
     x = x.swapaxes(0, axis)
 
@@ -714,31 +731,46 @@ def _cumulative_simpson_unequal_intervals(
     y2 = y[1:-1]
     y3 = y[2:]
 
-    sub_integrals_fwd = (
+    # Consider a quadratic interpolation over any 3 adjacent points, 
+    # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2 
+    
+    # Calculate integral over subinterval h1 for every set of 3 points.
+    # Calculate for all but last subinterval of y.
+    sub_integrals_h1 = (
         y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
         + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
         - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
     )
-    sub_integrals_bwd = (
+
+    # Calculate integral over subinterval h2 for every set of 3 points.
+    # Calculate for all but first subinterval of y.
+    sub_integrals_h2 = (
         -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
         + y2 * (3 * h1 + h2) * h2 / (6 * h1)
         + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
     )
 
-    if sub_integrals_fwd.shape[0] == 3:
+    # Addition of above formulae gives Simpson's 1/3 rule for unequal intervals, see 
+    # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
+
+    if sub_integrals_h1.shape[0] == 3:
         sub_integrals = np.concatenate(
             [
-                sub_integrals_fwd[0:1],
-                sub_integrals_bwd[-1:],
+                sub_integrals_h1[0:1],
+                sub_integrals_h2[-1:],
             ],
             axis=0,
         )
     else:
         sub_integrals = np.concatenate(
             [
-                sub_integrals_fwd[0:1],
-                (sub_integrals_fwd[1:] + sub_integrals_bwd[:-1]) / 2,
-                sub_integrals_bwd[-1:],
+                # Integral over first subinterval can only be calculated from formula for h1
+                sub_integrals_h1[0:1],
+                # For subintegrals that can be calculated with formulae for h1 or h2,
+                # average the result
+                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]) / 2,
+                # Integral over last subinterval can only be calculated from formula for h2
+                sub_integrals_h2[-1:],
             ],
             axis=0,
         )
@@ -750,7 +782,8 @@ def _cumulative_simpson_unequal_intervals(
 
 def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     """
-    Cumulatively integrate y(x) using Simpson's 1/3 rule.
+    Cumulatively integrate y(x) using the composite Simpson's 1/3 rule. 
+    If x is None, spacing of dx is assumed.
     
     The integral of the samples at every point is calculated by assuming a quadratic
     relationship between each point and the two adjacent points.
@@ -769,11 +802,10 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
         Specifies the axis to integrate along. Default is -1 (last axis).
     initial : scalar | array_like, optional
         If given, insert this value at the beginning of the returned result,
-        and add it to the rest of the result. Typically this value should be 0. 
-        Default is None, which means no value at ``x[0]`` is returned and `res` 
-        has one element less than `y` along the axis of integration.
-        Can either be a float, or an array with the same shape as `y`, 
-        but size 1 along `axis`. 
+        and add it to the rest of the result. Default is None, which means no 
+        value at ``x[0]`` is returned and `res` has one element less than `y` 
+        along the axis of integration. Can either be a float, or an array with 
+        the same shape as `y`, but size 1 along `axis`. 
 
     Returns
     -------
@@ -787,6 +819,7 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     --------
     numpy.cumsum, numpy.cumprod
     cumulative_trapezoid : cumulative integration using the composite trapezoidal rule
+    simpson : integrator for sampled data using the Composite Simpson's Rule
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
     quadrature : adaptive Gaussian quadrature
@@ -801,6 +834,19 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     -----
 
     .. versionadded:: 1.11.0
+
+    For samples that are equally spaced the result is exact if the function 
+    is a polynomial of order 3 or less. If the samples are not equally spaced, 
+    then the result is exact only if the function is a polynomial of order 2 
+    or less.
+
+    The composite Simpson's 1/3 method is outlined in [1]. A quadratic relationship
+    is assumed between any 3 adjacent points (2 subintervals, :math:`h_{1} and h_{2}`).
+    The integral is estimated over each subinterval and cumulatively summed.
+
+    References
+    ----------
+    .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
 
     Examples
     --------
