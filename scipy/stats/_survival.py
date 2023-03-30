@@ -15,15 +15,16 @@ class EmpiricalDistributionFunction:
 
     Attributes
     ----------
-    q : ndarray
+    quantiles : ndarray
         The unique values of the sample from which the
         `EmpiricalDistributionFunction` was estimated.
-    p : ndarray
+    probabilities : ndarray
         The point estimates of the cumulative distribution function (CDF) or
-        its complement, the survival function (SF), corresponding with `q`.
+        its complement, the survival function (SF), corresponding with
+        `quantiles`.
     """
-    q: np.ndarray
-    p: np.ndarray
+    quantiles: np.ndarray
+    probabilities: np.ndarray
     # Exclude these from __str__
     _n: np.ndarray = field(repr=False)  # number "at risk"
     _d: np.ndarray = field(repr=False)  # number of "deaths"
@@ -260,19 +261,23 @@ def ecdf(sample):
 
         The `cdf` and `sf` attributes themselves have the following attributes.
 
-        q : ndarray
+        quantiles : ndarray
             The unique values in the sample.
-        p : ndarray
-            The point estimates of the probability corresponding with `q`.
+        probabilities : ndarray
+            The point estimates of the probabilities corresponding with
+            `quantiles`.
 
         And the following methods:
 
-        evaluate(q) :
+        evaluate(x) :
             Evaluate the CDF/SF at the argument.
+
+        plot(ax) :
+            Plot the CDF/SF on the provided axes.
 
         confidence_interval(confidence_level=0.95) :
             Compute the confidence interval around the CDF/SF at the values in
-            `q`.
+            `quantiles`.
 
     Notes
     -----
