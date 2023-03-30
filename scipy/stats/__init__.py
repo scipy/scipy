@@ -522,6 +522,7 @@ Fitting / Survival Analysis
 
    fit
    ecdf
+   logrank
 
 Directional statistical functions
 ---------------------------------
