@@ -482,15 +482,16 @@ def logrank(
     :math:`N` is the number of subjects at risk just before an event occured,
     and :math:`O` is the observed number of events at that time.
 
-    The ``statistic`` $Z_x$ returned by `logrank` is the (positive or negative)
-    square root of the statistic returned by many other implementations. Under
-    the null hypothesis, $Z_x**2$ is asymptotically distributed according to
+    The ``statistic`` :math:`Z_x` returned by `logrank` is the (signed) square
+    root of the statistic returned by many other implementations. Under the
+    null hypothesis, :math:`Z_x**2` is asymptotically distributed according to
     the chi-squared distribution with one degree of freedom. Consequently,
-    $Z_x$ is asymptotically distributed according to the standard normal
-    distribution. The advantage of using $Z_x$ is that the sign information
-    (i.e. whether the observed number of events tends to be less than or
-    greater than the number expected under the null hypothesis) is preserved,
-    allowing `scipy.stats.logrank` to offer one-sided alternative hypotheses.
+    :math:`Z_x` is asymptotically distributed according to the standard normal
+    distribution. The advantage of using :math:`Z_x` is that the sign
+    information (i.e. whether the observed number of events tends to be less
+    than or greater than the number expected under the null hypothesis) is
+    preserved, allowing `scipy.stats.logrank` to offer one-sided alternative
+    hypotheses.
 
     References
     ----------
