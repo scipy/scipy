@@ -396,6 +396,17 @@ def _ecdf_right_censored(sample):
 
 @dataclass
 class LogRankResult:
+    """Result object returned by `scipy.stats.logrank`.
+
+    Attributes
+    ----------
+    statistic : float ndarray
+        The computed statistic (defined below). Its magnitude is the
+        square root of the magnitude returned by most other logrank test
+        implementations.
+    pvalue : float ndarray
+        The computed p-value of the test.
+    """
     statistic: np.ndarray
     pvalue: np.ndarray
 
@@ -420,14 +431,14 @@ def logrank(
 
         * 'two-sided': the survival functions underlying `x` and `y`
           are unequal.
-        * 'less': the survival function underlying `y` tends to be less
-          than the survival function underlying `x`.
-        * 'greater': the survival function underlying `y` tends to be greater
-          than the survival function underlying `x`.
+        * 'less': the survival function underlying `x` tends to be greater
+          than the survival function underlying `y`.
+        * 'greater': the survival function underlying `x` tends to be less
+          than the survival function underlying `y`.
 
     Returns
     -------
-    res : LogRankResult
+    res : `~scipy.stats._result_classes.LogRankResult`
         An object containing attributes:
 
         statistic : float ndarray
