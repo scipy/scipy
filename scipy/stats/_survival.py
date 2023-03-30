@@ -425,16 +425,20 @@ def logrank(
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
 
-        The null hypothesis is that the survival functions of the distributions
-        underlying `x` and `y` are identical. The following alternative
-        hypotheses are available (default is 'two-sided'):
+        The null hypothesis is that the survival distributions of the two
+        groups, say *X* and *Y*, are identical.
 
-        * 'two-sided': the survival functions underlying `x` and `y`
-          are unequal.
-        * 'less': the survival function underlying `x` tends to be greater
-          than the survival function underlying `y`.
-        * 'greater': the survival function underlying `x` tends to be less
-          than the survival function underlying `y`.
+        The following alternative hypotheses [4]_ are available (default is
+        'two-sided'):
+
+        * 'two-sided': the survival distributions of the two groups are not
+          identical.
+        * 'less': survival of group *X* is favored: the group *X* failure rate
+          function is less than the group *Y* failure rate function at some
+          times.
+        * 'greater': survival of group *Y* is favored: the group *X* failure
+          rate function is greater than the group *Y* failure rate function at
+          some times.
 
     Returns
     -------
@@ -497,6 +501,11 @@ def logrank(
            :doi:`10.1136/bmj.328.7447.1073`, 2004
     .. [3] "Logrank test", Wikipedia,
            https://en.wikipedia.org/wiki/Logrank_test
+    .. [4] Brown, Mark. "On the choice of variance for the log rank test."
+           Biometrika 71.1 (1984): 65-74.
+    .. [5] Klein, John P., and Melvin L. Moeschberger. Survival analysis:
+           techniques for censored and truncated data. Vol. 1230. New York:
+           Springer, 2003.
 
     Examples
     --------
