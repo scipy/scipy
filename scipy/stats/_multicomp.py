@@ -25,6 +25,19 @@ __all__ = [
 
 @dataclass
 class DunnettResult:
+    """Result object returned by `scipy.stats.dunnett`.
+
+    Attributes
+    ----------
+    statistic : float ndarray
+        The computed statistic of the test for each comparison. The element
+        at index ``i`` is the statistic for the comparison between
+        groups ``i`` and the control.
+    pvalue : float ndarray
+        The computed p-value of the test for each comparison. The element
+        at index ``i`` is the p-value for the comparison between
+        group ``i`` and the control.
+    """
     statistic: np.ndarray
     pvalue: np.ndarray
     _alternative: Literal['two-sided', 'less', 'greater'] = field(repr=False)
