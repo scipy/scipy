@@ -1260,10 +1260,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
             nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
             np.place(vals, can_correct, nval)
 
-    if vals.ndim == 0:
-        return vals.item()
-
-    return vals
+    return vals[()]
 
 
 @_axis_nan_policy_factory(
@@ -1374,10 +1371,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
             np.place(vals, can_correct, nval + 3.0)
 
-    if vals.ndim == 0:
-        vals = vals.item()  # array scalar
-
-    return vals - 3 if fisher else vals
+    return vals[()] - 3 if fisher else vals[()]
 
 
 DescribeResult = namedtuple('DescribeResult',
