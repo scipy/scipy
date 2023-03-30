@@ -125,14 +125,11 @@ class DunnettResult:
     ) -> ConfidenceInterval:
         """Compute the confidence interval for the specified confidence level.
 
-        The confidence interval corresponds to the difference in means of the
-        groups with the control +- the allowance.
-
         Parameters
         ----------
         confidence_level : float, optional
-            Confidence level for the computed confidence interval
-            of the estimated proportion. Default is .95.
+            Confidence level for the computed confidence interval.
+            Default is .95.
 
         Returns
         -------
