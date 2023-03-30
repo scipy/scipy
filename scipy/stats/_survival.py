@@ -31,8 +31,8 @@ class EmpiricalDistributionFunction:
     _kind: str = field(repr=False)  # type of function: "cdf" or "sf"
 
     def __init__(self, q, p, n, d, kind):
-        self.p = p
-        self.q = q
+        self.probabilities = p
+        self.quantiles = q
         self._n = n
         self._d = d
         self._sf = p if kind == 'sf' else 1 - p
@@ -127,10 +127,11 @@ class EmpiricalDistributionFunction:
         if np.any(np.isnan(low) | np.isnan(high)):
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        low = EmpiricalDistributionFunction(self.q, np.clip(low, 0, 1),
-                                            None, None, self._kind)
-        high = EmpiricalDistributionFunction(self.q, np.clip(high, 0, 1),
-                                            None, None, self._kind)
+        low, high = np.clip(low, 0, 1), np.clip(high, 0, 1)
+        low = EmpiricalDistributionFunction(self.quantiles, low, None, None,
+                                            self._kind)
+        high = EmpiricalDistributionFunction(self.quantiles, high, None, None,
+                                             self._kind)
         return ConfidenceInterval(low, high)
 
     def _linear_ci(self, confidence_level):
@@ -145,8 +146,8 @@ class EmpiricalDistributionFunction:
         z = special.ndtri(1 / 2 + confidence_level / 2)
 
         z_se = z * se
-        low = self.p - z_se
-        high = self.p + z_se
+        low = self.probabilities - z_se
+        high = self.probabilities + z_se
 
         return low, high
 
@@ -282,16 +283,16 @@ def ecdf(sample):
 
     >>> from scipy import stats
     >>> res = stats.ecdf(sample)
-    >>> res.cdf.q
+    >>> res.cdf.quantiles
     array([5.2 , 5.58, 6.23, 6.42, 7.06])
-    >>> res.cdf.p
+    >>> res.cdf.probabilities
     array([0.2, 0.4, 0.6, 0.8, 1. ])
 
     To plot the result as a step function:
 
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> x = [res.cdf.q[0]-1] + list(res.cdf.q) + [res.cdf.q[-1] + 1]
+    >>> x = [res.cdf.quantiles[0]-1] + list(res.cdf.quantiles) + [res.cdf.quantiles[-1] + 1]
     >>> ax.step(x, res.cdf.evaluate(x), where='post')
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
@@ -319,15 +320,15 @@ def ecdf(sample):
     The empirical survival function is calculated as follows.
 
     >>> res = stats.ecdf(sample)
-    >>> res.sf.q
+    >>> res.sf.quantiles
     array([37., 43., 47., 56., 60., 62., 71., 77., 80., 81.])
-    >>> res.sf.p
+    >>> res.sf.probabilities
     array([1.   , 1.   , 0.875, 0.75 , 0.75 , 0.75 , 0.75 , 0.5  , 0.25 , 0.   ])
 
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> x = [res.sf.q[0] - 1] + list(res.sf.q) + [res.sf.q[-1] + 1]
+    >>> x = [res.sf.quantiles[0] - 1] + list(res.sf.quantiles) + [res.sf.quantiles[-1] + 1]
     >>> ax.step(x, res.sf.evaluate(x), where='post')
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')

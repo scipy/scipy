@@ -88,12 +88,12 @@ class TestSurvival:
 
     def test_edge_cases(self):
         res = stats.ecdf([])
-        assert_equal(res.cdf.q, [])
-        assert_equal(res.cdf.p, [])
+        assert_equal(res.cdf.quantiles, [])
+        assert_equal(res.cdf.probabilities, [])
 
         res = stats.ecdf([1])
-        assert_equal(res.cdf.q, [1])
-        assert_equal(res.cdf.p, [1])
+        assert_equal(res.cdf.quantiles, [1])
+        assert_equal(res.cdf.probabilities, [1])
 
     def test_unique(self):
         # Example with unique observations; `stats.ecdf` ref. [1] page 80
@@ -102,10 +102,10 @@ class TestSurvival:
         ref_x = np.sort(np.unique(sample))
         ref_cdf = np.arange(1, 6) / 5
         ref_sf = 1 - ref_cdf
-        assert_equal(res.cdf.q, ref_x)
-        assert_equal(res.cdf.p, ref_cdf)
-        assert_equal(res.sf.q, ref_x)
-        assert_equal(res.sf.p, ref_sf)
+        assert_equal(res.cdf.quantiles, ref_x)
+        assert_equal(res.cdf.probabilities, ref_cdf)
+        assert_equal(res.sf.quantiles, ref_x)
+        assert_equal(res.sf.probabilities, ref_sf)
 
     def test_nonunique(self):
         # Example with non-unique observations; `stats.ecdf` ref. [1] page 82
@@ -114,26 +114,26 @@ class TestSurvival:
         ref_x = np.sort(np.unique(sample))
         ref_cdf = np.array([1/6, 2/6, 4/6, 5/6, 1])
         ref_sf = 1 - ref_cdf
-        assert_equal(res.cdf.q, ref_x)
-        assert_equal(res.cdf.p, ref_cdf)
-        assert_equal(res.sf.q, ref_x)
-        assert_equal(res.sf.p, ref_sf)
+        assert_equal(res.cdf.quantiles, ref_x)
+        assert_equal(res.cdf.probabilities, ref_cdf)
+        assert_equal(res.sf.quantiles, ref_x)
+        assert_equal(res.sf.probabilities, ref_sf)
 
     def test_evaluate_methods(self):
         # Test CDF and SF `evaluate` methods
         rng = np.random.default_rng(1162729143302572461)
         sample, _, _ = self.get_random_sample(rng, 15)
         res = stats.ecdf(sample)
-        x = res.cdf.q
+        x = res.cdf.quantiles
         xr = x + np.diff(x, append=x[-1]+1)/2  # right shifted points
 
-        assert_equal(res.cdf.evaluate(x), res.cdf.p)
-        assert_equal(res.cdf.evaluate(xr), res.cdf.p)
+        assert_equal(res.cdf.evaluate(x), res.cdf.probabilities)
+        assert_equal(res.cdf.evaluate(xr), res.cdf.probabilities)
         assert_equal(res.cdf.evaluate(x[0]-1), 0)  # CDF starts at 0
         assert_equal(res.cdf.evaluate([-np.inf, np.inf]), [0, 1])
 
-        assert_equal(res.sf.evaluate(x), res.sf.p)
-        assert_equal(res.sf.evaluate(xr), res.sf.p)
+        assert_equal(res.sf.evaluate(x), res.sf.probabilities)
+        assert_equal(res.sf.evaluate(xr), res.sf.probabilities)
         assert_equal(res.sf.evaluate(x[0]-1), 1)  # SF starts at 1
         assert_equal(res.sf.evaluate([-np.inf, np.inf]), [1, 0])
 
@@ -169,8 +169,8 @@ class TestSurvival:
         times, died, ref = case
         sample = stats.CensoredData.right_censored(times, np.logical_not(died))
         res = stats.ecdf(sample)
-        assert_allclose(res.sf.p, ref, atol=1e-3)
-        assert_equal(res.sf.q, np.sort(np.unique(times)))
+        assert_allclose(res.sf.probabilities, ref, atol=1e-3)
+        assert_equal(res.sf.quantiles, np.sort(np.unique(times)))
 
         # test reference implementation against other implementations
         res = _kaplan_meier_reference(times, np.logical_not(died))
@@ -186,17 +186,17 @@ class TestSurvival:
         sample, times, censored = self.get_random_sample(rng, n_unique)
         res = stats.ecdf(sample)
         ref = _kaplan_meier_reference(times, censored)
-        assert_allclose(res.sf.q, ref[0])
-        assert_allclose(res.sf.p, ref[1])
+        assert_allclose(res.sf.quantiles, ref[0])
+        assert_allclose(res.sf.probabilities, ref[1])
 
         # If all observations are uncensored, the KM estimate should match
         # the usual estimate for uncensored data
         sample = stats.CensoredData(uncensored=times)
         res = _survival._ecdf_right_censored(sample)  # force Kaplan-Meier
         ref = stats.ecdf(times)
-        assert_equal(res[0], ref.sf.q)
-        assert_allclose(res[1], ref.cdf.p, rtol=1e-14)
-        assert_allclose(res[2], ref.sf.p, rtol=1e-14)
+        assert_equal(res[0], ref.sf.quantiles)
+        assert_allclose(res[1], ref.cdf.probabilities, rtol=1e-14)
+        assert_allclose(res[2], ref.sf.probabilities, rtol=1e-14)
 
     def test_right_censored_ci(self):
         # test "greenwood" confidence interval against example 4 (URL above).
@@ -209,13 +209,17 @@ class TestSurvival:
 
         sf_ci = res.sf.confidence_interval()
         cdf_ci = res.cdf.confidence_interval()
-        allowance = res.sf.p - sf_ci.low.p
+        allowance = res.sf.probabilities - sf_ci.low.probabilities
 
         assert_allclose(allowance, ref_allowance, atol=1e-3)
-        assert_allclose(sf_ci.low.p, np.clip(res.sf.p - allowance, 0, 1))
-        assert_allclose(sf_ci.high.p, np.clip(res.sf.p + allowance, 0, 1))
-        assert_allclose(cdf_ci.low.p, np.clip(res.cdf.p - allowance, 0, 1))
-        assert_allclose(cdf_ci.high.p, np.clip(res.cdf.p + allowance, 0, 1))
+        assert_allclose(sf_ci.low.probabilities,
+                        np.clip(res.sf.probabilities - allowance, 0, 1))
+        assert_allclose(sf_ci.high.probabilities,
+                        np.clip(res.sf.probabilities + allowance, 0, 1))
+        assert_allclose(cdf_ci.low.probabilities,
+                        np.clip(res.cdf.probabilities - allowance, 0, 1))
+        assert_allclose(cdf_ci.high.probabilities,
+                        np.clip(res.cdf.probabilities + allowance, 0, 1))
 
         # test "log-log" confidence interval against Mathematica
         # e = {24, 3, 11, 19, 24, 13, 14, 2, 18, 17, 24, 21, 12, 1, 10, 23, 6, 5,
@@ -233,8 +237,8 @@ class TestSurvival:
                     0.947073, 0.947073, 0.947073, 0.947073, 0.906422, 0.856521,
                     0.856521, 0.856521, 0.856521, 0.776724, 0.776724]
         sf_ci = res.sf.confidence_interval(method='log-log')
-        assert_allclose(sf_ci.low.p, ref_low, atol=1e-6)
-        assert_allclose(sf_ci.high.p, ref_high, atol=1e-6)
+        assert_allclose(sf_ci.low.probabilities, ref_low, atol=1e-6)
+        assert_allclose(sf_ci.high.probabilities, ref_high, atol=1e-6)
 
     def test_right_censored_ci_example_5(self):
         # test "exponential greenwood" confidence interval against example 5
@@ -249,10 +253,10 @@ class TestSurvival:
         sf_ci = res.sf.confidence_interval(method='log-log')
         cdf_ci = res.cdf.confidence_interval(method='log-log')
 
-        assert_allclose(sf_ci.low.p, lower, atol=1e-5)
-        assert_allclose(sf_ci.high.p, upper, atol=1e-5)
-        assert_allclose(cdf_ci.low.p, 1-upper, atol=1e-5)
-        assert_allclose(cdf_ci.high.p, 1-lower, atol=1e-5)
+        assert_allclose(sf_ci.low.probabilities, lower, atol=1e-5)
+        assert_allclose(sf_ci.high.probabilities, upper, atol=1e-5)
+        assert_allclose(cdf_ci.low.probabilities, 1-upper, atol=1e-5)
+        assert_allclose(cdf_ci.high.probabilities, 1-lower, atol=1e-5)
 
         # Test against R's `survival` library `survfit` function, 90%CI
         # library(survival)
@@ -272,8 +276,8 @@ class TestSurvival:
                 0.3887616766886558]
         sf_ci = res.sf.confidence_interval(method='log-log',
                                            confidence_level=0.9)
-        assert_allclose(sf_ci.low.p, low)
-        assert_allclose(sf_ci.high.p, high)
+        assert_allclose(sf_ci.low.probabilities, low)
+        assert_allclose(sf_ci.high.probabilities, high)
 
         # And with conf.type = "plain"
         low = [0.8556383113628162, 0.7670478794850761, 0.5485720663578469,
@@ -283,8 +287,8 @@ class TestSurvival:
                 0.7391817920806210, 0.7391817920806210, 0.5773038116797676,
                 0.3642270254596720, 0.3642270254596720, 0.3642270254596720]
         sf_ci = res.sf.confidence_interval(confidence_level=0.9)
-        assert_allclose(sf_ci.low.p, low)
-        assert_allclose(sf_ci.high.p, high)
+        assert_allclose(sf_ci.low.probabilities, low)
+        assert_allclose(sf_ci.high.probabilities, high)
 
     def test_right_censored_ci_nans(self):
         # test `ecdf` confidence interval on a problem that results in NaNs
@@ -301,7 +305,7 @@ class TestSurvival:
         x = [37, 47, 56, 77, 80, 81]
         flo = [np.nan, 0, 0, 0.052701464070711, 0.337611126231790, np.nan]
         fup = [np.nan, 0.35417230377, 0.5500569798, 0.9472985359, 1.0, np.nan]
-        i = np.searchsorted(res.cdf.q, x)
+        i = np.searchsorted(res.cdf.quantiles, x)
 
         message = "The confidence interval is undefined at some observations"
         with pytest.warns(RuntimeWarning, match=message):
@@ -310,20 +314,20 @@ class TestSurvival:
         # Matlab gives NaN as the first element of the CIs. Mathematica agrees,
         # but R's survfit does not. It makes some sense, but it's not what the
         # formula gives, so skip that element.
-        assert_allclose(ci.low.p[i][1:], flo[1:])
-        assert_allclose(ci.high.p[i][1:], fup[1:])
+        assert_allclose(ci.low.probabilities[i][1:], flo[1:])
+        assert_allclose(ci.high.probabilities[i][1:], fup[1:])
 
         # [f, x, flo, fup] = ecdf(t, 'Censoring', censored, 'Function',
         #                        'survivor', 'Alpha', 0.05);
         flo = [np.nan, 0.64582769623, 0.449943020228, 0.05270146407, 0, np.nan]
         fup = [np.nan, 1.0, 1.0, 0.947298535929289, 0.662388873768210, np.nan]
-        i = np.searchsorted(res.cdf.q, x)
+        i = np.searchsorted(res.cdf.quantiles, x)
 
         with pytest.warns(RuntimeWarning, match=message):
             ci = res.sf.confidence_interval()
 
-        assert_allclose(ci.low.p[i][1:], flo[1:])
-        assert_allclose(ci.high.p[i][1:], fup[1:])
+        assert_allclose(ci.low.probabilities[i][1:], flo[1:])
+        assert_allclose(ci.high.probabilities[i][1:], fup[1:])
 
         # With the same data, R's `survival` library `survfit` function
         # doesn't produce the leading NaN
@@ -341,8 +345,8 @@ class TestSurvival:
                0.05270146407071086, 0., np.nan]
         high = [1., 1., 1., 1., 1., 1., 1., 0.9472985359292891,
                 0.6623888737682101, np.nan]
-        assert_allclose(ci.low.p, low)
-        assert_allclose(ci.high.p, high)
+        assert_allclose(ci.low.probabilities, low)
+        assert_allclose(ci.high.probabilities, high)
 
         # It does with conf.type="log-log", as do we
         with pytest.warns(RuntimeWarning, match=message):
@@ -353,8 +357,8 @@ class TestSurvival:
         high = [np.nan, np.nan, 0.9813929658789660, 0.9308983170906275,
                 0.9308983170906275, 0.9308983170906275, 0.9308983170906275,
                 0.8263946341076415, 0.6558775085110887, np.nan]
-        assert_allclose(ci.low.p, low)
-        assert_allclose(ci.high.p, high)
+        assert_allclose(ci.low.probabilities, low)
+        assert_allclose(ci.high.probabilities, high)
 
     def test_right_censored_against_uncensored(self):
         rng = np.random.default_rng(7463952748044886637)
@@ -363,7 +367,7 @@ class TestSurvival:
         censored[np.argmax(sample)] = True
         res = stats.ecdf(sample)
         ref = stats.ecdf(stats.CensoredData.right_censored(sample, censored))
-        assert_equal(res.sf.q, ref.sf.q)
+        assert_equal(res.sf.quantiles, ref.sf.quantiles)
         assert_equal(res.sf._n, ref.sf._n)
         assert_equal(res.sf._d[:-1], ref.sf._d[:-1])  # difference @ [-1]
         assert_allclose(res.sf._sf[:-1], ref.sf._sf[:-1], rtol=1e-14)
