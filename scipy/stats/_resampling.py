@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
@@ -6,7 +8,7 @@ import inspect
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy._lib._util import rng_integers
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -244,8 +246,27 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             method, bootstrap_result, random_state)
 
 
-fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
-BootstrapResult = make_dataclass("BootstrapResult", fields)
+@dataclass
+class BootstrapResult:
+    """Result object returned by `scipy.stats.bootstrap`.
+
+    Attributes
+    ----------
+    confidence_interval : ConfidenceInterval
+        The bootstrap confidence interval as an instance of
+        `collections.namedtuple` with attributes `low` and `high`.
+    bootstrap_distribution : ndarray
+        The bootstrap distribution, that is, the value of `statistic` for
+        each resample. The last dimension corresponds with the resamples
+        (e.g. ``res.bootstrap_distribution.shape[-1] == n_resamples``).
+    standard_error : float or ndarray
+        The bootstrap standard error, that is, the sample standard
+        deviation of the bootstrap distribution.
+
+    """
+    confidence_interval: ConfidenceInterval
+    bootstrap_distribution: np.ndarray
+    standard_error: float | np.ndarray
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
@@ -662,8 +683,23 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
             batch_iv, alternative, axis_int)
 
 
-fields = ['statistic', 'pvalue', 'null_distribution']
-MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
+@dataclass
+class MonteCarloTestResult:
+    """Result object returned by `scipy.stats.monte_carlo_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the sample.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
 def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
@@ -726,12 +762,16 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the sample.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : MonteCarloTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The observed test statistic of the sample.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     References
     ----------
@@ -852,8 +892,23 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 
 
-attributes = ('statistic', 'pvalue', 'null_distribution')
-PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
+@dataclass
+class PermutationTestResult:
+    """Result object returned by `scipy.stats.permutation_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the data.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
 def _all_partitions_concatenated(ns):
@@ -1246,12 +1301,16 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the data.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : PermutationTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The observed test statistic of the data.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     Notes
     -----

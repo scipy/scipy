@@ -49,7 +49,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import _batch_generator
@@ -4301,10 +4301,13 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Returns
     -------
-    statistic : float
-        The computed A statistic of the test.
-    pvalue : float
-        The associated p-value from the chi-squared distribution.
+    res : AlexanderGovernResult
+        An object with attributes:
+
+        statistic : float
+            The computed A statistic of the test.
+        pvalue : float
+            The associated p-value from the chi-squared distribution.
 
     Warns
     -----
@@ -4437,8 +4440,10 @@ def _alexandergovern_input_validation(samples, nan_policy):
     return samples
 
 
-AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
-                                                                 "pvalue"))
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
