@@ -62,6 +62,45 @@ class EmpiricalDistributionFunction:
         """
         return self._f(x)
 
+    def plot(self, ax=None, **kwargs):
+        """Plot the empirical distribution function
+
+        Available only if ``matplotlib`` is installed.
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes object to draw the plot onto, otherwise uses the current Axes.
+
+        **kwargs : dict, optional
+            Keyword arguments passed directly to `matplotlib.axes.Axes.step`.
+            Unless overridden, ``where='post'``.
+
+        Returns
+        -------
+        lines : list of `matplotlib.lines.Line2D`
+            Objects representing the plotted data
+        """
+        try:
+            import matplotlib  # noqa
+        except ModuleNotFoundError as exc:
+            message = "matplotlib must be installed to use method `plot`."
+            raise ModuleNotFoundError(message) from exc
+
+        if ax is None:
+            import matplotlib.pyplot as plt
+            ax = plt.gca()
+
+        kwds = {'where': 'post'}
+        kwds.update(kwargs)
+
+        factor = 0.05  # how far past the edges of the sample to plot
+        ptp = np.ptp(self.quantiles)
+        q = self.quantiles
+        q = [q[0] - ptp*factor] + list(q) + [q[-1] + ptp*factor]
+
+        return ax.step(q, self.evaluate(q), **kwds)
+
     def confidence_interval(self, confidence_level=0.95, *, method='linear'):
         """Compute a confidence interval around the CDF/SF point estimate
 
@@ -292,8 +331,7 @@ def ecdf(sample):
 
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
-    >>> x = [res.cdf.quantiles[0]-1] + list(res.cdf.quantiles) + [res.cdf.quantiles[-1] + 1]
-    >>> ax.step(x, res.cdf.evaluate(x), where='post')
+    >>> res.cdf.plot(ax)
     >>> ax.set_xlabel('One-Mile Run Time (minutes)')
     >>> ax.set_ylabel('Empirical CDF')
     >>> plt.show()
@@ -328,8 +366,7 @@ def ecdf(sample):
     To plot the result as a step function:
 
     >>> ax = plt.subplot()
-    >>> x = [res.sf.quantiles[0] - 1] + list(res.sf.quantiles) + [res.sf.quantiles[-1] + 1]
-    >>> ax.step(x, res.sf.evaluate(x), where='post')
+    >>> res.cdf.plot(ax)
     >>> ax.set_xlabel('Fanbelt Survival Time (thousands of miles)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.show()
