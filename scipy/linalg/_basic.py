@@ -5,6 +5,7 @@
 #              and Jake Vanderplas, August 2012
 
 from warnings import warn
+from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
 from .lapack import get_lapack_funcs, _compute_lwork
@@ -981,13 +982,13 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     Compute the determinant of a matrix
 
-    The determinant of a square matrix is a value derived arithmetically
-    from the coefficients of the matrix.
+    The determinant is the scalar that is a function of the associated square
+    matrix coefficients. The scalar is zero for singular matrices.
 
     Parameters
     ----------
-    a : (M, M) array_like
-        A square matrix.
+    a : (..., M, M) array_like
+        Input array to compute determinants for.
     overwrite_a : bool, optional
         Allow overwriting data in a (may enhance performance).
     check_finite : bool, optional
@@ -997,14 +998,14 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    det : float or complex
+    det : (...) float or complex
         Determinant of `a`.
 
     Notes
     -----
-    The determinant is computed via performing LU factorization, through LAPACK
-    routine z/dgetrf and then calculating the product of diagonal entries of
-    ``U`` factor.
+    The determinant is computed via performing an LU factorization of the
+    input, through LAPACK routine 'getrf' and then calculating the product of
+    diagonal entries of ``U`` factor.
 
     Examples
     --------
@@ -1022,17 +1023,26 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # First we check and make arrays.
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('Input array expected to be square in the last two '
-                         f'dimensions but a has {a1.shape}')
+    if a1.ndim < 2:
+        raise ValueError('The input array must be at least two-dimensional.')
+    if a1.shape[-1] != a.shape[-2]:
+        raise ValueError('Last 2 dimensions of the array must be square'
+                         f' but received shape {a1.shape}.')
 
-    # Also check if dtype is LAPACK compatible we only use double precision
-    # to prevent overflows in single precision
+    # Empty array has determinant 1 because math.
+    if min(*a.shape) == 0:
+        return np.ones(shape=a.shape[:-2])
+
+    # Scalar case
+    if a.shape[-2:] == (1, 1):
+        return np.squeeze(a)
+
+    # Also check if dtype is LAPACK compatible
     if a1.dtype.char not in 'fdFD':
         dtype_char = lapack_cast_dict[a1.dtype.char]
         if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype of array {a1.dtype.char} cannot be '
-                            'cast  to float(32, 64) or complex(64, 128).')
+            raise TypeError(f'The dtype {a1.dtype} cannot be cast '
+                            'to float(32, 64) or complex(64, 128).')
 
         a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
         overwrite_a = True
@@ -1051,7 +1061,19 @@ def det(a, overwrite_a=False, check_finite=True):
             and a1.flags['WRITEABLE']):
         a1 = a1.copy(order='C')
 
-    return find_det_from_lu(a1)
+    if a1.ndim == 2:
+        return find_det_from_lu(a1)
+
+    # loop over the stacked array, and avoid overflows for single precision
+    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
+    dtype_char = a1.dtype.char
+    if dtype_char in 'fF':
+        dtype_char = 'd' if dtype_char.islower() else 'D'
+
+    det = np.empty(a1.shape[:-2], dtype=dtype_char)
+    for ind in product(*[range(x) for x in a1.shape[:-2]]):
+        det[ind] = find_det_from_lu(a1[ind])
+    return det
 
 
 # Linear Least Squares
