@@ -7,16 +7,27 @@
 from warnings import warn
 import numpy as np
 from numpy import atleast_1d, atleast_2d
-from ._flinalg_py import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
+from ._cythonized_array_utils import find_det_from_lu
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
+
+
+# The numpy facilities for type-casting checks are too slow for small sized
+# arrays and eat away the time budget for the checkups. Here we set a
+# precomputed dict container of the numpy.can_cast() table.
+
+# It can be used to determine quickly what a dtype can be cast to LAPACK
+# compatible types, i.e., 'float32, float64, complex64, complex128'.
+# Then it can be checked via "casting_dict[arr.dtype.char]"
+lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
+                    for x in np.typecodes['All']}
 
 
 # Linear equations
@@ -973,14 +984,6 @@ def det(a, overwrite_a=False, check_finite=True):
     The determinant of a square matrix is a value derived arithmetically
     from the coefficients of the matrix.
 
-    The determinant for a 3x3 matrix, for example, is computed as follows::
-
-        a    b    c
-        d    e    f = A
-        g    h    i
-
-        det(A) = a*e*i + b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
-
     Parameters
     ----------
     a : (M, M) array_like
@@ -999,7 +1002,9 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Notes
     -----
-    The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
+    The determinant is computed via performing LU factorization, through LAPACK
+    routine z/dgetrf and then calculating the product of diagonal entries of
+    ``U`` factor.
 
     Examples
     --------
@@ -1013,16 +1018,40 @@ def det(a, overwrite_a=False, check_finite=True):
     3.0
 
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
+    # The goal is to end up with a writable contiguous array to pass to Cython
+
+    # First we check and make arrays.
+    a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    fdet, = get_flinalg_funcs(('det',), (a1,))
-    a_det, info = fdet(a1, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal '
-                         'det.getrf' % -info)
-    return a_det
+        raise ValueError('Input array expected to be square in the last two '
+                         f'dimensions but a has {a1.shape}')
+
+    # Also check if dtype is LAPACK compatible we only use double precision
+    # to prevent overflows in single precision
+    if a1.dtype.char not in 'fdFD':
+        dtype_char = lapack_cast_dict[a1.dtype.char]
+        if not dtype_char:  # No casting possible
+            raise TypeError(f'The dtype of array {a1.dtype.char} cannot be '
+                            'cast  to float(32, 64) or complex(64, 128).')
+
+        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
+        overwrite_a = True
+
+    # Then check overwrite permission
+    if not _datacopied(a1, a):  # "a"  still alive through "a1"
+        if not overwrite_a:
+            # Data belongs to "a" so make a copy
+            a1 = a1.copy(order='C')
+        #  else: Do nothing we'll use "a" if possible
+    # else:  a1 has its own data thus free to scratch
+
+    # Then layout checks, might happen that overwrite is allowed but original
+    # array was read-only or non-contiguous.
+    if not ((a1.flags['C_CONTIGUOUS'] or a1.flags['F_CONTIGUOUS'])
+            and a1.flags['WRITEABLE']):
+        a1 = a1.copy(order='C')
+
+    return find_det_from_lu(a1)
 
 
 # Linear Least Squares
