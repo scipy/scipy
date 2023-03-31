@@ -226,7 +226,7 @@ class TestCumulative_trapezoid:
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
-            y_int = cumulative_trapezoid(y, x, initial=3.45, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=0, axis=axis)
             assert_equal(y_int.shape, (3, 2, 4))
             y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
@@ -262,17 +262,26 @@ class TestCumulative_trapezoid:
         y_expected = [-1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, initial=1.23)
-        y_expected = [1.23, -1.5, -2., -1.5, 0.]
+        y_int = cumulative_trapezoid(y, initial=0)
+        y_expected = [0, -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3)
         y_expected = [-4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, dx=3, initial=1.23)
-        y_expected = [1.23, -4.5, -6., -4.5, 0.]
+        y_int = cumulative_trapezoid(y, dx=3, initial=0)
+        y_expected = [0, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
+
+    @pytest.mark.parametrize(
+        "initial", [1, 0.5, np.array([1]), False]
+    )
+    def test_initial_exception(self, initial):
+        """If initial is not None or 0, a ValueError is raised."""
+        y = np.linspace(0, 10, num=10)
+        with pytest.raises(ValueError):
+            cumulative_trapezoid(y, initial=initial)
 
     def test_cumtrapz(self):
         # Basic coverage test for the alias
