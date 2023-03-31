@@ -6,7 +6,7 @@ from cpython.long cimport PyLong_AsVoidPtr
 from libc.stdlib cimport free
 from libc.string cimport strdup
 
-from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
+from scipy._lib.ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
                          ccallback_signature_t)
 
 

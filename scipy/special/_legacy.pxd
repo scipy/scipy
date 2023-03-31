@@ -11,7 +11,7 @@ from libc.math cimport isnan, isinf, NAN
 
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
-from .sph_harm cimport sph_harmonic
+from scipy.special.sph_harm cimport sph_harmonic
 from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        nbdtr, nbdtri, pdtri, kn, yn,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)

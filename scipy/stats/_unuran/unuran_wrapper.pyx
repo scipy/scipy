@@ -8,7 +8,7 @@ from numpy.random cimport bitgen_t
 
 from scipy._lib.ccallback cimport ccallback_t
 from scipy._lib.messagestream cimport MessageStream
-from .unuran cimport *
+from scipy.stats._unuran.unuran cimport *
 import warnings
 import threading
 import functools
