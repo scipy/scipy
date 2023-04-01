@@ -1732,6 +1732,15 @@ class dweibull_gen(rv_continuous):
         fac = np.power(-np.log(fac), 1.0 / c)
         return np.where(q > 0.5, fac, -fac)
 
+    def _sf(self, x, c):
+        Cx1 = 0.5 * np.exp(-abs(x)**c)
+        return np.where(x > 0, Cx1, 1 - Cx1)
+
+    def _isf(self, q, c):
+        fac = 2. * np.where(q <= 0.5, q, 1. - q)
+        fac = np.power(-np.log(fac), 1.0 / c)
+        return np.where(q > 0.5, -fac, fac)
+
     def _munp(self, n, c):
         return (1 - (n % 2)) * sc.gamma(1.0 + 1.0 * n / c)
 

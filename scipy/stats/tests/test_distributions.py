@@ -6351,6 +6351,13 @@ class TestDweibull:
         ref = stats.weibull_min.entropy(c) - np.log(0.5)
         assert_allclose(res, ref, rtol=1e-15)
 
+    @pytest.mark.parametrize('x, c, ref',
+                             [(1e20, 0.1, 1.8600379880103705e-44),
+                              (1e5, 0.5, 2.306726997904701e-138)])
+    def test_sf_isf(self, x, c, ref):
+        assert_allclose(stats.dweibull.sf(x, c), ref, rtol=5e-14)
+        assert_allclose(stats.dweibull.isf(ref, c), x, rtol=5e-14)
+
 
 class TestTruncWeibull:
 
