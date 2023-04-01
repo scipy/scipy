@@ -999,11 +999,11 @@ class TestGeom:
         # this should not underflow
         assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
 
-    def test_entropy(self):
-        # Simple tests of entropy.
-        h = stats.geom(np.array([0.0146, 0.2, 0.5, 0.8])).entropy()
-        expected_h = np.array([5.21939796, 2.50201212, 1.38629436, 0.62550303])
-        assert_allclose(h, expected_h)
+    def test_entropy_gh18226(self):
+        # gh-18226 reported that `geom.entropy` produced a warning and
+        # inaccurate output for small p. Check that this is resolved.
+        h = stats.geom(0.0146).entropy()
+        assert_allclose(h, 5.219397961962308, rtol=1e-15)
 
 
 class TestPlanck:
