@@ -23,8 +23,8 @@ def find_det_from_lu(lapack_t[:, ::1] a):
     cdef int *piv = <int *>malloc(<int>n * sizeof(int))
     try:
         if not piv:
-            raise MemoryError('While computing determinant LU factorization '
-                              'due to failed memory allocation request.')
+            raise MemoryError('Internal memory allocation request for LU '
+                              'factorization failed in "find_det_from_lu".')
 
         if lapack_t is float:
             sgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
@@ -44,8 +44,8 @@ def find_det_from_lu(lapack_t[:, ::1] a):
                 return 0.+0.j
 
         if info < 0:
-            raise ValueError('SciPy determinant calculation has encountered '
-                             'an internal error in ?getrf routine with invalid'
+            raise ValueError('find_det_from_lu has encountered an internal'
+                             ' error in ?getrf routine with invalid'
                              f' value at {-info}-th parameter.'
                              )
         if lapack_t is float or lapack_t is double:

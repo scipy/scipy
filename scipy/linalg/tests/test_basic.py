@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
-import numpy.linalg as linalg
 from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
@@ -556,7 +555,7 @@ class TestSolve:
     def test_simple_sym_complexb(self):
         a = [[5, 2], [2, -4]]
         for b in ([1j, 0],
-                  [[1j, 1j],[0, 2]]
+                  [[1j, 1j], [0, 2]]
                   ):
             x = solve(a, b, assume_a='sym')
             assert_array_almost_equal(dot(a, x), b)
@@ -969,7 +968,9 @@ class TestDet:
         d1, d2 = det(a), np.linalg.det(a)
         assert_almost_equal(d1, d2)
 
-    @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]])
+    # g and G dtypes are handled differently in windows and other platforms
+    @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
+                                     if x not in 'gG'])
     def test_sample_compatible_dtype_input(self, typ):
         n = 4
         a = self.rng.random([n, n]).astype(typ)  # value is not important
@@ -1362,9 +1363,9 @@ class TestPinv:
         n = 12
         # get a random ortho matrix for shuffling
         q, _ = qr(np.random.rand(n, n))
-        a_m = np.arange(35.0).reshape(7,5)
+        a_m = np.arange(35.0).reshape(7, 5)
         a = a_m.copy()
-        a[0,0] = 0.001
+        a[0, 0] = 0.001
         atol = 1e-5
         rtol = 0.05
         # svds of a_m is ~ [116.906, 4.234, tiny, tiny, tiny]
