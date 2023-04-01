@@ -4724,11 +4724,28 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    >>> x, y = [1, 2, 3, 4, 5, 6], [10, 9, 2.5, 6, 4, 3]
+    >>> res = stats.pearsonr(x, y)
     >>> res
-    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
-    >>> res.confidence_interval()
-    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
+    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.06323438009921392)
+
+    To perform an exact permutation version of the test:
+
+    >>> rng = np.random.default_rng(7796654889291491997)
+    >>> method = stats.PermutationMethod(n_resamples=np.inf, random_state=rng)
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.07777777777777778)
+
+    To produce an asymptotic 90% confidence interval:
+
+    >>> res.confidence_interval(confidence_level=0.9)
+    ConfidenceInterval(low=-0.9649414445194328, high=-0.11329711738437286)
+
+    And for a bootstrap confidence interval:
+
+    >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
+    >>> res.confidence_interval(confidence_level=0.9, method=method)
+    ConfidenceInterval(low=-0.9983814394570301, high=0.20707884164064552)
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
