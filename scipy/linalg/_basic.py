@@ -1025,17 +1025,9 @@ def det(a, overwrite_a=False, check_finite=True):
     a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
     if a1.ndim < 2:
         raise ValueError('The input array must be at least two-dimensional.')
-    if a1.shape[-1] != a.shape[-2]:
+    if a1.shape[-1] != a1.shape[-2]:
         raise ValueError('Last 2 dimensions of the array must be square'
                          f' but received shape {a1.shape}.')
-
-    # Empty array has determinant 1 because math.
-    if min(*a.shape) == 0:
-        return np.ones(shape=a.shape[:-2])
-
-    # Scalar case
-    if a.shape[-2:] == (1, 1):
-        return np.squeeze(a)
 
     # Also check if dtype is LAPACK compatible
     if a1.dtype.char not in 'fdFD':
@@ -1046,6 +1038,17 @@ def det(a, overwrite_a=False, check_finite=True):
 
         a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
         overwrite_a = True
+
+    # Empty array has determinant 1 because math.
+    if min(*a1.shape) == 0:
+        if a1.ndim == 2:
+            return 1.
+        else:
+            return np.ones(shape=a1.shape[:-2])
+
+    # Scalar case
+    if a1.shape[-2:] == (1, 1):
+        return np.squeeze(a1)
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"

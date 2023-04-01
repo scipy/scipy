@@ -931,35 +931,73 @@ class TestInv:
 
 class TestDet:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(1680305949878959)
 
     def test_simple(self):
         a = [[1, 2], [3, 4]]
-        a_det = det(a)
-        assert_almost_equal(a_det, -2.0)
+        assert_allclose(det(a), -2.0)
+        a = np.flipud(a)
+        assert_allclose(det(a), 2.0)
 
     def test_simple_complex(self):
         a = [[1, 2], [3, 4j]]
-        a_det = det(a)
-        assert_almost_equal(a_det, -6+4j)
+        assert_almost_equal(det(a), -6+4j)
 
     def test_random(self):
-        basic_det = linalg.det
         n = 20
-        for i in range(4):
-            a = random([n, n])
-            d1 = det(a)
-            d2 = basic_det(a)
-            assert_almost_equal(d1, d2)
+        a = self.rng.random([n, n])
+        d1, d2 = det(a), np.linalg.det(a)
+        assert_allclose(d1, d2)
+
+    def test_random_stacked(self):
+        n = 20
+        a = self.rng.random([3, 2, n, n])
+        d1, d2 = det(a), np.linalg.det(a)
+        assert_almost_equal(d1, d2)
 
     def test_random_complex(self):
-        basic_det = linalg.det
         n = 20
-        for i in range(4):
-            a = random([n, n]) + 2j*random([n, n])
-            d1 = det(a)
-            d2 = basic_det(a)
-            assert_allclose(d1, d2, rtol=1e-13)
+        a = self.rng.integers(-2, 3, size=[n, n])*0.25j
+        a += self.rng.random([n, n])
+        d1, d2 = det(a), np.linalg.det(a)
+        assert_almost_equal(d1, d2)
+
+    def test_random_complex_stacked(self):
+        n = 20
+        a = self.rng.integers(-2, 3, size=[3, 2, n, n])*0.25j
+        a += self.rng.random([3, 2, n, n])
+        d1, d2 = det(a), np.linalg.det(a)
+        assert_almost_equal(d1, d2)
+
+    @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]])
+    def test_sample_compatible_dtype_input(self, typ):
+        n = 4
+        a = self.rng.random([n, n]).astype(typ)  # value is not important
+        assert isinstance(det(a), (float, complex))
+
+    def test_incompatible_dtype_input(self):
+        for c in 'SUO':
+            with assert_raises(TypeError):
+                det(np.array([['a', 'b']]*2, dtype=c))
+        with assert_raises(TypeError):
+            det(np.array([[b'a', b'b']]*2, dtype='V'))
+        with assert_raises(TypeError):
+            det(np.array([[100, 200]]*2, dtype='datetime64[s]'))
+        with assert_raises(TypeError):
+            det(np.array([[100, 200]]*2, dtype='timedelta64[s]'))
+
+    def test_empty_edge_cases(self):
+        assert_allclose(det(np.empty([0, 0])), 1.)
+        assert_allclose(det(np.empty([0, 0, 0])), np.array([]))
+        assert_allclose(det(np.empty([3, 0, 0])), np.array([1., 1., 1.]))
+        with assert_raises(ValueError):
+            det(np.empty([0, 0, 3]))
+        with assert_raises(ValueError):
+            det(np.array([]))
+        with assert_raises(ValueError):
+            det(np.array([[]]))
+        with assert_raises(ValueError):
+            det(np.array([[[]]]))
 
     def test_check_finite(self):
         a = [[1, 2], [3, 4]]
