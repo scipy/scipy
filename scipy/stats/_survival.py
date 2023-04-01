@@ -71,7 +71,7 @@ class EmpiricalDistributionFunction:
         """
         return self._f(x)
 
-    def plot(self, ax=None, **kwargs):
+    def plot(self, ax=None, **matplotlib_kwargs):
         """Plot the empirical distribution function
 
         Available only if ``matplotlib`` is installed.
@@ -81,7 +81,7 @@ class EmpiricalDistributionFunction:
         ax : matplotlib.axes.Axes
             Axes object to draw the plot onto, otherwise uses the current Axes.
 
-        **kwargs : dict, optional
+        **matplotlib_kwargs : dict, optional
             Keyword arguments passed directly to `matplotlib.axes.Axes.step`.
             Unless overridden, ``where='post'``.
 
@@ -100,14 +100,14 @@ class EmpiricalDistributionFunction:
             import matplotlib.pyplot as plt
             ax = plt.gca()
 
-        kwds = {'where': 'post'}
-        kwds.update(kwargs)
+        kwargs = {'where': 'post'}
+        kwargs.update(matplotlib_kwargs)
 
         delta = np.ptp(self.quantiles)*0.05  # how far past sample edge to plot
         q = self.quantiles
         q = [q[0] - delta] + list(q) + [q[-1] + delta]
 
-        return ax.step(q, self.evaluate(q), **kwds)
+        return ax.step(q, self.evaluate(q), **kwargs)
 
     def confidence_interval(self, confidence_level=0.95, *, method='linear'):
         """Compute a confidence interval around the CDF/SF point estimate
