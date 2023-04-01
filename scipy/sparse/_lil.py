@@ -322,7 +322,7 @@ class lil_matrix(spmatrix, IndexMixin):
             # Fast path for full-matrix sparse assignment.
             if (isinstance(row, slice) and isinstance(col, slice) and
                     row == slice(None) and col == slice(None) and
-                    isspmatrix(x)):
+                    isspmatrix(x) and x.shape == self.shape):
                 x = self._lil_container(x, dtype=self.dtype)
                 self.rows = x.rows
                 self.data = x.data
