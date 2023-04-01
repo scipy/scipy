@@ -13046,6 +13046,28 @@ add_newdoc(
     >>> plt.tight_layout()
     >>> plt.show()
 
+    The CDF of the Tukey lambda distribution is also implemented as the
+    ``cdf`` method of `scipy.stats.tukeylambda`.  In the following,
+    ``tukeylambda.cdf(x, -0.5)`` and ``tklmbda(x, -0.5)`` compute the
+    same values:
+
+    >>> from scipy.stats import tukeylambda
+    >>> x = np.linspace(-2, 2, 9)
+
+    >>> tukeylambda.cdf(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    >>> tklmbda(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    The implementation in ``tukeylambda`` also provides location and scale
+    parameters, and other methods such as ``pdf()`` (the probability
+    density function) and ``ppf()`` (the inverse of the CDF), so for
+    working with the Tukey lambda distribution, ``tukeylambda`` is more
+    generally useful.  The primary advantage of ``tklmbda`` is that it is
+    significantly faster than ``tukeylambda.cdf``.
     """)
 
 add_newdoc("wofz",
