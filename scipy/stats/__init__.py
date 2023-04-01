@@ -427,6 +427,7 @@ test.
    :toctree: generated/
 
    PermutationMethod
+   BootstrapMethod
 
 Multiple Hypothesis Testing and Meta-Analysis
 ---------------------------------------------
@@ -616,7 +617,7 @@ from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData  # noqa
 from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
-                          PermutationMethod)
+                          PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms

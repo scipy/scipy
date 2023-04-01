@@ -52,8 +52,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
-from ._resampling import (_batch_generator, PermutationMethod,
-                          permutation_test)
+from ._resampling import (_batch_generator, PermutationMethod, BootstrapMethod,
+                          permutation_test, bootstrap)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -4481,6 +4481,20 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y):
+    """
+    Compute the confidence interval for Pearson's R using the bootstrap.
+    """
+    def statistic(x, y):
+        statistic, _ = pearsonr(x, y)
+        return statistic
+
+    res = bootstrap((x, y), statistic, confidence_level=confidence_level,
+                    paired=True, **method._asdict())
+
+    return res.confidence_interval
+
+
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
@@ -4505,15 +4519,17 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
-    def __init__(self, statistic, pvalue, alternative, n):
+    def __init__(self, statistic, pvalue, alternative, n, x, y):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
+        self._x = x
+        self._y = y
 
         # add alias for consistency with other correlation functions
         self.correlation = statistic
 
-    def confidence_interval(self, confidence_level=0.95):
+    def confidence_interval(self, confidence_level=0.95, method=None):
         """
         The confidence interval for the correlation coefficient.
 
@@ -4534,20 +4550,34 @@ class PearsonRResult(PearsonRResultBase):
             The confidence level for the calculation of the correlation
             coefficient confidence interval. Default is 0.95.
 
+        method : BootstrapMethod, optional
+            Defines the method used to compute the confidence interval.
+            If `method` is an instance of `BootstrapMethod`, the confidence
+            interval is computed using `scipy.stats.bootstrap` with the
+            provided configuration options and other appropriate settings.
+            Otherwise, the confidence interval is computed as documented in the
+            description.
+
+            .. versionadded:: 1.11.0
+
         Returns
         -------
         ci : namedtuple
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.
 
-        References
-        ----------
-        .. [1] "Pearson correlation coefficient", Wikipedia,
-               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
-        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
-                                   self._alternative)
-
+        if isinstance(method, BootstrapMethod):
+            ci = _pearsonr_bootstrap_ci(confidence_level, method,
+                                        self._x, self._y)
+        elif method is None:
+            ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                     self._alternative)
+        else:
+            message = ('`method` must be an instance of `BootstrapMethod` '
+                       'or None.')
+            raise ValueError(message)
+        return ci
 
 def pearsonr(x, y, *, alternative='two-sided', method=None):
     r"""
@@ -4767,7 +4797,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg))
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
 
     if isinstance(method, PermutationMethod):
@@ -4779,7 +4809,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
                                alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
-                              alternative=alternative)
+                              alternative=alternative, x=x, y=y)
     elif method is not None:
         message = '`method` must be an instance of `PermutationMethod` or None.'
         raise ValueError(message)
@@ -4792,7 +4822,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     if n == 2:
         r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
         result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
 
     xmean = x.mean(dtype=dtype)
@@ -4839,7 +4869,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
                          '["two-sided", "less", "greater"]')
 
     return PearsonRResult(statistic=r, pvalue=prob, n=n,
-                          alternative=alternative)
+                          alternative=alternative, x=x, y=y)
 
 
 def fisher_exact(table, alternative='two-sided'):

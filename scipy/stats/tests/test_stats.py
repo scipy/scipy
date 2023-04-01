@@ -493,7 +493,7 @@ class TestCorrPearsonr:
             stats.pearsonr(x, y)
 
     @pytest.mark.xslow
-    def test_permutation(self):
+    def test_permutation_pvalue(self):
         rng = np.random.default_rng(24623935790378923)
         x = rng.normal(size=100)
         y = rng.normal(size=100)
@@ -503,10 +503,27 @@ class TestCorrPearsonr:
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
+    @pytest.mark.xslow
+    def test_bootstrap_ci(self):
+        rng = np.random.default_rng(24623935790378923)
+        x = rng.normal(size=100)
+        y = rng.normal(size=100)
+        res = stats.pearsonr(x, y)
+
+        method = stats.BootstrapMethod(random_state=rng)
+        res_ci = res.confidence_interval(method=method)
+        ref_ci = res.confidence_interval()
+
+        assert_allclose(res_ci, ref_ci, atol=1e-2)
+
     def test_invalid_method(self):
         message = "`method` must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+        res = stats.pearsonr([1, 2], [3, 4])
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(method="exact")
 
 
 

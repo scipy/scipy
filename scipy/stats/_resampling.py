@@ -1643,4 +1643,68 @@ class ResamplingMethod:
 
 @dataclass
 class PermutationMethod(ResamplingMethod):
+    """Configuration information for a permutation hypothesis test.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a permutation version of the
+    hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int
+        The number of resamples to perform.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+    """
     pass
+
+
+@dataclass
+class BootstrapMethod(ResamplingMethod):
+    """Configuration information for a permutation hypothesis test.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a permutation version of the
+    hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int
+        The number of resamples to perform.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+
+    method : {'percentile', 'basic', 'bca'}
+        Whether to use the 'percentile' bootstrap ('percentile'), the 'basic'
+        (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
+        accelerated bootstrap ('BCa').
+    """
+    method : str = 'BCa'
