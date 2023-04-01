@@ -492,6 +492,23 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
+    @pytest.mark.xslow
+    def test_permutation(self):
+        rng = np.random.default_rng(24623935790378923)
+        x = rng.normal(size=100)
+        y = rng.normal(size=100)
+        method = stats.PermutationMethod(random_state=rng)
+        res = stats.pearsonr(x, y, method=method)
+        ref = stats.pearsonr(x, y)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+    def test_invalid_method(self):
+        message = "`method` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.

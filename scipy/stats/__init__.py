@@ -419,6 +419,15 @@ at the cost of greater computational requirements and stochastic results.
    permutation_test
    bootstrap
 
+Instances of the following object can be passed into some hypothesis test
+functions to perform a resampling or Monte Carlo version of the hypothesis
+test.
+
+.. autosummary::
+   :toctree: generated/
+
+   PermutationMethod
+
 Multiple Hypothesis Testing and Meta-Analysis
 ---------------------------------------------
 These functions are for assessing the results of individual tests as a whole.
@@ -606,7 +615,8 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData  # noqa
-from ._resampling import bootstrap, monte_carlo_test, permutation_test
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
+                          PermutationMethod)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms

@@ -52,7 +52,8 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
-from ._resampling import _batch_generator
+from ._resampling import (_batch_generator, PermutationMethod,
+                          permutation_test)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -4548,7 +4549,7 @@ class PearsonRResult(PearsonRResultBase):
                                    self._alternative)
 
 
-def pearsonr(x, y, *, alternative='two-sided'):
+def pearsonr(x, y, *, alternative='two-sided', method=None):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
@@ -4583,6 +4584,14 @@ def pearsonr(x, y, *, alternative='two-sided'):
         * 'greater':  the correlation is positive (greater than zero)
 
         .. versionadded:: 1.9.0
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is computed
+        as documented in the notes.
+
+        .. versionadded:: 1.11.0
 
     Returns
     -------
@@ -4641,7 +4650,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
-    the distribution that is used in `pearsonr` to compute the p-value.
+    the distribution that is used in `pearsonr` to compute the p-value when
+    the `method` parameter is left at its default value (None).
     The distribution is a beta distribution on the interval [-1, 1],
     with equal shape parameters a = b = n/2 - 1.  In terms of SciPy's
     implementation of the beta distribution, the distribution of r is::
@@ -4759,6 +4769,20 @@ def pearsonr(x, y, *, alternative='two-sided'):
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative)
         return result
+
+    if isinstance(method, PermutationMethod):
+        def statistic(y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        res = permutation_test((y,), statistic, permutation_type='pairings',
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative)
+    elif method is not None:
+        message = '`method` must be an instance of `PermutationMethod` or None.'
+        raise ValueError(message)
 
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have

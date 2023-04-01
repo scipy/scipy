@@ -6,7 +6,7 @@ import inspect
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy._lib._util import rng_integers
-from dataclasses import make_dataclass
+from dataclasses import make_dataclass, dataclass, asdict
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -1601,3 +1601,46 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     pvalues = np.clip(pvalues, 0, 1)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
+
+
+@dataclass
+class ResamplingMethod:
+    """Configuration information for a statistical resampling method.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a resampling or Monte Carlo version
+    of the hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int
+        The number of resamples to perform or Monte Carlo samples to draw.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples or
+        Monte Carlo samples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+    """
+    n_resamples: int = 9999
+    batch: int = None
+    random_state: object = None
+
+    def _asdict(self):
+        return asdict(self)
+
+
+@dataclass
+class PermutationMethod(ResamplingMethod):
+    pass
