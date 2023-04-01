@@ -103,10 +103,9 @@ class EmpiricalDistributionFunction:
         kwds = {'where': 'post'}
         kwds.update(kwargs)
 
-        factor = 0.05  # how far past the edges of the sample to plot
-        ptp = np.ptp(self.quantiles)
+        delta = np.ptp(self.quantiles)*0.05  # how far past sample edge to plot
         q = self.quantiles
-        q = [q[0] - ptp*factor] + list(q) + [q[-1] + ptp*factor]
+        q = [q[0] - delta] + list(q) + [q[-1] + delta]
 
         return ax.step(q, self.evaluate(q), **kwds)
 
@@ -283,7 +282,7 @@ def ecdf(sample: npt.ArrayLike | CensoredData) -> ECDFResult:
         The `cdf` and `sf` attributes themselves have the following attributes.
 
         quantiles : ndarray
-            The unique values in the sample.
+            The unique values in the sample that defines the empirical CDF/SF.
         probabilities : ndarray
             The point estimates of the probabilities corresponding with
             `quantiles`.
@@ -614,13 +613,9 @@ def logrank(
     >>> import matplotlib.pyplot as plt
     >>> ax = plt.subplot()
     >>> ecdf_x = stats.ecdf(x)
-    >>> ax.step(np.insert(ecdf_x.x, 0, 0),
-    ...         np.insert(ecdf_x.sf.points, 0, 1),
-    ...         where='post', label='Astrocytoma')
+    >>> ecdf_x.sf.plot(ax, label='Astrocytoma')
     >>> ecdf_y = stats.ecdf(y)
-    >>> ax.step(np.insert(ecdf_y.x, 0, 0),
-    ...         np.insert(ecdf_y.sf.points, 0, 1),
-    ...         ls='-.', where='post', label='Glioblastoma')
+    >>> ecdf_x.sf.plot(ax, label='Glioblastoma')
     >>> ax.set_xlabel('Time to death (weeks)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.legend()
