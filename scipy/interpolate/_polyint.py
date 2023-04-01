@@ -5,8 +5,9 @@ from scipy.special import factorial
 from scipy._lib._util import _asarray_validated, float_factorial
 
 
-__all__ = ["KroghInterpolator", "krogh_interpolate", "BarycentricInterpolator",
-           "barycentric_interpolate", "approximate_taylor_polynomial"]
+__all__ = ["KroghInterpolator", "krogh_interpolate",
+           "BarycentricInterpolator", "barycentric_interpolate",
+           "approximate_taylor_polynomial"]
 
 
 def _isscalar(x):
@@ -227,8 +228,9 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         x : array_like
             1D array of points at which to evaluate the derivatives
         der : integer, optional
-            The number of derivatives to evaluate, from 'order 0' (der=1) to order der-1.
-            If omitted, return all possibly-non-zero derivatives, ie 0 to order n-1.
+            The number of derivatives to evaluate, from 'order 0' (der=1)
+            to order der-1.  If omitted, return all possibly-non-zero
+            derivatives, ie 0 to order n-1.
 
         Returns
         -------
@@ -314,7 +316,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     """
 
     def __init__(self, xi, yi, axis=0):
-        _Interpolator1DWithDerivatives.__init__(self, xi, yi, axis)
+        super().__init__(xi, yi, axis)
 
         self.xi = np.asarray(xi)
         self.yi = self._reshape_yi(yi)
@@ -441,8 +443,8 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     >>> plt.plot(x, y, label="krogh interpolation")
     >>> plt.legend()
     >>> plt.show()
-
     """
+
     P = KroghInterpolator(xi, yi, axis=axis)
     if der == 0:
         return P(x)
@@ -606,7 +608,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     """
 
     def __init__(self, xi, yi=None, axis=0, *, wi=None):
-        _Interpolator1DWithDerivatives.__init__(self, xi, yi, axis)
+        super().__init__(xi, yi, axis)
 
         self.xi = np.asfarray(xi)
         self.set_yi(yi)
@@ -637,7 +639,8 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
                 dist[inv_permute[i]] = 1.0
                 prod = np.prod(dist)
                 if prod == 0.0:
-                    raise ValueError("Interpolation points xi must be distinct.")
+                    raise ValueError("Interpolation points xi must be"
+                                     " distinct.")
                 self.wi[i] = 1.0 / prod
 
     def set_yi(self, yi, axis=None):
@@ -739,7 +742,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             z = c == 0
             c[z] = 1
             c = self.wi / c
-            with np.errstate(divide='ignore', invalid='ignore'):
+            with np.errstate(divide='ignore'):
                 p = np.dot(c, self.yi) / np.sum(c, axis=-1)[..., np.newaxis]
             # Now fix where x==some xi
             r = np.nonzero(z)
@@ -794,15 +797,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             der = self.n
 
         if all_lower and (x.size == 0 or self.r == 0):
-            cn = np.zeros((der, len(x), self.r), dtype=self.dtype)
-            return cn
+            return np.zeros((der, len(x), self.r), dtype=self.dtype)
 
         if self._diff_cij is None:
             # c[i,j] = xi[i] - xi[j]
             c = self.xi[..., np.newaxis] - self.xi
             # avoid division by 0 (diagonal entries are so far zero by construction)
             np.fill_diagonal(c, 1)
-            # with np.errstate(divide='ignore', invalid='ignore'):
             # c[i,j] = w[j] / (xi[i] - xi[j])
             c = self.wi / c
 
@@ -822,7 +823,9 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # initialise and cache derivative interpolator and cijs;
             # reuse weights wi (which depend only on interpolation points xi),
             # to avoid unnecessary re-computation
-            self._diff_baryint = BarycentricInterpolator(xi=self.xi, yi=self._diff_cij @ self.yi, wi=self.wi)
+            self._diff_baryint = BarycentricInterpolator(xi=self.xi,
+                                                         yi=self._diff_cij @ self.yi,
+                                                         wi=self.wi)
             self._diff_baryint._diff_cij = self._diff_cij
 
         if all_lower:

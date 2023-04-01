@@ -510,7 +510,8 @@ class TestBarycentric:
         # (computing the weights requires division by xi[i] - xi[j])
         xis = np.array([0.1, 0.5, 0.9, 0.5])
         ys = np.array([1, 2, 3, 4])
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError,
+                           match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
 
 
