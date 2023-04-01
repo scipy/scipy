@@ -1634,7 +1634,7 @@ class ResamplingMethod:
         `numpy.random.RandomState` singleton is used.
     """
     n_resamples: int = 9999
-    batch: int = None
+    batch: int = None  # type: ignore[assignment]
     random_state: object = None
 
     def _asdict(self):

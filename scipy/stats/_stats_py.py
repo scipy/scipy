@@ -4566,6 +4566,10 @@ class PearsonRResult(PearsonRResultBase):
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.
 
+        References
+        ----------
+        .. [1] "Pearson correlation coefficient", Wikipedia,
+               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
         if isinstance(method, BootstrapMethod):
             ci = _pearsonr_bootstrap_ci(confidence_level, method,
