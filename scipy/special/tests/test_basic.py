@@ -3705,7 +3705,7 @@ class TestStirling2:
 
     def test_correct_modulus(self):
         n, k = 30, 20
-        assert int(stirling2(n, k)) % 2 == comb(n - (k//2) - 1, n - k) % 2
+        assert int(stirling2(n, k)) % 2 == math.comb(n - (k//2) - 1, n - k) % 2
 
     def test_big_numbers(self):
         # via mpmath
