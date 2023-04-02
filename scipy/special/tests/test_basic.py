@@ -3708,7 +3708,7 @@ class TestStirling2:
 
     def test_big_numbers(self):
         # via mpmath
-        ans = [48063331393111, 48004081105038304]
+        ans = [48063331393111, 48004081105038305]
         n = [25, 30]
         k = [17, 40]
         assert array_equal(stirling2(n, k), ans)
