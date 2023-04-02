@@ -3658,3 +3658,57 @@ def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):
         mathieu_even_coef(1000, 1000)
+
+
+class TestStirling2:
+    def __init__(self):
+        self.table = [
+            [1],
+            [0,1],
+            [0,1,1],
+            [0,1,3,1],
+            [0,1,7,6,1],
+            [0,1,15,25,10,1],
+            [0,1,31,90,65,15,1],
+            [0,1,63,301,350,140,21,1],
+            [0,1,127,966,1701,1050,266,28,1],
+            [0,1,255,3025,7770,6951,2646,462,36,1],
+            [0,1,511,9330,34105,42525,22827,5880,750,45,1],
+        ]
+
+    def test_table_cases(self):
+        for n in range(len(self.table)):
+            for k in range(len(self.table[n])):
+                assert_equal(self.table[n][k], stirling2(n,k))
+
+    def test_valid_single_integer(self):
+        assert_equal(stirling2(0, 0), self.table[0][0])
+        assert_equal(stirling2(4, 2), self.table[4][2])
+
+    def test_negative_integer(self):
+        assert_equal(stirling2(-1, -1), 0)
+        assert_equal(stirling2(-1, 2), 0)
+        assert_equal(stirling2(2, -1), 0)
+
+    def test_array_inputs(self):
+        ans = [self.table[10][3], self.table[10][4]]
+        assert array_equal(stirling2(asarray([10,10]), asarray([3, 4])), ans)
+        assert array_equal(stirling2([10,10], asarray([3, 4])), ans)
+        assert array_equal(stirling2(asarray([10,10]), [3, 4]), ans)
+
+    def test_mixed_values(self):
+        ans = [0, 1, 3, 25, 1050, 5880, 9330]
+        n = [-1, 0,3,5,8,10,10]
+        k = [-2, 0,2,3,5,7,3]
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_correct_modulus(self):
+        n, k = 30, 20
+        assert int(stirling2(n, k)) % 2 == comb(n - (k//2) - 1, n - k) % 2
+
+    def test_big_numbers(self):
+        # via mpmath
+        ans = [48063331393111, 48004081105038304]
+        n = [25, 30]
+        k = [17, 40]
+        assert array_equal(stirling2(n, k), ans)

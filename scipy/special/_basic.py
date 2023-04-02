@@ -6,6 +6,8 @@ import operator
 import numpy as np
 import math
 import warnings
+from collections import defaultdict
+from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -68,6 +70,7 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'stirling2',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
@@ -2951,6 +2954,92 @@ def factorialk(n, k, exact=True):
         return val
     else:
         raise NotImplementedError
+
+
+def stirling2(N, K, exact=True):
+    """Generate Stirling number(s) of the second kind.
+
+        Stirling numbers of the second kind count the number
+        of non-empty subsets that can be formed by N elements
+        into K non-emptuy subsets.
+
+        This is often expressed as "N subset K".
+
+        Parameters
+        ----------
+        N : int, ndarray
+            Number of things.
+        K : int, ndarray
+            Number of non-empty subsets taken.
+        exact : bool, optional
+            For integers, if `exact` is False, then floating point precision is
+            used, otherwise the result is computed exactly. For non-integers, if
+            `exact` is True, is truncated. Defaults to True.
+
+        Returns
+        -------
+        val : int, float, ndarray
+            The total number of combinations.
+
+        See Also
+        --------
+        binom : Binomial coefficient considered as a function of two real
+                variables.
+
+        Notes
+        -----
+        - If N < 0, or K < 0, then 0 is returned.
+        - If K > N, then 0 is returned.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy.special import stirling2
+        >>> k = np.array([3, -1])
+        >>> n = np.array([10, 10])
+        >>> stirling2(n, k)
+        array([9330,   0])
+
+    """
+    if exact:
+        # make a min-heap of unique (n,k) pairs
+        N, K = asarray(N), asarray(K)
+        nk_pairs = list(set([(int(n), int(k)) for n, k in nditer([N,K])]))
+        heapify(nk_pairs)
+        # base mapping for small values
+        snsk_vals = defaultdict(int)
+        for pair in [(0,0),(1,1),(2,1),(2,2)]:
+            snsk_vals[pair] = 1
+        n_old, n_row = 2, [0, 1, 1]
+        # for each pair in the min-heap, calculate the value, store for later
+        while nk_pairs:
+            n, k = heappop(nk_pairs)
+            if n < 2 or k > n or k <= 0:
+                continue
+            elif k == n or k == 1:
+                snsk_vals[(n,k)] = 1
+                continue
+            elif n != n_old:
+                num_iters = n - n_old
+                while num_iters > 0:
+                    n_row.append(1)
+                    for j in range(len(n_row)-2, 1, -1):
+                        n_row[j] = n_row[j]*j + n_row[j-1]
+                    num_iters -= 1
+                snsk_vals[(n,k)] = n_row[k]
+            else:
+                # value is in the same row as prev
+                snsk_vals[(n,k)] = n_row[k]
+            n_old, n_row = n, n_row
+        # for each pair in the map, fetch the value, and populate the array
+        it = nditer([N, K, None], [], [['readonly'], ['readonly'], ['writeonly','allocate']])
+        with it:
+            while not it.finished:
+                it[2] = snsk_vals[(int(it[0]), int(it[1]))]
+                it.iternext()
+            return it.operands[2]
+    else:
+        raise NotImplementedError()
 
 
 def zeta(x, q=None, out=None):
