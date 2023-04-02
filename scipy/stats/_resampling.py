@@ -832,16 +832,14 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     # Some statistics return plain floats; ensure they're at least np.float64
     observed = np.asarray(statistic(*data, axis=-1))[()]
 
-    data = data[0]
-    rvs = rvs[0]
-
-    n_observations = data.shape[-1]
+    n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples
     null_distribution = []
     for k in range(0, n_resamples, batch_nominal):
-        batch_actual = min(batch_nominal, n_resamples-k)
-        resamples = rvs(size=(batch_actual, n_observations))
-        null_distribution.append(statistic(resamples, axis=-1))
+        batch_actual = min(batch_nominal, n_resamples - k)
+        resamples = [rvs_i(size=(batch_actual, n_observations_i))
+                     for rvs_i, n_observations_i in zip(rvs, n_observations)]
+        null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = np.concatenate(null_distribution)
     null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
 
