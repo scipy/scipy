@@ -23,7 +23,8 @@ import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_,
+        array_equal)
 
 import pytest
 from pytest import raises as assert_raises
@@ -36,7 +37,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
