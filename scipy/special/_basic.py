@@ -3004,7 +3004,7 @@ def stirling2(N, K, exact=True):
     if exact:
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
-        nk_pairs = list(set([(int(n), int(k)) for n, k in nditer([N,K])]))
+        nk_pairs = list(set([(int(n), int(k)) for n, k in np.nditer([N,K])]))
         heapify(nk_pairs)
         # base mapping for small values
         snsk_vals = defaultdict(int)
@@ -3032,7 +3032,7 @@ def stirling2(N, K, exact=True):
                 snsk_vals[(n,k)] = n_row[k]
             n_old, n_row = n, n_row
         # for each pair in the map, fetch the value, and populate the array
-        it = nditer([N, K, None], [], [['readonly'], ['readonly'], ['writeonly','allocate']])
+        it = np.nditer([N, K, None], [], [['readonly'], ['readonly'], ['writeonly','allocate']])
         with it:
             while not it.finished:
                 it[2] = snsk_vals[(int(it[0]), int(it[1]))]
