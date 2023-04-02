@@ -633,6 +633,10 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         if not callable(rvs_i):
             raise TypeError("`rvs` must be callable or sequence of callables.")
 
+    if not len(rvs) == len(data):
+        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
+        raise ValueError(message)
+
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
 

@@ -702,6 +702,12 @@ class TestMonteCarloHypothesisTest:
         def stat(x):
             return stats.skewnorm(x).statistic
 
+        message = "Array shapes are incompatible for broadcasting."
+        data = (np.zeros((2, 5)), np.zeros((3, 5)))
+        rvs = (stats.norm.rvs, stats.norm.rvs)
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test(data, rvs, lambda x, y: 1, axis=-1)
+
         message = "`axis` must be an integer."
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
@@ -710,9 +716,15 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
 
-        message = "`rvs` must be callable."
+        message = "`rvs` must be callable or sequence of callables."
         with pytest.raises(TypeError, match=message):
             monte_carlo_test([1, 2, 3], None, stat)
+        with pytest.raises(TypeError, match=message):
+            monte_carlo_test([[1, 2], [3, 4]], [lambda x: x, None], stat)
+
+        message = "If `rvs` is a sequence..."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([[1, 2, 3]], [lambda x: x, lambda x: x], stat)
 
         message = "`statistic` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -740,6 +752,7 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
+
 
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
