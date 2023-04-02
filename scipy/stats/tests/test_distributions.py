@@ -6351,6 +6351,18 @@ class TestDweibull:
         ref = stats.weibull_min.entropy(c) - np.log(0.5)
         assert_allclose(res, ref, rtol=1e-15)
 
+    # reference values were computed with mpmath
+    # from mpmath import mp
+    # mp.dps = 50
+    # def sf_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     if x > 0:
+    #          return mp.mpf(0.5) * mp.exp(-x**c)
+    # else:
+    #          return mp.one - mp.mpf(0.5) * mp.exp(-(-x)**c)
+    # for the inverse survival function tests, swap ref and x
+
     @pytest.mark.parametrize('x, c, ref',
                              [(1e20, 0.1, 1.8600379880103705e-44),
                               (1e5, 0.5, 2.306726997904701e-138)])
