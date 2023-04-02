@@ -946,6 +946,36 @@ class TestMonteCarloHypothesisTest:
                                vectorized=True, alternative='less')
         assert res.pvalue == 0.0001
 
+    def test_against_ttest_ind(self):
+        # test that `monte_carlo_test` can reproduce results of `ttest_ind`.
+        rng = np.random.default_rng(219017667302737545)
+        data = rng.random(size=(2, 5)), rng.random(size=7)  # broadcastable
+        rvs = rng.normal, rng.normal
+        def statistic(x, y, axis):
+            return stats.ttest_ind(x, y, axis).statistic
+
+        res = stats.monte_carlo_test(data, rvs, statistic, axis=-1)
+        ref = stats.ttest_ind(data[0], [data[1]], axis=-1)
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=2e-2)
+
+    def test_against_f_oneway(self):
+        # test that `monte_carlo_test` can reproduce results of `f_oneway`.
+        rng = np.random.default_rng(219017667302737545)
+        data = (rng.random(size=(2, 100)), rng.random(size=(2, 101)),
+                rng.random(size=(2, 102)), rng.random(size=(2, 103)))
+        rvs = rng.normal, rng.normal, rng.normal, rng.normal
+
+        def statistic(*args, axis):
+            return stats.f_oneway(*args, axis=axis).statistic
+
+        res = stats.monte_carlo_test(data, rvs, statistic, axis=-1,
+                                     alternative='greater')
+        ref = stats.f_oneway(*data, axis=-1)
+
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
+
 
 class TestPermutationTest:
 
