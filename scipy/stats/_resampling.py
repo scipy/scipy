@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
+from collections.abc import Sequence
 import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter
@@ -614,7 +615,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 
-def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
+def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
 
@@ -625,8 +626,12 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
-    if not callable(rvs):
-        raise TypeError("`rvs` must be callable.")
+    if not isinstance(rvs, Sequence):
+        rvs = (rvs,)
+        data = (data,)
+    for rvs_i in rvs:
+        if not callable(rvs_i):
+            raise TypeError("`rvs` must be callable or sequence of callables.")
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
@@ -639,8 +644,12 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     else:
         statistic_vectorized = statistic
 
-    sample = np.atleast_1d(sample)
-    sample = np.moveaxis(sample, axis, -1)
+    data = _broadcast_arrays(data, axis)
+    data_iv = []
+    for sample in data:
+        sample = np.atleast_1d(sample)
+        sample = np.moveaxis(sample, axis_int, -1)
+        data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -658,7 +667,7 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
-    return (sample, rvs, statistic_vectorized, vectorized, n_resamples_int,
+    return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int)
 
 
@@ -666,8 +675,8 @@ fields = ['statistic', 'pvalue', 'null_distribution']
 MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
 
 
-# @_rename_parameter('sample', 'data')
-def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
+@_rename_parameter('sample', 'data')
+def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
                      axis=0):
     r"""Monte Carlo test that data is drawn from given distributions.
@@ -815,15 +824,18 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     >>> plt.show()
 
     """
-    args = _monte_carlo_test_iv(sample, rvs, statistic, vectorized,
+    args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
-    (sample, rvs, statistic, vectorized,
+    (data, rvs, statistic, vectorized,
      n_resamples, batch, alternative, axis) = args
 
     # Some statistics return plain floats; ensure they're at least np.float64
-    observed = np.asarray(statistic(sample, axis=-1))[()]
+    observed = np.asarray(statistic(*data, axis=-1))[()]
 
-    n_observations = sample.shape[-1]
+    data = data[0]
+    rvs = rvs[0]
+
+    n_observations = data.shape[-1]
     batch_nominal = batch or n_resamples
     null_distribution = []
     for k in range(0, n_resamples, batch_nominal):
