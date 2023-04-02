@@ -1508,10 +1508,11 @@ class Test_bounding_box:
         out = ndimage.bounding_box(data)
         assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
 
-    @pytest.mark.parametrize("type", [np.float128,])
-    def test_bounding_box16(self, type):
+    def test_bounding_box16(self):
         ''' assert ValueError is raised when input dtype is not supported '''
-        data = np.zeros([5,5,5,5], dtype=type)
+        if not hasattr(np, 'float128'):
+            pytest.skip("runs only if np.float128 is available")
+        data = np.zeros([5,5,5,5], dtype=np.float128)
         data[1:3,2:5,2:5,0] = 1
         msg = "data type not supported"
         with assert_raises(RuntimeError, match=msg):
