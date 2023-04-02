@@ -1709,6 +1709,7 @@ def bounding_box(input):
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.array([[0, 0, 0, 0, 0],
     ...               [0, 1, 1, 1, 0],
     ...               [0, 1, 1, 1, 0],

@@ -1395,12 +1395,10 @@ class TestWatershedIft:
 
 class Test_bounding_box:
     '''
-    supported dtypes are all `types` in __init__.py, plus: 
-    np.float16, np.complex256, and bool.
-    bool is tested separately.
+    supported dtypes are all `types` in __init__.py, plus:
+    np.float16 and bool.
     '''
-    supported_types = types + [np.float16, np.complex256]
-    
+
     def test_bounding_box01(self):
         data = np.ones([], dtype=int)
         out = ndimage.bounding_box(data)
@@ -1494,7 +1492,7 @@ class Test_bounding_box:
         out = ndimage.bounding_box(data)
         assert_equal(out, (slice(1, 3, None), slice(2, 5, None), slice(2, 5, None), slice(0, 1, None)))
 
-    @pytest.mark.parametrize("type", float_types+[np.float16])
+    @pytest.mark.parametrize("type", float_types+[np.float16,])
     def test_bounding_box14(self, type):
         ''' test floating point data types specifically - with only small values '''
         data = np.zeros([5,5,5,5],dtype=type)
