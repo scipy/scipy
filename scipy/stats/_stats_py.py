@@ -38,7 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
@@ -577,7 +577,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
 
     if a.size == 0:
-        return ModeResult(np.nan, np.int64(0))
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
     vals, cnts = np.unique(a, return_counts=True)
     modes, counts = vals[cnts.argmax()], cnts.max()
@@ -3474,7 +3475,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     # This check prevents percentile from raising an error later. Also, it is
     # consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        return _get_nan(x)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -7757,8 +7758,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     if na == 0 or nb == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
-        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
-                           standard_error=np.nan, estimate=np.nan)
+        NaN = _get_nan(a, b)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     n = a.shape[axis]
     df = n - 1
@@ -9249,7 +9251,8 @@ def kruskal(*samples, nan_policy='propagate'):
 
     for sample in samples:
         if sample.size == 0:
-            return KruskalResult(np.nan, np.nan)
+            NaN = _get_nan(*samples)
+            return KruskalResult(NaN, NaN)
         elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
