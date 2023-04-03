@@ -624,7 +624,7 @@ class SHGO:
             'newton-cg': ['jac', 'hess', 'hessp'],
             'l-bfgs-b': ['jac', 'bounds'],
             'tnc': ['jac', 'bounds'],
-            'cobyla': ['constraints'],
+            'cobyla': ['constraints', 'catol'],
             'slsqp': ['jac', 'bounds', 'constraints'],
             'dogleg': ['jac', 'hess'],
             'trust-ncg': ['jac', 'hess', 'hessp'],
