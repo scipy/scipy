@@ -21,6 +21,14 @@ def unpack_ttest_result(res):
             res._estimate, low, high)
 
 
+def _get_ttest_ci(ttest):
+    # get a function that returns the CI bounds of provided `ttest`
+    def ttest_ci(*args, **kwargs):
+        res = ttest(*args, **kwargs)
+        return res.confidence_interval()
+    return ttest_ci
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -50,6 +58,9 @@ axis_nan_policy_cases = [
      unpack_ttest_result),
     (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
     (stats.ttest_ind, tuple(), dict(), 2, 7, False, unpack_ttest_result),
+    (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
+    (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
+    (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 
@@ -526,6 +537,9 @@ def test_axis_nan_policy_decorated_keyword_samples():
                           "paired", "unpacker"), axis_nan_policy_cases)
 def test_axis_nan_policy_decorated_pickled(hypotest, args, kwds, n_samples,
                                            n_outputs, paired, unpacker):
+    if "ttest_ci" in hypotest.__name__:
+        pytest.skip("Can't pickle functions defined within functions.")
+
     rng = np.random.default_rng(0)
 
     # Some hypothesis tests return a non-iterable that needs an `unpacker` to
