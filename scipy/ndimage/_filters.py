@@ -308,11 +308,11 @@ def gaussian_filter(input, sigma, order=0, output=None,
         will be ``2*radius + 1``, and `truncate` is ignored.
         Default is None.
     axes : tuple of int or None, optional
-        If None, it is assumed all axes are to be filtered. Otherwise, only
+        If None, `input` is filtered along all axes. Otherwise,
         the axes specified in the tuple will be considered. When `axes` is
         specified, any tuples used for `sigma`, `order`, `mode` and/or `radius`
         must match the length of `axes`. The ith entry in any of these tuples
-        corresponds to the ith entry in `axes.
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
