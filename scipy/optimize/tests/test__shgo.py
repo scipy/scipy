@@ -786,8 +786,10 @@ class TestShgoArguments:
 
         with Pool(2) as p:
             run_test(test1_1, n=30, workers=p.map)  # Constrained
+        run_test(test1_1, n=30, workers=map)  # Constrained
         with Pool(2) as p:
             run_test(test_s, n=30, workers=p.map)  # Unconstrained
+        run_test(test_s, n=30, workers=map)  # Unconstrained
 
     def test_20_constrained_args(self):
         """Test that constraints can be passed to arguments"""
