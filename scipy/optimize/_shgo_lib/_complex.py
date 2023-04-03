@@ -142,7 +142,7 @@ class Complex:
                 constraints = (constraints,)
 
             for cons in constraints:
-                if cons['type'] == 'ineq':
+                if cons['type'] in ('ineq'):
                     self.g_cons.append(cons['fun'])
                     try:
                         self.g_args.append(cons['args'])
