@@ -6695,8 +6695,9 @@ class TtestResult(TtestResultBase):
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
-    # at most one unique value
-    alternative = np.atleast_1d(alternative).ravel()
+    # at most one unique non-NaN value
+    alternative = np.atleast_1d(alternative)  # can't index 0D object
+    alternative = alternative[np.isfinite(alternative)]
     alternative = alternative[0] if alternative.size else np.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
