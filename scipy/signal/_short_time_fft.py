@@ -117,7 +117,7 @@ class ShortTimeFFT:
     of the :ref:`user_guide`.
 
     Note that all parameters of the initializer, except `scale_to` (which uses
-    `scaling`) have identical named properties.
+    `scaling`) have identical named attributes.
 
     Parameters
     ----------
@@ -373,9 +373,9 @@ class ShortTimeFFT:
                     phase_shift: Optional[int] = 0):
         """Instantiate `ShortTimeFFT` by using `get_window`.
 
-        This method `get_window` is used to create a symmetric window of length
-        `nperseg`. The parameter names `fs`, `noverlap`, and `nperseg` are used
-        here, since they more inline with other classical STFT libraries.
+        This method `get_window` is used to create a window of length
+        `nperseg`. The parameter names `noverlap`, and `nperseg` are used here,
+        since they more inline with other classical STFT libraries.
 
         Parameters
         ----------
@@ -390,14 +390,14 @@ class ShortTimeFFT:
             sampling interval `T` is ``T = 1 / fs``.
         nperseg: int
             Window length in samples, which corresponds to the `m_num`.
-        noverlap:
+        noverlap: int
             Window overlap in samples. It relates to the `hop` increment by
             ``hop = npsereg - noverlap``.
-        symmetric_win:
-            If ``True`` then symetric window is generated, else a periodic
+        symmetric_win: bool
+            If ``True`` then a symetric window is generated, else a periodic
             window is generated (default). Though symmetric windows seem for
-            most applications to be more sensible, the default of periodic
-            windows was chosen to correspond to the classical implementations.
+            most applications to be more sensible, the default of a periodic
+            windows was chosen to correspond to the default of `get_window`.
         fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
             Type of FFT to be used (default 'onesided').
             See property `fft_typ` for details.
@@ -421,7 +421,7 @@ class ShortTimeFFT:
 
         >>> from scipy.signal import ShortTimeFFT, get_window
         >>> nperseg = 9  # window length
-        >>> w = get_window(('gaussian', 2.), nperseg, fftbins=False)
+        >>> w = get_window(('gaussian', 2.), nperseg)
         >>> fs = 128  # sampling frequency
         >>> hop = 3  # increment of STFT time slice
         >>> SFT0 = ShortTimeFFT(w, hop, fs=fs)
@@ -1624,6 +1624,8 @@ class ShortTimeFFT:
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
         ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
         of the time-frequency domain of the `stft`.
+        That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
+        with the same name.
 
         Parameters
         ----------
