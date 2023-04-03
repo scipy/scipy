@@ -71,10 +71,10 @@ cdef class _PyWalleniusNCHypergeometric:
 
 
 cdef bitgen_t* _glob_rng
-cdef double next_double() nogil:
+cdef double next_double() noexcept nogil:
     global _glob_rng
     return _glob_rng.next_double(_glob_rng.state)
-cdef double next_normal(const double m, const double s) nogil:
+cdef double next_normal(const double m, const double s) noexcept nogil:
     global _glob_rng
     return random_normal(_glob_rng, m, s)
 

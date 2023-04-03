@@ -8,18 +8,18 @@ from numpy cimport npy_intp as intp
 
 np.import_array()
 
-cdef void _destructor(obj):
+cdef void _destructor(obj) noexcept:
     cdef void *callback_data = PyCapsule_GetContext(obj)
     PyMem_Free(callback_data)
 
 
-cdef void _destructor_data(obj):
+cdef void _destructor_data(obj) noexcept:
     cdef void *callback_data = PyCapsule_GetPointer(obj, NULL)
     PyMem_Free(callback_data)
 
 
 cdef int _filter1d(double *input_line, intp input_length, double *output_line,
-	           intp output_length, void *callback_data):
+	           intp output_length, void *callback_data) noexcept:
     cdef intp i, j
     cdef intp filter_size = (<intp *>callback_data)[0]
 
