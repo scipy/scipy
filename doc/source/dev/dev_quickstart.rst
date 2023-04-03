@@ -108,3 +108,23 @@ Other workflows
 
 This is only one possible way to set up your development environment out of
 many. For more detailed instructions, see the :ref:`contributor-toc`.
+
+.. note::
+
+    If you are having trouble building SciPy from source or setting up your
+    local development environment, you can try to build SciPy with GitHub
+    Codespaces. It allows you to create the correct development environment
+    right in your browser, reducing the need to install local development
+    environments and deal with incompatible dependencies.
+
+    If you have good internet connectivity and want a temporary set-up, it is
+    often faster to work on SciPy in a Codespaces environment. For
+    documentation on how to get started with Codespaces, see
+    `the Codespaces docs <https://docs.github.com/en/codespaces>`__.
+    When creating a codespace for the ``scipy/scipy`` repository, the default
+    2-core machine type works; 4-core will build and work a bit faster (but of
+    course at a cost of halving your number of free usage hours). Once your
+    codespace has started, you can run ``mamba activate scipy-dev`` and your
+    development environment is completely set up - you can then follow the
+    relevant parts of the SciPy documentation to build, test, develop, write
+    docs, and contribute to SciPy.
