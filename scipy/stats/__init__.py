@@ -394,6 +394,7 @@ Others are generalized to multiple samples.
 
    f_oneway
    tukey_hsd
+   dunnett
    kruskal
    alexandergovern
    fligner
@@ -513,13 +514,15 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
 
-Distribution Fitting
---------------------
+Fitting / Survival Analysis
+---------------------------
 
 .. autosummary::
    :toctree: generated/
 
    fit
+   ecdf
+   logrank
 
 Directional statistical functions
 ---------------------------------
@@ -593,6 +596,7 @@ from ._stats_py import *
 from ._variation import variation
 from .distributions import *
 from ._morestats import *
+from ._multicomp import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
 from ._kde import gaussian_kde
@@ -611,6 +615,7 @@ from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
+from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

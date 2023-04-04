@@ -1422,7 +1422,7 @@ class TestMultinomial:
         assert vals3 == 0
 
         vals4 = multinomial.logpmf([3, 4], 0, [-2, 3])
-        assert_allclose(vals4, np.NAN, rtol=1e-8)
+        assert_allclose(vals4, np.nan, rtol=1e-8)
 
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
@@ -2557,9 +2557,9 @@ class TestMultivariateHypergeom:
             # Ground truth value from R dmvhyper
             ([3, 4], [5, 10], 7, -1.119814),
             # test for `n=0`
-            ([3, 4], [5, 10], 0, np.NINF),
+            ([3, 4], [5, 10], 0, -np.inf),
             # test for `x < 0`
-            ([-3, 4], [5, 10], 7, np.NINF),
+            ([-3, 4], [5, 10], 7, -np.inf),
             # test for `m < 0` (RuntimeWarning issue)
             ([3, 4], [-5, 10], 7, np.nan),
             # test for all `m < 0` and `x.sum() != n`
@@ -2574,7 +2574,7 @@ class TestMultivariateHypergeom:
             # test for `n < 0`
             ([3, 4], [5, 10], -7, np.nan),
             # test for `x.sum() != n`
-            ([3, 3], [5, 10], 7, np.NINF)
+            ([3, 3], [5, 10], 7, -np.inf)
         ]
     )
     def test_logpmf(self, x, m, n, expected):
