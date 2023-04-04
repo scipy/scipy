@@ -212,7 +212,7 @@ if 'versionwarning' in tags:  # noqa
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);');
+           'document.head.appendChild(script);')
     html_context = {
         'VERSIONCHECK_JS': src
     }
