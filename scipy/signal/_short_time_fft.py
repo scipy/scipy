@@ -2,26 +2,23 @@
 
 Implementation Notes (as of 2022-12)
 ------------------------------------
-* When the minimal version of Python is bumped to 3.9 then
-  ``@lru_cache(maxsize=None)`` can be replaced with ``@cache`` from functools,
-  which should be marginally faster.
-* MyPy Version 0.931 does not support decorated property methods. Hence,
-  applying ``@property`` to methods decorated with `@lru_cache(maxsize=None)``
-  causes a MyPy error. Hence, the caching in method `lower_border_end()` is
-  done by hand. MyPy Version 0.950 does not seem to have this limitation.
+* MyPy Version 1.1.1 does not seem to support decorated property methods
+  properly. Hence, applying ``@property`` to methods decorated with `@cache``
+  (as tried with the ``lower_border_end`` method) causes a mypy error when
+  accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
 * Since `NDArray` is only available for Numpy versions 1.21 and above, the
   methods `stft()`, `stft_detrend()`, `istft()`, and  `_ifft_func()` need to
   use `NDArray` array as a parameter instead of `NDArray[complex]`.
 * The entry ``.. currentmodule:: scipy.signal.ShortTimeFFT`` is required
   in docstrings to ensure that `stft` and `istft` generate HTML links to
   methods and not the legacy functions. The side effect is that `ShortTimeFFT`
-  does not work anymore. It is not known how to this file wide instead of
+  does not work anymore. It is not known how to do this file-wide instead of
   method-wide.
 * The HTML documentation currently renders each method/property on a separate
-  page without reference to the parent class. Thus, a link to `ShortTimeFT` was
-  added to the "See Also" section of each method/property.
+  page without reference to the parent class. Thus, a link to `ShortTimeFFT`
+  was added to the "See Also" section of each method/property.
 """
-from functools import lru_cache, partial
+from functools import cache, lru_cache, partial
 from typing import Callable, get_args, Literal, Optional, Union
 # Linter does allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
@@ -1163,7 +1160,7 @@ class ShortTimeFFT:
         """
         return self.m_num // 2
 
-    @lru_cache(maxsize=1)
+    @cache
     def _pre_padding(self) -> tuple[int, int]:
         """Smallest signal index and slice index due to padding.
 
