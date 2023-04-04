@@ -557,6 +557,9 @@ cdef class cKDTree:
         if data.ndim != 2:
             raise ValueError("data must be 2 dimensions")
 
+        if (~np.isfinite(data)).sum() > 0:
+            raise ValueError("data must be finite, check for nan or inf values")
+
         self.data = data
         cself.n = data.shape[0]
         cself.m = data.shape[1]
@@ -588,17 +591,6 @@ cdef class cKDTree:
         self.mins = np.ascontiguousarray(
             np.amin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
             dtype=np.float64)
-        # NOTE: these tricky shims are required to allow
-        # test_kdtree_nan and test_gh_18223 to both pass;
-        # blanket usage of nanmin/max causes the former to fail
-        if self.maxes.size > 1 and np.isfinite(self.maxes).sum() == 0:
-            self.maxes = np.ascontiguousarray(
-                np.nanmax(self.data, axis=0) if self.n > 0 else np.zeros(self.m),
-                dtype=np.float64)
-        if self.mins.size > 1 and np.isfinite(self.mins).sum() == 0:
-            self.mins = np.ascontiguousarray(
-                np.nanmin(self.data,axis=0) if self.n > 0 else np.zeros(self.m),
-                dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
         self._pre_init()

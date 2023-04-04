@@ -1464,18 +1464,20 @@ def test_kdtree_nan():
     vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
     n = len(vals)
     data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
-
-    query_with_nans = KDTree(data).query_pairs(2)
-    query_without_nans = KDTree(data[:n]).query_pairs(2)
-    assert query_with_nans == query_without_nans
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(data)
 
 
 def test_gh_18223():
     rng = np.random.default_rng(12345)
     coords = rng.uniform(size=(100, 3), low=0.0, high=0.1)
-    tree1 = KDTree(coords, balanced_tree=False, compact_nodes=False)
+    KDTree(coords, balanced_tree=False, compact_nodes=False)
     coords[0, :] = np.nan
-    tree2 = KDTree(coords, balanced_tree=True, compact_nodes=False)
-    tree3 = KDTree(coords, balanced_tree=False, compact_nodes=True)
-    tree4 = KDTree(coords, balanced_tree=True, compact_nodes=True)
-    tree5 = KDTree(coords, balanced_tree=False, compact_nodes=False)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=False)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=False)
