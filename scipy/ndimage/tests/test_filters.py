@@ -703,7 +703,7 @@ class TestNdimageFilters:
         axes = tuple(ax % array.ndim for ax in axes)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="axes must be unique"):
                 ndimage.gaussian_filter(array, sigma, axes=axes)
             return
         output = ndimage.gaussian_filter(array, sigma, axes=axes)
@@ -726,7 +726,7 @@ class TestNdimageFilters:
         kwargs = dict(sigma=sigma, radius=radius, mode=mode, order=order)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
-            with pytest.raises(ValueError):
+            with pytest.raises(ValueError, match="axes must be unique"):
                 ndimage.gaussian_filter(array, axes=axes, **kwargs)
             return
         output = ndimage.gaussian_filter(array, axes=axes, **kwargs)
@@ -756,9 +756,11 @@ class TestNdimageFilters:
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
+            match = "cannot be interpreted as an integer"
         else:
             error_class = ValueError
-        with pytest.raises(error_class):
+            match = "out of range"
+        with pytest.raises(error_class, match=match):
             ndimage.gaussian_filter(array, sigma=1.0, axes=axes)
 
     @pytest.mark.parametrize('tuple_ndim', [1, 3])
@@ -766,24 +768,25 @@ class TestNdimageFilters:
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         axes = (0, 1)
 
+        err_msg = "sequence argument must have length equal to input rank"
         # len(radius) != len(axes)
         radius = (3,) * tuple_ndim
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match=err_msg):
             ndimage.gaussian_filter(array, sigma=1.0, radius=radius, axes=axes)
 
         # len(mode) != len(axes)
         mode = ['constant'] * tuple_ndim
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match=err_msg):
             ndimage.gaussian_filter(array, sigma=1.0, mode=mode, axes=axes)
 
         # len(sigma) != len(axes)
         sigma = (1.0,) * tuple_ndim
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match=err_msg):
             ndimage.gaussian_filter(array, sigma=sigma, axes=axes)
 
         # len(order) != len(axes)
         order = (0,) * tuple_ndim
-        with pytest.raises(RuntimeError):
+        with pytest.raises(RuntimeError, match=err_msg):
             ndimage.gaussian_filter(array, sigma=1.0, order=order, axes=axes)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
