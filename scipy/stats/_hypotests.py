@@ -1865,6 +1865,10 @@ def tukey_hsd(*args):
         confidence_interval(confidence_level=0.95):
             Compute the confidence interval for the specified confidence level.
 
+    See Also
+    --------
+    dunnett : performs comparison of means against a control group.
+
     Notes
     -----
     The use of this test relies on several assumptions.

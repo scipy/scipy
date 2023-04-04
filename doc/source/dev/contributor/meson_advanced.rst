@@ -26,10 +26,12 @@ implementations on conda-forge), use::
 
 Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl`` and ``blis``. Note that using
-``pip install`` or ``pip wheel`` doesn't work (as of Jan'23) because we need
-two ``setup-args`` flags for specifying both ``blas`` and ``lapack`` here, and
-``pip`` does not yet support specifying ``--config-settings`` with the same key
-twice, while ``build`` does support that.
+``pip install`` or ``pip wheel`` doesn't work (pending release of the fix for
+`pip#11681 <https://github.com/pypa/pip/issues/11681>`__, likely in Pip
+23.1.0) because we need two ``setup-args`` flags for specifying both ``blas``
+and ``lapack`` here, and ``pip`` does not yet support specifying
+``--config-settings`` with the same key twice, while ``build`` does support
+that.
 
 .. note::
 

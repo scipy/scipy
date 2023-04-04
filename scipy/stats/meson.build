@@ -205,6 +205,7 @@ py3.install_sources([
     '_morestats.py',
     '_mstats_basic.py',
     '_mstats_extras.py',
+    '_multicomp.py',
     '_multivariate.py',
     '_odds_ratio.py',
     '_page_trend_test.py',

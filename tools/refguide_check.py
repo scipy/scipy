@@ -52,7 +52,6 @@ from sphinx.directives.other import SeeAlso, Only
 directives.register_directive('seealso', SeeAlso)
 directives.register_directive('only', Only)
 
-
 BASE_MODULE = "scipy"
 
 PUBLIC_SUBMODULES = [
@@ -341,7 +340,7 @@ def validate_rst_syntax(text, name, dots=True):
         return False, "ERROR: %s: no documentation" % (name,)
 
     ok_unknown_items = set([
-        'mod', 'currentmodule', 'autosummary', 'data',
+        'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'

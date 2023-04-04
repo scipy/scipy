@@ -18,6 +18,21 @@ project(
   ],
 )
 
+# https://mesonbuild.com/Python-module.html
+py_mod = import('python')
+py3 = py_mod.find_installation(pure: false)
+py3_dep = py3.dependency()
+
+# Emit a warning for 32-bit Python installs on Windows; users are getting
+# unexpected from-source builds there because we no longer provide wheels.
+is_windows = host_machine.system() == 'windows'
+if is_windows and py3.has_variable('EXT_SUFFIX')
+  ext_suffix = py3.get_variable('EXT_SUFFIX')
+  if ext_suffix.contains('win32')
+    warning('You are building from source on a 32-bit Python install. SciPy does not provide 32-bit wheels; install 64-bit Python if you are having issues!')
+  endif
+endif
+
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
 
@@ -67,8 +82,6 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
-is_windows = host_machine.system() == 'windows'
-
 # Intel compilers default to fast-math, so disable it if we detect Intel
 # compilers. A word of warning: this may not work with the conda-forge
 # compilers, because those have the annoying habit of including lots of flags
@@ -117,11 +130,6 @@ endif
 cython = find_program(meson.get_compiler('cython').cmd_array()[0])
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
-
-# https://mesonbuild.com/Python-module.html
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
-py3_dep = py3.dependency()
 
 use_pythran = get_option('use-pythran')
 if use_pythran
