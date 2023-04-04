@@ -1,4 +1,6 @@
 import logging
+import warnings
+
 import numpy
 import numpy as np
 import time
@@ -1081,13 +1083,13 @@ def test_vector_constraint():
     assert res.success
 
 
+@pytest.mark.filterwarnings("ignore:delta_grad")
 def test_trust_constr():
     def quad(x):
         x = np.asarray(x)
         return [np.sum(x ** 2)]
 
     nlc = NonlinearConstraint(quad, [2.6], [3])
-    oldc = new_constraint_to_old(nlc, np.array([1.0, 1.0]))
     minimizer_kwargs = {'method': 'trust-constr'}
     # note that we don't supply the constraints in minimizer_kwargs,
     # so if the final result obeys the constraints we know that shgo
@@ -1095,7 +1097,7 @@ def test_trust_constr():
     res = shgo(
         rosen,
         [(0, 10), (0, 10)],
-        constraints=oldc,
+        constraints=nlc,
         sampling_method='sobol',
         minimizer_kwargs=minimizer_kwargs
     )
