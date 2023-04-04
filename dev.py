@@ -203,6 +203,10 @@ rich_click.COMMAND_GROUPS = {
             "name": "benchmarking",
             "commands": ["bench"],
         },
+        {
+            "name": "Run GitHub Actions jobs locally",
+            "commands": ["ci-local"],
+        },
     ]
 }
 
@@ -1196,6 +1200,51 @@ def authors(ctx_obj, revision_args):
         subprocess.run([cmd], check=True, shell=True)
     except subprocess.CalledProcessError:
         print('Error caught: Incorrect revision start or revision end')
+
+
+@cli.cls_cmd('ci-local')
+class CILocal():
+    """:flashlight: A tool which provides a handy way to run GitHub Actions locally using Docker
+
+    Installation guide :arrow_down:
+    - Install docker desktop/toolkit
+    - Install act
+        * Using homebrew: brew install act
+        * Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+
+    Options available:
+        * list (lists all the workflows present)
+        * run-job (runs a particular workflow)
+        * reuse (reuse the containers in act to maintain state)
+
+    Examples (verbose logging enabled by default):
+
+    $ python dev.py ci-local list \b
+    $ python dev.py ci-local run-job test_meson \b
+    $ python dev.py ci-local reuse test_meson \b
+
+    """
+    args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
+
+    @classmethod
+    def run(cls, args):
+        cmd = ['act']
+        print("arguments passed", args)
+        if len(args)==1:
+            if args[0] == 'list':
+                cmd += ['-l']
+        elif len(args)==2:
+            if args[0] == 'run-job':
+                cmd += ['-v', '-j', args[1]]
+            if args[0] == 'reuse':
+                cmd += ['-v', '-j', args[1], '--bind', '--reuse']
+        else:
+            click.echo("Too many positional arguments detected, kindly use to --help to know more")
+
+        cmd_str = ' '.join(cmd)
+        click.echo(cmd_str)
+
+        return subprocess.call(cmd)
 
 
 if __name__ == '__main__':
