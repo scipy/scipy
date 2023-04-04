@@ -764,30 +764,23 @@ class TestNdimageFilters:
             ndimage.gaussian_filter(array, sigma=1.0, axes=axes)
 
     @pytest.mark.parametrize('tuple_ndim', [1, 3])
-    def test_gauss_axes_tuple_length_mismatch(self, tuple_ndim):
+    @pytest.mark.parametrize('mismatched',
+                             ['radius', 'mode', 'sigma', 'order'])
+    def test_gauss_axes_tuple_length_mismatch(self, tuple_ndim, mismatched):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
-        axes = (0, 1)
+        kwargs = dict(sigma=1.0, radius=(3, 3), axes=(0, 1), mode='constant')
+        if mismatched == 'radius':
+            kwargs['radius'] = (3,) * tuple_ndim
+        elif mismatched == 'mode':
+            kwargs['mode'] = ['constant'] * tuple_ndim
+        elif mismatched == 'sigma':
+            kwargs['sigma'] = (1.0,) * tuple_ndim
+        elif mismatched == 'order':
+            kwargs['order'] = (0,) * tuple_ndim
 
         err_msg = "sequence argument must have length equal to input rank"
-        # len(radius) != len(axes)
-        radius = (3,) * tuple_ndim
         with pytest.raises(RuntimeError, match=err_msg):
-            ndimage.gaussian_filter(array, sigma=1.0, radius=radius, axes=axes)
-
-        # len(mode) != len(axes)
-        mode = ['constant'] * tuple_ndim
-        with pytest.raises(RuntimeError, match=err_msg):
-            ndimage.gaussian_filter(array, sigma=1.0, mode=mode, axes=axes)
-
-        # len(sigma) != len(axes)
-        sigma = (1.0,) * tuple_ndim
-        with pytest.raises(RuntimeError, match=err_msg):
-            ndimage.gaussian_filter(array, sigma=sigma, axes=axes)
-
-        # len(order) != len(axes)
-        order = (0,) * tuple_ndim
-        with pytest.raises(RuntimeError, match=err_msg):
-            ndimage.gaussian_filter(array, sigma=1.0, order=order, axes=axes)
+            ndimage.gaussian_filter(array, **kwargs)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype):
