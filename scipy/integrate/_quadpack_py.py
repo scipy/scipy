@@ -437,7 +437,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     # if a == b, directly return 0 with error 0
     if a == b:
-        return [0, 0]
+        if full_output == 0:
+            return (0., 0.)
+        else:
+            return (0., 0., {"neval": 0, "last": 0,
+                             "alist": np.full(limit, np.nan, dtype=np.float64),
+                             "blist": np.full(limit, np.nan, dtype=np.float64),
+                             "rlist": np.zeros(limit, dtype=np.float64),
+                             "elist": np.zeros(limit, dtype=np.float64),
+                             "iord" : np.full(limit, np.nan, dtype=np.int32)})
 
     # check the limits of integration: \int_a^b, expect a < b
     flip, a, b = b < a, min(a, b), max(a, b)

@@ -239,6 +239,14 @@ class TestQuad:
         err = max(res_1[1], res_2[1])
         assert_allclose(res_1[0], -res_2[0], atol=err)
 
+    def test_b_equals_a(self):
+        def f(x):
+            return x**(-0.5)
+
+        upper = lower = 0.
+        zero, err = quad(f, lower, upper)
+        assert_allclose((zero, err), (0., 0.), atol=err)
+
     def test_double_integral(self):
         # 8) Double Integral test
         def simpfunc(y, x):       # Note order of arguments.
