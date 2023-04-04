@@ -240,8 +240,9 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
     Notes
     -----
-    The Gaussian kernel will have size ``2*radius + 1`` where
-    ``radius = round(truncate * sigma)``.
+    The Gaussian kernel will have size ``2*radius + 1`` along each axis. If
+    `radius` is None, a default ``radius = round(truncate * sigma)`` will be
+    used.
 
     Examples
     --------
@@ -328,8 +329,9 @@ def gaussian_filter(input, sigma, order=0, output=None,
     because intermediate results may be stored with insufficient
     precision.
 
-    The Gaussian kernel will have size ``2*radius + 1`` along each axis
-    where ``radius = round(truncate * sigma)``.
+    The Gaussian kernel will have size ``2*radius + 1`` along each axis. If
+    `radius` is None, the default ``radius = round(truncate * sigma)`` will be
+    used.
 
     Examples
     --------
