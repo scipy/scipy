@@ -17,23 +17,19 @@ as the existing one and delivers comparable results. Furthermore, the
 wrappers highlight the different philosophies of the implementations,
 especially in the border handling.
 """
-from typing import cast, Literal
 import platform
+from typing import cast, Literal
 
 import numpy as np
 from numpy.testing import assert_allclose
+from numpy.typing import NDArray
 
+from scipy.signal import ShortTimeFFT
 from scipy.signal import csd, get_window, stft, istft
 from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
-from scipy.signal import ShortTimeFFT
 from scipy.signal._short_time_fft import FFT_TYP_TYPE
 from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
     _median_bias
-
-try:  # Workaround needed for Numpy versions < 1.21
-    from numpy.typing import NDArray
-except ModuleNotFoundError:
-    NDArray: type = np.ndarray  # type: ignore
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,

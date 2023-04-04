@@ -1,14 +1,15 @@
 """Short-time Fourier Transform Module.
 
-Implementation Notes (as of 2022-12)
+Implementation Notes (as of 2023-04)
 ------------------------------------
-* MyPy Version 1.1.1 does not seem to support decorated property methods
+* MyPy version 1.1.1 does not seem to support decorated property methods
   properly. Hence, applying ``@property`` to methods decorated with `@cache``
   (as tried with the ``lower_border_end`` method) causes a mypy error when
   accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
-* Since `NDArray` is only available for Numpy versions 1.21 and above, the
-  methods `stft()`, `stft_detrend()`, `istft()`, and  `_ifft_func()` need to
-  use `NDArray` array as a parameter instead of `NDArray[complex]`.
+* MyPy version 1.1.1 does not seem to support ``NDArray[complex]`` (only
+  ``NDArray[np.complex128]``). Hence the methods `stft()`, `stft_detrend()`,
+  `istft()`, and  `_ifft_func()` need to use `NDArray` array as a parameter
+  instead of `NDArray[complex]`.
 * The entry ``.. currentmodule:: scipy.signal.ShortTimeFFT`` is required
   in docstrings to ensure that `stft` and `istft` generate HTML links to
   methods and not the legacy functions. The side effect is that `ShortTimeFFT`
@@ -18,22 +19,17 @@ Implementation Notes (as of 2022-12)
   page without reference to the parent class. Thus, a link to `ShortTimeFFT`
   was added to the "See Also" section of each method/property.
 """
-from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal, Optional, Union
 # Linter does allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
+from functools import cache, lru_cache, partial
+from typing import Callable, get_args, Literal, Optional, Union
 
 import numpy as np
+from numpy.typing import NDArray
 
 import scipy.fft as fft_lib
 from scipy.signal import detrend
 from .windows import get_window
-
-try:  # Workaround needed for Numpy versions < 1.21
-    from numpy.typing import NDArray
-except ModuleNotFoundError:
-    NDArray: type = np.ndarray  # type: ignore
-
 
 __all__ = ['ShortTimeFFT']
 
