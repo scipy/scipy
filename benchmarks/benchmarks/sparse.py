@@ -4,20 +4,17 @@ Simple benchmarks for the sparse module
 import warnings
 import time
 import timeit
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import pickle
 
 import numpy
 import numpy as np
-from numpy import ones, array, asarray, empty, random
+from numpy import ones, array, asarray, empty
 
 from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import sparse
-    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+    from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
 
 
@@ -55,7 +52,7 @@ def poisson2d(N, dtype='d', format=None):
 class Arithmetic(Benchmark):
     param_names = ['format', 'XY', 'op']
     params = [
-        ['csr'],
+        ['csr', 'csc', 'coo', 'dia'],
         ['AA', 'AB', 'BA', 'BB'],
         ['__add__', '__sub__', 'multiply', '__mul__']
     ]
@@ -146,16 +143,16 @@ class Matmul(Benchmark):
         C1 = 10
         C2 = 1000000
 
-        random.seed(0)
+        rng = np.random.default_rng(0)
 
-        i = random.randint(H1, size=C1)
-        j = random.randint(W1, size=C1)
-        data = random.rand(C1)
+        i = rng.integers(H1, size=C1)
+        j = rng.integers(W1, size=C1)
+        data = rng.random(C1)
         self.matrix1 = coo_matrix((data, (i, j)), shape=(H1, W1)).tocsr()
 
-        i = random.randint(H2, size=C2)
-        j = random.randint(W2, size=C2)
-        data = random.rand(C2)
+        i = rng.integers(H2, size=C2)
+        j = rng.integers(W2, size=C2)
+        data = rng.random(C2)
         self.matrix2 = coo_matrix((data, (i, j)), shape=(H2, W2)).tocsr()
 
     def time_large(self):
@@ -220,6 +217,20 @@ class BlockDiagSparseConstruction(Benchmark):
 
     def time_block_diag(self, num_matrices):
         sparse.block_diag(self.matrices)
+
+
+class CsrHstack(Benchmark):
+    param_names = ['num_rows']
+    params = [10000, 25000, 50000, 100000, 250000]
+
+    def setup(self, num_rows):
+        num_cols = int(1e5)
+        density = 2e-3
+        nnz_per_row = int(density*num_cols)
+        self.mat = random_sparse(num_rows, num_cols, nnz_per_row)
+
+    def time_csr_hstack(self, num_rows):
+        sparse.hstack([self.mat, self.mat])
 
 
 class Conversion(Benchmark):

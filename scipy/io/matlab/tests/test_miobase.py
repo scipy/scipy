@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.matlab.miobase import matdims
+from scipy.io.matlab._miobase import matdims
 
 
 def test_matdims():
@@ -19,8 +19,9 @@ def test_matdims():
     # 3d array, rowish vector
     assert_equal(matdims(np.array([[[2,3]]])), (1, 1, 2))
     assert_equal(matdims(np.array([])), (0, 0))  # empty 1-D array
-    assert_equal(matdims(np.array([[]])), (0, 0))  # empty 2-D array
-    assert_equal(matdims(np.array([[[]]])), (0, 0, 0))  # empty 3-D array
+    assert_equal(matdims(np.array([[]])), (1, 0))  # empty 2-D array
+    assert_equal(matdims(np.array([[[]]])), (1, 1, 0))  # empty 3-D array
+    assert_equal(matdims(np.empty((1, 0, 1))), (1, 0, 1))  # empty 3-D array
     # Optional argument flips 1-D shape behavior.
     assert_equal(matdims(np.array([1,2]), 'row'), (1, 2))  # 1-D array, 2 elements
     # The argument has to make sense though

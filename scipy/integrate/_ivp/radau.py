@@ -62,7 +62,7 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
     Z0 : ndarray, shape (3, n)
         Initial guess for the solution. It determines new values of `y` at
         ``t + h * C`` as ``y + Z0``, where ``C`` is the Radau method constants.
-    scale : float
+    scale : ndarray, shape (n)
         Problem tolerance scale, i.e. ``rtol * abs(y) + atol``.
     tol : float
         Tolerance to which solve the system. This value is compared with
@@ -186,15 +186,11 @@ class Radau(OdeSolver):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and there are two options for the ndarray ``y``:
-        It can either have shape (n,); then ``fun`` must return array_like with
-        shape (n,). Alternatively it can have shape (n, k); then ``fun``
-        must return an array_like with shape (n, k), i.e., each column
-        corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows a faster approximation of the Jacobian
-        by finite differences (required for this solver).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -210,11 +206,15 @@ class Radau(OdeSolver):
         bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol`, the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
+        estimates less than ``atol + rtol * abs(y)``. HHere `rtol` controls a
+        relative accuracy (number of correct digits), while `atol` controls
+        absolute accuracy (number of correct decimal places). To achieve the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        allowable error. If `atol` is larger than ``rtol * abs(y)`` the
+        number of correct digits is not guaranteed. Conversely, to achieve the
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
+        than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
@@ -244,7 +244,20 @@ class Radau(OdeSolver):
         element in the Jacobian is always zero. If None (default), the Jacobian
         is assumed to be dense.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by this method, but may result in slower
+        execution overall in some circumstances (e.g. small ``len(y0)``).
 
     Attributes
     ----------
@@ -283,7 +296,7 @@ class Radau(OdeSolver):
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, first_step=None, **extraneous):
         warn_extraneous(extraneous)
-        super(Radau, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super().__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -537,7 +550,7 @@ class Radau(OdeSolver):
 
 class RadauDenseOutput(DenseOutput):
     def __init__(self, t_old, t, y_old, Q):
-        super(RadauDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.h = t - t_old
         self.Q = Q
         self.order = Q.shape[1] - 1

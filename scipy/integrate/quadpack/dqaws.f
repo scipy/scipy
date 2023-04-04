@@ -1,5 +1,5 @@
-      subroutine dqaws(f,a,b,alfa,beta,integr,epsabs,epsrel,result,
-     *   abserr,neval,ier,limit,lenw,last,iwork,work)
+      recursive subroutine dqaws(f,a,b,alfa,beta,integr,epsabs,epsrel,
+     *   result,abserr,neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqaws
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

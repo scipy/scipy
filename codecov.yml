@@ -11,9 +11,13 @@ coverage:
         target: 1
     patch:
       default:
-        target: 90
+        # Must be 0%, because many PRs touch files that we don't have coverage
+        # results for (build files, scripts, tools/, etc.)
+        target: 0
         if_no_uploads: error
         if_not_found: success
         if_ci_failed: failure
     changes: false
 comment: off
+github_checks:
+    annotations: false

@@ -34,8 +34,8 @@
  *
  */
 
-#include <setjmp.h>
 #include <Python.h>
+#include <setjmp.h>
 
 #include "ccallback.h"
 
@@ -400,7 +400,8 @@ static struct PyModuleDef test_ccallback_module = {
 };
 
 
-PyObject *PyInit__test_ccallback(void)
+PyMODINIT_FUNC
+PyInit__test_ccallback(void)
 {
     return PyModule_Create(&test_ccallback_module);
 }

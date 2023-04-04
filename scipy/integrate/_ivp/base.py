@@ -22,7 +22,7 @@ def check_arguments(fun, y0, support_complex):
     return fun_wrapped, y0
 
 
-class OdeSolver(object):
+class OdeSolver:
     """Base class for ODE solvers.
 
     In order to implement a new solver you need to follow the guidelines:
@@ -64,13 +64,11 @@ class OdeSolver(object):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or, alternatively, it can have shape (n, n_points), then
-        ``fun`` must return array_like with shape (n, n_points) (each column
-        corresponds to a single column in ``y``). The choice between the two
-        options is determined by `vectorized` argument (see below).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -79,7 +77,22 @@ class OdeSolver(object):
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     vectorized : bool
-        Whether `fun` is implemented in a vectorized fashion.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for other methods. It can also
+        result in slower overall execution for 'Radau' and 'BDF' in some
+        circumstances (e.g. small ``len(y0)``).
     support_complex : bool, optional
         Whether integration in a complex domain should be supported.
         Generally determined by a derived solver class capabilities.
@@ -214,7 +227,7 @@ class OdeSolver(object):
         raise NotImplementedError
 
 
-class DenseOutput(object):
+class DenseOutput:
     """Base class for local interpolant over step made by an ODE solver.
 
     It interpolates between `t_min` and `t_max` (see Attributes below).
@@ -262,7 +275,7 @@ class ConstantDenseOutput(DenseOutput):
     or a system with 0 equations.
     """
     def __init__(self, t_old, t, value):
-        super(ConstantDenseOutput, self).__init__(t_old, t)
+        super().__init__(t_old, t)
         self.value = value
 
     def _call_impl(self, t):

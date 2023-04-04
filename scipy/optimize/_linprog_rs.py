@@ -18,14 +18,14 @@ References
 # Author: Matt Haberland
 
 import numpy as np
+from numpy.linalg import LinAlgError
+
 from scipy.linalg import solve
-from .optimize import _check_unknown_options
+from ._optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
-from scipy.linalg import LinAlgError
-from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
-from .optimize import OptimizeResult
+from ._optimize import OptimizeResult
 
 
 def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
@@ -87,7 +87,7 @@ def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
                 keep_rows[pertinent_row] = False
             else:
                 basis[basis == basis_column] = new_basis_column
-        except (LinAlgError, LinAlgError2):
+        except LinAlgError:
             status = 4
 
     # form solution to original problem

@@ -36,7 +36,6 @@
 
       COMPLEX FUNCTION WCLADIV( X, Y )
       COMPLEX            X, Y
-      COMPLEX            Z
       EXTERNAL SLADIV
       INTRINSIC          AIMAG, CMPLX, REAL
       REAL               ZI, ZR
@@ -47,7 +46,6 @@
 
       DOUBLE COMPLEX FUNCTION WZLADIV( X, Y )
       DOUBLE COMPLEX     X, Y
-      DOUBLE COMPLEX     Z
       EXTERNAL DLADIV
       INTRINSIC          DBLE, DCMPLX, DIMAG
       DOUBLE PRECISION   ZI, ZR

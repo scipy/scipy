@@ -1,11 +1,11 @@
 cimport numpy as np
-from libc.math cimport fabs, sin, cos, exp
+from libc.math cimport fabs, sin, cos, exp, atan2
+
 from ._complexstuff cimport (
     zisfinite, zabs, zpack, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
 cdef extern from "_complexstuff.h":
-    double npy_atan2(double y, double x) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble x) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
 
@@ -58,7 +58,7 @@ cdef inline double complex clog1p(double complex z) nogil:
             return clog1p_ddouble(zr, zi)
         else:
             x = 0.5 * log1p(az*(az + 2*zr/az))
-            y = npy_atan2(zi, zr + 1.0)
+            y = atan2(zi, zr + 1.0)
             return zpack(x, y)
 
     z = z + 1.0
@@ -80,7 +80,7 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     absm1 = dd_add(absm1, rtwo)
 
     x = 0.5 * log1p(dd_to_double(absm1))
-    y = npy_atan2(zi, zr+1.0)
+    y = atan2(zi, zr+1.0)
     return zpack(x, y)
 
 # cexpm1(z) = cexp(z) - 1

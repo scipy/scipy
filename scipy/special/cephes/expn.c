@@ -75,12 +75,12 @@ double expn(int n, double x)
     int i, k;
     static double big = BIG;
 
-    if (npy_isnan(x)) {
-	return NPY_NAN;
+    if (isnan(x)) {
+	return NAN;
     }
     else if (n < 0 || x < 0) {
 	sf_error("expn", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
 
     if (x > MAXLOG) {
@@ -90,7 +90,7 @@ double expn(int n, double x)
     if (x == 0.0) {
 	if (n < 2) {
 	    sf_error("expn", SF_ERROR_SINGULAR, NULL);
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
 	else {
 	    return (1.0 / (n - 1.0));

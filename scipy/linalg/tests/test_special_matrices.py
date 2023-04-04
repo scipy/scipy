@@ -1,4 +1,3 @@
-
 import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
@@ -21,8 +20,11 @@ def get_mat(n):
     data = add.outer(data, data)
     return data
 
+dep_filter = np.testing.suppress_warnings()
+dep_filter.filter(DeprecationWarning, "'tri'/'tril/'triu'")
 
-class TestTri(object):
+@dep_filter
+class TestTri:
     def test_basic(self):
         assert_equal(tri(4), array([[1, 0, 0, 0],
                                     [1, 1, 0, 0],
@@ -62,7 +64,8 @@ class TestTri(object):
                                              [1, 1, 0]]))
 
 
-class TestTril(object):
+@dep_filter
+class TestTril:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -85,7 +88,8 @@ class TestTril(object):
         assert_equal(tril(a, k=-2), b)
 
 
-class TestTriu(object):
+@dep_filter
+class TestTriu:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -108,7 +112,13 @@ class TestTriu(object):
         assert_equal(triu(a, k=-2), b)
 
 
-class TestToeplitz(object):
+@pytest.mark.parametrize("func", [tri, tril, triu])
+def test_special_matrices_deprecation(func):
+    with pytest.warns(DeprecationWarning, match="'tri'/'tril/'triu'"):
+        func(np.array([[1]]))
+
+
+class TestToeplitz:
 
     def test_basic(self):
         y = toeplitz([1, 2, 3])
@@ -155,7 +165,7 @@ class TestToeplitz(object):
         assert_array_equal(t, [[1, 2, 3]])
 
 
-class TestHankel(object):
+class TestHankel:
     def test_basic(self):
         y = hankel([1, 2, 3])
         assert_array_equal(y, [[1, 2, 3], [2, 3, 0], [3, 0, 0]])
@@ -163,13 +173,13 @@ class TestHankel(object):
         assert_array_equal(y, [[1, 2, 3], [2, 3, 4], [3, 4, 5]])
 
 
-class TestCirculant(object):
+class TestCirculant:
     def test_basic(self):
         y = circulant([1, 2, 3])
         assert_array_equal(y, [[1, 3, 2], [2, 1, 3], [3, 2, 1]])
 
 
-class TestHadamard(object):
+class TestHadamard:
 
     def test_basic(self):
 
@@ -189,7 +199,7 @@ class TestHadamard(object):
         assert_raises(ValueError, hadamard, 5)
 
 
-class TestLeslie(object):
+class TestLeslie:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
@@ -205,7 +215,7 @@ class TestLeslie(object):
         assert_array_equal(a, expected)
 
 
-class TestCompanion(object):
+class TestCompanion:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, companion, [[1, 1], [2, 2]])
@@ -313,7 +323,7 @@ class TestKron:
         assert_array_equal(a, expected)
 
 
-class TestHelmert(object):
+class TestHelmert:
 
     def test_orthogonality(self):
         for n in range(1, 7):
@@ -332,7 +342,7 @@ class TestHelmert(object):
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
 
-class TestHilbert(object):
+class TestHilbert:
 
     def test_basic(self):
         h3 = array([[1.0, 1/2., 1/3.],
@@ -346,7 +356,7 @@ class TestHilbert(object):
         assert_equal(h0.shape, (0, 0))
 
 
-class TestInvHilbert(object):
+class TestInvHilbert:
 
     def test_basic(self):
         invh1 = array([[1]])
@@ -514,7 +524,7 @@ class TestInvHilbert(object):
             assert_allclose(a.dot(b), eye(n), atol=1e-15*c, rtol=1e-15*c)
 
 
-class TestPascal(object):
+class TestPascal:
 
     cases = [
         (1, array([[1]]), array([[1]])),
@@ -552,7 +562,7 @@ class TestPascal(object):
 
     def test_big(self):
         p = pascal(50)
-        assert_equal(p[-1, -1], comb(98, 49, exact=True))
+        assert p[-1, -1] == comb(98, 49, exact=True)
 
     def test_threshold(self):
         # Regression test.  An early version of `pascal` returned an
@@ -562,7 +572,7 @@ class TestPascal(object):
         p = pascal(34)
         assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
         p = pascal(35)
-        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+        assert_equal(2.*p.item(-1, -2), 1.*p.item(-1, -1), err_msg="n = 35")
 
 
 def test_invpascal():

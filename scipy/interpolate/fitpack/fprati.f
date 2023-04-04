@@ -1,4 +1,6 @@
-      real*8 function fprati(p1,f1,p2,f2,p3,f3)
+      recursive function fprati(p1,f1,p2,f2,p3,f3) result(fprati_res)
+      implicit none
+      real*8 :: fprati_res
 c  given three points (p1,f1),(p2,f2) and (p3,f3), function fprati
 c  gives the value of p such that the rational interpolating function
 c  of the form r(p) = (u*p+v)/(p+w) equals zero at p.
@@ -24,6 +26,6 @@ c  adjust the value of p1,f1,p3 and f3 such that f1 > 0 and f3 < 0.
       go to 40
   30  p3 = p2
       f3 = f2
-  40  fprati = p
+  40  fprati_res = p
       return
       end

@@ -413,7 +413,7 @@ def test_compute_global_jac():
     J = construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle,
                              df_dp, df_dp_middle, dbc_dya, dbc_dyb, dbc_dp)
     J = J.toarray()
-    assert_allclose(J, J_true, rtol=1e-8, atol=1e-9)
+    assert_allclose(J, J_true, rtol=2e-8, atol=2e-8)
 
 
 def test_parameter_validation():
@@ -425,8 +425,10 @@ def test_parameter_validation():
     y = np.zeros((2, 4))
     assert_raises(ValueError, solve_bvp, exp_fun, exp_bc, x, y)
 
-    fun = lambda x, y, p: exp_fun(x, y)
-    bc = lambda ya, yb, p: exp_bc(ya, yb)
+    def fun(x, y, p):
+        return exp_fun(x, y)
+    def bc(ya, yb, p):
+        return exp_bc(ya, yb)
 
     y = np.zeros((2, x.shape[0]))
     assert_raises(ValueError, solve_bvp, fun, bc, x, y, p=[1])

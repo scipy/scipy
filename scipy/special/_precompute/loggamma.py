@@ -1,7 +1,7 @@
 """Precompute series coefficients for log-Gamma."""
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     pass
 

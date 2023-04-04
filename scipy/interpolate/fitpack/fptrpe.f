@@ -1,4 +1,5 @@
-      subroutine fptrpe(m,mm,idim,n,nr,sp,p,b,z,a,aa,q,right)
+      recursive subroutine fptrpe(m,mm,idim,n,nr,sp,p,b,z,a,aa,q,right)
+      implicit none
 c  subroutine fptrpe reduces the (m+n-7) x (n-7) cyclic bandmatrix a
 c  to upper triangular form and applies the same givens transformations
 c  to the (m) x (mm) x (idim) matrix z to obtain the (n-7) x (mm) x
@@ -16,6 +17,7 @@ c  ..local scalars..
       real*8 co,pinv,piv,si,one
       integer i,irot,it,ii,i2,i3,j,jj,l,mid,nmd,m2,m3,
      * nrold,n4,number,n1,n7,n11,m1
+      integer i1, ij,j1,jk,jper,l0,l1, ik
 c  ..local arrays..
       real*8 h(5),h1(5),h2(4)
 c  ..subroutine references..

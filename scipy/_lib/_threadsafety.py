@@ -10,7 +10,7 @@ class ReentrancyError(RuntimeError):
     pass
 
 
-class ReentrancyLock(object):
+class ReentrancyLock:
     """
     Threading lock that raises an exception for reentrant calls.
 

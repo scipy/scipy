@@ -85,6 +85,9 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         t, tp, size = 'M', p - (n - r) - (r + 1), n - r
     elif p - 1 < 2*n + 1:
         t, tp, size = 'N', p - (n - r) - (n - r) - (r + 1), r
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NULL
 
     lwork = 60*size
     liwork = 30*size
@@ -193,11 +196,15 @@ cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
         size, psi = n - r, pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
     elif p - 1 < 2*n + 1:
         size, psi = r, pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NAN
+
     lambda_romain = 1.0 - <double>s2/<double>h2
     pp = eigv[size - 1]
-
     for j in range(size - 2, -1, -1):
         pp = pp*lambda_romain + eigv[j]
+
     pp = pp*psi
     return pp
 

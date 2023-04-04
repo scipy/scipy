@@ -12,8 +12,8 @@ import scipy.ndimage as ndimage
 from . import types
 
 
-class Test_measurements_stats(object):
-    """ndimage.measurements._stats() is a utility used by other functions."""
+class Test_measurements_stats:
+    """ndimage._measurements._stats() is a utility used by other functions."""
 
     def test_a(self):
         x = [0, 1, 2, 6]
@@ -22,7 +22,7 @@ class Test_measurements_stats(object):
         for shp in [(4,), (2, 2)]:
             x = np.array(x).reshape(shp)
             labels = np.array(labels).reshape(shp)
-            counts, sums = ndimage.measurements._stats(
+            counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
             assert_array_equal(counts, [2, 2])
             assert_array_equal(sums, [1.0, 8.0])
@@ -36,7 +36,7 @@ class Test_measurements_stats(object):
         for shp in [(4,), (2, 2)]:
             x = np.array(x).reshape(shp)
             labels = np.array(labels).reshape(shp)
-            counts, sums = ndimage.measurements._stats(
+            counts, sums = ndimage._measurements._stats(
                 x, labels=labels, index=index)
             assert_array_equal(counts, [2, 2])
             assert_array_equal(sums, [1.0, 8.0])
@@ -48,7 +48,7 @@ class Test_measurements_stats(object):
         for shp in [(4,), (2, 2)]:
             x = np.array(x).reshape(shp)
             labels = np.array(labels).reshape(shp)
-            counts, sums, centers = ndimage.measurements._stats(
+            counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
             assert_array_equal(counts, [2, 2])
             assert_array_equal(sums, [1.0, 8.0])
@@ -61,7 +61,7 @@ class Test_measurements_stats(object):
         for shp in [(4,), (2, 2)]:
             x = np.array(x).reshape(shp)
             labels = np.array(labels).reshape(shp)
-            counts, sums, centers = ndimage.measurements._stats(
+            counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
             assert_array_equal(counts, [2, 2])
             assert_array_equal(sums, [1.0, 8.0])
@@ -74,15 +74,15 @@ class Test_measurements_stats(object):
         for shp in [(4,), (2, 2)]:
             x = np.array(x).reshape(shp)
             labels = np.array(labels).reshape(shp)
-            counts, sums, centers = ndimage.measurements._stats(
+            counts, sums, centers = ndimage._measurements._stats(
                 x, labels=labels, index=index, centered=True)
             assert_array_equal(counts, [2, 2])
             assert_array_equal(sums, [1.0, 8.0])
             assert_array_equal(centers, [0.5, 8.0])
 
 
-class Test_measurements_select(object):
-    """ndimage.measurements._select() is a utility used by other functions."""
+class Test_measurements_select:
+    """ndimage._measurements._select() is a utility used by other functions."""
 
     def test_basic(self):
         x = [0, 1, 6, 2]
@@ -92,25 +92,25 @@ class Test_measurements_select(object):
             ([0.0, 0.0, 7.0, 7.0], [0.0, 7.0]),   # Non-integer labels
         ]
         for labels, index in cases:
-            result = ndimage.measurements._select(
+            result = ndimage._measurements._select(
                 x, labels=labels, index=index)
             assert_(len(result) == 0)
-            result = ndimage.measurements._select(
+            result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_max=True)
             assert_(len(result) == 1)
             assert_array_equal(result[0], [1, 6])
-            result = ndimage.measurements._select(
+            result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_min=True)
             assert_(len(result) == 1)
             assert_array_equal(result[0], [0, 2])
-            result = ndimage.measurements._select(
+            result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_min=True,
                 find_min_positions=True)
             assert_(len(result) == 2)
             assert_array_equal(result[0], [0, 2])
             assert_array_equal(result[1], [0, 3])
             assert_equal(result[1].dtype.kind, 'i')
-            result = ndimage.measurements._select(
+            result = ndimage._measurements._select(
                 x, labels=labels, index=index, find_max=True,
                 find_max_positions=True)
             assert_(len(result) == 2)
@@ -451,6 +451,46 @@ def test_find_objects09():
                        (slice(1, 3, None), slice(2, 5, None)),
                        None,
                        (slice(5, 6, None), slice(3, 5, None))])
+
+
+def test_value_indices01():
+    "Test dictionary keys and entries"
+    data = np.array([[1, 0, 0, 0, 0, 0],
+                     [0, 0, 2, 2, 0, 0],
+                     [0, 0, 2, 2, 2, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 0, 0, 0],
+                     [0, 0, 0, 4, 4, 0]])
+    vi = ndimage.value_indices(data, ignore_value=0)
+    true_keys = [1, 2, 4]
+    assert_equal(list(vi.keys()), true_keys)
+
+    truevi = {}
+    for k in true_keys:
+        truevi[k] = np.where(data == k)
+
+    vi = ndimage.value_indices(data, ignore_value=0)
+    assert_equal(vi, truevi)
+
+
+def test_value_indices02():
+    "Test input checking"
+    data = np.zeros((5, 4), dtype=np.float32)
+    msg = "Parameter 'arr' must be an integer array"
+    with assert_raises(ValueError, match=msg):
+        ndimage.value_indices(data)
+
+
+def test_value_indices03():
+    "Test different input array shapes, from 1-D to 4-D"
+    for shape in [(36,), (18, 2), (3, 3, 4), (3, 3, 2, 2)]:
+        a = np.array((12*[1]+12*[2]+12*[3]), dtype=np.int32).reshape(shape)
+        trueKeys = np.unique(a)
+        vi = ndimage.value_indices(a)
+        assert_equal(list(vi.keys()), list(trueKeys))
+        for k in trueKeys:
+            trueNdx = np.where(a == k)
+            assert_equal(vi[k], trueNdx)
 
 
 def test_sum01():
@@ -1342,7 +1382,6 @@ class TestWatershedIft:
 
     def test_watershed_ift08(self):
         # Test cost larger than uint8. See gh-10069.
-        shape = (2, 2)
         data = np.array([[256, 0],
                          [0, 0]], np.uint16)
         markers = np.array([[1, 0],

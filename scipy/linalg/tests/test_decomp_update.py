@@ -87,7 +87,7 @@ def make_nonnative(arrs):
     return [a.astype(a.dtype.newbyteorder()) for a in arrs]
 
 
-class BaseQRdeltas(object):
+class BaseQRdeltas:
     def setup_method(self):
         self.rtol = 10.0 ** -(np.finfo(self.dtype).precision-2)
         self.atol = 10 * np.finfo(self.dtype).eps
@@ -581,7 +581,8 @@ class BaseQRdelete(BaseQRdeltas):
         a, q0, r0 = self.generate('tall')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'row')
             assert_raises(ValueError, qr_delete, q, r0, 0, 2, 'row')
             assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'col')
@@ -630,7 +631,7 @@ class TestQRdelete_D(BaseQRdelete):
 
 class BaseQRinsert(BaseQRdeltas):
     def generate(self, type, mode='full', which='row', p=1):
-        a, q, r = super(BaseQRinsert, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
 
@@ -1125,7 +1126,8 @@ class BaseQRinsert(BaseQRdeltas):
         a, q0, r0, u0 = self.generate('sqr', which='row')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             u = u0.real.astype(dtype)
             assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'row')
             assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'col')
@@ -1172,7 +1174,7 @@ class TestQRinsert_D(BaseQRinsert):
 
 class BaseQRupdate(BaseQRdeltas):
     def generate(self, type, mode='full', p=1):
-        a, q, r = super(BaseQRupdate, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         # super call set the seed...
         if p == 1:
@@ -1558,7 +1560,8 @@ class BaseQRupdate(BaseQRdeltas):
         a, q0, r0, u0, v0 = self.generate('tall')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             u = u0.real.astype(dtype)
             v = v0.real.astype(dtype)
             assert_raises(ValueError, qr_update, q, r0, u0, v0)

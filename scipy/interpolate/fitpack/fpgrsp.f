@@ -1,6 +1,8 @@
-      subroutine fpgrsp(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,mv,r,mr,dr,
-     * iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,mvnu,spu,spv,
-     * right,q,au,av1,av2,bu,bv,a0,a1,b0,b1,c0,c1,cosi,nru,nrv)
+      recursive subroutine fpgrsp(ifsu,ifsv,ifbu,ifbv,iback,u,mu,v,
+     * mv,r,mr,dr,iop0,iop1,tu,nu,tv,nv,p,c,nc,sq,fp,fpu,fpv,mm,
+     * mvnu,spu,spv,right,q,au,av1,av2,bu,bv,a0,a1,b0,b1,c0,c1,
+     * cosi,nru,nrv)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 p,sq,fp

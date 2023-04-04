@@ -8,7 +8,8 @@ cimport cython
 import numpy as np
 
 cimport numpy as np
-from cpython cimport bool
+
+np.import_array()
 
 
 @cython.boundscheck(False)

@@ -1,6 +1,5 @@
 #include "qhull_src/src/qhull_ra.h"
 
-#define trace1(args) {}
 
 /* This is a patched version of qhull_src/src/user_r.c:qh_new_qhull,
    with an additional "feaspoint" argument.

@@ -1,9 +1,9 @@
 !    -*- f90 -*-
 ! Note: the context of this file is case sensitive.
 
-python module mvn ! in 
-    interface  ! in :mvn
-        subroutine mvnun(d,n,lower,upper,means,covar,maxpts,abseps,releps,value,inform) ! in :mvn:mvndst.f
+python module _mvn ! in
+    interface  ! in :_mvn
+        subroutine mvnun(d,n,lower,upper,means,covar,maxpts,abseps,releps,value,inform) ! in :_mvn:mvndst.f
             integer intent(hide) :: d=shape(means,0)
             integer intent(hide) :: n=shape(means,1)
             double precision dimension(d) :: lower
@@ -17,7 +17,7 @@ python module mvn ! in
             integer intent(out) :: inform
         end subroutine mvnun
 
-        subroutine mvnun_weighted(d,n,lower,upper,means,weights,covar,maxpts,abseps,releps,value,inform) ! in :mvn:mvndst.f
+        subroutine mvnun_weighted(d,n,lower,upper,means,weights,covar,maxpts,abseps,releps,value,inform) ! in :_mvn:mvndst.f
             integer intent(hide) :: d=shape(means,0)
             integer intent(hide) :: n=shape(means,1)
             double precision dimension(d) :: lower
@@ -32,7 +32,7 @@ python module mvn ! in
             integer intent(out) :: inform
         end subroutine mvnun_weighted
 
-        subroutine mvndst(n,lower,upper,infin,correl,maxpts,abseps,releps,error,value,inform) ! in :mvn:mvndst.f
+        subroutine mvndst(n,lower,upper,infin,correl,maxpts,abseps,releps,error,value,inform) ! in :_mvn:mvndst.f
             integer intent(hide) :: n=len(lower)
             double precision dimension(n) :: lower
             double precision dimension(n) :: upper
@@ -47,8 +47,8 @@ python module mvn ! in
             integer :: ivls
             common /dkblck/ ivls
         end subroutine mvndst
-    end interface 
-end python module mvn
+    end interface
+end python module _mvn
 
 ! This file was auto-generated with f2py (version:2.39.235_1752).
 ! See http://cens.ioc.ee/projects/f2py2e/

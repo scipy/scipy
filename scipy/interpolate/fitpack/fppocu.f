@@ -1,4 +1,5 @@
-      subroutine fppocu(idim,k,a,b,ib,db,nb,ie,de,ne,cp,np)
+      recursive subroutine fppocu(idim,k,a,b,ib,db,nb,ie,de,ne,cp,np)
+      implicit none
 c  subroutine fppocu finds a idim-dimensional polynomial curve p(u) =
 c  (p1(u),p2(u),...,pidim(u)) of degree k, satisfying certain derivative
 c  constraints at the end points a and b, i.e.

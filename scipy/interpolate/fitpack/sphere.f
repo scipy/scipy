@@ -1,5 +1,5 @@
-      subroutine sphere(iopt,m,teta,phi,r,w,s,ntest,npest,eps,
-     *  nt,tt,np,tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
+      recursive subroutine sphere(iopt,m,teta,phi,r,w,s,ntest,npest,
+     *  eps,nt,tt,np,tp,c,fp,wrk1,lwrk1,wrk2,lwrk2,iwrk,kwrk,ier)
       implicit none
 c  subroutine sphere determines a smooth bicubic spherical spline
 c  approximation s(teta,phi), 0 <= teta <= pi ; 0 <= phi <= 2*pi

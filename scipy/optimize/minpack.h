@@ -36,6 +36,7 @@ the result tuple when the full_output argument is non-zero.
 #define PYERR2(errobj,message) {PyErr_Print(); PyErr_SetString(errobj, message); goto fail;}
 
 #define STORE_VARS() ccallback_t callback; int callback_inited = 0; jac_callback_info_t jac_callback_info;
+#define STORE_VARS_NO_INFO() ccallback_t callback; int callback_inited = 0;
 
 #define INIT_FUNC(fun,arg,errobj) do { /* Get extra arguments or set to zero length tuple */ \
   if (arg == NULL) { \
@@ -146,7 +147,7 @@ static PyObject *call_python_function(PyObject *func, npy_intp n, double *x, PyO
   /* Call function object --- variable passed to routine.  Extra
           arguments are in another passed variable.
    */
-  if ((result = PyEval_CallObject(func, arglist))==NULL) {
+  if ((result = PyObject_CallObject(func, arglist))==NULL) {
       goto fail;
   }
 

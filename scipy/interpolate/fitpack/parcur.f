@@ -1,5 +1,6 @@
-      subroutine parcur(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,nest,n,t,
-     * nc,c,fp,wrk,lwrk,iwrk,ier)
+      recursive subroutine parcur(iopt,ipar,idim,m,u,mx,x,w,ub,ue,k,s,
+     * nest,n,t,nc,c,fp,wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the ordered set of m points x(i) in the idim-dimensional space
 c  and given also a corresponding set of strictly increasing values u(i)
 c  and the set of positive numbers w(i),i=1,2,...,m, subroutine parcur

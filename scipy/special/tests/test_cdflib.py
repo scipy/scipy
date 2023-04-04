@@ -22,7 +22,7 @@ The following functions still need tests:
 import itertools
 
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 import pytest
 
 import scipy.special as sp
@@ -32,12 +32,12 @@ from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
 
 
-class ProbArg(object):
+class ProbArg:
     """Generate a set of probabilities on [0, 1]."""
     def __init__(self):
         # Include the endpoints for compatibility with Arg et. al.
@@ -54,7 +54,7 @@ class ProbArg(object):
         return np.unique(v)
 
 
-class EndpointFilter(object):
+class EndpointFilter:
     def __init__(self, a, b, rtol, atol):
         self.a = a
         self.b = b
@@ -67,7 +67,7 @@ class EndpointFilter(object):
         return np.where(mask1 | mask2, False, True)
 
 
-class _CDFData(object):
+class _CDFData:
     def __init__(self, spfunc, mpfunc, index, argspec, spfunc_first=True,
                  dps=20, n=5000, rtol=None, atol=None,
                  endpt_rtol=None, endpt_atol=None):
@@ -205,7 +205,7 @@ def _tukey_lmbda_quantile(p, lmbda):
 
 @pytest.mark.slow
 @check_version(mpmath, '0.19')
-class TestCDFlib(object):
+class TestCDFlib:
 
     @pytest.mark.xfail(run=False)
     def test_bdtrik(self):
@@ -404,3 +404,21 @@ def test_nonfinite():
                 # All other inputs should return something (but not
                 # raise exceptions or cause hangs)
                 pass
+
+
+def test_chndtrix_gh2158():
+    # test that gh-2158 is resolved; previously this blew up
+    res = sp.chndtrix(0.999999, 2, np.arange(20.)+1e-6)
+
+    # Generated in R
+    # options(digits=16)
+    # ncp <- seq(0, 19) + 1e-6
+    # print(qchisq(0.999999, df = 2, ncp = ncp))
+    res_exp = [27.63103493142305, 35.25728589950540, 39.97396073236288,
+               43.88033702110538, 47.35206403482798, 50.54112500166103,
+               53.52720257322766, 56.35830042867810, 59.06600769498512,
+               61.67243118946381, 64.19376191277179, 66.64228141346548,
+               69.02756927200180, 71.35726934749408, 73.63759723904816,
+               75.87368842650227, 78.06984431185720, 80.22971052389806,
+               82.35640899964173, 84.45263768373256]
+    assert_allclose(res, res_exp)

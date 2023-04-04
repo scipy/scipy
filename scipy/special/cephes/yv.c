@@ -24,21 +24,21 @@ double yv(double v, double x)
     else if (v == floor(v)) {
         /* Zero in denominator. */
 	sf_error("yv", SF_ERROR_DOMAIN, NULL);
-        return NPY_NAN;
+        return NAN;
     }
 
-    t = NPY_PI * v;
+    t = M_PI * v;
     y = (cos(t) * jv(v, x) - jv(-v, x)) / sin(t);
 
     if (cephes_isinf(y)) {
         if (v > 0) {
             sf_error("yv", SF_ERROR_OVERFLOW, NULL);
-            return -NPY_INFINITY;
+            return -INFINITY;
         }
         else if (v < -1e10) {
             /* Whether it's +inf or -inf is numerically ill-defined. */
             sf_error("yv", SF_ERROR_DOMAIN, NULL);
-            return NPY_NAN;
+            return NAN;
         }
     }
 

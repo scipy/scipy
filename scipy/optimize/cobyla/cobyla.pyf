@@ -8,11 +8,16 @@ python module _cobyla__user__routines
             double precision intent(out) :: f
             double precision intent(in), dimension(m), depend(m) :: con
         end subroutine calcfc
+        subroutine callback(n,m,x)
+            integer intent(in,hide) :: n
+            integer intent(in,hide) :: m
+            double precision dimension(n),depend(n),intent(in) :: x
+        end subroutine callback
     end interface _cobyla_user_interface
 end python module _cobyla__user__routines
 python module _cobyla ! in 
     interface  ! in :__cobyla
-        subroutine minimize(calcfc,n,m,x,rhobeg,rhoend,iprint,maxfun,w,iact,dinfo)
+        subroutine minimize(calcfc,n,m,x,rhobeg,rhoend,iprint,maxfun,w,iact,dinfo,callback)
             fortranname cobyla
             use _cobyla__user__routines
             external calcfc
@@ -26,6 +31,7 @@ python module _cobyla ! in
             double precision dimension(n*(3*n+2*m+11)+4*m+6), intent(cache,hide),depend(n,m) :: w
             integer dimension(m + 1),intent(cache,hide),depend(m) :: iact
             double precision dimension(4), intent(in,out) :: dinfo
+            external callback
         end subroutine minimize
     end interface 
 end python module _cobyla

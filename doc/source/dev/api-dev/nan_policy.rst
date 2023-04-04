@@ -1,5 +1,5 @@
-A Design Specification for `nan_policy`
-=======================================
+A Design Specification for ``nan_policy``
+=========================================
 
 Many functions in `scipy.stats` have a parameter called ``nan_policy``
 that determines how the function handles data that contains ``nan``.  In
@@ -15,9 +15,10 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
 
 * ``nan_policy='omit'``:
   Ignore occurrences of ``nan`` in the input.  Do not generate a warning
-  if the input contains ``nan``. For example, for the simple case of a
-  function that accepts a single array (and ignoring the possible use of
-  ``axis`` for the moment)::
+  if the input contains ``nan`` (unless the equivalent input with the
+  ``nan`` values removed would generate a warning). For example, for the
+  simple case of a function that accepts a single array and returns a
+  scalar (and ignoring the possible use of ``axis`` for the moment)::
 
       func([1.0, 3.0, np.nan, 5.0], nan_policy='omit')
 
@@ -25,14 +26,35 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
 
       func([1.0, 3.0, 5.0])
 
-  More generally, ``func(a, nan_policy='omit')`` should behave the same as
+  More generally, for functions that return a scalar,
+  ``func(a, nan_policy='omit')`` should behave the same as
   ``func(a[~np.isnan(a)])``.
+
+  For functions that transform a vector to a new vector of the same
+  size and for which each entry in the output array depends on
+  more than just the corresponding value in the input array [#f1]_ (e.g.
+  `scipy.stats.zscore`, `scipy.stats.boxcox` *when* ``lmbda`` *is None*),::
+
+      y = func(a, nan_policy='omit')
+
+  should behave the same as::
+
+      nan_mask = np.isnan(a)
+      y = np.empty(a.shape, dtype=np.float64)
+      y[~nan_mask] = func(a[~nan_mask])
+      y[nan_mask] = np.nan
+
+  (In general, the dtype of ``y`` might depend on ``a`` and on the expected
+  behavior of ``func``).  In other words, a `nan` in the input gives a
+  corresponding `nan` in the output, but the presence of that `nan` does not
+  affect the calculation of the non-`nan` values.
 
   Unit tests for this property should be used to test functions that
   handle ``nan_policy``.
 
-  For functions that accept two or more arguments but whose values are
-  not related, the same idea applies to each input array.  So::
+  For functions that return a scalar and that accept two or more arguments
+  but whose values are not related (e.g. `scipy.stats.ansari`,
+  `scipy.stats.f_oneway`), the same idea applies to each input array.  So::
 
       func(a, b, nan_policy='omit')
 
@@ -40,9 +62,10 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
 
       func(a[~np.isnan(a)], b[~np.isnan(b)])
 
-  For inputs with *related* or *paired* values, the recommended behavior
-  is to omit all the values for which any of the related values are ``nan``.
-  For a function with two related array inputs, this means::
+  For inputs with *related* or *paired* values (e.g. `scipy.stats.pearsonr`,
+  `scipy.stats.ttest_rel`) the recommended behavior is to omit all the values
+  for which any of the related values are ``nan``.  For a function with two
+  related array inputs, this means::
 
       y = func(a, b, nan_policy='omit')
 
@@ -149,3 +172,10 @@ The problem with this approach is that the masked array code might convert
 ``inf`` to a masked value, which we don't want to do (see above).  It also
 means that, if care is not taken, the return value will be a masked array,
 which will likely be a surprise to the user if they passed in regular arrays.
+
+
+.. rubric:: Footnotes
+
+.. [#f1] If an element of the output depends only on the corresponding
+         element of the input (e.g. `numpy.sin`, `scipy.special.gamma`),
+         then there is no need for a ``nan_policy`` parameter.

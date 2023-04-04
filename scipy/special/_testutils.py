@@ -1,7 +1,7 @@
 import os
 import functools
 import operator
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
@@ -16,16 +16,16 @@ __all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
 
 def check_version(module, min_ver):
     if type(module) == MissingModule:
-        return pytest.mark.skip(reason="{} is not installed".format(module.name))
-    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
-                              reason="{} version >= {} required".format(module.__name__, min_ver))
+        return pytest.mark.skip(reason=f"{module.name} is not installed")
+    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
+                              reason=f"{module.__name__} version >= {min_ver} required")
 
 
 #------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -119,7 +119,7 @@ class FuncData(object):
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
     distinguish_nan_and_inf : bool, optional
-        If True, treat numbers which contain nans or infs as as
+        If True, treat numbers which contain nans or infs as
         equal. Sets ignore_inf_sign to be True.
 
     """
@@ -295,12 +295,13 @@ class FuncData(object):
                            % (np.sum(bad_j), point_count, output_num,))
                 for j in np.nonzero(bad_j)[0]:
                     j = int(j)
-                    fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
+                    def fmt(x):
+                        return '%30s' % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))
                     b = "  ".join(map(fmt, got))
                     c = "  ".join(map(fmt, wanted))
                     d = fmt(rdiff)
-                    msg.append("%s => %s != %s  (rdiff %s)" % (a, b, c, d))
+                    msg.append(f"{a} => {b} != {c}  (rdiff {d})")
                 assert_(False, "\n".join(msg))
 
     def __repr__(self):
@@ -310,7 +311,7 @@ class FuncData(object):
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for %s%s: %s>" % (self.func.__name__, is_complex,
+            return "<Data for {}{}: {}>".format(self.func.__name__, is_complex,
                                             os.path.basename(self.dataname))
         else:
-            return "<Data for %s%s>" % (self.func.__name__, is_complex)
+            return f"<Data for {self.func.__name__}{is_complex}>"

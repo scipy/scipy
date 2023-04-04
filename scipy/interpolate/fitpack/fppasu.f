@@ -1,6 +1,7 @@
       subroutine fppasu(iopt,ipar,idim,u,mu,v,mv,z,mz,s,nuest,nvest,
      * tol,maxit,nc,nu,tu,nv,tv,c,fp,fp0,fpold,reducu,reducv,fpintu,
      * fpintv,lastdi,nplusu,nplusv,nru,nrv,nrdatu,nrdatv,wrk,lwrk,ier)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 s,tol,fp,fp0,fpold,reducu,reducv

@@ -27,6 +27,7 @@ Contents
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_flow -- solve the maximum flow problem for a graph
    maximum_bipartite_matching -- compute a maximum matching of a bipartite graph
+   min_weight_full_bipartite_matching - compute a minimum weight full matching of a bipartite graph
    structural_rank -- compute the structural rank of a graph
    NegativeCycleError
 
@@ -76,6 +77,7 @@ weight 2, and nodes 0 and 2 are connected by an edge of weight 1.
 We can construct the dense, masked, and sparse representations as follows,
 keeping in mind that an undirected graph is represented by a symmetric matrix::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 2, 1],
     ...                     [2, 0, 0],
     ...                     [1, 0, 0]])
@@ -100,6 +102,7 @@ leads to ambiguities: how can non-edges be represented if zero is a meaningful
 value? In this case, either a masked or sparse representation must be used
 to eliminate the ambiguity::
 
+    >>> import numpy as np
     >>> G2_data = np.array([[np.inf, 2,      0     ],
     ...                     [2,      np.inf, np.inf],
     ...                     [0,      np.inf, np.inf]])
@@ -123,6 +126,7 @@ assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
 G[j, i].  Consider the following dense graph::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 1, 0],
     ...                     [2, 0, 3],
     ...                     [0, 4, 0]])
@@ -139,7 +143,7 @@ and the two have unequal weights, then the smaller of the two is used.
 
 So for the same graph, when ``directed=False`` we get the graph::
 
-    (0)--1--(1)--2--(2)
+    (0)--1--(1)--3--(2)
 
 Note that a symmetric matrix will represent an undirected graph, regardless
 of whether the 'directed' keyword is set to True or False. In this case,
@@ -167,6 +171,7 @@ __all__ = ['connected_components',
            'reverse_cuthill_mckee',
            'maximum_flow',
            'maximum_bipartite_matching',
+           'min_weight_full_bipartite_matching',
            'structural_rank',
            'construct_dist_matrix',
            'reconstruct_path',
@@ -178,17 +183,25 @@ __all__ = ['connected_components',
            'NegativeCycleError']
 
 from ._laplacian import laplacian
-from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
-    bellman_ford, johnson, NegativeCycleError
-from ._traversal import breadth_first_order, depth_first_order, \
-    breadth_first_tree, depth_first_tree, connected_components
+from ._shortest_path import (
+    shortest_path, floyd_warshall, dijkstra, bellman_ford, johnson,
+    NegativeCycleError
+)
+from ._traversal import (
+    breadth_first_order, depth_first_order, breadth_first_tree,
+    depth_first_tree, connected_components
+)
 from ._min_spanning_tree import minimum_spanning_tree
 from ._flow import maximum_flow
-from ._matching import maximum_bipartite_matching
+from ._matching import (
+    maximum_bipartite_matching, min_weight_full_bipartite_matching
+)
 from ._reordering import reverse_cuthill_mckee, structural_rank
-from ._tools import construct_dist_matrix, reconstruct_path,\
-    csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
-    csgraph_from_masked, csgraph_to_masked
+from ._tools import (
+    construct_dist_matrix, reconstruct_path, csgraph_from_dense,
+    csgraph_to_dense, csgraph_masked_from_dense, csgraph_from_masked,
+    csgraph_to_masked
+)
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

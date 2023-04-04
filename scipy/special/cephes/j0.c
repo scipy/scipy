@@ -63,7 +63,7 @@
  * The domain is divided into the intervals [0, 5] and
  * (5, infinity). In the first interval a rational approximation
  * R(x) is employed to compute
- *   y0(x)  = R(x)  +   2 * log(x) * j0(x) / NPY_PI.
+ *   y0(x)  = R(x)  +   2 * log(x) * j0(x) / M_PI.
  * Thus a call to j0() is required.
  *
  * In the second interval, the Hankel asymptotic expansion
@@ -204,7 +204,7 @@ double x;
     q = 25.0 / (x * x);
     p = polevl(q, PP, 6) / polevl(q, PQ, 6);
     q = polevl(q, QP, 7) / p1evl(q, QQ, 7);
-    xn = x - NPY_PI_4;
+    xn = x - M_PI_4;
     p = p * cos(xn) - w * q * sin(xn);
     return (p * SQ2OPI / sqrt(x));
 }
@@ -213,14 +213,9 @@ double x;
 /* Bessel function of second kind, order zero  */
 
 /* Rational approximation coefficients YP[], YQ[] are used here.
- * The function computed is  y0(x)  -  2 * log(x) * j0(x) / NPY_PI,
- * whose value at x = 0 is  2 * ( log(0.5) + EUL ) / NPY_PI
+ * The function computed is  y0(x)  -  2 * log(x) * j0(x) / M_PI,
+ * whose value at x = 0 is  2 * ( log(0.5) + EUL ) / M_PI
  * = 0.073804295108687225.
- */
-
-/*
- * #define NPY_PI_4 .78539816339744830962
- * #define SQ2OPI .79788456080286535588
  */
 
 double y0(x)
@@ -231,15 +226,15 @@ double x;
     if (x <= 5.0) {
 	if (x == 0.0) {
 	    sf_error("y0", SF_ERROR_SINGULAR, NULL);
-	    return -NPY_INFINITY;
+	    return -INFINITY;
 	}
 	else if (x < 0.0) {
 	    sf_error("y0", SF_ERROR_DOMAIN, NULL);
-	    return NPY_NAN;
+	    return NAN;
 	}
 	z = x * x;
 	w = polevl(z, YP, 7) / p1evl(z, YQ, 7);
-	w += NPY_2_PI * log(x) * j0(x);
+	w += M_2_PI * log(x) * j0(x);
 	return (w);
     }
 
@@ -247,7 +242,7 @@ double x;
     z = 25.0 / (x * x);
     p = polevl(z, PP, 6) / polevl(z, PQ, 6);
     q = polevl(z, QP, 7) / p1evl(z, QQ, 7);
-    xn = x - NPY_PI_4;
+    xn = x - M_PI_4;
     p = p * sin(xn) + w * q * cos(xn);
     return (p * SQ2OPI / sqrt(x));
 }

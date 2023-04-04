@@ -2,7 +2,7 @@
 !Author: John Travers
 !Date:   22 Feb 2009
 
-python module __user__routines 
+python module __user__routines
     interface
        subroutine fcn(n,x,y,f,rpar,ipar)
          integer intent(hide) :: n
@@ -80,5 +80,4 @@ python module _dop
        integer :: intvar
        common /types/ intvar
     end interface
-end python module dop
-
+end python module _dop

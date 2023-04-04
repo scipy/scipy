@@ -3,11 +3,9 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal,
-                           suppress_warnings)
+                           assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
-from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi
@@ -95,7 +93,7 @@ def _sample_sphere(n, dim, seed=None):
     return points
 
 
-class TestSphericalVoronoi(object):
+class TestSphericalVoronoi:
 
     def setup_method(self):
         self.points = np.array([
@@ -128,6 +126,11 @@ class TestSphericalVoronoi(object):
         assert_array_equal(s4.center, center)
         assert_equal(s4.radius, radius)
 
+        # Test a non-sequence/-ndarray based array-like
+        s5 = SphericalVoronoi(memoryview(self.points))  # type: ignore[arg-type]
+        assert_array_equal(s5.center, np.array([0, 0, 0]))
+        assert_equal(s5.radius, 1)
+
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)
         center = np.array([1, 1, 1])
@@ -143,16 +146,9 @@ class TestSphericalVoronoi(object):
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
-    def test_old_radius_api(self):
-        sv_unit = SphericalVoronoi(self.points, radius=1)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`radius` is `None`")
-            sv = SphericalVoronoi(self.points, None)
-            assert_array_almost_equal(sv_unit.vertices, sv.vertices)
-
-    def test_old_radius_api_warning(self):
-        with assert_warns(DeprecationWarning):
-            SphericalVoronoi(self.points, None)
+    def test_old_radius_api_error(self):
+        with pytest.raises(ValueError, match='`radius` is `None`. *'):
+            SphericalVoronoi(self.points, radius=None)
 
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)
@@ -347,3 +343,13 @@ class TestSphericalVoronoi(object):
         assert sv.points.dtype is np.dtype(np.float64)
         assert sv.center.dtype is np.dtype(np.float64)
         assert isinstance(sv.radius, float)
+
+    def test_region_types(self):
+        # Tests that region integer type does not change
+        # See Issue #13412
+        sv = SphericalVoronoi(self.points)
+        dtype = type(sv.regions[0][0])
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype

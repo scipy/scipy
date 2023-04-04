@@ -1,0 +1,3 @@
+# generated files from f2py:
+*.f
+*.c

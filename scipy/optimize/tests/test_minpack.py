@@ -2,6 +2,7 @@
 Unit tests for optimization routines from minpack.py.
 """
 import warnings
+import pytest
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
@@ -11,13 +12,14 @@ import numpy as np
 from numpy import array, float64
 from multiprocessing.pool import ThreadPool
 
-from scipy import optimize
+from scipy import optimize, linalg
 from scipy.special import lambertw
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize._minpack_py import leastsq, curve_fit, fixed_point
 from scipy.optimize import OptimizeWarning
+from scipy.optimize._minimize import Bounds
 
 
-class ReturnShape(object):
+class ReturnShape:
     """This class exists to create a callable that does not have a '__name__' attribute.
 
     __init__ takes the argument 'shape', which should be a tuple of ints. When an instance
@@ -39,11 +41,8 @@ def dummy_func(x, shape):
 
 
 def sequence_parallel(fs):
-    pool = ThreadPool(len(fs))
-    try:
+    with ThreadPool(len(fs)) as pool:
         return pool.map(lambda f: f(), fs)
-    finally:
-        pool.terminate()
 
 
 # Function and Jacobian for tests of solvers for systems of nonlinear
@@ -109,7 +108,7 @@ def pressure_network_fun_and_grad(flow_rates, Qtot, k):
             pressure_network_jacobian(flow_rates, Qtot, k))
 
 
-class TestFSolve(object):
+class TestFSolve:
     def test_pressure_network_no_gradient(self):
         # fsolve without gradient, equal pipes -> equal flows.
         k = np.full(4, 0.5)
@@ -150,8 +149,10 @@ class TestFSolve(object):
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_wrong_shape_fprime_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.fsolve, func, x0=[0,1], fprime=deriv_func)
 
     def test_func_can_raise(self):
@@ -162,7 +163,8 @@ class TestFSolve(object):
             optimize.fsolve(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -171,7 +173,8 @@ class TestFSolve(object):
             optimize.fsolve(func, x0=[0], fprime=deriv_func)
 
     def test_float32(self):
-        func = lambda x: np.array([x[0] - 100, x[1] - 1000], dtype=np.float32)**2
+        def func(x):
+            return np.array([x[0] - 100, x[1] - 1000], dtype=np.float32) ** 2
         p = optimize.fsolve(func, np.array([1, 1], np.float32))
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
@@ -205,13 +208,15 @@ class TestFSolve(object):
         assert_array_almost_equal(final_flows, np.ones(4))
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_no_gradient] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        v = sequence_parallel([self.test_pressure_network_with_gradient] * 10)
+        assert all([result is None for result in v])
 
 
-class TestRootHybr(object):
+class TestRootHybr:
     def test_pressure_network_no_gradient(self):
         # root/hybr without gradient, equal pipes -> equal flows
         k = np.full(4, 0.5)
@@ -243,7 +248,7 @@ class TestRootHybr(object):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestRootLM(object):
+class TestRootLM:
     def test_pressure_network_no_gradient(self):
         # root/lm without gradient, equal pipes -> equal flows
         k = np.full(4, 0.5)
@@ -254,7 +259,7 @@ class TestRootLM(object):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestLeastSq(object):
+class TestLeastSq:
     def setup_method(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
@@ -326,8 +331,10 @@ class TestLeastSq(object):
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_wrong_shape_Dfun_function(self):
-        func = lambda x: dummy_func(x, (2,))
-        deriv_func = lambda x: dummy_func(x, (3,3))
+        def func(x):
+            return dummy_func(x, (2,))
+        def deriv_func(x):
+            return dummy_func(x, (3, 3))
         assert_raises(TypeError, optimize.leastsq, func, x0=[0,1], Dfun=deriv_func)
 
     def test_float32(self):
@@ -354,7 +361,8 @@ class TestLeastSq(object):
             optimize.leastsq(func, x0=[0])
 
     def test_Dfun_can_raise(self):
-        func = lambda x: x - np.array([10])
+        def func(x):
+            return x - np.array([10])
 
         def deriv_func(*args):
             raise ValueError('I raised')
@@ -388,13 +396,24 @@ class TestLeastSq(object):
         assert_array_almost_equal(params_fit, self.abc, decimal=2)
 
     def test_concurrent_no_gradient(self):
-        return sequence_parallel([self.test_basic] * 10)
+        v = sequence_parallel([self.test_basic] * 10)
+        assert all([result is None for result in v])
 
     def test_concurrent_with_gradient(self):
-        return sequence_parallel([self.test_basic_with_gradient] * 10)
+        v = sequence_parallel([self.test_basic_with_gradient] * 10)
+        assert all([result is None for result in v])
+
+    def test_func_input_output_length_check(self):
+
+        def func(x):
+            return 2 * (x[0] - 3) ** 2 + 1
+
+        with assert_raises(TypeError,
+                           match='Improper input: func input vector length N='):
+            optimize.leastsq(func, x0=[0, 1])
 
 
-class TestCurveFit(object):
+class TestCurveFit:
     def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
@@ -426,7 +445,7 @@ class TestCurveFit(object):
                                   decimal=4)
 
     def test_func_is_classmethod(self):
-        class test_self(object):
+        class test_self:
             """This class tests if curve_fit passes the correct number of
                arguments when the model function is a class instance method.
             """
@@ -539,6 +558,81 @@ class TestCurveFit(object):
         assert_raises(ValueError, curve_fit, lambda x, a, b: a*x + b,
                       xdata, ydata, **{"check_finite": True})
 
+    @staticmethod
+    def _check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                          ydata_with_nan, ydata_without_nan, method):
+        kwargs = {'f': f, 'xdata': xdata_with_nan, 'ydata': ydata_with_nan,
+                  'method': method, 'check_finite': False}
+        # propagate test
+        error_msg = ("`nan_policy='propagate'` is not supported "
+                     "by this function.")
+        with assert_raises(ValueError, match=error_msg):
+            curve_fit(**kwargs, nan_policy="propagate", maxfev=2000)
+
+        # raise test
+        with assert_raises(ValueError, match="The input contains nan"):
+            curve_fit(**kwargs, nan_policy="raise")
+
+        # omit test
+        result_with_nan, _ = curve_fit(**kwargs, nan_policy="omit")
+        kwargs['xdata'] = xdata_without_nan
+        kwargs['ydata'] = ydata_without_nan
+        result_without_nan, _ = curve_fit(**kwargs)
+        assert_allclose(result_with_nan, result_without_nan)
+
+        # not valid policy test
+        error_msg = ("nan_policy must be one of "
+                     "{'None', 'raise', 'omit'}")
+        with assert_raises(ValueError, match=error_msg):
+            curve_fit(**kwargs, nan_policy="hi")
+
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_1d(self, method):
+        def f(x, a, b):
+            return a*x + b
+
+        xdata_with_nan = np.array([2, 3, np.nan, 4, 4, np.nan])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7])
+        xdata_without_nan = np.array([2, 3, 4])
+        ydata_without_nan = np.array([1, 2, 3])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
+
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_2d(self, method):
+        def f(x, a, b):
+            x1 = x[0, :]
+            x2 = x[1, :]
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]])
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[2, 3, 5], [2, 3, 7]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
+
+    @pytest.mark.parametrize('n', [2, 3])
+    @pytest.mark.parametrize('method', ["lm", "trf", "dogbox"])
+    def test_nan_policy_2_3d(self, n, method):
+        def f(x, a, b):
+            x1 = x[..., 0, :].squeeze()
+            x2 = x[..., 1, :].squeeze()
+            return a*x1 + b + x2
+
+        xdata_with_nan = np.array([[[2, 3, np.nan, 4, 4, np.nan, 5],
+                                   [2, 3, np.nan, np.nan, 4, np.nan, 7]]])
+        xdata_with_nan = xdata_with_nan.squeeze() if n == 2 else xdata_with_nan
+        ydata_with_nan = np.array([1, 2, 5, 3, np.nan, 7, 10])
+        xdata_without_nan = np.array([[[2, 3, 5], [2, 3, 7]]])
+        ydata_without_nan = np.array([1, 2, 10])
+
+        self._check_nan_policy(f, xdata_with_nan, xdata_without_nan,
+                               ydata_with_nan, ydata_without_nan, method)
+
     def test_empty_inputs(self):
         # Test both with and without bounds (regression test for gh-9864)
         assert_raises(ValueError, curve_fit, lambda x, a: a*x, [], [])
@@ -570,6 +664,26 @@ class TestCurveFit(object):
 
         assert_raises(ValueError, curve_fit, f, xdata, ydata, method='unknown')
 
+    def test_full_output(self):
+        def f(x, a, b):
+            return a * np.exp(-b * x)
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        for method in ['trf', 'dogbox', 'lm', None]:
+            popt, pcov, infodict, errmsg, ier = curve_fit(
+                f, xdata, ydata, method=method, full_output=True)
+            assert_allclose(popt, [2., 2.])
+            assert "nfev" in infodict
+            assert "fvec" in infodict
+            if method == 'lm' or method is None:
+                assert "fjac" in infodict
+                assert "ipvt" in infodict
+                assert "qtf" in infodict
+            assert isinstance(errmsg, str)
+            assert ier in (1, 2, 3, 4)
+
     def test_bounds(self):
         def f(x, a, b):
             return a * np.exp(-b*x)
@@ -579,11 +693,21 @@ class TestCurveFit(object):
 
         # The minimum w/out bounds is at [2., 2.],
         # and with bounds it's at [1.5, smth].
-        bounds = ([1., 0], [1.5, 3.])
+        lb = [1., 0]
+        ub = [1.5, 3.]
+
+        # Test that both variants of the bounds yield the same result
+        bounds = (lb, ub)
+        bounds_class = Bounds(lb, ub)
         for method in [None, 'trf', 'dogbox']:
             popt, pcov = curve_fit(f, xdata, ydata, bounds=bounds,
                                    method=method)
             assert_allclose(popt[0], 1.5)
+
+            popt_class, pcov_class = curve_fit(f, xdata, ydata,
+                                               bounds=bounds_class,
+                                               method=method)
+            assert_allclose(popt_class, popt)
 
         # With bounds, the starting estimate is feasible.
         popt, pcov = curve_fit(f, xdata, ydata, method='trf',
@@ -781,7 +905,8 @@ class TestCurveFit(object):
     def test_broadcast_y(self):
         xdata = np.arange(10)
         target = 4.7 * xdata ** 2 + 3.5 * xdata + np.random.rand(len(xdata))
-        fit_func = lambda x, a, b: a*x**2 + b*x - target
+        def fit_func(x, a, b):
+            return a * x ** 2 + b * x - target
         for method in ['lm', 'trf', 'dogbox']:
             popt0, pcov0 = curve_fit(fit_func,
                                      xdata=xdata,
@@ -806,8 +931,81 @@ class TestCurveFit(object):
                       p0=[1],
                       args=(1,))
 
+    def test_data_point_number_validation(self):
+        def func(x, a, b, c, d, e):
+            return a * np.exp(-b * x) + c + d + e
 
-class TestFixedPoint(object):
+        with assert_raises(TypeError, match="The number of func parameters="):
+            curve_fit(func,
+                      xdata=[1, 2, 3, 4],
+                      ydata=[5, 9, 13, 17])
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_gh4555(self):
+        # gh-4555 reported that covariance matrices returned by `leastsq`
+        # can have negative diagonal elements and eigenvalues. (In fact,
+        # they can also be asymmetric.) This shows up in the output of
+        # `scipy.optimize.curve_fit`. Check that it has been resolved.giit
+        def f(x, a, b, c, d, e):
+            return a*np.log(x + 1 + b) + c*np.log(x + 1 + d) + e
+
+        rng = np.random.default_rng(408113519974467917)
+        n = 100
+        x = np.arange(n)
+        y = np.linspace(2, 7, n) + rng.random(n)
+        p, cov = optimize.curve_fit(f, x, y, maxfev=100000)
+        assert np.all(np.diag(cov) > 0)
+        eigs = linalg.eigh(cov)[0]  # separate line for debugging
+        # some platforms see a small negative eigevenvalue
+        assert np.all(eigs > -1e-2)
+        assert_allclose(cov, cov.T)
+
+    def test_gh4555b(self):
+        # check that PR gh-17247 did not significantly change covariance matrix
+        # for simple cases
+        rng = np.random.default_rng(408113519974467917)
+
+        def func(x, a, b, c):
+            return a * np.exp(-b * x) + c
+
+        xdata = np.linspace(0, 4, 50)
+        y = func(xdata, 2.5, 1.3, 0.5)
+        y_noise = 0.2 * rng.normal(size=xdata.size)
+        ydata = y + y_noise
+        _, res = curve_fit(func, xdata, ydata)
+        # reference from commit 1d80a2f254380d2b45733258ca42eb6b55c8755b
+        ref = [[+0.0158972536486215, 0.0069207183284242, -0.0007474400714749],
+               [+0.0069207183284242, 0.0205057958128679, +0.0053997711275403],
+               [-0.0007474400714749, 0.0053997711275403, +0.0027833930320877]]
+        # Linux_Python_38_32bit_full fails with default tolerance
+        assert_allclose(res, ref, 2e-7)
+
+    def test_gh13670(self):
+        # gh-13670 reported that `curve_fit` executes callables
+        # with the same values of the parameters at the beginning of
+        # optimization. Check that this has been resolved.
+
+        rng = np.random.default_rng(8250058582555444926)
+        x = np.linspace(0, 3, 101)
+        y = 2 * x + 1 + rng.normal(size=101) * 0.5
+
+        def line(x, *p):
+            assert not np.all(line.last_p == p)
+            line.last_p = p
+            return x * p[0] + p[1]
+
+        def jac(x, *p):
+            assert not np.all(jac.last_p == p)
+            jac.last_p = p
+            return np.array([x, np.ones_like(x)]).T
+
+        line.last_p = None
+        jac.last_p = None
+        p0 = np.array([1.0, 5.0])
+        curve_fit(line, x, y, p0, method='lm', jac=jac)
+
+
+class TestFixedPoint:
 
     def test_scalar_trivial(self):
         # f(x) = 2x; fixed point should be x=0
@@ -876,7 +1074,7 @@ class TestFixedPoint(object):
         i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
 
         def func(n):
-            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+            return np.log(kl/ks/n) / np.log(i0*n/(n - 1)) + 1
 
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)

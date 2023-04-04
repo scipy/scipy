@@ -28,15 +28,15 @@
 /* #undef TRLIB_MEASURE_TIME */
 /* #undef TRLIB_MEASURE_SUBTIME */
 
+#include "numpy/arrayobject.h"
+#include "npy_cblas.h"
+
 #include "trlib.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
-#include "numpy/arrayobject.h"
-#include "npy_cblas.h"
 
 // blas
 void BLAS_FUNC(daxpy)(CBLAS_INT *n, double *alpha, double *x, CBLAS_INT *incx, double *y, CBLAS_INT *incy);

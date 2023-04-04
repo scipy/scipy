@@ -1,6 +1,6 @@
-      subroutine dqawoe (f,a,b,omega,integr,epsabs,epsrel,limit,icall,
-     *  maxp1,result,abserr,neval,ier,last,alist,blist,rlist,elist,iord,
-     *   nnlog,momcom,chebmo)
+      recursive subroutine dqawoe (f,a,b,omega,integr,epsabs,epsrel,
+     *  limit,icall,maxp1,result,abserr,neval,ier,last,alist,blist,
+     *  rlist,elist,iord,nnlog,momcom,chebmo)
 c***begin prologue  dqawoe
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

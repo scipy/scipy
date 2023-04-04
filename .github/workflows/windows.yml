@@ -1,0 +1,77 @@
+name: Windows Meson tests
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Meson Windows tests
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          architecture: 'x64'
+          cache: 'pip'
+          cache-dependency-path: 'environment.yml'
+      - name: install-rtools
+        run: |
+          choco install rtools --no-progress
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+      - name: show-gfortran
+        run: |
+          gcc --version
+          gfortran --version
+      - name: pip-packages
+        run: |
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+      - name: openblas-libs
+        run: |
+          # Download and install pre-built OpenBLAS library
+          # Built with mingw-w64, -ucrt -static.
+          # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
+          choco install wget unzip -y --no-progress
+          wget -q https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-571-g3dec11c6/download/openblas-v0.3.20-571-g3dec11c6-win_amd64-gcc_10_3_0.zip
+          unzip -d c:\opt openblas-v0.3.20-571-g3dec11c6-win_amd64-gcc_10_3_0.zip
+          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $env:GITHUB_ENV
+      - name: build
+        run: |
+          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
+          python dev.py build -j 2 --win-cp-openblas
+
+          # following steps are required because the build step does not put
+          # the *.pyd files in build-install! Furthermore the --win-cp-openblas
+          # option does not seem to copy libopenblas*.dll, so manually copy it.
+          cd build
+          meson install
+          cd ..
+          cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
+          echo "PYTHONPATH=$PWD\build-install\Lib\site-packages" >> $env:GITHUB_ENV
+          python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
+      - name: test
+        run: |
+          Get-ChildItem env:
+          cd $env:PYTHONPATH
+          python -c "import sys; import scipy; sys.exit(not scipy.test())"

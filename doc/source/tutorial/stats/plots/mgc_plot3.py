@@ -17,10 +17,10 @@ def mgc_plot(x, y, sim_name):
     plt.show()
 
 
-np.random.seed(12345678)
-unif = np.array(np.random.uniform(0, 5, size=100))
+rng = np.random.default_rng()
+unif = np.array(rng.uniform(0, 5, size=100))
 x = unif * np.cos(np.pi * unif)
-y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+y = unif * np.sin(np.pi * unif) + 0.4 * rng.random(x.size)
 
 
 mgc_plot(x, y, "Spiral")

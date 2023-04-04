@@ -218,12 +218,12 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
         mesh nodes.
     df_dp : ndarray with shape (n, k, m) or None
         Jacobian of f with respect to p computed at the mesh nodes.
-    df_dp_middle: ndarray with shape (n, k, m - 1) or None
+    df_dp_middle : ndarray with shape (n, k, m - 1) or None
         Jacobian of f with respect to p computed at the middle between the
         mesh nodes.
     dbc_dya, dbc_dyb : ndarray, shape (n, n)
         Jacobian of bc with respect to ya and yb.
-    dbc_dp: ndarray with shape (n, k) or None
+    dbc_dp : ndarray with shape (n, k) or None
         Jacobian of bc with respect to p.
 
     Returns
@@ -594,7 +594,7 @@ def create_spline(y, yp, x, h):
     c[1] = (slope - yp[:, :-1]) / h - t
     c[2] = yp[:, :-1]
     c[3] = y[:, :-1]
-    c = np.rollaxis(c, 1)
+    c = np.moveaxis(c, 1, 0)
 
     return PPoly(c, x, extrapolate=True, axis=1)
 
@@ -895,6 +895,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         y1' = y2
         y2' = -exp(y1)
 
+    >>> import numpy as np
     >>> def fun(x, y):
     ...     return np.vstack((y[1], -np.exp(y[0])))
 
@@ -1024,7 +1025,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         raise ValueError("`p` must be 1 dimensional.")
 
     if tol < 100 * EPS:
-        warn("`tol` is too low, setting to {:.2e}".format(100 * EPS))
+        warn(f"`tol` is too low, setting to {100 * EPS:.2e}")
         tol = 100 * EPS
 
     if verbose not in [0, 1, 2]:
@@ -1106,7 +1107,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if m + nodes_added > max_nodes:
             status = 1
             if verbose == 2:
-                nodes_added = "({})".format(nodes_added)
+                nodes_added = f"({nodes_added})"
                 print_iteration_progress(iteration, max_rms_res, max_bc_res,
                                          m, nodes_added)
             break

@@ -1,4 +1,5 @@
-      subroutine curev(idim,t,n,c,nc,k,u,m,x,mx,ier)
+      recursive subroutine curev(idim,t,n,c,nc,k,u,m,x,mx,ier)
+      implicit none
 c  subroutine curev evaluates in a number of points u(i),i=1,2,...,m
 c  a spline curve s(u) of degree k and dimension idim, given in its
 c  b-spline representation.

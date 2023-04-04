@@ -6,6 +6,7 @@ from cpython.pycapsule cimport (
 cimport numpy as np
 from numpy cimport npy_intp as intp
 
+np.import_array()
 
 cdef void _destructor(obj):
     cdef void *callback_data = PyCapsule_GetContext(obj)
@@ -42,7 +43,7 @@ def filter1d(intp filter_size, with_signature=False):
 
     try:
         capsule = PyCapsule_New(<void *>_filter1d, signature, _destructor)
-        res = PyCapsule_SetContext(capsule, callback_data)
+        PyCapsule_SetContext(capsule, callback_data)
     except:  # noqa: E722
         PyMem_Free(callback_data)
         raise

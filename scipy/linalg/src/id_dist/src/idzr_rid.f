@@ -17,7 +17,7 @@ c       computes the ID of a matrix "a" specified by
 c       the routine matveca -- matveca must apply the adjoint
 c       of the matrix being ID'd to an arbitrary vector --
 c       i.e., the present routine lists in list the indices
-c       of krank columns of a such that 
+c       of krank columns of a such that
 c
 c       a(j,list(k))  =  a(j,list(k))
 c

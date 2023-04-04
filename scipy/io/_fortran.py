@@ -10,7 +10,7 @@ import numpy as np
 __all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
 
 
-class FortranEOFError(TypeError, IOError):
+class FortranEOFError(TypeError, OSError):
     """Indicates that the file ended properly.
 
     This error descends from TypeError because the code used to raise
@@ -21,7 +21,7 @@ class FortranEOFError(TypeError, IOError):
     pass
 
 
-class FortranFormattingError(TypeError, IOError):
+class FortranFormattingError(TypeError, OSError):
     """Indicates that the file ended mid-record.
 
     Descends from TypeError for backward compatibility.
@@ -30,7 +30,7 @@ class FortranFormattingError(TypeError, IOError):
     pass
 
 
-class FortranFile(object):
+class FortranFile:
     """
     A file object for unformatted sequential files from Fortran code.
 
@@ -73,6 +73,7 @@ class FortranFile(object):
     To create an unformatted sequential Fortran file:
 
     >>> from scipy.io import FortranFile
+    >>> import numpy as np
     >>> f = FortranFile('test.unf', 'w')
     >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
     >>> f.write_record(np.linspace(0,1,20).reshape((5,4)).T)
@@ -131,7 +132,7 @@ class FortranFile(object):
         elif len(b) < n:
             raise FortranFormattingError(
                 "End of file in the middle of the record size")
-        return int(np.frombuffer(b, dtype=self._header_dtype, count=1))
+        return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
 
     def write_record(self, *items):
         """
@@ -242,7 +243,7 @@ class FortranFile(object):
         """
         dtype = kwargs.pop('dtype', None)
         if kwargs:
-            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
+            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
 
         if dtype is not None:
             dtypes = dtypes + (dtype,)
@@ -256,15 +257,15 @@ class FortranFile(object):
 
         num_blocks, remainder = divmod(first_size, block_size)
         if remainder != 0:
-            raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtypes given ({1}).'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) is not a multiple of the '
+                             'dtypes given ({}).'.format(first_size, block_size))
 
         if len(dtypes) != 1 and first_size != block_size:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({0}) does not match with the expected '
-                             'size ({1}) of multi-item record'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) does not match with the expected '
+                             'size ({}) of multi-item record'.format(first_size, block_size))
 
         data = []
         for dtype in dtypes:
@@ -282,8 +283,8 @@ class FortranFile(object):
 
         second_size = self._read_size()
         if first_size != second_size:
-            raise IOError('Sizes do not agree in the header and footer for '
-                          'this record - check header dtype')
+            raise ValueError('Sizes do not agree in the header and footer for '
+                             'this record - check header dtype')
 
         # Unpack result
         if len(dtypes) == 1:

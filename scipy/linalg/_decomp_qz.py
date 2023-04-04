@@ -2,8 +2,7 @@ import warnings
 
 import numpy as np
 from numpy import asarray_chkfinite
-
-from .misc import LinAlgError, _datacopied, LinAlgWarning
+from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 
 
@@ -117,13 +116,14 @@ def _qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
         result = gges(lambda x: None, a1, b1, lwork=-1)
         lwork = result[-2][0].real.astype(np.int_)
 
-    sfunction = lambda x: None
+    def sfunction(x):
+        return None
     result = gges(sfunction, a1, b1, lwork=lwork, overwrite_a=overwrite_a,
                   overwrite_b=overwrite_b, sort_t=0)
 
     info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument {} of gges".format(-info))
+        raise ValueError(f"Illegal value in argument {-info} of gges")
     elif info > 0 and info <= a_n:
         warnings.warn("The QZ iteration failed. (a,b) are not in Schur "
                       "form, but ALPHAR(j), ALPHAI(j), and BETA(j) should be "
@@ -147,10 +147,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     """
     QZ decomposition for generalized eigenvalues of a pair of matrices.
 
-    The QZ, or generalized Schur, decomposition for a pair of N x N
-    nonsymmetric matrices (A,B) is::
+    The QZ, or generalized Schur, decomposition for a pair of n-by-n
+    matrices (A,B) is::
 
-        (A,B) = (Q*AA*Z', Q*BB*Z')
+        (A,B) = (Q @ AA @ Z*, Q @ BB @ Z*)
 
     where AA, BB is in generalized Schur form if BB is upper-triangular
     with non-negative diagonal and AA is upper-triangular, or for real QZ
@@ -217,6 +217,10 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
     Z : (N, N) ndarray
         The right Schur vectors.
 
+    See Also
+    --------
+    ordqz
+
     Notes
     -----
     Q is transposed versus the equivalent function in Matlab.
@@ -225,32 +229,83 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 
     Examples
     --------
-    >>> from scipy import linalg
-    >>> np.random.seed(1234)
-    >>> A = np.arange(9).reshape((3, 3))
-    >>> B = np.random.randn(3, 3)
+    >>> import numpy as np
+    >>> from scipy.linalg import qz
 
-    >>> AA, BB, Q, Z = linalg.qz(A, B)
+    >>> A = np.array([[1, 2, -1], [5, 5, 5], [2, 4, -8]])
+    >>> B = np.array([[1, 1, -3], [3, 1, -1], [5, 6, -2]])
+
+    Compute the decomposition.  The QZ decomposition is not unique, so
+    depending on the underlying library that is used, there may be
+    differences in the signs of coefficients in the following output.
+
+    >>> AA, BB, Q, Z = qz(A, B)
     >>> AA
-    array([[-13.40928183,  -4.62471562,   1.09215523],
-           [  0.        ,   0.        ,   1.22805978],
-           [  0.        ,   0.        ,   0.31973817]])
+    array([[-1.36949157, -4.05459025,  7.44389431],
+           [ 0.        ,  7.65653432,  5.13476017],
+           [ 0.        , -0.65978437,  2.4186015 ]])  # may vary
     >>> BB
-    array([[ 0.33362547, -1.37393632,  0.02179805],
-           [ 0.        ,  1.68144922,  0.74683866],
-           [ 0.        ,  0.        ,  0.9258294 ]])
+    array([[ 1.71890633, -1.64723705, -0.72696385],
+           [ 0.        ,  8.6965692 , -0.        ],
+           [ 0.        ,  0.        ,  2.27446233]])  # may vary
     >>> Q
-    array([[ 0.14134727, -0.97562773,  0.16784365],
-           [ 0.49835904, -0.07636948, -0.86360059],
-           [ 0.85537081,  0.20571399,  0.47541828]])
+    array([[-0.37048362,  0.1903278 ,  0.90912992],
+           [-0.90073232,  0.16534124, -0.40167593],
+           [ 0.22676676,  0.96769706, -0.11017818]])  # may vary
     >>> Z
-    array([[-0.24900855, -0.51772687,  0.81850696],
-           [-0.79813178,  0.58842606,  0.12938478],
-           [-0.54861681, -0.6210585 , -0.55973739]])
+    array([[-0.67660785,  0.63528924, -0.37230283],
+           [ 0.70243299,  0.70853819, -0.06753907],
+           [ 0.22088393, -0.30721526, -0.92565062]])  # may vary
 
-    See also
-    --------
-    ordqz
+    Verify the QZ decomposition.  With real output, we only need the
+    transpose of ``Z`` in the following expressions.
+
+    >>> Q @ AA @ Z.T  # Should be A
+    array([[ 1.,  2., -1.],
+           [ 5.,  5.,  5.],
+           [ 2.,  4., -8.]])
+    >>> Q @ BB @ Z.T  # Should be B
+    array([[ 1.,  1., -3.],
+           [ 3.,  1., -1.],
+           [ 5.,  6., -2.]])
+
+    Repeat the decomposition, but with ``output='complex'``.
+
+    >>> AA, BB, Q, Z = qz(A, B, output='complex')
+
+    For conciseness in the output, we use ``np.set_printoptions()`` to set
+    the output precision of NumPy arrays to 3 and display tiny values as 0.
+
+    >>> np.set_printoptions(precision=3, suppress=True)
+    >>> AA
+    array([[-1.369+0.j   ,  2.248+4.237j,  4.861-5.022j],
+           [ 0.   +0.j   ,  7.037+2.922j,  0.794+4.932j],
+           [ 0.   +0.j   ,  0.   +0.j   ,  2.655-1.103j]])  # may vary
+    >>> BB
+    array([[ 1.719+0.j   , -1.115+1.j   , -0.763-0.646j],
+           [ 0.   +0.j   ,  7.24 +0.j   , -3.144+3.322j],
+           [ 0.   +0.j   ,  0.   +0.j   ,  2.732+0.j   ]])  # may vary
+    >>> Q
+    array([[ 0.326+0.175j, -0.273-0.029j, -0.886-0.052j],
+           [ 0.794+0.426j, -0.093+0.134j,  0.402-0.02j ],
+           [-0.2  -0.107j, -0.816+0.482j,  0.151-0.167j]])  # may vary
+    >>> Z
+    array([[ 0.596+0.32j , -0.31 +0.414j,  0.393-0.347j],
+           [-0.619-0.332j, -0.479+0.314j,  0.154-0.393j],
+           [-0.195-0.104j,  0.576+0.27j ,  0.715+0.187j]])  # may vary
+
+    With complex arrays, we must use ``Z.conj().T`` in the following
+    expressions to verify the decomposition.
+
+    >>> Q @ AA @ Z.conj().T  # Should be A
+    array([[ 1.-0.j,  2.-0.j, -1.-0.j],
+           [ 5.+0.j,  5.+0.j,  5.-0.j],
+           [ 2.+0.j,  4.+0.j, -8.+0.j]])
+    >>> Q @ BB @ Z.conj().T  # Should be B
+    array([[ 1.+0.j,  1.+0.j, -3.+0.j],
+           [ 3.-0.j,  1.-0.j, -1.+0.j],
+           [ 5.+0.j,  6.+0.j, -2.+0.j]])
+
     """
     # output for real
     # AA, BB, sdim, alphar, alphai, beta, vsl, vsr, work, info
@@ -265,8 +320,6 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
 def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
           overwrite_b=False, check_finite=True):
     """QZ decomposition for a pair of matrices with reordering.
-
-    .. versionadded:: 0.17.0
 
     Parameters
     ----------
@@ -323,6 +376,10 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     Z : (N, N) ndarray
         The right Schur vectors.
 
+    See Also
+    --------
+    qz
+
     Notes
     -----
     On exit, ``(ALPHAR(j) + ALPHAI(j)*i)/BETA(j), j=1,...,N``, will be the
@@ -334,12 +391,11 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     real; if positive, then the ``j``th and ``(j+1)``st eigenvalues are a
     complex conjugate pair, with ``ALPHAI(j+1)`` negative.
 
-    See also
-    --------
-    qz
+    .. versionadded:: 0.17.0
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import ordqz
     >>> A = np.array([[2, 5, 8, 7], [5, 2, 2, 8], [7, 5, 6, 6], [5, 4, 4, 8]])
     >>> B = np.array([[0, 6, 0, 0], [5, 0, 2, 1], [5, 2, 6, 6], [4, 7, 7, 7]])
@@ -351,52 +407,43 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     array([ True,  True, False, False], dtype=bool)
 
     """
-    # NOTE: should users be able to set these?
-    lwork = None
-    result, typ = _qz(A, B, output=output, lwork=lwork, sort=None,
-                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                      check_finite=check_finite)
-    AA, BB, Q, Z = result[0], result[1], result[-4], result[-3]
-    if typ not in 'cz':
-        alpha, beta = result[3] + result[4]*1.j, result[5]
+    (AA, BB, _, *ab, Q, Z, _, _), typ = _qz(A, B, output=output, sort=None,
+                                            overwrite_a=overwrite_a,
+                                            overwrite_b=overwrite_b,
+                                            check_finite=check_finite)
+
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
     else:
-        alpha, beta = result[3], result[4]
+        alpha, beta = ab
 
     sfunction = _select_function(sort)
     select = sfunction(alpha, beta)
 
-    tgsen, = get_lapack_funcs(('tgsen',), (AA, BB))
+    tgsen = get_lapack_funcs('tgsen', (AA, BB))
+    # the real case needs 4n + 16 lwork
+    lwork = 4*AA.shape[0] + 16 if typ in 'sd' else 1
+    AAA, BBB, *ab, QQ, ZZ, _, _, _, _, info = tgsen(select, AA, BB, Q, Z,
+                                                    ijob=0,
+                                                    lwork=lwork, liwork=1)
 
-    if lwork is None or lwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, lwork=-1)
-        lwork = result[-3][0].real.astype(np.int_)
-        # looks like wrong value passed to ZTGSYL if not
-        lwork += 1
+    # Once more for tgsen output
+    if typ == 's':
+        alpha, beta = ab[0] + ab[1]*np.complex64(1j), ab[2]
+    elif typ == 'd':
+        alpha, beta = ab[0] + ab[1]*1.j, ab[2]
+    else:
+        alpha, beta = ab
 
-    liwork = None
-    if liwork is None or liwork == -1:
-        result = tgsen(select, AA, BB, Q, Z, liwork=-1)
-        liwork = result[-2][0]
-
-    result = tgsen(select, AA, BB, Q, Z, lwork=lwork, liwork=liwork)
-
-    info = result[-1]
     if info < 0:
-        raise ValueError("Illegal value in argument %d of tgsen" % -info)
+        raise ValueError(f"Illegal value in argument {-info} of tgsen")
     elif info == 1:
         raise ValueError("Reordering of (A, B) failed because the transformed"
                          " matrix pair (A, B) would be too far from "
                          "generalized Schur form; the problem is very "
                          "ill-conditioned. (A, B) may have been partially "
-                         "reorded. If requested, 0 is returned in DIF(*), "
-                         "PL, and PR.")
+                         "reordered.")
 
-    # for real results has a, b, alphar, alphai, beta, q, z, m, pl, pr, dif,
-    # work, iwork, info
-    if typ in ['f', 'd']:
-        alpha = result[2] + result[3] * 1.j
-        return (result[0], result[1], alpha, result[4], result[5], result[6])
-    # for complex results has a, b, alpha, beta, q, z, m, pl, pr, dif, work,
-    # iwork, info
-    else:
-        return result[0], result[1], result[2], result[3], result[4], result[5]
+    return AAA, BBB, alpha, beta, QQ, ZZ

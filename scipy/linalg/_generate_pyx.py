@@ -8,6 +8,9 @@ all the BLAS/LAPACK routines that should be included in the wrappers.
 from collections import defaultdict
 from operator import itemgetter
 import os
+from stat import ST_MTIME
+import argparse
+
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -60,7 +63,7 @@ def arg_casts(arg):
     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
                '_zselect1', '_zselect2']:
-        return '<{0}*>'.format(arg)
+        return f'<{arg}*>'
     return ''
 
 
@@ -373,7 +376,7 @@ cpdef int _test_izamax(double complex[:] zx) nogil:
 cpdef float _test_sasum(float[:] sx) nogil:
     cdef:
         int n = sx.shape[0]
-        int incx = sx.shape[0] // sizeof(sx[0])
+        int incx = sx.strides[0] // sizeof(sx[0])
     return sasum(&n, &sx[0], &incx)
 
 cpdef float _test_scasum(float complex[:] cx) nogil:
@@ -398,7 +401,7 @@ cpdef float _test_sdot(float[:] sx, float[:] sy) nogil:
 cpdef float _test_snrm2(float[:] x) nogil:
     cdef:
         int n = x.shape[0]
-        int incx = x.shape[0] // sizeof(x[0])
+        int incx = x.strides[0] // sizeof(x[0])
     return snrm2(&n, &x[0], &incx)
 
 cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) nogil:
@@ -575,7 +578,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     argnames = ',\n     +    '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
-    argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
+    argdecls = '\n        '.join(f'{fortran_types[t]} {n}'
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
                                    argnames=argnames, argdecls=argdecls,
@@ -589,7 +592,7 @@ def generate_fortran(func_sigs):
 def make_c_args(args):
     types, names = arg_names_and_types(args)
     types = [c_types[arg] for arg in types]
-    return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
+    return ', '.join(f'{t} *{n}' for t, n in zip(types, names))
 
 
 c_func_template = ("void F_FUNC({name}wrp, {upname}WRP)"
@@ -670,13 +673,30 @@ def filter_lines(lines):
     return func_sigs, sub_sigs, all_sigs
 
 
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
+
+
 def all_newer(src_files, dst_files):
-    from distutils.dep_util import newer
     return all(os.path.exists(dst) and newer(dst, src)
                for dst in dst_files for src in src_files)
 
 
-def make_all(blas_signature_file="cython_blas_signatures.txt",
+def make_all(outdir,
+             blas_signature_file="cython_blas_signatures.txt",
              lapack_signature_file="cython_lapack_signatures.txt",
              blas_name="cython_blas",
              lapack_name="cython_lapack",
@@ -696,6 +716,7 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
                  lapack_name + '.pxd',
                  lapack_fortran_name,
                  lapack_header_name)
+    dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
 
@@ -709,45 +730,57 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
                         for line in comments]) + '\n'
     pyxcomment = ''.join(['# ' + line for line in comments]) + '\n'
     fcomment = ''.join(['c     ' + line for line in comments]) + '\n'
-    with open(blas_signature_file, 'r') as f:
+    with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = filter_lines(blas_sigs)
     blas_pyx = generate_blas_pyx(*(blas_sigs + (blas_header_name,)))
-    with open(blas_name + '.pyx', 'w') as f:
+    with open(os.path.join(outdir, blas_name + '.pyx'), 'w') as f:
         f.write(pyxcomment)
         f.write(blas_pyx)
     blas_pxd = generate_blas_pxd(blas_sigs[2])
-    with open(blas_name + '.pxd', 'w') as f:
+    with open(os.path.join(outdir, blas_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(blas_pxd)
     blas_fortran = generate_fortran(blas_sigs[0])
-    with open(blas_fortran_name, 'w') as f:
+    with open(os.path.join(outdir, blas_fortran_name), 'w') as f:
         f.write(fcomment)
         f.write(blas_fortran)
     blas_c_header = generate_c_header(*(blas_sigs + ('BLAS',)))
-    with open(blas_header_name, 'w') as f:
+    with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
         f.write(blas_c_header)
-    with open(lapack_signature_file, 'r') as f:
+    with open(lapack_signature_file) as f:
         lapack_sigs = f.readlines()
     lapack_sigs = filter_lines(lapack_sigs)
     lapack_pyx = generate_lapack_pyx(*(lapack_sigs + (lapack_header_name,)))
-    with open(lapack_name + '.pyx', 'w') as f:
+    with open(os.path.join(outdir, lapack_name + '.pyx'), 'w') as f:
         f.write(pyxcomment)
         f.write(lapack_pyx)
     lapack_pxd = generate_lapack_pxd(lapack_sigs[2])
-    with open(lapack_name + '.pxd', 'w') as f:
+    with open(os.path.join(outdir, lapack_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(lapack_pxd)
     lapack_fortran = generate_fortran(lapack_sigs[0])
-    with open(lapack_fortran_name, 'w') as f:
+    with open(os.path.join(outdir, lapack_fortran_name), 'w') as f:
         f.write(fcomment)
         f.write(lapack_fortran)
     lapack_c_header = generate_c_header(*(lapack_sigs + ('LAPACK',)))
-    with open(lapack_header_name, 'w') as f:
+    with open(os.path.join(outdir, lapack_header_name), 'w') as f:
         f.write(ccomment)
         f.write(lapack_c_header)
 
 
 if __name__ == '__main__':
-    make_all()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    args = parser.parse_args()
+
+    if not args.outdir:
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+    else:
+        outdir_abs = os.path.join(os.getcwd(), args.outdir)
+
+    make_all(outdir_abs)

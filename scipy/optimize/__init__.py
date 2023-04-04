@@ -5,6 +5,11 @@ Optimization and root finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
+.. toctree::
+   :hidden:
+
+   optimize.cython_optimize
+
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
@@ -103,11 +108,11 @@ Global optimization
 
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
-   differential_evolution - stochastic minimization using differential evolution.
+   differential_evolution - Stochastic optimizer using differential evolution.
 
-   shgo - simplicial homology global optimisation
+   shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
-
+   direct - DIRECT (Dividing Rectangles) optimizer.
 
 Least-squares and curve fitting
 ===============================
@@ -200,7 +205,7 @@ functions defined on (a subset of) the complex plane.
 
 .. seealso::
 
-   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of root finding functions
 
 Fixed point finding:
 
@@ -232,12 +237,13 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear programming
-==================
+Linear programming / MILP
+=========================
 
 .. autosummary::
    :toctree: generated/
 
+   milp -- Mixed integer linear programming.
    linprog -- Unified interface for minimizers of linear programming problems.
 
 The `linprog` function supports the following methods:
@@ -333,7 +339,7 @@ General-purpose multivariate methods:
    :toctree: generated/
 
    fmin - Nelder-Mead Simplex algorithm.
-   fmin_powell - Powell's (modified) level set method.
+   fmin_powell - Powell's (modified) conjugate direction method.
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm.
    fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno).
    fmin_ncg - Line-search Newton Conjugate Gradient.
@@ -385,6 +391,10 @@ Large-scale nonlinear solvers:
    newton_krylov
    anderson
 
+   BroydenFirst
+   InverseJacobian
+   KrylovJacobian
+
 Simple iteration solvers:
 
 .. autosummary::
@@ -394,20 +404,19 @@ Simple iteration solvers:
    linearmixing
    diagbroyden
 
-:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
-"""
+"""  # noqa: E501
 
-from .optimize import *
+from ._optimize import *
 from ._minimize import *
 from ._root import *
 from ._root_scalar import *
-from .minpack import *
-from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
-from .tnc import fmin_tnc
-from .cobyla import fmin_cobyla
-from .nonlin import *
-from .slsqp import fmin_slsqp
+from ._minpack_py import *
+from ._zeros_py import *
+from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
+from ._tnc import fmin_tnc
+from ._cobyla_py import fmin_cobyla
+from ._nonlin import *
+from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
@@ -421,6 +430,14 @@ from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
+from ._direct_py import direct
+from ._milp import milp
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    cobyla, lbfgsb, linesearch, minpack, minpack2, moduleTNC, nonlin, optimize,
+    slsqp, tnc, zeros
+)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

@@ -11,7 +11,7 @@ command, which (i) aborts the py process so that runtests.py does not finish,
 and (ii) the exit code is implementation-defined.
 
 Also check that the number of tests run is larger than some baseline number
-(taken from the state of the master branch at some random point in time.)
+(taken from the state of the main branch at some random point in time.)
 This probably could/should be made less brittle.
 
 """

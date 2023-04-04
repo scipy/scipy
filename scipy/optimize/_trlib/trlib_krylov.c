@@ -22,10 +22,8 @@
  *
  */
 
-#include "trlib.h"
 #include "trlib_private.h"
-
-#include "_c99compat.h"
+#include "trlib.h"
 
 trlib_int_t trlib_krylov_min_internal(
     trlib_int_t init, trlib_flt_t radius, trlib_int_t equality, trlib_int_t itmax, trlib_int_t itmax_lanczos,
@@ -722,7 +720,6 @@ trlib_int_t trlib_krylov_min(
         if( ret < 10 && *outerstatus < 100 && convexify ) {
             // exit, check if we should convexify
             trlib_flt_t lam = fwork[7];
-            trlib_flt_t obj = fwork[8];
             if( lam > 1e-2*fmax(1.0, fwork[13]) && fwork[14] < 0.0 && fabs(fwork[14]) < 1e-8 * fwork[13]) { // do only if it seems to make sense based on eigenvalue estimation
                 // ask caller to compute objective value
                 *outerstatus = 200 + ret;
@@ -731,7 +728,6 @@ trlib_int_t trlib_krylov_min(
             }
         }
         if( *outerstatus > 200 && *outerstatus < 300 ) {
-            trlib_flt_t lam = fwork[7];
             trlib_flt_t obj = fwork[8];
             trlib_flt_t realobj = g_dot_g;
             if( fabs(obj - realobj) > fmax(1e-6, 1e-1*fabs(realobj)) || realobj > 0.0) {

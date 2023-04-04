@@ -5,8 +5,8 @@ import collections
 
 import numpy as np
 from scipy.optimize import OptimizeResult
-from scipy.optimize.optimize import _check_unknown_options
-from .linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
+from scipy.optimize._optimize import _check_unknown_options
+from ._linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
 
 class _NoConvergence(Exception):
     pass
@@ -64,7 +64,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
     _check_unknown_options(unknown_options)
 
     if line_search not in ('cheng', 'cruz'):
-        raise ValueError("Invalid value %r for 'line_search'" % (line_search,))
+        raise ValueError(f"Invalid value {line_search!r} for 'line_search'")
 
     nexp = 2
 

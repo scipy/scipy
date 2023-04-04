@@ -1,11 +1,3 @@
-cdef extern from "_complexstuff.h":
-    # numpy/npy_math.h doesn't have correct extern "C" declarations,
-    # so we must include a wrapped version first
-    pass
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_NAN
-
 cimport numpy as np
 from numpy cimport (
     npy_float, npy_double, npy_longdouble,

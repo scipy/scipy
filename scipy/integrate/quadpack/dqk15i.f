@@ -1,4 +1,5 @@
-      subroutine dqk15i(f,boun,inf,a,b,result,abserr,resabs,resasc)
+      recursive subroutine dqk15i(f,boun,inf,a,b,result,abserr,resabs,
+     *   resasc)
 c***begin prologue  dqk15i
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

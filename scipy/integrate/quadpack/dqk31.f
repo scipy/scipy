@@ -1,4 +1,4 @@
-      subroutine dqk31(f,a,b,result,abserr,resabs,resasc)
+      recursive subroutine dqk31(f,a,b,result,abserr,resabs,resasc)
 c***begin prologue  dqk31
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

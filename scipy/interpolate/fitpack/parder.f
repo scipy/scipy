@@ -1,5 +1,6 @@
-      subroutine parder(tx,nx,ty,ny,c,kx,ky,nux,nuy,x,mx,y,my,z,
-     * wrk,lwrk,iwrk,kwrk,ier)
+      recursive subroutine parder(tx,nx,ty,ny,c,kx,ky,nux,nuy,x,mx,
+     * y,my,z,wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  subroutine parder evaluates on a grid (x(i),y(j)),i=1,...,mx; j=1,...
 c  ,my the partial derivative ( order nux,nuy) of a bivariate spline
 c  s(x,y) of degrees kx and ky, given in the b-spline representation.

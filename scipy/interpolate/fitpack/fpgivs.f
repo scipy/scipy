@@ -1,4 +1,5 @@
-      subroutine fpgivs(piv,ww,cos,sin)
+      recursive subroutine fpgivs(piv,ww,cos,sin)
+      implicit none
 c  subroutine fpgivs calculates the parameters of a givens
 c  transformation .
 c  ..

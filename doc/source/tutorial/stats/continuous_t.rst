@@ -37,12 +37,14 @@ As :math:`\nu\rightarrow\infty,` this distribution approaches the standard norma
 
 .. math::
 
-     h\left[X\right]=\frac{1}{4}\log\left(\frac{\pi c\Gamma^{2}\left(\frac{c}{2}\right)}{\Gamma^{2}\left(\frac{c+1}{2}\right)}\right)-\frac{\left(c+1\right)}{4}\left[\Psi\left(\frac{c}{2}\right)-cZ\left(c\right)+\pi\tan\left(\frac{\pi c}{2}\right)+\gamma+2\log2\right]
+     h\left[X\right]=\frac{\nu+1}{2} \left[\psi \left(\frac{1+\nu}{2} \right) -\psi \left(\frac{\nu}{2} \right) \right] + \ln \left[ \sqrt{\nu} B \left( \frac{\nu}{2}, \frac{1}{2} \right) \right]
 
-where
+where :math:`\psi(x)` is the digamma function and :math:`B(x, y)` is the
+beta function.
 
-.. math::
+References
+----------
 
-     Z\left(c\right)=\,_{3}F_{2}\left(1,1,1+\frac{c}{2};\frac{3}{2},2;1\right)=\sum_{k=0}^{\infty}\frac{k!}{k+1}\frac{\Gamma\left(\frac{c}{2}+1+k\right)}{\Gamma\left(\frac{c}{2}+1\right)}\frac{\Gamma\left(\frac{3}{2}\right)}{\Gamma\left(\frac{3}{2}+k\right)}
+- "Student's t-distribution", Wikipedia, https://en.wikipedia.org/wiki/Student%27s_t-distribution
 
 Implementation: `scipy.stats.t`

@@ -3,7 +3,7 @@ import pytest
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_less, assert_,
+                           assert_array_less, assert_, assert_allclose,
                            suppress_warnings)
 from pytest import raises
 from scipy.optimize import (NonlinearConstraint,
@@ -676,3 +676,105 @@ def test_bug_11886():
         A = np.matrix(np.diag([1, 1]))
     lin_cons = LinearConstraint(A, -1, np.inf)
     minimize(opt, 2*[1], constraints = lin_cons)  # just checking that there are no errors
+
+
+# Remove xfail when gh-11649 is resolved
+@pytest.mark.xfail(reason="Known bug in trust-constr; see gh-11649.",
+                   strict=True)
+def test_gh11649():
+    bnds = Bounds(lb=[-1, -1], ub=[1, 1], keep_feasible=True)
+
+    def assert_inbounds(x):
+        assert np.all(x >= bnds.lb)
+        assert np.all(x <= bnds.ub)
+
+    def obj(x):
+        assert_inbounds(x)
+        return np.exp(x[0])*(4*x[0]**2 + 2*x[1]**2 + 4*x[0]*x[1] + 2*x[1] + 1)
+
+    def nce(x):
+        assert_inbounds(x)
+        return x[0]**2 + x[1]
+
+    def nci(x):
+        assert_inbounds(x)
+        return x[0]*x[1]
+
+    x0 = np.array((0.99, -0.99))
+    nlcs = [NonlinearConstraint(nci, -10, np.inf),
+            NonlinearConstraint(nce, 1, 1)]
+
+    res = minimize(fun=obj, x0=x0, method='trust-constr',
+                   bounds=bnds, constraints=nlcs)
+    assert res.success
+    assert_inbounds(res.x)
+    assert nlcs[0].lb < nlcs[0].fun(res.x) < nlcs[0].ub
+    assert_allclose(nce(res.x), nlcs[1].ub)
+
+    ref = minimize(fun=obj, x0=x0, method='slsqp',
+                   bounds=bnds, constraints=nlcs)
+    assert_allclose(res.fun, ref.fun)
+
+
+class TestBoundedNelderMead:
+
+    @pytest.mark.parametrize('bounds, x_opt',
+                             [(Bounds(-np.inf, np.inf), Rosenbrock().x_opt),
+                              (Bounds(-np.inf, -0.8), [-0.8, -0.8]),
+                              (Bounds(3.0, np.inf), [3.0, 9.0]),
+                              (Bounds([3.0, 1.0], [4.0, 5.0]), [3., 5.]),
+                              ])
+    def test_rosen_brock_with_bounds(self, bounds, x_opt):
+        prob = Rosenbrock()
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, -10],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.less_equal(bounds.lb, result.x).all()
+            assert np.less_equal(result.x, bounds.ub).all()
+            assert np.allclose(prob.fun(result.x), result.fun)
+            assert np.allclose(result.x, x_opt, atol=1.e-3)
+
+    def test_equal_all_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 5.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 5.0])
+
+    def test_equal_one_bounds(self):
+        prob = Rosenbrock()
+        bounds = Bounds([4.0, 5.0], [4.0, 20.0])
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Initial guess is not within "
+                                    "the specified bounds")
+            result = minimize(prob.fun, [-10, 8],
+                              method='Nelder-Mead',
+                              bounds=bounds)
+            assert np.allclose(result.x, [4.0, 16.0])
+
+    def test_invalid_bounds(self):
+        prob = Rosenbrock()
+        message = 'An upper bound is less than the corresponding lower bound.'
+        with raises(ValueError, match=message):
+            bounds = Bounds([-np.inf, 1.0], [4.0, -5.0])
+            minimize(prob.fun, [-10, 3],
+                     method='Nelder-Mead',
+                     bounds=bounds)
+
+    @pytest.mark.xfail(reason="Failing on Azure Linux and macOS builds, "
+                              "see gh-13846")
+    def test_outside_bounds_warning(self):
+        prob = Rosenbrock()
+        with raises(UserWarning, match=r"Initial guess is not within "
+                                       r"the specified bounds"):
+            bounds = Bounds([-np.inf, 1.0], [4.0, 5.0])
+            minimize(prob.fun, [-10, 8],
+                     method='Nelder-Mead',
+                     bounds=bounds)

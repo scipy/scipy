@@ -24,8 +24,8 @@ from libc.math cimport fabs, sqrt
 
 import numpy as np
 
-import scipy.spatial.qhull as qhull
-cimport scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
+cimport scipy.spatial._qhull as qhull
 
 import warnings
 
@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 
@@ -207,7 +207,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N dimensions.
+    Piecewise linear interpolant in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -236,15 +236,18 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -290,11 +293,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, m, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 
@@ -623,9 +625,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double g[3]
-    cdef double \
-         e12x, e12y, e23x, e23y, e31x, e31y, \
-         e14x, e14y, e24x, e24y, e34x, e34y
+    cdef double e12x, e12y, e23x, e23y, e31x, e31y
     cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
@@ -649,15 +649,6 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
             - d.points[0 + 2*d.simplices[3*isimplex + 2]])
     e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
             - d.points[1 + 2*d.simplices[3*isimplex + 2]])
-
-    e14x = (e12x - e31x)/3
-    e14y = (e12y - e31y)/3
-
-    e24x = (-e12x + e23x)/3
-    e24y = (-e12y + e23y)/3
-
-    e34x = (e31x - e23x)/3
-    e34y = (e31y - e23y)/3
 
     f1 = f[0]
     f2 = f[1]
@@ -804,8 +795,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """
-    CloughTocher2DInterpolator(points, values, tol=1e-6)
+    """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
@@ -847,15 +837,18 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -874,9 +867,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
+        Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolation in N > 1 dimensions.
 
     References
     ----------
@@ -922,14 +915,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 

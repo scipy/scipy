@@ -1,4 +1,5 @@
-      subroutine fpbacp(a,b,z,n,k,c,k1,nest)
+      recursive subroutine fpbacp(a,b,z,n,k,c,k1,nest)
+      implicit none
 c  subroutine fpbacp calculates the solution of the system of equations
 c  g * c = z  with g  a n x n upper triangular matrix of the form
 c            ! a '   !

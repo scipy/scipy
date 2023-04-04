@@ -310,6 +310,7 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
             break;
         /* kkkkkkkk|abcd]kkkkkkkk */
         case NI_EXTEND_CONSTANT:
+        case NI_EXTEND_GRID_CONSTANT:
             val = extend_value;
             dst = buffer;
             while (size_before--) {
@@ -670,6 +671,7 @@ int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
                         }
                         break;
                     case NI_EXTEND_CONSTANT:
+                    case NI_EXTEND_GRID_CONSTANT:
                         if (cc < 0 || cc >= len)
                             cc = *border_flag_value;
                         break;

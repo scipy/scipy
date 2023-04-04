@@ -1,4 +1,5 @@
-      subroutine fpcyt1(a,n,nn)
+      recursive subroutine fpcyt1(a,n,nn)
+      implicit none
 c (l u)-decomposition of a cyclic tridiagonal matrix with the non-zero
 c elements stored as follows
 c

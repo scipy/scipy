@@ -8,7 +8,7 @@ import pytest
 import scipy.interpolate
 
 
-class TestGIL(object):
+class TestGIL:
     """Check if the GIL is properly released by scipy.interpolate functions."""
 
     def setup_method(self):

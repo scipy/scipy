@@ -12,7 +12,7 @@ from scipy.signal import tf2ss, impulse2, dimpulse, step2, dstep
 # March 29, 2011
 
 
-class TestC2D(object):
+class TestC2D:
     def test_zoh(self):
         ac = np.eye(2)
         bc = np.full((2, 1), 0.5)
@@ -347,7 +347,7 @@ class TestC2D(object):
         assert_allclose(den, den1, rtol=1e-13)
         assert_allclose(den, den2, rtol=1e-13)
 
-class TestC2dLti(object):
+class TestC2dLti:
     def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])

@@ -13,7 +13,10 @@ uses are 2-clause BSD, MIT and PSF.  Incompatible licenses are GPL, Apache and
 custom licenses that require attribution/citation or prohibit use for
 commercial purposes.
 
-PRs are often submitted with content copied or derived from unlicensed code.
+PRs are often submitted with content copied or derived from unlicensed code or
+code from a default license that is not compatible with SciPy's license.
+For instance, code published on StackOverflow is covered by a CC-BY-SA license,
+which is not compatible due to the share-alike clause.
 These contributions cannot be accepted for inclusion in SciPy unless the
 original code author is willing to (re)license his/her code under the
 modified BSD (or compatible) license.  If the original author agrees,

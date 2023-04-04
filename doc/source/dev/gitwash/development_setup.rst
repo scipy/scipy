@@ -1,3 +1,5 @@
+.. _git-start:
+
 ====================================
 Getting started with Git development
 ====================================
@@ -9,7 +11,10 @@ with the SciPy source code.  If you have git already set up, skip to
 Basic Git setup
 ###############
 
-* :ref:`git-intro`.
+* Developing with git can be done entirely without GitHub. Git is a distributed
+  version control system. In order to use git on your machine you must first
+  `install git <https://git-scm.com/downloads>`__.
+
 * Introduce yourself to Git::
 
       git config --global user.email you@yourdomain.example.com
@@ -20,40 +25,17 @@ Basic Git setup
 Making your own copy (fork) of SciPy
 ####################################
 
-You need to do this only once.  The instructions here are very similar
-to the instructions at http://help.github.com/forking/ - please see that
-page for more detail.  We're repeating some of it here just to give the
-specifics for the SciPy_ project, and to suggest some default names.
+You need to do this only once.
 
-Set up and configure a github_ account
-======================================
+#. Set up and configure a github_ account
 
-If you don't have a github_ account, go to the github_ page, and make one.
+   If you don't have a github_ account, go to the github_ page, and make one.
 
-You then need to configure your account to allow write access - see the
-``Generating SSH keys`` help on `github help`_.
+   You then need to configure your account to allow write access - see the
+   ``Generating SSH keys`` help on `github help`_.
 
-Create your own forked copy of SciPy_
-=========================================
-
-#. Log into your github_ account.
-#. Go to the SciPy_ github home at `SciPy github`_.
-#. Click on the *fork* button:
-
-   .. image:: forking_button.png
-
-   After a short pause, you should find yourself at the home page for
-   your own forked copy of SciPy_.
-
-.. include:: git_links.inc
-
-
-.. _set-up-fork:
-
-Set up your fork
-################
-
-First you follow the instructions for :ref:`forking`.
+#. Next, create your own `forked copy of SciPy
+   <https://docs.github.com/get-started/quickstart/fork-a-repo>`__.
 
 Overview
 ========
@@ -63,6 +45,7 @@ Overview
    git clone https://github.com/your-user-name/scipy.git
    cd scipy
    git remote add upstream https://github.com/scipy/scipy.git
+   git submodule update --init
 
 In detail
 =========
@@ -76,11 +59,11 @@ Clone your fork
    ``git branch -a`` to show you all branches.  You'll get something
    like::
 
-      * master
-      remotes/origin/master
+      * main
+      remotes/origin/main
 
-   This tells you that you are currently on the ``master`` branch, and
-   that you also have a ``remote`` connection to ``origin/master``.
+   This tells you that you are currently on the ``main`` branch, and
+   that you also have a ``remote`` connection to ``origin/main``.
    What remote repository is ``remote/origin``? Try ``git remote -v`` to
    see the URLs for the remote.  They will point to your github_ fork.
 
@@ -111,8 +94,8 @@ Just for your own satisfaction, show yourself that you now have a new
 To keep in sync with changes in SciPy, you want to set up your repository
 so it pulls from ``upstream`` by default.  This can be done with::
 
-   git config branch.master.remote upstream
-   git config branch.master.merge refs/heads/master
+   git config branch.main.remote upstream
+   git config branch.main.merge refs/heads/main
 
 Your config file should now look something like (from
 ``$ cat .git/config``)::
@@ -130,8 +113,24 @@ Your config file should now look something like (from
    [remote "upstream"]
            url = https://github.com/scipy/scipy.git
            fetch = +refs/heads/*:refs/remotes/upstream/*
-   [branch "master"]
+   [branch "main"]
            remote = upstream
-           merge = refs/heads/master
+           merge = refs/heads/main
+
+
+Update submodules
+-----------------
+
+Initialize git submodules::
+
+   git submodule update --init
+
+This fetches and updates any submodules that SciPy needs (such as `Boost`).
+
+Next steps
+==========
+
+You are now ready to start developing with SciPy. Check the
+:ref:`contributor-toc` for more details.
 
 .. include:: git_links.inc

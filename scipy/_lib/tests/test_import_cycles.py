@@ -40,6 +40,7 @@ MODULES = [
     "scipy.stats",
     "scipy.stats.distributions",
     "scipy.stats.mstats",
+    "scipy.stats.contingency"
 ]
 
 
@@ -48,5 +49,5 @@ def test_modules_importable():
     # Check that all modules are importable in a new Python process.
     # This is not necessarily true if there are import cycles present.
     for module in MODULES:
-        cmd = 'import {}'.format(module)
+        cmd = f'import {module}'
         subprocess.check_call([sys.executable, '-c', cmd])

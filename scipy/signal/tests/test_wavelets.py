@@ -2,10 +2,10 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
 
-from scipy.signal import wavelets
+import scipy.signal._wavelets as wavelets
 
 
-class TestWavelets(object):
+class TestWavelets:
     def test_qmf(self):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
@@ -130,7 +130,8 @@ class TestWavelets(object):
 
     def test_cwt(self):
         widths = [1.0]
-        delta_wavelet = lambda s, t: np.array([1])
+        def delta_wavelet(s, t):
+            return np.array([1])
         len_data = 100
         test_data = np.sin(np.pi * np.arange(0, len_data) / 10.0)
 
@@ -146,7 +147,7 @@ class TestWavelets(object):
 
         widths = [len_data * 10]
         #Note: this wavelet isn't defined quite right, but is fine for this test
-        flat_wavelet = lambda l, w: np.full(w, 1 / w)
+        def flat_wavelet(l, w):
+            return np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
-

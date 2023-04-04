@@ -9,11 +9,10 @@ import numpy as np
 
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_)
-import pytest
 from pytest import raises as assert_raises
 
-from scipy.io.arff.arffread import loadarff
-from scipy.io.arff.arffread import read_header, ParseArffError
+from scipy.io.arff import loadarff
+from scipy.io.arff._arffread import read_header, ParseArffError
 
 
 data_path = pjoin(os.path.dirname(__file__), 'data')
@@ -45,7 +44,7 @@ expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 
 
-class TestData(object):
+class TestData:
     def test1(self):
         # Parsing trivial file with nothing.
         self._test(test4)
@@ -57,7 +56,7 @@ class TestData(object):
     def test3(self):
         # Parsing trivial file with nominal attribute of 1 character.
         self._test(test6)
-        
+
     def test4(self):
         # Parsing trivial file with trailing spaces in attribute declaration.
         self._test(test11)
@@ -91,29 +90,33 @@ class TestData(object):
         assert_(repr(meta1) == repr(meta2))
 
 
-class TestMissingData(object):
+class TestMissingData:
     def test_missing(self):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
 
-class TestNoData(object):
+class TestNoData:
     def test_nodata(self):
         # The file nodata.arff has no data in the @DATA section.
         # Reading it should result in an array with length 0.
         nodata_filename = os.path.join(data_path, 'nodata.arff')
         data, meta = loadarff(nodata_filename)
-        expected_dtype = np.dtype([('sepallength', '<f8'),
-                                   ('sepalwidth', '<f8'),
-                                   ('petallength', '<f8'),
-                                   ('petalwidth', '<f8'),
+        if sys.byteorder == 'big':
+            end = '>'
+        else:
+            end = '<'
+        expected_dtype = np.dtype([('sepallength', f'{end}f8'),
+                                   ('sepalwidth', f'{end}f8'),
+                                   ('petallength', f'{end}f8'),
+                                   ('petalwidth', f'{end}f8'),
                                    ('class', 'S15')])
         assert_equal(data.dtype, expected_dtype)
         assert_equal(data.size, 0)
 
 
-class TestHeader(object):
+class TestHeader:
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         with open(test2) as ofile:
@@ -182,7 +185,7 @@ class TestHeader(object):
         assert_raises(ValueError, read_dateheader_unsupported)
 
 
-class TestDateAttribute(object):
+class TestDateAttribute:
     def setup_method(self):
         self.data, self.meta = loadarff(test7)
 
@@ -250,7 +253,7 @@ class TestDateAttribute(object):
         assert_raises(ParseArffError, loadarff, test8)
 
 
-class TestRelationalAttribute(object):
+class TestRelationalAttribute:
     def setup_method(self):
         self.data, self.meta = loadarff(test9)
 
@@ -296,7 +299,7 @@ class TestRelationalAttribute(object):
                                expected[i])
 
 
-class TestRelationalAttributeLong(object):
+class TestRelationalAttributeLong:
     def setup_method(self):
         self.data, self.meta = loadarff(test10)
 
@@ -322,7 +325,7 @@ class TestRelationalAttributeLong(object):
                            expected)
 
 
-class TestQuotedNominal(object):
+class TestQuotedNominal:
     """
     Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
     """
@@ -368,7 +371,7 @@ class TestQuotedNominal(object):
         assert_array_equal(self.data["smoker"], smoker_expected)
 
 
-class TestQuotedNominalSpaces(object):
+class TestQuotedNominalSpaces:
     """
     Regression test for issue #10232 : Exception in loadarff with quoted nominal attributes.
     """

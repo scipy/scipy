@@ -4,7 +4,7 @@
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble wrightomega(npy_cdouble zp)
 {
@@ -18,4 +18,4 @@ double wrightomega_real(double x)
   return wright::wrightomega_real(x);
 }
 
-EXTERN_C_END
+}  // extern "C"

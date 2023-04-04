@@ -286,8 +286,8 @@ void
 apply_filter(double *coefficients, const npy_intp len, const double *poles,
              int npoles, NI_ExtendMode mode)
 {
-    init_fn *causal;
-    init_fn *anticausal;
+    init_fn *causal = NULL;
+    init_fn *anticausal = NULL;
 
     //Note: This switch statement should match the settings used for
 	//      the spline_mode variable in NI_GeometricTransform

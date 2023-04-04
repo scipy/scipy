@@ -1,0 +1,41 @@
+==========================
+SciPy 1.6.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.6.2 is a bug-fix release with no new features
+compared to 1.6.1. This is also the first SciPy release
+to place upper bounds on some dependencies to improve
+the long-term repeatability of source builds.
+
+Authors
+=======
+
+* Pradipta Ghosh +
+* Tyler Reddy
+* Ralf Gommers
+* Martin K. Scherer +
+* Robert Uhl
+* Warren Weckesser
+
+A total of 6 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+Issues closed for 1.6.2
+-----------------------
+
+* `#13512 <https://github.com/scipy/scipy/issues/13512>`__: \`stats.gaussian_kde.evaluate\` broken on S390X
+* `#13584 <https://github.com/scipy/scipy/issues/13584>`__: rotation._compute_euler_from_matrix() creates an array with negative...
+* `#13585 <https://github.com/scipy/scipy/issues/13585>`__: Behavior change in coo_matrix when dtype=None
+* `#13686 <https://github.com/scipy/scipy/issues/13686>`__: delta0 argument of scipy.odr.ODR() ignored
+
+Pull requests for 1.6.2
+-----------------------
+
+* `#12862 <https://github.com/scipy/scipy/pull/12862>`__: REL: put upper bounds on versions of dependencies
+* `#13575 <https://github.com/scipy/scipy/pull/13575>`__: BUG: fix \`gaussian_kernel_estimate\` on S390X
+* `#13586 <https://github.com/scipy/scipy/pull/13586>`__: BUG: sparse: Create a utility function \`getdata\`
+* `#13598 <https://github.com/scipy/scipy/pull/13598>`__: MAINT, BUG: enforce contiguous layout for output array in Rotation.as_euler
+* `#13687 <https://github.com/scipy/scipy/pull/13687>`__: BUG: fix scipy.odr to consider given delta0 argument

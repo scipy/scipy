@@ -1,4 +1,5 @@
-      subroutine fpchep(x,m,t,n,k,ier)
+      recursive subroutine fpchep(x,m,t,n,k,ier)
+      implicit none
 c  subroutine fpchep verifies the number and the position of the knots
 c  t(j),j=1,2,...,n of a periodic spline of degree k, in relation to
 c  the number and the position of the data points x(i),i=1,2,...,m.

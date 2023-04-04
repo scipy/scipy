@@ -1,0 +1,22 @@
+name: Feature Request
+description: Suggest an idea for SciPy
+title: "ENH: "
+labels: [enhancement]
+
+body:
+  - type: textarea
+    attributes:
+      label: Is your feature request related to a problem? Please describe.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Describe the solution you'd like.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Describe alternatives you've considered.
+  - type: textarea
+    attributes:
+      label: Additional context (e.g. screenshots, GIFs)

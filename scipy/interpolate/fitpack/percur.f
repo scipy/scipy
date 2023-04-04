@@ -1,5 +1,6 @@
-      subroutine percur(iopt,m,x,y,w,k,s,nest,n,t,c,fp,
+      recursive subroutine percur(iopt,m,x,y,w,k,s,nest,n,t,c,fp,
      * wrk,lwrk,iwrk,ier)
+      implicit none
 c  given the set of data points (x(i),y(i)) and the set of positive
 c  numbers w(i),i=1,2,...,m-1, subroutine percur determines a smooth
 c  periodic spline approximation of degree k with period per=x(m)-x(1).

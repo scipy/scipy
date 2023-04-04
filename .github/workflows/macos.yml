@@ -1,0 +1,71 @@
+name: macOS tests (setup.py)
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test_macos:
+    name: macOS Test Matrix
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: macos-11
+    strategy:
+      max-parallel: 3
+      matrix:
+        python-version: ["3.9"]
+        numpy-version: ['--upgrade numpy']
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
+
+    - name: Setup gfortran + OpenBLAS
+      run: |
+        bash tools/wheels/cibw_before_build_macos.sh $PWD
+
+        echo "[openblas]" > site.cfg
+        echo "libraries = openblas" >> site.cfg
+        echo "library_dirs = /usr/local/lib" >> site.cfg
+        echo "include_dirs = /usr/local/include" >> site.cfg
+        echo "runtime_library_dirs = /usr/local/lib" >> site.cfg
+
+    - name: A few other packages
+      continue-on-error: true
+      run: |
+        brew install libmpc suitesparse swig
+
+    - name: Install packages
+      run: |
+        pip install ${{ matrix.numpy-version }}
+        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 pytest-xdist mpmath gmpy2 pythran pooch
+
+    - name: Test SciPy
+      run: |
+        # Set SDKROOT env variable if not set. Refer to
+        # tools/wheels/cibw_before_build_macos.sh to see why it's necessary
+        export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
+
+        export SCIPY_USE_PYTHRAN=1
+        python setup.py install
+        cd /tmp
+        python -m pytest --pyargs scipy --durations=10 --timeout=80 -n 3

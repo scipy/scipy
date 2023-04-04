@@ -5,12 +5,12 @@ from scipy.special._mptestutils import mp_assert_allclose
 from scipy.special._precompute.utils import lagrange_inversion
 
 try:
-    import sympy  # type: ignore[import]
+    import sympy
 except ImportError:
     sympy = MissingModule('sympy')
 
 try:
-    import mpmath as mp  # type: ignore[import]
+    import mpmath as mp
 except ImportError:
     mp = MissingModule('mpmath')
 
@@ -18,7 +18,7 @@ except ImportError:
 @pytest.mark.slow
 @check_version(sympy, '0.7')
 @check_version(mp, '0.19')
-class TestInversion(object):
+class TestInversion:
     @pytest.mark.xfail_on_32bit("rtol only 2e-9, see gh-6938")
     def test_log(self):
         with mp.workdps(30):

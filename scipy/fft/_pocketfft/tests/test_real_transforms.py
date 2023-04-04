@@ -1,4 +1,5 @@
 from os.path import join, dirname
+from typing import Callable, Dict, Tuple, Union, Type
 
 import numpy as np
 from numpy.testing import (
@@ -194,8 +195,13 @@ def test_complex(transform, dtype):
     assert_array_almost_equal(x, y)
 
 
+DecMapType = Dict[
+    Tuple[Callable[..., np.ndarray], Union[Type[np.floating], Type[int]], int],
+    int,
+]
+
 # map (tranform, dtype, type) -> decimal
-dec_map = {
+dec_map: DecMapType = {
     # DCT
     (dct, np.double, 1): 13,
     (dct, np.float32, 1): 6,
@@ -405,13 +411,13 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
     x2 = x.copy()
     routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
 
-    sig = "%s(%s%r, %r, axis=%r, overwrite_x=%r)" % (
+    sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
         routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
     if not overwrite_x:
         assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 
 
-class Test_DCTN_IDCTN(object):
+class Test_DCTN_IDCTN:
     dec = 14
     dct_type = [1, 2, 3, 4]
     norms = [None, 'backward', 'ortho', 'forward']

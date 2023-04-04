@@ -255,7 +255,7 @@ static PyObject *minpack_hybrd(PyObject *dummy, PyObject *args) {
   int      allocated = 0;
   double   *wa = NULL;
 
-  STORE_VARS();    /* Define storage variables for global variables. */
+  STORE_VARS_NO_INFO();    /* Define storage variables for global variables. */
   
   if (!PyArg_ParseTuple(args, "OO|OidiiiddO", &fcn, &x0, &extra_args, &full_output, &xtol, &maxfev, &ml, &mu, &epsfcn, &factor, &o_diag)) return NULL;
 
@@ -464,7 +464,7 @@ static PyObject *minpack_lmdif(PyObject *dummy, PyObject *args) {
   int      allocated = 0;
   double   *wa = NULL;
 
-  STORE_VARS();
+  STORE_VARS_NO_INFO();
 
   if (!PyArg_ParseTuple(args, "OO|OidddiddO", &fcn, &x0, &extra_args, &full_output, &ftol, &xtol, &gtol, &maxfev, &epsfcn, &factor, &o_diag)) return NULL;
 

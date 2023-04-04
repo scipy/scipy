@@ -1,4 +1,5 @@
-      subroutine cualde(idim,t,n,c,nc,k1,u,d,nd,ier)
+      recursive subroutine cualde(idim,t,n,c,nc,k1,u,d,nd,ier)
+      implicit none
 c  subroutine cualde evaluates at the point u all the derivatives
 c                     (l)
 c     d(idim*l+j) = sj   (u) ,l=0,1,...,k, j=1,2,...,idim
