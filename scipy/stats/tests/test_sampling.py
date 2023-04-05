@@ -7,7 +7,6 @@ import sys
 import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
-from numpy.lib import NumpyVersion
 from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
@@ -699,7 +698,7 @@ class TestDiscreteAliasUrn:
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
         rng = DiscreteAliasUrn(pv, random_state=123)
-        rvs = rng.rvs(100_000)
+        rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))
         # test if the first few moments match

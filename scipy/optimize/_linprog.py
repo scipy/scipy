@@ -89,16 +89,16 @@ def linprog_verbose_callback(res):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float': lambda x: "{0: 12.4f}".format(x)})
+                        formatter={'float': lambda x: f"{x: 12.4f}"})
     if status:
         print('--------- Simplex Early Exit -------\n')
-        print('The simplex method exited early with status {0:d}'.format(status))
+        print(f'The simplex method exited early with status {status:d}')
         print(message)
     elif complete:
         print('--------- Simplex Complete --------\n')
-        print('Iterations required: {}'.format(nit))
+        print(f'Iterations required: {nit}')
     else:
-        print('--------- Iteration {0:d}  ---------\n'.format(nit))
+        print(f'--------- Iteration {nit:d}  ---------\n')
 
     if nit > 0:
         if phase == 1:
@@ -161,7 +161,7 @@ def linprog_terse_callback(res):
 
     if nit == 0:
         print("Iter:   X:")
-    print("{0: <5d}   ".format(nit), end="")
+    print(f"{nit: <5d}   ", end="")
     print(x)
 
 
@@ -187,18 +187,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Alternatively, that's:
 
-    minimize::
+        - minimize ::
 
-        c @ x
+            c @ x
 
-    such that::
+        - such that ::
 
-        A_ub @ x <= b_ub
-        A_eq @ x == b_eq
-        lb <= x <= ub
+            A_ub @ x <= b_ub
+            A_eq @ x == b_eq
+            lb <= x <= ub
 
-    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``.
+    Note that by default ``lb = 0`` and ``ub = None``. Other bounds can be
+    specified with ``bounds``.
 
     Parameters
     ----------
@@ -218,11 +218,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None``
-        to indicate that there is no bound. By default, bounds are
-        ``(0, None)`` (all decision variables are non-negative).
-        If a single tuple ``(min, max)`` is provided, then ``min`` and
-        ``max`` will serve as bounds for all decision variables.
+        the minimum and maximum values of that decision variable.
+        If a single tuple ``(min, max)`` is provided, then ``min`` and ``max``
+        will serve as bounds for all decision variables.
+        Use ``None`` to indicate that there is no bound. For instance, the
+        default bound ``(0, None)`` means that all decision variables are
+        non-negative, and the pair ``(None, None)`` means no bounds at all,
+        i.e. all variables are allowed to be any real.
     method : str, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs' <optimize.linprog-highs>` (default),
@@ -638,7 +640,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                              **solver_options)
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
-                          sol['con'], lp.bounds, tol, sol['message']))
+                          sol['con'], lp.bounds, tol, sol['message'],
+                          integrality))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
@@ -690,7 +693,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
-    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds,
+                                    tol, message, integrality)
 
     if disp:
         _display_summary(message, status, fun, iteration)

@@ -12,7 +12,6 @@ from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
 from scipy.optimize import rosen, minimize
 from scipy.sparse import csr_matrix
 from scipy import stats
-from scipy._lib._pep440 import Version
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
@@ -811,8 +810,7 @@ class TestDifferentialEvolutionSolver:
         fn = solver._accept_trial
         # both solutions are feasible, select lower energy
         assert fn(0.1, True, np.array([0.]), 1.0, True, np.array([0.]))
-        assert (fn(1.0, True, np.array([0.]), 0.1, True, np.array([0.]))
-               == False)
+        assert (fn(1.0, True, np.array([0.0]), 0.1, True, np.array([0.0])) is False)
         assert fn(0.1, True, np.array([0.]), 0.1, True, np.array([0.]))
 
         # trial is feasible, original is not
@@ -824,8 +822,7 @@ class TestDifferentialEvolutionSolver:
                   1.0, False, np.array([1., 1.0])))
         assert (fn(0.1, False, np.array([0.5, 0.5]),
                   1.0, False, np.array([1., 0.50])))
-        assert (fn(1.0, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 0.4])) == False)
+        assert (fn(1.0, False, np.array([0.5, 0.5]), 1.0, False, np.array([1.0, 0.4])) is False)
 
     def test_constraint_wrapper(self):
         lb = np.array([0, 20, 30])

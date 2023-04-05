@@ -1,3 +1,4 @@
+import re
 from contextlib import contextmanager
 import functools
 import operator
@@ -521,6 +522,29 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         np.random.default_rng = orig_fun
 
 
+def _rng_html_rewrite(func):
+    """Rewrite the HTML rendering of ``np.random.default_rng``.
+
+    This is intended to decorate
+    ``numpydoc.docscrape_sphinx.SphinxDocString._str_examples``.
+
+    Examples are only run by Sphinx when there are plot involved. Even so,
+    it does not change the result values getting printed.
+    """
+    # hexadecimal or number seed, case-insensitive
+    pattern = re.compile(r'np.random.default_rng\((0x[0-9A-F]+|\d+)\)', re.I)
+
+    def _wrapped(*args, **kwargs):
+        res = func(*args, **kwargs)
+        lines = [
+            re.sub(pattern, 'np.random.default_rng()', line)
+            for line in res
+        ]
+        return lines
+
+    return _wrapped
+
+
 def _argmin(a, keepdims=False, axis=None):
     """
     argmin with a `keepdims` parameter.
@@ -615,10 +639,12 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True):
+def _contains_nan(a, nan_policy='propagate', use_summation=True,
+                  policies=None):
     if not isinstance(a, np.ndarray):
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
-    policies = ['propagate', 'raise', 'omit']
+    if policies is None:
+        policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
@@ -709,3 +735,10 @@ def _rng_spawn(rng, n_children):
     child_rngs = [np.random.Generator(type(bg)(child_ss))
                   for child_ss in ss.spawn(n_children)]
     return child_rngs
+
+
+def _get_nan(*data):
+    # Get NaN of appropriate dtype for data
+    data = [np.asarray(item) for item in data]
+    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    return np.array(np.nan, dtype=dtype)[()]

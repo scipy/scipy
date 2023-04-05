@@ -23,8 +23,8 @@ except ImportError:
 
 has_cholmod = True
 try:
-    import sksparse
-    from sksparse.cholmod import cholesky as cholmod
+    import sksparse  # noqa: F401
+    from sksparse.cholmod import cholesky as cholmod  # noqa: F401
 except ImportError:
     has_cholmod = False
 
@@ -63,7 +63,7 @@ def _assert_success(res, desired_fun=None, desired_x=None,
     # desired_fun: desired objective function value or None
     # desired_x: desired solution or None
     if not res.success:
-        msg = "linprog status {0}, message: {1}".format(res.status,
+        msg = "linprog status {}, message: {}".format(res.status,
                                                         res.message)
         raise AssertionError(msg)
 
@@ -276,7 +276,8 @@ def test_unknown_solvers_and_options():
                   c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
-    with pytest.warns(OptimizeWarning, match="Unknown solver options:"):
+    message = "Unrecognized options detected: {'rr_method': 'ekki-ekki-ekki'}"
+    with pytest.warns(OptimizeWarning, match=message):
         linprog(c, A_ub=A_ub, b_ub=b_ub,
                 options={"rr_method": 'ekki-ekki-ekki'})
 
@@ -513,10 +514,10 @@ class LinprogCommonTests:
         m = 100
         n = 150
         A_eq = scipy.sparse.rand(m, n, 0.5)
-        x_valid = np.random.randn((n))
-        c = np.random.randn((n))
-        ub = x_valid + np.random.rand((n))
-        lb = x_valid - np.random.rand((n))
+        x_valid = np.random.randn(n)
+        c = np.random.randn(n)
+        ub = x_valid + np.random.rand(n)
+        lb = x_valid - np.random.rand(n)
         bounds = np.column_stack((lb, ub))
         b_eq = A_eq * x_valid
 
@@ -1740,7 +1741,8 @@ class LinprogRSTests(LinprogCommonTests):
 class LinprogHiGHSTests(LinprogCommonTests):
     def test_callback(self):
         # this is the problem from test_callback
-        cb = lambda res: None
+        def cb(res):
+            return None
         c = np.array([-3, -2])
         A_ub = [[2, 1], [1, 1], [1, 0]]
         b_ub = [10, 8, 4]
@@ -2362,6 +2364,21 @@ class TestLinprogHiGHSMIP():
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
         assert np.all(gap_diffs >= 0)
         assert not np.all(gap_diffs == 0)
+
+    def test_semi_continuous(self):
+        # See issue #18106. This tests whether the solution is being
+        # checked correctly (status is 0) when integrality > 1:
+        # values are allowed to be 0 even if 0 is out of bounds.
+
+        c = np.array([1., 1., -1, -1])
+        bounds = np.array([[0.5, 1.5], [0.5, 1.5], [0.5, 1.5], [0.5, 1.5]])
+        integrality = np.array([2, 3, 2, 3])
+
+        res = linprog(c, bounds=bounds,
+                      integrality=integrality, method='highs')
+
+        np.testing.assert_allclose(res.x, [0, 0, 1.5, 1])
+        assert res.status == 0
 
 
 ###########################

@@ -592,6 +592,19 @@ class TestBSpline:
                                         bc_type='natural')
         assert_allclose(bspl.c, [1, 1, 1, 1, 1, 1, 1], atol=1e-15)
 
+    def test_read_only(self):
+        # BSpline must work on read-only knots and coefficients.
+        t = np.array([0, 1])
+        c = np.array([3.0])
+        t.setflags(write=False)
+        c.setflags(write=False)
+
+        xx = np.linspace(0, 1, 10)
+        xx.setflags(write=False)
+
+        b = BSpline(t=t, c=c, k=0)
+        assert_allclose(b(xx), 3)
+
 
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
@@ -603,7 +616,7 @@ def test_knots_multiplicity():
         x = np.unique(t)
         x = np.r_[t[0]-0.1, 0.5*(x[1:] + x[:1]), t[-1]+0.1]
         assert_allclose(splev(x, (t, c, k), der), b(x, der),
-                atol=atol, rtol=rtol, err_msg='der = %s  k = %s' % (der, b.k))
+                atol=atol, rtol=rtol, err_msg=f'der = {der}  k = {b.k}')
 
     # test loop itself
     # [the index `j` is for interpreting the traceback in case of a failure]
@@ -1506,6 +1519,13 @@ class TestLSQ:
             y[-1] = z
             assert_raises(ValueError, make_lsq_spline, x, y, t)
 
+    def test_read_only(self):
+        # Check that make_lsq_spline works with read only arrays
+        x, y, t = self.x, self.y, self.t
+        x.setflags(write=False)
+        y.setflags(write=False)
+        t.setflags(write=False)
+        make_lsq_spline(x=x, y=y, t=t)
 
 def data_file(basename):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -1539,6 +1559,13 @@ class TestSmoothingSpline:
 
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
+
+        # x and y length must be larger than 5
+        x = np.arange(4)
+        y = np.ones(4)
+        exception_message = "``x`` and ``y`` length must be larger than 5"
+        with pytest.raises(ValueError, match=exception_message):
+            make_smoothing_spline(x, y)
 
     def test_compare_with_GCVSPL(self):
         """

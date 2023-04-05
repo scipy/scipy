@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple, Counter
+from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -38,7 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
@@ -577,7 +577,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
 
     if a.size == 0:
-        return ModeResult(np.nan, np.int64(0))
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
     vals, cnts = np.unique(a, return_counts=True)
     modes, counts = vals[cnts.argmax()], cnts.max()
@@ -1131,7 +1132,8 @@ def _moment(a, moment, axis, *, mean=None):
                               keepdims=True) / np.abs(mean)
         with np.errstate(invalid='ignore'):
             precision_loss = np.any(rel_diff < eps)
-        if precision_loss:
+        n = a.shape[axis] if axis is not None else a.size
+        if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophic cancellation. This occurs when the data "
                        "are nearly identical. Results may be unreliable.")
@@ -1259,10 +1261,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
             nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
             np.place(vals, can_correct, nval)
 
-    if vals.ndim == 0:
-        return vals.item()
-
-    return vals
+    return vals[()]
 
 
 @_axis_nan_policy_factory(
@@ -1311,7 +1310,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
 
     Examples
     --------
-    In Fisher's definiton, the kurtosis of the normal distribution is zero.
+    In Fisher's definition, the kurtosis of the normal distribution is zero.
     In the following example, the kurtosis is close to zero, because it was
     calculated from the dataset, not from the continuous distribution.
 
@@ -1373,10 +1372,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
             np.place(vals, can_correct, nval + 3.0)
 
-    if vals.ndim == 0:
-        vals = vals.item()  # array scalar
-
-    return vals - 3 if fisher else vals
+    return vals[()] - 3 if fisher else vals[()]
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -2845,6 +2841,9 @@ def obrientransform(*samples):
     return np.array(arrays)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, too_small=1
+)
 def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """Compute standard error of the mean.
 
@@ -2897,14 +2896,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.sem(a, axis, ddof)
-
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
     return s
@@ -3365,6 +3356,10 @@ _scale_conversions = {'raw': 1.0,
                       'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1,
+    default_axis=None, override={'nan_propagation': False}
+)
 def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         interpolation='linear', keepdims=False):
     r"""
@@ -3480,14 +3475,14 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     # This check prevents percentile from raising an error later. Also, it is
     # consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        return _get_nan(x)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
-            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+            raise ValueError(f"{scale} not a valid scale for `iqr`")
         if scale_key == 'raw':
             msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
                    "'scale=1' and will raise an error in SciPy 1.12.0.")
@@ -5820,9 +5815,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
-        return ((cnt * (cnt - 1) // 2).sum(),
-                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+        # Python ints to avoid overflow down the line
+        return (int((cnt * (cnt - 1) // 2).sum()),
+                int((cnt * (cnt - 1.) * (cnt - 2)).sum()),
+                int((cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -5839,7 +5835,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
 
-    ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
+    ntie = int((cnt * (cnt - 1) // 2).sum())  # joint ties
     xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
     ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
@@ -6035,7 +6031,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     if x.size != y.size:
         raise ValueError("All inputs to `weightedtau` must be "
                          "of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
+                         "found x-size {} and y-size {}".format(x.size, y.size))
     if not x.size:
         # Return NaN if arrays are empty
         res = SignificanceResult(np.nan, np.nan)
@@ -6075,7 +6071,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         if rank.size != x.size:
             raise ValueError(
                 "All inputs to `weightedtau` must be of the same size, "
-                "found x-size %s and rank-size %s" % (x.size, rank.size)
+                "found x-size {} and rank-size {}".format(x.size, rank.size)
             )
 
     tau = _weightedrankedtau(x, y, rank, weigher, additive)
@@ -6692,10 +6688,11 @@ class TtestResult(TtestResultBase):
 
 
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
-                      estimate):
+                     estimate):
     # this could be any number of dimensions (including 0d), but there is
-    # at most one unique value
-    alternative = np.atleast_1d(alternative).ravel()
+    # at most one unique non-NaN value
+    alternative = np.atleast_1d(alternative)  # can't index 0D object
+    alternative = alternative[np.isfinite(alternative)]
     alternative = alternative[0] if alternative.size else np.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
@@ -6964,6 +6961,14 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
 
 
 def _equal_var_ttest_denom(v1, n1, v2, n2):
+    # If there is a single observation in one sample, this formula for pooled
+    # variance breaks down because the variance of that sample is undefined.
+    # The pooled variance is still defined, though, because the (n-1) in the
+    # numerator should cancel with the (n-1) in the denominator, leaving only
+    # the sum of squared differences from the mean: zero.
+    v1 = np.where(n1 == 1, 0, v1)[()]
+    v2 = np.where(n2 == 1, 0, v2)[()]
+
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
     denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
@@ -7028,6 +7033,12 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
     standard error. Therefore, the statistic will be positive when `mean1` is
     greater than `mean2` and negative when `mean1` is less than `mean2`.
+
+    This method does not check whether any of the elements of `std1` or `std2`
+    are negative. If any elements of the `std1` or `std2` parameters are
+    negative in a call to this method, this method will return the same result
+    as if it were passed ``numpy.abs(std1)`` and ``numpy.abs(std2)``,
+    respectively, instead; no exceptions or warnings will be emitted.
 
     References
     ----------
@@ -7418,8 +7429,13 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
+            if equal_var:
+                old_errstate = np.geterr()
+                np.seterr(divide='ignore', invalid='ignore')
             v1 = _var(a, axis, ddof=1)
             v2 = _var(b, axis, ddof=1)
+            if equal_var:
+                np.seterr(**old_errstate)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -7431,6 +7447,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
         res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+
     return Ttest_indResult(*res)
 
 
@@ -7742,8 +7759,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     if na == 0 or nb == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
-        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
-                           standard_error=np.nan, estimate=np.nan)
+        NaN = _get_nan(a, b)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     n = a.shape[axis]
     df = n - 1
@@ -7972,8 +7990,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
             names = repr(list(_power_div_lambda_names.keys()))[1:-1]
-            raise ValueError("invalid string for lambda_: {0!r}. "
-                             "Valid strings are {1}".format(lambda_, names))
+            raise ValueError("invalid string for lambda_: {!r}. "
+                             "Valid strings are {}".format(lambda_, names))
         lambda_ = _power_div_lambda_names[lambda_]
     elif lambda_ is None:
         lambda_ = 1
@@ -9234,7 +9252,8 @@ def kruskal(*samples, nan_policy='propagate'):
 
     for sample in samples:
         if sample.size == 0:
-            return KruskalResult(np.nan, np.nan)
+            NaN = _get_nan(*samples)
+            return KruskalResult(NaN, NaN)
         elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
@@ -9315,6 +9334,35 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
+    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
+           Methods, Third Edition". Chapter 6, Section 6.3.2.
+
+    Examples
+    --------
+    In [2]_, the pulse rate (per minute) of a group of seven students was
+    measured before exercise, immediately after exercise and 5 minutes
+    after exercise. Is there evidence to suggest that the pulse rates on
+    these three occasions are similar?
+
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The pulse rates are identical on these three occasions.
+
+    Let's assess the plausibility of this hypothesis with a Friedman test.
+
+    >>> from scipy.stats import friedmanchisquare
+    >>> before = [72, 96, 88, 92, 74, 76, 82]
+    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
+    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
+    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> res.statistic
+    10.57142857142857
+    >>> res.pvalue
+    0.005063414171757498
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the pulse rates are different on
+    these three occasions".
 
     """
     k = len(samples)
@@ -10126,7 +10174,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
-        raise ValueError('unknown method "{0}"'.format(method))
+        raise ValueError(f'unknown method "{method}"')
 
     a = np.asarray(a)
 
@@ -10236,7 +10284,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     The empirical expectile at level :math:`\alpha` (`alpha`) of a sample
     :math:`a_i` (the array `a`) is defined by plugging in the empirical CDF of
     `a`. Given sample or case weights :math:`w` (the array `weights`), it
-    reads :math:`F_a(x) = \frac{1}{\sum_i a_i} \sum_i w_i 1_{a_i \leq x}`
+    reads :math:`F_a(x) = \frac{1}{\sum_i w_i} \sum_i w_i 1_{a_i \leq x}`
     with indicator function :math:`1_{A}`. This leads to the definition of the
     empirical expectile at level `alpha` as the unique solution :math:`t` of:
 

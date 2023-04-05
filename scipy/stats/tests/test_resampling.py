@@ -164,17 +164,26 @@ def test_bootstrap_vectorized(method, axis, paired):
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
-    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
+    rng = np.random.default_rng(2442101192988600726)
+    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=rng)
     alpha = 0.95
     dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
     expected_interval = dist.interval(confidence=alpha)
     expected_se = dist.std()
 
-    res = bootstrap((data,), np.mean, n_resamples=5000,
-                    confidence_level=alpha, method=method,
-                    random_state=0)
+    config = dict(data=(data,), statistic=np.mean, n_resamples=5000,
+                  method=method, random_state=rng)
+    res = bootstrap(**config, confidence_level=alpha)
     assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
     assert_allclose(res.standard_error, expected_se, atol=3e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='less')
+    assert_allclose(res.confidence_interval.high, dist.ppf(alpha), rtol=5e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='greater')
+    assert_allclose(res.confidence_interval.low, dist.ppf(1-alpha), rtol=5e-4)
 
 
 tests_R = {"basic": (23.77, 79.12),
@@ -390,7 +399,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
 def test_bootstrap_vectorized_3samp(method, axis):
     def statistic(*data, axis=0):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -488,7 +497,7 @@ def test_bootstrap_min():
 
 
 @pytest.mark.parametrize("additional_resamples", [0, 1000])
-def test_re_boostrap(additional_resamples):
+def test_re_bootstrap(additional_resamples):
     # Test behavior of parameter `bootstrap_result`
     rng = np.random.default_rng(8958153316228384)
     x = rng.random(size=100)
@@ -511,6 +520,28 @@ def test_re_boostrap(additional_resamples):
     assert_allclose(res.standard_error, ref.standard_error, rtol=1e-14)
     assert_allclose(res.confidence_interval, ref.confidence_interval,
                     rtol=1e-14)
+
+
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+def test_bootstrap_alternative(method):
+    rng = np.random.default_rng(5894822712842015040)
+    dist = stats.norm(loc=2, scale=4)
+    data = (dist.rvs(size=(100), random_state=rng),)
+
+    config = dict(data=data, statistic=np.std, random_state=rng, axis=-1)
+    t = stats.bootstrap(**config, confidence_level=0.9)
+
+    config.update(dict(n_resamples=0, bootstrap_result=t))
+    l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
+    g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
+
+    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
+    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert np.isneginf(l.confidence_interval.low)
+    assert np.isposinf(g.confidence_interval.high)
+
+    with pytest.raises(ValueError, match='`alternative` must be one of'):
+        stats.bootstrap(**config, alternative='ekki-ekki')
 
 
 def test_jackknife_resample():
@@ -597,7 +628,7 @@ def test_vectorize_statistic(axis):
 
     def statistic(*data, axis):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -1609,8 +1640,8 @@ def test_all_partitions_concatenated():
         partitioning = np.split(partition_concatenated, nc[:-1])
         all_partitions.add(tuple([frozenset(i) for i in partitioning]))
 
-    expected = np.product([special.binom(sum(n[i:]), sum(n[i+1:]))
-                           for i in range(len(n)-1)])
+    expected = np.prod([special.binom(sum(n[i:]), sum(n[i+1:]))
+                        for i in range(len(n)-1)])
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)

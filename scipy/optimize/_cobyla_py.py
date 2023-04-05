@@ -181,7 +181,7 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
     sol = _minimize_cobyla(func, x0, args, constraints=con,
                            **opts)
     if disp and not sol['success']:
-        print("COBYLA failed to find a solution: %s" % (sol.message,))
+        print(f"COBYLA failed to find a solution: {sol.message}")
     return sol['x']
 
 @synchronized

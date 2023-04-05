@@ -21,6 +21,14 @@ def unpack_ttest_result(res):
             res._estimate, low, high)
 
 
+def _get_ttest_ci(ttest):
+    # get a function that returns the CI bounds of provided `ttest`
+    def ttest_ci(*args, **kwargs):
+        res = ttest(*args, **kwargs)
+        return res.confidence_interval()
+    return ttest_ci
+
+
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, number of outputs,
     # ... paired, unpacker function
@@ -37,6 +45,8 @@ axis_nan_policy_cases = [
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.sem, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.iqr, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -47,6 +57,8 @@ axis_nan_policy_cases = [
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
     (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
+    (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
+    (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 
@@ -76,6 +88,7 @@ inaccuracy_messages = {"Precision loss occurred in moment calculation",
 
 # For some functions, nan_policy='propagate' should not just return NaNs
 override_propagate_funcs = {stats.mode}
+
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -385,7 +398,11 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             else:
                 assert_equal(res1db, res1da)
                 assert_equal(res1dc, res1da)
-
+                for item in list(res1da) + list(res1db) + list(res1dc):
+                    # Most functions naturally return NumPy numbers, which
+                    # are drop-in replacements for the Python versions but with
+                    # desirable attributes. Make sure this is consistent.
+                    assert np.issubdtype(item.dtype, np.number)
 
 # Test keepdims for:
 #     - single-output and multi-output functions (gmean and mannwhitneyu)
@@ -522,6 +539,9 @@ def test_axis_nan_policy_decorated_keyword_samples():
                           "paired", "unpacker"), axis_nan_policy_cases)
 def test_axis_nan_policy_decorated_pickled(hypotest, args, kwds, n_samples,
                                            n_outputs, paired, unpacker):
+    if "ttest_ci" in hypotest.__name__:
+        pytest.skip("Can't pickle functions defined within functions.")
+
     rng = np.random.default_rng(0)
 
     # Some hypothesis tests return a non-iterable that needs an `unpacker` to
@@ -617,17 +637,16 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
         # yield all possible combinations of small samples
         gens = [small_sample_generator(n_dims) for i in range(n_samples)]
-        for i in product(*gens):
-            yield i
+        yield from product(*gens)
 
     n_dims = [2, 3]
     for samples in small_data_generator(n_samples, n_dims):
 
         # this test is only for arrays of zero size
-        if not any((sample.size == 0 for sample in samples)):
+        if not any(sample.size == 0 for sample in samples):
             continue
 
-        max_axis = max((sample.ndim for sample in samples))
+        max_axis = max(sample.ndim for sample in samples)
 
         # need to test for all valid values of `axis` parameter, too
         for axis in range(-max_axis, max_axis):
@@ -1050,3 +1069,24 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     if weighted_fun_name not in {'pmean', 'gmean'}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+
+
+def test_raise_invalid_args_g17713():
+    # other cases are handled in:
+    # test_axis_nan_policy_decorated_positional_axis - multiple values for arg
+    # test_axis_nan_policy_decorated_positional_args - unexpected kwd arg
+    message = "got an unexpected keyword argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], invalid_arg=True)
+
+    message = " got multiple values for argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], a=True)
+
+    message = "missing 1 required positional argument"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean()
+
+    message = "takes from 1 to 4 positional arguments but 5 were given"
+    with pytest.raises(TypeError, match=message):
+        stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)

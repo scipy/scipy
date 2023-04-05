@@ -307,7 +307,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         code_book = code_book[has_members]
-        diff = prev_avg_dists[0] - prev_avg_dists[1]
+        diff = np.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
@@ -743,7 +743,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     try:
         miss_meth = _valid_miss_meth[missing]
     except KeyError as e:
-        raise ValueError("Unknown missing method %r" % (missing,)) from e
+        raise ValueError(f"Unknown missing method {missing!r}") from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -776,14 +776,14 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         try:
             init_meth = _valid_init_meth[minit]
         except KeyError as e:
-            raise ValueError("Unknown init method %r" % (minit,)) from e
+            raise ValueError(f"Unknown init method {minit!r}") from e
         else:
             rng = check_random_state(seed)
             code_book = init_meth(data, k, rng)
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
-        label = vq(data, code_book)[0]
+        label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():

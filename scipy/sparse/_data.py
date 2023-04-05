@@ -9,7 +9,7 @@
 import numpy as np
 
 from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
-from ._sputils import isscalarlike, validateaxis, matrix
+from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
 
@@ -133,8 +133,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise %s.\n\n"
-                          "See `numpy.%s` for more information." % (name, name))
+        method.__doc__ = ("Element-wise {}.\n\n"
+                          "See `numpy.{}` for more information.".format(name, name))
         method.__name__ = name
 
         return method
@@ -190,8 +190,8 @@ class _minmax_mixin:
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'out' parameter."))
+            raise ValueError("Sparse matrices do not support "
+                              "an 'out' parameter.")
 
         validateaxis(axis)
 
@@ -250,7 +250,7 @@ class _minmax_mixin:
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
-        return matrix(ret)
+        return self._ascontainer(ret)
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:

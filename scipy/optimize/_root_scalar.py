@@ -275,7 +275,21 @@ def root_scalar(f, args=(), method=None, bracket=None,
             raise ValueError('Bracket needed for %s' % method)
 
         a, b = bracket[:2]
-        r, sol = methodc(f, a, b, args=args, **kwargs)
+        try:
+            r, sol = methodc(f, a, b, args=args, **kwargs)
+        except ValueError as e:
+            # gh-17622 fixed some bugs in low-level solvers by raising an error
+            # (rather than returning incorrect results) when the callable
+            # returns a NaN. It did so by wrapping the callable rather than
+            # modifying compiled code, so the iteration count is not available.
+            if hasattr(e, "_x"):
+                sol = optzeros.RootResults(root=e._x,
+                                           iterations=np.nan,
+                                           function_calls=e._function_calls,
+                                           flag=str(e))
+            else:
+                raise
+
     elif meth in ['secant']:
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)

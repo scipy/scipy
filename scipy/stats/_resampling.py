@@ -154,7 +154,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, bootstrap_result, random_state):
+                  alternative, n_resamples, batch, method, bootstrap_result,
+                  random_state):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -209,6 +210,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     confidence_level_float = float(confidence_level)
 
+    alternative = alternative.lower()
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be one of {alternatives}")
+
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int < 0:
         raise ValueError("`n_resamples` must be a non-negative integer.")
@@ -240,7 +246,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
-            confidence_level_float, n_resamples_int, batch_iv,
+            confidence_level_float, alternative, n_resamples_int, batch_iv,
             method, bootstrap_result, random_state)
 
 
@@ -250,12 +256,14 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', bootstrap_result=None, random_state=None):
+              alternative='two-sided', method='BCa', bootstrap_result=None,
+              random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
-    When `method` is ``'percentile'``, a bootstrap confidence interval is
-    computed according to the following procedure.
+    When `method` is ``'percentile'`` and `alternative` is ``'two-sided'``,
+    a bootstrap confidence interval is computed according to the following
+    procedure.
 
     1. Resample the data: for each sample in `data` and for each of
        `n_resamples`, take a random sample of the original sample
@@ -315,6 +323,15 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         calculated.
     confidence_level : float, default: ``0.95``
         The confidence level of the confidence interval.
+    alternative : {'two-sided', 'less', 'greater'}, default: ``'two-sided'``
+        Choose ``'two-sided'`` (default) for a two-sided confidence interval,
+        ``'less'`` for a one-sided confidence interval with the lower bound
+        at ``-np.inf``, and ``'greater'`` for a one-sided confidence interval
+        with the upper bound at ``np.inf``. The other bound of the one-sided
+        confidence intervals is the same as that of a two-sided confidence
+        interval with `confidence_level` twice as far from 1.0; e.g. the upper
+        bound of a 95% ``'less'``  confidence interval is the same as the upper
+        bound of a 90% ``'two-sided'`` confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
@@ -567,10 +584,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
-                         confidence_level, n_resamples, batch, method,
-                         bootstrap_result, random_state)
-    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
-    n_resamples, batch, method, bootstrap_result, random_state = args[6:]
+                         confidence_level, alternative, n_resamples, batch,
+                         method, bootstrap_result, random_state)
+    (data, statistic, vectorized, paired, axis, confidence_level,
+     alternative, n_resamples, batch, method, bootstrap_result,
+     random_state) = args
 
     theta_hat_b = ([] if bootstrap_result is None
                    else [bootstrap_result.bootstrap_distribution])
@@ -591,7 +609,8 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2
+    alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
+             else (1 - confidence_level))
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch)[:2]
@@ -608,6 +627,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     if method == 'basic':  # see [3]
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
+
+    if alternative == 'less':
+        ci_l = np.full_like(ci_l, -np.inf)
+    elif alternative == 'greater':
+        ci_u = np.full_like(ci_u, np.inf)
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,
@@ -919,6 +943,7 @@ def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
                 yield np.argsort(x, axis=-1)[:batch_actual]
 
     return batched_perm_generator()
+
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
                          random_state=None):
@@ -1299,7 +1324,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     case, if ``n`` is an array of the number of observations within each
     sample, the number of distinct partitions is::
 
-        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
+        np.prod([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
     **Paired statistics, permute pairings** (``permutation_type='pairings'``):
 

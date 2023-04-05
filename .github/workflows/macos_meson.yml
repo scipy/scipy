@@ -29,7 +29,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11"]
 
     steps:
     - uses: actions/checkout@v3
@@ -74,7 +74,7 @@ jobs:
         channels: conda-forge
         channel-priority: true
         activate-environment: scipy-dev
-        use-only-tar-bz2: true
+        use-only-tar-bz2: false
         miniforge-variant: Mambaforge
         miniforge-version: latest
         use-mamba: true
@@ -88,7 +88,7 @@ jobs:
       uses: actions/cache@v3
       env:
         # Increase this value to reset cache if environment.yml has not changed
-        CACHE_NUMBER: 0
+        CACHE_NUMBER: 1
       with:
         path: ${{ env.CONDA }}/envs/scipy-dev
         key:
@@ -105,7 +105,7 @@ jobs:
         conda activate scipy-dev
 
         # optional test dependencies
-        conda install scikit-umfpack scikit-sparse
+        mamba install scikit-umfpack scikit-sparse
 
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
