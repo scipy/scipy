@@ -128,3 +128,8 @@ many. For more detailed instructions, see the :ref:`contributor-toc`.
     development environment is completely set up - you can then follow the
     relevant parts of the SciPy documentation to build, test, develop, write
     docs, and contribute to SciPy.
+
+    Another alternative is to use `Gitpod <https://www.gitpod.io>`__.
+    We do not maintain this solution anymore but some information can be found
+    in previous versions of our
+    `docs <https://docs.scipy.org/doc/scipy-1.10.1/dev/contributor/quickstart_gitpod.html>`__.
