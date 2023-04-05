@@ -9,13 +9,40 @@ python _cython_signature_generator.py blas <blas_directory> <out_file>
 To generate the LAPACK wrapper signatures call:
 python _cython_signature_generator.py lapack <lapack_src_directory> <out_file>
 
-This script expects to be run on the source directory for
-the oldest supported version of LAPACK (currently 3.4.0).
+This script expects to be run on the root directory of the LAPACK source code.
+
+It was last run with netlib's LAPACK 3.7.1 (https://netlib.org/lapack/#_lapack_version_3_7_1).
 """
 
-import glob
-import os
+import pathlib
+import re
 from numpy.f2py import crackfortran
+
+RETTYPE = "(?P<rettype>(void|CBLAS_INDEX|double|float))"
+FUNCNAME = r"(cblas|LAPACK)_(?P<funcname>\w+)"
+ALLARGS = r"(?P<args>[^\)]*)"
+FUNCTYPENAME = rf"{RETTYPE}\s+{FUNCNAME}"
+FUNCDECL = re.compile(rf"\n+{FUNCTYPENAME}\({ALLARGS}\);")
+ARG = re.compile(r"\s*(?P<argtype>.*?)(\w+(,|$))")
+
+
+def parse_headers(headers_file, exclusions=None):
+    headers = {}
+    with open(headers_file) as f:
+        all_headers = f.read()
+
+    for funcmo in FUNCDECL.finditer(all_headers):
+        funcname = funcmo.group('funcname')
+        if exclusions is not None and funcname in exclusions:
+            continue
+
+        argsstr = funcmo.group('args')
+        args = []
+        for argmo in ARG.finditer(argsstr):
+            args.append(argmo.group("argtype"))
+        headers[funcname] = args
+    return headers
+
 
 sig_types = {'integer': 'int',
              'complex': 'c',
@@ -27,21 +54,38 @@ sig_types = {'integer': 'int',
              'logical': 'bint'}
 
 
-def get_type(info, arg):
-    argtype = sig_types[info['vars'][arg]['typespec']]
-    if argtype == 'c' and info['vars'][arg].get('kindselector') is not None:
+def get_type(info, funcname, arg=None, argindex=None, headers=None):
+    name = arg or funcname
+    argtype = sig_types[info['vars'][name]['typespec']]
+    if argtype == 'c' and info['vars'][name].get('kindselector') is not None:
         argtype = 'z'
-    return argtype
+    constness = (headers is not None
+                 and funcname in headers
+                 and argindex is not None
+                 and argindex < len(headers[funcname])
+                 and "const" in headers[funcname][argindex])
+    return f"{'const ' if constness else ''}{argtype}"
 
 
-def make_signature(filename):
-    info = crackfortran.crackfortran(filename)[0]
-    name = info['name']
-    if info['block'] == 'subroutine':
-        return_type = 'void'
-    else:
-        return_type = get_type(info, name)
-    arglist = [' *'.join([get_type(info, arg), arg]) for arg in info['args']]
+def make_signature(file, headers):
+    info = iter(crackfortran.crackfortran(str(file)))
+
+    while True:
+        try:
+            subinfo = next(info)
+        except StopIteration:
+            return None
+
+        name = subinfo['name']
+        if subinfo['block'] == 'subroutine':
+            return_type = 'void'
+            break
+        elif subinfo['block'] == 'function':
+            return_type = get_type(subinfo, name)
+            break
+
+    arglist = [' *'.join([get_type(subinfo, name, arg, index, headers), arg])
+               for index, arg in enumerate(subinfo['args'])]
     args = ', '.join(arglist)
     # Eliminate strange variable naming that replaces rank with rank_bn.
     args = args.replace('rank_bn', 'rank')
@@ -52,20 +96,20 @@ def get_sig_name(line):
     return line.split('(')[0].split(' ')[-1]
 
 
-def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
-    if directory[-1] in ['/', '\\']:
-        directory = directory[:-1]
-    files = sorted(glob.glob(directory + '/*.f*'))
+def sigs_from_dir(directory, outfile, headers, manual_wrappers=None, exclusions=None):
+    files = sorted(directory.glob("*.f*"))
     if exclusions is None:
         exclusions = []
     if manual_wrappers is not None:
         exclusions += [get_sig_name(l) for l in manual_wrappers.split('\n')]
     signatures = []
-    for filename in files:
-        name = os.path.splitext(os.path.basename(filename))[0]
+    for file in files:
+        name = file.stem
         if name in exclusions:
             continue
-        signatures.append(make_signature(filename))
+        signature = make_signature(file, headers)
+        if signature is not None:
+            signatures.append(signature)
     if manual_wrappers is not None:
         signatures += [l + '\n' for l in manual_wrappers.split('\n')]
     signatures.sort(key=get_sig_name)
@@ -172,14 +216,19 @@ lapack_exclusions = [
               'clarscl2', 'dlarscl2', 'slarscl2', 'zlarscl2',
               'clascl2', 'dlascl2', 'slascl2', 'zlascl2',
               'cla_wwaddw', 'dla_wwaddw', 'sla_wwaddw', 'zla_wwaddw',
+              'dbdsvdx', 'dtrevc3', 'sbdsvdx', 'strevc3', # These 4 fail, because of a bug in f2py
+                                                          # see (https://github.com/numpy/numpy/issues/23533)
               ]
 
 
 if __name__ == '__main__':
     from sys import argv
-    libname, src_dir, outfile = argv[1:]
+    libname, src_dir_name, outfile = argv[1:]
+    src_dir = pathlib.Path(src_dir_name)
     if libname.lower() == 'blas':
-        sigs_from_dir(src_dir, outfile, exclusions=blas_exclusions)
+        blas_headers = parse_headers(src_dir / "CBLAS" / "include" / "cblas.h", exclusions=blas_exclusions)
+        sigs_from_dir(src_dir / "BLAS" / "SRC", outfile, blas_headers, exclusions=blas_exclusions)
     elif libname.lower() == 'lapack':
-        sigs_from_dir(src_dir, outfile, manual_wrappers=lapack_manual_wrappers,
-                      exclusions=lapack_exclusions)
+        lapack_headers = parse_headers(src_dir / "LAPACKE" / "include" / "lapacke.h", exclusions=lapack_exclusions)
+        sigs_from_dir(src_dir / "SRC", outfile, lapack_headers,
+                      manual_wrappers=lapack_manual_wrappers, exclusions=lapack_exclusions)
