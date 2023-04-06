@@ -1,6 +1,6 @@
 import re
 
-import scipy
+from scipy import signal
 from numpy.testing import assert_
 
 
