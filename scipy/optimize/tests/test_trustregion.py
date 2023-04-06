@@ -26,7 +26,6 @@ class Accumulator:
             self.accum += x
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTrustRegionSolvers:
 
     def setup_method(self):
@@ -37,7 +36,7 @@ class TestTrustRegionSolvers:
     def test_dogleg_accuracy(self):
         # test the accuracy and the return_all option
         x0 = self.hard_guess
-        r = minimize(rosen, x0, jac=rosen_der, hess=rosen_hess, tol=1e-8,
+        r = minimize(rosen, x0, grad=rosen_der, hess=rosen_hess, tol=1e-8,
                      method='dogleg', options={'return_all': True},)
         assert_allclose(x0, r['allvecs'][0])
         assert_allclose(r['x'], r['allvecs'][-1])
@@ -47,7 +46,7 @@ class TestTrustRegionSolvers:
         # test the callback mechanism and the maxiter and return_all options
         accumulator = Accumulator()
         maxiter = 5
-        r = minimize(rosen, self.hard_guess, jac=rosen_der, hess=rosen_hess,
+        r = minimize(rosen, self.hard_guess, grad=rosen_der, hess=rosen_hess,
                      callback=accumulator, method='dogleg',
                      options={'return_all': True, 'maxiter': maxiter},)
         assert_equal(accumulator.count, maxiter)
@@ -58,7 +57,7 @@ class TestTrustRegionSolvers:
     def test_dogleg_user_warning(self):
         with pytest.warns(RuntimeWarning,
                           match=r'Maximum number of iterations'):
-            minimize(rosen, self.hard_guess, jac=rosen_der,
+            minimize(rosen, self.hard_guess, grad=rosen_der,
                      hess=rosen_hess, method='dogleg',
                      options={'disp': True, 'maxiter': 1}, )
 
@@ -71,17 +70,17 @@ class TestTrustRegionSolvers:
         g = rosen_der
         h = rosen_hess
         for x0 in (self.easy_guess, self.hard_guess):
-            r_dogleg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
+            r_dogleg = minimize(f, x0, grad=g, hess=h, tol=1e-8,
                                 method='dogleg', options={'return_all': True})
-            r_trust_ncg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
+            r_trust_ncg = minimize(f, x0, grad=g, hess=h, tol=1e-8,
                                    method='trust-ncg',
                                    options={'return_all': True})
-            r_trust_krylov = minimize(f, x0, jac=g, hess=h, tol=1e-8,
+            r_trust_krylov = minimize(f, x0, grad=g, hess=h, tol=1e-8,
                                    method='trust-krylov',
                                    options={'return_all': True})
-            r_ncg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
+            r_ncg = minimize(f, x0, grad=g, hess=h, tol=1e-8,
                              method='newton-cg', options={'return_all': True})
-            r_iterative = minimize(f, x0, jac=g, hess=h, tol=1e-8,
+            r_iterative = minimize(f, x0, grad=g, hess=h, tol=1e-8,
                                    method='trust-exact',
                                    options={'return_all': True})
             assert_allclose(self.x_opt, r_dogleg['x'])
@@ -93,21 +92,21 @@ class TestTrustRegionSolvers:
 
     def test_trust_ncg_hessp(self):
         for x0 in (self.easy_guess, self.hard_guess, self.x_opt):
-            r = minimize(rosen, x0, jac=rosen_der, hessp=rosen_hess_prod,
+            r = minimize(rosen, x0, grad=rosen_der, hessp=rosen_hess_prod,
                          tol=1e-8, method='trust-ncg')
             assert_allclose(self.x_opt, r['x'])
 
     def test_trust_ncg_start_in_optimum(self):
-        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+        r = minimize(rosen, x0=self.x_opt, grad=rosen_der, hess=rosen_hess,
                      tol=1e-8, method='trust-ncg')
         assert_allclose(self.x_opt, r['x'])
 
     def test_trust_krylov_start_in_optimum(self):
-        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+        r = minimize(rosen, x0=self.x_opt, grad=rosen_der, hess=rosen_hess,
                      tol=1e-8, method='trust-krylov')
         assert_allclose(self.x_opt, r['x'])
 
     def test_trust_exact_start_in_optimum(self):
-        r = minimize(rosen, x0=self.x_opt, jac=rosen_der, hess=rosen_hess,
+        r = minimize(rosen, x0=self.x_opt, grad=rosen_der, hess=rosen_hess,
                      tol=1e-8, method='trust-exact')
         assert_allclose(self.x_opt, r['x'])

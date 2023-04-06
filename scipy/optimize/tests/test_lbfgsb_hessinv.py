@@ -5,14 +5,13 @@ import scipy.linalg
 from scipy.optimize import minimize
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_1():
     def f(x):
         return x**4, 4*x**3
 
     for gtol in [1e-8, 1e-12, 1e-20]:
         for maxcor in range(20, 35):
-            result = minimize(fun=f, jac=True, method='L-BFGS-B', x0=20,
+            result = minimize(fun=f, grad=True, method='L-BFGS-B', x0=20,
                 options={'gtol': gtol, 'maxcor': maxcor})
 
             H1 = result.hess_inv(np.array([1])).reshape(1,1)
@@ -21,7 +20,6 @@ def test_1():
             assert_allclose(H1, H2)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_2():
     H0 = [[3, 0], [1, 2]]
 

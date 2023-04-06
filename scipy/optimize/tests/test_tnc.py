@@ -10,7 +10,6 @@ from math import pow
 from scipy import optimize
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTnc:
     """TNC non-linear optimization.
 
@@ -24,7 +23,7 @@ class TestTnc:
         # options for minimize
         self.opts = {'disp': False, 'maxfun': 200}
 
-    # objective functions and Jacobian for each test
+    # objective functions and gradient for each test
     def f1(self, x, a=100.0):
         return a * pow((x[1] - pow(x[0], 2)), 2) + pow(1.0 - x[0], 2)
 
@@ -121,7 +120,7 @@ class TestTnc:
         xopt = [1, 1]
         iterx = []  # to test callback
 
-        res = optimize.minimize(self.f1, x0, method='TNC', jac=self.g1,
+        res = optimize.minimize(self.f1, x0, method='TNC', grad=self.g1,
                                 bounds=bnds, options=self.opts,
                                 callback=iterx.append)
         assert_allclose(res.fun, self.f1(xopt), atol=1e-8)
@@ -138,7 +137,7 @@ class TestTnc:
         x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
         xopt = [1, 1]
         x = optimize.minimize(self.fg1, x0, method='TNC',
-                              jac=True, bounds=bnds,
+                              grad=True, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
 
@@ -146,7 +145,7 @@ class TestTnc:
         x0, bnds = [-2, 1], ([-np.inf, None], [1.5, None])
         xopt = [-1.2210262419616387, 1.5]
         x = optimize.minimize(self.f1, x0, method='TNC',
-                              jac=self.g1, bounds=bnds,
+                              grad=self.g1, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8)
 
@@ -154,7 +153,7 @@ class TestTnc:
         x0, bnds = [10, 1], ([-np.inf, None], [0.0, None])
         xopt = [0, 0]
         x = optimize.minimize(self.f3, x0, method='TNC',
-                              jac=self.g3, bounds=bnds,
+                              grad=self.g3, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8)
 
@@ -162,7 +161,7 @@ class TestTnc:
         x0,bnds = [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
         x = optimize.minimize(self.f4, x0, method='TNC',
-                              jac=self.g4, bounds=bnds,
+                              grad=self.g4, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f4(x), self.f4(xopt), atol=1e-8)
 
@@ -170,7 +169,7 @@ class TestTnc:
         x0, bnds = [0, 0], [(-1.5, 4),(-3, 3)]
         xopt = [-0.54719755119659763, -1.5471975511965976]
         x = optimize.minimize(self.f5, x0, method='TNC',
-                              jac=self.g5, bounds=bnds,
+                              grad=self.g5, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f5(x), self.f5(xopt), atol=1e-8)
 
@@ -178,7 +177,7 @@ class TestTnc:
         x0, bnds = np.array([-3, -1, -3, -1]), [(-10, 10)]*4
         xopt = [1]*4
         x = optimize.minimize(self.f38, x0, method='TNC',
-                              jac=self.g38, bounds=bnds,
+                              grad=self.g38, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f38(x), self.f38(xopt), atol=1e-8)
 
@@ -186,7 +185,7 @@ class TestTnc:
         x0, bnds = [2] * 5, [(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]
         xopt = [1, 2, 3, 4, 5]
         x = optimize.minimize(self.f45, x0, method='TNC',
-                              jac=self.g45, bounds=bnds,
+                              grad=self.g45, bounds=bnds,
                               options=self.opts).x
         assert_allclose(self.f45(x), self.f45(xopt), atol=1e-8)
 

@@ -24,7 +24,6 @@ class MyCallBack:
         self.ncalls += 1
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestSLSQP:
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
@@ -51,7 +50,7 @@ class TestSLSQP:
         y = d[1]
         return sign*(2*x*y + 2*x - x**2 - 2*y**2)
 
-    def jac(self, d, sign=1.0):
+    def grad(self, d, sign=1.0):
         """
         This is the derivative of fun, returning a NumPy array
         representing df/dx and df/dy.
@@ -63,8 +62,8 @@ class TestSLSQP:
         dfdy = sign*(2*x - 4*y)
         return np.array([dfdx, dfdy], float)
 
-    def fun_and_jac(self, d, sign=1.0):
-        return self.fun(d, sign), self.jac(d, sign)
+    def fun_and_grad(self, d, sign=1.0):
+        return self.fun(d, sign), self.grad(d, sign)
 
     def f_eqcon(self, x, sign=1.0):
         """ Equality constraint """
@@ -100,29 +99,29 @@ class TestSLSQP:
 
     # minimize
     def test_minimize_unbounded_approximated(self):
-        # Minimize, method='SLSQP': unbounded, approximated jacobian.
-        jacs = [None, False, '2-point', '3-point']
-        for jac in jacs:
+        # Minimize, method='SLSQP': unbounded, approximated gradient.
+        grads = [None, False, '2-point', '3-point']
+        for grad in grads:
             res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                           jac=jac, method='SLSQP',
+                           grad=grad, method='SLSQP',
                            options=self.opts)
             assert_(res['success'], res['message'])
             assert_allclose(res.x, [2, 1])
 
     def test_minimize_unbounded_given(self):
-        # Minimize, method='SLSQP': unbounded, given Jacobian.
+        # Minimize, method='SLSQP': unbounded, given gradient.
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                       jac=self.jac, method='SLSQP', options=self.opts)
+                       grad=self.grad, method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_bounded_approximated(self):
-        # Minimize, method='SLSQP': bounded, approximated jacobian.
-        jacs = [None, False, '2-point', '3-point']
-        for jac in jacs:
+        # Minimize, method='SLSQP': bounded, approximated gradient.
+        grads = [None, False, '2-point', '3-point']
+        for grad in grads:
             with np.errstate(invalid='ignore'):
                 res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                               jac=jac,
+                               grad=grad,
                                bounds=((2.5, None), (None, 0.5)),
                                method='SLSQP', options=self.opts)
             assert_(res['success'], res['message'])
@@ -131,18 +130,19 @@ class TestSLSQP:
             assert_(res.x[1] <= 0.5)
 
     def test_minimize_unbounded_combined(self):
-        # Minimize, method='SLSQP': unbounded, combined function and Jacobian.
-        res = minimize(self.fun_and_jac, [-1.0, 1.0], args=(-1.0, ),
-                       jac=True, method='SLSQP', options=self.opts)
+        # Minimize, method='SLSQP': unbounded, combined function and gradient.
+        res = minimize(self.fun_and_grad, [-1.0, 1.0], args=(-1.0, ),
+                       grad=True, method='SLSQP', options=self.opts)
         assert_(res['success'], res['message'])
         assert_allclose(res.x, [2, 1])
 
     def test_minimize_equality_approximated(self):
-        # Minimize with method='SLSQP': equality constraint, approx. jacobian.
-        jacs = [None, False, '2-point', '3-point']
-        for jac in jacs:
+        # Minimize with method='SLSQP': equality constraint, approx. gradient
+        # and Jacobian
+        grads = [None, False, '2-point', '3-point']
+        for grad in grads:
             res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                           jac=jac,
+                           grad=grad,
                            constraints={'type': 'eq',
                                         'fun': self.f_eqcon,
                                         'args': (-1.0, )},
@@ -151,8 +151,9 @@ class TestSLSQP:
             assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given(self):
-        # Minimize with method='SLSQP': equality constraint, given Jacobian.
-        res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
+        # Minimize with method='SLSQP': equality constraint, given gradient
+        # but approximated Jacobian.
+        res = minimize(self.fun, [-1.0, 1.0], grad=self.grad,
                        method='SLSQP', args=(-1.0,),
                        constraints={'type': 'eq', 'fun':self.f_eqcon,
                                     'args': (-1.0, )},
@@ -161,10 +162,10 @@ class TestSLSQP:
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_equality_given2(self):
-        # Minimize with method='SLSQP': equality constraint, given Jacobian
-        # for fun and const.
+        # Minimize with method='SLSQP': equality constraint, given gradient
+        # and Jacobian.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
-                       jac=self.jac, args=(-1.0,),
+                       grad=self.grad, args=(-1.0,),
                        constraints={'type': 'eq',
                                     'fun': self.f_eqcon,
                                     'args': (-1.0, ),
@@ -175,9 +176,9 @@ class TestSLSQP:
 
     def test_minimize_equality_given_cons_scalar(self):
         # Minimize with method='SLSQP': scalar equality constraint, given
-        # Jacobian for fun and const.
+        # gradient and Jacobian.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
-                       jac=self.jac, args=(-1.0,),
+                       grad=self.grad, args=(-1.0,),
                        constraints={'type': 'eq',
                                     'fun': self.f_eqcon_scalar,
                                     'args': (-1.0, ),
@@ -187,9 +188,10 @@ class TestSLSQP:
         assert_allclose(res.x, [1, 1])
 
     def test_minimize_inequality_given(self):
-        # Minimize with method='SLSQP': inequality constraint, given Jacobian.
+        # Minimize with method='SLSQP': inequality constraint, given gradient
+        # but approximated Jacobian.
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
-                       jac=self.jac, args=(-1.0, ),
+                       grad=self.grad, args=(-1.0, ),
                        constraints={'type': 'ineq',
                                     'fun': self.f_ieqcon,
                                     'args': (-1.0, )},
@@ -199,8 +201,8 @@ class TestSLSQP:
 
     def test_minimize_inequality_given_vector_constraints(self):
         # Minimize with method='SLSQP': vector inequality constraint, given
-        # Jacobian.
-        res = minimize(self.fun, [-1.0, 1.0], jac=self.jac,
+        # gradient and Jacobian.
+        res = minimize(self.fun, [-1.0, 1.0], grad=self.grad,
                        method='SLSQP', args=(-1.0,),
                        constraints={'type': 'ineq',
                                     'fun': self.f_ieqcon2,
@@ -211,8 +213,8 @@ class TestSLSQP:
 
     def test_minimize_bounded_constraint(self):
         # when the constraint makes the solver go up against a parameter
-        # bound make sure that the numerical differentiation of the
-        # jacobian doesn't try to exceed that bound using a finite difference.
+        # bound make sure that the numerical approximation of the
+        # Jacobian doesn't try to exceed that bound using a finite difference.
         # gh11403
         def c(x):
             assert 0 <= x[0] <= 1 and 0 <= x[1] <= 1, x
@@ -228,10 +230,10 @@ class TestSLSQP:
         minimize(f, x0, method='SLSQP', bounds=bnd, constraints=cns)
 
     def test_minimize_bound_equality_given2(self):
-        # Minimize with method='SLSQP': bounds, eq. const., given jac. for
-        # fun. and const.
+        # Minimize with method='SLSQP': bounds, eq. const., given gradient
+        # and Jacobian
         res = minimize(self.fun, [-1.0, 1.0], method='SLSQP',
-                       jac=self.jac, args=(-1.0, ),
+                       grad=self.grad, args=(-1.0, ),
                        bounds=[(-0.8, 1.), (-1, 0.8)],
                        constraints={'type': 'eq',
                                     'fun': self.f_eqcon,
@@ -245,7 +247,7 @@ class TestSLSQP:
 
     # fmin_slsqp
     def test_unbounded_approximated(self):
-        # SLSQP: unbounded, approximated Jacobian.
+        # SLSQP: unbounded, approximated gradient.
         res = fmin_slsqp(self.fun, [-1.0, 1.0], args=(-1.0, ),
                          iprint = 0, full_output = 1)
         x, fx, its, imode, smode = res
@@ -253,16 +255,16 @@ class TestSLSQP:
         assert_array_almost_equal(x, [2, 1])
 
     def test_unbounded_given(self):
-        # SLSQP: unbounded, given Jacobian.
+        # SLSQP: unbounded, given gradient.
         res = fmin_slsqp(self.fun, [-1.0, 1.0], args=(-1.0, ),
-                         fprime = self.jac, iprint = 0,
+                         fprime = self.grad, iprint = 0,
                          full_output = 1)
         x, fx, its, imode, smode = res
         assert_(imode == 0, imode)
         assert_array_almost_equal(x, [2, 1])
 
     def test_equality_approximated(self):
-        # SLSQP: equality constraint, approximated Jacobian.
+        # SLSQP: equality constraint, approximated gradient and Jacobian.
         res = fmin_slsqp(self.fun,[-1.0,1.0], args=(-1.0,),
                          eqcons = [self.f_eqcon],
                          iprint = 0, full_output = 1)
@@ -271,9 +273,9 @@ class TestSLSQP:
         assert_array_almost_equal(x, [1, 1])
 
     def test_equality_given(self):
-        # SLSQP: equality constraint, given Jacobian.
+        # SLSQP: equality constraint, given gradient but not Jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
-                         fprime=self.jac, args=(-1.0,),
+                         fprime=self.grad, args=(-1.0,),
                          eqcons = [self.f_eqcon], iprint = 0,
                          full_output = 1)
         x, fx, its, imode, smode = res
@@ -281,9 +283,9 @@ class TestSLSQP:
         assert_array_almost_equal(x, [1, 1])
 
     def test_equality_given2(self):
-        # SLSQP: equality constraint, given Jacobian for fun and const.
+        # SLSQP: equality constraint, given gradient and Jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
-                         fprime=self.jac, args=(-1.0,),
+                         fprime=self.grad, args=(-1.0,),
                          f_eqcons = self.f_eqcon,
                          fprime_eqcons = self.fprime_eqcon,
                          iprint = 0,
@@ -293,9 +295,9 @@ class TestSLSQP:
         assert_array_almost_equal(x, [1, 1])
 
     def test_inequality_given(self):
-        # SLSQP: inequality constraint, given Jacobian.
+        # SLSQP: inequality constraint, given gradient but not Jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
-                         fprime=self.jac, args=(-1.0, ),
+                         fprime=self.grad, args=(-1.0, ),
                          ieqcons = [self.f_ieqcon],
                          iprint = 0, full_output = 1)
         x, fx, its, imode, smode = res
@@ -303,9 +305,9 @@ class TestSLSQP:
         assert_array_almost_equal(x, [2, 1], decimal=3)
 
     def test_bound_equality_given2(self):
-        # SLSQP: bounds, eq. const., given jac. for fun. and const.
+        # SLSQP: bounds, eq. const., given gradient and Jacobian.
         res = fmin_slsqp(self.fun, [-1.0, 1.0],
-                         fprime=self.jac, args=(-1.0, ),
+                         fprime=self.grad, args=(-1.0, ),
                          bounds = [(-0.8, 1.), (-1, 0.8)],
                          f_eqcons = self.f_eqcon,
                          fprime_eqcons = self.fprime_eqcon,
@@ -354,7 +356,8 @@ class TestSLSQP:
         fmin_slsqp(lambda x: [0], [1, 2, 3], iprint=0)
 
     def test_callback(self):
-        # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
+        # Minimize, method='SLSQP': unbounded, approximated gradient.
+        # Check for callback
         callback = MyCallBack()
         res = minimize(self.fun, [-1.0, 1.0], args=(-1.0, ),
                        method='SLSQP', callback=callback, options=self.opts)
@@ -408,7 +411,7 @@ class TestSLSQP:
             return (x[0] - 1)**2 + 2*(x[1] - 1)**2 + 0.5*(x[2] - 1)**2
 
         sol = minimize(func, [0, 0, 0], method='SLSQP')
-        assert_(sol.jac.shape == (3,))
+        assert_(sol.grad.shape == (3,))
 
     def test_invalid_bounds(self):
         # Raise correct error when lower bound is greater than upper bound.

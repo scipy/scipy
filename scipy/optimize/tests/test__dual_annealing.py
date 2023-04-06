@@ -20,7 +20,6 @@ from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDualAnnealing:
 
     def setup_method(self):
@@ -272,12 +271,12 @@ class TestDualAnnealing:
 
     def test_gradient_gnev(self):
         minimizer_opts = {
-            'jac': self.rosen_der_wrapper,
+            'grad': self.rosen_der_wrapper,
         }
         ret = dual_annealing(rosen, self.ld_bounds,
                              minimizer_kwargs=minimizer_opts,
                              seed=self.seed)
-        assert ret.njev == self.ngev
+        assert ret.ngev == self.ngev
 
     def test_from_docstring(self):
         def func(x):
@@ -362,19 +361,19 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
 
-    def test_callable_jac_with_args_gh11052(self):
-        # dual_annealing used to fail when `jac` was callable and `args` were
+    def test_callable_grad_with_args_gh11052(self):
+        # dual_annealing used to fail when `grad` was callable and `args` were
         # used; check that this is resolved. Example is from gh-11052.
         rng = np.random.default_rng(94253637693657847462)
         def f(x, power):
             return np.sum(np.exp(x ** power))
 
-        def jac(x, power):
+        def grad(x, power):
             return np.exp(x ** power) * power * x ** (power - 1)
 
         res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B'))
         res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B',
-                                                    jac=jac))
+                                                    grad=grad))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)

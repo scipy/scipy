@@ -36,9 +36,9 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
-                        _wrap_callback, _check_unknown_options,
-                        _prepare_scalar_function)
+from ._optimize import (MemoizeJac, _OptimizeResult as OptimizeResult,
+                        _call_callback_maybe_halt, _wrap_callback,
+                        _check_unknown_options, _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -396,7 +396,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
 
     task_str = task_str.decode()
     return OptimizeResult(fun=f, grad=g, nfev=sf.nfev,
-                          njev=sf.ngev,
+                          ngev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)
 

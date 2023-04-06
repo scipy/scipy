@@ -7,7 +7,6 @@ from numpy.testing import assert_allclose, assert_, assert_array_equal
 from scipy.optimize import fmin_cobyla, minimize, Bounds
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestCobyla:
     def setup_method(self):
         self.x0 = [4.95, 0.66]
@@ -87,7 +86,6 @@ class TestCobyla:
         assert_(not sol.success)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_vector_constraints():
     # test that fmin_cobyla and minimize can take a combination
     # of constraints, some returning a number and others an array

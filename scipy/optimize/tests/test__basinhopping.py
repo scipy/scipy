@@ -103,7 +103,6 @@ class MyCallBack:
             return True
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestBasinHopping:
 
     def setup_method(self):
@@ -122,7 +121,7 @@ class TestBasinHopping:
         # fix random seed
         np.random.seed(1234)
 
-        self.kwargs = {"method": "L-BFGS-B", "jac": True}
+        self.kwargs = {"method": "L-BFGS-B", "grad": True}
         self.kwargs_nograd = {"method": "L-BFGS-B"}
 
     def test_TypeError(self):
@@ -163,33 +162,33 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
         assert_(res.nfev > 0)
 
-    def test_njev(self):
-        # test njev is returned correctly
+    def test_ngev(self):
+        # test ngev is returned correctly
         i = 1
         minimizer_kwargs = self.kwargs.copy()
-        # L-BFGS-B doesn't use njev, but BFGS does
+        # L-BFGS-B doesn't use ngev, but BFGS does
         minimizer_kwargs["method"] = "BFGS"
         res = basinhopping(func2d, self.x0[i],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
         assert_(res.nfev > 0)
-        assert_equal(res.nfev, res.njev)
+        assert_equal(res.nfev, res.ngev)
 
-    def test_jac(self):
-        # test Jacobian returned
+    def test_grad(self):
+        # test gradient returned
         minimizer_kwargs = self.kwargs.copy()
-        # BFGS returns a Jacobian
+        # BFGS returns a gradient
         minimizer_kwargs["method"] = "BFGS"
 
         res = basinhopping(func2d_easyderiv, [0.0, 0.0],
                            minimizer_kwargs=minimizer_kwargs, niter=self.niter,
                            disp=self.disp)
 
-        assert_(hasattr(res.lowest_optimization_result, "jac"))
+        assert_(hasattr(res.lowest_optimization_result, "grad"))
 
-        # in this case, the Jacobian is just [df/dx, df/dy]
-        _, jacobian = func2d_easyderiv(res.x)
-        assert_almost_equal(res.lowest_optimization_result.jac, jacobian,
+        # in this case, the gradient is just [df/dx, df/dy]
+        _, gradient = func2d_easyderiv(res.x)
+        assert_almost_equal(res.lowest_optimization_result.grad, gradient,
                             self.tol)
 
     def test_2d_nograd(self):
@@ -202,7 +201,7 @@ class TestBasinHopping:
 
     def test_all_minimizers(self):
         # Test 2-D minimizations with gradient. Nelder-Mead, Powell, and COBYLA
-        # don't accept jac=True, so aren't included here.
+        # don't accept grad=True, so aren't included here.
         i = 1
         methods = ['CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'SLSQP']
         minimizer_kwargs = copy.copy(self.kwargs)
@@ -214,8 +213,8 @@ class TestBasinHopping:
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_nograd_minimizers(self):
-        # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
-        # so not included here.
+        # Test 2-D minimizations without gradient. Newton-CG requires
+        # grad=True, so not included here.
         i = 1
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
                    'Nelder-Mead', 'Powell', 'COBYLA']
@@ -300,7 +299,7 @@ class TestBasinHopping:
 
     def test_seed_reproducibility(self):
         # seed should ensure reproducibility between runs
-        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+        minimizer_kwargs = {"method": "L-BFGS-B", "grad": True}
 
         f_1 = []
 
@@ -323,7 +322,7 @@ class TestBasinHopping:
         # check that np.random.Generator can be used (numpy >= 1.17)
         rng = np.random.default_rng(1)
 
-        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+        minimizer_kwargs = {"method": "L-BFGS-B", "grad": True}
 
         res1 = basinhopping(func2d, [1.0, 1.0],
                             minimizer_kwargs=minimizer_kwargs,
@@ -395,7 +394,6 @@ class Test_RandomDisplacement:
         assert_almost_equal(np.var(x), v, 1)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestMetropolis:
     def setup_method(self):
         self.T = 2.

@@ -444,7 +444,6 @@ class Elec:
         return NonlinearConstraint(fun, -np.inf, 0, jac, hess)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTrustRegionConstr(TestCase):
 
     @pytest.mark.slow
@@ -487,7 +486,7 @@ class TestTrustRegionConstr(TestCase):
                         sup.filter(UserWarning, "delta_grad == 0.0")
                         result = minimize(prob.fun, prob.x0,
                                           method='trust-constr',
-                                          jac=grad, hess=hess,
+                                          grad=grad, hess=hess,
                                           bounds=prob.bounds,
                                           constraints=prob.constr)
 
@@ -519,21 +518,21 @@ class TestTrustRegionConstr(TestCase):
             return (x - 1) ** 2
         bounds = [(-2, 2)]
         res = minimize(fun, x0=[-1.5], bounds=bounds, method='trust-constr',
-                       jac='2-point')
+                       grad='2-point')
         assert_array_almost_equal(res.x, 1, decimal=5)
 
     def test_no_constraints(self):
         prob = Rosenbrock()
         result = minimize(prob.fun, prob.x0,
                           method='trust-constr',
-                          jac=prob.grad, hess=prob.hess)
+                          grad=prob.grad, hess=prob.hess)
         result1 = minimize(prob.fun, prob.x0,
                            method='L-BFGS-B',
-                           jac='2-point')
+                           grad='2-point')
 
         result2 = minimize(prob.fun, prob.x0,
                            method='L-BFGS-B',
-                           jac='3-point')
+                           grad='3-point')
         assert_array_almost_equal(result.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result1.x, prob.x_opt, decimal=5)
         assert_array_almost_equal(result2.x, prob.x_opt, decimal=5)
@@ -547,7 +546,7 @@ class TestTrustRegionConstr(TestCase):
 
         result = minimize(prob.fun, prob.x0,
                           method='trust-constr',
-                          jac=prob.grad, hessp=hessp,
+                          grad=prob.grad, hessp=hessp,
                           bounds=prob.bounds,
                           constraints=prob.constr)
 
@@ -572,7 +571,7 @@ class TestTrustRegionConstr(TestCase):
 
         result = minimize(prob.fun, prob.x0, ("a", 234),
                           method='trust-constr',
-                          jac=prob.grad, hess=prob.hess,
+                          grad=prob.grad, hess=prob.hess,
                           bounds=prob.bounds,
                           constraints=prob.constr)
 
@@ -595,7 +594,7 @@ class TestTrustRegionConstr(TestCase):
         prob = Maratos()
 
         raises(ValueError, minimize, prob.fun, prob.x0, method='trust-constr',
-               jac='2-point', hess='2-point', constraints=prob.constr)
+               grad='2-point', hess='2-point', constraints=prob.constr)
 
     def test_issue_9044(self):
         # https://github.com/scipy/scipy/issues/9044
@@ -606,7 +605,7 @@ class TestTrustRegionConstr(TestCase):
             assert_('nit' in info)
             assert_('niter' in info)
 
-        result = minimize(lambda x: x**2, [0], jac=lambda x: 2*x,
+        result = minimize(lambda x: x**2, [0], grad=lambda x: 2*x,
                           hess=lambda x: 2, callback=callback,
                           method='trust-constr')
         assert_(result.get('success'))
@@ -617,7 +616,6 @@ class TestTrustRegionConstr(TestCase):
         assert_(result.get('niter', -1) == 1)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestEmptyConstraint(TestCase):
     """
     Here we minimize x^2+y^2 subject to x^2-y^2>1.
@@ -636,7 +634,7 @@ class TestEmptyConstraint(TestCase):
         def function(x):
             return x[0]**2 + x[1]**2
 
-        def functionjacobian(x):
+        def functiongradient(x):
             return np.array([2.*x[0], 2.*x[1]])
 
         def functionhvp(x, v):
@@ -661,7 +659,7 @@ class TestEmptyConstraint(TestCase):
           function,
           startpoint,
           method='trust-constr',
-          jac=functionjacobian,
+          grad=functiongradient,
           hessp=functionhvp,
           constraints=[constraint],
           bounds=bounds,
@@ -670,7 +668,6 @@ class TestEmptyConstraint(TestCase):
         assert_array_almost_equal(abs(result.x), np.array([1, 0]), decimal=4)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bug_11886():
     def opt(x):
         return x[0]**2+x[1]**2
