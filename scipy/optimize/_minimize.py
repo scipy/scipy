@@ -747,7 +747,7 @@ def minimize(fun, x0, args=(), method=None, grad=None, hess=None,
 
     if remove_vars:
         res.x = _add_to_array(res.x, i_fixed, x_fixed)
-        res.jac = _add_to_array(res.jac, i_fixed, np.nan)
+        res.grad = _add_to_array(res.grad, i_fixed, np.nan)
         if "hess_inv" in res:
             res.hess_inv = None  # unknown
 

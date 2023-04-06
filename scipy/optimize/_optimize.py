@@ -179,7 +179,7 @@ def _call_callback_maybe_halt(callback, res):
         return True
 
 
-class OptimizeResult(dict):
+class _OptimizeResult(dict):
     """ Represents the optimization result.
 
     Attributes
@@ -193,8 +193,8 @@ class OptimizeResult(dict):
         underlying solver. Refer to `message` for details.
     message : str
         Description of the cause of the termination.
-    fun, jac, hess: ndarray
-        Values of objective function, its Jacobian and its Hessian (if
+    fun, grad, hess: ndarray
+        Values of objective function, its gradient and its Hessian (if
         available). The Hessians may be approximations, see the documentation
         of the function in question.
     hess_inv : object
@@ -203,7 +203,7 @@ class OptimizeResult(dict):
         either np.ndarray or scipy.sparse.linalg.LinearOperator.
     nfev, njev, nhev : int
         Number of evaluations of the objective functions and of its
-        Jacobian and Hessian.
+        gradient and Hessian.
     nit : int
         Number of iterations performed by the optimizer.
     maxcv : float
@@ -257,6 +257,45 @@ class OptimizeResult(dict):
 
     def __dir__(self):
         return list(self.keys())
+
+
+class OptimizeResult(_OptimizeResult):
+    def __getattr__(self, name):
+        if name == 'jac':
+            name = 'grad'
+        return super().__getattr__(name)
+
+    def __setattr__(self, name, value):
+        if name == 'jac':
+            name = 'grad'
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name == 'jac':
+            name = 'grad'
+        del self[name]
+
+    def __setitem__(self, key, value):
+        if key == 'jac':
+            key = 'grad'
+        return super().__setitem__(key, value)
+
+    def __getitem__(self, key):
+        if key == 'jac':
+            key = 'grad'
+        return super().__getitem__(key)
+
+    def __delitem__(self, key):
+        if key == 'jac':
+            key = 'grad'
+        return super().__delitem__(key)
+
+    def __init__(self, *args, jac_is_grad=False, **kwargs):
+        # self.jac_is_grad = jac_is_grad
+        if 'jac' in kwargs:
+            kwargs['grad'] = kwargs['jac']
+            del kwargs['jac']
+        return super().__init__(*args, **kwargs)
 
 
 class OptimizeWarning(UserWarning):
@@ -1514,7 +1553,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, jac=gfk, hess_inv=Hk, nfev=sf.nfev,
+    result = OptimizeResult(fun=fval, grad=gfk, hess_inv=Hk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
                             success=(warnflag == 0), message=msg, x=xk,
                             nit=k)
@@ -1672,7 +1711,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ...         'gtol' : 1e-5,    # default value.
     ...         'norm' : np.inf,  # default value.
     ...         'eps' : 1.4901161193847656e-08}  # default value.
-    >>> res2 = optimize.minimize(f, x0, jac=gradf, args=args,
+    >>> res2 = optimize.minimize(f, x0, grad=gradf, args=args,
     ...                          method='CG', options=opts)
     Optimization terminated successfully.
             Current function value: 1.617021
@@ -1842,7 +1881,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
+    result = OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
                             njev=sf.ngev, status=warnflag,
                             success=(warnflag == 0), message=msg, x=xk,
                             nit=k)
@@ -2032,7 +2071,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Gradient evaluations: %d" % sf.ngev)
             print("         Hessian evaluations: %d" % hcalls)
         fval = old_fval
-        result = OptimizeResult(fun=fval, jac=gfk, nfev=sf.nfev,
+        result = OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
                                 success=(warnflag == 0), message=msg, x=xk,
                                 nit=k)

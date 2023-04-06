@@ -97,7 +97,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr
 from scipy.sparse.linalg import lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import _OptimizeResult as OptimizeResult
 
 from .common import (
     step_size_to_bound, find_active_constraints, in_bounds,

@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import qr, solve_triangular
 from scipy.sparse.linalg import lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import  _OptimizeResult as OptimizeResult
 
 from .givens_elimination import givens_elimination
 from .common import (

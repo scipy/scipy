@@ -3,7 +3,7 @@ import numpy as np
 from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator, lsmr
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import  _OptimizeResult as OptimizeResult
 from scipy.optimize._minimize import Bounds
 
 from .common import in_bounds, compute_grad

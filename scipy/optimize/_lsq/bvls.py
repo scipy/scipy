@@ -1,7 +1,7 @@
 """Bounded-variable least-squares algorithm."""
 import numpy as np
 from numpy.linalg import norm, lstsq
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import  _OptimizeResult as OptimizeResult
 
 from .common import print_header_linear, print_iteration_linear
 
