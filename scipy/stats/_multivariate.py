@@ -6378,7 +6378,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         kappa_error_msg = "'kappa' must be a positive scalar."
         if not np.isscalar(kappa):
             raise ValueError(kappa_error_msg)
-        if kappa < 0:
+        if kappa <= 0:
             raise ValueError(kappa_error_msg)
         dim = mu.size
 

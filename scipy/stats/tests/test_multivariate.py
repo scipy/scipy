@@ -3148,7 +3148,7 @@ class TestVonMises_Fisher:
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 
-    @pytest.mark.parametrize("kappa", [-1, (5, 3)])
+    @pytest.mark.parametrize("kappa", [-1, 0, (5, 3)])
     def test_kappa_validation(self, kappa):
         msg = "'kappa' must be a positive scalar."
         with pytest.raises(ValueError, match=msg):
