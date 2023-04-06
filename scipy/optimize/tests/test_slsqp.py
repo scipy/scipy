@@ -24,6 +24,7 @@ class MyCallBack:
         self.ncalls += 1
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestSLSQP:
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for

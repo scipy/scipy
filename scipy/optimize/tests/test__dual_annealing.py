@@ -20,6 +20,7 @@ from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDualAnnealing:
 
     def setup_method(self):

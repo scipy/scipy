@@ -10,6 +10,7 @@ from math import pow
 from scipy import optimize
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTnc:
     """TNC non-linear optimization.
 

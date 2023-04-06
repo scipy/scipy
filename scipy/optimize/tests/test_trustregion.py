@@ -26,6 +26,7 @@ class Accumulator:
             self.accum += x
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTrustRegionSolvers:
 
     def setup_method(self):

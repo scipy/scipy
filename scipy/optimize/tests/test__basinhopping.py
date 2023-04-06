@@ -103,6 +103,7 @@ class MyCallBack:
             return True
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestBasinHopping:
 
     def setup_method(self):

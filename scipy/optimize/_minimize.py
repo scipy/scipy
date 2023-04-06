@@ -49,7 +49,7 @@ MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
-@_rename_parameter('jac', 'grad')
+@_rename_parameter('jac', 'grad', '1.11.0')
 def minimize(fun, x0, args=(), method=None, grad=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):

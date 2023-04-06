@@ -444,6 +444,7 @@ class Elec:
         return NonlinearConstraint(fun, -np.inf, 0, jac, hess)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestTrustRegionConstr(TestCase):
 
     @pytest.mark.slow
@@ -615,6 +616,8 @@ class TestTrustRegionConstr(TestCase):
         # compatibility
         assert_(result.get('niter', -1) == 1)
 
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestEmptyConstraint(TestCase):
     """
     Here we minimize x^2+y^2 subject to x^2-y^2>1.

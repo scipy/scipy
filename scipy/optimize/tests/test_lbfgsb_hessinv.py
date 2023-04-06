@@ -1,9 +1,11 @@
 import numpy as np
+import pytest
 from numpy.testing import assert_allclose
 import scipy.linalg
 from scipy.optimize import minimize
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_1():
     def f(x):
         return x**4, 4*x**3

@@ -498,7 +498,9 @@ class TestShgoSimplicialTestFunctions:
         assert_allclose(res.fun, ref.fun)
         assert_allclose(res.x, ref.x, rtol=1e-6)
 
+
 # Argument test functions
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestShgoArguments:
     def test_1_1_simpl_iter(self):
         """Iterative simplicial sampling on TestFunction 1 (multivariate)"""

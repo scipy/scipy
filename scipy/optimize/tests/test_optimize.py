@@ -773,26 +773,31 @@ def test_onesided_bounded_powell_stability():
     assert_allclose(res.fun, -(2e3) ** 5 - (1e6) ** (0.1), rtol=1e-7)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = True
     disp = True
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeWrapperNoDisp(CheckOptimizeParameterized):
     use_wrapper = True
     disp = False
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeNoWrapperDisp(CheckOptimizeParameterized):
     use_wrapper = False
     disp = True
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeNoWrapperNoDisp(CheckOptimizeParameterized):
     use_wrapper = False
     disp = False
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeSimple(CheckOptimize):
 
     def test_bfgs_nan(self):
@@ -1611,6 +1616,7 @@ def test_minimize_with_scalar(method):
     assert_allclose(res.x, [0.0], atol=1e-5)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLBFGSBBounds:
     def setup_method(self):
         self.bounds = ((1, None), (None, None))
@@ -1975,6 +1981,7 @@ def test_brent_negative_tolerance():
     assert_raises(ValueError, optimize.brent, np.cos, tol=-.01)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestNewtonCg:
     def test_rosenbrock(self):
         x0 = np.array([-1.2, 1.0])
@@ -2327,6 +2334,7 @@ def test_minimize_multiple_constraints():
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestOptimizeResultAttributes:
     # Test that all minimizers return an OptimizeResult containing
     # all the OptimizeResult attributes
@@ -2557,6 +2565,7 @@ class TestIterationLimits:
                     assert res["nfev"] >= default_iters*2 or res["nit"] >= default_iters*2
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_result_x_shape_when_len_x_is_one():
     def fun(x):
         return x * x
@@ -2752,6 +2761,7 @@ eb_data = setup_test_equal_bounds()
 
 
 # This test is about handling fixed variables, not the accuracy of the solvers
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.xfail_on_32bit("Failures due to floating point issues, not logic")
 @pytest.mark.parametrize('method', eb_data["methods"])
 @pytest.mark.parametrize('kwds', eb_data["kwds"])
@@ -2919,6 +2929,7 @@ def test_bounds_with_list():
     )
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_x_overwritten_user_function():
     # if the user overwrites the x-array in the user function it's likely
     # that the minimizer stops working properly.
@@ -3008,3 +3019,11 @@ def test_gh12594():
 
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
+
+
+def test_deprecate_jac():
+    # test that DeprecationWarning is emitted when `jac` keyword is passed
+    # into `scipy.optimize.minimize`. Remove this in SciPy 1.13.0.
+    message = "Use of keyword argument `jac` is deprecated and replaced by..."
+    with pytest.warns(DeprecationWarning, match=message):
+        optimize.minimize(lambda x: x, x0=(0), jac = lambda x: 1)
