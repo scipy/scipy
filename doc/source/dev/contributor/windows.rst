@@ -148,7 +148,7 @@ You can see all available options via
    git tag
 
 Now change the directory one level up via :code:`cd ..` to get out of the
-directory and create a file named `build_openblas.sh`. The easiest way is to
+directory and create a file named ``build_openblas.sh``. The easiest way is to
 type
 
 .. code:: shell
@@ -297,7 +297,7 @@ Once you have built OpenBLAS, it's time to build SciPy. Before continuing, make
 sure to install the following software for building on the latest Python
 version. For building on other Python versions, see the WindowsCompilers_ page.
 We are also assuming that your Python is on the system path. That is to say,
-when you type `python` in the Windows command prompt the correct Python is
+when you type ``python`` in the Windows command prompt the correct Python is
 executed.
 
 Install Microsoft Visual Studio 2017 or 2019 Community Edition (use the
@@ -379,7 +379,7 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy Cython pybind11 pythran pytest pytest-xdist
+    python -m pip install numpy meson-python Cython pybind11 pythran pytest pytest-xdist
 
 .. note::
 
@@ -391,43 +391,32 @@ The last two are for using SciPy's test suite, which is handy if you want to tes
 some new change locally.
 
 Please note that this is a simpler procedure than what is used for the official
-binaries. **Your binaries will only work with the latest NumPy**.
-For building against older NumPy versions, see
-`Building Against an Older NumPy Version`_.
+binaries.
 
-Assuming that you are in the top of the SciPy repository directory where
-``setup.py`` is and assuming that you have set up everything correctly, you
-are ready to build. Run the following commands:
+Assuming that you are in the top of the SciPy repository directory and assuming
+that you have set up everything correctly, you are ready to build. Run the
+following commands:
 
 .. code:: shell
 
-    python setup.py build
+    pip wheel . -v --no-build-isolation  # will produce a wheel in `dist/`
 
 You may verify that the OpenBLAS library was correctly picked up by looking for
 the following in your build log:
 
-.. code:: shell
+.. code::
 
-   FOUND:
-      libraries = ['openblas']
-      library_dirs = ['C:\...........\lib']
-      language = f77
-      define_macros = [('HAVE_CBLAS', None)]
+   Run-time dependency openblas found: YES 0.3.21
 
 Notice that there will be multiple lines similar to these. You only need to
 track the OpenBLAS one.
 
 When everything finishes without an error, congratulations! You've built
-SciPy!
-
-You can further install the built SciPy via
+SciPy! You can further install the built SciPy via
 
 .. code:: shell
 
-    python setup.py install
-
-Just make sure that you uninstalled the existing installation of other SciPy if
-there were any (by the regular ``pip uninstall scipy`` machinery).
+    pip install dist/scipy*.whl
 
 
 .. _BLAS: https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms
@@ -438,23 +427,6 @@ there were any (by the regular ``pip uninstall scipy`` machinery).
 .. _`pre-built zip files`: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/
 .. _WindowsCompilers: https://wiki.python.org/moin/WindowsCompilers
 
-Building Against an Older NumPy Version
----------------------------------------
-
-If you want to build SciPy to work with an older NumPy version, then you will need
-to replace the NumPy "distutils" folder with the folder from the latest numpy.
-The following Powershell snippet can upgrade NumPy distutils while retaining an older
-NumPy ABI_.
-
-.. code:: shell
-
-      $NumpyDir = $((python -c 'import os; import numpy; print(os.path.dirname(numpy.__file__))') | Out-String).Trim()
-      rm -r -Force "$NumpyDir\distutils"
-      $tmpdir = New-TemporaryFile | %{ rm $_; mkdir $_ }
-      git clone -q --depth=1 -b master https://github.com/numpy/numpy.git $tmpdir
-      mv $tmpdir\numpy\distutils $NumpyDir
-
-.. _ABI: https://en.wikipedia.org/wiki/Application_binary_interface
 
 Additional Resources
 --------------------
