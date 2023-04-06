@@ -14,6 +14,7 @@ from warnings import warn
 
 import numpy as np
 
+from scipy._lib._util import _rename_parameter
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
@@ -48,7 +49,8 @@ MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
-def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
+@_rename_parameter('jac', 'grad')
+def minimize(fun, x0, args=(), method=None, grad=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
@@ -68,7 +70,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         where ``n`` is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
-        derivatives (`fun`, `jac` and `hess` functions).
+        derivatives (`fun`, `grad` and `hess` functions).
     method : str or callable, optional
         Type of solver.  Should be one of
 
@@ -90,17 +92,17 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
         depending on whether or not the problem has constraints or bounds.
-    jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
+    grad : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
         trust-exact and trust-constr.
         If it is a callable, it should be a function that returns the gradient
         vector:
 
-            ``jac(x, *args) -> array_like, shape (n,)``
+            ``grad(x, *args) -> array_like, shape (n,)``
 
         where ``x`` is an array with shape (n,) and ``args`` is a tuple with
-        the fixed parameters. If `jac` is a Boolean and is True, `fun` is
+        the fixed parameters. If `grad` is a Boolean and is True, `fun` is
         assumed to return a tuple ``(f, g)`` containing the objective
         function and the gradient.
         Methods 'Newton-CG', 'trust-ncg', 'dogleg', 'trust-exact', and
@@ -112,6 +114,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         to select a finite difference scheme for numerical estimation of the
         gradient with a relative step size. These finite difference schemes
         obey any specified `bounds`.
+
+        .. note::
+           the `grad` keyword was formerly referred to as `jac`. As of SciPy
+           1.11.0, either may be used, but consider using `grad` to avoid
+           confusion with the constraint Jacobian.
+
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
         trust-ncg, trust-krylov, trust-exact and trust-constr.
@@ -405,9 +413,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     where ``kwargs`` corresponds to any other parameters passed to `minimize`
     (such as `callback`, `hess`, etc.), except the `options` dict, which has
     its contents also passed as `method` parameters pair by pair.  Also, if
-    `jac` has been passed as a bool type, `jac` and `fun` are mangled so that
-    `fun` returns just the function values and `jac` is converted to a function
-    returning the Jacobian.  The method shall return an `OptimizeResult`
+    `grad` has been passed as a bool type, `grad` and `fun` are mangled so that
+    `fun` returns just the function values and `grad` is converted to a
+    function returning the gradient. The method must return an `OptimizeResult`
     object.
 
     The provided `method` callable must be able to accept (and possibly ignore)
@@ -485,7 +493,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Now using the *BFGS* algorithm, using the first derivative and a few
     options:
 
-    >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    >>> res = minimize(rosen, x0, method='BFGS', grad=rosen_der,
     ...                options={'gtol': 1e-6, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -555,9 +563,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if options is None:
         options = {}
     # check if optional parameters are supported by the selected method
-    # - jac
-    if meth in ('nelder-mead', 'powell', 'cobyla') and bool(jac):
-        warn('Method %s does not use gradient information (jac).' % method,
+    # - grad
+    if meth in ('nelder-mead', 'powell', 'cobyla') and bool(grad):
+        warn('Method %s does not use gradient information (grad).' % method,
              RuntimeWarning)
     # - hess
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg', 'trust-constr',
@@ -586,25 +594,25 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              RuntimeWarning)
 
     # check gradient vector
-    if callable(jac):
+    if callable(grad):
         pass
-    elif jac is True:
+    elif grad is True:
         # fun returns func and grad
         fun = MemoizeJac(fun)
-        jac = fun.derivative
-    elif (jac in FD_METHODS and
+        grad = fun.derivative
+    elif (grad in FD_METHODS and
           meth in ['trust-constr', 'bfgs', 'cg', 'l-bfgs-b', 'tnc', 'slsqp']):
         # finite differences with relative step
         pass
     elif meth in ['trust-constr']:
-        # default jac calculation for this method
-        jac = '2-point'
-    elif jac is None or bool(jac) is False:
+        # default grad calculation for this method
+        grad = '2-point'
+    elif grad is None or bool(grad) is False:
         # this will cause e.g. LBFGS to use forward difference, absolute step
-        jac = None
+        grad = None
     else:
-        # default if jac option is not understood
-        jac = None
+        # default if grad option is not understood
+        grad = None
 
     # set default tolerances
     if tol is not None:
@@ -630,7 +638,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         # custom method called before bounds and constraints are 'standardised'
         # custom method should be able to accept whatever bounds/constraints
         # are provided to it.
-        return method(fun, x0, args=args, jac=jac, hess=hess, hessp=hessp,
+        return method(fun, x0, args=args, jac=grad, hess=hess, hessp=hessp,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
 
@@ -661,7 +669,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 )
 
             # determine whether finite differences are needed for any grad/jac
-            fd_needed = (not callable(jac))
+            fd_needed = (not callable(grad))
             for con in constraints:
                 if not callable(con.get('jac', None)):
                     fd_needed = True
@@ -676,8 +684,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                 fun = _remove_from_func(fun, i_fixed, x_fixed)
                 if callable(callback):
                     callback = _remove_from_func(callback, i_fixed, x_fixed)
-                if callable(jac):
-                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+                if callable(grad):
+                    grad = _remove_from_func(grad, i_fixed, x_fixed, remove=1)
 
                 # make a copy of the constraints so the user's version doesn't
                 # get changed. (Shallow copy is ok)
@@ -700,39 +708,39 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'powell':
         res = _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':
-        res = _minimize_cg(fun, x0, args, jac, callback, **options)
+        res = _minimize_cg(fun, x0, args, grad, callback, **options)
     elif meth == 'bfgs':
-        res = _minimize_bfgs(fun, x0, args, jac, callback, **options)
+        res = _minimize_bfgs(fun, x0, args, grad, callback, **options)
     elif meth == 'newton-cg':
-        res = _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+        res = _minimize_newtoncg(fun, x0, args, grad, hess, hessp, callback,
                                  **options)
     elif meth == 'l-bfgs-b':
-        res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
+        res = _minimize_lbfgsb(fun, x0, args, grad, bounds,
                                callback=callback, **options)
     elif meth == 'tnc':
-        res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+        res = _minimize_tnc(fun, x0, args, grad, bounds, callback=callback,
                             **options)
     elif meth == 'cobyla':
         res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
                                bounds=bounds, **options)
     elif meth == 'slsqp':
-        res = _minimize_slsqp(fun, x0, args, jac, bounds,
+        res = _minimize_slsqp(fun, x0, args, grad, bounds,
                               constraints, callback=callback, **options)
     elif meth == 'trust-constr':
-        res = _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trustregion_constr(fun, x0, args, grad, hess, hessp,
                                            bounds, constraints,
                                            callback=callback, **options)
     elif meth == 'dogleg':
-        res = _minimize_dogleg(fun, x0, args, jac, hess,
+        res = _minimize_dogleg(fun, x0, args, grad, hess,
                                callback=callback, **options)
     elif meth == 'trust-ncg':
-        res = _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trust_ncg(fun, x0, args, grad, hess, hessp,
                                   callback=callback, **options)
     elif meth == 'trust-krylov':
-        res = _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
+        res = _minimize_trust_krylov(fun, x0, args, grad, hess, hessp,
                                      callback=callback, **options)
     elif meth == 'trust-exact':
-        res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
+        res = _minimize_trustregion_exact(fun, x0, args, grad, hess,
                                           callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
