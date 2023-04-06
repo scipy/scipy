@@ -1,18 +1,14 @@
-import re
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
 
-import scipy
-from numpy.testing import assert_
+b = [1, 1]
+w, h = signal.freqz(b)
 
+fig, ax = plt.subplots()
+ax.plot(w, 20 * np.log10(abs(h)))
+ax.set(title='Frequency response of filter', xlabel='Frequency [rad/sample]', ylabel='Magnitude [dB]')
+ax.grid(True)
 
-def test_valid_scipy_version():
-    # Verify that the SciPy version is a valid one (no .post suffix or other
-    # nonsense). See NumPy issue gh-6431 for an issue caused by an invalid
-    # version.
-    version_pattern = r"^[0-9]+\.[0-9]+\.[0-9]+(|a[0-9]|b[0-9]|rc[0-9])"
-    dev_suffix = r"(\.dev0\+.+([0-9a-f]{7}|Unknown))"
-    if scipy.version.release:
-        res = re.match(version_pattern, scipy.__version__)
-    else:
-        res = re.match(version_pattern + dev_suffix, scipy.__version__)
+plt.show()
 
-    assert_(res is not None, scipy.__version__)
