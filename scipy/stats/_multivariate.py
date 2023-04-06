@@ -6494,14 +6494,20 @@ class vonmises_fisher_gen(multi_rv_generic):
         rotated towards the desired mean direction mu.
         This method is much faster than the general rejection
         sampling based algorithm.
+        Reference: https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
 
         """
         if size is None:
             sample_size = 1
         else:
             sample_size = size
+
+        # compute x coordinate acc. to equation from section 3.1
         x = random_state.random(sample_size)
         x = 1. + np.log(x + (1. - x) * np.exp(-2 * kappa))/kappa
+
+        # (y, z) are random 2D vectors that only have to be
+        # normalized accordingly. Then (x, y z) follow a VMF distribution
         temp = np.sqrt(1. - np.square(x))
         uniformcircle = _sample_uniform_direction(2, sample_size, random_state)
         samples = np.stack([x, temp * uniformcircle[..., 0],
@@ -6516,6 +6522,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Generate samples from a n-dimensional von Mises-Fisher distribution
         with mu = [1, 0, ..., 0] and kappa via rejection sampling.
         Samples then have to be rotated towards the desired mean direction mu.
+        Reference: https://doi.org/10.1080/03610919408813161
         """
         dim_minus_one = dim - 1
         # calculate number of requested samples
@@ -6525,9 +6532,10 @@ class vonmises_fisher_gen(multi_rv_generic):
             n_samples = math.prod(size)
         else:
             n_samples = 1
-        # calculate envelope for rejection sampler
+        # calculate envelope for rejection sampler (eq. 4)
         sqrt = np.sqrt(4 * kappa ** 2. + dim_minus_one ** 2)
         envelop_param = (-2 * kappa + sqrt) / dim_minus_one
+        # reference step 0
         node = (1. - envelop_param) / (1. + envelop_param)
         correction = kappa * node + dim_minus_one * np.log(1. - node ** 2)
         n_accepted = 0
@@ -6535,12 +6543,12 @@ class vonmises_fisher_gen(multi_rv_generic):
         halfdim = 0.5 * dim_minus_one
         # main loop
         while n_accepted < n_samples:
-            # generate candidate
+            # generate candidates acc. to reference step 1
             sym_beta = random_state.beta(halfdim, halfdim,
                                          size=n_samples - n_accepted)
             coord_x = (1 - (1 + envelop_param) * sym_beta) / (
                 1 - (1 - envelop_param) * sym_beta)
-            # accept or reject
+            # accept or reject: reference step 2
             accept_tol = random_state.random(n_samples - n_accepted)
             criterion = (
                 kappa * coord_x
@@ -6549,7 +6557,7 @@ class vonmises_fisher_gen(multi_rv_generic):
             accepted_iter = np.sum(criterion)
             x[n_accepted:n_accepted + accepted_iter] = coord_x[criterion]
             n_accepted += accepted_iter
-        # concatenate x and remaining coordinates
+        # concatenate x and remaining coordinates: step 3
         coord_rest = _sample_uniform_direction(dim_minus_one, n_accepted,
                                                random_state)
         coord_rest = np.einsum(
