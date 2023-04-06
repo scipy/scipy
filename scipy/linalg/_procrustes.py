@@ -53,7 +53,7 @@ def orthogonal_procrustes(A, B, check_finite=True):
     References
     ----------
     .. [1] Peter H. Schonemann, "A generalized solution of the orthogonal
-           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1996.
+           Procrustes problem", Psychometrica -- Vol. 31, No. 1, March, 1966.
 
     Examples
     --------
