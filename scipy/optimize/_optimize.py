@@ -179,6 +179,15 @@ def _call_callback_maybe_halt(callback, res):
         return True
 
 
+# gh-18249 deprecates 'jac' in favor of 'grad' when used by the local
+# minimizers to refer to the gradient of the objective function. This is
+# complicated by the fact that `least_squares` and the `trust-constr` method
+# of `minimize` already use `jac` and `grad` correctly; so we need two versions
+# of `OptimizeResult`: one that uses `jac` as an alias of `grad` (and emits
+# appropriate warnings when it is used) and one that doesn't interfere. For
+# simplicity, the one that doesn't interfere (this one) is the superclass of
+# the other. In SciPy version 1.13.0, the subclass can be removed, and this
+# can be renamed to `OptimizeResult`.
 class _OptimizeResult(dict):
     """ Represents the optimization result.
 
@@ -259,12 +268,14 @@ class _OptimizeResult(dict):
         return list(self.keys())
 
 
+# Version of `OptimizeResult` that treats `jac` and `grad` interchangeably
+# except for emitting a deprecation warning when `jac` is used.
 class OptimizeResult(_OptimizeResult):
     def warn_deprecation_jac(self):
         message = ('Use of attribute/item `jac` is deprecated and replaced '
                    'by `grad`.  Support for `jac` will be removed in SciPy '
                    '1.13.0.')
-        warnings.warn(DeprecationWarning(message))
+        warnings.warn(DeprecationWarning(message), stacklevel=3)
 
     def __getattr__(self, name):
         if name == 'jac':

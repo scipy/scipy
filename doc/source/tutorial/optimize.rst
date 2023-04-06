@@ -34,7 +34,7 @@ The minimum value of this function is 0 which is achieved when
 Note that the Rosenbrock function and its derivatives are included in
 `scipy.optimize`. The implementations shown in the following sections
 provide examples of how to define an objective function as well as its
-jacobian and hessian functions. Objective functions in `scipy.optimize`
+gradient and Hessian functions. Objective functions in `scipy.optimize`
 expect a numpy array as their first parameter which is to be optimized
 and must return a float value. The exact calling signature must be
 ``f(x, *args)`` where ``x`` represents a numpy array and ``args``
@@ -156,10 +156,10 @@ code-segment:
     ...     return der
 
 This gradient information is specified in the :func:`minimize` function
-through the ``jac`` parameter as illustrated below.
+through the ``grad`` parameter as illustrated below.
 
 
-    >>> res = minimize(rosen, x0, method='BFGS', jac=rosen_der,
+    >>> res = minimize(rosen, x0, method='BFGS', grad=rosen_der,
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -190,7 +190,7 @@ calculation. For instance, consider the following problem.
     >>> def dexpensive(x):
     ...     return np.cos(x)
     >>>
-    >>> res = minimize(f, 0.5, jac=df)
+    >>> res = minimize(f, 0.5, grad=df)
     >>> res.fun
     -0.9999999999999174
     >>> res.nfev, res.njev
@@ -209,13 +209,13 @@ gradient.
     ...             -2*expensive_value*dexpensive(x[0]))  # gradient
     >>>
     >>> expensive.count = 0  # reset the counter
-    >>> res = minimize(f_and_df, 0.5, jac=True)
+    >>> res = minimize(f_and_df, 0.5, grad=True)
     >>> res.fun
     -0.9999999999999174
     >>> expensive.count
     6
 
-When we call minimize, we specify ``jac==True`` to indicate that the provided
+When we call minimize, we specify ``grad==True`` to indicate that the provided
 function returns both the objective function and its gradient. While
 convenient, not all :mod:`scipy.optimize` functions support this feature,
 and moreover, it is only for sharing calculations between the function and its
@@ -228,7 +228,7 @@ simple situations, this can be accomplished with the
     >>> from functools import lru_cache
     >>> expensive.count = 0  # reset the counter
     >>> expensive = lru_cache(expensive)
-    >>> res = minimize(f, 0.5, jac=df)
+    >>> res = minimize(f, 0.5, grad=df)
     >>> res.fun
     -0.9999999999999174
     >>> expensive.count
@@ -304,7 +304,7 @@ the function using Newton-CG method is shown in the following example:
     ...     return H
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hess=rosen_hess,
+    ...                grad=rosen_der, hess=rosen_hess,
     ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -351,7 +351,7 @@ Rosenbrock function using :func:`minimize` follows:
     ...     return Hp
 
     >>> res = minimize(rosen, x0, method='Newton-CG',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                grad=rosen_der, hessp=rosen_hess_p,
     ...                options={'xtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -398,7 +398,7 @@ Full Hessian example:
 """""""""""""""""""""
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
-    ...                jac=rosen_der, hess=rosen_hess,
+    ...                grad=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -413,7 +413,7 @@ Hessian product example:
 """"""""""""""""""""""""
 
     >>> res = minimize(rosen, x0, method='trust-ncg',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                grad=rosen_der, hessp=rosen_hess_p,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -428,7 +428,7 @@ Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``met
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
-suitable for large-scale problems as it uses the hessian only as linear
+suitable for large-scale problems as it uses the Hessian only as linear
 operator by means of matrix-vector products.
 It solves the quadratic subproblem more accurately than the ``trust-ncg``
 method.
@@ -451,7 +451,7 @@ Full Hessian example:
 """""""""""""""""""""
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
-    ...                jac=rosen_der, hess=rosen_hess,
+    ...                grad=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -466,7 +466,7 @@ Hessian product example:
 """"""""""""""""""""""""
 
     >>> res = minimize(rosen, x0, method='trust-krylov',
-    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                grad=rosen_der, hessp=rosen_hess_p,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -509,7 +509,7 @@ example using the Rosenbrock function follows:
 
 
     >>> res = minimize(rosen, x0, method='trust-exact',
-    ...                jac=rosen_der, hess=rosen_hess,
+    ...                grad=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
@@ -689,7 +689,7 @@ Solving the Optimization Problem:
 The optimization problem is solved using:
 
     >>> x0 = np.array([0.5, 0])
-    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess,
+    >>> res = minimize(rosen, x0, method='trust-constr', grad=rosen_der, hess=rosen_hess,
     ...                constraints=[linear_constraint, nonlinear_constraint],
     ...                options={'verbose': 1}, bounds=bounds)
     # may vary
@@ -704,7 +704,7 @@ When needed, the objective function Hessian can be defined using a :obj:`~scipy.
     ...     def matvec(p):
     ...         return rosen_hess_p(x, p)
     ...     return LinearOperator((2, 2), matvec=matvec)
-    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hess=rosen_hess_linop,
+    >>> res = minimize(rosen, x0, method='trust-constr', grad=rosen_der, hess=rosen_hess_linop,
     ...                constraints=[linear_constraint, nonlinear_constraint],
     ...                options={'verbose': 1}, bounds=bounds)
     # may vary
@@ -715,7 +715,7 @@ When needed, the objective function Hessian can be defined using a :obj:`~scipy.
 
 or a Hessian-vector product through the parameter ``hessp``.
 
-    >>> res = minimize(rosen, x0, method='trust-constr', jac=rosen_der, hessp=rosen_hess_p,
+    >>> res = minimize(rosen, x0, method='trust-constr', grad=rosen_der, hessp=rosen_hess_p,
     ...                constraints=[linear_constraint, nonlinear_constraint],
     ...                options={'verbose': 1}, bounds=bounds)
     # may vary
@@ -729,7 +729,7 @@ For instance,  the Hessian can be approximated with :func:`SR1` quasi-Newton app
 and the gradient with finite differences.
 
     >>> from scipy.optimize import SR1
-    >>> res = minimize(rosen, x0, method='trust-constr',  jac="2-point", hess=SR1(),
+    >>> res = minimize(rosen, x0, method='trust-constr',  grad="2-point", hess=SR1(),
     ...                constraints=[linear_constraint, nonlinear_constraint],
     ...                options={'verbose': 1}, bounds=bounds)
     # may vary
@@ -778,7 +778,7 @@ Both linear and nonlinear constraints are defined as dictionaries with keys ``ty
 And the optimization problem is solved with:
 
     >>> x0 = np.array([0.5, 0])
-    >>> res = minimize(rosen, x0, method='SLSQP', jac=rosen_der,
+    >>> res = minimize(rosen, x0, method='SLSQP', grad=rosen_der,
     ...                constraints=[eq_cons, ineq_cons], options={'ftol': 1e-9, 'disp': True},
     ...                bounds=bounds)
     # may vary

@@ -115,10 +115,11 @@ def minimize(fun, x0, args=(), method=None, grad=None, hess=None,
         gradient with a relative step size. These finite difference schemes
         obey any specified `bounds`.
 
-        .. note::
-           the `grad` keyword was formerly referred to as `jac`. As of SciPy
-           1.11.0, either may be used, but consider using `grad` to avoid
-           confusion with the constraint Jacobian.
+        .. deprecated:: 1.11.0
+           The `jac` keyword has been replaced by `grad` to better reflect that
+           it refers to the gradient of the objective function, not the
+           Jacobian of the constraints. Support for use of `jac` will be
+           removed in SciPy 1.13.0.
 
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
