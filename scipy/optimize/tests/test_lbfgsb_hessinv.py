@@ -21,6 +21,7 @@ def test_1():
             assert_allclose(H1, H2)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_2():
     H0 = [[3, 0], [1, 2]]
 

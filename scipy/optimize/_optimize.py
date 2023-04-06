@@ -260,18 +260,27 @@ class _OptimizeResult(dict):
 
 
 class OptimizeResult(_OptimizeResult):
+    def warn_deprecation_jac(self):
+        message = ('Use of attribute/item `jac` is deprecated and replaced '
+                   'by `grad`.  Support for `jac` will be removed in SciPy '
+                   '1.13.0.')
+        warnings.warn(DeprecationWarning(message))
+
     def __getattr__(self, name):
         if name == 'jac':
+            self.warn_deprecation_jac()
             name = 'grad'
         return super().__getattr__(name)
 
     def __setattr__(self, name, value):
         if name == 'jac':
+            self.warn_deprecation_jac()
             name = 'grad'
         self[name] = value
 
     def __delattr__(self, name):
         if name == 'jac':
+            self.warn_deprecation_jac()
             name = 'grad'
         del self[name]
 
@@ -282,17 +291,19 @@ class OptimizeResult(_OptimizeResult):
 
     def __getitem__(self, key):
         if key == 'jac':
+            self.warn_deprecation_jac()
             key = 'grad'
         return super().__getitem__(key)
 
     def __delitem__(self, key):
         if key == 'jac':
+            self.warn_deprecation_jac()
             key = 'grad'
         return super().__delitem__(key)
 
-    def __init__(self, *args, jac_is_grad=False, **kwargs):
-        # self.jac_is_grad = jac_is_grad
+    def __init__(self, *args, **kwargs):
         if 'jac' in kwargs:
+            self.warn_deprecation_jac()
             kwargs['grad'] = kwargs['jac']
             del kwargs['jac']
         return super().__init__(*args, **kwargs)

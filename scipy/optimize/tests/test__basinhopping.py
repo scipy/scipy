@@ -395,7 +395,8 @@ class Test_RandomDisplacement:
         assert_almost_equal(np.var(x), v, 1)
 
 
-class Test_Metropolis:
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+class TestMetropolis:
     def setup_method(self):
         self.T = 2.
         self.met = Metropolis(self.T)

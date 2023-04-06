@@ -60,6 +60,7 @@ class TestOldToNew:
         assert_allclose(res.fun, 1.125, rtol=1e-4)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestNewToOld:
 
     def test_multiple_constraint_objects(self):
@@ -167,6 +168,7 @@ class TestNewToOld:
             assert_allclose(funs['slsqp'], funs['trust-constr'], rtol=1e-3)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestNewToOldSLSQP:
     method = 'slsqp'
     elec = Elec(n_electrons=2)

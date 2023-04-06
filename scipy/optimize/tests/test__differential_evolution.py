@@ -20,6 +20,7 @@ from pytest import raises as assert_raises, warns
 import pytest
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestDifferentialEvolutionSolver:
 
     def setup_method(self):

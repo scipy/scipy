@@ -1602,6 +1602,7 @@ class TestOptimizeSimple(CheckOptimize):
                           method=method, options=options, **kwargs)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 @pytest.mark.parametrize(
     'method',
     ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
@@ -2312,6 +2313,7 @@ himmelblau_xopt = [3, 2]
 himmelblau_min = 0.0
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_minimize_multiple_constraints():
     # Regression test for gh-4240.
     def func(x):
@@ -2874,6 +2876,7 @@ def test_all_bounds_equal(method):
         assert res.message.startswith(message)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -2970,6 +2973,7 @@ def test_x_overwritten_user_function():
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestGlobalOptimization:
 
     def test_optimize_result_attributes(self):
@@ -3026,4 +3030,31 @@ def test_deprecate_jac():
     # into `scipy.optimize.minimize`. Remove this in SciPy 1.13.0.
     message = "Use of keyword argument `jac` is deprecated and replaced by..."
     with pytest.warns(DeprecationWarning, match=message):
-        optimize.minimize(lambda x: x, x0=(0), jac = lambda x: 1)
+        optimize.minimize(lambda x: x, x0=0, jac = lambda x: 1)
+
+    message = "Use of attribute/item `jac` is deprecated and replaced by..."
+    with pytest.warns(DeprecationWarning, match=message):
+        OptimizeResult(jac=1)
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+@pytest.mark.parametrize('kwargs', [{"jac": 1}, {"grad": 1}])
+@pytest.mark.parametrize('modify',
+                         [(setattr, 'jac'), (setattr, 'grad'),
+                         (lambda obj, key, val: obj.__setitem__(key, val), 'jac'),
+                         (lambda obj, key, val: obj.__setitem__(key, val), 'grad')])
+@pytest.mark.parametrize('delete',
+                         [(lambda obj, key: obj.__delattr__(key), 'jac'),
+                          (lambda obj, key: obj.__delattr__(key), 'grad'),
+                          (lambda obj, key: obj.__delitem__(key), 'jac'),
+                          (lambda obj, key: obj.__delitem__(key), 'grad')])
+def test_jac_is_grad(kwargs, modify, delete):
+    # test that jac and grad are equivalent attributes/items of OptimizeResult
+    res = OptimizeResult(**kwargs)
+    assert res.grad == res.jac == res['jac'] == res['grad'] == 1
+    modify_fun, modify_item = modify
+    modify_fun(res, modify_item, 2)
+    assert res.grad == res.jac == res['jac'] == res['grad'] == 2
+    del_fun, del_item = delete
+    del_fun(res, del_item)
+    assert (hasattr(res, 'grad') is hasattr(res, 'jac')
+            is ('grad' in res) is ('jac' in res) is False)

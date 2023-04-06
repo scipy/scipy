@@ -670,6 +670,7 @@ class TestEmptyConstraint(TestCase):
         assert_array_almost_equal(abs(result.x), np.array([1, 0]), decimal=4)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_bug_11886():
     def opt(x):
         return x[0]**2+x[1]**2

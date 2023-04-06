@@ -333,6 +333,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
 
 
 # Base test functions:
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestShgoSobolTestFunctions:
     """
     Global optimisation tests with Sobol sampling:
@@ -391,6 +392,7 @@ class TestShgoSobolTestFunctions:
         #    run_test(test11_1)
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestShgoSimplicialTestFunctions:
     """
     Global optimisation tests with Simplicial sampling:
@@ -912,6 +914,7 @@ class TestShgoArguments:
 
 
 # Failure test functions
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestShgoFailures:
     def test_1_maxiter(self):
         """Test failure on insufficient iterations"""
@@ -1029,6 +1032,7 @@ class TestShgoFailures:
 
 
 # Returns
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestShgoReturns:
     def test_1_nfev_simplicial(self):
         bounds = [(0, 2), (0, 2), (0, 2), (0, 2), (0, 2)]
