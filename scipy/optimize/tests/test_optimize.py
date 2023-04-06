@@ -29,7 +29,8 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._optimize import (MemoizeJac, show_options, OptimizeResult,
+                                      _OptimizeResult)
 
 
 def test_check_grad():
@@ -2807,9 +2808,9 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:
-        expected.jac[i_eb] = np.nan
-    assert res.jac.shape[0] == 4
-    assert_allclose(res.jac[i_eb], expected.jac[i_eb], rtol=1e-6)
+        expected.grad[i_eb] = np.nan
+    assert res.grad.shape[0] == 4
+    assert_allclose(res.grad[i_eb], expected.grad[i_eb], rtol=1e-6)
 
     if not (kwds['jac'] or test_constraints or isinstance(bounds, Bounds)):
         # compare the output to an equivalent FD minimization that doesn't
@@ -3034,7 +3035,7 @@ def test_deprecate_jac():
 
     message = "Use of attribute/item `jac` is deprecated and replaced by..."
     with pytest.warns(DeprecationWarning, match=message):
-        OptimizeResult(jac=1)
+        _OptimizeResult(jac=1)
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('kwargs', [{"jac": 1}, {"grad": 1}])
@@ -3048,8 +3049,8 @@ def test_deprecate_jac():
                           (lambda obj, key: obj.__delitem__(key), 'jac'),
                           (lambda obj, key: obj.__delitem__(key), 'grad')])
 def test_jac_is_grad(kwargs, modify, delete):
-    # test that jac and grad are equivalent attributes/items of OptimizeResult
-    res = OptimizeResult(**kwargs)
+    # test that jac and grad are equivalent attributes/items of _OptimizeResult
+    res = _OptimizeResult(**kwargs)
     assert res.grad == res.jac == res['jac'] == res['grad'] == 1
     modify_fun, modify_item = modify
     modify_fun(res, modify_item, 2)

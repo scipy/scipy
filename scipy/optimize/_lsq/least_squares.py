@@ -6,8 +6,7 @@ from numpy.linalg import norm
 
 from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
-from scipy.optimize import _minpack
-from scipy.optimize._optimize import _OptimizeResult as OptimizeResult
+from scipy.optimize import _minpack, OptimizeResult
 from scipy.optimize._numdiff import approx_derivative, group_columns
 from scipy.optimize._minimize import Bounds
 

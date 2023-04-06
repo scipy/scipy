@@ -44,7 +44,7 @@ import numpy as np
 from numpy.linalg import lstsq, norm
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator, lsmr
-from scipy.optimize._optimize import _OptimizeResult as OptimizeResult
+from scipy.optimize import OptimizeResult
 
 from .common import (
     step_size_to_bound, in_bounds, update_tr_radius, evaluate_quadratic,

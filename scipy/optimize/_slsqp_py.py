@@ -19,7 +19,8 @@ import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, isfinite, atleast_1d)
-from ._optimize import (OptimizeResult, _check_unknown_options,
+from ._optimize import (_OptimizeResult as OptimizeResult,
+                        _check_unknown_options,
                         _prepare_scalar_function, _clip_x_for_func,
                         _check_clip_x)
 from ._numdiff import approx_derivative

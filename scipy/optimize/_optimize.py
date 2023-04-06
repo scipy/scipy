@@ -188,7 +188,7 @@ def _call_callback_maybe_halt(callback, res):
 # simplicity, the one that doesn't interfere (this one) is the superclass of
 # the other. In SciPy version 1.13.0, the subclass can be removed, and this
 # can be renamed to `OptimizeResult`.
-class _OptimizeResult(dict):
+class OptimizeResult(dict):
     """ Represents the optimization result.
 
     Attributes
@@ -270,7 +270,7 @@ class _OptimizeResult(dict):
 
 # Version of `OptimizeResult` that treats `jac` and `grad` interchangeably
 # except for emitting a deprecation warning when `jac` is used.
-class OptimizeResult(_OptimizeResult):
+class _OptimizeResult(OptimizeResult):
     def warn_deprecation_jac(self):
         message = ('Use of attribute/item `jac` is deprecated and replaced '
                    'by `grad`.  Support for `jac` will be removed in SciPy '
@@ -1575,10 +1575,10 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, grad=gfk, hess_inv=Hk, nfev=sf.nfev,
-                            njev=sf.ngev, status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
-                            nit=k)
+    result = _OptimizeResult(fun=fval, grad=gfk, hess_inv=Hk, nfev=sf.nfev,
+                             njev=sf.ngev, status=warnflag,
+                             success=(warnflag == 0), message=msg, x=xk,
+                             nit=k)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -1903,10 +1903,10 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         print("         Function evaluations: %d" % sf.nfev)
         print("         Gradient evaluations: %d" % sf.ngev)
 
-    result = OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
-                            njev=sf.ngev, status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
-                            nit=k)
+    result = _OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
+                             njev=sf.ngev, status=warnflag,
+                             success=(warnflag == 0), message=msg, x=xk,
+                             nit=k)
     if retall:
         result['allvecs'] = allvecs
     return result
@@ -2093,10 +2093,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Gradient evaluations: %d" % sf.ngev)
             print("         Hessian evaluations: %d" % hcalls)
         fval = old_fval
-        result = OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
-                                njev=sf.ngev, nhev=hcalls, status=warnflag,
-                                success=(warnflag == 0), message=msg, x=xk,
-                                nit=k)
+        result = _OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
+                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
+                                 success=(warnflag == 0), message=msg, x=xk,
+                                 nit=k)
         if retall:
             result['allvecs'] = allvecs
         return result
