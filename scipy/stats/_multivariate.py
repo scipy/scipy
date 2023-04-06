@@ -6547,7 +6547,12 @@ class vonmises_fisher_gen(multi_rv_generic):
                              - dim_minus_one**3/64 * kappa**-3.)
         # reference step 0
         node = (1. - envelop_param) / (1. + envelop_param)
-        correction = kappa * node + dim_minus_one * np.log(1. - node ** 2)
+        # t = ln(1 - ((1-x)/(1+x))**2)
+        #   = ln(4 * x / (1+x)**2)
+        #   = ln(4) + ln(x) - 2*log1p(x)
+        correction = (kappa * node + dim_minus_one
+                      * (np.log(4) + np.log(envelop_param)
+                      - 2 * np.log1p(envelop_param)))
         n_accepted = 0
         x = np.zeros((n_samples, ))
         halfdim = 0.5 * dim_minus_one
@@ -6559,10 +6564,14 @@ class vonmises_fisher_gen(multi_rv_generic):
             coord_x = (1 - (1 + envelop_param) * sym_beta) / (
                 1 - (1 - envelop_param) * sym_beta)
             # accept or reject: reference step 2
+            # reformulation for numerical stability:
+            # t = ln(1 - (1-x)/(1+x) * y)
+            #   = ln((1 + x - y +x*y)/(1 +x))
             accept_tol = random_state.random(n_samples - n_accepted)
             criterion = (
                 kappa * coord_x
-                + dim_minus_one * np.log(1 - node * coord_x)
+                + dim_minus_one * (np.log((1 + envelop_param - coord_x
+                + coord_x * envelop_param) / (1 + envelop_param)))
                 - correction) > np.log(accept_tol)
             accepted_iter = np.sum(criterion)
             x[n_accepted:n_accepted + accepted_iter] = coord_x[criterion]

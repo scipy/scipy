@@ -3131,12 +3131,12 @@ class TestVonMises_Fisher:
         assert_allclose(norms, 1.)
 
     @pytest.mark.parametrize("dim", [5, 8])
-    @pytest.mark.parametrize("kappa", [1e12, 1e16])
+    @pytest.mark.parametrize("kappa", [1e15, 1e20, 1e30])
     def test_sampling_high_concentration(self, dim, kappa):
         # test that no warnings are encountered for high values
         rng = np.random.default_rng(2777937887058094419)
-        mu = np.zeros((dim, ), )
-        mu[0] = 1.
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        #mu[0] = 1.
         vmf_dist = vonmises_fisher(mu, kappa, seed=rng)
         vmf_dist.rvs(10)
 
