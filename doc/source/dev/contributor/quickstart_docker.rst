@@ -81,8 +81,7 @@ instructions each time you want to start the container, as changes made to a
 container do not persist after you close it.
 
 #. In a terminal window, change the directory (using the ``cd`` command)
-   to the root folder of the SciPy git repository, which contains the file
-   ``setup.py``.
+   to the root folder of the SciPy git repository.
 
 #. Ensure that Docker Desktop (or Docker Toolbox) is running, and start up the
    SciPy Docker container by entering the following command in a terminal
