@@ -198,7 +198,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
 
     res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
                            **opts)
-    d = {'grad': res['jac'],
+    d = {'grad': res['grad'],
          'task': res['message'],
          'funcalls': res['nfev'],
          'nit': res['nit'],
@@ -395,7 +395,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     hess_inv = LbfgsInvHessProduct(s[:n_corrs], y[:n_corrs])
 
     task_str = task_str.decode()
-    return OptimizeResult(fun=f, jac=g, nfev=sf.nfev,
+    return OptimizeResult(fun=f, grad=g, nfev=sf.nfev,
                           njev=sf.ngev,
                           nit=n_iterations, status=warnflag, message=task_str,
                           x=x, success=(warnflag == 0), hess_inv=hess_inv)

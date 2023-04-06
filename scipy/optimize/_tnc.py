@@ -418,6 +418,6 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     # func_and_grad so they are synced.
     funv, jacv = func_and_grad(x)
 
-    return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
+    return OptimizeResult(x=x, fun=funv, grad=jacv, nfev=sf.nfev,
                           nit=nit, status=rc, message=RCSTRINGS[rc],
                           success=(-1 < rc < 3))

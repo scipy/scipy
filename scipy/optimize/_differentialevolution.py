@@ -243,7 +243,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes. If `polish`
         was employed, and a lower minimum was obtained by the polishing, then
-        OptimizeResult also contains the ``jac`` attribute.
+        OptimizeResult also contains the ``grad`` attribute.
         If the eventual solution does not satisfy the applied constraints
         ``success`` will be `False`.
 
@@ -994,7 +994,7 @@ class DifferentialEvolutionSolver:
             ``message`` which describes the cause of the termination. See
             `OptimizeResult` for a description of other attributes.  If `polish`
             was employed, and a lower minimum was obtained by the polishing,
-            then OptimizeResult also contains the ``jac`` attribute.
+            then OptimizeResult also contains the ``grad`` attribute.
         """
         nit, warning_flag = 0, False
         status_message = _status_message['success']
@@ -1097,7 +1097,7 @@ class DifferentialEvolutionSolver:
                     np.all(self.limits[0] <= result.x)):
                 DE_result.fun = result.fun
                 DE_result.x = result.x
-                DE_result.jac = result.jac
+                DE_result.grad = result.grad
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
@@ -1592,7 +1592,7 @@ class _ConstraintWrapper:
     """Object to wrap/evaluate user defined constraints.
 
     Very similar in practice to `PreparedConstraint`, except that no evaluation
-    of jac/hess is performed (explicit or implicit).
+    of grad/hess is performed (explicit or implicit).
 
     If created successfully, it will contain the attributes listed below.
 

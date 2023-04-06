@@ -400,7 +400,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                 The minimization method (e.g. ``"L-BFGS-B"``)
             args : tuple
                 Extra arguments passed to the objective function (`func`) and
-                its derivatives (Jacobian, Hessian).
+                its derivatives (gradient, Hessian).
 
     take_step : callable ``take_step(x)``, optional
         Replace the default step-taking routine with this routine. The default
@@ -595,9 +595,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...     return f, df
 
     We'll also use a different local minimization algorithm. Also, we must tell
-    the minimizer that our function returns both energy and gradient (Jacobian).
+    the minimizer that our function returns both energy and gradient).
 
-    >>> minimizer_kwargs = {"method":"L-BFGS-B", "jac":True}
+    >>> minimizer_kwargs = {"method":"L-BFGS-B", "grad":True}
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)

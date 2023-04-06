@@ -456,7 +456,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+    return OptimizeResult(x=x, fun=fx, grad=g[:-1], nit=int(majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 

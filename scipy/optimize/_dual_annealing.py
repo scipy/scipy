@@ -7,6 +7,7 @@
 A Dual Annealing global optimization algorithm
 """
 
+import warnings
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize, Bounds
@@ -394,7 +395,7 @@ class LocalSearchWrapper:
     def __init__(self, search_bounds, func_wrapper, *args, **kwargs):
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
-        self.jac = self.kwargs.get('jac', None)
+        self.grad = self.kwargs.get('grad', None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -411,10 +412,10 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
-        elif callable(self.jac):
-            def wrapped_jac(x):
-                return self.jac(x, *args)
-            self.kwargs['jac'] = wrapped_jac
+        elif callable(self.grad):
+            def wrapped_grad(x):
+                return self.grad(x, *args)
+            self.kwargs['grad'] = wrapped_grad
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -624,6 +625,14 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     # noqa: E501
     if x0 is not None and not len(x0) == len(bounds):
         raise ValueError('Bounds size does not match x0')
+
+    minimizer_kwargs = {} if minimizer_kwargs is None else minimizer_kwargs
+    if 'jac' in minimizer_kwargs:
+        message = ("Use of `minimize` keyword argument `jac` is deprecated "
+                   "and replaced by `grad`. Support for `jac` will be "
+                   "removed in SciPy 1.13.0.")
+        warnings.warn(message, DeprecationWarning)
+        minimizer_kwargs['grad'] = minimizer_kwargs.pop('jac')
 
     lu = list(zip(*bounds))
     lower = np.array(lu[0])
