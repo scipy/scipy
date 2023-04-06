@@ -6,6 +6,7 @@ import math
 import inspect
 import scipy.optimize
 from scipy._lib._util import check_random_state
+from scipy.optimize._optimize import _OptimizeResult as OptimizeResult
 
 __all__ = ['basinhopping']
 
@@ -71,7 +72,7 @@ class BasinHoppingRunner:
         self.nstep = 0
 
         # initialize return object
-        self.res = scipy.optimize.OptimizeResult()
+        self.res = OptimizeResult()
         self.res.minimization_failures = 0
 
         # do initial minimization
@@ -91,8 +92,8 @@ class BasinHoppingRunner:
 
         if hasattr(minres, "nfev"):
             self.res.nfev = minres.nfev
-        if hasattr(minres, "njev"):
-            self.res.njev = minres.njev
+        if hasattr(minres, "ngev"):
+            self.res.ngev = minres.ngev
         if hasattr(minres, "nhev"):
             self.res.nhev = minres.nhev
 
@@ -117,8 +118,8 @@ class BasinHoppingRunner:
                 print("warning: basinhopping: local minimization failure")
         if hasattr(minres, "nfev"):
             self.res.nfev += minres.nfev
-        if hasattr(minres, "njev"):
-            self.res.njev += minres.njev
+        if hasattr(minres, "ngev"):
+            self.res.ngev += minres.ngev
         if hasattr(minres, "nhev"):
             self.res.nhev += minres.nhev
 

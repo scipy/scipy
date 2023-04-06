@@ -1355,8 +1355,8 @@ class SHGO:
 
         # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
-        if 'njev' in lres:
-            self.res.nljev += lres.njev
+        if 'ngev' in lres:
+            self.res.nljev += lres.ngev
         if 'nhev' in lres:
             self.res.nlhev += lres.nhev
 

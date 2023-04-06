@@ -2568,12 +2568,11 @@ class TestIterationLimits:
                     assert res["nfev"] >= default_iters*2 or res["nit"] >= default_iters*2
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_result_x_shape_when_len_x_is_one():
     def fun(x):
         return x * x
 
-    def jac(x):
+    def grad(x):
         return 2. * x
 
     def hess(x):
@@ -2585,11 +2584,11 @@ def test_result_x_shape_when_len_x_is_one():
         res = optimize.minimize(fun, np.array([0.1]), method=method)
         assert res.x.shape == (1,)
 
-    # use jac + hess
+    # use grad + hess
     methods = ['trust-constr', 'dogleg', 'trust-ncg', 'trust-exact',
                'trust-krylov', 'Newton-CG']
     for method in methods:
-        res = optimize.minimize(fun, np.array([0.1]), method=method, jac=jac,
+        res = optimize.minimize(fun, np.array([0.1]), method=method, grad=grad,
                                 hess=hess)
         assert res.x.shape == (1,)
 
@@ -2877,7 +2876,6 @@ def test_all_bounds_equal(method):
         assert res.message.startswith(message)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -2933,7 +2931,6 @@ def test_bounds_with_list():
     )
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 def test_x_overwritten_user_function():
     # if the user overwrites the x-array in the user function it's likely
     # that the minimizer stops working properly.
@@ -2944,7 +2941,7 @@ def test_x_overwritten_user_function():
         x *= x
         return np.sum(x)
 
-    def fquad_jac(x):
+    def fquad_grad(x):
         a = np.arange(np.size(x))
         x *= 2
         x -= 2 * a
@@ -2953,7 +2950,7 @@ def test_x_overwritten_user_function():
     def fquad_hess(x):
         return np.eye(np.size(x)) * 2.0
 
-    meth_jac = [
+    meth_grad = [
         'newton-cg', 'dogleg', 'trust-ncg', 'trust-exact',
         'trust-krylov', 'trust-constr'
     ]
@@ -2964,17 +2961,16 @@ def test_x_overwritten_user_function():
     x0 = np.ones(5) * 1.5
 
     for meth in MINIMIZE_METHODS:
-        jac = None
+        grad = None
         hess = None
-        if meth in meth_jac:
-            jac = fquad_jac
+        if meth in meth_grad:
+            grad = fquad_grad
         if meth in meth_hess:
             hess = fquad_hess
-        res = optimize.minimize(fquad, x0, method=meth, jac=jac, hess=hess)
+        res = optimize.minimize(fquad, x0, method=meth, grad=grad, hess=hess)
         assert_allclose(res.x, np.arange(np.size(x0)), atol=2e-4)
 
 
-@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestGlobalOptimization:
 
     def test_optimize_result_attributes(self):
@@ -3001,7 +2997,7 @@ class TestGlobalOptimization:
 
 def test_approx_fprime():
     # check that approx_fprime (serviced by approx_derivative) works for
-    # jac and hess
+    # grad and hess
     g = optimize.approx_fprime(himmelblau_x0, himmelblau)
     assert_allclose(g, himmelblau_grad(himmelblau_x0), rtol=5e-6)
 
@@ -3041,8 +3037,10 @@ def test_deprecate_jac():
 @pytest.mark.parametrize('kwargs', [{"jac": 1}, {"grad": 1}])
 @pytest.mark.parametrize('modify',
                          [(setattr, 'jac'), (setattr, 'grad'),
-                         (lambda obj, key, val: obj.__setitem__(key, val), 'jac'),
-                         (lambda obj, key, val: obj.__setitem__(key, val), 'grad')])
+                         (lambda obj, key, val: obj.__setitem__(key, val),
+                          'jac'),
+                         (lambda obj, key, val: obj.__setitem__(key, val),
+                          'grad')])
 @pytest.mark.parametrize('delete',
                          [(lambda obj, key: obj.__delattr__(key), 'jac'),
                           (lambda obj, key: obj.__delattr__(key), 'grad'),
@@ -3059,3 +3057,29 @@ def test_jac_is_grad(kwargs, modify, delete):
     del_fun(res, del_item)
     assert (hasattr(res, 'grad') is hasattr(res, 'jac')
             is ('grad' in res) is ('jac' in res) is False)
+
+
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+@pytest.mark.parametrize('kwargs', [{"njev": 1}, {"ngev": 1}])
+@pytest.mark.parametrize('modify',
+                         [(setattr, 'njev'), (setattr, 'ngev'),
+                         (lambda obj, key, val: obj.__setitem__(key, val),
+                          'njev'),
+                         (lambda obj, key, val: obj.__setitem__(key, val),
+                          'ngev')])
+@pytest.mark.parametrize('delete',
+                         [(lambda obj, key: obj.__delattr__(key), 'njev'),
+                          (lambda obj, key: obj.__delattr__(key), 'ngev'),
+                          (lambda obj, key: obj.__delitem__(key), 'njev'),
+                          (lambda obj, key: obj.__delitem__(key), 'ngev')])
+def test_njev_is_ngev(kwargs, modify, delete):
+    # test that jac and grad are equivalent attributes/items of _OptimizeResult
+    res = _OptimizeResult(**kwargs)
+    assert res.ngev == res.njev == res['njev'] == res['ngev'] == 1
+    modify_fun, modify_item = modify
+    modify_fun(res, modify_item, 2)
+    assert res.ngev == res.njev == res['njev'] == res['ngev'] == 2
+    del_fun, del_item = delete
+    del_fun(res, del_item)
+    assert (hasattr(res, 'ngev') is hasattr(res, 'njev')
+            is ('ngev' in res) is ('njev' in res) is False)

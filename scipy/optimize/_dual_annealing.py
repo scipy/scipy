@@ -9,7 +9,7 @@ A Dual Annealing global optimization algorithm
 
 import warnings
 import numpy as np
-from scipy.optimize import OptimizeResult
+from scipy.optimize._optimize import _OptimizeResult as OptimizeResult
 from scipy.optimize import minimize, Bounds
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state
@@ -421,8 +421,8 @@ class LocalSearchWrapper:
         # Run local search from the given x location where energy value is e
         x_tmp = np.copy(x)
         mres = self.minimizer(self.func_wrapper.fun, x, **self.kwargs)
-        if 'njev' in mres:
-            self.func_wrapper.ngev += mres.njev
+        if 'ngev' in mres:
+            self.func_wrapper.ngev += mres.ngev
         if 'nhev' in mres:
             self.func_wrapper.nhev += mres.nhev
         # Check if is valid value
@@ -719,7 +719,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     optimize_res.fun = energy_state.ebest
     optimize_res.nit = iteration
     optimize_res.nfev = func_wrapper.nfev
-    optimize_res.njev = func_wrapper.ngev
+    optimize_res.ngev = func_wrapper.ngev
     optimize_res.nhev = func_wrapper.nhev
     optimize_res.message = message
     return optimize_res

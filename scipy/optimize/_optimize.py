@@ -210,7 +210,7 @@ class OptimizeResult(dict):
         Inverse of the objective function's Hessian; may be an approximation.
         Not available for all solvers. The type of this attribute may be
         either np.ndarray or scipy.sparse.linalg.LinearOperator.
-    nfev, njev, nhev : int
+    nfev, ngev, nhev : int
         Number of evaluations of the objective functions and of its
         gradient and Hessian.
     nit : int
@@ -269,54 +269,51 @@ class OptimizeResult(dict):
 
 
 # Version of `OptimizeResult` that treats `jac` and `grad` interchangeably
-# except for emitting a deprecation warning when `jac` is used.
+# except for emitting a deprecation warning when `jac` is used.  Similar for
+# `njev` and `ngev`.
 class _OptimizeResult(OptimizeResult):
-    def warn_deprecation_jac(self):
-        message = ('Use of attribute/item `jac` is deprecated and replaced '
-                   'by `grad`.  Support for `jac` will be removed in SciPy '
-                   '1.13.0.')
-        warnings.warn(DeprecationWarning(message), stacklevel=3)
+    _name_substitutions = {'jac': 'grad', 'njev': 'ngev'}
+    def _substitute_name(self, name):
+        if name in self._name_substitutions:
+            new_name = self._name_substitutions[name]
+            message = (f'Use of attribute/item `{name}` is deprecated and '
+                       f'replaced by `{new_name}`.  Support for `{name}` will '
+                       'be removed in SciPy 1.13.0.')
+            warnings.warn(DeprecationWarning(message), stacklevel=3)
+        else:
+            new_name = name
+        return new_name
 
     def __getattr__(self, name):
-        if name == 'jac':
-            self.warn_deprecation_jac()
-            name = 'grad'
+        name = self._substitute_name(name)
         return super().__getattr__(name)
 
     def __setattr__(self, name, value):
-        if name == 'jac':
-            self.warn_deprecation_jac()
-            name = 'grad'
+        name = self._substitute_name(name)
         self[name] = value
 
     def __delattr__(self, name):
-        if name == 'jac':
-            self.warn_deprecation_jac()
-            name = 'grad'
+        name = self._substitute_name(name)
         del self[name]
 
     def __setitem__(self, key, value):
-        if key == 'jac':
-            key = 'grad'
+        key = self._substitute_name(key)
         return super().__setitem__(key, value)
 
     def __getitem__(self, key):
-        if key == 'jac':
-            self.warn_deprecation_jac()
-            key = 'grad'
+        key = self._substitute_name(key)
         return super().__getitem__(key)
 
     def __delitem__(self, key):
-        if key == 'jac':
-            self.warn_deprecation_jac()
-            key = 'grad'
+        key = self._substitute_name(key)
         return super().__delitem__(key)
 
     def __init__(self, *args, **kwargs):
-        if 'jac' in kwargs:
-            self.warn_deprecation_jac()
-            kwargs['grad'] = kwargs['jac']
-            del kwargs['jac']
+        for name, new_name in self._name_substitutions.items():
+            if name in kwargs:
+                self._substitute_name(name)
+                kwargs[new_name] = kwargs[name]
+                del kwargs[name]
         return super().__init__(*args, **kwargs)
 
 
@@ -1417,8 +1414,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
-        retlist = (res['x'], res['fun'], res['jac'], res['hess_inv'],
-                   res['nfev'], res['njev'], res['status'])
+        retlist = (res['x'], res['fun'], res['grad'], res['hess_inv'],
+                   res['nfev'], res['ngev'], res['status'])
         if retall:
             retlist += (res['allvecs'], )
         return retlist
@@ -1576,7 +1573,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         print("         Gradient evaluations: %d" % sf.ngev)
 
     result = _OptimizeResult(fun=fval, grad=gfk, hess_inv=Hk, nfev=sf.nfev,
-                             njev=sf.ngev, status=warnflag,
+                             ngev=sf.ngev, status=warnflag,
                              success=(warnflag == 0), message=msg, x=xk,
                              nit=k)
     if retall:
@@ -1755,7 +1752,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
 
     if full_output:
-        retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
+        retlist = res['x'], res['fun'], res['nfev'], res['ngev'], res['status']
         if retall:
             retlist += (res['allvecs'], )
         return retlist
@@ -1904,7 +1901,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         print("         Gradient evaluations: %d" % sf.ngev)
 
     result = _OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
-                             njev=sf.ngev, status=warnflag,
+                             ngev=sf.ngev, status=warnflag,
                              success=(warnflag == 0), message=msg, x=xk,
                              nit=k)
     if retall:
@@ -2014,7 +2011,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
                              callback=callback, **opts)
 
     if full_output:
-        retlist = (res['x'], res['fun'], res['nfev'], res['njev'],
+        retlist = (res['x'], res['fun'], res['nfev'], res['ngev'],
                    res['nhev'], res['status'])
         if retall:
             retlist += (res['allvecs'], )
@@ -2094,7 +2091,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             print("         Hessian evaluations: %d" % hcalls)
         fval = old_fval
         result = _OptimizeResult(fun=fval, grad=gfk, nfev=sf.nfev,
-                                 njev=sf.ngev, nhev=hcalls, status=warnflag,
+                                 ngev=sf.ngev, nhev=hcalls, status=warnflag,
                                  success=(warnflag == 0), message=msg, x=xk,
                                  nit=k)
         if retall:
