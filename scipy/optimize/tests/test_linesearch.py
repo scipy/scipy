@@ -145,7 +145,7 @@ class TestLineSearch:
     def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
-                phi, derphi, phi(0), old_phi0, derphi(0))
+                phi, derphi, phi(0), old_phi0, derphi(0), maxiter=10)
             assert_fp_equal(phi0, phi(0), name)
             assert_fp_equal(phi1, phi(s), name)
             if derphi1 is not None:
