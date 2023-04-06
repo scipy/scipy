@@ -6185,7 +6185,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     See Also
     --------
     scipy.stats.vonmises : Von-Mises Fisher distribution in 2D on a circle
-    uniform_direction: uniform distribution on the surface of a hypersphere
+    uniform_direction : uniform distribution on the surface of a hypersphere
 
     Notes
     -----
@@ -6286,6 +6286,9 @@ class vonmises_fisher_gen(multi_rv_generic):
     >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0, right=1.0, wspace=0.)
     >>> plt.show()
 
+    As we increase the concentration parameter, the points are getting more
+    clustered together around the mean direction.
+
     **Sampling**
 
     Draw 5 samples from the distribution using the ``rvs`` method resulting
@@ -6376,16 +6379,14 @@ class vonmises_fisher_gen(multi_rv_generic):
         if not mu.size > 1:
             raise ValueError("'mu' must have at least two entries.")
         kappa_error_msg = "'kappa' must be a positive scalar."
-        if not np.isscalar(kappa):
-            raise ValueError(kappa_error_msg)
-        if kappa < 0:
+        if not np.isscalar(kappa) or kappa < 0:
             raise ValueError(kappa_error_msg)
         dim = mu.size
 
         return dim, mu, kappa
 
     def _check_data_vs_dist(self, x, dim):
-        if not x.shape[-1] == dim:
+        if x.shape[-1] != dim:
             raise ValueError("The dimensionality of the last axis of 'x' must "
                              "match the dimensionality of the "
                              "von Mises Fisher distribution.")
@@ -6428,20 +6429,19 @@ class vonmises_fisher_gen(multi_rv_generic):
             Points at which to evaluate the log of the probability
             density function. The last axis of `x` must correspond
             to unit vectors of the same dimensionality as the distribution.
-        mu : array_like, default None.
+        mu : array_like, default: None
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
-        kappa : float, default 1.
+        kappa : float, default: 1
             Concentration parameter. Must be positive.
 
         Returns
         -------
         logpdf : ndarray or scalar
-            Log of the probability density function evaluated at `x`
+            Log of the probability density function evaluated at `x`.
 
         """
-        params = self._process_parameters(mu, kappa)
-        dim, mu, kappa = params
+        dim, mu, kappa = self._process_parameters(mu, kappa)
         return self._logpdf(x, dim, mu, kappa)
 
     def pdf(self, x, mu=None, kappa=1):
@@ -6462,11 +6462,10 @@ class vonmises_fisher_gen(multi_rv_generic):
         Returns
         -------
         pdf : ndarray or scalar
-            Probability density function evaluated at `x`
+            Probability density function evaluated at `x`.
 
         """
-        params = self._process_parameters(mu, kappa)
-        dim, mu, kappa = params
+        dim, mu, kappa = self._process_parameters(mu, kappa)
         return np.exp(self._logpdf(x, dim, mu, kappa))
 
     def _rvs_2d(self, mu, kappa, size, random_state):
@@ -6590,12 +6589,13 @@ class vonmises_fisher_gen(multi_rv_generic):
     def _rvs(self, dim, mu, kappa, size, random_state):
         if dim == 2:
             samples = self._rvs_2d(mu, kappa, size, random_state)
+        elif dim == 3:
+            samples = self._rvs_3d(kappa, size, random_state)
         else:
-            if dim == 3:
-                samples = self._rvs_3d(kappa, size, random_state)
-            else:
-                samples = self._rejection_sampling(dim, kappa, size,
-                                                   random_state)
+            samples = self._rejection_sampling(dim, kappa, size,
+                                               random_state)
+
+        if dim != 2:
             samples = self._rotate_samples(samples, mu, dim)
         return samples
 
@@ -6628,8 +6628,8 @@ class vonmises_fisher_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random variates of size (`size`, `N`), where `N` is the
-            dimension of the random variable.
+            Random variates of shape (`size`, `N`), where `N` is the
+            dimension of the distribution.
 
         """
         dim, mu, kappa = self._process_parameters(mu, kappa)
@@ -6648,23 +6648,23 @@ class vonmises_fisher_gen(multi_rv_generic):
 
         Parameters
         ----------
-        mu : array_like, default None.
+        mu : array_like, default: None
             Mean direction of the distribution. Must be a one-dimensional unit
             vector of norm 1.
-        kappa : float, default 1.
+        kappa : float, default: 1
             Concentration parameter. Must be positive.
 
         Returns
         -------
         h : scalar
-            Entropy of the von Mises-Fisher distribution
+            Entropy of the von Mises-Fisher distribution.
 
         """
-        dim, mu, kappa = self._process_parameters(mu, kappa)
+        dim, _, kappa = self._process_parameters(mu, kappa)
         return self._entropy(dim, kappa)
 
     def fit(self, x):
-        """Fit the von Mises-Fisher distribution to data
+        """Fit the von Mises-Fisher distribution to data.
 
         Parameters
         ----------
@@ -6675,7 +6675,7 @@ class vonmises_fisher_gen(multi_rv_generic):
         Returns
         -------
         mu : ndarray
-            Estimated mean direcion
+            Estimated mean direction.
         kappa : float
             Estimated concentration parameter.
 
@@ -6683,9 +6683,9 @@ class vonmises_fisher_gen(multi_rv_generic):
         # validate input data
         x = np.asarray(x)
         if x.ndim == 1:
-            raise ValueError("x must be at least two dimensional.")
+            raise ValueError("'x' must be at least two dimensional.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
-            msg = "x must be unit vectors of norm 1 along last dimension."
+            msg = "'x' must be unit vectors of norm 1 along last dimension."
             raise ValueError(msg)
         dim = x.shape[-1]
         if x.ndim > 2:
@@ -6738,7 +6738,8 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         """
         self._dist = vonmises_fisher_gen(seed)
         self.dim, self.mu, self.kappa = (
-            self._dist._process_parameters(mu, kappa))
+            self._dist._process_parameters(mu, kappa)
+        )
 
     def logpdf(self, x):
         """
@@ -6752,7 +6753,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         Returns
         -------
         logpdf : ndarray or scalar
-            Log of probability density function evaluated at `x`
+            Log of probability density function evaluated at `x`.
 
         """
         return self._dist._logpdf(x, self.dim, self.mu, self.kappa)
@@ -6769,7 +6770,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         Returns
         -------
         pdf : ndarray or scalar
-            Probability density function evaluated at `x`
+            Probability density function evaluated at `x`.
 
         """
         return np.exp(self.logpdf(x))
@@ -6798,7 +6799,7 @@ class vonmises_fisher_frozen(multi_rv_frozen):
         -------
         rvs : ndarray or scalar
             Random variates of size (`size`, `N`), where `N` is the
-            dimension of the random variable.
+            dimension of the distribution.
 
         """
         random_state = self._dist._get_random_state(random_state)
