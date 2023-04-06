@@ -12,7 +12,7 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize
 from scipy import special
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from . import _statlib
 from . import _stats_py
@@ -4104,9 +4104,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        res = WilcoxonResult(np.nan, np.nan)
+        NaN = _get_nan(d)
+        res = WilcoxonResult(NaN, NaN)
         if method == 'approx':
-            res.zstatistic = np.nan
+            res.zstatistic = NaN
         return res
 
     if mode == "auto":

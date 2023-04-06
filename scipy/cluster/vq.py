@@ -307,7 +307,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         code_book = code_book[has_members]
-        diff = prev_avg_dists[0] - prev_avg_dists[1]
+        diff = np.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
