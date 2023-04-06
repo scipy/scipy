@@ -3148,11 +3148,21 @@ class TestVonMises_Fisher:
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher(mu, 1)
 
-    @pytest.mark.parametrize("kappa", [-1, 0, (5, 3)])
+    @pytest.mark.parametrize("kappa", [-1, (5, 3)])
     def test_kappa_validation(self, kappa):
         msg = "'kappa' must be a positive scalar."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher([1, 0], kappa)
+
+    @pytest.mark.parametrize("kappa", [0, 0.])
+    def test_kappa_zero(self, kappa):
+        msg = ("For 'kappa=0' the von Mises-Fisher distribution "
+               "becomes the uniform distribution on the sphere "
+               "surface. Consider using 'scipy.stats.uniform_direction' "
+               "instead.")
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher([1, 0], kappa)
+
 
     @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
                                         vonmises_fisher.logpdf])
@@ -3329,13 +3339,13 @@ class TestVonMises_Fisher:
 
     def test_fit_error_one_dimensional_data(self):
         x = np.zeros((3, ))
-        msg = "x must be at least two dimensional."
+        msg = "'x' must be at least two dimensional."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher.fit(x)
 
     def test_fit_error_unnormalized_data(self):
         x = np.ones((3, 3))
-        msg = "x must be unit vectors of norm 1 along last dimension."
+        msg = "'x' must be unit vectors of norm 1 along last dimension."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher.fit(x)
 
