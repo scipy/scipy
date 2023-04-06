@@ -6535,6 +6535,16 @@ class vonmises_fisher_gen(multi_rv_generic):
         # calculate envelope for rejection sampler (eq. 4)
         sqrt = np.sqrt(4 * kappa ** 2. + dim_minus_one ** 2)
         envelop_param = (-2 * kappa + sqrt) / dim_minus_one
+        if envelop_param == 0:
+            # the regular formula suffers from loss of precision for high
+            # kappa. This can only be detected by checking for 0 here.
+            # Workaround: expansion for sqrt variable
+            # https://www.wolframalpha.com/input?i=sqrt%284*x%5E2%2Bd%5E2%29
+            # e = (-2 * k + sqrt(k**2 + d**2)) / d
+            #   ~ (-2 * k + 2 * k + d**2/(4 * k) - d**4/(64 * k**3)) / d
+            #   = d/(4 * k) - d**3/(64 * k**3)
+            envelop_param = (dim_minus_one/4 * kappa**-1.
+                             - dim_minus_one**3/64 * kappa**-3.)
         # reference step 0
         node = (1. - envelop_param) / (1. + envelop_param)
         correction = kappa * node + dim_minus_one * np.log(1. - node ** 2)
