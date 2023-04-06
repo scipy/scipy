@@ -11182,9 +11182,7 @@ class rel_breitwigner_gen(rv_continuous):
 
     def _cdf(self, x, rho):
         # C = k / (2 * rho**2) / np.sqrt(1 + 1/rho**2)
-        C = np.sqrt(
-                2 / (1 + np.sqrt(1 + 1/rho**2))
-            ) / np.pi
+        C = np.sqrt(2/(1 + np.sqrt(1 + 1/rho**2)))/np.pi
         result = (
             np.sqrt(-1 + 1j/rho)
             * np.arctan(x/np.sqrt(-rho*(rho + 1j)))
