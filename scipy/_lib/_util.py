@@ -735,3 +735,10 @@ def _rng_spawn(rng, n_children):
     child_rngs = [np.random.Generator(type(bg)(child_ss))
                   for child_ss in ss.spawn(n_children)]
     return child_rngs
+
+
+def _get_nan(*data):
+    # Get NaN of appropriate dtype for data
+    data = [np.asarray(item) for item in data]
+    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    return np.array(np.nan, dtype=dtype)[()]

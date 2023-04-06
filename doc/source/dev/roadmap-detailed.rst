@@ -61,12 +61,10 @@ Making this easier is a priority.
 
 Moving to the Meson build system
 ````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021.
-This significantly improves build performance, and will fix multiple issues
-(e.g., our issues with Windows compilers, cross-compilation support). The aim
-is to make it the default build system for SciPy 1.9.0, and then remove support
-for ``numpy.distutils``/``setuptools`` in SciPy 1.10.0. For more details, see
-`gh-13615 <https://github.com/scipy/scipy/issues/13615>`_.
+Support for the Meson build system was merged into SciPy main in Dec 2021,
+and SciPy 1.9.3 was the first release where all wheels were also built with
+Meson. What is left to do is removing support for
+``numpy.distutils``/``setuptools``, this will happen soon.
 
 
 Use of Cython
