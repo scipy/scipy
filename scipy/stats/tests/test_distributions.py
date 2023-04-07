@@ -8730,6 +8730,95 @@ def test_moment_order_4():
     assert stats.skewnorm._munp(4, 0) == 3.0
 
 
+class TestRelativisticBW:
+    @pytest.fixture
+    def ROOT_pdf_sample_data(self):
+        """Sample data points for pdf computed with CERN's ROOT
+
+        See - https://root.cern/
+
+        Uses ROOT.TMath.BreitWignerRelativistic, available in ROOT
+        versions 6.27+
+
+        pdf calculated for Z0 Boson, W Boson, and Higgs Boson for
+        x in `np.linspace(0, 200, 401)`.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        return data
+
+    @pytest.mark.parametrize(
+        "rho,gamma,rtol", [
+            (36.545206797050334, 2.4952, 5e-14),  # Z0 Boson
+            (38.55107913669065, 2.085, 1e-14),  # W Boson
+            (96292.3076923077, 0.0013, 5e-13),  # Higgs Boson
+        ]
+    )
+    def test_pdf_against_ROOT(self, ROOT_pdf_sample_data, rho, gamma, rtol):
+        data = ROOT_pdf_sample_data[
+            (ROOT_pdf_sample_data['rho'] == rho)
+            & (ROOT_pdf_sample_data['gamma'] == gamma)
+        ]
+        x, pdf = data['x'], data['pdf']
+        assert_allclose(
+            pdf, stats.rel_breitwigner.pdf(x, rho, scale=gamma), rtol=rtol
+        )
+
+    @pytest.mark.parametrize("rho, Gamma, rtol", [
+              (36.545206797050334, 2.4952, 5e-13),  # Z0 Boson
+              (38.55107913669065, 2.085, 5e-13),  # W Boson
+              (96292.3076923077, 0.0013, 5e-10),  # Higgs Boson
+          ]
+      )
+    def test_pdf_against_simple_implementation(self, rho, Gamma, rtol):
+        # reference implementation straight from formulas on Wikipedia [1]
+        def pdf(E, M, Gamma):
+            gamma = np.sqrt(M**2 * (M**2 + Gamma**2))
+            k = (2 * np.sqrt(2) * M * Gamma * gamma
+                 / (np.pi * np.sqrt(M**2 + gamma)))
+            return k / ((E**2 - M**2)**2 + M**2*Gamma**2)
+        # get reasonable values at which to evaluate the CDF
+        p = np.linspace(0.05, 0.95, 10)
+        x = stats.rel_breitwigner.ppf(p, rho, scale=Gamma)
+        res = stats.rel_breitwigner.pdf(x, rho, scale=Gamma)
+        ref = pdf(x, rho*Gamma, Gamma)
+        assert_allclose(res, ref, rtol=rtol)
+
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            pytest.param(
+                36.545206797050334, 2.4952, marks=pytest.mark.slow
+            ),  # Z0 Boson
+            pytest.param(
+                38.55107913669065, 2.085, marks=pytest.mark.xslow
+            ),  # W Boson
+            pytest.param(
+                96292.3076923077, 0.0013, marks=pytest.mark.xslow
+            ),  # Higgs Boson
+        ]
+    )
+    def test_fit_floc(self, rho, gamma):
+        """Tests fit for cases where floc is set.
+
+        `rel_breitwigner` has special handling for these cases.
+        """
+        seed = 6936804688480013683
+        rng = np.random.default_rng(seed)
+        data = stats.rel_breitwigner.rvs(
+            rho, scale=gamma, size=1000, random_state=rng
+        )
+        fit = stats.rel_breitwigner.fit(data, floc=0)
+        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=2e-1)
+        assert fit[1] == 0
+        # Check again with fscale set.
+        fit = stats.rel_breitwigner.fit(data, floc=0, fscale=gamma)
+        assert_allclose(fit[0], rho, rtol=1e-2)
+        assert (fit[1], fit[2]) == (0, gamma)
+
+
 class TestJohnsonSU:
     @pytest.mark.parametrize("case", [  # a, b, loc, scale, m1, m2, g1, g2
             (-0.01, 1.1, 0.02, 0.0001, 0.02000137427557091,

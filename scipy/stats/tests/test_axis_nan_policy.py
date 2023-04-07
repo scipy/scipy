@@ -400,7 +400,11 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             else:
                 assert_equal(res1db, res1da)
                 assert_equal(res1dc, res1da)
-
+                for item in list(res1da) + list(res1db) + list(res1dc):
+                    # Most functions naturally return NumPy numbers, which
+                    # are drop-in replacements for the Python versions but with
+                    # desirable attributes. Make sure this is consistent.
+                    assert np.issubdtype(item.dtype, np.number)
 
 # Test keepdims for:
 #     - single-output and multi-output functions (gmean and mannwhitneyu)

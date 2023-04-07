@@ -11105,6 +11105,155 @@ studentized_range = studentized_range_gen(name='studentized_range', a=0,
                                           b=np.inf)
 
 
+class rel_breitwigner_gen(rv_continuous):
+    r"""A relativistic Breit-Wigner random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    cauchy: Cauchy distribution, also known as the Breit-Wigner distribution.
+
+    Notes
+    -----
+
+    The probability density function for `rel_breitwigner` is
+
+    .. math::
+
+        f(x, \rho) = \frac{k}{(x^2 - \rho^2)^2 + \rho^2}
+
+    where
+
+    .. math::
+        k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
+            {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
+
+    The relativistic Breit-Wigner distribution is used in high energy physics
+    to model resonances [1]_. It gives the uncertainty in the invariant mass,
+    :math:`M` [2]_, of a resonance with characteristic mass :math:`M_0` and
+    decay-width :math:`\Gamma`, where :math:`M`, :math:`M_0` and :math:`\Gamma`
+    are expressed in natural units. In SciPy's parametrization, the shape
+    parameter :math:`\rho` is equal to :math:`M_0/\Gamma` and takes values in
+    :math:`(0, \infty)`.
+
+    Equivalently, the relativistic Breit-Wigner distribution is said to give
+    the uncertainty in the center-of-mass energy :math:`E_{\text{cm}}`. In
+    natural units, the speed of light :math:`c` is equal to 1 and the invariant
+    mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
+    center-of-mass frame, the rest energy is equal to the total energy [3]_.
+
+    %(after_notes)s
+
+    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
+    example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
+    \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
+    [4]_ one can set ``rho=91.1876/2.4952`` and ``scale=2.4952``.
+
+    To ensure a physically meaningful result when using the `fit` method, one
+    should set ``floc=0`` to fix the location parameter to 0.
+
+    References
+    ----------
+    .. [1] Relativistic Breit-Wigner distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
+    .. [2] Invariant mass, Wikipedia,
+           https://en.wikipedia.org/wiki/Invariant_mass
+    .. [3] Center-of-momentum frame, Wikipedia,
+           https://en.wikipedia.org/wiki/Center-of-momentum_frame
+    .. [4] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
+           Published 17 August 2018
+
+    %(example)s
+
+    """
+    def _argcheck(self, rho):
+        return rho > 0
+
+    def _shape_info(self):
+        return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
+
+    def _pdf(self, x, rho):
+        # C = k / rho**2
+        C = np.sqrt(
+            2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+        ) * 2 / np.pi
+        with np.errstate(over='ignore'):
+            return C / (((x - rho)*(x + rho)/rho)**2 + 1)
+
+    def _cdf(self, x, rho):
+        # C = k / (2 * rho**2) / np.sqrt(1 + 1/rho**2)
+        C = np.sqrt(2/(1 + np.sqrt(1 + 1/rho**2)))/np.pi
+        result = (
+            np.sqrt(-1 + 1j/rho)
+            * np.arctan(x/np.sqrt(-rho*(rho + 1j)))
+        )
+        result = C * 2 * np.imag(result)
+        # Sometimes above formula produces values greater than 1.
+        return np.clip(result, None, 1)
+
+    def _munp(self, n, rho):
+        if n == 1:
+            # C = k / (2 * rho)
+            C = np.sqrt(
+                2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+            ) / np.pi * rho
+            return C * (np.pi/2 + np.arctan(rho))
+        if n == 2:
+            # C = pi * k / (4 * rho)
+            C = np.sqrt(
+                (1 + 1/rho**2) / (2 * (1 + np.sqrt(1 + 1/rho**2)))
+            ) * rho
+            result = (1 - rho * 1j) / np.sqrt(-1 - 1j/rho)
+            return 2 * C * np.real(result)
+        else:
+            return np.inf
+
+    def _stats(self, rho):
+        # Returning None from stats makes public stats use _munp.
+        # nan values will be omitted from public stats. Skew and
+        # kurtosis are actually infinite.
+        return None, None, np.nan, np.nan
+
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        # Override rv_continuous.fit to better handle case where floc is set.
+        data, _, floc, fscale = _check_fit_input_parameters(
+            self, data, args, kwds
+        )
+
+        censored = isinstance(data, CensoredData)
+        if censored:
+            if data.num_censored() == 0:
+                # There are no censored values in data, so replace the
+                # CensoredData instance with a regular array.
+                data = data._uncensored
+                censored = False
+
+        if floc is None or censored:
+            return super().fit(data, *args, **kwds)
+
+        if fscale is None:
+            # The interquartile range approximates the scale parameter gamma.
+            # The median approximates rho * gamma.
+            p25, p50, p75 = np.quantile(data - floc, [0.25, 0.5, 0.75])
+            scale_0 = p75 - p25
+            rho_0 = p50 / scale_0
+            if not args:
+                args = [rho_0]
+            if "scale" not in kwds:
+                kwds["scale"] = scale_0
+        else:
+            M_0 = np.median(data - floc)
+            rho_0 = M_0 / fscale
+            if not args:
+                args = [rho_0]
+        return super().fit(data, *args, **kwds)
+
+
+rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().copy().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
