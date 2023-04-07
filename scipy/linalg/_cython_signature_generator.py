@@ -217,7 +217,9 @@ lapack_exclusions = [
               'clascl2', 'dlascl2', 'slascl2', 'zlascl2',
               'cla_wwaddw', 'dla_wwaddw', 'sla_wwaddw', 'zla_wwaddw',
               'dbdsvdx', 'dtrevc3', 'sbdsvdx', 'strevc3', # These 4 fail, because of a bug in f2py
-                                                          # see (https://github.com/numpy/numpy/issues/23533)
+                                                          # see https://github.com/numpy/numpy/issues/23533
+              'ssyconvf', # This fails because the symbol does not get exported correctly on macOS,
+                          # see gh-18247
               ]
 
 
