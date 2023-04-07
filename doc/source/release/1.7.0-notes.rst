@@ -342,7 +342,7 @@ There are two changes to the default behavior of `scipy.stats.mannwhitenyu`:
 Support has been added for PEP 621 (project metadata in ``pyproject.toml``)
 
 We now support a Gitpod environment to reduce the barrier to entry for SciPy
-development; for more details see :ref:`quickstart-gitpod`.
+development; for more details see ``quickstart-gitpod``.
 
 
 *******
