@@ -5037,7 +5037,18 @@ class Test_ttest_CI:
     # yuen.t.test(a, b, tr=0, conf.level = 0.9, alternative = 'l')
     #
     # equal_var=True reference values computed with R multicon yuenContrast:
-
+    #
+    # library(multicon)
+    # options(digits=16)
+    # a < - c(0.88236329, 0.97318744, 0.4549262, 0.97893335, 0.0606677,
+    #         0.44013366, 0.55806018, 0.40151434, 0.14453315, 0.25860601,
+    #         0.20202162)
+    # b < - c(0.93455277, 0.42680603, 0.49751939, 0.14152846, 0.711435,
+    #         0.77669667, 0.20507578, 0.78702772, 0.94691855, 0.32464958,
+    #         0.3873582, 0.35187468, 0.21731811)
+    # dv = c(a, b)
+    # iv = c(rep('a', length(a)), rep('b', length(b)))
+    # yuenContrast(dv~iv, EQVAR = FALSE, alternative = 'unequal', tr = 0.2)
     r = np.empty(shape=(3, 2, 2, 5))
     r[0, 0, 0] = [-0.2314607, 19.894435, 0.8193209, -0.247220294, 0.188729943]
     r[1, 0, 0] = [-0.2314607, 19.894435, 0.40966045, -np.inf, 0.1382426469]
@@ -5072,7 +5083,7 @@ class Test_ttest_CI:
         assert_allclose(res.statistic, statistic)
         assert_allclose(res.df, df)
         assert_allclose(res.pvalue, pvalue)
-        if not equal_var:
+        if not equal_var:  # CI not available when `equal_var is True`
             ci = res.confidence_interval(0.9)
             assert_allclose(ci.low, low)
             assert_allclose(ci.high, high)

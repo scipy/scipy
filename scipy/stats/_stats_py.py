@@ -117,80 +117,6 @@ def _chk2_asarray(a, b, axis):
     return a, b, outaxis
 
 
-def _shape_with_dropped_axis(a, axis):
-    """
-    Given an array `a` and an integer `axis`, return the shape
-    of `a` with the `axis` dimension removed.
-
-    Examples
-    --------
-    >>> a = np.zeros((3, 5, 2))
-    >>> _shape_with_dropped_axis(a, 1)
-    (3, 2)
-
-    """
-    shp = list(a.shape)
-    try:
-        del shp[axis]
-    except IndexError:
-        raise np.AxisError(axis, a.ndim) from None
-    return tuple(shp)
-
-
-def _broadcast_shapes(shape1, shape2):
-    """
-    Given two shapes (i.e. tuples of integers), return the shape
-    that would result from broadcasting two arrays with the given
-    shapes.
-
-    Examples
-    --------
-    >>> _broadcast_shapes((2, 1), (4, 1, 3))
-    (4, 2, 3)
-    """
-    d = len(shape1) - len(shape2)
-    if d <= 0:
-        shp1 = (1,)*(-d) + shape1
-        shp2 = shape2
-    else:
-        shp1 = shape1
-        shp2 = (1,)*d + shape2
-    shape = []
-    for n1, n2 in zip(shp1, shp2):
-        if n1 == 1:
-            n = n2
-        elif n2 == 1 or n1 == n2:
-            n = n1
-        else:
-            raise ValueError(f'shapes {shape1} and {shape2} could not be '
-                             'broadcast together')
-        shape.append(n)
-    return tuple(shape)
-
-
-def _broadcast_shapes_with_dropped_axis(a, b, axis):
-    """
-    Given two arrays `a` and `b` and an integer `axis`, find the
-    shape of the broadcast result after dropping `axis` from the
-    shapes of `a` and `b`.
-
-    Examples
-    --------
-    >>> a = np.zeros((5, 2, 1))
-    >>> b = np.zeros((1, 9, 3))
-    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
-    (5, 3)
-    """
-    shp1 = _shape_with_dropped_axis(a, axis)
-    shp2 = _shape_with_dropped_axis(b, axis)
-    try:
-        shp = _broadcast_shapes(shp1, shp2)
-    except ValueError:
-        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
-                         'broadcast together') from None
-    return shp
-
-
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
                                        ['statistic', 'pvalue'], [])
 
@@ -7974,7 +7900,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     if f_exp is not None:
         f_exp = np.asanyarray(f_exp)
-        bshape = _broadcast_shapes(f_obs_float.shape, f_exp.shape)
+        bshape = np.broadcast_shapes(f_obs_float.shape, f_exp.shape)
         f_obs_float = _m_broadcast_to(f_obs_float, bshape)
         f_exp = _m_broadcast_to(f_exp, bshape)
         rtol = 1e-8  # to pass existing tests
