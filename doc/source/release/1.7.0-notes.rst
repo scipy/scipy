@@ -142,7 +142,7 @@ The ``rotation`` methods ``from_rotvec`` and ``as_rotvec`` now accept a
 ============================
 
 Wright's generalized Bessel function for positive arguments was added as
-`scipy.special.wright_bessel.`
+`scipy.special.wright_bessel`.
 
 An implementation of the inverse of the Log CDF of the Normal Distribution is
 now available via `scipy.special.ndtri_exp`.
