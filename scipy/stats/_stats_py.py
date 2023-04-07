@@ -7292,10 +7292,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
+    NaN = _get_nan(a, b)
+
     if a.size == 0 or b.size == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
-        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
-                           standard_error=np.nan, estimate=np.nan)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     if permutations is not None and permutations != 0:
         if trim != 0:
@@ -7310,7 +7312,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                      nan_policy=nan_policy,
                                      random_state=random_state,
                                      alternative=alternative)
-        df, denom, estimate = np.nan, np.nan, np.nan
+        df, denom, estimate = NaN, NaN, NaN
 
     else:
         n1 = a.shape[axis]
