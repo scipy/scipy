@@ -1063,18 +1063,17 @@ class TestNdimageFilters:
         assert_equal(output.dtype.type, dtype_output)
 
     @pytest.mark.parametrize(
-        'function_name',
-        ['uniform_filter', 'minimum_filter', 'maximum_filter'])
+        'filter_func', [ndimage.uniform_filter, ndimage.minimum_filter,
+                        ndimage.maximum_filter])
     @pytest.mark.parametrize(
         'axes', tuple(itertools.combinations(range(-3, 3), 2)))
-    def test_filter_axes_kwargs(self, axes, function_name):
+    def test_filter_axes_kwargs(self, axes, filter_func):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         size = (3, 5)
         origin = (-1, 1)
         mode = ('reflect', 'nearest')
         axes = tuple(ax % array.ndim for ax in axes)
         kwargs = dict(size=size, mode=mode, origin=origin)
-        filter_func = getattr(ndimage, function_name)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
@@ -1097,13 +1096,12 @@ class TestNdimageFilters:
         assert_allclose(output, expected)
 
     @pytest.mark.parametrize(
-        'function_name',
-        ['uniform_filter', 'minimum_filter', 'maximum_filter'])
+        'filter_func', [ndimage.uniform_filter, ndimage.minimum_filter,
+                        ndimage.maximum_filter])
     @pytest.mark.parametrize('tuple_ndim', [1, 3])
     @pytest.mark.parametrize('mismatched', ['mode', 'size', 'origin'])
     def test_filter_axes_tuple_length_mismatch(self, tuple_ndim, mismatched,
-                                               function_name):
-        filter_func = getattr(ndimage, function_name)
+                                               filter_func):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         kwargs = dict(size=3, origin=0, axes=(0, 1), mode='constant')
         if mismatched == 'mode':
