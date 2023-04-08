@@ -7,6 +7,7 @@ from numpy.testing import (assert_equal, assert_array_almost_equal,
 import scipy.optimize._linesearch as ls
 from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
+import pytest
 
 
 def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
@@ -142,10 +143,13 @@ class TestLineSearch:
 
         assert c > 3  # check that the iterator really works...
 
-    def test_scalar_search_wolfe2(self):
+
+    
+    @pytest.mark.parameterize("maxiter", [5, 10, 15, 20])
+    def test_scalar_search_wolfe2(self, maxiter):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
-                phi, derphi, phi(0), old_phi0, derphi(0), maxiter=10)
+                phi, derphi, phi(0), old_phi0, derphi(0), maxiter=maxiter)
             assert_fp_equal(phi0, phi(0), name)
             assert_fp_equal(phi1, phi(s), name)
             if derphi1 is not None:
