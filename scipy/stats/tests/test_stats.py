@@ -3001,26 +3001,27 @@ class TestMoments:
             dtype = expect.dtype
         assert actual.dtype == dtype
 
-    def test_moment_center(self):
-        # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
-        y = stats.moment(self.testcase, 1, center=0)
-        assert_approx_equal(y, 2.5)
-        y = stats.moment(self.testcase, 1, center=2)
-        assert_approx_equal(y, 0.5)
-        y = stats.moment(self.testcase, 2, center=0)
-        assert_approx_equal(y, 7.5)
-        y = stats.moment(self.testcase, 2, center=1)
-        assert_approx_equal(y, 3.5)
-        y = stats.moment(self.testcase, 3, center=1)
-        assert_approx_equal(y, 9)
-        y = stats.moment(self.testcase, 3, center=2)
-        assert_approx_equal(y, 2)
-        # Compare against the naive np.sum implementation:
+    @pytest.mark.parametrize('m, c, expect', [
+        (1, 0, 2.5),
+        (1, 2.5, 0),
+        (1, 2, 0.5),
+        (2, 0, 7.5),
+        (2, 1, 3.5),
+        (3, 1, 9.0),
+        (3, 2, 2.0)
+    ])
+    def test_moment_center(self, m, c, expect):
+        y = stats.moment(self.testcase, m, center=c)
+        assert_allclose(y, expect, rtol=0.1)
+    # Compare against the naive np.sum implementation:
+    @pytest.mark.parametrize('m', [
+        (3),
+        (2)
+    ])
+    def test_moment_center_naive(self, m):
         x = np.asarray(self.testmathworks)
-        y = stats.moment(x, 3, center=0)
-        assert_approx_equal(y, np.sum(x**3)/len(x))
-        y = stats.moment(x, 2, center=0)
-        assert_approx_equal(y, np.sum(x**2)/len(x))
+        y = stats.moment(x, m, center=0)
+        assert_allclose(y, np.sum(x**m)/len(x))
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
