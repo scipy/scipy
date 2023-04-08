@@ -3012,7 +3012,7 @@ class TestMoments:
     ])
     def test_moment_center(self, m, c, expect):
         y = stats.moment(self.testcase, m, center=c)
-        assert_allclose(y, expect, rtol=0.1)
+        assert_allclose(y, expect)
     # Compare against the naive np.sum implementation:
     @pytest.mark.parametrize('m', [
         (3),
