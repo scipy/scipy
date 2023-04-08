@@ -3001,27 +3001,25 @@ class TestMoments:
             dtype = expect.dtype
         assert actual.dtype == dtype
 
-    @pytest.mark.parametrize('m, c, expect', [
-        (1, 0, 2.5),
-        (1, 2.5, 0),
-        (1, 2, 0.5),
-        (2, 0, 7.5),
-        (2, 1, 3.5),
-        (3, 1, 9.0),
-        (3, 2, 2.0)
-    ])
-    def test_moment_center(self, m, c, expect):
-        y = stats.moment(self.testcase, m, center=c)
-        assert_allclose(y, expect)
-    # Compare against the naive np.sum implementation:
-    @pytest.mark.parametrize('m', [
-        (3),
-        (2)
-    ])
-    def test_moment_center_naive(self, m):
-        x = np.asarray(self.testmathworks)
-        y = stats.moment(x, m, center=0)
-        assert_allclose(y, np.sum(x**m)/len(x))
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
+    def test_moment_center_scalar_moment(self, size, m, c):
+        rng = np.random.default_rng(6581432544381372042)
+        x = rng.random(size=size)
+        res = stats.moment(x, m, center=c)
+        c = np.mean(x, axis=0) if c is None else c
+        ref = np.sum((x - c)**m, axis=0)/len(x)
+        assert_allclose(res, ref, atol=1e-16)
+
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('c', (None, 0, 1))
+    def test_moment_center_array_moment(self, size, c):
+        rng = np.random.default_rng(1706828300224046506)
+        x = rng.random(size=size)
+        m = [0, 1, 2, 3]
+        res = stats.moment(x, m, center=c)
+        ref = [stats.moment(x, i, center=c) for i in m]
+        assert_equal(res, ref)
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))

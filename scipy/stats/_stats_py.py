@@ -1007,11 +1007,17 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     """
     a, axis = _chk_asarray(a, axis)
 
-    if center is None:
-        center = a.mean(axis, keepdims=True)
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mmnt = [_moment(a, i, axis, mean=center) for i in moment]
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
+        mean = a.mean(axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in moment:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean))
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center))
         return np.array(mmnt)
     else:
         return _moment(a, moment, axis, mean=center)
@@ -1028,8 +1034,9 @@ def _moment(a, moment, axis, *, mean=None):
 
     dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
-    if moment == 0:
-        # By definition the zeroth moment is 1
+    if moment == 0 or (moment == 1 and mean is None):
+        # By definition the zeroth moment is always 1, and the first *central*
+        # moment is 0.
         shape = list(a.shape)
         del shape[axis]
 
