@@ -770,15 +770,14 @@ class TestNdimageFilters:
         assert_allclose(output, expected)
 
     @pytest.mark.parametrize(
-        'function_name, kwargs',
-        [('gaussian_filter', {'sigma': 1.0}),
-         ('uniform_filter', {'size': 3}),
-         ('minimum_filter', {'size': 3}),
-         ('maximum_filter', {'size': 3})])
+        'filter_func, kwargs',
+        [(ndimage.gaussian_filter, {'sigma': 1.0}),
+         (ndimage.uniform_filter, {'size': 3}),
+         (ndimage.minimum_filter, {'size': 3}),
+         (ndimage.maximum_filter, {'size': 3})])
     @pytest.mark.parametrize('axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)])
-    def test_filter_invalid_axes(self, axes, function_name, kwargs):
+    def test_filter_invalid_axes(self, axes, filter_func, kwargs):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
-        filter_func = getattr(ndimage, function_name)
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
             match = "cannot be interpreted as an integer"
@@ -1297,14 +1296,13 @@ class TestNdimageFilters:
         'axes', tuple(itertools.combinations(range(-3, 3), 2))
     )
     @pytest.mark.parametrize(
-        'function_name', [ndimage.minimum_filter, ndimage.maximum_filter]
+        'filter_func', [ndimage.minimum_filter, ndimage.maximum_filter]
     )
-    def test_minmax_nonseparable_axes(self, function_name, axes):
+    def test_minmax_nonseparable_axes(self, filter_func, axes):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
         # use 2D triangular footprint because it is non-separable
         footprint = numpy.tri(5)
         axes = tuple(ax % array.ndim for ax in axes)
-        filter_func = getattr(ndimage, function_name)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError):
