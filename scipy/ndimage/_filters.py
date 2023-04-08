@@ -950,7 +950,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
 
 @_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
-                   cval=0.0, origin=0):
+                   cval=0.0, origin=0, *, axes=None):
     """Multidimensional uniform filter.
 
     Parameters
@@ -964,6 +964,12 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -995,12 +1001,13 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     input = numpy.asarray(input)
     output = _ni_support._get_output(output, input,
                                      complex_output=input.dtype.kind == 'c')
-    sizes = _ni_support._normalize_sequence(size, input.ndim)
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
-    modes = _ni_support._normalize_sequence(mode, input.ndim)
-    axes = list(range(input.ndim))
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    sizes = _ni_support._normalize_sequence(size, num_axes)
+    origins = _ni_support._normalize_sequence(origin, num_axes)
+    modes = _ni_support._normalize_sequence(mode, num_axes)
     axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
-            for ii in range(len(axes)) if sizes[ii] > 1]
+            for ii in range(num_axes) if sizes[ii] > 1]
     if len(axes) > 0:
         for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,

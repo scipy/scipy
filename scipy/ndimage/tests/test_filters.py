@@ -693,24 +693,41 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, input)
 
     @pytest.mark.parametrize(
+        'function_name', ['gaussian_filter', 'uniform_filter'])
+    @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
         + tuple(itertools.combinations(range(-3, 3), 2))
         + ((0, 1, 2),))
-    def test_gauss_axes(self, axes):
+    def test_filter_axes(self, axes, function_name):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
-        sigma = 1.0
+        filter_func = getattr(ndimage, function_name)
+        if function_name == 'gaussian_filter':
+            sigma = 1.0
+            filter_args = (array, sigma)
+        elif function_name == 'uniform_filter':
+            size = 3
+            filter_args = (array, size)
+
         axes = tuple(ax % array.ndim for ax in axes)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
-            with pytest.raises(ValueError, match="axes must be unique"):
-                ndimage.gaussian_filter(array, sigma, axes=axes)
+            with pytest.raises(ValueError):
+                filter_func(*filter_args, axes=axes)
             return
-        output = ndimage.gaussian_filter(array, sigma, axes=axes)
+        output = filter_func(*filter_args, axes=axes)
 
-        # result should be equivalent to sigma=0.0 on unfiltered axes
-        all_sigmas = (sigma if ax in axes else 0.0 for ax in range(array.ndim))
-        expected = ndimage.gaussian_filter(array, all_sigmas)
+        if function_name == 'gaussian_filter':
+            # result should be equivalent to sigma=0.0 on unfiltered axes
+            all_sigmas = (sigma if ax in axes else 0.0
+                          for ax in range(array.ndim))
+            filter_args = (all_sigmas,)
+        elif function_name == 'uniform_filter':
+            # result should be equivalent to size=1 on any unfiltered axes
+            all_sizes = tuple(size if ax in axes else 1
+                              for ax in range(array.ndim))
+            filter_args = (all_sizes,)
+        expected = filter_func(array, *filter_args)
         assert_allclose(output, expected)
 
     @pytest.mark.parametrize(
@@ -732,16 +749,16 @@ class TestNdimageFilters:
         output = ndimage.gaussian_filter(array, axes=axes, **kwargs)
 
         # result should be equivalent to sigma=0.0 on unfiltered axes
-        sigma_3d = [0,] * array.ndim
+        sigma_3d = [0] * array.ndim
         sigma_3d[axes[0]] = sigma[0]
         sigma_3d[axes[1]] = sigma[1]
-        radius_3d = [0,] * array.ndim
+        radius_3d = [0] * array.ndim
         radius_3d[axes[0]] = radius[0]
         radius_3d[axes[1]] = radius[1]
-        mode_3d = [0,] * array.ndim
+        mode_3d = ['reflect'] * array.ndim
         mode_3d[axes[0]] = mode[0]
         mode_3d[axes[1]] = mode[1]
-        order_3d = [0,] * array.ndim
+        order_3d = [0] * array.ndim
         order_3d[axes[0]] = order[0]
         order_3d[axes[1]] = order[1]
         kwargs = dict(sigma=sigma_3d, radius=radius_3d, mode=mode_3d,
@@ -750,10 +767,13 @@ class TestNdimageFilters:
         assert_allclose(output, expected)
 
     @pytest.mark.parametrize(
-        'axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)]
-    )
-    def test_gauss_invalid_axes(self, axes):
+        'function_name, kwargs',
+        [('gaussian_filter', {'sigma': 1.0}),
+         ('uniform_filter', {'size': 3})])
+    @pytest.mark.parametrize('axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)])
+    def test_filter_invalid_axes(self, axes, function_name, kwargs):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        filter_func = getattr(ndimage, function_name)
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
             match = "cannot be interpreted as an integer"
@@ -761,7 +781,7 @@ class TestNdimageFilters:
             error_class = ValueError
             match = "out of range"
         with pytest.raises(error_class, match=match):
-            ndimage.gaussian_filter(array, sigma=1.0, axes=axes)
+            filter_func(array, axes=axes, **kwargs)
 
     @pytest.mark.parametrize('tuple_ndim', [1, 3])
     @pytest.mark.parametrize('mismatched',
@@ -1037,6 +1057,53 @@ class TestNdimageFilters:
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output.real)
         assert_equal(output.dtype.type, dtype_output)
+
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2))
+    )
+    def test_uniform_axes_kwargs(self, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        size = (3, 5)
+        origin = (-1, 1)
+        mode = ('reflect', 'nearest')
+        axes = tuple(ax % array.ndim for ax in axes)
+        kwargs = dict(size=size, mode=mode, origin=origin)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError, match="axes must be unique"):
+                ndimage.uniform_filter(array, axes=axes, **kwargs)
+            return
+        output = ndimage.uniform_filter(array, axes=axes, **kwargs)
+
+        # result should be equivalent to size=1 on unfiltered axes
+        size_3d = [1] * array.ndim
+        size_3d[axes[0]] = size[0]
+        size_3d[axes[1]] = size[1]
+        mode_3d = ['reflect'] * array.ndim
+        mode_3d[axes[0]] = mode[0]
+        mode_3d[axes[1]] = mode[1]
+        origin_3d = [0] * array.ndim
+        origin_3d[axes[0]] = origin[0]
+        origin_3d[axes[1]] = origin[1]
+        kwargs = dict(size=size_3d, mode=mode_3d, origin=origin_3d)
+        expected = ndimage.uniform_filter(array, **kwargs)
+        assert_allclose(output, expected)
+
+    @pytest.mark.parametrize('tuple_ndim', [1, 3])
+    @pytest.mark.parametrize('mismatched', ['mode', 'size', 'origin'])
+    def test_uniform_tuple_length_mismatch(self, tuple_ndim, mismatched):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        kwargs = dict(size=3, origin=0, axes=(0, 1), mode='constant')
+        if mismatched == 'mode':
+            kwargs['mode'] = ['constant'] * tuple_ndim
+        elif mismatched == 'size':
+            kwargs['size'] = (3,) * tuple_ndim
+        elif mismatched == 'origin':
+            kwargs['origin'] = (0,) * tuple_ndim
+
+        err_msg = "sequence argument must have length equal to input rank"
+        with pytest.raises(RuntimeError, match=err_msg):
+            ndimage.uniform_filter(array, **kwargs)
 
     def test_minimum_filter01(self):
         array = numpy.array([1, 2, 3, 4, 5])
