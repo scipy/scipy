@@ -186,7 +186,7 @@ def sqrtm(A, disp=True, blocksize=64):
             X = X.astype(f"f{np.clip(byte_size, 2, 16)}", copy=False)
         else:
             # complex byte size range: c8 ~ c16.
-			X = X.astype(f"c{np.clip(byte_size*2, 8, 16)}", copy=False)
+            X = X.astype(f"c{np.clip(byte_size*2, 8, 16)}", copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)
