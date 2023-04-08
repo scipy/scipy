@@ -244,6 +244,19 @@ class TestVonMises:
         assert scale_fit == 1
         assert_allclose(kappa, kappa_fit, rtol=1e-2)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
+    def test_vonmises_fit_bad_floc(self, loc):
+        data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
+                -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
+                3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
+                -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
+        data = np.asarray(data)
+        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
+        assert kappa_fit == np.finfo(float).tiny
+        _assert_less_or_close_loglike(stats.vonmises, data,
+                                      stats.vonmises.nnlf, fscale=1, floc=loc)
+
     @pytest.mark.parametrize('sign', [-1, 1])
     def test_vonmises_fit_unwrapped_data(self, sign):
         rng = np.random.default_rng(6762668991392531563)
@@ -986,6 +999,12 @@ class TestGeom:
         # this should not underflow
         assert_allclose(stats.geom.ppf(1e-20, 1e-20), 1.0, atol=1e-14)
 
+    def test_entropy_gh18226(self):
+        # gh-18226 reported that `geom.entropy` produced a warning and
+        # inaccurate output for small p. Check that this is resolved.
+        h = stats.geom(0.0146).entropy()
+        assert_allclose(h, 5.219397961962308, rtol=1e-15)
+
 
 class TestPlanck:
     def setup_method(self):
@@ -1107,6 +1126,19 @@ class TestGompertz:
                                         (1e10, -22.025850930040455)])
     def test_entropy(self, c, ref):
         assert_allclose(stats.gompertz.entropy(c), ref, rtol=1e-14)
+
+
+class TestFoldNorm:
+
+    # reference values were computed with mpmath with 50 digits of precision
+    # from mpmath import mp
+    # mp.dps = 50
+    # mp.mpf(0.5) * (mp.erf((x - c)/mp.sqrt(2)) + mp.erf((x + c)/mp.sqrt(2)))
+
+    @pytest.mark.parametrize('x, c, ref', [(1e-4, 1e-8, 7.978845594730578e-05),
+                                           (1e-4, 1e-4, 7.97884555483635e-05)])
+    def test_cdf(self, x, c, ref):
+        assert_allclose(stats.foldnorm.cdf(x, c), ref, rtol=1e-15)
 
 
 class TestHalfNorm:
@@ -1891,6 +1923,14 @@ class TestLogistic:
         expected = [-10000.0, -800.0, -4.139937633089748e-08,
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
+
+    def test_fit_gh_18176(self):
+        # logistic.fit returned `scale < 0` for this data. Check that this has
+        # been fixed.
+        data = np.array([-459, 37, 43, 45, 45, 48, 54, 55, 58]
+                        + [59] * 3 + [61] * 9)
+        # If scale were negative, NLLF would be infinite, so this would fail
+        _assert_less_or_close_loglike(stats.logistic, data)
 
 
 class TestLogser:
@@ -8688,6 +8728,95 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestRelativisticBW:
+    @pytest.fixture
+    def ROOT_pdf_sample_data(self):
+        """Sample data points for pdf computed with CERN's ROOT
+
+        See - https://root.cern/
+
+        Uses ROOT.TMath.BreitWignerRelativistic, available in ROOT
+        versions 6.27+
+
+        pdf calculated for Z0 Boson, W Boson, and Higgs Boson for
+        x in `np.linspace(0, 200, 401)`.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        return data
+
+    @pytest.mark.parametrize(
+        "rho,gamma,rtol", [
+            (36.545206797050334, 2.4952, 5e-14),  # Z0 Boson
+            (38.55107913669065, 2.085, 1e-14),  # W Boson
+            (96292.3076923077, 0.0013, 5e-13),  # Higgs Boson
+        ]
+    )
+    def test_pdf_against_ROOT(self, ROOT_pdf_sample_data, rho, gamma, rtol):
+        data = ROOT_pdf_sample_data[
+            (ROOT_pdf_sample_data['rho'] == rho)
+            & (ROOT_pdf_sample_data['gamma'] == gamma)
+        ]
+        x, pdf = data['x'], data['pdf']
+        assert_allclose(
+            pdf, stats.rel_breitwigner.pdf(x, rho, scale=gamma), rtol=rtol
+        )
+
+    @pytest.mark.parametrize("rho, Gamma, rtol", [
+              (36.545206797050334, 2.4952, 5e-13),  # Z0 Boson
+              (38.55107913669065, 2.085, 5e-13),  # W Boson
+              (96292.3076923077, 0.0013, 5e-10),  # Higgs Boson
+          ]
+      )
+    def test_pdf_against_simple_implementation(self, rho, Gamma, rtol):
+        # reference implementation straight from formulas on Wikipedia [1]
+        def pdf(E, M, Gamma):
+            gamma = np.sqrt(M**2 * (M**2 + Gamma**2))
+            k = (2 * np.sqrt(2) * M * Gamma * gamma
+                 / (np.pi * np.sqrt(M**2 + gamma)))
+            return k / ((E**2 - M**2)**2 + M**2*Gamma**2)
+        # get reasonable values at which to evaluate the CDF
+        p = np.linspace(0.05, 0.95, 10)
+        x = stats.rel_breitwigner.ppf(p, rho, scale=Gamma)
+        res = stats.rel_breitwigner.pdf(x, rho, scale=Gamma)
+        ref = pdf(x, rho*Gamma, Gamma)
+        assert_allclose(res, ref, rtol=rtol)
+
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            pytest.param(
+                36.545206797050334, 2.4952, marks=pytest.mark.slow
+            ),  # Z0 Boson
+            pytest.param(
+                38.55107913669065, 2.085, marks=pytest.mark.xslow
+            ),  # W Boson
+            pytest.param(
+                96292.3076923077, 0.0013, marks=pytest.mark.xslow
+            ),  # Higgs Boson
+        ]
+    )
+    def test_fit_floc(self, rho, gamma):
+        """Tests fit for cases where floc is set.
+
+        `rel_breitwigner` has special handling for these cases.
+        """
+        seed = 6936804688480013683
+        rng = np.random.default_rng(seed)
+        data = stats.rel_breitwigner.rvs(
+            rho, scale=gamma, size=1000, random_state=rng
+        )
+        fit = stats.rel_breitwigner.fit(data, floc=0)
+        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=2e-1)
+        assert fit[1] == 0
+        # Check again with fscale set.
+        fit = stats.rel_breitwigner.fit(data, floc=0, fscale=gamma)
+        assert_allclose(fit[0], rho, rtol=1e-2)
+        assert (fit[1], fit[2]) == (0, gamma)
 
 
 class TestJohnsonSU:

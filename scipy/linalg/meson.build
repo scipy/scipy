@@ -16,6 +16,10 @@ cython_linalg = custom_target('cython_linalg',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  depend_files: [
+    'cython_blas_signatures.txt',
+    'cython_lapack_signatures.txt',
+  ],
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,

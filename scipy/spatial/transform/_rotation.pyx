@@ -689,8 +689,8 @@ cdef class Rotation:
         quat = np.asarray(quat, dtype=float)
 
         if quat.ndim not in [1, 2] or quat.shape[len(quat.shape) - 1] != 4:
-            raise ValueError("Expected `quat` to have shape (4,) or (N x 4), "
-                             "got {}.".format(quat.shape))
+            raise ValueError("Expected `quat` to have shape (4,) or (N, 4), "
+                             f"got {quat.shape}.")
 
         # If a single quaternion is given, convert it to a 2D 1 x 4 matrix but
         # set self._single to True so that we can return appropriate objects
@@ -2766,12 +2766,11 @@ class Slerp:
 
     """
     def __init__(self, times, rotations):
-        if rotations.single:
-            raise ValueError("`rotations` must be a sequence of rotations.")
+        if not isinstance(rotations, Rotation):
+            raise TypeError("`rotations` must be a `Rotation` instance.")
 
-        if len(rotations) == 1:
-                raise ValueError("`rotations` must contain at least 2 "
-                                 "rotations.")
+        if rotations.single or len(rotations) == 1:
+            raise ValueError("`rotations` must be a sequence of at least 2 rotations.")
 
         times = np.asarray(times)
         if times.ndim != 1:

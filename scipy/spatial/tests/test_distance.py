@@ -568,7 +568,6 @@ class TestCdist:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                         assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
     def test_cdist_out(self):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1469,7 +1468,6 @@ class TestPdist:
                         y2 = pdist(new_type(X1), metric=metric)
                         assert_allclose(y1, y2, rtol=eps, verbose=verbose > 2)
 
-    @pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
     def test_pdist_out(self):
         # Test that out parameter works properly
         eps = 1e-15
@@ -1937,6 +1935,15 @@ def test_hamming_unequal_length():
     assert_raises(ValueError, whamming, x, y)
 
 
+def test_hamming_unequal_length_with_w():
+    u = [0, 0, 1]
+    v = [0, 0, 1]
+    w = [1, 0, 1, 0]
+    msg = "'w' should have the same length as 'u' and 'v'."
+    with assert_raises(ValueError, match=msg):
+        whamming(u, v, w)
+
+
 def test_hamming_string_array():
     # https://github.com/scikit-learn/scikit-learn/issues/4014
     a = np.array(['eggs', 'spam', 'spam', 'eggs', 'spam', 'spam', 'spam',
@@ -2073,7 +2080,6 @@ def test_Xdist_deprecated_args():
                 pdist(X1, metric, **kwargs)
 
 
-@pytest.mark.skip("Failing on Windows Azure jobs; see gh-18108.")
 def test_Xdist_non_negative_weights():
     X = eo['random-float32-data'][::5, ::2]
     w = np.ones(X.shape[1])
