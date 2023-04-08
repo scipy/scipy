@@ -101,7 +101,7 @@ cdef class _URNG:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef double _next_qdouble(self) nogil:
+    cdef double _next_qdouble(self) noexcept nogil:
         self.i += 1
         return self.qrvs_array[self.i-1]
 
@@ -1522,7 +1522,7 @@ cdef class NumericalInversePolynomial(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -2008,7 +2008,7 @@ cdef class NumericalInverseHermite(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -2716,7 +2716,7 @@ cdef class DiscreteGuideTable(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
