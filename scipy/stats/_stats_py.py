@@ -1028,9 +1028,8 @@ def _moment(a, moment, axis, *, mean=None):
 
     dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
-    if moment == 0 or moment == 1:
-        # By definition the zeroth moment about the mean is 1, and the first
-        # moment is 0.
+    if moment == 0:
+        # By definition the zeroth moment is 1
         shape = list(a.shape)
         del shape[axis]
 
