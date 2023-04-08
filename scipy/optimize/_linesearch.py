@@ -322,7 +322,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
     return alpha_star, fc[0], gc[0], phi_star, old_fval, derphi_star
 
 
-def scalar_search_wolfe2(phi, derphi, maxiter = 10, phi0=None,
+def scalar_search_wolfe2(phi, derphi, maxiter, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
                          extra_condition=None):
@@ -409,8 +409,10 @@ def scalar_search_wolfe2(phi, derphi, maxiter = 10, phi0=None,
 
     for i in range(maxiter):
         if alpha1 == 0 or (amax is not None and alpha0 == amax):
+
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
+
             alpha_star = None
             phi_star = phi0
             phi0 = old_phi0
@@ -431,7 +433,7 @@ def scalar_search_wolfe2(phi, derphi, maxiter = 10, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter=10)
             break
 
         derphi_a1 = derphi(alpha1)
@@ -446,7 +448,7 @@ def scalar_search_wolfe2(phi, derphi, maxiter = 10, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter=10)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
@@ -524,7 +526,7 @@ def _quadmin(a, fa, fpa, b, fb):
 
 
 def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
-          phi, derphi, phi0, derphi0, c1, c2, extra_condition, maxiter):
+          phi, derphi, phi0, derphi0, c1, c2, extra_condition, maxiter=10):
     """Zoom stage of approximate linesearch satisfying strong Wolfe conditions.
 
     Part of the optimization algorithm in `scalar_search_wolfe2`.
@@ -536,7 +538,6 @@ def _zoom(a_lo, a_hi, phi_lo, phi_hi, derphi_lo,
 
     """
 
-    maxiter = maxiter
     i = 0
     delta1 = 0.2  # cubic interpolant check
     delta2 = 0.1  # quadratic interpolant check
