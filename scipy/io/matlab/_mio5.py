@@ -490,7 +490,10 @@ def to_writeable(source):
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    try:
+        narr = np.asanyarray(source)
+    except ValueError:
+        narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible

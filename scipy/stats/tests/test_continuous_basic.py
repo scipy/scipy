@@ -72,10 +72,11 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                      'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                      'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
-                     'tukeylambda', 'invweibull']
-                    + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                       'nct', 'pareto', 'powernorm', 'powerlognorm']
-                    + ['pearson3'])
+                     'tukeylambda', 'invweibull', 'rel_breitwigner']
+                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                        'nct', 'pareto', 'powernorm', 'powerlognorm']
+                     + ['pearson3'])
+
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -118,7 +119,8 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'skewnorm', 't', 'truncweibull_min',
                'tukeylambda', 'vonmises', 'vonmises_line',
                'rv_histogram_instance', 'truncnorm', 'studentized_range',
-               'johnsonsb', 'halflogistic'}
+               'johnsonsb', 'halflogistic', 'rel_breitwigner'}
+
 
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
