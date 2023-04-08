@@ -145,7 +145,7 @@ class TestLineSearch:
 
 
     
-    @pytest.mark.parameterize("maxiter", [5, 10, 15, 20, 100])
+    @pytest.mark.parametrize("maxiter", [5, 10, 15, 20, 100])
     def test_scalar_search_wolfe2(self, maxiter):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
