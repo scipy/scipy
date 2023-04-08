@@ -1099,12 +1099,13 @@ def _moment(a, moment, axis, *, mean=None):
     if a.size == 0:
         return np.mean(a, axis=axis)
 
+    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
     if moment == 0 or moment == 1:
         # By definition the zeroth moment about the mean is 1, and the first
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
         if len(shape) == 0:
             return dtype(1.0 if moment == 0 else 0.0)
@@ -1123,7 +1124,8 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        mean = (a.mean(axis, keepdims=True) if mean is None
+                else dtype(mean))
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10

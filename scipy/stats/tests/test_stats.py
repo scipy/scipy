@@ -3016,7 +3016,7 @@ class TestMoments:
         y = stats.moment(self.testcase, 3, center=2)
         assert_approx_equal(y, 2)
         # Compare against the naive np.sum implementation:
-        x = self.testmathworks
+        x = np.asarray(self.testmathworks)
         y = stats.moment(x, 3, center=0)
         assert_approx_equal(y, np.sum(x**3)/len(x))
         y = stats.moment(x, 2, center=0)
