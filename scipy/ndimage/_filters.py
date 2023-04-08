@@ -1128,7 +1128,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 
 
 def _min_or_max_filter(input, size, footprint, structure, output, mode,
-                       cval, origin, minimum):
+                       cval, origin, minimum, axes=None):
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     if structure is None:
@@ -1162,11 +1162,12 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         # input and output arrays cannot share memory
         temp = output
         output = _ni_support._get_output(output.dtype, input)
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
     if separable:
-        sizes = _ni_support._normalize_sequence(size, input.ndim)
-        modes = _ni_support._normalize_sequence(mode, input.ndim)
-        axes = list(range(input.ndim))
+        origins = _ni_support._normalize_sequence(origin, num_axes)
+        sizes = _ni_support._normalize_sequence(size, num_axes)
+        modes = _ni_support._normalize_sequence(mode, num_axes)
         axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
                 for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
@@ -1180,6 +1181,14 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
+        origins = _ni_support._normalize_sequence(origin, input.ndim)
+        if num_axes < input.ndim:
+            if footprint.ndim != num_axes:
+                raise RuntimeError("footprint.ndim must match len(axes)")
+            footprint = numpy.expand_dims(
+                footprint,
+                tuple(ax for ax in range(input.ndim) if ax not in axes)
+            )
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
             raise RuntimeError('footprint array has incorrect shape.')
@@ -1191,6 +1200,11 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if structure is not None:
             if len(structure.shape) != input.ndim:
                 raise RuntimeError('structure array has incorrect shape')
+            if num_axes != structure.ndim:
+                structure = numpy.expand_dims(
+                    structure,
+                    tuple(ax for ax in range(structure.ndim) if ax not in axes)
+                )
             if not structure.flags.contiguous:
                 structure = structure.copy()
         if not isinstance(mode, str) and isinstance(mode, Iterable):
@@ -1208,7 +1222,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
 
 @_ni_docstrings.docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
-                   mode="reflect", cval=0.0, origin=0):
+                   mode="reflect", cval=0.0, origin=0, *, axes=None):
     """Calculate a multidimensional minimum filter.
 
     Parameters
@@ -1219,6 +1233,12 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1245,12 +1265,12 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
-                              cval, origin, 1)
+                              cval, origin, 1, axes)
 
 
 @_ni_docstrings.docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
-                   mode="reflect", cval=0.0, origin=0):
+                   mode="reflect", cval=0.0, origin=0, *, axes=None):
     """Calculate a multidimensional maximum filter.
 
     Parameters
@@ -1261,6 +1281,12 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1287,7 +1313,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
-                              cval, origin, 0)
+                              cval, origin, 0, axes)
 
 
 @_ni_docstrings.docfiller

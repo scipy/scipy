@@ -693,7 +693,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(output1, input)
 
     @pytest.mark.parametrize(
-        'function_name', ['gaussian_filter', 'uniform_filter'])
+        'function_name', ['gaussian_filter', 'uniform_filter',
+                          'minimum_filter', 'maximum_filter'])
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -705,7 +706,8 @@ class TestNdimageFilters:
         if function_name == 'gaussian_filter':
             sigma = 1.0
             filter_args = (array, sigma)
-        elif function_name == 'uniform_filter':
+        elif function_name in ('uniform_filter', 'minimum_filter',
+                               'maximum_filter'):
             size = 3
             filter_args = (array, size)
 
@@ -722,7 +724,8 @@ class TestNdimageFilters:
             all_sigmas = (sigma if ax in axes else 0.0
                           for ax in range(array.ndim))
             filter_args = (all_sigmas,)
-        elif function_name == 'uniform_filter':
+        elif function_name in ('uniform_filter', 'minimum_filter',
+                               'maximum_filter'):
             # result should be equivalent to size=1 on any unfiltered axes
             all_sizes = tuple(size if ax in axes else 1
                               for ax in range(array.ndim))
@@ -769,7 +772,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize(
         'function_name, kwargs',
         [('gaussian_filter', {'sigma': 1.0}),
-         ('uniform_filter', {'size': 3})])
+         ('uniform_filter', {'size': 3}),
+         ('minimum_filter', {'size': 3}),
+         ('maximum_filter', {'size': 3})])
     @pytest.mark.parametrize('axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)])
     def test_filter_invalid_axes(self, axes, function_name, kwargs):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
@@ -1059,21 +1064,24 @@ class TestNdimageFilters:
         assert_equal(output.dtype.type, dtype_output)
 
     @pytest.mark.parametrize(
-        'axes', tuple(itertools.combinations(range(-3, 3), 2))
-    )
-    def test_uniform_axes_kwargs(self, axes):
+        'function_name',
+        ['uniform_filter', 'minimum_filter', 'maximum_filter'])
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2)))
+    def test_filter_axes_kwargs(self, axes, function_name):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         size = (3, 5)
         origin = (-1, 1)
         mode = ('reflect', 'nearest')
         axes = tuple(ax % array.ndim for ax in axes)
         kwargs = dict(size=size, mode=mode, origin=origin)
+        filter_func = getattr(ndimage, function_name)
         if len(tuple(set(axes))) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
-                ndimage.uniform_filter(array, axes=axes, **kwargs)
+                filter_func(array, axes=axes, **kwargs)
             return
-        output = ndimage.uniform_filter(array, axes=axes, **kwargs)
+        output = filter_func(array, axes=axes, **kwargs)
 
         # result should be equivalent to size=1 on unfiltered axes
         size_3d = [1] * array.ndim
@@ -1086,12 +1094,17 @@ class TestNdimageFilters:
         origin_3d[axes[0]] = origin[0]
         origin_3d[axes[1]] = origin[1]
         kwargs = dict(size=size_3d, mode=mode_3d, origin=origin_3d)
-        expected = ndimage.uniform_filter(array, **kwargs)
+        expected = filter_func(array, **kwargs)
         assert_allclose(output, expected)
 
+    @pytest.mark.parametrize(
+        'function_name',
+        ['uniform_filter', 'minimum_filter', 'maximum_filter'])
     @pytest.mark.parametrize('tuple_ndim', [1, 3])
     @pytest.mark.parametrize('mismatched', ['mode', 'size', 'origin'])
-    def test_uniform_tuple_length_mismatch(self, tuple_ndim, mismatched):
+    def test_filter_axes_tuple_length_mismatch(self, tuple_ndim, mismatched,
+                                               function_name):
+        filter_func = getattr(ndimage, function_name)
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
         kwargs = dict(size=3, origin=0, axes=(0, 1), mode='constant')
         if mismatched == 'mode':
@@ -1103,7 +1116,7 @@ class TestNdimageFilters:
 
         err_msg = "sequence argument must have length equal to input rank"
         with pytest.raises(RuntimeError, match=err_msg):
-            ndimage.uniform_filter(array, **kwargs)
+            filter_func(array, **kwargs)
 
     def test_minimum_filter01(self):
         array = numpy.array([1, 2, 3, 4, 5])
@@ -1279,6 +1292,30 @@ class TestNdimageFilters:
         assert_array_almost_equal([[7, 7, 9, 9, 5],
                                    [7, 9, 8, 9, 7],
                                    [8, 8, 8, 7, 7]], output)
+
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2))
+    )
+    @pytest.mark.parametrize(
+        'function_name', [ndimage.minimum_filter, ndimage.maximum_filter]
+    )
+    def test_minmax_nonseparable_axes(self, function_name, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
+        # use 2D triangular footprint because it is non-separable
+        footprint = numpy.tri(5)
+        axes = tuple(ax % array.ndim for ax in axes)
+        filter_func = getattr(ndimage, function_name)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError):
+                filter_func(array, footprint=footprint, axes=axes)
+            return
+        output = filter_func(array, footprint=footprint, axes=axes)
+
+        missing_axis = tuple(set(range(3)) - set(axes))[0]
+        footprint_3d = numpy.expand_dims(footprint, missing_axis)
+        expected = filter_func(array, footprint=footprint_3d)
+        assert_allclose(output, expected)
 
     def test_rank01(self):
         array = numpy.array([1, 2, 3, 4, 5])
