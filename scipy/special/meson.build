@@ -371,7 +371,7 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1'],
+  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1', '-D__PYX_EXTERN_C=extern "C"'],
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
