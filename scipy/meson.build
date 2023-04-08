@@ -207,7 +207,9 @@ dependency_map = {
 #        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
 #        in general to enable the ILP64 interface (also for OpenBLAS).
 uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
-if uses_mkl or get_option('use-g77-abi')
+uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
+use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
+if use_g77_abi
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'
