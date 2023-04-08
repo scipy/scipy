@@ -93,7 +93,7 @@ def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
-                dtype=A.dtype, format=A.format)
+                                           dtype=A.dtype, format=A.format)
     elif is_pydata_spmatrix(A):
         import sparse
         return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
@@ -275,9 +275,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
 
 
 def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
-    """
-    A helper function.
-    """
+    """A helper function."""
     if balance:
         raise NotImplementedError
     if tol is None:
@@ -304,51 +302,51 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
 # They seem to have been difficult to calculate, involving symbolic
 # manipulation of equations, followed by numerical root finding.
 _theta = {
-        # The first 30 values are from table A.3 of Computing Matrix Functions.
-        1: 2.29e-16,
-        2: 2.58e-8,
-        3: 1.39e-5,
-        4: 3.40e-4,
-        5: 2.40e-3,
-        6: 9.07e-3,
-        7: 2.38e-2,
-        8: 5.00e-2,
-        9: 8.96e-2,
-        10: 1.44e-1,
-        # 11
-        11: 2.14e-1,
-        12: 3.00e-1,
-        13: 4.00e-1,
-        14: 5.14e-1,
-        15: 6.41e-1,
-        16: 7.81e-1,
-        17: 9.31e-1,
-        18: 1.09,
-        19: 1.26,
-        20: 1.44,
-        # 21
-        21: 1.62,
-        22: 1.82,
-        23: 2.01,
-        24: 2.22,
-        25: 2.43,
-        26: 2.64,
-        27: 2.86,
-        28: 3.08,
-        29: 3.31,
-        30: 3.54,
-        # The rest are from table 3.1 of
-        # Computing the Action of the Matrix Exponential.
-        35: 4.7,
-        40: 6.0,
-        45: 7.2,
-        50: 8.5,
-        55: 9.9,
-        }
+    # The first 30 values are from table A.3 of Computing Matrix Functions.
+    1: 2.29e-16,
+    2: 2.58e-8,
+    3: 1.39e-5,
+    4: 3.40e-4,
+    5: 2.40e-3,
+    6: 9.07e-3,
+    7: 2.38e-2,
+    8: 5.00e-2,
+    9: 8.96e-2,
+    10: 1.44e-1,
+    # 11
+    11: 2.14e-1,
+    12: 3.00e-1,
+    13: 4.00e-1,
+    14: 5.14e-1,
+    15: 6.41e-1,
+    16: 7.81e-1,
+    17: 9.31e-1,
+    18: 1.09,
+    19: 1.26,
+    20: 1.44,
+    # 21
+    21: 1.62,
+    22: 1.82,
+    23: 2.01,
+    24: 2.22,
+    25: 2.43,
+    26: 2.64,
+    27: 2.86,
+    28: 3.08,
+    29: 3.31,
+    30: 3.54,
+    # The rest are from table 3.1 of
+    # Computing the Action of the Matrix Exponential.
+    35: 4.7,
+    40: 6.0,
+    45: 7.2,
+    50: 8.5,
+    55: 9.9,
+}
 
 
 def _onenormest_matrix_power(A, p,
-        t=2, itmax=5, compute_v=False, compute_w=False):
+                             t=2, itmax=5, compute_v=False, compute_w=False):
     """
     Efficiently estimate the 1-norm of A^p.
 
@@ -384,11 +382,12 @@ def _onenormest_matrix_power(A, p,
         that is relatively large in norm compared to the input.
 
     """
-    #XXX Eventually turn this into an API function in the  _onenormest module,
-    #XXX and remove its underscore,
-    #XXX but wait until expm_multiply goes into scipy.
+    # XXX Eventually turn this into an API function in the  _onenormest module,
+    # XXX and remove its underscore,
+    # XXX but wait until expm_multiply goes into scipy.
     from scipy.sparse.linalg._onenormest import onenormest
     return onenormest(aslinearoperator(A) ** p)
+
 
 class LazyOperatorNormInfo:
     """
@@ -424,34 +423,27 @@ class LazyOperatorNormInfo:
         self._d = {}
         self._scale = scale
 
-    def set_scale(self,scale):
-        """
-        Set the scale parameter.
-        """
+    def set_scale(self, scale):
+        """Set the scale parameter."""
         self._scale = scale
 
     def onenorm(self):
-        """
-        Compute the exact 1-norm.
-        """
+        """Compute the exact 1-norm."""
         if self._A_1_norm is None:
             self._A_1_norm = _exact_1_norm(self._A)
         return self._scale*self._A_1_norm
 
     def d(self, p):
-        """
-        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm.
-        """
+        """Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm."""
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
             self._d[p] = est ** (1.0 / p)
         return self._scale*self._d[p]
 
     def alpha(self, p):
-        """
-        Lazily compute max(d(p), d(p+1)).
-        """
+        """Lazily compute max(d(p), d(p+1))."""
         return max(self.d(p), self.d(p+1))
+
 
 def _compute_cost_div_m(m, p, norm_info):
     """
@@ -580,7 +572,6 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     This is condition (3.13) in Al-Mohy and Higham (2011).
 
     """
-
     # This is the rhs of equation (3.12).
     p_max = _compute_p_max(m_max)
     a = 2 * ell * p_max * (p_max + 3)
@@ -706,28 +697,25 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
             return 0
         else:
             return _expm_multiply_interval_core_0(A, X,
-                    h, mu, q, norm_info, tol, ell,n0)
+                                                  h, mu, q, norm_info, tol, ell, n0)
     elif not (q % s):
         if status_only:
             return 1
         else:
             return _expm_multiply_interval_core_1(A, X,
-                    h, mu, m_star, s, q, tol)
+                                                  h, mu, m_star, s, q, tol)
     elif (q % s):
         if status_only:
             return 2
         else:
             return _expm_multiply_interval_core_2(A, X,
-                    h, mu, m_star, s, q, tol)
+                                                  h, mu, m_star, s, q, tol)
     else:
         raise Exception('internal error')
 
 
 def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
-    """
-    A helper function, for the case q <= s.
-    """
-
+    """A helper function, for the case q <= s."""
     # Compute the new values of m_star and s which should be applied
     # over intervals of size t/q
     if norm_info.onenorm() == 0:
@@ -743,9 +731,7 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
 
 
 def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
-    """
-    A helper function, for the case q > s and q % s == 0.
-    """
+    """A helper function, for the case q > s and q % s == 0."""
     d = q // s
     input_shape = X.shape[1:]
     K_shape = (m_star + 1, ) + input_shape
@@ -772,9 +758,7 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
 
 
 def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
-    """
-    A helper function, for the case q > s and q % s > 0.
-    """
+    """A helper function, for the case q > s and q % s > 0."""
     d = q // s
     j = q // d
     r = q - d * j
