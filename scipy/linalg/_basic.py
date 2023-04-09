@@ -999,15 +999,15 @@ def det(a, overwrite_a=False, check_finite=True):
     Returns
     -------
     det : (...) float or complex
-        Determinant of `a`. For stacked arrays, say, shape of (p, q, m, m),
-        the result is going to be (p, q), that is to say, for each (m, m)
-        slice in the last two dimensions, a single scalar will be returned.
+        Determinant of `a`. For stacked arrays, a scalar is returned for each
+        (m, m) slice in the last two dimensions of the input. For example, an
+        input of shape (p, q, m, m) will produce a result of shape (p, q).
 
     Notes
     -----
-    The determinant is computed via performing an LU factorization of the
-    input, through LAPACK routine 'getrf' and then calculating the product of
-    diagonal entries of ``U`` factor.
+    The determinant is computed by performing an LU factorization of the
+    input with LAPACK routine 'getrf', and then calculating the product of
+    diagonal entries of the U factor.
 
     Even the input array is single precision (float32 or complex64), the result
     will be returned in double precision (float64 or complex128) to prevent

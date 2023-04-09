@@ -937,24 +937,24 @@ class TestDet:
         deta = det(a)
         assert deta.dtype.char == 'd'
         assert deta.shape == (4, 5)
-        assert_almost_equal(deta, np.squeeze(a))
+        assert_allclose(deta, np.squeeze(a))
 
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)*np.complex64(1.j)
         deta = det(a)
         assert deta.dtype.char == 'D'
         assert deta.shape == (4, 5)
-        assert_almost_equal(deta, np.squeeze(a))
+        assert_allclose(deta, np.squeeze(a))
 
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
     def test_simple_det_shapes_real_complex(self, shape):
         a = self.rng.uniform(-1., 1., size=shape)
         d1, d2 = det(a), np.linalg.det(a)
-        assert_almost_equal(d1, d2)
+        assert_allclose(d1, d2)
 
         b = self.rng.uniform(-1., 1., size=shape)*1j
         b += self.rng.uniform(-0.5, 0.5, size=shape)
         d3, d4 = det(b), np.linalg.det(b)
-        assert_almost_equal(d3, d4)
+        assert_allclose(d3, d4)
 
     def test_for_known_det_values(self):
         # Hadamard8
@@ -966,19 +966,22 @@ class TestDet:
                       [1, -1, 1, -1, -1, 1, -1, 1],
                       [1, 1, -1, -1, -1, -1, 1, 1],
                       [1, -1, -1, 1, -1, 1, 1, -1]])
-        assert_almost_equal(det(a), 4096.)
+        assert_allclose(det(a), 4096.)
 
         # consecutive number array always singular
-        assert_almost_equal(det(np.arange(25).reshape(5, 5)), 0.)
+        assert_allclose(det(np.arange(25).reshape(5, 5)), 0.)
 
-        # simple anti-diagonal array with known det
+        # simple anti-diagonal block array
+        # Upper right has det (-2+1j) and lower right has (-2-1j)
+        # det(a) = - (-2+1j) (-2-1j) = 5.
         a = np.array([[0.+0.j, 0.+0.j, 0.-1.j, 1.-1.j],
                       [0.+0.j, 0.+0.j, 1.+0.j, 0.-1.j],
                       [0.+1.j, 1.+1.j, 0.+0.j, 0.+0.j],
                       [1.+0.j, 0.+1.j, 0.+0.j, 0.+0.j]], dtype=np.complex64)
-        assert_almost_equal(det(a), 5.+0.j)
+        assert_allclose(det(a), 5.+0.j)
 
         # Fiedler companion complexified
+        # >>> a = scipy.linalg.fiedler_companion(np.arange(1, 10))
         a = np.array([[-2., -3., 1., 0., 0., 0., 0., 0.],
                       [1., 0., 0., 0., 0., 0., 0., 0.],
                       [0., -4., 0., -5., 1., 0., 0., 0.],
@@ -987,7 +990,7 @@ class TestDet:
                       [0., 0., 0., 1., 0., 0., 0., 0.],
                       [0., 0., 0., 0., 0., -8., 0., -9.],
                       [0., 0., 0., 0., 0., 1., 0., 0.]])*1.j
-        assert_almost_equal(det(a), 9.)
+        assert_allclose(det(a), 9.)
 
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
@@ -998,7 +1001,7 @@ class TestDet:
         assert isinstance(det(a), (np.float64, np.complex128))
 
     def test_incompatible_dtype_input(self):
-
+        # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
 
         for c, t in zip('SUO', ['bytes8', 'str32', 'object']):
@@ -1032,14 +1035,14 @@ class TestDet:
         a = np.arange(9).reshape(3, 3).astype(np.float32)
         ac = a.copy()
         deta = det(ac, overwrite_a=True)
-        assert_almost_equal(deta, 0.)
+        assert_allclose(deta, 0.)
         assert not (a == ac).all()
 
     def test_readonly_array(self):
         a = np.array([[2., 0., 1.], [5., 3., -1.], [1., 1., 1.]])
         a.setflags(write=False)
         # overwrite_a will be overridden
-        assert_almost_equal(det(a, overwrite_a=True), 10.)
+        assert_allclose(det(a, overwrite_a=True), 10.)
 
     def test_simple_check_finite(self):
         a = [[1, 2], [3, np.inf]]
