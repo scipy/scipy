@@ -1025,16 +1025,17 @@ def det(a, overwrite_a=False, check_finite=True):
     3.0
     >>> # An array with the shape (3, 2, 2, 2)
     >>> c = np.array([[[[1., 2.], [3., 4.]],
-        ...            [[5., 6.], [7., 8.]]],
-        ...          [[[9., 10.], [11., 12.]],
-        ...           [[13., 14.], [15., 16.]]],
-        ...          [[[17., 18.], [19., 20.]],
-        ...           [[21., 22.], [23., 24.]]]])
+    ...                [[5., 6.], [7., 8.]]],
+    ...               [[[9., 10.], [11., 12.]],
+    ...                [[13., 14.], [15., 16.]]],
+    ...               [[[17., 18.], [19., 20.]],
+    ...                [[21., 22.], [23., 24.]]]])
     >>> linalg.det(c)  # The resulting shape is (3, 2)
     array([[-2., -2.],
            [-2., -2.],
            [-2., -2.]])
-
+    >>> linalg.det(c[0, 0])  # Confirm the (0, 0) slice, [[1, 2], [3, 4]]
+    -2.0
     """
     # The goal is to end up with a writable contiguous array to pass to Cython
 
