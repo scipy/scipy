@@ -587,29 +587,26 @@ def _expm_multiply_interval(A, B, mu, start=None, stop=None, num=None,
         linspace_kwargs['num'] = num
     if endpoint is not None:
         linspace_kwargs['endpoint'] = endpoint
-    samples, step = np.linspace(start, stop, **linspace_kwargs)
+    samples, h = np.linspace(start, stop, **linspace_kwargs)
 
     # Convert the linspace output to the notation used by the publication.
-    nsamples = len(samples)
-    if nsamples < 2:
+    num = samples.size
+    if num < 2:
         raise ValueError('at least two time points are required')
-    q = nsamples - 1
-    h = step
+    q = num - 1
     t_0 = samples[0]
-    t_q = samples[q]
 
     # Define the output ndarray.
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
-    X_shape = (nsamples,) + B.shape
-    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype))
-    t = t_q - t_0
+    X = np.empty((num,) + B.shape, dtype=np.result_type(A.dtype, B.dtype))
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
-    norm_info = LazyOperatorNormInfo(A, onenorm=A_1_norm, scale=t, t=ell)
+    norm_info = LazyOperatorNormInfo(A, onenorm=A_1_norm,
+                                     scale=samples[-1] - t_0, t=ell)
     n0 = 1 if B.ndim == 1 else B.shape[1]
-    if t*A_1_norm == 0:
+    if norm_info.onenorm == 0:
         m_star, s = 0, 1
     else:
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
