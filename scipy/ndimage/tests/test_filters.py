@@ -1233,6 +1233,29 @@ class TestNdimageFilters:
                                    [7, 9, 8, 9, 7],
                                    [8, 8, 8, 7, 7]], output)
 
+    @pytest.mark.parametrize(
+        'axes', tuple(itertools.combinations(range(-3, 3), 2))
+    )
+    @pytest.mark.parametrize(
+        'filter_func', [ndimage.minimum_filter, ndimage.maximum_filter]
+    )
+    def test_minmax_nonseparable_axes(self, filter_func, axes):
+        array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
+        # use 2D triangular footprint because it is non-separable
+        footprint = numpy.tri(5)
+        axes = tuple(ax % array.ndim for ax in axes)
+        if len(tuple(set(axes))) != len(axes):
+            # parametrized cases with duplicate axes raise an error
+            with pytest.raises(ValueError):
+                filter_func(array, footprint=footprint, axes=axes)
+            return
+        output = filter_func(array, footprint=footprint, axes=axes)
+
+        missing_axis = tuple(set(range(3)) - set(axes))[0]
+        footprint_3d = numpy.expand_dims(footprint, missing_axis)
+        expected = filter_func(array, footprint=footprint_3d)
+        assert_allclose(output, expected)
+
     def test_rank01(self):
         array = numpy.array([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=2)
