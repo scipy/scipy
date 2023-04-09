@@ -433,7 +433,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha0, alpha1, phi_a0,
                               phi_a1, derphi_a0, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition, maxiter=10)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter)
             break
 
         derphi_a1 = derphi(alpha1)
