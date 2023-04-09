@@ -478,12 +478,12 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
     """
     if ell < 1:
         raise ValueError('expected ell to be a positive integer')
-    best_m = None
-    best_s = None
+    best_m = np.infty
+    best_s = np.infty
     if _condition_3_13(norm_info.onenorm, n0, m_max, ell):
         for m, theta in _theta.items():
             s = int(np.ceil(norm_info.onenorm / theta))
-            if best_m is None or m * s < best_m * best_s:
+            if m * s < best_m * best_s:
                 best_m = m
                 best_s = s
     else:
@@ -492,7 +492,7 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
             for m in range(p*(p-1)-1, m_max+1):
                 if m in _theta:
                     s = _compute_cost_div_m(m, p, norm_info)
-                    if best_m is None or m * s < best_m * best_s:
+                    if m * s < best_m * best_s:
                         best_m = m
                         best_s = s
         best_s = max(best_s, 1)
