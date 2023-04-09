@@ -448,7 +448,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             alpha_star, phi_star, derphi_star = \
                         _zoom(alpha1, alpha0, phi_a1,
                               phi_a0, derphi_a1, phi, derphi,
-                              phi0, derphi0, c1, c2, extra_condition, maxiter=10)
+                              phi0, derphi0, c1, c2, extra_condition, maxiter)
             break
 
         alpha2 = 2 * alpha1  # increase by factor of two on each iteration
