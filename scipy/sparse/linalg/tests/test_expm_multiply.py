@@ -120,11 +120,11 @@ class TestExpmActionSimple:
             with np.errstate(invalid='ignore'):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 B = np.random.randn(n, k)
-                observed = _expm_multiply_simple(A, B, t=t)
+                observed = _expm_multiply_simple(A, B, 0, t=t)
                 expected = np.dot(sp_expm(t*A), B)
                 assert_allclose(observed, expected)
-                observed = estimated(_expm_multiply_simple)(
-                    aslinearoperator(A), B, t=t
+                observed = _expm_multiply_simple(
+                    aslinearoperator(A), B, 0, t=t
                 )
                 assert_allclose(observed, expected)
 
@@ -135,11 +135,11 @@ class TestExpmActionSimple:
         k = 2
         A = np.random.randn(n, n)
         B = np.random.randn(n, k)
-        observed = _expm_multiply_simple(A, B, t=t)
+        observed = _expm_multiply_simple(A, B, 0, t=t)
         expected = sp_expm(t*A).dot(B)
         assert_allclose(observed, expected)
-        observed = estimated(_expm_multiply_simple)(
-            aslinearoperator(A), B, t=t
+        observed = _expm_multiply_simple(
+            aslinearoperator(A), B, 0, t=t
         )
         assert_allclose(observed, expected)
 
@@ -286,13 +286,15 @@ class TestExpmActionInterval:
         for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
+            mu = A.trace() / n
+            A_ = A - mu*np.eye(n, n)
             status = _expm_multiply_interval(
-                A, B, start=start, stop=stop, num=num, endpoint=endpoint,
+                A_, B, mu, start=start, stop=stop, num=num, endpoint=endpoint,
                 status_only=True
             )
             if status == target_status:
-                X, status = _expm_multiply_interval(
-                    A, B, start=start, stop=stop, num=num, endpoint=endpoint,
+                X, _ = _expm_multiply_interval(
+                    A_, B, mu, start=start, stop=stop, num=num, endpoint=endpoint,
                     status_only=False
                 )
                 assert_equal(X.shape, (num, n, k))

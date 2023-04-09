@@ -200,15 +200,41 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
     >>> expm(2*A).dot(B)                # Verify 3rd timestep
     array([ 2.71828183,  1.        ])
     """
-    if all(arg is None for arg in (start, stop, num, endpoint)):
-        X = _expm_multiply_simple(A, B, traceA=traceA)
+    if A.ndim != 2 or A.shape[0] != A.shape[1]:
+        raise ValueError(
+            f"Expected A to be like a square matrix, got {A.shape}."
+        )
+    if A.shape[1] != B.shape[0]:
+        raise ValueError(
+            f"Shapes of matrices A {A.shape} and B {B.shape} are incompatible."
+        )
+    if B.ndim not in (1, 2):
+        raise ValueError("Expected B to be like a matrix or a vector.")
+
+    is_single_exponent = all(arg is None for arg in (start, stop, num, endpoint))
+    if traceA is None:
+        is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
+        if is_linear_operator:
+            warn("Trace of LinearOperator not available, it will be estimated."
+                 " Provide `traceA` to ensure performance.", stacklevel=2)
+        # m3 is bit arbitrary choice, a more accurate trace (larger m3) might
+        # speed up exponential calculation, but trace estimation is also costly
+        # an educated guess would need to consider the number of time points
+        m3 = 1 if is_single_exponent else 5
+        traceA = traceest(A, m3=m3) if is_linear_operator else _trace(A)
+
+    mu = traceA / float(A.shape[0])
+    A = A - mu*_ident_like(A)
+
+    if is_single_exponent:
+        X = _expm_multiply_simple(A, B, mu)
     else:
-        X, status = _expm_multiply_interval(A, B, start, stop, num,
-                                            endpoint, traceA=traceA)
+        X, status = _expm_multiply_interval(A, B, mu, start, stop, num,
+                                            endpoint)
     return X
 
 
-def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
+def _expm_multiply_simple(A, B, mu, t=1.0, balance=False):
     """
     Compute the action of the matrix exponential at a single time point.
 
@@ -220,10 +246,6 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         The matrix to be multiplied by the matrix exponential of A.
     t : float
         A time point.
-    traceA : scalar, optional
-        Trace of `A`. If not given the trace is estimated for linear operators,
-        or calculated exactly for sparse matrices. It is used to precondition
-        `A`, thus an approximate trace is acceptable
     balance : bool
         Indicates whether or not to apply balancing.
 
@@ -239,37 +261,15 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     """
     if balance:
         raise NotImplementedError
-    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
-    if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
-    ident = _ident_like(A)
+    tol = 2**-53
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
-    n = A.shape[0]
-    if len(B.shape) == 1:
-        n0 = 1
-    elif len(B.shape) == 2:
-        n0 = B.shape[1]
-    else:
-        raise ValueError('expected B to be like a matrix or a vector')
-    u_d = 2**-53
-    tol = u_d
-    if traceA is None:
-        if is_linear_operator:
-            warn("Trace of LinearOperator not available, it will be estimated."
-                 " Provide `traceA` to ensure performance.", stacklevel=3)
-        # m3=1 is bit arbitrary choice, a more accurate trace (larger m3) might
-        # speed up exponential calculation, but trace estimation is more costly
-        traceA = traceest(A, m3=1) if is_linear_operator else _trace(A)
-    mu = traceA / float(n)
-    A = A - mu * ident
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
         ell = 2
         norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        n0 = 1 if B.ndim == 1 else B.shape[1]
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
 
@@ -279,8 +279,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
     if balance:
         raise NotImplementedError
     if tol is None:
-        u_d = 2 ** -53
-        tol = u_d
+        tol = 2**-53
     F = B
     eta = np.exp(t*mu / float(s))
     for _ in range(s):
@@ -537,8 +536,8 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     return A_1_norm <= a * b
 
 
-def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
-                            endpoint=None, traceA=None, balance=False,
+def _expm_multiply_interval(A, B, mu, start=None, stop=None, num=None,
+                            endpoint=None, balance=False,
                             status_only=False):
     """
     Compute the action of the matrix exponential at multiple time points.
@@ -558,10 +557,6 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         Note that the step size changes when `endpoint` is False.
     num : int, optional
         Number of time points to use.
-    traceA : scalar, optional
-        Trace of `A`. If not given the trace is estimated for linear operators,
-        or calculated exactly for sparse matrices. It is used to precondition
-        `A`, thus an approximate trace is acceptable
     endpoint : bool, optional
         If True, `stop` is the last time point. Otherwise, it is not included.
     balance : bool
@@ -586,31 +581,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     """
     if balance:
         raise NotImplementedError
-    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
-    if A.shape[1] != B.shape[0]:
-        raise ValueError('shapes of matrices A {} and B {} are incompatible'
-                         .format(A.shape, B.shape))
-    ident = _ident_like(A)
-    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
-    n = A.shape[0]
-    if len(B.shape) == 1:
-        n0 = 1
-    elif len(B.shape) == 2:
-        n0 = B.shape[1]
-    else:
-        raise ValueError('expected B to be like a matrix or a vector')
-    u_d = 2**-53
-    tol = u_d
-    if traceA is None:
-        if is_linear_operator:
-            warn("Trace of LinearOperator not available, it will be estimated."
-                 " Provide `traceA` to ensure performance.", stacklevel=3)
-        # m3=5 is bit arbitrary choice, a more accurate trace (larger m3) might
-        # speed up exponential calculation, but trace estimation is also costly
-        # an educated guess would need to consider the number of time points
-        traceA = traceest(A, m3=5) if is_linear_operator else _trace(A)
-    mu = traceA / float(n)
+    tol = 2**-53
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
     linspace_kwargs = {'retstep': True}
@@ -635,10 +606,11 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     X_shape = (nsamples,) + B.shape
     X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
-    A = A - mu*ident
+    is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
     norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+    n0 = 1 if B.ndim == 1 else B.shape[1]
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
@@ -666,7 +638,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
 
 
 def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
-    """A helper function, for the case q <= s."""
+    """Compute the case q <= s."""
     # Compute the new values of m_star and s which should be applied
     # over intervals of size t/q
     if norm_info.onenorm() == 0:
