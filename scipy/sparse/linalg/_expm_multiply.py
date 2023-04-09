@@ -726,54 +726,41 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
 
 
 def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
-    """A helper function, for the case q > s and q % s == 0."""
+    """Compute the case q > s and q % s == 0."""
     d = q // s
     K = np.empty((m_star + 1, *X.shape[1:]), dtype=X.dtype)
     for i in range(s):
-        Z = X[i*d]
-        K[0] = Z
-        high_p = 0
-        for k in range(1, d+1):
-            F = K[0]
-            c1 = _exact_inf_norm(F)
-            for p in range(1, m_star+1):
-                if p > high_p:
-                    K[p] = h * A.dot(K[p-1]) / float(p)
-                coeff = float(pow(k, p))
-                F = F + coeff * K[p]
-                inf_norm_K_p_1 = _exact_inf_norm(K[p])
-                c2 = coeff * inf_norm_K_p_1
-                if c1 + c2 <= tol * _exact_inf_norm(F):
-                    break
-                c1 = c2
-            X[k + i*d] = np.exp(k*h*mu) * F
+        _compute_core(A, X, K, d, d, i, h, mu, m_star, tol)
     return X, 1
 
 
 def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
-    """A helper function, for the case q > s and q % s > 0."""
+    """Compute the case q > s and q % s > 0."""
     d = q // s
     j = q // d
     r = q - d*j
     K = np.empty((m_star + 1, *X.shape[1:]), dtype=X.dtype)
     for i in range(j + 1):
-        Z = X[i*d]
-        K[0] = Z
-        high_p = 0
         effective_d = d if i < j else r
-        for k in range(1, effective_d+1):
-            F = K[0]
-            c1 = _exact_inf_norm(F)
-            for p in range(1, m_star+1):
-                if p == high_p + 1:
-                    K[p] = h * A.dot(K[p-1]) / float(p)
-                    high_p = p
-                coeff = float(pow(k, p))
-                F = F + coeff * K[p]
-                inf_norm_K_p_1 = _exact_inf_norm(K[p])
-                c2 = coeff * inf_norm_K_p_1
-                if c1 + c2 <= tol * _exact_inf_norm(F):
-                    break
-                c1 = c2
-            X[k + i*d] = np.exp(k*h*mu) * F  # TODO: precompute exp
+        _compute_core(A, X, K, d, effective_d, i, h, mu, m_star, tol)
     return X, 2
+
+
+def _compute_core(A, X, K, d, effective_d, i, h, mu, m_star, tol):
+    """Cumpute common calculations of cores 1 and 2."""
+    K[0] = X[i*d]
+    high_p = 0  # keep track, how far we calculated the dot products
+    for k in range(1, effective_d+1):
+        F = K[0]
+        c1 = _exact_inf_norm(F)
+        for p in range(1, m_star+1):
+            if p == high_p + 1:  # haven't pre-calcualted dot
+                K[p] = h * A.dot(K[p-1]) / float(p)
+                high_p = p
+            coeff = float(pow(k, p))
+            F = F + coeff*K[p]
+            c2 = coeff * _exact_inf_norm(K[p])
+            if c1 + c2 <= tol * _exact_inf_norm(F):
+                break
+            c1 = c2
+        X[k + i*d] = np.exp(k*h*mu) * F
