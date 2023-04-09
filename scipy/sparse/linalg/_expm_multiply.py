@@ -755,7 +755,7 @@ def _compute_core(A, X, K, d, effective_d, i, h, mu, m_star, tol):
         c1 = _exact_inf_norm(F)
         for p in range(1, m_star+1):
             if p == high_p + 1:  # haven't pre-calcualted dot
-                K[p] = h * A.dot(K[p-1]) / float(p)
+                K[p] = h / p * A.dot(K[p-1])
                 high_p = p
             coeff = float(pow(k, p))
             F = F + coeff*K[p]
