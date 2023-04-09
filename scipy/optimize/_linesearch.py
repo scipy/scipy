@@ -325,7 +325,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 def scalar_search_wolfe2(phi, derphi, phi0=None,
                          old_phi0=None, derphi0=None,
                          c1=1e-4, c2=0.9, amax=None,
-                         extra_condition=None, maxiter = 10,):
+                         extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
