@@ -1733,8 +1733,9 @@ class dweibull_gen(rv_continuous):
         return np.where(q > 0.5, fac, -fac)
 
     def _sf(self, x, c):
-        Cx1 = 0.5 * np.exp(-abs(x)**c)
-        return np.where(x > 0, Cx1, 1 - Cx1)
+        #Cx1 = 0.5 * np.exp(-abs(x)**c)
+        #return np.where(x > 0, stats.weibull_min._sf(x, c), 1 - Cx1)
+        return 0.5 * stats.weibull_min._sf(np.abs(x), c)
 
     def _isf(self, q, c):
         fac = 2. * np.where(q <= 0.5, q, 1. - q)
