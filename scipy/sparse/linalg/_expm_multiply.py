@@ -283,7 +283,7 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
         tol = u_d
     F = B
     eta = np.exp(t*mu / float(s))
-    for i in range(s):
+    for _ in range(s):
         c1 = _exact_inf_norm(B)
         for j in range(m_star):
             coeff = t / float(s*(j+1))
@@ -679,7 +679,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     X_shape = (nsamples,) + B.shape
     X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
-    A = A - mu * ident
+    A = A - mu*ident
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
     norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
@@ -695,23 +695,18 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     if q <= s:
         if status_only:
             return 0
-        else:
-            return _expm_multiply_interval_core_0(A, X,
-                                                  h, mu, q, norm_info, tol, ell, n0)
+        return _expm_multiply_interval_core_0(A, X, h, mu,
+                                              q, norm_info, tol, ell, n0)
     elif not (q % s):
         if status_only:
             return 1
-        else:
-            return _expm_multiply_interval_core_1(A, X,
-                                                  h, mu, m_star, s, q, tol)
+        return _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol)
     elif (q % s):
         if status_only:
             return 2
-        else:
-            return _expm_multiply_interval_core_2(A, X,
-                                                  h, mu, m_star, s, q, tol)
-    else:
-        raise Exception('internal error')
+        return _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol)
+
+    raise Exception('internal error')
 
 
 def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
@@ -721,7 +716,7 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
     if norm_info.onenorm() == 0:
         m_star, s = 0, 1
     else:
-        norm_info.set_scale(1./q)
+        norm_info.set_scale(1.0/q)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
         norm_info.set_scale(1)
 
@@ -733,9 +728,7 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
 def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     """A helper function, for the case q > s and q % s == 0."""
     d = q // s
-    input_shape = X.shape[1:]
-    K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=X.dtype)
+    K = np.empty((m_star + 1, *X.shape[1:]), dtype=X.dtype)
     for i in range(s):
         Z = X[i*d]
         K[0] = Z
@@ -761,18 +754,13 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     """A helper function, for the case q > s and q % s > 0."""
     d = q // s
     j = q // d
-    r = q - d * j
-    input_shape = X.shape[1:]
-    K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=X.dtype)
+    r = q - d*j
+    K = np.empty((m_star + 1, *X.shape[1:]), dtype=X.dtype)
     for i in range(j + 1):
         Z = X[i*d]
         K[0] = Z
         high_p = 0
-        if i < j:
-            effective_d = d
-        else:
-            effective_d = r
+        effective_d = d if i < j else r
         for k in range(1, effective_d+1):
             F = K[0]
             c1 = _exact_inf_norm(F)
@@ -787,5 +775,5 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
                 if c1 + c2 <= tol * _exact_inf_norm(F):
                     break
                 c1 = c2
-            X[k + i*d] = np.exp(k*h*mu) * F
+            X[k + i*d] = np.exp(k*h*mu) * F  # TODO: precompute exp
     return X, 2
