@@ -60,7 +60,7 @@ def traceest(A, m3, seed=None):
 
     Returns
     -------
-    trace : LinearOperator.dtype
+    trace : LinearOperator
         Estimate of the trace
 
     Notes
@@ -223,7 +223,7 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         m3 = 1 if is_single_exponent else 5
         traceA = traceest(A, m3=m3) if is_linear_operator else _trace(A)
 
-    mu = traceA / float(A.shape[0])
+    mu = traceA / A.shape[0]
     A = A - mu*_ident_like(A)
 
     if is_single_exponent:
@@ -261,7 +261,7 @@ def _expm_multiply_simple(A, B, mu, t=1.0, balance=False):
     """
     if balance:
         raise NotImplementedError
-    tol = 2**-53
+    tol = 0.5*np.finfo(np.result_type(A.dtype, B.dtype)).eps
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     if t*A_1_norm == 0:
@@ -279,13 +279,13 @@ def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
     if balance:
         raise NotImplementedError
     if tol is None:
-        tol = 2**-53
+        tol = 0.5*np.finfo(np.result_type(A.dtype, B.dtype)).eps
     F = B
-    eta = np.exp(t*mu / float(s))
+    eta = np.exp(t * mu / s)
     for _ in range(s):
         c1 = _exact_inf_norm(B)
         for j in range(m_star):
-            coeff = t / float(s*(j+1))
+            coeff = t / (s * (j + 1))
             B = coeff * A.dot(B)
             c2 = _exact_inf_norm(B)
             F = F + B
@@ -532,7 +532,7 @@ def _condition_3_13(A_1_norm, n0, m_max, ell):
     a = 2 * ell * p_max * (p_max + 3)
 
     # Evaluate the condition (3.13).
-    b = _theta[m_max] / float(n0 * m_max)
+    b = _theta[m_max] / (n0 * m_max)
     return A_1_norm <= a * b
 
 
@@ -581,7 +581,7 @@ def _expm_multiply_interval(A, B, mu, start=None, stop=None, num=None,
     """
     if balance:
         raise NotImplementedError
-    tol = 2**-53
+    tol = 0.5*np.finfo(np.result_type(A.dtype, B.dtype)).eps
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
     linspace_kwargs = {'retstep': True}
@@ -604,7 +604,7 @@ def _expm_multiply_interval(A, B, mu, start=None, stop=None, num=None,
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
     X_shape = (nsamples,) + B.shape
-    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
+    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype))
     t = t_q - t_0
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
@@ -685,7 +685,8 @@ def _compute_core(A, X, K, d, effective_d, i, h, mu, m_star, tol):
             if p == high_p + 1:  # haven't pre-calcualted dot
                 K[p] = h / p * A.dot(K[p-1])
                 high_p = p
-            coeff = float(pow(k, p))
+            # in case the python integer type is to large we need numpy float
+            coeff = K.dtype.type(pow(k, p))
             F = F + coeff*K[p]
             c2 = coeff * _exact_inf_norm(K[p])
             if c1 + c2 <= tol * _exact_inf_norm(F):
