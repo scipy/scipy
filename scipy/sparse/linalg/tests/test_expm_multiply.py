@@ -76,7 +76,7 @@ class TestExpmActionSimple:
                     M = np.identity(n)
                 else:
                     M = np.dot(M, A)
-                estimated = _onenormest_matrix_power(A, p)
+                estimated = onenormest(aslinearoperator(A)**p)
                 exact = np.linalg.norm(M, 1)
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
@@ -247,22 +247,22 @@ class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags(np.arange(5), format='csr', dtype=int)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
         # Test A complex, B int
-        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        A = scipy.sparse.diags(-1j*np.arange(5), format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
         # Test A int, B complex
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags(np.arange(5), format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
@@ -286,16 +286,18 @@ class TestExpmActionInterval:
         for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            status = _expm_multiply_interval(A, B,
-                    start=start, stop=stop, num=num, endpoint=endpoint,
-                    status_only=True)
+            status = _expm_multiply_interval(
+                A, B, start=start, stop=stop, num=num, endpoint=endpoint,
+                status_only=True
+            )
             if status == target_status:
-                X, status = _expm_multiply_interval(A, B,
-                        start=start, stop=stop, num=num, endpoint=endpoint,
-                        status_only=False)
+                X, status = _expm_multiply_interval(
+                    A, B, start=start, stop=stop, num=num, endpoint=endpoint,
+                    status_only=False
+                )
                 assert_equal(X.shape, (num, n, k))
                 samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
+                                      num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
                     assert_allclose(solution, sp_expm(t*A).dot(B))
                 nsuccesses += 1
