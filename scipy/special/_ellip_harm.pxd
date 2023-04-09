@@ -32,9 +32,8 @@ import cython
 
 from . cimport sf_error
 
-from libc.math cimport sqrt, fabs, pow
+from libc.math cimport sqrt, fabs, pow, NAN
 from libc.stdlib cimport malloc, free
-from numpy.math cimport NAN, PI
 
 cdef extern from "lapack_defs.h":
     ctypedef int CBLAS_INT  # actual type defined in the header
