@@ -982,8 +982,8 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     Compute the determinant of a matrix
 
-    The determinant is the scalar that is a function of the associated square
-    matrix coefficients. The scalar is zero for singular matrices.
+    The determinant is a scalar that is a function of the associated square
+    matrix coefficients. The determinant value is zero for singular matrices.
 
     Parameters
     ----------
@@ -999,7 +999,9 @@ def det(a, overwrite_a=False, check_finite=True):
     Returns
     -------
     det : (...) float or complex
-        Determinant of `a`.
+        Determinant of `a`. For stacked arrays, say, shape of (p, q, m, m),
+        the result is going to be (p, q), that is to say, for each (m, m)
+        slice in the last two dimensions, a single scalar will be returned.
 
     Notes
     -----
@@ -1007,16 +1009,31 @@ def det(a, overwrite_a=False, check_finite=True):
     input, through LAPACK routine 'getrf' and then calculating the product of
     diagonal entries of ``U`` factor.
 
+    Even the input array is single precision (float32 or complex64), the result
+    will be returned in double precision (float64 or complex128) to prevent
+    overflows.
+
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])
+    >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])  # A singular matrix
     >>> linalg.det(a)
     0.0
-    >>> a = np.array([[0,2,3], [4,5,6], [7,8,9]])
-    >>> linalg.det(a)
+    >>> b = np.array([[0,2,3], [4,5,6], [7,8,9]])
+    >>> linalg.det(b)
     3.0
+    >>> # An array with the shape (3, 2, 2, 2)
+    >>> c = np.array([[[[1., 2.], [3., 4.]],
+        ...            [[5., 6.], [7., 8.]]],
+        ...          [[[9., 10.], [11., 12.]],
+        ...           [[13., 14.], [15., 16.]]],
+        ...          [[[17., 18.], [19., 20.]],
+        ...           [[21., 22.], [23., 24.]]]])
+    >>> linalg.det(c)  # The resulting shape is (3, 2)
+    array([[-2., -2.],
+           [-2., -2.],
+           [-2., -2.]])
 
     """
     # The goal is to end up with a writable contiguous array to pass to Cython
@@ -1033,7 +1050,7 @@ def det(a, overwrite_a=False, check_finite=True):
     if a1.dtype.char not in 'fdFD':
         dtype_char = lapack_cast_dict[a1.dtype.char]
         if not dtype_char:  # No casting possible
-            raise TypeError(f'The dtype {a1.dtype} cannot be cast '
+            raise TypeError(f'The dtype "{a1.dtype.name}" cannot be cast '
                             'to float(32, 64) or complex(64, 128).')
 
         a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
@@ -1042,13 +1059,17 @@ def det(a, overwrite_a=False, check_finite=True):
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
         if a1.ndim == 2:
-            return 1.
+            return np.float64(1.)
         else:
-            return np.ones(shape=a1.shape[:-2])
+            return np.ones(shape=a1.shape[:-2], dtype=np.float64)
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):
-        return np.squeeze(a1)
+        if a1.dtype.char in 'dD':
+            return np.squeeze(a1)
+        else:
+            return (np.squeeze(a1).astype('d') if a1.dtype.char == 'f' else
+                    np.squeeze(a1).astype('D'))
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"
@@ -1059,13 +1080,14 @@ def det(a, overwrite_a=False, check_finite=True):
     # else:  a1 has its own data thus free to scratch
 
     # Then layout checks, might happen that overwrite is allowed but original
-    # array was read-only or non-contiguous.
-    if not ((a1.flags['C_CONTIGUOUS'] or a1.flags['F_CONTIGUOUS'])
-            and a1.flags['WRITEABLE']):
+    # array was read-only or non-C-contiguous.
+    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
         a1 = a1.copy(order='C')
 
     if a1.ndim == 2:
-        return find_det_from_lu(a1)
+        det = find_det_from_lu(a1)
+        # Convert float, complex to to NumPy scalars
+        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
 
     # loop over the stacked array, and avoid overflows for single precision
     # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
