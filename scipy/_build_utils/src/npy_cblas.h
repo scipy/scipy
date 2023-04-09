@@ -6,6 +6,7 @@
 #ifndef NUMPY_CORE_SRC_COMMON_NPY_CBLAS_H_
 #define NUMPY_CORE_SRC_COMMON_NPY_CBLAS_H_
 
+#include <numpy/npy_common.h>
 #include <stddef.h>
 
 /* Allow the use in C++ code.  */
