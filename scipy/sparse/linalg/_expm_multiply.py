@@ -268,7 +268,7 @@ def _expm_multiply_simple(A, B, mu, t=1.0, balance=False):
         m_star, s = 0, 1
     else:
         ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+        norm_info = LazyOperatorNormInfo(A, onenorm=A_1_norm, scale=t, t=ell)
         n0 = 1 if B.ndim == 1 else B.shape[1]
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
@@ -356,7 +356,7 @@ class LazyOperatorNormInfo:
 
     """
 
-    def __init__(self, A, A_1_norm=None, ell=2, scale=1):
+    def __init__(self, A, onenorm=None, scale=1, t=2):
         """
         Provide the operator and some norm-related information.
 
@@ -364,39 +364,37 @@ class LazyOperatorNormInfo:
         ----------
         A : linear operator
             The operator of interest.
-        A_1_norm : float, optional
+        onenorm : float, optional
             The exact 1-norm of A.
-        ell : int, optional
-            A technical parameter controlling norm estimation quality.
-        scale : int, optional
+        scale : scalar, optional
             If specified, return the norms of scale*A instead of A.
-
+        t : int, optional
+            A positive parameter controlling the tradeoff between accuracy
+            versus time and memory usage. Larger values take longer and use
+            more memory but give more accurate output.
         """
         self._A = A
-        self._A_1_norm = A_1_norm
-        self._ell = ell
+        self._onenorm = onenorm
         self._d = {}
-        self._scale = scale
+        self.scale = scale
+        self.t = t
 
-    def set_scale(self, scale):
-        """Set the scale parameter."""
-        self._scale = scale
-
+    @property
     def onenorm(self):
         """Compute the exact 1-norm."""
-        if self._A_1_norm is None:
-            self._A_1_norm = _exact_1_norm(self._A)
-        return self._scale*self._A_1_norm
+        if self._onenorm is None:
+            self._onenorm = _exact_1_norm(self._A)
+        return abs(self.scale)*self._onenorm
 
     def d(self, p):
-        """Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm."""
+        """Estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm."""
         if p not in self._d:
-            est = onenormest(aslinearoperator(self._A)**p)
-            self._d[p] = est ** (1.0 / p)
-        return self._scale*self._d[p]
+            est = onenormest(aslinearoperator(self._A)**p, t=self.t)
+            self._d[p] = est**(1.0 / p)
+        return abs(self.scale)*self._d[p]
 
     def alpha(self, p):
-        """Lazily compute max(d(p), d(p+1))."""
+        """Compute max(d(p), d(p+1))."""
         return max(self.d(p), self.d(p+1))
 
 
@@ -482,9 +480,9 @@ def _fragment_3_1(norm_info, n0, tol, m_max=55, ell=2):
         raise ValueError('expected ell to be a positive integer')
     best_m = None
     best_s = None
-    if _condition_3_13(norm_info.onenorm(), n0, m_max, ell):
+    if _condition_3_13(norm_info.onenorm, n0, m_max, ell):
         for m, theta in _theta.items():
-            s = int(np.ceil(norm_info.onenorm() / theta))
+            s = int(np.ceil(norm_info.onenorm / theta))
             if best_m is None or m * s < best_m * best_s:
                 best_m = m
                 best_s = s
@@ -609,7 +607,7 @@ def _expm_multiply_interval(A, B, mu, start=None, stop=None, num=None,
     is_linear_operator = isinstance(A, scipy.sparse.linalg.LinearOperator)
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
     ell = 2
-    norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
+    norm_info = LazyOperatorNormInfo(A, onenorm=A_1_norm, scale=t, t=ell)
     n0 = 1 if B.ndim == 1 else B.shape[1]
     if t*A_1_norm == 0:
         m_star, s = 0, 1
@@ -641,12 +639,12 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
     """Compute the case q <= s."""
     # Compute the new values of m_star and s which should be applied
     # over intervals of size t/q
-    if norm_info.onenorm() == 0:
+    if norm_info.onenorm == 0:
         m_star, s = 0, 1
     else:
-        norm_info.set_scale(1.0/q)
+        norm_info.scale /= q
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
-        norm_info.set_scale(1)
+        norm_info.scale *= q
 
     for k in range(q):
         X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
