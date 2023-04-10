@@ -4,90 +4,178 @@ from mpmath import mp
 mp.dps = 100
 
 class Distribution:
+    # Minimalist distribution infrastructure for generating reference values
+    # of distribution functions. No edge case handling.
+
     @staticmethod
     def _make_mpf_array(x):
-        shape = np.shape(x) or (1,)
+        shape = np.shape(x)
         x = np.asarray(x, dtype=np.float64).ravel()
-        return np.asarray([mp.mpf(xi) for xi in x]).reshape(shape)
+        return np.asarray([mp.mpf(xi) for xi in x]).reshape(shape)[()]
 
     def __init__(self, **kwargs):
-        _shape_info = self._shape_info()
+        self._params = {key:self._make_mpf_array(val)
+                        for key, val in kwargs.items()}
 
-        invalid_params = set(kwargs) - set(_shape_info)
-        if invalid_params:
-            raise ValueError(f"Invalid parameters {invalid_params}.")
+    def _pdf(self, x):
+        raise NotImplementedError("_pdf must be overridden.")
 
-        missing_params = set(_shape_info) - set(kwargs)
-        if missing_params:
-            raise ValueError(f"Parameters {missing_params} not specified.")
+    def _cdf(self, x, **kwargs):
+        a, _ = self._support(**kwargs)
+        return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
 
-        shapes = []
-        for key, val in kwargs.items():
-            shapes.append(np.shape(val))
-        self._param_shape = np.broadcast_shapes(*shapes)
+    def _sf(self, x, **kwargs):
+        _, b = self._support(**kwargs)
+        return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
 
-        for key, val in kwargs.items():
-            val = np.broadcast_to(self._make_mpf_array(val),
-                                  self._param_shape or (1,))
-            setattr(self, key, val)
+    def _logpdf(self, x, **kwargs):
+        return mp.log(self._pdf(x, **kwargs))
 
-        self._check_domain()
+    def _logcdf(self, x, **kwargs):
+        return mp.log(self._cdf(x, **kwargs))
 
-    def _check_domain(self):
-        # add check for relationship between shapes
-        _shape_info = self._shape_info()
-        conditions = []
-        for param_name in _shape_info:
-            param_val = getattr(self, param_name)
-            a, b = _shape_info[param_name]['domain']
-            a_inclusive, b_inclusive = _shape_info[param_name]['inclusive']
-            a_compare = np.less_equal if a_inclusive else np.less
-            b_compare = np.less_equal if b_inclusive else np.less
-            conditions.append(a_compare(a, param_val)
-                              & b_compare(param_val, b))
-        self._in_domain = np.all(conditions, axis=0)
+    def _logsf(self, x, **kwargs):
+        return mp.log(self._sf(x, **kwargs))
 
-    def _result_shape(self, x=None):
-        return (np.broadcast_shapes(np.shape(x), self._param_shape)
-                if x is not None else self._param_shape)
-
-    def support(self):
-        a, b = self._support()
-        return (np.broadcast_to(a, self._param_shape),
-                np.broadcast_to(b, self._param_shape))
-
-    def _support(self):
+    def _support(self, **kwargs):
         return -mp.inf, mp.inf
 
-    def supported(self, x):
-        # TODO: add inclusive support
-        a, b = self.support()
-        return (a < x) & (x < b)
+    def _entropy(self, **kwargs):
+        def integrand(x):
+            logpdf = self._logpdf(x, **kwargs)
+            pdf = mp.exp(logpdf)
+            return  -pdf*logpdf
 
+        a, b = self._support(**kwargs)
+        return mp.quad(integrand, (a, b))
+
+    def _mean(self, **kwargs):
+        return self._moment(order=1, center=0, **kwargs)
+
+    def _var(self, **kwargs):
+        mu = self._mean(**kwargs)
+        return self._moment(order=2, center=mu, **kwargs)
+
+    def _skew(self, **kwargs):
+        mu = self._mean(**kwargs)
+        u2 = self._moment(order=2, center=mu, **kwargs)
+        sigma = mp.sqrt(u2)
+        u3 = self._moment(order=3, center=mu, **kwargs)
+        return u3 / sigma**3
+
+    def _kurtosis(self, **kwargs):
+        mu = self._mean(**kwargs)
+        u2 = self._moment(order=2, center=mu, **kwargs)
+        u4 = self._moment(order=4, center=mu, **kwargs)
+        return u4 / u2**2 - 3
+
+    def _moment(self, order, center=None, **kwargs):
+        def integrand(x):
+            return self._pdf(x, **kwargs)*(x - center)**order
+
+        if center is None:
+            center = self._mean(**kwargs)
+
+        a, b = self._support(**kwargs)
+        return mp.quad(integrand, (a, b))
+
+    def pdf(self, x):
+        fun = np.vectorize(self._pdf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def cdf(self, x):
+        fun = np.vectorize(self._cdf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def sf(self, x):
+        fun = np.vectorize(self._sf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def logpdf(self, x):
+        fun = np.vectorize(self._logpdf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def logcdf(self, x):
+        fun = np.vectorize(self._logcdf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def logsf(self, x):
+        fun = np.vectorize(self._logsf)
+        x = self._make_mpf_array(x)
+        res = fun(x, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def support(self):
+        fun = np.vectorize(self._support)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def entropy(self):
+        fun = np.vectorize(self._entropy)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def mean(self):
+        fun = np.vectorize(self._mean)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def var(self):
+        fun = np.vectorize(self._var)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def skew(self):
+        fun = np.vectorize(self._skew)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def kurtosis(self):
+        fun = np.vectorize(self._kurtosis)
+        res = fun(**self._params)
+        return np.asarray(res, dtype=np.float64)[()]
+
+    def moment(self, order):
+        fun = np.vectorize(self._moment)
+        order = self._make_mpf_array(order)
+        res = fun(order, **self._params)
+        return np.asarray(res, dtype=np.float64)[()]
 
 class Normal(Distribution):
 
-    def _shape_info(self):
-        return {}
+    # always override __init__ so IDEs hint at shape parameter names
+    def __init__(self, *, mu, sigma):
+        super().__init__(mu=mu, sigma=sigma)
 
-    def _pdf(self, x):
-        return mp.npdf(x)
+    def _pdf(self, x, mu, sigma):
+        return mp.npdf(x, mu, sigma)
 
 class SkewNormal(Distribution):
 
-    def _shape_info(self):
-        return {'a': dict(domain=(-mp.inf, mp.inf), inclusive=(False, False))}
+    def __init__(self, *, a, mu=0, sigma=1):
+        super().__init__(a=a, mu=mu, sigma=sigma)
 
-    def _pdf(self, x):
-        return 2 * mp.npdf(x) * mp.ncdf(self.a * x)
+    def _pdf(self, x, a, mu, sigma):
+        return 2 * mp.npdf(x) * mp.ncdf(a * x)
 
-class Beta(Distribution):
-    def _support(self):
-        return 0, 1
-
-    def _shape_info(self):
-        return {'a': dict(domain=(0, 1), inclusive=(False, False)),
-                'b': dict(domain=(0, 1), inclusive=(False, False))}
-
-dist = Normal()
-# SkewNormal(a=0.5)
+#
+# class Beta(Distribution):
+#     def _support(self):
+#         return 0, 1
+#
+#     def _shape_info(self):
+#         return {'a': dict(domain=(0, 1), inclusive=(False, False)),
+#                 'b': dict(domain=(0, 1), inclusive=(False, False))}
+#
+# dist = Normal()
+# # SkewNormal(a=0.5)
