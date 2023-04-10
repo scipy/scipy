@@ -5,11 +5,10 @@
 import numpy as np
 from scipy import stats
 from numpy.testing import assert_allclose
-from reference_distributions import SkewNormal
+import scipy.stats.tests.test_generation.reference_distributions as rd
 from mpmath import mp
 
 def test_basic():
-    assert False
     mp.dps = 20  # high enough to pass, not unreasonably slow
 
     # Basic tests of the mpmath distribution infrastructure using a SciPy
@@ -23,7 +22,7 @@ def test_basic():
     a = rng.random(size=(2, 1))
     rtol = 1e-15
 
-    dist = SkewNormal(a=a)
+    dist = rd.SkewNormal(a=a)
     dist_ref = stats.skewnorm(a)
 
     assert_allclose(dist.pdf(x), dist_ref.pdf(x), rtol=rtol)
