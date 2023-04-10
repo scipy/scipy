@@ -2,16 +2,19 @@ import numpy as np
 from scipy import stats
 from numpy.testing import assert_allclose
 from .mpmath_distribution import SkewNormal
+from mpmath import mp
 
 def test_basic():
+    mp.dps = 20  # high enough to pass, not unreasonably slow
+
     # Basic tests of mpmath distribution using a SciPy distribution as a
     # reference. The mpmath distribution is assumed to be more accurate;
-    # this is just to make sure that the formulae are correct and that
-    # broadcasting is working as expected.
+    # this is just to make sure that the methods are implemented correctly
+    # and that broadcasting is working as expected.
     rng = np.random.default_rng(6716188855217730280)
 
+    x = rng.random(size=3)
     a = rng.random(size=(2, 1))
-    x = rng.random(size=2)
     rtol = 1e-15
 
     dist = SkewNormal(a=a)

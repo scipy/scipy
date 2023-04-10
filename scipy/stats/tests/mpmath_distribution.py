@@ -1,7 +1,7 @@
 import numpy as np
 from mpmath import mp
 
-mp.dps = 100
+mp.dps = 100  # default in case the user forgets to set it
 
 class Distribution:
     # Minimalist distribution infrastructure for generating reference values
@@ -162,20 +162,8 @@ class Normal(Distribution):
 
 class SkewNormal(Distribution):
 
-    def __init__(self, *, a, mu=0, sigma=1):
-        super().__init__(a=a, mu=mu, sigma=sigma)
+    def __init__(self, *, a):
+        super().__init__(a=a)
 
-    def _pdf(self, x, a, mu, sigma):
+    def _pdf(self, x, a):
         return 2 * mp.npdf(x) * mp.ncdf(a * x)
-
-#
-# class Beta(Distribution):
-#     def _support(self):
-#         return 0, 1
-#
-#     def _shape_info(self):
-#         return {'a': dict(domain=(0, 1), inclusive=(False, False)),
-#                 'b': dict(domain=(0, 1), inclusive=(False, False))}
-#
-# dist = Normal()
-# # SkewNormal(a=0.5)
