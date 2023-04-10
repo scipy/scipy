@@ -525,14 +525,14 @@ ctypedef double complex z
 
 # Function pointer type declarations for
 # gees and gges families of functions.
-ctypedef bint cselect1(c*)
-ctypedef bint cselect2(c*, c*)
-ctypedef bint dselect2(d*, d*)
-ctypedef bint dselect3(d*, d*, d*)
-ctypedef bint sselect2(s*, s*)
-ctypedef bint sselect3(s*, s*, s*)
-ctypedef bint zselect1(z*)
-ctypedef bint zselect2(z*, z*)
+ctypedef bint cselect1(const c*)
+ctypedef bint cselect2(const c*, const c*)
+ctypedef bint dselect2(const d*, const d*)
+ctypedef bint dselect3(const d*, const d*, const d*)
+ctypedef bint sselect2(const s*, const s*)
+ctypedef bint sselect3(const s*, const s*, const s*)
+ctypedef bint zselect1(const z*)
+ctypedef bint zselect2(const z*, const z*)
 
 """
 
