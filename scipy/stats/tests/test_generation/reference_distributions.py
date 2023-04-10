@@ -1,7 +1,9 @@
 import numpy as np
-from mpmath import mp
+import mpmath
+mpmath.dps = None  # see assertion in `ReferenceDistribution` `__init__`.
 
-mp.dps = 100  # default; but this can be overridden in scripts
+from mpmath import mp
+mp.dps = 100  # default; but this can be overridden in scripts after import
 
 
 class ReferenceDistribution:
@@ -64,6 +66,8 @@ class ReferenceDistribution:
     """
 
     def __init__(self, **kwargs):
+        assert mpmath.dps is None
+
         self._params = {key:self._make_mpf_array(val)
                         for key, val in kwargs.items()}
 
@@ -233,7 +237,11 @@ class SkewNormal(ReferenceDistribution):
     """Reference implementation of the SkewNormal distribution.
 
     Follow the example here to generate new reference distributions.
-    Use the reference distributions to implement test cases.
+    Use the reference distributions to generate reference values of
+    distributions functions. For now, copy-paste the output into unit
+    tests. Full code to generate reference values does not need to be
+    included as a comment in the test; just refer to the reference
+    distribution used and the settings (e.g. mp.dps=50).
     """
 
     def __init__(self, *, a):

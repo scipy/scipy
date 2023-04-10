@@ -1,16 +1,22 @@
+# Note: this file is to be run locally, not on CI. It is only for tests of the
+# reference distribution *infrastructure*; unit tests of SciPy distributions
+# do not go here.
+
 import numpy as np
 from scipy import stats
 from numpy.testing import assert_allclose
-from .mpmath_distribution import SkewNormal
+from reference_distributions import SkewNormal
 from mpmath import mp
 
 def test_basic():
+    assert False
     mp.dps = 20  # high enough to pass, not unreasonably slow
 
-    # Basic tests of mpmath distribution using a SciPy distribution as a
-    # reference. The mpmath distribution is assumed to be more accurate;
-    # this is just to make sure that the methods are implemented correctly
-    # and that broadcasting is working as expected.
+    # Basic tests of the mpmath distribution infrastructure using a SciPy
+    # distribution as a reference. The intent is just to make sure that the
+    # implementations do not have *mistakes* and that broadcasting is working
+    # as expected. The accuracy is what it is.
+
     rng = np.random.default_rng(6716188855217730280)
 
     x = rng.random(size=3)
