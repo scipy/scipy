@@ -23,6 +23,8 @@ def test_basic():
     assert_allclose(dist.pdf(x), dist_ref.pdf(x), rtol=rtol)
     assert_allclose(dist.cdf(x), dist_ref.cdf(x), rtol=rtol)
     assert_allclose(dist.sf(x), dist_ref.sf(x), rtol=rtol)
+    assert_allclose(dist.ppf(x), dist_ref.ppf(x), rtol=rtol)
+    assert_allclose(dist.isf(x), dist_ref.isf(x), rtol=rtol)
     assert_allclose(dist.logpdf(x), dist_ref.logpdf(x), rtol=rtol)
     assert_allclose(dist.logcdf(x), dist_ref.logcdf(x), rtol=rtol)
     assert_allclose(dist.logsf(x), dist_ref.logsf(x), rtol=rtol)
