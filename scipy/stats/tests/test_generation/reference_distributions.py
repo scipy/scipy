@@ -266,7 +266,21 @@ class SkewNormal(ReferenceDistribution):
     # too slow. Why? Less code to write, less code to review, and a guarantee
     # that there is no *mistake* in the implementation (e.g. wrong formula).
 
+
 class Normal(ReferenceDistribution):
 
     def _pdf(self, x):
         return mp.npdf(x)
+
+
+class NormInvGauss(ReferenceDistribution):
+
+    def __init__(self, *, alpha, beta):
+        super().__init__(alpha=alpha, beta=beta)
+
+    def _pdf(self, x, alpha, beta):
+        # Implemented as described in https://www.jstor.org/stable/4616433
+        # Equations 2.1 - 2.3
+        q = mp.sqrt(1 + x**2)
+        a = mp.pi**-1 * alpha * mp.exp(mp.sqrt(alpha**2 - beta**2))
+        return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
