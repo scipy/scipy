@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+import random
 import functools
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
@@ -993,6 +994,30 @@ class TestSomersD(_TestPythranFunc):
         res = stats.somersd(x1, x2, alternative="greater")
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
+
+    def test_somersd_large_inputs_gh18132(self):
+        # Test that large inputs where potential overflows could occur give
+        # the expected output. This is tested in the case of binary inputs.
+        # See gh-18126.
+
+        # generate lists of random classes 1-2 (binary)
+        classes = [1, 2]
+        n_samples = 10 ** 6
+        random.seed(6272161)
+        x = random.choices(classes, k=n_samples)
+        y = random.choices(classes, k=n_samples)
+
+        # get value to compare with: sklearn output
+        # from sklearn import metrics
+        # val_auc_sklearn = metrics.roc_auc_score(x, y)
+        # # convert to the Gini coefficient (Gini = (AUC*2)-1)
+        # val_sklearn = 2 * val_auc_sklearn - 1
+        val_sklearn = -0.001528138777036947
+
+        # calculate the Somers' D statistic, which should be equal to the
+        # result of val_sklearn until approximately machine precision
+        val_scipy = stats.somersd(x, y).statistic
+        assert_allclose(val_sklearn, val_scipy, atol=1e-15)
 
 
 class TestBarnardExact:

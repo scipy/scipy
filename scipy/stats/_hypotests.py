@@ -1,5 +1,5 @@
 from collections import namedtuple
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from math import comb
 import numpy as np
 import warnings
@@ -694,8 +694,11 @@ def _somers_d(A, alternative='two-sided'):
     return d, p
 
 
-SomersDResult = make_dataclass("SomersDResult",
-                               ("statistic", "pvalue", "table"))
+@dataclass
+class SomersDResult:
+    statistic: float
+    pvalue: float
+    table: np.ndarray
 
 
 def somersd(x, y=None, alternative='two-sided'):
@@ -871,7 +874,8 @@ def somersd(x, y=None, alternative='two-sided'):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table, alternative)
+    # The table type is converted to a float to avoid an integer overflow
+    d, p = _somers_d(table.astype(float), alternative)
 
     # add alias for consistency with other correlation functions
     res = SomersDResult(d, p, table)
@@ -902,9 +906,10 @@ def _compute_log_combinations(n):
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-BarnardExactResult = make_dataclass(
-    "BarnardExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BarnardExactResult:
+    statistic: float
+    pvalue: float
 
 
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
@@ -1172,9 +1177,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
-BoschlooExactResult = make_dataclass(
-    "BoschlooExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BoschlooExactResult:
+    statistic: float
+    pvalue: float
 
 
 def boschloo_exact(table, alternative="two-sided", n=32):
@@ -1863,6 +1869,10 @@ def tukey_hsd(*args):
 
         confidence_interval(confidence_level=0.95):
             Compute the confidence interval for the specified confidence level.
+
+    See Also
+    --------
+    dunnett : performs comparison of means against a control group.
 
     Notes
     -----

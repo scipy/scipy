@@ -339,7 +339,7 @@ General-purpose multivariate methods:
    :toctree: generated/
 
    fmin - Nelder-Mead Simplex algorithm.
-   fmin_powell - Powell's (modified) level set method.
+   fmin_powell - Powell's (modified) conjugate direction method.
    fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm.
    fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno).
    fmin_ncg - Line-search Newton Conjugate Gradient.
