@@ -1988,7 +1988,6 @@ class TestGumbel_r_l:
         data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
                         random_state=rng)
 
-
         kwds = dict()
         # the fixed location and scales are arbitrarily modified to not be
         # close to the true value.
@@ -3241,6 +3240,7 @@ def test_t_entropy():
                 1.459327578078393, 1.4289633653182439]
     assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
+
 @pytest.mark.parametrize("v, ref",
                          [(100, 1.4289633653182439),
                           (1e+100, 1.4189385332046727)])
@@ -3257,6 +3257,7 @@ def test_t_extreme_entropy(v, ref):
     #   h = A + B
     #   return float(h)
     assert_allclose(stats.t.entropy(v), ref, rtol=1e-14)
+
 
 @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
                                       "ppf", "sf", "isf"])
@@ -6183,6 +6184,66 @@ class TestExponWeib:
         expected = stats.expon.logpdf(x)
         assert_allclose(logp, expected)
 
+    # Reference values were computed with mpmath, e.g:
+    #
+    #     from mpmath import mp
+    #
+    #     def mp_sf(x, a, c):
+    #         x = mp.mpf(x)
+    #         a = mp.mpf(a)
+    #         c = mp.mpf(c)
+    #         return -mp.powm1(-mp.expm1(-x**c)), a)
+    #
+    #     mp.dps = 100
+    #     print(float(mp_sf(1, 2.5, 0.75)))
+    #
+    # prints
+    #
+    #     0.6823127476985246
+    #
+    @pytest.mark.parametrize(
+        'x, a, c, ref',
+        [(1, 2.5, 0.75, 0.6823127476985246),
+         (50, 2.5, 0.75, 1.7056666054719663e-08),
+         (125, 2.5, 0.75, 1.4534393150714602e-16),
+         (250, 2.5, 0.75, 1.2391389689773512e-27),
+         (250, 0.03125, 0.75, 1.548923711221689e-29),
+         (3, 0.03125, 3.0,  5.873527551689983e-14),
+         (2e80, 10.0, 0.02, 2.9449084156902135e-17)]
+    )
+    def test_sf(self, x, a, c, ref):
+        sf = stats.exponweib.sf(x, a, c)
+        assert_allclose(sf, ref, rtol=1e-14)
+
+    # Reference values were computed with mpmath, e.g.
+    #
+    #     from mpmath import mp
+    #
+    #     def mp_isf(p, a, c):
+    #         p = mp.mpf(p)
+    #         a = mp.mpf(a)
+    #         c = mp.mpf(c)
+    #         return (-mp.log(-mp.expm1(mp.log1p(-p)/a)))**(1/c)
+    #
+    #     mp.dps = 100
+    #     print(float(mp_isf(0.25, 2.5, 0.75)))
+    #
+    # prints
+    #
+    #     2.8946008178158924
+    #
+    @pytest.mark.parametrize(
+        'p, a, c, ref',
+        [(0.25, 2.5, 0.75, 2.8946008178158924),
+         (3e-16, 2.5, 0.75, 121.77966713102938),
+         (1e-12, 1, 2, 5.256521769756932),
+         (2e-13, 0.03125, 3, 2.953915059484589),
+         (5e-14, 10.0, 0.02, 7.57094886384687e+75)]
+    )
+    def test_isf(self, p, a, c, ref):
+        isf = stats.exponweib.isf(p, a, c)
+        assert_allclose(isf, ref, rtol=5e-14)
+
 
 class TestFatigueLife:
 
@@ -7159,6 +7220,7 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+
 @pytest.mark.parametrize("a, c, ref, tol",
                          [(1500000.0, 1, 8.529426144018633, 1e-15),
                           (1e+30, 1, 35.95771492811536, 1e-15),
@@ -7177,6 +7239,7 @@ def test_gengamma_extreme_entropy(a, c, ref, tol):
     #     h = (a * (mp.one - val) + val/c + mp.loggamma(a) - mp.log(abs(c)))
     #     return float(h)
     assert_allclose(stats.gengamma.entropy(a, c), ref, rtol=tol)
+
 
 def test_gengamma_endpoint_with_neg_c():
     p = stats.gengamma.pdf(0, 1, -1)
