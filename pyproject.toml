@@ -109,6 +109,8 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "jupytext",
+    "myst-nb",
     "pooch",
 ]
 dev = [

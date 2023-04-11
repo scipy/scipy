@@ -57,8 +57,10 @@ axis_nan_policy_cases = [
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
     (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
+    (stats.ttest_ind, tuple(), dict(), 2, 7, False, unpack_ttest_result),
     (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
     (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
+    (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 

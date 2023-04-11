@@ -4804,7 +4804,7 @@ class Test_ttest_ind_permutations():
             stats.ttest_ind(self.a2, self.b2, permutations=1.5)
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
-                            random_state='hello')
+                            random_state='hello', axis=1)
 
     def test_ttest_ind_permutation_check_p_values(self):
         # p-values should never be exactly zero
@@ -5012,15 +5012,81 @@ class Test_ttest_trim:
         match = "Permutations are currently not supported with trimming."
         with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
-        match = ("not supported by permutation tests or trimmed tests.")
-        with assert_raises(ValueError, match=match):
-            stats.ttest_ind([1, 2], [2, np.nan, 3], trim=.2, nan_policy='omit')
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
     def test_trim_bounds_error(self, trim):
         match = "Trimming percentage should be 0 <= `trim` < .5."
         with assert_raises(ValueError, match=match):
             stats.ttest_ind([1, 2], [2, 1], trim=trim)
+
+
+class Test_ttest_CI:
+    # indices in order [alternative={two-sided, less, greater},
+    #                   equal_var={False, True}, trim={0, 0.2}]
+    # reference values in order `statistic, df, pvalue, low, high`
+    # equal_var=False reference values computed with R PairedData yuen.t.test:
+    #
+    # library(PairedData)
+    # options(digits=16)
+    # a < - c(0.88236329, 0.97318744, 0.4549262, 0.97893335, 0.0606677,
+    #         0.44013366, 0.55806018, 0.40151434, 0.14453315, 0.25860601,
+    #         0.20202162)
+    # b < - c(0.93455277, 0.42680603, 0.49751939, 0.14152846, 0.711435,
+    #         0.77669667, 0.20507578, 0.78702772, 0.94691855, 0.32464958,
+    #         0.3873582, 0.35187468, 0.21731811)
+    # yuen.t.test(a, b, tr=0, conf.level = 0.9, alternative = 'l')
+    #
+    # equal_var=True reference values computed with R multicon yuenContrast:
+    #
+    # library(multicon)
+    # options(digits=16)
+    # a < - c(0.88236329, 0.97318744, 0.4549262, 0.97893335, 0.0606677,
+    #         0.44013366, 0.55806018, 0.40151434, 0.14453315, 0.25860601,
+    #         0.20202162)
+    # b < - c(0.93455277, 0.42680603, 0.49751939, 0.14152846, 0.711435,
+    #         0.77669667, 0.20507578, 0.78702772, 0.94691855, 0.32464958,
+    #         0.3873582, 0.35187468, 0.21731811)
+    # dv = c(a, b)
+    # iv = c(rep('a', length(a)), rep('b', length(b)))
+    # yuenContrast(dv~iv, EQVAR = FALSE, alternative = 'unequal', tr = 0.2)
+    r = np.empty(shape=(3, 2, 2, 5))
+    r[0, 0, 0] = [-0.2314607, 19.894435, 0.8193209, -0.247220294, 0.188729943]
+    r[1, 0, 0] = [-0.2314607, 19.894435, 0.40966045, -np.inf, 0.1382426469]
+    r[2, 0, 0] = [-0.2314607, 19.894435, 0.5903395, -0.1967329982, np.inf]
+    r[0, 0, 1] = [-0.2452886, 11.427896, 0.8105823, -0.34057446, 0.25847383]
+    r[1, 0, 1] = [-0.2452886, 11.427896, 0.40529115, -np.inf, 0.1865829074]
+    r[2, 0, 1] = [-0.2452886, 11.427896, 0.5947089, -0.268683541, np.inf]
+    # confidence interval not available for equal_var=True
+    r[0, 1, 0] = [-0.2345625322555006, 22, 0.8167175905643815, None, None]
+    r[1, 1, 0] = [-0.2345625322555006, 22, 0.4083587952821908, None, None]
+    r[2, 1, 0] = [-0.2345625322555006, 22, 0.5916412047178092, None, None]
+    r[0, 1, 1] = [-0.2505369406507428, 14, 0.8058115135702835, None, None]
+    r[1, 1, 1] = [-0.2505369406507428, 14, 0.4029057567851417, None, None]
+    r[2, 1, 1] = [-0.2505369406507428, 14, 0.5970942432148583, None, None]
+    @pytest.mark.parametrize('alternative', ['two-sided', 'less', 'greater'])
+    @pytest.mark.parametrize('equal_var', [False, True])
+    @pytest.mark.parametrize('trim', [0, 0.2])
+    def test_confidence_interval(self, alternative, equal_var, trim):
+        if equal_var and trim:
+            pytest.xfail('Discrepancy in `main`; needs further investigation.')
+
+        rng = np.random.default_rng(3810954496107292580)
+        x = rng.random(11)
+        y = rng.random(13)
+
+        res = stats.ttest_ind(x, y, alternative=alternative,
+                              equal_var=equal_var, trim=trim)
+
+        alternatives = {'two-sided': 0, 'less': 1, 'greater': 2}
+        ref = self.r[alternatives[alternative], int(equal_var), int(np.ceil(trim))]
+        statistic, df, pvalue, low, high = ref
+        assert_allclose(res.statistic, statistic)
+        assert_allclose(res.df, df)
+        assert_allclose(res.pvalue, pvalue)
+        if not equal_var:  # CI not available when `equal_var is True`
+            ci = res.confidence_interval(0.9)
+            assert_allclose(ci.low, low)
+            assert_allclose(ci.high, high)
 
 
 def test__broadcast_concatenate():
@@ -5173,10 +5239,10 @@ def test_ttest_ind_nan_2nd_arg():
 
 
 def test_ttest_ind_empty_1d_returns_nan():
-    # Two empty inputs should return a Ttest_indResult containing nan
+    # Two empty inputs should return a TtestResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -5189,7 +5255,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -5203,7 +5269,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -5217,7 +5283,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats._stats_py.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 

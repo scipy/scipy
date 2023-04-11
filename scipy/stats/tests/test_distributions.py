@@ -4220,6 +4220,13 @@ class TestBetaPrime:
         assert y < 1.0
         assert_allclose(y, expected, rtol=2e-5)
 
+    def test_fit_stats_gh18274(self):
+        # gh-18274 reported spurious warning emitted when fitting `betaprime`
+        # to data. Some of these were emitted by stats, too. Check that the
+        # warnings are no longer emitted.
+        stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
+        stats.betaprime(a=1, b=1).stats('mvsk')
+
 
 class TestGamma:
     def test_pdf(self):
