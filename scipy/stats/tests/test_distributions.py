@@ -6349,6 +6349,9 @@ class TestWeibull:
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
 
+    @pytest.mark.parametrize('x, c, ref', [()])
+    def test_sf_isf(self, x, c, ref)
+
 
 class TestDweibull:
     def test_entropy(self):
