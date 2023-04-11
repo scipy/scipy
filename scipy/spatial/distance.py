@@ -886,7 +886,8 @@ def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
 
-    Computes the standardized Euclidean distance. The standardized Euclidean distance between two n-vectors u and v is
+    Computes the standardized Euclidean distance. The standardized
+    Euclidean distance between two n-vectors `u` and `v` is
 
     $\\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}$
 
