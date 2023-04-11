@@ -349,7 +349,7 @@ class GradientEstimationWarning(Warning):
     pass
 
 @cython.cdivision(True)
-cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
+cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
                                        int maxiter, double tol,
                                        double *y) nogil:
     """
