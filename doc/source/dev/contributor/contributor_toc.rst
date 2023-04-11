@@ -27,8 +27,6 @@ Development environment
 - :ref:`system-level` shows how to install system-level dependencies for Linux, Mac or Windows (needed if you're not using conda).
 - :ref:`conda-guide` presents a step-by-step process for setting up a convenient SciPy development environment with conda *(recommended)*.
 - :ref:`ubuntu-guide` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu Linux.
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
-- :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
 
 .. _editing-scipy:
 
@@ -94,8 +92,6 @@ Compiled code
 
     conda_guide
     ubuntu_guide
-    quickstart_docker
-    quickstart_gitpod
     development_workflow
     building
     meson

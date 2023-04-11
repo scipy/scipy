@@ -936,22 +936,27 @@ class betaprime_gen(rv_continuous):
 
     def _munp(self, n, a, b):
         if n == 1.0:
-            return np.where(b > 1,
-                            a/(b-1.0),
-                            np.inf)
+            return _lazywhere(
+                b > 1, (a, b),
+                lambda a, b: a/(b-1.0),
+                fillvalue=np.inf)
         elif n == 2.0:
-            return np.where(b > 2,
-                            a*(a+1.0)/((b-2.0)*(b-1.0)),
-                            np.inf)
+            return _lazywhere(
+                b > 2, (a, b),
+                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
+                fillvalue=np.inf)
         elif n == 3.0:
-            return np.where(b > 3,
-                            a*(a+1.0)*(a+2.0)/((b-3.0)*(b-2.0)*(b-1.0)),
-                            np.inf)
+            return _lazywhere(
+                b > 3, (a, b),
+                lambda a, b: (a*(a+1.0)*(a+2.0)
+                              / ((b-3.0)*(b-2.0)*(b-1.0))),
+                fillvalue=np.inf)
         elif n == 4.0:
-            return np.where(b > 4,
-                            (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                             ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                            np.inf)
+            return _lazywhere(
+                b > 4, (a, b),
+                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
+                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
+                fillvalue=np.inf)
         else:
             raise NotImplementedError
 
