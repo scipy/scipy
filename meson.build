@@ -54,14 +54,11 @@ if not cy.version().version_compare('>=0.29.33')
   error('SciPy requires Cython >= 0.29.33')
 endif
 
-# TODO: the below -Wno flags are all needed to silence warnings in
-# f2py-generated code. This should be fixed in f2py itself.
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
   '-Wno-unused-function',
   '-Wno-conversion',
   '-Wno-misleading-indentation',
-  '-Wno-incompatible-pointer-types',
 )
 add_project_arguments(_global_c_args, language : 'c')
 
