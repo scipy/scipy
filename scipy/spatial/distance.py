@@ -889,7 +889,9 @@ def seuclidean(u, v, V):
     Computes the standardized Euclidean distance. The standardized
     Euclidean distance between two n-vectors `u` and `v` is
 
-    $\\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}$
+    .. math::
+
+       \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
 
     V is the variance vector; V[i] is the variance computed over all the i-th components of the points. If not passed, it is automatically computed.
     
