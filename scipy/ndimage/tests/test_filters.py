@@ -3,7 +3,6 @@ import functools
 import itertools
 import math
 import numpy
-import numpy as np
 
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_almost_equal,
@@ -704,6 +703,7 @@ class TestNdimageFilters:
         + tuple(itertools.combinations(range(-3, 3), 2))
         + ((0, 1, 2),))
     def test_filter_axes(self, filter_func, size0, size, axes):
+        # Note: `size` is called `sigma` in `gaussian_filter`
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
 
         axes = tuple(ax % array.ndim for ax in axes)
@@ -732,8 +732,8 @@ class TestNdimageFilters:
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes):
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
 
-        kwargs = {key: np.array(val) for key, val in kwargs.items()}
-        axes = np.array(axes)
+        kwargs = {key: numpy.array(val) for key, val in kwargs.items()}
+        axes = numpy.array(axes)
         n_axes = axes.size
 
         # form kwargs that specify only the axes in `axes`
@@ -747,7 +747,7 @@ class TestNdimageFilters:
         output = filter_func(array, [size]*n_axes, axes=axes, **reduced_kwargs)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
-        size_3d = np.full(array.ndim, fill_value=size0)
+        size_3d = numpy.full(array.ndim, fill_value=size0)
         size_3d[axes] = size
         expected = filter_func(array, size_3d, **kwargs)
         assert_allclose(output, expected)
@@ -770,7 +770,7 @@ class TestNdimageFilters:
             error_class = ValueError
             match = "out of range"
         with pytest.raises(error_class, match=match):
-            ndimage.gaussian_filter(array, size, axes=axes)
+            filter_func(array, size, axes=axes)
 
     @staticmethod
     def _cases_axes_tuple_length_mismatch():
