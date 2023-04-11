@@ -893,7 +893,8 @@ def seuclidean(u, v, V):
 
        \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
 
-    V is the variance vector; V[i] is the variance computed over all the i-th components of the points. If not passed, it is automatically computed.
+    ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
+    components of the points. If not passed, it is automatically computed.
     
     Parameters
     ----------
