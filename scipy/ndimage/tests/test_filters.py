@@ -695,9 +695,9 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize(('filter_func', 'size0', 'size'),
                              [(ndimage.gaussian_filter, 0, 1.0),
-                              (ndimage.uniform_filter, 1, 3.0),
-                              (ndimage.minimum_filter, 1, 3.0),
-                              (ndimage.maximum_filter, 1, 3.0)])
+                              (ndimage.uniform_filter, 1, 3),
+                              (ndimage.minimum_filter, 1, 3),
+                              (ndimage.maximum_filter, 1, 3)])
     @pytest.mark.parametrize(
         'axes',
         tuple(itertools.combinations(range(-3, 3), 1))
@@ -724,7 +724,7 @@ class TestNdimageFilters:
     kwargs_other = dict(origin=(-1, 0, 1),
                         mode=['reflect', 'nearest', 'constant'])
     @pytest.mark.parametrize("filter_func, size0, size, kwargs",
-                             [(ndimage.gaussian_filter, 0, 2, kwargs_gauss),
+                             [(ndimage.gaussian_filter, 0, 1.0, kwargs_gauss),
                               (ndimage.uniform_filter, 1, 3, kwargs_other),
                               (ndimage.maximum_filter, 1, 3, kwargs_other),
                               (ndimage.minimum_filter, 1, 3, kwargs_other)])
@@ -778,13 +778,13 @@ class TestNdimageFilters:
         # keyword-value pairs for which the value will become with mismatched
         # (invalid) size
         filter_func = ndimage.gaussian_filter
-        kwargs = {'radius': 3, 'mode': 'constant', 'sigma': 1.0, 'order': 0}
+        kwargs = dict(radius=3, mode='constant', sigma=1.0, order=0)
         for key, val in kwargs.items():
             yield filter_func, kwargs, key, val
 
         filter_funcs = [ndimage.uniform_filter, ndimage.minimum_filter,
                         ndimage.maximum_filter]
-        kwargs = {'size': 3, 'mode': 'constant', 'origin': 0}
+        kwargs = dict(size=3, mode='constant', origin=0)
         for filter_func in filter_funcs:
             for key, val in kwargs.items():
                 yield filter_func, kwargs, key, val
