@@ -895,7 +895,7 @@ def seuclidean(u, v, V):
 
     ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
     components of the points. If not passed, it is automatically computed.
-    
+
     Parameters
     ----------
     u : (N,) array_like
