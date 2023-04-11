@@ -6205,7 +6205,9 @@ class vonmises_fisher_gen(multi_rv_generic):
     on the hypersphere: :math:`\mathbf{\mu}\in S^{d-1}`. :math:`\kappa` is a
     concentration parameter, which means that it must be positive
     (:math:`\kappa>0`) and that the distribution becomes more narrow with
-    increasing :math:`\kappa`.
+    increasing :math:`\kappa`. In that sense, the reciprocal value
+    :math:`1/\kappa` resembles the variance parameter of the normal
+    distribution.
 
     The von Mises-Fisher distribution often serves as an analogue of the
     normal distribution on the sphere. Intuitively, for unit vectors, a
