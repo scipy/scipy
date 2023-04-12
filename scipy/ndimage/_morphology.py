@@ -1964,7 +1964,6 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     ...                  label_mode="1", share_all=True,
     ...                  cbar_location="right", cbar_mode="each",
     ...                  cbar_size="7%", cbar_pad="2%")
-    >>> fig.suptitle('Distance transformations', fontsize=14)
     >>> for ax in grid:
     ...     ax.axis('off')  # remove axes from images
 
