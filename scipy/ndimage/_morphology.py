@@ -1954,11 +1954,16 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     >>> image = add_circle(37, 30, 10, image)
     >>> image = add_circle(70, 45, 20, image)
     >>> image = add_circle(45, 80, 10, image)
-    >>> fig, ax = plt.subplots(111)
-    >>> ax.imshow(image)
+    >>> fig, ax = plt.subplots()
+    >>> ax.imshow(image, cmap='gray')
     >>> ax.axis('off')
-    >>> ax.set_title("Binary test image")
-    
+    >>> ax.set_title("Binary test image: foreground in white")
+
+    The distance transform calculates the distance between foreground pixels
+    and the image background according to a distance metric. Available
+    metrics in `distance_transform_bf` are: ``euclidean`` (default),
+    ``taxicab`` and ``chessboard``.
+
     >>> fig = plt.figure(figsize=(8, 8))  # set up the figure structure
     >>> grid = ImageGrid(fig, 111, nrows_ncols=(2, 2), axes_pad=(0.4, 0.3),
     ...                  label_mode="1", share_all=True,
@@ -1989,7 +1994,7 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     >>> cbar_taxicab.set_ticks(colorbar_ticks)
     >>> grid[2].set_title("Taxicab distance")
     >>> # chessboard metric in lower right
-    >>> distance_transform_cb = distance_transform_bf(image, 
+    >>> distance_transform_cb = distance_transform_bf(image,
     ...                                               metric='chessboard')
     >>> chessboard_transformation = grid[3].imshow(distance_transform_cb,
     ...                                            cmap='gray')
