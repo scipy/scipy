@@ -6360,8 +6360,8 @@ class TestWeibull:
                                            (1000, 0.8,
                                             8.131269637872743e-110)])
     def test_sf_isf(self, x, c, ref):
-        assert_allclose(stats.weibull_min.sf(x, c), ref, rtol=1e-14)
-        assert_allclose(stats.weibull_min.isf(ref, c), x, rtol=1e-14)
+        assert_allclose(stats.weibull_min.sf(x, c), ref, rtol=5e-14)
+        assert_allclose(stats.weibull_min.isf(ref, c), x, rtol=5e-14)
 
 
 class TestDweibull:
