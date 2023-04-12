@@ -236,11 +236,14 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -290,11 +293,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, m, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 
@@ -347,7 +349,7 @@ class GradientEstimationWarning(Warning):
     pass
 
 @cython.cdivision(True)
-cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
+cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
                                        int maxiter, double tol,
                                        double *y) nogil:
     """
@@ -835,11 +837,14 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -910,14 +915,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 

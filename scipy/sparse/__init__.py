@@ -5,6 +5,12 @@ Sparse matrices (:mod:`scipy.sparse`)
 
 .. currentmodule:: scipy.sparse
 
+.. toctree::
+   :hidden:
+
+   sparse.csgraph
+   sparse.linalg
+
 SciPy 2-D sparse array package for numeric data.
 
 .. note::

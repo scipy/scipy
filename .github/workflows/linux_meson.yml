@@ -1,6 +1,6 @@
 name: Linux Meson tests
 
-# This is a single job: Python 3.9, building with Meson, using -Werror to
+# This is a single job: Python 3.10, building with Meson, using -Werror to
 # ensure we remain at zero build warnings. Other Meson CI jobs are running
 # on https://github.com/rgommers/scipy/tree/meson
 
@@ -13,6 +13,9 @@ on:
     branches:
       - main
       - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
 
 env:
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
@@ -30,12 +33,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.9', '3.11-dev']
+        python-version: ['3.10', '3.11']  # change to 3.12-dev when beta starts
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.11-dev'
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -56,12 +59,12 @@ jobs:
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.11-dev'
+      if: matrix.python-version == '3.11'
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
@@ -73,9 +76,9 @@ jobs:
       shell: bash
       run: |
         mkdir -p "${CCACHE_DIR}"
-        echo "::set-output name=dir::$CCACHE_DIR"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
-        echo "::set-output name=timestamp::${NOW}"
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
       uses:  actions/cache@v3
@@ -88,7 +91,7 @@ jobs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # This evaluates to `Linux Tests-3.10-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
         # need to be updated to be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
@@ -109,11 +112,11 @@ jobs:
         popd
 
     - name: Mypy
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install -r mypy_requirements.txt
-        python -m pip install types-psutil pybind11 sphinx
+        python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
     - name: Test SciPy
@@ -154,4 +157,24 @@ jobs:
         python -c "import scipy"
         python -c "import scipy.linalg"
         python -m pip install pytest
+        python -c "from scipy import cluster; cluster.test()"
+
+    - name: Create venv inside source tree
+      # This is a regression test for gh-16312
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        # Install build dependencies. Use meson-python from its main branch,
+        # most convenient to test in this job because we're using pip without
+        # build isolation here.
+        python -m pip install numpy pybind11 pythran cython pytest ninja
+        python -m pip install git+https://github.com/mesonbuild/meson-python.git
+        # Non-isolated build, so we use dependencies installed inside the source tree
+        python -m pip install -U pip  # need pip >=23 for `--config-settings`
+        python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
+        
+        # Basic tests
+        cd ..
+        python -c "import scipy"
+        python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"

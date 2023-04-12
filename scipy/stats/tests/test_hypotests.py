@@ -1,6 +1,7 @@
 from itertools import product
 
 import numpy as np
+import random
 import functools
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
@@ -169,7 +170,7 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
-    def setup(self):
+    def setup_method(self):
         _mwu_state._recursive = True
 
     # All magic numbers are from R wilcox.test unless otherwise specied
@@ -469,19 +470,19 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, method=method, axis=axis)
 
         shape = (6, 3, 8)  # appropriate shape of outputs, given inputs
-        assert(res.pvalue.shape == shape)
-        assert(res.statistic.shape == shape)
+        assert res.pvalue.shape == shape
+        assert res.statistic.shape == shape
 
         # move axis of test to end for simplicity
         x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
 
         x = x[None, ...]  # give x a zeroth dimension
-        assert(x.ndim == y.ndim)
+        assert x.ndim == y.ndim
 
         x = np.broadcast_to(x, shape + (m,))
         y = np.broadcast_to(y, shape + (n,))
-        assert(x.shape[:-1] == shape)
-        assert(y.shape[:-1] == shape)
+        assert x.shape[:-1] == shape
+        assert y.shape[:-1] == shape
 
         # loop over pairs of samples
         statistics = np.zeros(shape)
@@ -616,15 +617,15 @@ class TestMannWhitneyU:
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
 
-    def teardown(self):
+    def teardown_method(self):
         _mwu_state._recursive = None
 
 
 class TestMannWhitneyU_iterative(TestMannWhitneyU):
-    def setup(self):
+    def setup_method(self):
         _mwu_state._recursive = False
 
-    def teardown(self):
+    def teardown_method(self):
         _mwu_state._recursive = None
 
 
@@ -993,6 +994,30 @@ class TestSomersD(_TestPythranFunc):
         res = stats.somersd(x1, x2, alternative="greater")
         assert res.statistic == expected_statistic
         assert res.pvalue == (0 if positive_correlation else 1)
+
+    def test_somersd_large_inputs_gh18132(self):
+        # Test that large inputs where potential overflows could occur give
+        # the expected output. This is tested in the case of binary inputs.
+        # See gh-18126.
+
+        # generate lists of random classes 1-2 (binary)
+        classes = [1, 2]
+        n_samples = 10 ** 6
+        random.seed(6272161)
+        x = random.choices(classes, k=n_samples)
+        y = random.choices(classes, k=n_samples)
+
+        # get value to compare with: sklearn output
+        # from sklearn import metrics
+        # val_auc_sklearn = metrics.roc_auc_score(x, y)
+        # # convert to the Gini coefficient (Gini = (AUC*2)-1)
+        # val_sklearn = 2 * val_auc_sklearn - 1
+        val_sklearn = -0.001528138777036947
+
+        # calculate the Somers' D statistic, which should be equal to the
+        # result of val_sklearn until approximately machine precision
+        val_scipy = stats.somersd(x, y).statistic
+        assert_allclose(val_sklearn, val_scipy, atol=1e-15)
 
 
 class TestBarnardExact:

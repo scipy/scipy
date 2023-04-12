@@ -29,7 +29,9 @@ section for an example.)
 - Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
 - The Python environment needs the ``NumPy`` package to be installed.
 - Testing requires the ``pytest`` Python package.
-- Building the documentation requires the ``matplotlib``, Sphinx packages along with PyData theme.
+- Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
+
+.. _MyST-NB: https://myst-nb.readthedocs.io/
 
 The tooling used to build CPython has some implications for the tooling used
 in building SciPy.
@@ -81,6 +83,7 @@ The table shows the NumPy versions suitable for each major Python version.
  1.9.0/1            >=3.8, <3.12                >=1.18.5, <1.25.0
  1.9.2              >=3.8, <3.12                >=1.18.5, <1.26.0
  1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
+ 1.11               >=3.9, <3.12                >=1.21.6, <1.27.0
 =================  ========================    =======================
 
 In specific cases, such as a particular architecture, these requirements
@@ -123,8 +126,8 @@ Currently, SciPy wheels are being built as follows:
 ================  ========================  ===========================  ==============================
  Platform          Azure Base Image [5]_     Compilers                    Comment
 ================  ========================  ===========================  ==============================
-Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
-Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
+Linux (nightly)    ``ubuntu-20.04``          GCC 6.5                      See ``azure-pipelines.yml``
+Linux (release)    ``ubuntu-22.04``          GCC 8                        Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
 Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_
 ================  ========================  ===========================  ==============================
@@ -411,6 +414,7 @@ PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
 Sphinx-Design         Whatever recent versions work. >= 0.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
+MyST-NB               Whatever recent versions work. >= 0.17.1
 ====================  =================================================
 
 .. note::

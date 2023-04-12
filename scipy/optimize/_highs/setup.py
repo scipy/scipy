@@ -4,7 +4,6 @@ setup.py for HiGHS scipy interface
 Some CMake files are used to create source lists for compilation
 """
 
-import pathlib
 from datetime import datetime
 import os
 from os.path import join
@@ -31,7 +30,7 @@ def basiclu_pre_build_hook(build_clib, build_info):
 def _get_sources(CMakeLists: str, start_token: str, end_token: str):
     # Read in sources from CMakeLists.txt
     CMakeLists = str(_highs_dir() / CMakeLists)
-    with open(CMakeLists, 'r', encoding='utf-8') as f:
+    with open(CMakeLists, encoding='utf-8') as f:
         s = f.read()
 
         # Find block where sources are listed
@@ -47,7 +46,7 @@ def _get_sources(CMakeLists: str, start_token: str, end_token: str):
 def _get_version(CMakeLists: str, start_token: str, end_token: str = ')'):
     # Grab some more info about HiGHS from root CMakeLists
     CMakeLists = str(_highs_dir() / CMakeLists)
-    with open(CMakeLists, 'r', encoding='utf-8') as f:
+    with open(CMakeLists, encoding='utf-8') as f:
         s = f.read()
         start_idx = s.find(start_token) + len(start_token) + 1
         end_idx = s[start_idx:].find(end_token) + len(s[:start_idx])
@@ -80,6 +79,7 @@ def configuration(parent_package='', top_path=None):
         ('HIGHS_VERSION_MINOR', HIGHS_VERSION_MINOR),
         ('HIGHS_VERSION_PATCH', HIGHS_VERSION_PATCH),
         ('HIGHS_DIR', '"' + HIGHS_DIR + '"'),
+        ('NDEBUG', None),
         # ('NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION', None),
     ]
     UNDEF_MACROS = [

@@ -54,6 +54,11 @@ def general_cosine(M, a, sym=True):
         design.
         When False, generates a periodic window, for use in spectral analysis.
 
+    Returns
+    -------
+    w : ndarray
+        The array of window values.
+
     References
     ----------
     .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
@@ -84,6 +89,7 @@ def general_cosine(M, a, sym=True):
     Figure 42 by plotting the window and its frequency response, and confirm
     the sidelobe level in red:
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_cosine
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -142,6 +148,7 @@ def boxcar(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -199,6 +206,7 @@ def triang(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -264,6 +272,7 @@ def parzen(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -323,6 +332,7 @@ def bohman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -414,6 +424,7 @@ def blackman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -475,6 +486,7 @@ def nuttall(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -522,6 +534,7 @@ def blackmanharris(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -583,6 +596,7 @@ def flattop(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -673,6 +687,7 @@ def bartlett(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -762,6 +777,7 @@ def hann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -824,6 +840,7 @@ def tukey(M, alpha=0.5, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -894,6 +911,7 @@ def barthann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -950,6 +968,10 @@ def general_hamming(M, alpha, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    hamming, hann
+
     Notes
     -----
     The generalized Hamming window is defined as
@@ -961,9 +983,17 @@ def general_hamming(M, alpha, sym=True):
     generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
     0.5, respectively [2]_.
 
-    See Also
-    --------
-    hamming, hann
+    References
+    ----------
+    .. [1] DSPRelated, "Generalized Hamming Window Family",
+           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function
+    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
+           Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
+    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
 
     Examples
     --------
@@ -974,6 +1004,7 @@ def general_hamming(M, alpha, sym=True):
     :math:`\alpha` values include 0.75, 0.7 and 0.52 [4]_. As an example, we
     plot these different windows.
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_hamming
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -998,17 +1029,6 @@ def general_hamming(M, alpha, sym=True):
     >>> freq_plot.legend(loc="upper right")
     >>> spatial_plot.legend(loc="upper right")
 
-    References
-    ----------
-    .. [1] DSPRelated, "Generalized Hamming Window Family",
-           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
-    .. [2] Wikipedia, "Window function",
-           https://en.wikipedia.org/wiki/Window_function
-    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
-           Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
-    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
     """
     return general_cosine(M, [alpha, 1. - alpha], sym)
 
@@ -1066,6 +1086,7 @@ def hamming(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1175,6 +1196,7 @@ def kaiser(M, beta, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1256,6 +1278,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Plot the Kaiser-Bessel derived window based on the wikipedia
     reference [2]_:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
@@ -1325,6 +1348,7 @@ def gaussian(M, std, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1395,6 +1419,7 @@ def general_gaussian(M, p, sig, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1492,6 +1517,7 @@ def chebwin(M, at, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1582,6 +1608,7 @@ def cosine(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1655,6 +1682,7 @@ def exponential(M, center=None, tau=1., sym=True):
     --------
     Plot the symmetric window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1759,6 +1787,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -2126,6 +2155,7 @@ def lanczos(M, *, sym=True):
     --------
     Plot the window
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import lanczos
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt

@@ -1,5 +1,3 @@
-:orphan:
-
 .. _ubuntu-guide:
 
 ======================================
@@ -38,200 +36,197 @@ up a development environment with Docker may be more reliable.*
 Building SciPy
 ==============
 
-With pip
---------
+.. dropdown:: With pip
 
-Start with installing ``pip``::
+    Start with installing ``pip``::
 
-    sudo apt install -y python3-pip
+      sudo apt install -y python3-pip
 
-All further work should proceed in a virtual environment. Popular options
-include the standard library ``venv`` module or a separate ``virtualenv``
-package. There are muliple third-party tutorials on how to set up a virtual
-environment, so we cover only briefly these two options here.
+    All further work should proceed in a virtual environment. Popular options
+    include the standard library ``venv`` module or a separate ``virtualenv``
+    package. There are muliple third-party tutorials on how to set up a virtual
+    environment, so we cover only briefly these two options here.
 
-.. note::
+    .. note::
 
-    We repeat: all work should happen in a virtual environment. Never use ``sudo pip``.
+       We repeat: all work should happen in a virtual environment. Never use ``sudo pip``.
 
-Using ``virtualenv``
-~~~~~~~~~~~~~~~~~~~~
+    .. tab-set::
 
-Install the ``virtualenvwrapper`` package::
+      .. tab-item:: Using ``virtualenv``
 
-    python3 -m pip install virtualenvwrapper --user
+          Install the ``virtualenvwrapper`` package::
 
-Edit the ``.bashrc`` file to add some environment variables which are used
-internally by the ``virtualenvwrapper``::
+            python3 -m pip install virtualenvwrapper --user
 
-    export WORKON_HOME=$HOME/virtualenvs
-    export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
-    . $HOME/.local/bin/virtualenvwrapper.sh
+          Edit the ``.bashrc`` file to add some environment variables which are used
+          internally by the ``virtualenvwrapper``::
 
-Here we store the virtualenvs in a ``virtualenvs`` folder in the home directory.
-(you might need to create the folder manually).
+            export WORKON_HOME=$HOME/virtualenvs
+            export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+            . $HOME/.local/bin/virtualenvwrapper.sh
 
-Now open a new terminal window for the changes to the ``.bashrc`` to take effect.
+          Here we store the virtualenvs in a ``virtualenvs`` folder in the home directory.
+          (you might need to create the folder manually).
 
-Create a new virtual environment and activate it::
+          Now open a new terminal window for the changes to the ``.bashrc`` to take effect.
 
-    mkvirtualenv scipy-dev
+          Create a new virtual environment and activate it::
 
-Your command prompt now lists the name of your new environment, like so
-``(scipy-dev)$``. This means that the environment is active. If it is not,
-activate it manually with::
+            mkvirtualenv scipy-dev
 
-    workon scipy-dev
+          Your command prompt now lists the name of your new environment, like so
+          ``(scipy-dev)$``. This means that the environment is active. If it is not,
+          activate it manually with::
 
-Note ``mkvirtualenv`` and ``workon`` commands come from the ``virtualwrapper``
-package.
+            workon scipy-dev
 
-Using the standard-library ``venv`` package
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          Note ``mkvirtualenv`` and ``workon`` commands come from the ``virtualwrapper``
+          package.
 
-Install the ``venv`` package::
+      .. tab-item:: Using the standard-library ``venv`` package
 
-    sudo apt install -y python3-venv
+          Install the ``venv`` package::
 
-Change the directory to your home folder and create a directory ``.venvs`` there.
-Create the virtualenvironment::
+            sudo apt install -y python3-venv
 
-    python3 -m venv scipy-dev
+          Change the directory to your home folder and create a directory ``.venvs`` there.
+          Create the virtual environment within ``$HOME/.venvs``::
 
-To activate the environment, use ::
+            python3 -m venv $HOME/.venvs/scipy-dev
 
-    source $HOME/.venvs/scipy-dev/bin/activate
+          To activate the environment, use ::
 
-Your command prompt now lists the name of your new environment, like so
-``(scipy-dev)$``.
+            source $HOME/.venvs/scipy-dev/bin/activate
 
-(For the official docs for the ``venv`` package see
-https://docs.python.org/3/tutorial/venv.html).
+          Your command prompt now lists the name of your new environment, like so
+          ``(scipy-dev)$``.
 
-Building SciPy
-~~~~~~~~~~~~~~
+          (For the official docs for the ``venv`` package see
+          https://docs.python.org/3/tutorial/venv.html).
 
-Inside the ``scipy-dev`` environment, install the python-level dependencies::
+    **Building SciPy**
 
-    python -m pip install numpy pytest cython pythran pybind11 meson ninja
+    Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-Note that when the virtual environment is active, the system-wide names ``pip3``
-and ``python3`` are aliased to ``pip`` and ``python``, respectively.
+      python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
-Now that you have all external dependencies, navigate to the directory where
-you cloned the source code into. Download the submodules::
+    Note that when the virtual environment is active, the system-wide names ``pip3``
+    and ``python3`` are aliased to ``pip`` and ``python``, respectively.
 
-    git submodule update --init
+    Now that you have all external dependencies, navigate to the directory where
+    you cloned the source code into. Download the submodules::
 
-Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
-much faster)::
+      git submodule update --init
 
-    python dev.py
+    Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
+    much faster)::
 
-With conda
-----------
+      python dev.py
 
-#. Download, install, and test the latest release of the
-   `Anaconda Distribution of Python`_. In addition to the latest version of
-   Python 3, the Anaconda Distribution includes dozens of the most popular
-   Python packages for scientific computing, the ``conda`` package manager, and
-   tools for managing virtual environments.
+.. dropdown:: With conda
 
-   If you're installing using the terminal, be sure to follow the "Next Steps"
-   listed after the installer finishes. You might also need to restart your
-   terminal window or enter ``source ~/.bashrc`` for all the changes to take
-   effect.
+    #. Download, install, and test the latest release of the
+       `Anaconda Distribution of Python`_. In addition to the latest version of
+       Python 3, the Anaconda Distribution includes dozens of the most popular
+       Python packages for scientific computing, the ``conda`` package manager, and
+       tools for managing virtual environments.
 
-#. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list
-   of all the Python packages that came with the Anaconda Distribution of
-   Python. Note the latest released version of SciPy is among them; this is not
-   the development version you are going to build and will be able to modify.
+       If you're installing using the terminal, be sure to follow the "Next Steps"
+       listed after the installer finishes. You might also need to restart your
+       terminal window or enter ``source ~/.bashrc`` for all the changes to take
+       effect.
 
-   Ideally, we'd like to have both versions, and we'd like to be able to switch
-   between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_
-   can do just that. With a few keystrokes in the terminal or even the click of
-   an icon, we can enable or disable our development version. Let's set that up.
+    #. (Optional) In a terminal window, enter ``conda list``. |br| This shows a list
+       of all the Python packages that came with the Anaconda Distribution of
+       Python. Note the latest released version of SciPy is among them; this is not
+       the development version you are going to build and will be able to modify.
 
-   .. note::
+       Ideally, we'd like to have both versions, and we'd like to be able to switch
+       between the two as needed. `Virtual environments <https://medium.freecodecamp.org/why-you-need-python-environments-and-how-to-manage-them-with-conda-85f155f4353c>`_
+       can do just that. With a few keystrokes in the terminal or even the click of
+       an icon, we can enable or disable our development version. Let's set that up.
 
-      If ``conda`` is not a recognized command, try restarting your terminal. If
-	  it is still not recognized, please see "Should I add Anaconda to the macOS
-	  or Linux PATH?" in the `Anaconda FAQ`_.
+       .. note::
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the
-   source we want for our packages. Then enter ``conda create --name scipy-dev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-design matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipy-dev`` (or another name that you prefer) with several packages.
+          If ``conda`` is not a recognized command, try restarting your terminal. If
+          it is still not recognized, please see "Should I add Anaconda to the macOS
+          or Linux PATH?" in the `Anaconda FAQ`_.
 
-   * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
+    #. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the
+       source we want for our packages. Then enter ``conda create --name scipy-dev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-design matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipy-dev`` (or another name that you prefer) with several packages.
 
-   * ``gfortran gxx`` are compilers used to build SciPy's Fortran, C, and C++ source code.
+       * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
-   * ``pytest`` is needed for running the test suite.
+       * ``gfortran gxx`` are compilers used to build SciPy's Fortran, C, and C++ source code.
 
-   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-design`` and ``matplotlib`` are required to render the SciPy documentation.
+       * ``pytest`` is needed for running the test suite.
 
-   * ``mypy`` is a static type checker for Python. Consider using it.
+       * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-design`` and ``matplotlib`` are required to render the SciPy documentation.
 
-   * ``git`` is a version control system used to download and manage the SciPy source code.
+       * ``mypy`` is a static type checker for Python. Consider using it.
 
-   Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
+       * ``git`` is a version control system used to download and manage the SciPy source code.
 
-   .. note::
+       Note that we're installing SciPy's build dependencies and some other software, but not SciPy itself.
 
-      You could ``conda create`` an empty virtual environment first, then
-      ``conda install`` the packages, but creating the virtual environment
-      with all the packages you need is preferable to installing packages
-      individually because it makes it easier for ``conda`` to solve
-      the package dependencies optimally.
+       .. note::
 
-#. You're still in the base environment. Activate your new virtual environment
-   by entering ``conda activate scipy-dev``. |br| If you're working with an old
-   version of ``conda``, you might need to type ``source activate scipy-dev``
-   instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__).
-   Note that you'll need to have this virtual environment active whenever you
-   want to work with the development version of SciPy.
+          You could ``conda create`` an empty virtual environment first, then
+          ``conda install`` the packages, but creating the virtual environment
+          with all the packages you need is preferable to installing packages
+          individually because it makes it easier for ``conda`` to solve
+          the package dependencies optimally.
 
-#. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
+    #. You're still in the base environment. Activate your new virtual environment
+       by entering ``conda activate scipy-dev``. |br| If you're working with an old
+       version of ``conda``, you might need to type ``source activate scipy-dev``
+       instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__).
+       Note that you'll need to have this virtual environment active whenever you
+       want to work with the development version of SciPy.
 
-#. Browse to your fork. Your fork will have a URL like `https://github.com/mdhaber/scipy <https://github.com/mdhaber/scipy>`_, except with your GitHub username in place of "mdhaber".
+    #. Browse to the `SciPy repository on GitHub <https://github.com/scipy/scipy>`_ and `create your own fork <https://help.github.com/en/articles/fork-a-repo>`_. You'll need to create a GitHub account if you don't already have one.
 
-#. Click the big, green "Clone or download" button, and copy the ".git" URL to the clipboard. The URL will be the same as your fork's URL, except it will end in ".git".
+    #. Browse to your fork. Your fork will have a URL like `https://github.com/mdhaber/scipy <https://github.com/mdhaber/scipy>`_, except with your GitHub username in place of "mdhaber".
 
-#. Create a folder for the SciPy source code in a convenient place on your computer. Navigate to it in the terminal.
+    #. Click the big, green "Clone or download" button, and copy the ".git" URL to the clipboard. The URL will be the same as your fork's URL, except it will end in ".git".
 
-#. Enter the command ``git clone`` followed by your fork's .git URL. Note that this creates in the terminal's working directory a ``scipy`` folder containing the SciPy source code.
+    #. Create a folder for the SciPy source code in a convenient place on your computer. Navigate to it in the terminal.
 
-#. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
+    #. Enter the command ``git clone`` followed by your fork's .git URL. Note that this creates in the terminal's working directory a ``scipy`` folder containing the SciPy source code.
 
-#. Initialize git submodules: ``git submodule update --init``.
+    #. In the terminal, navigate into the ``scipy`` root directory (e.g. ``cd scipy``).
 
-#. Build SciPy: enter ``python3 dev.py build``
+    #. Initialize git submodules: ``git submodule update --init``.
 
-    This will compile the C, C++, and Fortran code that comes with SciPy and
-    install it in the directory you already have rather than the default
-    location for Python packages. We installed ``python3`` with Anaconda.
-    ``dev.py`` is a script in the root directory of SciPy which can be used to
-    execute several development tasks (see :ref:`the-dev-py-interface` for
-    details).
+    #. Build SciPy: enter ``python3 dev.py build``
 
-#. Test the build: enter ``python3 dev.py test -v``.  
+       This will compile the C, C++, and Fortran code that comes with SciPy and
+       install it in the directory you already have rather than the default
+       location for Python packages. We installed ``python3`` with Anaconda.
+       ``dev.py`` is a script in the root directory of SciPy which can be used to
+       execute several development tasks (see :ref:`the-dev-py-interface` for
+       details).
 
-    This command runs a suite of tests that make sure SciPy is working as it
-    should, and ``-v`` activates the ``--verbose`` option to show all the test
-    output. If the tests are successful, you now have a working development
-    build of SciPy!
-    You could stop here, but you would only be able to use this development
-    build when the Python working directory is the SciPy root directory.
+    #. Test the build: enter ``python3 dev.py test -v``.  
 
-#. Enter ``conda develop .``, where ``.`` refers to the present directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
+       This command runs a suite of tests that make sure SciPy is working as it
+       should, and ``-v`` activates the ``--verbose`` option to show all the test
+       output. If the tests are successful, you now have a working development
+       build of SciPy!
+       You could stop here, but you would only be able to use this development
+       build when the Python working directory is the SciPy root directory.
 
-#. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipy-dev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda. You can also check which version of SciPy you're using by executing in Python::
+    #. Enter ``conda develop .``, where ``.`` refers to the present directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
 
-      import scipy
-      print(scipy.__version__)
+    #. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipy-dev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda. You can also check which version of SciPy you're using by executing in Python::
 
-   If you have successfully imported a development version of SciPy, the word ``dev`` will appear in the output, e.g.::
+         import scipy
+         print(scipy.__version__)
 
-      1.6.0.dev0+be97f1a
+      If you have successfully imported a development version of SciPy, the word ``dev`` will appear in the output, e.g.::
+
+         1.6.0.dev0+be97f1a
 
 
 .. _Anaconda SciPy Dev\: Part I (macOS): https://youtu.be/1rPOSNd0ULI

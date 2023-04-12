@@ -1,7 +1,6 @@
 # cython: wraparound=False, boundscheck=False
 
 import numpy as np
-import warnings
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
 
@@ -29,15 +28,6 @@ class MaximumFlowResult:
 
     def __repr__(self):
         return 'MaximumFlowResult with value of %d' % self.flow_value
-
-    @property
-    def residual(self):
-        warnings.warn(
-            "The attribute `residual` has been renamed to `flow`"
-            " and will be removed in SciPy 1.11.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.flow
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -138,6 +128,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     Here, the maximum flow is simply the capacity of the edge:
 
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import maximum_flow
     >>> graph = csr_matrix([[0, 5], [0, 0]])

@@ -11,10 +11,9 @@ odrpack = static_library('odrpack',
 py3.extension_module('__odrpack',
   '__odrpack.c',
   link_with: odrpack,
-  include_directories: inc_np,
   link_args: version_link_args,
   c_args: numpy_nodepr_api,
-  dependencies: [blas],
+  dependencies: [blas, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/odr'
@@ -32,7 +31,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/odr'
 )
 

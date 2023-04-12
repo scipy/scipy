@@ -119,7 +119,7 @@ dgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
     int      i, j, k, iptr, jcol, n, ldb, nrhs;
     double   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void dprint_soln();
+    void dprint_soln(int n, int nrhs, double *soln);
 
     /* Test input parameters ... */
     *info = 0;

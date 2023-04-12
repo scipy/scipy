@@ -11,10 +11,8 @@ from scipy._lib._util import prod
 
 from . import _fitpack_py
 from . import dfitpack
-from . import _fitpack
 from ._polyint import _Interpolator1D
 from . import _ppoly
-from ._fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
@@ -45,6 +43,7 @@ def lagrange(x, w):
     --------
     Interpolate :math:`f(x) = x^3` by 3 points.
 
+    >>> import numpy as np
     >>> from scipy.interpolate import lagrange
     >>> x = np.array([0, 1, 2])
     >>> y = x**3
@@ -92,10 +91,43 @@ def lagrange(x, w):
 # !! found, get rid of it!
 
 
+dep_mesg = """\
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0.
+
+For legacy code, nearly bug-for-bug compatible replacements are
+`RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+scattered 2D data.
+
+In new code, for regular grids use `RegularGridInterpolator` instead.
+For scattered data, prefer `LinearNDInterpolator` or
+`CloughTocher2DInterpolator`.
+
+For more details see
+`https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+"""
+
 class interp2d:
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
              fill_value=None)
+
+    .. deprecated:: 1.10.0
+
+        `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy
+        1.12.0.
+
+        For legacy code, nearly bug-for-bug compatible replacements are
+        `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
+        scattered 2D data.
+
+        In new code, for regular grids use `RegularGridInterpolator` instead.
+        For scattered data, prefer `LinearNDInterpolator` or
+        `CloughTocher2DInterpolator`.
+
+        For more details see
+        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff
+        <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
+
 
     Interpolate over a 2-D grid.
 
@@ -187,6 +219,7 @@ class interp2d:
     --------
     Construct a 2-D grid and interpolate on it:
 
+    >>> import numpy as np
     >>> from scipy import interpolate
     >>> x = np.arange(-5.01, 5.01, 0.25)
     >>> y = np.arange(-5.01, 5.01, 0.25)
@@ -204,6 +237,7 @@ class interp2d:
     >>> plt.show()
     """
 
+    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=None):
         x = ravel(x)
@@ -256,11 +290,12 @@ class interp2d:
 
         self.bounds_error = bounds_error
         self.fill_value = fill_value
-        self.x, self.y, self.z = [array(a, copy=copy) for a in (x, y, z)]
+        self.x, self.y, self.z = (array(a, copy=copy) for a in (x, y, z))
 
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)
 
+    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __call__(self, x, y, dx=0, dy=0, assume_sorted=False):
         """Interpolate the function.
 
@@ -350,6 +385,8 @@ class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
 
+    .. legacy:: class
+
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
@@ -435,6 +472,7 @@ class interp1d(_Interpolator1D):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy import interpolate
     >>> x = np.arange(0, 10)
@@ -1261,6 +1299,7 @@ class PPoly(_PPolyBase):
         Finding roots of ``[x**2 - 1, (x - 1)**2]`` defined on intervals
         ``[-2, 1], [1, 2]``:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import PPoly
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
         >>> pp.solve()
@@ -1337,6 +1376,7 @@ class PPoly(_PPolyBase):
         --------
         Construct an interpolating spline and convert it to a `PPoly` instance 
 
+        >>> import numpy as np
         >>> from scipy.interpolate import splrep, PPoly
         >>> x = np.linspace(0, 1, 11)
         >>> y = np.sin(2*np.pi*x)

@@ -7,35 +7,68 @@ echo $PLATFORM
 # Update license
 cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 
-# Install Openblas
-basedir=$(python tools/openblas_support.py)
-cp -r $basedir/lib/* /usr/local/lib
-cp $basedir/include/* /usr/local/include
-
-if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
-  # this version of openblas has the pkg-config file included. The version
-  # obtained from the openblas_support.py doesn't.
-  # Problems were experienced with meson->cmake detection of openblas when
-  # trying to cross compile.
-  curl -L https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-140-gbfd9c1b5/download/openblas-v0.3.20-140-gbfd9c1b5-macosx_11_0_arm64-gf_f26990f.tar.gz -o openblas.tar.gz
-  sudo tar -xv -C / -f openblas.tar.gz
-
-  sudo mkdir -p /opt/arm64-builds/lib /opt/arm64-builds/include
-  sudo chown -R $USER /opt/arm64-builds
-  cp -r $basedir/lib/* /opt/arm64-builds/lib
-  cp $basedir/include/* /opt/arm64-builds/include
-fi
-
 #########################################################################################
-# Install GFortran
+# Install GFortran + OpenBLAS
 
 if [[ $PLATFORM == "macosx-x86_64" ]]; then
+  # Openblas
+  basedir=$(python tools/openblas_support.py)
+
+  # copy over the OpenBLAS library stuff first
+  cp -r $basedir/lib/* /usr/local/lib
+  cp $basedir/include/* /usr/local/include
+
   #GFORTRAN=$(type -p gfortran-9)
   #sudo ln -s $GFORTRAN /usr/local/bin/gfortran
   # same version of gfortran as the openblas-libs and scipy-wheel builds
-  curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+  curl -L https://github.com/isuruf/gcc/releases/download/gcc-11.3.0-2/gfortran-darwin-x86_64-native.tar.gz -o gfortran.tar.gz
+
+  GFORTRAN_SHA256=$(shasum -a 256 gfortran.tar.gz)
+  KNOWN_SHA256="981367dd0ad4335613e91bbee453d60b6669f5d7e976d18c7bdb7f1966f26ae4  gfortran.tar.gz"
+  if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+      echo sha256 mismatch
+      exit 1
+  fi
+
+  sudo mkdir -p /opt/
+  # places gfortran in /opt/gfortran-darwin-x86_64-native. There's then
+  # bin, lib, include, libexec underneath that.
+  sudo tar -xv -C /opt -f gfortran.tar.gz
+
+  # Link these into /usr/local so that there's no need to add rpath or -L
+  for f in libgfortran.dylib libgfortran.5.dylib libgcc_s.1.dylib libgcc_s.1.1.dylib libquadmath.dylib libquadmath.0.dylib; do
+    ln -sf /opt/gfortran-darwin-x86_64-native/lib/$f /usr/local/lib/$f
+  done
+  ln -sf /opt/gfortran-darwin-x86_64-native/bin/gfortran /usr/local/bin/gfortran
+
+  # Set SDKROOT env variable if not set
+  # This step is required whenever the gfortran compilers sourced from
+  # conda-forge (built by isuru fernando) are used outside of a conda-forge
+  # environment (so it mirrors what is done in the conda-forge compiler
+  # activation scripts)
+  export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
+  gfortran tools/wheels/test.f
+fi
+
+if [[ $PLATFORM == "macosx-arm64" ]]; then
+  # OpenBLAS
+  # need a version of OpenBLAS that is suited for gcc >= 11
+  basedir=$(python tools/openblas_support.py)
+
+  # use /opt/arm64-builds as a prefix, because that's what the multibuild
+  # OpenBLAS pkgconfig files state
+  sudo mkdir -p /opt/arm64-builds/lib
+  sudo mkdir -p /opt/arm64-builds/include
+  sudo cp -r $basedir/lib/* /opt/arm64-builds/lib
+  sudo cp $basedir/include/* /opt/arm64-builds/include
+
+  # we want to force a dynamic linking
+  sudo rm /opt/arm64-builds/lib/*.a
+
+  curl -L https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg -o gfortran.dmg
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-  KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+  KNOWN_SHA256="e2e32f491303a00092921baebac7ffb7ae98de4ca82ebbe9e6a866dd8501acdf  gfortran.dmg"
+
   if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
       echo sha256 mismatch
       exit 1
@@ -43,34 +76,5 @@ if [[ $PLATFORM == "macosx-x86_64" ]]; then
 
   hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
   sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-  otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-fi
-
-# arm64 stuff from gfortran_utils
-if [[ $PLATFORM == "macosx-arm64" ]]; then
-    source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
-    export MACOSX_DEPLOYMENT_TARGET=11.0
-
-    # The install script requires the PLAT variable in order to set
-    # the FC variable
-    export PLAT=arm64
-    install_arm64_cross_gfortran
-    export FC=$FC_ARM64
-    export PATH=$FC_LOC:$PATH
-    # force a dynamic link, there may be a more elegant way of doing this.
-    rm /opt/arm64-builds/lib/*.a
-
-    # required so that gfortran knows where to find the linking libraries.
-    export SDKROOT=/Applications/Xcode_13.2.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX12.1.sdk
-    #    export SDKROOT=$(xcrun --show-sdk-path)
-    export FFLAGS=" -arch arm64 $FFLAGS"
-    export LDFLAGS=" $FC_ARM64_LDFLAGS $LDFLAGS -L/opt/arm64-builds/lib -arch arm64"
-    sudo ln -s $FC $FC_LOC/gfortran
-    echo $(type -p gfortran)
-
-    # having a test fortran program has helped in debugging problems with the
-    # compiler environment.
-    $FC $FFLAGS $PROJECT_DIR/tools/wheels/test.f $LDFLAGS
-    ls -al *.out
-    otool -L a.out
+  type -p gfortran
 fi

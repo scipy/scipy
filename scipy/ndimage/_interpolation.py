@@ -584,8 +584,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             exptd = [0] * input.ndim + [1]
             if not numpy.all(matrix[input.ndim] == exptd):
                 msg = ('Expected homogeneous transformation matrix with '
-                       'shape %s for image shape %s, but bottom row was '
-                       'not equal to %s' % (matrix.shape, input.shape, exptd))
+                       'shape {} for image shape {}, but bottom row was '
+                       'not equal to {}'.format(matrix.shape, input.shape, exptd))
                 raise ValueError(msg)
         # assume input is homogeneous coordinate transformation matrix
         offset = matrix[:input.ndim, input.ndim]
@@ -877,7 +877,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
     >>> ax2.set_axis_off()
     >>> ax3.imshow(full_img_45, cmap='gray')
     >>> ax3.set_axis_off()
-    >>> fig.set_tight_layout(True)
+    >>> fig.set_layout_engine('tight')
     >>> plt.show()
     >>> print(img.shape)
     (512, 512)

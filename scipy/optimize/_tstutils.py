@@ -35,6 +35,9 @@ Collections of test cases suitable for testing 1-D root-finders
 #      "Algorithm 748: Enclosing Zeros of Continuous Functions",
 #      ACM Trans. Math. Softw. Volume 221(1995)
 #       doi = {10.1145/210089.210111},
+#  [2] Chandrupatla, Tirupathi R. "A new hybrid quadratic/bisection algorithm
+#      for finding the zero of a nonlinear function without using derivatives."
+#      Advances in Engineering Software 28.3 (1997): 145-149.
 
 from random import random
 
@@ -487,7 +490,7 @@ _APS_TESTS = [
     [aps12_f, aps12_fp, aps12_fpp, (29,), [1, 100], np.inf, 1.1, 29, "aps.12.16"],
     [aps12_f, aps12_fp, aps12_fpp, (31,), [1, 100], np.inf, 1.1, 31, "aps.12.17"],
     [aps12_f, aps12_fp, aps12_fpp, (33,), [1, 100], np.inf, 1.1, 33, "aps.12.18"],
-    [aps13_f, aps13_fp, aps13_fpp, (), [-1, 4], np.inf, 1.5, 1.54720911915117165e-02, "aps.13.00"],
+    [aps13_f, aps13_fp, aps13_fpp, (), [-1, 4], np.inf, 1.5, 0, "aps.13.00"],
     [aps14_f, aps14_fp, aps14_fpp, (1,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.00"],
     [aps14_f, aps14_fp, aps14_fpp, (2,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.01"],
     [aps14_f, aps14_fp, aps14_fpp, (3,), [-1000, np.pi / 2], 0, 1, 6.23806518961612433e-01, "aps.14.02"],
@@ -662,7 +665,8 @@ def get_tests(collection='original', smoothness=None):
     collection = collection or "original"
     subsets = {"aps": _APS_TESTS_DICTS,
                "complex": _COMPLEX_TESTS_DICTS,
-               "original": _ORIGINAL_TESTS_DICTS}
+               "original": _ORIGINAL_TESTS_DICTS,
+               "chandrupatla": _CHANDRUPATLA_TESTS_DICTS}
     tests = subsets.get(collection, [])
     if smoothness is not None:
         tests = [tc for tc in tests if tc['smoothness'] >= smoothness]
@@ -674,3 +678,118 @@ methods = [cc.bisect, cc.ridder, cc.brenth, cc.brentq]
 mstrings = ['cc.bisect', 'cc.ridder', 'cc.brenth', 'cc.brentq']
 functions = [f2, f3, f4, f5, f6]
 fstrings = ['f2', 'f3', 'f4', 'f5', 'f6']
+
+#   ##################
+#   "Chandrupatla" test cases
+#   Functions and test cases that appear in [2]
+
+def fun1(x):
+    return x**3 - 2*x - 5
+fun1.root = 2.0945514815423265  # additional precision using mpmath.findroot
+
+
+def fun2(x):
+    return 1 - 1/x**2
+fun2.root = 1
+
+
+def fun3(x):
+    return (x-3)**3
+fun3.root = 3
+
+
+def fun4(x):
+    return 6*(x-2)**5
+fun4.root = 2
+
+
+def fun5(x):
+    return x**9
+fun5.root = 0
+
+
+def fun6(x):
+    return x**19
+fun6.root = 0
+
+
+def fun7(x):
+    return 0 if abs(x) < 3.8e-4 else x*np.exp(-x**(-2))
+fun7.root = 0
+
+
+def fun8(x):
+    xi = 0.61489
+    return -(3062*(1-xi)*np.exp(-x))/(xi + (1-xi)*np.exp(-x)) - 1013 + 1628/x
+fun8.root = 1.0375360332870405
+
+
+def fun9(x):
+    return np.exp(x) - 2 - 0.01/x**2 + .000002/x**3
+fun9.root = 0.7032048403631358
+
+# Each "chandropatla" test case has
+# - a function,
+# - two starting values x0 and x1
+# - the root
+# - the number of function evaluations required by Chandrupatla's algorithm
+# - an Identifier of the test case
+#
+# Chandrupatla's is a bracketing algorithm, so a bracketing interval was
+# provided in [2] for each test case. No special support for testing with
+# secant/Newton/Halley is provided.
+
+_CHANDRUPATLA_TESTS_KEYS = ["f", "bracket", "root", "nfeval", "ID"]
+_CHANDRUPATLA_TESTS = [
+    [fun1, [2, 3], fun1.root, 7],
+    [fun1, [1, 10], fun1.root, 11],
+    [fun1, [1, 100], fun1.root, 14],
+    [fun1, [-1e4, 1e4], fun1.root, 23],
+    [fun1, [-1e10, 1e10], fun1.root, 43],
+    [fun2, [0.5, 1.51], fun2.root, 8],
+    [fun2, [1e-4, 1e4], fun2.root, 22],
+    [fun2, [1e-6, 1e6], fun2.root, 28],
+    [fun2, [1e-10, 1e10], fun2.root, 41],
+    [fun2, [1e-12, 1e12], fun2.root, 48],
+    [fun3, [0, 5], fun3.root, 21],
+    [fun3, [-10, 10], fun3.root, 23],
+    [fun3, [1e-4, 1e4], fun3.root, 36],
+    [fun3, [1e-6, 1e6], fun3.root, 45],
+    [fun3, [1e-10, 1e10], fun3.root, 55],
+    [fun4, [0, 5], fun4.root, 21],
+    [fun4, [-10, 10], fun4.root, 23],
+    [fun4, [1e-4, 1e4], fun4.root, 33],
+    [fun4, [1e-6, 1e6], fun4.root, 43],
+    [fun4, [1e-10, 1e10], fun4.root, 54],
+    [fun5, [-1, 4], fun5.root, 21],
+    [fun5, [-2, 5], fun5.root, 22],
+    [fun5, [-1, 10], fun5.root, 23],
+    [fun5, [-5, 50], fun5.root, 25],
+    [fun5, [-10, 100], fun5.root, 26],
+    [fun6, [-1., 4.], fun6.root, 21],
+    [fun6, [-2., 5.], fun6.root, 22],
+    [fun6, [-1., 10.], fun6.root, 23],
+    [fun6, [-5., 50.], fun6.root, 25],
+    [fun6, [-10., 100.], fun6.root, 26],
+    [fun7, [-1, 4], fun7.root, 8],
+    [fun7, [-2, 5], fun7.root, 8],
+    [fun7, [-1, 10], fun7.root, 11],
+    [fun7, [-5, 50], fun7.root, 18],
+    [fun7, [-10, 100], fun7.root, 19],
+    [fun8, [2e-4, 2], fun8.root, 9],
+    [fun8, [2e-4, 3], fun8.root, 10],
+    [fun8, [2e-4, 9], fun8.root, 11],
+    [fun8, [2e-4, 27], fun8.root, 12],
+    [fun8, [2e-4, 81], fun8.root, 14],
+    [fun9, [2e-4, 2], fun9.root, 7],
+    [fun9, [2e-4, 3], fun9.root, 8],
+    [fun9, [2e-4, 9], fun9.root, 10],
+    [fun9, [2e-4, 27], fun9.root, 11],
+    [fun9, [2e-4, 81], fun9.root, 13],
+]
+_CHANDRUPATLA_TESTS = [test + [f'{test[0].__name__}.{i%5+1}']
+                       for i, test in enumerate(_CHANDRUPATLA_TESTS)]
+
+_CHANDRUPATLA_TESTS_DICTS = [dict(zip(_CHANDRUPATLA_TESTS_KEYS, testcase))
+                             for testcase in _CHANDRUPATLA_TESTS]
+_add_a_b(_CHANDRUPATLA_TESTS_DICTS)

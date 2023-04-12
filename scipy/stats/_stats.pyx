@@ -1,11 +1,10 @@
 from cpython cimport bool
 from libc cimport math
+from libc.math cimport NAN, INFINITY, M_PI as PI
 cimport cython
 cimport numpy as np
-from numpy.math cimport PI
-from numpy.math cimport INFINITY
-from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
+
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
@@ -660,6 +659,7 @@ cpdef double genhyperbolic_logpdf(
         ) nogil:
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
+
 cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
@@ -677,23 +677,22 @@ cdef double _genhyperbolic_logpdf_kernel(
     cdef double t1, t2, t3, t4, t5
 
     t1 = _log_norming_constant(p, a, b)
-
-    t2 = math.pow(1, 2) + math.pow(x, 2)
-    t2 = math.pow(t2, 0.5)
+    t2 = math.sqrt(1.0 + x*x)
     t3 = (p - 0.5) * math.log(t2)
-    t4 = math.log(cs.kve(p-0.5, a * t2)) - a * t2
+    t4 = math.log(cs.kve(p - 0.5, a * t2)) - a * t2
     t5 = b * x
 
     return t1 + t3 + t4 + t5
 
+
 cdef double _log_norming_constant(double p, double a, double b) nogil:
     cdef double t1, t2, t3, t4, t5, t6
 
-    t1 = math.pow(a, 2) - math.pow(b, 2)
+    t1 = (a + b)*(a - b)
     t2 = p * 0.5 * math.log(t1)
     t3 = 0.5 * math.log(2 * PI)
     t4 = (p - 0.5) * math.log(a)
-    t5 = math.pow(t1, 0.5)
+    t5 = math.sqrt(t1)
     t6 = math.log(cs.kve(p, t5)) - t5
 
     return t2 - t3 - t4 - t6
@@ -762,9 +761,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     """
     cdef:
         real[:, :] points_, xi_, values_, estimate, cho_cov_
-        int i, j, k
         int n, d, m, p
-        real arg, residual, norm
 
     n = points.shape[0]
     d = points.shape[1]
@@ -829,7 +826,7 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_, estimate, cho_cov_
+        real[:, :] points_, xi_, values_, log_values_, estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -845,7 +842,6 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    cho_cov_ = cho_cov.astype(dtype, copy=False)
     points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
                          dtype=dtype)
     xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,

@@ -10,6 +10,9 @@ on:
       - main
       - maintenance/**
 
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -18,11 +21,11 @@ jobs:
   test_macos:
     name: macOS Test Matrix
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: macos-latest
+    runs-on: macos-11
     strategy:
       max-parallel: 3
       matrix:
-        python-version: ["3.8"]
+        python-version: ["3.9"]
         numpy-version: ['--upgrade numpy']
 
     steps:
@@ -36,37 +39,9 @@ jobs:
         cache: 'pip'
         cache-dependency-path: 'environment.yml'
 
-    - name: Setup gfortran
+    - name: Setup gfortran + OpenBLAS
       run: |
-        # this is taken verbatim from the numpy azure pipeline setup.
-        set -xe
-        # same version of gfortran as the open-libs and numpy-wheel builds
-        curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-        GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-        KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-        if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-            echo sha256 mismatch
-            exit 1
-        fi
-        hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-        sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-        otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-        # Manually symlink gfortran-4.9 to plain gfortran for f2py.
-        # No longer needed after Feb 13 2020 as gfortran is already present
-        # and the attempted link errors. Keep this for future reference.
-        # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
-
-    - name: Setup openblas
-      run: |
-        # this is taken verbatim from the numpy azure pipeline setup.
-        set -xe
-        target=$(python tools/openblas_support.py)
-        ls -lR $target
-        # manually link to appropriate system paths
-        cp $target/lib/lib* /usr/local/lib/
-        cp $target/include/* /usr/local/include/
-
-        # otool -L /usr/local/lib/libopenblas*
+        bash tools/wheels/cibw_before_build_macos.sh $PWD
 
         echo "[openblas]" > site.cfg
         echo "libraries = openblas" >> site.cfg
@@ -86,5 +61,11 @@ jobs:
 
     - name: Test SciPy
       run: |
-        export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py -- --durations=10 --timeout=60
+        # Set SDKROOT env variable if not set. Refer to
+        # tools/wheels/cibw_before_build_macos.sh to see why it's necessary
+        export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
+
+        export SCIPY_USE_PYTHRAN=1
+        python setup.py install
+        cd /tmp
+        python -m pytest --pyargs scipy --durations=10 --timeout=80 -n 3

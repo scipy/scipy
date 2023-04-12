@@ -494,7 +494,7 @@ class TestCephes:
     def test_iv(self):
         assert_equal(cephes.iv(1,0),0.0)
 
-    def _check_ive(self):
+    def test_ive(self):
         assert_equal(cephes.ive(1,0),0.0)
 
     def test_j0(self):
@@ -509,7 +509,7 @@ class TestCephes:
     def test_jv(self):
         assert_equal(cephes.jv(0,0),1.0)
 
-    def _check_jve(self):
+    def test_jve(self):
         assert_equal(cephes.jve(0,0),1.0)
 
     def test_k0(self):
@@ -536,7 +536,7 @@ class TestCephes:
     def test_kerp(self):
         cephes.kerp(2)
 
-    def _check_kelvin(self):
+    def test_kelvin(self):
         cephes.kelvin(2)
 
     def test_kn(self):
@@ -559,10 +559,10 @@ class TestCephes:
         assert_equal(cephes._kolmogci(0), 0.0)
         assert_(np.isnan(cephes._kolmogci(np.nan)))
 
-    def _check_kv(self):
+    def test_kv(self):
         cephes.kv(1,1)
 
-    def _check_kve(self):
+    def test_kve(self):
         cephes.kve(1,1)
 
     def test_log1p(self):
@@ -700,7 +700,7 @@ class TestCephes:
     def test_modfresnelp(self):
         cephes.modfresnelp(0)
 
-    def _check_modstruve(self):
+    def test_modstruve(self):
         assert_equal(cephes.modstruve(1,0),0.0)
 
     def test_nbdtr(self):
@@ -712,7 +712,7 @@ class TestCephes:
     def test_nbdtri(self):
         assert_equal(cephes.nbdtri(1,1,1),1.0)
 
-    def __check_nbdtrik(self):
+    def test_nbdtrik(self):
         cephes.nbdtrik(1,.4,.5)
 
     def test_nbdtrin(self):
@@ -754,7 +754,7 @@ class TestCephes:
         assert_(np.isnan(cephes.nctdtr(2., np.nan, 1.)))
         assert_(np.isnan(cephes.nctdtr(2., 1., np.nan)))
 
-    def __check_nctdtridf(self):
+    def test_nctdtridf(self):
         cephes.nctdtridf(1,0.5,0)
 
     def test_nctdtrinc(self):
@@ -778,7 +778,7 @@ class TestCephes:
         assert_almost_equal(result[0],1.0)
         assert_almost_equal(result[1],0.0)
 
-    def _check_obl_cv(self):
+    def test_obl_cv(self):
         assert_equal(cephes.obl_cv(1,1,0),2.0)
 
     def test_obl_rad1(self):
@@ -835,7 +835,7 @@ class TestCephes:
         assert_array_almost_equal(cephes.pro_ang1_cv(1,1,1,1,0),
                                   array((1.0,0.0)))
 
-    def _check_pro_cv(self):
+    def test_pro_cv(self):
         assert_equal(cephes.pro_cv(1,1,0),2.0)
 
     def test_pro_rad1(self):
@@ -947,7 +947,7 @@ class TestCephes:
     def test_yv(self):
         cephes.yv(1,1)
 
-    def _check_yve(self):
+    def test_yve(self):
         cephes.yve(1,1)
 
     def test_wofz(self):
@@ -1321,15 +1321,15 @@ class TestCombinatorics:
         assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False])
+    @pytest.mark.parametrize("legacy", [True, False, None])
     @pytest.mark.parametrize("k", [3.5, 3])
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy and (N != int(N) or k != int(k)):
+        if legacy is not None:
             with pytest.warns(
                 DeprecationWarning,
-                match=r"Non-integer arguments are currently being cast to",
+                match=r"Using 'legacy' keyword is deprecated"
             ):
                 result = special.comb(N, k, exact=True, legacy=legacy,
                                       repetition=repetition)
@@ -1347,7 +1347,10 @@ class TestCombinatorics:
             else:
                 N, k = int(N), int(k)
         # expected result is the same as with exact=False
-        expected = special.comb(N, k, legacy=legacy, repetition=repetition)
+        with suppress_warnings() as sup:
+            if legacy is not None:
+                sup.filter(DeprecationWarning)
+            expected = special.comb(N, k, legacy=legacy, repetition=repetition)
         assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
@@ -1614,7 +1617,7 @@ class TestEllip:
         assert_array_almost_equal_nulp(f1, np.full_like(f1, 3.3471442287390509), 4)
 
 
-class TestEllipCarlson(object):
+class TestEllipCarlson:
     """Test for Carlson elliptic integrals ellipr[cdfgj].
     The special values used in these tests can be found in Sec. 3 of Carlson
     (1994), https://arxiv.org/abs/math/9409227
@@ -1752,7 +1755,7 @@ class TestEllipCarlson(object):
                         rtol=5e-15, atol=1e-20)
 
 
-class TestEllipLegendreCarlsonIdentities(object):
+class TestEllipLegendreCarlsonIdentities:
     """Test identities expressing the Legendre elliptic integrals in terms
     of Carlson's symmetric integrals.  These identities can be found
     in the DLMF https://dlmf.nist.gov/19.25#i .
@@ -2776,7 +2779,8 @@ class TestBessel:
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305)
 
     def test_yv_cephes_vs_amos_only_small_orders(self):
-        skipper = lambda v, z: (abs(v) > 50)
+        def skipper(v, z):
+            return abs(v) > 50
         self.check_cephes_vs_amos(special.yv, special.yn, rtol=1e-11, atol=1e-305, skip=skipper)
 
     def test_iv_cephes_vs_amos(self):

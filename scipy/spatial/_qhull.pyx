@@ -20,8 +20,6 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
-import warnings
-
 np.import_array()
 
 
@@ -332,7 +330,6 @@ cdef class _Qhull:
         self._messages.clear()
 
         cdef coordT* coord
-        cdef int i
         with nogil:
             self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
             if self._qh == NULL:
@@ -543,7 +540,7 @@ cdef class _Qhull:
         cdef facetT* neighbor
         cdef vertexT *vertex
         cdef pointT *point
-        cdef int i, j, ipoint, ipoint2, ncoplanar
+        cdef int i, j, ipoint, ncoplanar
         cdef object tmp
         cdef np.ndarray[np.npy_int, ndim=2] facets
         cdef np.ndarray[np.npy_int, ndim=1] good
@@ -808,7 +805,6 @@ cdef class _Qhull:
         cdef np.ndarray[np.double_t, ndim=2] voronoi_vertices
         cdef np.ndarray[np.intp_t, ndim=1] point_region
         cdef int nvoronoi_vertices
-        cdef pointT infty_point[NPY_MAXDIMS+1]
         cdef pointT *point
         cdef pointT *center
         cdef double dist
@@ -1080,19 +1076,12 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef CBLAS_INT info = 0
     cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
-    cdef double centroid[NPY_MAXDIMS]
-    cdef double c[NPY_MAXDIMS+1]
-    cdef double *transform
     cdef double anorm
     cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
     cdef CBLAS_INT iwork[NPY_MAXDIMS]
-
-    cdef double x1, x2, x3
-    cdef double y1, y2, y3
-    cdef double det
 
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
@@ -1162,7 +1151,7 @@ cdef double _matrix_norm1(int n, double *a) nogil:
     return maxsum
 
 cdef int _barycentric_inside(int ndim, double *transform,
-                             double *x, double *c, double eps) nogil:
+                             const double *x, double *c, double eps) nogil:
     """
     Check whether point is inside a simplex, using barycentric
     coordinates.  `c` will be filled with barycentric coordinates, if
@@ -1184,7 +1173,7 @@ cdef int _barycentric_inside(int ndim, double *transform,
     return 1
 
 cdef void _barycentric_coordinate_single(int ndim, double *transform,
-                                         double *x, double *c, int i) nogil:
+                                         const double *x, double *c, int i) nogil:
     """
     Compute a single barycentric coordinate.
 
@@ -1204,7 +1193,7 @@ cdef void _barycentric_coordinate_single(int ndim, double *transform,
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
 
 cdef void _barycentric_coordinates(int ndim, double *transform,
-                                   double *x, double *c) nogil:
+                                   const double *x, double *c) nogil:
     """
     Compute barycentric coordinates.
 
@@ -1222,7 +1211,7 @@ cdef void _barycentric_coordinates(int ndim, double *transform,
 # N-D geometry
 #------------------------------------------------------------------------------
 
-cdef void _lift_point(DelaunayInfo_t *d, double *x, double *z) nogil:
+cdef void _lift_point(DelaunayInfo_t *d, const double *x, double *z) nogil:
     cdef int i
     z[d.ndim] = 0
     for i in range(d.ndim):
@@ -1247,7 +1236,7 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
 # Finding simplices
 #------------------------------------------------------------------------------
 
-cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
+cdef int _is_point_fully_outside(DelaunayInfo_t *d, const double *x,
                                  double eps) nogil:
     """
     Is the point outside the bounding box of the triangulation?
@@ -1261,7 +1250,7 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
     return 0
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
-                                  double *x, double eps,
+                                  const double *x, double eps,
                                   double eps_broad) nogil:
     """
     Find simplex containing point `x` by going through all simplices.
@@ -1319,7 +1308,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
     return -1
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
-                                double *x, int *start, double eps,
+                                const double *x, int *start, double eps,
                                 double eps_broad) nogil:
     """
     Find simplex containing point `x` via a directed walk in the tessellation.
@@ -1420,7 +1409,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     return isimplex
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c,
-                       double *x, int *start, double eps,
+                       const double *x, int *start, double eps,
                        double eps_broad) nogil:
     """
     Find simplex containing point `x` by walking the triangulation.
@@ -1713,12 +1702,6 @@ class Delaunay(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
 
         .. versionadded:: 0.12.0
-    vertices
-        Same as `simplices`, but deprecated.
-
-        .. deprecated:: 0.12.0
-            Delaunay attribute `vertices` is deprecated in favour of `simplices`
-            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1751,6 +1734,7 @@ class Delaunay(_QhullUser):
     --------
     Triangulation of a set of points:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
     >>> from scipy.spatial import Delaunay
     >>> tri = Delaunay(points)
@@ -1857,17 +1841,7 @@ class Delaunay(_QhullUser):
         self._vertex_to_simplex = None
         self._vertex_neighbor_vertices = None
 
-        # Backwards compatibility (Scipy < 0.12.0)
-        self._vertices = self.simplices
-
         _QhullUser._update(self, qhull)
-
-    @property
-    def vertices(self):
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-        return self._vertices
 
     def add_points(self, points, restart=False):
         self._add_points(points, restart)
@@ -1923,9 +1897,6 @@ class Delaunay(_QhullUser):
             arr = self._vertex_to_simplex
             simplices = self.simplices
 
-            coplanar = self.coplanar
-            ncoplanar = coplanar.shape[0]
-
             nsimplex = self.nsimplex
             ndim = self.ndim
 
@@ -1949,7 +1920,7 @@ class Delaunay(_QhullUser):
         ``indices[indptr[k]:indptr[k+1]]``.
 
         """
-        cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
+        cdef int i, j, k
         cdef int nsimplex, npoints, ndim
         cdef np.ndarray[np.npy_int, ndim=2] simplices
         cdef setlist.setlist_t sets
@@ -2129,7 +2100,7 @@ class Delaunay(_QhullUser):
         cdef np.ndarray[np.double_t, ndim=2] out_
         cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
-        cdef int i, j, k
+        cdef int i, j
 
         if xi.shape[-1] != self.ndim:
             raise ValueError("xi has different dimensionality than "
@@ -2167,6 +2138,7 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
+
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -2174,16 +2146,29 @@ def tsearch(tri, xi):
     Find simplices containing the given points. This function does the
     same thing as `Delaunay.find_simplex`.
 
-    .. versionadded:: 0.9
+    Parameters
+    ----------
+    tri : DelaunayInfo
+        Delaunay triangulation
+    xi : ndarray of double, shape (..., ndim)
+        Points to locate
+
+    Returns
+    -------
+    i : ndarray of int, same shape as `xi`
+        Indices of simplices containing each point.
+        Points outside the triangulation get the value -1.
 
     See Also
     --------
     Delaunay.find_simplex
 
+    Notes
+    -----
+    .. versionadded:: 0.9
 
     Examples
     --------
-
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import Delaunay, delaunay_plot_2d, tsearch
@@ -2360,6 +2345,7 @@ class ConvexHull(_QhullUser):
     Convex hull of a random set of points:
 
     >>> from scipy.spatial import ConvexHull, convex_hull_plot_2d
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> points = rng.random((30, 2))   # 30 random points in 2-D
     >>> hull = ConvexHull(points)
@@ -2562,6 +2548,7 @@ class Voronoi(_QhullUser):
     --------
     Voronoi diagram for a set of point:
 
+    >>> import numpy as np
     >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
     ...                    [2, 0], [2, 1], [2, 2]])
     >>> from scipy.spatial import Voronoi, voronoi_plot_2d
@@ -2728,6 +2715,7 @@ class HalfspaceIntersection(_QhullUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
+    >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
     ...                        [0., -1., 0.],
     ...                        [2., 1., -4.],

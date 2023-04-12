@@ -9,7 +9,7 @@ every piece of code or documentation which is contributed to SciPy is working
 and does not have unforeseen effects.
 
 .. note:: Before submitting or updating your PR, please ensure that you tested
-          your changes locally. See :ref:`pr-checklist` and :ref:`runtests`.
+          your changes locally. See :ref:`pr-checklist` and :ref:`devpy-test`.
 
 Workflows
 =========
@@ -36,6 +36,7 @@ GitHub Actions
 * ``Linux Tests``: test suite runs for Linux (``x86_64``)
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
 * ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
+* ``Check the rendered docs here!``: live preview of the documentation
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -57,9 +58,14 @@ Azure
 CircleCI
 --------
 * ``build_docs``: build the documentation
-* ``build_docs artifact``: live preview of the documentation
 * ``build_scipy``
 * ``run_benchmarks``: verify how the changes impact performance
+
+CirrusCI
+--------
+* ``Tests``: test suite for specific architecture like
+  ``musllinux, arm, aarch``
+* ``Wheels``: build and upload some wheels
 
 Codecov
 -------
@@ -84,6 +90,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 * ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
+* ``[skip cirrus]``: will skip CirrusCI
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.
@@ -94,7 +101,7 @@ GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
 
-    [skip azp] [skip actions]
+    [skip azp] [skip actions] [skip cirrus]
 
 Wheel builds
 ============
@@ -121,28 +128,3 @@ It is not advised to use cibuildwheel to build scipy wheels on your own system
 as it will automatically install gfortran compilers and various other
 dependencies. Instead, one could use an isolated Docker container to build
 Linux wheels.
-
-Docker image builds
-===================
-
-Two Docker images are built in CI with GitHub Actions, and made available on
-Docker Hub under the ``scipy`` organisation:
-
-1. ``scipy/scipy-dev`` - contains all the dependencies needed for developing
-   SciPy. This image is only rebuilt when ``environment.yml`` in the root of
-   the repo is updated,
-2. ``scipy/scipy-gitpod`` - builds on top of ``scipy-dev`` and contains a built
-   development version of SciPy and the SciPy docs. It is the image pulled when
-   `a user opens Gitpod <quickstart_gitpod.html>`_.
-
-This diagram explains the CI setup, triggers, and flow of artifacts to Docker
-Hub and Gitpod:
-
-.. image:: ../../_static/gitpod/gitpod_ci_build_flow.png
-    :alt: Diagram of how Docker images are built for Docker Hub and Gitpod in CI
-
-.. warning::
-   These Docker images are intended for SciPy development *only*.
-   These should not be used "as-is" for any production-level applications (they
-   are not updated very frequently, and not audited for known security
-   vulnerabilities for example).

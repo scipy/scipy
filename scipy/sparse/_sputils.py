@@ -50,7 +50,7 @@ def upcast(*args):
             _upcast_memo[hash(args)] = t
             return t
 
-    raise TypeError('no supported conversion for types: %r' % (args,))
+    raise TypeError(f'no supported conversion for types: {args!r}')
 
 
 def upcast_char(*args):
@@ -169,7 +169,8 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
     int32min = np.int32(np.iinfo(np.int32).min)
     int32max = np.int32(np.iinfo(np.int32).max)
 
-    dtype = np.intc
+    # not using intc directly due to misinteractions with pythran
+    dtype = np.int32 if np.intc().itemsize == 4 else np.int64
     if maxval is not None:
         maxval = np.int64(maxval)
         if maxval > int32max:
@@ -277,9 +278,9 @@ def validateaxis(axis):
         # dimensions, so let's make it explicit that they are not
         # allowed to be passed in
         if axis_type == tuple:
-            raise TypeError(("Tuples are not accepted for the 'axis' "
+            raise TypeError("Tuples are not accepted for the 'axis' "
                              "parameter. Please pass in one of the "
-                             "following: {-2, -1, 0, 1, None}."))
+                             "following: {-2, -1, 0, 1, None}.")
 
         # If not a tuple, check that the provided axis is actually
         # an integer and raise a TypeError similar to NumPy's

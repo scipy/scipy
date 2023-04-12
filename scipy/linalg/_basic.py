@@ -37,12 +37,12 @@ def _solve_check(n, info, lamch=None, rcond=None):
              LinAlgWarning, stacklevel=3)
 
 
-def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+def solve(a, b, lower=False, overwrite_a=False,
           overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
-    Solves the linear equation set ``a * x = b`` for the unknown ``x``
-    for square ``a`` matrix.
+    Solves the linear equation set ``a @ x == b`` for the unknown ``x``
+    for square `a` matrix.
 
     If the data matrix is known to be a particular type then supplying the
     corresponding string to ``assume_a`` key chooses the dedicated solver.
@@ -68,31 +68,25 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, optional, deprecated
-        Assume `a` is symmetric and positive definite.
-
-        .. deprecated:: 0.19.0
-            This keyword is deprecated and should be replaced by using
-           ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
-
-    lower : bool, optional
-        If True, only the data contained in the lower triangle of `a`. Default
-        is to use upper triangle. (ignored for ``'gen'``)
-    overwrite_a : bool, optional
+    lower : bool, default: False
+        Ignored if ``assume_a == 'gen'`` (the default). If True, the
+        calculation uses only the data in the lower triangle of `a`;
+        entries above the diagonal are ignored. If False (default), the
+        calculation uses only the data in the upper triangle of `a`; entries
+        below the diagonal are ignored.
+    overwrite_a : bool, default: False
         Allow overwriting data in `a` (may enhance performance).
-        Default is False.
-    overwrite_b : bool, optional
+    overwrite_b : bool, default: False
         Allow overwriting data in `b` (may enhance performance).
-        Default is False.
-    check_finite : bool, optional
+    check_finite : bool, default: True
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    assume_a : str, optional
+    assume_a : str, {'gen', 'sym', 'her', 'pos'}
         Valid entries are explained above.
-    transposed : bool, optional
-        If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
-        for complex matrices (only for True).
+    transposed : bool, default: False
+        If True, solve ``a.T @ x == b``. Raises `NotImplementedError`
+        for complex `a`.
 
     Returns
     -------
@@ -110,19 +104,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     NotImplementedError
         If transposed is True and input a is a complex matrix.
 
-    Examples
-    --------
-    Given `a` and `b`, solve for `x`:
-
-    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
-    >>> b = np.array([2, 4, -1])
-    >>> from scipy import linalg
-    >>> x = linalg.solve(a, b)
-    >>> x
-    array([ 2., -2.,  9.])
-    >>> np.dot(a, x) == b
-    array([ True,  True,  True], dtype=bool)
-
     Notes
     -----
     If the input b matrix is a 1-D array with N elements, when supplied
@@ -133,6 +114,21 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     The generic, symmetric, Hermitian and positive definite solutions are
     obtained via calling ?GESV, ?SYSV, ?HESV, and ?POSV routines of
     LAPACK respectively.
+
+    Examples
+    --------
+    Given `a` and `b`, solve for `x`:
+
+    >>> import numpy as np
+    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
+    >>> b = np.array([2, 4, -1])
+    >>> from scipy import linalg
+    >>> x = linalg.solve(a, b)
+    >>> x
+    array([ 2., -2.,  9.])
+    >>> np.dot(a, x) == b
+    array([ True,  True,  True], dtype=bool)
+
     """
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
@@ -164,14 +160,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         else:
             b1 = b1[:, None]
         b_is_1D = True
-
-    # Backwards compatibility - old keyword.
-    if sym_pos:
-        message = ("The 'sym_pos' keyword is deprecated and should be "
-                   "replaced by using 'assume_a = \"pos\"'. 'sym_pos' will be"
-                   " removed in SciPy 1.11.0.")
-        warn(message, DeprecationWarning, stacklevel=2)
-        assume_a = 'pos'
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
         raise ValueError('{} is not a recognized matrix structure'
@@ -319,6 +307,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
              [1  0  1  0]       [4]
              [1  1  1  1]       [2]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solve_triangular
     >>> a = np.array([[3, 0, 0, 0], [2, 1, 0, 0], [1, 0, 1, 0], [1, 1, 1, 1]])
     >>> b = np.array([4, 2, 4, 2])
@@ -415,6 +404,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
              [5  4  3  2  1]
              [1  1  1  1  *]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solve_banded
     >>> ab = np.array([[0,  0, -1, -1, -1],
     ...                [0,  2,  2,  2,  2],
@@ -470,13 +460,18 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
     Solve equation a x = b. a is Hermitian positive-definite banded matrix.
 
-    The matrix a is stored in `ab` either in lower diagonal or upper
+    Uses Thomas' Algorithm, which is more efficient than standard LU
+    factorization, but should only be used for Hermitian positive-definite
+    matrices.
+
+    The matrix ``a`` is stored in `ab` either in lower diagonal or upper
     diagonal ordered form:
 
         ab[u + i - j, j] == a[i,j]        (if upper form; i <= j)
         ab[    i - j, j] == a[i,j]        (if lower form; i >= j)
 
-    Example of `ab` (shape of a is (6, 6), `u` =2)::
+    Example of `ab` (shape of ``a`` is (6, 6), number of upper diagonals,
+    ``u`` =2)::
 
         upper form:
         *   *   a02 a13 a24 a35
@@ -492,7 +487,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
 
     Parameters
     ----------
-    ab : (`u` + 1, M) array_like
+    ab : (``u`` + 1, M) array_like
         Banded matrix
     b : (M,) or (M, K) array_like
         Right-hand side
@@ -510,12 +505,17 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     Returns
     -------
     x : (M,) or (M, K) ndarray
-        The solution to the system a x = b. Shape of return matches shape
+        The solution to the system ``a x = b``. Shape of return matches shape
         of `b`.
+
+    Notes
+    -----
+    In the case of a non-positive definite matrix ``a``, the solver
+    `solve_banded` may be used.
 
     Examples
     --------
-    Solve the banded system A x = b, where::
+    Solve the banded system ``A x = b``, where::
 
             [ 4  2 -1  0  0  0]       [1]
             [ 2  5  2 -1  0  0]       [2]
@@ -524,9 +524,10 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
             [ 0  0 -1  2  8  2]       [3]
             [ 0  0  0 -1  2  9]       [3]
 
+    >>> import numpy as np
     >>> from scipy.linalg import solveh_banded
 
-    `ab` contains the main diagonal and the nonzero diagonals below the
+    ``ab`` contains the main diagonal and the nonzero diagonals below the
     main diagonal. That is, we use the lower form:
 
     >>> ab = np.array([[ 4,  5,  6,  7, 8, 9],
@@ -539,14 +540,14 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
             0.34733894])
 
 
-    Solve the Hermitian banded system H x = b, where::
+    Solve the Hermitian banded system ``H x = b``, where::
 
             [ 8   2-1j   0     0  ]        [ 1  ]
         H = [2+1j  5     1j    0  ]    b = [1+1j]
             [ 0   -1j    9   -2-1j]        [1-2j]
             [ 0    0   -2+1j   6  ]        [ 0  ]
 
-    In this example, we put the upper diagonals in the array `hb`:
+    In this example, we put the upper diagonals in the array ``hb``:
 
     >>> hb = np.array([[0, 2-1j, 1j, -2-1j],
     ...                [8,  5,    9,   6  ]])
@@ -638,6 +639,7 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     To specify the Toeplitz matrix, only the first column and the first
     row are needed.
 
+    >>> import numpy as np
     >>> c = np.array([1, 3, 6, 10])    # First column of T
     >>> r = np.array([1, -1, -2, -3])  # First row of T
     >>> b = np.array([1, 2, 2, 5])
@@ -684,7 +686,7 @@ def _get_axis_len(aname, a, axis):
         ax += a.ndim
     if 0 <= ax < a.ndim:
         return a.shape[ax]
-    raise ValueError("'%saxis' entry is out of bounds" % (aname,))
+    raise ValueError(f"'{aname}axis' entry is out of bounds")
 
 
 def solve_circulant(c, b, singular='raise', tol=None,
@@ -766,6 +768,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import solve_circulant, solve, circulant, lstsq
 
     >>> c = np.array([2, 2, 4])
@@ -914,6 +917,7 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1., 2.], [3., 4.]])
     >>> linalg.inv(a)
@@ -999,6 +1003,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])
     >>> linalg.det(a)
@@ -1088,6 +1093,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import lstsq
     >>> import matplotlib.pyplot as plt
 
@@ -1288,15 +1294,55 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+
+    Notes
+    -----
+    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly
+    the inverse of ``A`` [1]_. If ``A`` is not invertible then the
+    Moore-Penrose pseudoinverse computes the ``x`` solution to ``Ax = b`` such
+    that ``||Ax - b||`` is minimized [1]_.
+
+    References
+    ----------
+    .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
+           equations. Mathematical Proceedings of the Cambridge Philosophical
+           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+
     Examples
     --------
+
+    Given an ``m x n`` matrix ``A`` and an ``n x m`` matrix ``B`` the four
+    Moore-Penrose conditions are:
+
+    1. ``ABA = A`` (``B`` is a generalized inverse of ``A``),
+    2. ``BAB = B`` (``A`` is a generalized inverse of ``B``),
+    3. ``(AB)* = AB`` (``AB`` is hermitian),
+    4. ``(BA)* = BA`` (``BA`` is hermitian) [1]_.
+
+    Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
+    pseudoinverse is a unique ``B`` that satisfies all four of these
+    conditions and exists for any ``A``. Note that, unlike the standard
+    matrix inverse, ``A`` does not have to be square or have
+    independant columns/rows.
+
+    As an example, we can calculate the Moore-Penrose pseudoinverse of a
+    random non-square matrix and verify it satisfies the four conditions.
+
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
-    >>> a = rng.standard_normal((9, 6))
-    >>> B = linalg.pinv(a)
-    >>> np.allclose(a, a @ B @ a)
+    >>> A = rng.standard_normal((9, 6))
+    >>> B = linalg.pinv(A)
+    >>> np.allclose(A @ B @ A, A)  # Condition 1
     True
-    >>> np.allclose(B, B @ a @ B)
+    >>> np.allclose(B @ A @ B, B)  # Condition 2
+    True
+    >>> np.allclose((A @ B).conj().T, A @ B)  # Condition 3
+    True
+    >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
     """
@@ -1381,8 +1427,16 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     LinAlgError
         If eigenvalue algorithm does not converge.
 
+    See Also
+    --------
+    pinv : Moore-Penrose pseudoinverse of a matrix.
+
     Examples
     --------
+
+    For a more detailed example see `pinv`.
+
+    >>> import numpy as np
     >>> from scipy.linalg import pinvh
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
@@ -1488,8 +1542,19 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     .. versionadded:: 0.19.0
 
+    References
+    ----------
+    .. [1] B.N. Parlett and C. Reinsch, "Balancing a Matrix for
+       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
+       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
+    .. [2] R. James, J. Langou, B.R. Lowery, "On matrix balancing and
+       eigenvector computation", 2014, :arxiv:`1401.5766`
+    .. [3] D.S. Watkins. A case where balancing is harmful.
+       Electron. Trans. Numer. Anal, Vol.23, 2006.
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> x = np.array([[1,2,0], [9,1,0.01], [1,2,10*np.pi]])
 
@@ -1504,18 +1569,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     array([[  0.5,   0. ,  0. ],  # may vary
            [  0. ,   1. ,  0. ],
            [  0. ,   0. ,  1. ]])
-
-    References
-    ----------
-    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
-       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
-       Vol.13(4), 1969, :doi:`10.1007/BF02165404`
-
-    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
-       eigenvector computation", 2014, :arxiv:`1401.5766`
-
-    .. [3] :  D.S. Watkins. A case where balancing is harmful.
-       Electron. Trans. Numer. Anal, Vol.23, 2006.
 
     """
 
@@ -1733,6 +1786,7 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     To specify the Toeplitz matrix, only the first column and the first
     row are needed.
 
+    >>> import numpy as np
     >>> c = np.array([1, 3, 6, 10])    # First column of T
     >>> r = np.array([1, -1, -2, -3])  # First row of T
     >>> x = np.array([[1, 10], [2, 11], [2, 11], [5, 19]])

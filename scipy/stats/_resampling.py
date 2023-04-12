@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
@@ -6,7 +8,7 @@ import inspect
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy._lib._util import rng_integers
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -69,12 +71,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -129,7 +132,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
                     for theta_hat_i in theta_hat_ji]
 
-    n_j = [len(theta_hat_i) for theta_hat_i in theta_hat_ji]
+    n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
 
     theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
                        for theta_hat_i in theta_hat_ji]
@@ -153,7 +156,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, bootstrap_result, random_state):
+                  alternative, n_resamples, batch, method, bootstrap_result,
+                  random_state):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -208,6 +212,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     confidence_level_float = float(confidence_level)
 
+    alternative = alternative.lower()
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be one of {alternatives}")
+
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int < 0:
         raise ValueError("`n_resamples` must be a non-negative integer.")
@@ -239,22 +248,43 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
-            confidence_level_float, n_resamples_int, batch_iv,
+            confidence_level_float, alternative, n_resamples_int, batch_iv,
             method, bootstrap_result, random_state)
 
 
-fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
-BootstrapResult = make_dataclass("BootstrapResult", fields)
+@dataclass
+class BootstrapResult:
+    """Result object returned by `scipy.stats.bootstrap`.
+
+    Attributes
+    ----------
+    confidence_interval : ConfidenceInterval
+        The bootstrap confidence interval as an instance of
+        `collections.namedtuple` with attributes `low` and `high`.
+    bootstrap_distribution : ndarray
+        The bootstrap distribution, that is, the value of `statistic` for
+        each resample. The last dimension corresponds with the resamples
+        (e.g. ``res.bootstrap_distribution.shape[-1] == n_resamples``).
+    standard_error : float or ndarray
+        The bootstrap standard error, that is, the sample standard
+        deviation of the bootstrap distribution.
+
+    """
+    confidence_interval: ConfidenceInterval
+    bootstrap_distribution: np.ndarray
+    standard_error: float | np.ndarray
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', bootstrap_result=None, random_state=None):
+              alternative='two-sided', method='BCa', bootstrap_result=None,
+              random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
-    When `method` is ``'percentile'``, a bootstrap confidence interval is
-    computed according to the following procedure.
+    When `method` is ``'percentile'`` and `alternative` is ``'two-sided'``,
+    a bootstrap confidence interval is computed according to the following
+    procedure.
 
     1. Resample the data: for each sample in `data` and for each of
        `n_resamples`, take a random sample of the original sample
@@ -314,6 +344,15 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         calculated.
     confidence_level : float, default: ``0.95``
         The confidence level of the confidence interval.
+    alternative : {'two-sided', 'less', 'greater'}, default: ``'two-sided'``
+        Choose ``'two-sided'`` (default) for a two-sided confidence interval,
+        ``'less'`` for a one-sided confidence interval with the lower bound
+        at ``-np.inf``, and ``'greater'`` for a one-sided confidence interval
+        with the upper bound at ``np.inf``. The other bound of the one-sided
+        confidence intervals is the same as that of a two-sided confidence
+        interval with `confidence_level` twice as far from 1.0; e.g. the upper
+        bound of a 95% ``'less'``  confidence interval is the same as the upper
+        bound of a 90% ``'two-sided'`` confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
@@ -566,10 +605,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
-                         confidence_level, n_resamples, batch, method,
-                         bootstrap_result, random_state)
-    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
-    n_resamples, batch, method, bootstrap_result, random_state = args[6:]
+                         confidence_level, alternative, n_resamples, batch,
+                         method, bootstrap_result, random_state)
+    (data, statistic, vectorized, paired, axis, confidence_level,
+     alternative, n_resamples, batch, method, bootstrap_result,
+     random_state) = args
 
     theta_hat_b = ([] if bootstrap_result is None
                    else [bootstrap_result.bootstrap_distribution])
@@ -590,7 +630,8 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2
+    alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
+             else (1 - confidence_level))
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
                                  theta_hat_b=theta_hat_b, batch=batch)[:2]
@@ -607,6 +648,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     if method == 'basic':  # see [3]
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
+
+    if alternative == 'less':
+        ci_l = np.full_like(ci_l, -np.inf)
+    elif alternative == 'greater':
+        ci_u = np.full_like(ci_u, np.inf)
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,
@@ -661,8 +707,23 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
             batch_iv, alternative, axis_int)
 
 
-fields = ['statistic', 'pvalue', 'null_distribution']
-MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
+@dataclass
+class MonteCarloTestResult:
+    """Result object returned by `scipy.stats.monte_carlo_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the sample.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
 def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
@@ -725,12 +786,16 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the sample.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : MonteCarloTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The observed test statistic of the sample.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     References
     ----------
@@ -851,8 +916,23 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 
 
-attributes = ('statistic', 'pvalue', 'null_distribution')
-PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
+@dataclass
+class PermutationTestResult:
+    """Result object returned by `scipy.stats.permutation_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the data.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
 def _all_partitions_concatenated(ns):
@@ -891,6 +971,33 @@ def _batch_generator(iterable, batch):
     while z:  # we don't want StopIteration without yielding an empty list
         yield z
         z = [item for i, item in zip(range(batch), iterator)]
+
+
+def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
+                               random_state):
+    # Returns a generator that yields arrays of size
+    # `(batch, n_samples, n_obs_sample)`.
+    # Each row is an independent permutation of indices 0 to `n_obs_sample`.
+    batch = min(batch, n_permutations)
+
+    if hasattr(random_state, 'permuted'):
+        def batched_perm_generator():
+            indices = np.arange(n_obs_sample)
+            indices = np.tile(indices, (batch, n_samples, 1))
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                # Don't permute in place, otherwise results depend on `batch`
+                permuted_indices = random_state.permuted(indices, axis=-1)
+                yield permuted_indices[:batch_actual]
+    else:  # RandomState and early Generators don't have `permuted`
+        def batched_perm_generator():
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                size = (batch_actual, n_samples, n_obs_sample)
+                x = random_state.random(size=size)
+                yield np.argsort(x, axis=-1)[:batch_actual]
+
+    return batched_perm_generator()
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
@@ -969,22 +1076,23 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     if n_permutations >= n_max:
         exact_test = True
         n_permutations = n_max
+        batch = batch or int(n_permutations)
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
     else:
         exact_test = False
+        batch = batch or int(n_permutations)
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
+        args = n_permutations, n_samples, n_obs_sample, batch, random_state
+        batched_perm_generator = _pairings_permutations_gen(*args)
 
-    batch = batch or int(n_permutations)
     null_distribution = []
 
-    for indices in _batch_generator(perm_generator, batch=batch):
+    for indices in batched_perm_generator:
         indices = np.array(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
@@ -1217,12 +1325,16 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the data.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : PermutationTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The observed test statistic of the data.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     Notes
     -----
@@ -1271,7 +1383,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     case, if ``n`` is an array of the number of observations within each
     sample, the number of distinct partitions is::
 
-        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
+        np.prod([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
     **Paired statistics, permute pairings** (``permutation_type='pairings'``):
 

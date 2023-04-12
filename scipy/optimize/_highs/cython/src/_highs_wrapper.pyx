@@ -126,10 +126,9 @@ cdef apply_options(dict options, Highs & highs):
             'dual_simplex_cleanup_strategy',
             'ipm_iteration_limit',
             'keep_n_rows',
-            'max_threads',
+            'threads',
             'mip_max_nodes',
             'highs_debug_level',
-            'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
             'simplex_dualise_strategy',
@@ -150,6 +149,9 @@ cdef apply_options(dict options, Highs & highs):
                 opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
                 if opt_status != HighsStatusOK:
                     warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+                else:
+                    if opt == "threads":
+                        highs.resetGlobalScheduler(blocking=True)
 
     # Do all the doubles
     for opt in set([
@@ -165,7 +167,8 @@ cdef apply_options(dict options, Highs & highs):
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
             'start_crossover_tolerance',
-            'time_limit'
+            'time_limit',
+            'mip_rel_gap'
     ]):
         val = options.get(opt, None)
         if val is not None:
@@ -332,7 +335,7 @@ def _highs_wrapper(
             - less_infeasible_DSE_choose_row : bool
                 Undocumented advanced option.
 
-            - max_threads : int
+            - threads : int
                 Maximum number of threads in parallel execution.
 
             - message_level : int {0, 1, 2, 4, 7}
@@ -358,9 +361,6 @@ def _highs_wrapper(
                 ``message_level`` behaves like a bitmask, i.e., any
                 combination of levels is possible using the bit-or
                 operator.
-
-            - min_threads : int
-                Minimum number of threads in parallel execution.
 
             - mps_parser_type_free : bool
                 Use free format MPS parsing.
@@ -554,7 +554,7 @@ def _highs_wrapper(
 
     References
     ----------
-    .. [1] https://www.maths.ed.ac.uk/hall/HiGHS
+    .. [1] https://highs.dev/
     .. [2] https://www.maths.ed.ac.uk/hall/HiGHS/HighsOptions.html
     '''
 

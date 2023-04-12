@@ -29,7 +29,7 @@ double erfinv(double y) {
         return y / M_2_SQRTPI;
     } 
     if ((domain_lb < y) && (y < domain_ub)) {
-        return ndtri(0.5 * (y+1)) * NPY_SQRT1_2;
+        return ndtri(0.5 * (y+1)) * M_SQRT1_2;
     }
     else if (y == domain_lb) {
         return -INFINITY;
@@ -59,7 +59,7 @@ double erfcinv(double y) {
     const double domain_ub = 2;
 
     if ((domain_lb < y) && (y < domain_ub)) {
-        return -ndtri(0.5 * y) * NPY_SQRT1_2;
+        return -ndtri(0.5 * y) * M_SQRT1_2;
     }
     else if (y == domain_lb) {
         return INFINITY;

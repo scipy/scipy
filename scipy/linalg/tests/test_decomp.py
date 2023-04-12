@@ -35,9 +35,9 @@ from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
-from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
+from numpy import (array, diag, full, linalg, argsort, zeros, arange,
                    float32, complex64, ravel, sqrt, iscomplex, shape, sort,
-                   sign, asarray, isfinite, ndarray, eye, dtype, triu, tril)
+                   sign, asarray, isfinite, ndarray, eye,)
 
 from numpy.random import seed, random
 
@@ -46,7 +46,10 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
-
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
     "Generate random sym/hermitian array of the given size n"
@@ -84,22 +87,6 @@ def clear_fuss(ar, fuss_binary_bits=7):
     return np.ldexp(x_mant, x_exp)
 
 
-# XXX: This function should be available through numpy.testing
-def assert_dtype_equal(act, des):
-    if isinstance(act, ndarray):
-        act = act.dtype
-    else:
-        act = dtype(act)
-
-    if isinstance(des, ndarray):
-        des = des.dtype
-    else:
-        des = dtype(des)
-
-    assert_(act == des,
-            'dtype mismatch: "{}" (should be "{}")'.format(act, des))
-
-
 # XXX: This function should not be defined here, but somewhere in
 #      scipy.linalg namespace
 def symrand(dim_or_eigv):
@@ -126,13 +113,6 @@ def symrand(dim_or_eigv):
     # to avoid roundoff errors, symmetrize the matrix (again)
     h = 0.5*(h.T+h)
     return h
-
-
-def _complex_symrand(dim, dtype):
-    a1, a2 = symrand(dim), symrand(dim)
-    # add antisymmetric matrix as imag part
-    a = a1 + 1j*(triu(a2)-tril(a2))
-    return a.astype(dtype)
 
 
 class TestEigVals:
@@ -227,7 +207,7 @@ class TestEig:
             A = asarray(A)
             B0 = B
             B = np.eye(*A.shape)
-        msg = "\n%r\n%r" % (A, B)
+        msg = f"\n{A!r}\n{B!r}"
 
         # Eigenvalues in homogeneous coordinates
         w, vr = eig(A, B0, homogeneous_eigvals=True)
@@ -305,7 +285,7 @@ class TestEig:
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
-        M = diag(array(([1, 0, 3])))
+        M = diag(array([1, 0, 3]))
         K = array(([2, -1, -1], [-1, 2, -1], [-1, -1, 2]))
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
@@ -791,16 +771,32 @@ class TestEigh:
                       type=4)
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      subset_by_value=[1, 2], eigvals=[2, 4])
+                      subset_by_value=[1, 2], subset_by_index=[2, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[0, 4])
+                      subset_by_index=[0, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[-2, 2])
+                      subset_by_index=[-2, 2])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[2, 0])
+                      subset_by_index=[2, 0])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -813,7 +809,11 @@ class TestEigh:
                       driver='evr', turbo=False)
         # Subset request from invalid driver
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='gvd', eigvals=[1, 2], turbo=False)
+                      driver='gvd', subset_by_index=[1, 2], turbo=False)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          driver='gvd', subset_by_index=[1, 2], turbo=False)
 
     def test_nonpositive_b(self):
         assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))
@@ -869,36 +869,9 @@ class TestEigh:
         else:
             assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
-    # Old eigh tests kept for backwards compatibility
-    @pytest.mark.parametrize('eigvals', (None, (2, 4)))
-    @pytest.mark.parametrize('turbo', (True, False))
-    @pytest.mark.parametrize('lower', (True, False))
-    @pytest.mark.parametrize('overwrite', (True, False))
-    @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
-    @pytest.mark.parametrize('dim', (6,))
-    def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
-        atol = 1e-11 if dtype_ in ('dD') else 1e-4
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag_, w, rtol=0., atol=atol)
-
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
-        w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                    overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag1_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag1_, w, rtol=0., atol=atol)
-        diag2_ = diag(z.T.conj() @ b @ z).real
-        assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
-
     def test_eigvalsh_new_args(self):
         a = _random_hermitian_matrix(5)
-        w = eigvalsh(a, eigvals=[1, 2])
+        w = eigvalsh(a, subset_by_index=[1, 2])
         assert_equal(len(w), 2)
 
         w2 = eigvalsh(a, subset_by_index=[1, 2])
@@ -909,6 +882,35 @@ class TestEigh:
         w3 = eigvalsh(b, subset_by_value=[1, 1.4])
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
+
+    @pytest.mark.parametrize("method", [eigh, eigvalsh])
+    def test_deprecation_warnings(self, method):
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'turbo'"):
+            method(np.zeros((2, 2)), turbo=True)
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'eigvals'"):
+            method(np.zeros((2, 2)), eigvals=[0, 1])
+
+    def test_deprecation_results(self):
+        a = _random_hermitian_matrix(3)
+        b = _random_hermitian_matrix(3, posdef=True)
+
+        # check turbo gives same result as driver='gvd'
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
+            w_dep, v_dep = eigh(a, b, turbo=True)
+        w, v = eigh(a, b, driver='gvd')
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
+
+        # check eigvals gives the same result as subset_by_index
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
+            w_dep, v_dep = eigh(a, eigvals=[0, 1])
+        w, v = eigh(a, subset_by_index=[0, 1])
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
 
 
 class TestLU:
@@ -2044,12 +2046,22 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
+
+
 class TestQZ:
     def setup_method(self):
         seed(12345)
 
-    @pytest.mark.xfail(sys.platform == 'darwin',
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+    @pytest.mark.xfail(
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < "0.3.21.dev",
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
+    )
     def test_qz_single(self):
         n = 5
         A = random([n, n]).astype(float32)
@@ -2222,11 +2234,6 @@ class TestQZ:
         assert_(np.all(diag(BB) >= 0))
 
 
-def _make_pos(X):
-    # the decompositions can have different signs than verified results
-    return np.sign(X)*X
-
-
 class TestOrdQZ:
     @classmethod
     def setup_class(cls):
@@ -2331,7 +2338,7 @@ class TestOrdQZ:
             # once the sorting criterion was not matched all subsequent
             # eigenvalues also shouldn't match
             if not lastsort:
-                assert(not cursort)
+                assert not cursort
             lastsort = cursort
 
     def check_all(self, sort):

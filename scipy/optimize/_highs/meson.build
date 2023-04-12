@@ -11,7 +11,8 @@ highs_define_macros = [
   '-UEXT_PRESOLVE',
   '-USCIP_DEV',
   '-UHiGHSDEV',
-  '-UOSI_FOUND'
+  '-UOSI_FOUND',
+  '-DNDEBUG'
 ]
 
 basiclu_lib = static_library('basiclu',
@@ -104,6 +105,7 @@ ipx_lib = static_library('ipx',
     '../../_lib/highs/extern/',
     'cython/src/'
   ],
+  dependencies: thread_dep,
   cpp_args: [highs_flags, highs_define_macros]
 )
 
@@ -220,13 +222,13 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/',
   ],
+  dependencies: thread_dep,
   cpp_args: [highs_flags, highs_define_macros]
 )
 
 _highs_wrapper = py3.extension_module('_highs_wrapper',
   cython_gen_cpp.process('cython/src/_highs_wrapper.pyx'),
   include_directories: [
-    inc_np,
     'cython/src/',
     'src/',
     '../../_lib/highs/src/',
@@ -234,6 +236,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/util/'
   ],
+  dependencies: [np_dep, thread_dep, atomic_dep],
   link_args: version_link_args,
   link_with: [highs_lib, ipx_lib, basiclu_lib],
   cpp_args: [highs_flags, highs_define_macros, cython_c_args],
@@ -252,6 +255,7 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
+  dependencies: thread_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_highs'
@@ -271,12 +275,10 @@ py3.install_sources([
     'cython/src/SimplexConst.pxd',
     'cython/src/highs_c_api.pxd'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_highs/src/cython'
 )
 
 py3.install_sources(
   ['__init__.py'],
-  pure: false,
   subdir: 'scipy/optimize/_highs'
 )

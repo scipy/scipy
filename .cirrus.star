@@ -15,7 +15,6 @@ def main(ctx):
     # - a cron job called "nightly". The cron job is not set in this file,
     #   but on the cirrus-ci repo page
     # - commit message containing [wheel build]
-    # - a tag that begins with v, but doesn't end with dev0
     ######################################################################
 
     if env.get("CIRRUS_REPO_FULL_NAME") != "scipy/scipy":
@@ -23,22 +22,6 @@ def main(ctx):
 
     if env.get("CIRRUS_CRON", "") == "nightly":
         return fs.read("ci/cirrus_wheels.yml")
-
-    tag = env.get("CIRRUS_TAG")
-
-    # test if it's a tag?
-    if tag:
-        # if tag name contains "dev", then don't build any wheels
-        # I tried using a regex for this, but I don't think go supports
-        # the particular regex I wanted to use
-        if "dev" in tag:
-            return []
-        elif tag.startswith("v"):
-            # all other tags beginning with 'v' will build. cirrus_wheels.yml
-            # will only upload wheels to staging if the following bash test is
-            # True:
-            # [[ $CIRRUS_TAG =~ ^v.*[^dev0]$ ]]
-            return fs.read("ci/cirrus_wheels.yml")
 
     # Obtain commit message for the event. Unfortunately CIRRUS_CHANGE_MESSAGE
     # only contains the actual commit message on a non-PR trigger event.
@@ -49,4 +32,10 @@ def main(ctx):
     if "[wheel build]" in dct["message"]:
         return fs.read("ci/cirrus_wheels.yml")
 
-    return []
+    # this configuration runs a single linux_aarch64 + macosx_arm64 run.
+    # there's no need to do this during a wheel run as they automatically build
+    # and test over a wider range of Pythons.
+    if "[skip cirrus]" in dct["message"] or "[skip ci]" in dct["message"]:
+        return []
+
+    return fs.read("ci/cirrus_general_ci.yml")

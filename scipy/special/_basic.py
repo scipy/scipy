@@ -90,7 +90,7 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
         if n < 0:
             raise ValueError()
     except (ValueError, TypeError) as err:
-        raise err.__class__("{} must be a non-negative integer".format(var_name)) from err
+        raise err.__class__(f"{var_name} must be a non-negative integer") from err
     return n
 
 
@@ -116,6 +116,7 @@ def diric(x, n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -615,9 +616,8 @@ def y0_zeros(nt, complex=False):
 
     Plot the real part of :math:`Y_0` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y0_zeros, y0
+    >>> from scipy.special import y0
     >>> xmin = 0
     >>> xmax = 11
     >>> x = np.linspace(xmin, xmax, 500)
@@ -698,9 +698,8 @@ def y1_zeros(nt, complex=False):
 
     Plot :math:`Y_1` and the first four computed roots.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1_zeros, y1
+    >>> from scipy.special import y1
     >>> xmin = 0
     >>> xmax = 13
     >>> x = np.linspace(xmin, xmax, 500)
@@ -776,9 +775,8 @@ def y1p_zeros(nt, complex=False):
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
 
-    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import y1, yvp, y1p_zeros
+    >>> from scipy.special import y1, yvp
     >>> y1_roots, y1_values_at_roots = y1p_zeros(4)
     >>> real_roots = y1_roots.real
     >>> xmax = 15
@@ -1780,7 +1778,7 @@ def clpmn(m, n, z, type=3):
         raise ValueError("n must be a non-negative integer.")
     if not isscalar(z):
         raise ValueError("z must be scalar.")
-    if not(type == 2 or type == 3):
+    if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
     if (m < 0):
         mp = -m
@@ -1875,6 +1873,7 @@ def bernoulli(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import bernoulli, zeta
     >>> bernoulli(4)
     array([ 1.        , -0.5       ,  0.16666667,  0.        , -0.03333333])
@@ -1932,6 +1931,7 @@ def euler(n):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import euler
     >>> euler(6)
     array([  1.,   0.,  -1.,   0.,   5.,   0., -61.])
@@ -2577,7 +2577,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=True):
+def comb(N, k, exact=False, repetition=False, legacy=None):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2591,8 +2591,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
         used, otherwise the result is computed exactly. For non-integers, if
-        `exact` is True, the inputs are currently cast to integers, though
-        this behavior is deprecated (see below).
+        `exact` is True, is disregarded.
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
@@ -2602,12 +2601,10 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         arguments is unaffected by the value of `exact`.
 
         .. deprecated:: 1.9.0
-            Non-integer arguments are currently being cast to integers when
-            `exact=True`. This behaviour is deprecated and the default will
-            change to avoid the cast in SciPy 1.11.0. To opt into the future
-            behavior set `legacy=False`. If you want to keep the
-            argument-casting but silence this warning, cast your inputs
-            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
+            Using `legacy` is deprecated and will removed by
+            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            your inputs directly, e.g.
+            ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2627,6 +2624,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import comb
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2638,25 +2636,28 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     220
 
     """
+    if legacy is not None:
+        warnings.warn(
+            "Using 'legacy' keyword is deprecated and will be removed by "
+            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "your inputs directly, e.g. "
+            "'comb(int(your_N), int(your_k), exact=True)'.",
+            DeprecationWarning,
+            stacklevel=2
+        )
     if repetition:
         return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
-        if int(N) != N or int(k) != k:
-            if legacy:
-                warnings.warn(
-                    "Non-integer arguments are currently being cast to "
-                    "integers when exact=True. This behaviour is "
-                    "deprecated and the default will change to avoid the cast "
-                    "in SciPy 1.11.0. To opt into the future behavior set "
-                    "legacy=False. If you want to keep the argument-casting "
-                    "but silence this warning, cast your inputs directly, "
-                    "e.g. comb(int(your_N), int(your_k), exact=True).",
-                    DeprecationWarning, stacklevel=2
-                )
-            else:
-                return comb(N, k)
-        # _comb_int casts inputs to integers
-        return _comb_int(N, k)
+        if int(N) == N and int(k) == k:
+            # _comb_int casts inputs to integers, which is safe & intended here
+            return _comb_int(N, k)
+        elif legacy:
+            # here at least one number is not an integer; legacy behavior uses
+            # lossy casts to int
+            return _comb_int(N, k)
+        # otherwise, we disregard `exact=True`; it makes no sense for
+        # non-integral arguments
+        return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -2695,6 +2696,7 @@ def perm(N, k, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import perm
     >>> k = np.array([3, 4])
     >>> n = np.array([10, 10])
@@ -2779,6 +2781,7 @@ def factorial(n, exact=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import factorial
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
@@ -2990,6 +2993,7 @@ def zeta(x, q=None, out=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zeta, polygamma, factorial
 
     Some specific values:

@@ -10,8 +10,8 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.9.0",
-    "Cython>=0.29.32",
+    "meson-python>=0.12.1",
+    "Cython>=0.29.33",  # when updating version, also update check in meson.build
     "pybind11>=2.10.0",
     "pythran>=0.12.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
@@ -25,24 +25,17 @@ requires = [
 
     # now matches minimum supported version, keep here as separate requirement
     # to be able to sync more easily with oldest-supported-numpy
-    "numpy==1.19.5; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
-
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.21.0
-    # (first version with arm64 wheels available)
-    "numpy==1.21.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.21.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
-
     # loongarch64 requires numpy>=1.22.0
     "numpy==1.22.0; platform_machine=='loongarch64'",
 
     # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
     # built with vc142. 1.22.3 is the first version that has 32-bit Windows
     # wheels *and* was built with vc141. So use that:
+    "numpy==1.22.3; python_version=='3.9' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
     "numpy==1.22.3; python_version=='3.10' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
-    "numpy==1.19.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.5; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.6; python_version=='3.9' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
     # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
     # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
     # (see oldest-supported-numpy issues gh-28 and gh-45)
@@ -54,7 +47,7 @@ requires = [
     # to be used and allows wheels to be used as soon as they
     # become available.
     "numpy; python_version>='3.12'",
-    "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
+    "numpy; python_version>='3.9' and platform_python_implementation=='PyPy'",
 ]
 
 [project]
@@ -69,11 +62,11 @@ maintainers = [
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     # TODO: update to "pin-compatible" once possible, see
     # https://github.com/FFY00/meson-python/issues/29
-    "numpy>=1.19.5",
+    "numpy>=1.21.6",
 ]
 readme = "README.rst"
 classifiers = [
@@ -84,9 +77,9 @@ classifiers = [
     "Programming Language :: C",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -116,12 +109,17 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "jupytext",
+    "myst-nb",
+    "pooch",
 ]
 dev = [
     "mypy",
     "typing_extensions",
+    "types-psutil",
     "pycodestyle",
-    "flake8",
+    "ruff",
+    "cython-lint>=0.12.2",
     "rich-click",
     "click",
     "doit>=0.36.0",
@@ -140,7 +138,7 @@ dodoFile = "dev.py"
 
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
+skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
@@ -154,7 +152,6 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-test-skip = "*_arm64 *_universal2:arm64"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
@@ -170,4 +167,5 @@ select = "*-win_amd64"
 # An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
-environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
+# environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
+environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }

@@ -46,6 +46,7 @@ desired `numpy` type object to the output argument. For example:
 .. code:: python
 
     >>> from scipy.ndimage import correlate
+    >>> import numpy as np
     >>> correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> correlate(np.arange(10), [1, 2.5], output=np.float64)
@@ -1754,25 +1755,11 @@ We can also implement the callback function with the following C code:
 
 More information on writing Python extension modules can be found
 `here`__. If the C code is in the file ``example.c``, then it can be
-compiled with the following ``setup.py``,
+compiled after adding it to ``meson.build`` (see examples inside
+``meson.build`` files) and follow what's there. After that is done,
+running the script:
 
-__ https://docs.python.org/2/extending/extending.html
-
-.. code:: python
-
-   from distutils.core import setup, Extension
-   import numpy
-
-   shift = Extension('example',
-                     ['example.c'],
-                     include_dirs=[numpy.get_include()]
-   )
-
-   setup(name='example',
-         ext_modules=[shift]
-   )
-
-and now running the script
+__ https://docs.python.org/3/extending/index.html
 
 .. code:: python
 
