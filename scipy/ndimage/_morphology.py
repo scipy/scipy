@@ -1922,6 +1922,12 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Returned only when `return_indices` is True and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_cdt : Faster distance transform for taxicab and
+        chessboard metrics
+    distance_transform_edt : Faster distance transform for euclidean metric
+
     Notes
     -----
     This function employs a slow brute force algorithm, see also the
