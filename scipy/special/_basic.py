@@ -3043,6 +3043,11 @@ def factorialk(n, k, exact=True):
     if not exact:
         raise NotImplementedError
 
+    helpmsg = ""
+    if k in {1, 2}:
+        func = "factorial" if k == 1 else "factorial2"
+        helpmsg = f"\nYou can try to use {func} instead"
+
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
@@ -3050,7 +3055,7 @@ def factorialk(n, k, exact=True):
             return np.nan
         elif not np.issubdtype(type(n), np.integer):
             msg = "factorialk does not support non-integral scalar arguments!"
-            raise ValueError(msg)
+            raise ValueError(msg + helpmsg)
         elif n < 0:
             return 0
         elif n in {0, 1}:
@@ -3063,7 +3068,7 @@ def factorialk(n, k, exact=True):
         return n
     if not np.issubdtype(n.dtype, np.integer):
         msg = "factorialk does not support non-integral arrays!"
-        raise ValueError(msg)
+        raise ValueError(msg + helpmsg)
     return _exact_factorialx_array(n, k=k)
 
 
