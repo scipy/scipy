@@ -1294,6 +1294,24 @@ class _TestCommon:
                 for attribute in ('offsets', 'data'):
                     check_equal_but_not_same_array_attribute(attribute)
 
+    @sup_complex
+    def test_astype_immutable(self):
+        D = array([[2.0 + 3j, 0, 0],
+                   [0, 4.0 + 5j, 0],
+                   [0, 0, 0]])
+        S = self.spmatrix(D)
+        if hasattr(S, 'data'):
+            S.data.flags.writeable = False
+        if hasattr(S, 'indptr'):
+            S.indptr.flags.writeable = False
+        if hasattr(S, 'indices'):
+            S.indices.flags.writeable = False
+        for x in supported_dtypes:
+            D_casted = D.astype(x)
+            S_casted = S.astype(x)
+            assert_equal(S_casted.dtype, D_casted.dtype)
+
+
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
 
