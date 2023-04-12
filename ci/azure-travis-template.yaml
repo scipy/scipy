@@ -91,7 +91,7 @@ steps:
       # only in a single place)
     displayName: 'Install full mode optional dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
-  - script: pip install pytest-cov coverage codecov
+  - script: pip install pytest-cov coverage
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
   - script: pip install matplotlib sphinx numpydoc pooch
