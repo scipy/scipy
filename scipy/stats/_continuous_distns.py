@@ -1743,8 +1743,8 @@ class dweibull_gen(rv_continuous):
 
     def _isf(self, q, c):
         double_q = 2. * np.where(q <= 0.5, q, 1. - q)
-        inv = stats.weibull_min._isf(double_q, c) 
-        return np.where(q > 0.5, -inv, inv)
+        weibull_min_isf = stats.weibull_min._isf(double_q, c) 
+        return np.where(q > 0.5, -weibull_min_isf, weibull_min_isf)
 
     def _munp(self, n, c):
         return (1 - (n % 2)) * sc.gamma(1.0 + 1.0 * n / c)

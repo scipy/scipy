@@ -6349,8 +6349,19 @@ class TestWeibull:
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
 
-    @pytest.mark.parametrize('x, c, ref', [()])
-    def test_sf_isf(self, x, c, ref)
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def weibull_sf_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.exp(-x**c))
+
+    @pytest.mark.parametrize('x, c, ref', [(50, 1, 1.9287498479639178e-22),
+                                           (1000, 0.8,
+                                            8.131269637872743e-110)])
+    def test_sf_isf(self, x, c, ref):
+        assert_allclose(stats.weibull_min.sf(x, c), ref, rtol=1e-14)
+        assert_allclose(stats.weibull_min.isf(ref, c), x, rtol=1e-14)
 
 
 class TestDweibull:
@@ -6367,24 +6378,15 @@ class TestDweibull:
         ref = stats.weibull_min.entropy(c) - np.log(0.5)
         assert_allclose(res, ref, rtol=1e-15)
 
-    # reference values were computed with mpmath
-    # from mpmath import mp
-    # mp.dps = 50
-    # def sf_mpmath(x, c):
-    #     x = mp.mpf(x)
-    #     c = mp.mpf(c)
-    #     if x > 0:
-    #          return mp.mpf(0.5) * mp.exp(-x**c)
-    # else:
-    #          return mp.one - mp.mpf(0.5) * mp.exp(-(-x)**c)
-    # for the inverse survival function tests, swap ref and x
-
-    @pytest.mark.parametrize('x, c, ref',
-                             [(1e20, 0.1, 1.8600379880103705e-44),
-                              (1e5, 0.5, 2.306726997904701e-138)])
-    def test_sf_isf(self, x, c, ref):
-        assert_allclose(stats.dweibull.sf(x, c), ref, rtol=5e-14)
-        assert_allclose(stats.dweibull.isf(ref, c), x, rtol=5e-14)
+    def test_sf(self):
+        # test that for positive values the dweibull survival function is half
+        # the weibull_min survival function
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=1, size=10)
+        x = 10 * rng.uniform()
+        res = stats.dweibull.sf(x, c)
+        ref = 0.5 * stats.weibull_min.sf(x, c)
+        assert_allclose(res, ref, rtol=1e-15)
 
 
 class TestTruncWeibull:
