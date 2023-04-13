@@ -505,6 +505,7 @@ class TestQuad:
             error_tolerance=6e-8
         )
 
+    @pytest.mark.filterwarnings("ignore::scipy.integrate._quadpack_py.IntegrationWarning")
     def test_complex(self):
         def tfunc(x):
             return np.exp(1j*x)
@@ -517,8 +518,7 @@ class TestQuad:
         # to return an error message.  The output is compared
         # against what is returned by explicit integration
         # of the parts.
-        kwargs = {'a': 0, 'b': np.inf,
-                  'weight': 'cos', 'wvar': 1}
+        kwargs = {'a': 0, 'b': np.inf, 'weight': 'cos', 'wvar': 1}
         res_c = quad(tfunc, complex_func=True, **kwargs)
         res_r = quad(lambda x: np.real(np.exp(1j*x)),
                      complex_func=False,
@@ -530,10 +530,9 @@ class TestQuad:
         np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
         np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
 
-        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
-        assert res_c[2]['real'][2] == res_r[4]
-        assert res_c[2]['real'][1] == res_r[3]
-        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+        assert res_c.explain['real'] == res_r.explain
+        assert res_c.message['real'] == res_r.message
+        assert res_c.infodict['real']['lst'] == res_r.infodict['lst']
 
         assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
         assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']

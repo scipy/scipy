@@ -480,9 +480,9 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
             msgexp["imag"] = im_retval[2:]
             return retval + (msgexp,)
         else:
-            infodict = {"real" : re_retval.infodict, "imag": re_retval.infodict}
-            message = {"real" : re_retval.message, "imag": re_retval.message}
-            explain = {"real" : re_retval.explain, "imag": re_retval.explain}
+            infodict = {"real" : re_retval.infodict, "imag": im_retval.infodict}
+            message = {"real" : re_retval.message, "imag": im_retval.message}
+            explain = {"real" : re_retval.explain, "imag": im_retval.explain}
             return QuadResult(integral=integral, abserr=error_estimate,
                               infodict=infodict, message=message,
                               explain=explain)
@@ -539,9 +539,9 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         else:
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
             if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
-                return QuadResult(*retval[:-1], msg, explain)
+                return QuadResult(*retval[:-2], infodict=retval[-1], message=msg, explain=explain)
             else:
-                return QuadResult(retval[:-1], msg)
+                return QuadResult(*retval[:-2], infodict=retval[-1], message=msg, explain="")
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
