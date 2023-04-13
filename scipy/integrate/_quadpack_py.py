@@ -229,7 +229,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
     For the 'cos' and 'sin' weighting, additional inputs and outputs are
     available.
 
-    For finite integration limits, the integration is performed using a/f
+    For finite integration limits, the integration is performed using a
     Clenshaw-Curtis method which uses Chebyshev moments. For repeated
     calculations, these moments are saved in the output dictionary:
 
