@@ -150,10 +150,10 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
 
     **Extra information for quad() inputs and outputs**
 
-    `infodict` is a dictionary with entries as tabulated below. For
-    infinite limits, the range is transformed to (0,1) and the
+    The `infodict` attribute is a dictionary with entries as tabulated below.
+    For infinite limits, the range is transformed to (0,1) and the
     optional outputs are given with respect to this transformed range.
-    Let M be the input argument limit and let K be infodict['last'].
+    Let M be the input argument limit and let K be ``infodict['last']``.
     The entries are:
 
     'neval'
@@ -182,7 +182,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         decreasing sequence.
 
     If the input argument points is provided (i.e., it is not None),
-    the following additional outputs are placed in the output
+    the following additional outputs are placed in the `infodict` attribute
     dictionary. Assume the points sequence is of length P.
 
     'pts'
@@ -231,7 +231,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
 
     For finite integration limits, the integration is performed using a
     Clenshaw-Curtis method which uses Chebyshev moments. For repeated
-    calculations, these moments are saved in the output dictionary:
+    calculations, these moments are saved in the `infodict` attribute dictionary:
 
     'momcom'
         The maximum level of Chebyshev moments that have been computed,
@@ -252,10 +252,10 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
 
     If one of the integration limits is infinite, then a Fourier integral is
     computed (assuming w neq 0). If a numerical error
-    is encountered, besides the error message attached to the output tuple,
-    a dictionary is also appended to the output tuple which translates the
+    is encountered, besides the `message` attribute of the results object,
+    the `explain` attribute translates the
     error codes in the array ``info['ierlst']`` to English messages. The
-    output information dictionary contains the following entries instead of
+    `infodict` attribute dictionary contains the following entries instead of
     'last', 'alist', 'blist', 'rlist', and 'elist':
 
     'lst'
