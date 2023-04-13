@@ -2414,9 +2414,18 @@ class TestMode:
 
     def test_raise_non_numeric_gh18254(self):
         message = "Argument `a` is not recognized as numeric."
-        with pytest.raises(TypeError, match=message):
-            stats.mode(np.arange(5, dtype=object))
 
+        class ArrLike():
+            def __init__(self, x):
+                self._x = x
+
+            def __array__(self):
+                return self._x.astype(object)
+
+        with pytest.raises(TypeError, match=message):
+            stats.mode(ArrLike(np.arange(3)))
+        with pytest.raises(TypeError, match=message):
+            stats.mode(np.arange(3, dtype=object))
 
 class TestSEM:
 
