@@ -2,9 +2,6 @@ import numpy as np
 import mpmath
 from mpmath import mp
 
-mpmath.dps = None  # see assertion in `ReferenceDistribution` `__init__`.
-mp.dps = 100  # default; but this can be overridden in scripts after import
-
 
 class ReferenceDistribution:
     """Minimalist distribution infrastructure for generating reference data.
@@ -62,12 +59,23 @@ class ReferenceDistribution:
     SciPy distribution methods are *correct* (in the sense of being consistent
     with the rest of the distribution methods); generic tests take care of
     that.
-
-
     """
 
     def __init__(self, **kwargs):
-        assert mpmath.dps is None
+        try:
+            if mpmath.dps is not None:
+                message = ("`mpmath.dps` has been assigned. This is not "
+                           "intended usage; instead, assign the desired "
+                           "precision to `mpmath.mp.dps` (e.g. `from mpmath "
+                           "as mp; mp.dps = 50.")
+                raise RuntimeError(message)
+        except AttributeError:
+            mpmath.dps = None
+
+        if mp.dps <= 15:
+            message = ("`mpmath.mp.dps <= 15`. Set a higher precision (e.g."
+                       "`50`) to use this distribution.")
+            raise RuntimeError(message)
 
         self._params = {key:self._make_mpf_array(val)
                         for key, val in kwargs.items()}
@@ -247,19 +255,22 @@ class SkewNormal(ReferenceDistribution):
 
     def __init__(self, *, a):
         # Overriding __init__ is not necessary, but it allows IDEs to hint at
-        # shape parameters. All parameters are keyword only to avoid the ambiguity
-        # inherent in positional arguments. The infrastructure does not take
-        # care of location and scale; nonetheless, assume standard location
-        # and scale. Typically, there is no need to test the SciPy distribution
-        # infrastructure's treatment of location and scale separately for
-        # a specific distribution.
+        # shape parameters. All parameters are keyword only to avoid the
+        # ambiguity inherent in positional arguments. The infrastructure does
+        # not take care of location and scale; nonetheless, assume standard
+        # location and scale. Typically, there is no need to test the SciPy
+        # distribution infrastructure's treatment of location and scale
+        # separately for a specific distribution.
         super().__init__(a=a)
 
     def _pdf(self, x, a):
-        # Write PDFs in the simplest form possible or following a (solid)
-        # reference as closely as possible. Trust mpmath for the accuracy, and
-        # don't worry about speed. What's important is the ease of verifying
-        # the PDF against the reference.
+        # Write PDFs following a scholarly reference as closely as possible.
+        # Trust mpmath for the accuracy, and don't worry about speed. What's
+        # important is the ease of verifying the PDF against the reference. If
+        # the result is inaccurate, it will not match SciPy's output (whether
+        # SciPy is accurate or not). If this occurs, try increasing dps before
+        # implementing a numerically favorable (but presumably more complex)
+        # implementation.
         return 2 * mp.npdf(x) * mp.ncdf(a * x)
 
     # Avoid overriding other methods unless the generic implementation is

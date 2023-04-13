@@ -3,12 +3,26 @@
 # do not go here.
 
 import numpy as np
+import pytest
+
 from scipy import stats
 from numpy.testing import assert_allclose
 import scipy.stats.tests.test_generation.reference_distributions as rd
+import mpmath
 from mpmath import mp
 
 def test_basic():
+
+    message = "`mpmath.mp.dps <= 15`. Set a higher precision..."
+    with pytest.raises(RuntimeError, match=message):
+        rd.Normal()
+
+    mpmath.dps = 20
+    message = "`mpmath.dps` has been assigned. This is not intended usage..."
+    with pytest.raises(RuntimeError, match=message):
+        rd.Normal()
+    del mpmath.dps
+
     mp.dps = 20  # high enough to pass, not unreasonably slow
 
     # Basic tests of the mpmath distribution infrastructure using a SciPy
