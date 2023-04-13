@@ -1,8 +1,8 @@
 import numpy as np
 import mpmath
-mpmath.dps = None  # see assertion in `ReferenceDistribution` `__init__`.
-
 from mpmath import mp
+
+mpmath.dps = None  # see assertion in `ReferenceDistribution` `__init__`.
 mp.dps = 100  # default; but this can be overridden in scripts after import
 
 
@@ -22,7 +22,7 @@ class ReferenceDistribution:
     -----
 
     In this infrastructure, distributions families are classes, and
-    fully-specified distributions (i.e. with definte values of all family
+    fully-specified distributions (i.e. with definite values of all family
     parameters) are instances of these classes. Typically, the public methods
     accept as input only the argument at which the at which the function is to
     be evaluated. Unlike SciPy distributions, they never accept values of
@@ -30,7 +30,8 @@ class ReferenceDistribution:
     other parameters are noteworthy:
 
     - All methods accept `dtype` to control the output data type. The default
-      is `np.float64`, but `object` or `mp.mpf`
+      is `np.float64`, but `object` or `mp.mpf` may be
+      specified to output the full `mpf`.
     - `ppf`/`isf` accept a `guess` because they use a scalar rootfinder
       to invert the `cdf`/`sf`. This is passed directly into the `x0` method
       of `mpmath.findroot`; see its documentation for details.
@@ -246,7 +247,7 @@ class SkewNormal(ReferenceDistribution):
 
     def __init__(self, *, a):
         # Overriding __init__ is not necessary, but it allows IDEs to hint at
-        # shape parameters. All parameters are keyword only to the ambiguity
+        # shape parameters. All parameters are keyword only to avoid the ambiguity
         # inherent in positional arguments. The infrastructure does not take
         # care of location and scale; nonetheless, assume standard location
         # and scale. Typically, there is no need to test the SciPy distribution
