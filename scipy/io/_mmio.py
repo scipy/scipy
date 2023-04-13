@@ -386,8 +386,11 @@ class MMFile:
 
             # skip comments
             # line.startswith('%')
-            while line and line[0] in ['%', 37]:
-                line = stream.readline()
+            while line:
+                if line.lstrip() and line.lstrip()[0] in ['%', 37]:
+                    line = stream.readline()
+                else:
+                    break
 
             # skip empty lines
             while not line.strip():
