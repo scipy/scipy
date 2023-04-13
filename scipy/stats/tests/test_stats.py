@@ -2412,6 +2412,11 @@ class TestMode:
         ref = np.mean(z, axis=None, keepdims=True)
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
+    def test_raise_non_numeric_gh18254(self):
+        message = "Argument `a` is not recognized as numeric."
+        with pytest.raises(TypeError, match=message):
+            stats.mode(np.arange(5, dtype=object))
+
 
 class TestSEM:
 
