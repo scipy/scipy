@@ -1092,3 +1092,24 @@ def test_raise_invalid_args_g17713():
     message = "takes from 1 to 4 positional arguments but 5 were given"
     with pytest.raises(TypeError, match=message):
         stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)
+
+@pytest.mark.parametrize(
+    'dtype',
+    (list(np.typecodes['Float']
+          + np.typecodes['Integer']
+          + np.typecodes['Complex'])))
+def test_array_like_input(dtype):
+    # Check that `_axis_nan_policy`-decorated functions work with custom
+    # containers that are coercible to numeric arrays
+
+    class ArrLike():
+        def __init__(self, x):
+            self._x = x
+
+        def __array__(self):
+            return np.asarray(x, dtype=dtype)
+
+    x = [1]*2 + [3, 4, 5]
+    res = stats.mode(ArrLike(x))
+    assert res.mode == 1
+    assert res.count == 2
