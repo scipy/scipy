@@ -534,8 +534,7 @@ class TestQuad:
         assert res_c.message['real'] == res_r.message
         assert res_c.infodict['real']['lst'] == res_r.infodict['lst']
 
-        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
-        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+        assert res_c.infodict['imag']['lst'] == res_i.infodict['lst']
 
 
 class TestNQuad:

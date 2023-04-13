@@ -387,7 +387,8 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> from scipy import integrate
     >>> import numpy as np
     >>> x2 = lambda x: x**2
-    >>> integrate.quad(x2, 0, 4)
+    >>> res = integrate.quad(x2, 0, 4)
+    >>> (res.integral, res.abserr)
     (21.333333333333332, 2.3684757858670003e-13)
     >>> print(4**3 / 3.)  # analytical result
     21.3333333333
@@ -395,17 +396,18 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
     Calculate :math:`\\int^\\infty_0 e^{-x} dx`
 
     >>> invexp = lambda x: np.exp(-x)
-    >>> integrate.quad(invexp, 0, np.inf)
+    >>> res = integrate.quad(invexp, 0, np.inf)
+    >>> (res.integral, res.abserr)
     (1.0, 5.842605999138044e-11)
 
     Calculate :math:`\\int^1_0 a x \\,dx` for :math:`a = 1, 3`
 
     >>> f = lambda x, a: a*x
-    >>> y, err = integrate.quad(f, 0, 1, args=(1,))
-    >>> y
+    >>> res = integrate.quad(f, 0, 1, args=(1,))
+    >>> res.integral
     0.5
-    >>> y, err = integrate.quad(f, 0, 1, args=(3,))
-    >>> y
+    >>> res = integrate.quad(f, 0, 1, args=(3,))
+    >>> res.integral
     1.5
 
     Calculate :math:`\\int^1_0 x^2 + y^2 dx` with ctypes, holding
@@ -423,7 +425,8 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
        lib = ctypes.CDLL('/home/.../testlib.*') #use absolute path
        lib.func.restype = ctypes.c_double
        lib.func.argtypes = (ctypes.c_int,ctypes.c_double)
-       integrate.quad(lib.func,0,1,(1))
+       res = integrate.quad(lib.func,0,1,(1))
+       (res.integral, res.abserr)
        #(1.3333333333333333, 1.4802973661668752e-14)
        print((1.0**3/3.0 + 1.0) - (0.0**3/3.0 + 0.0)) #Analytic result
        # 1.3333333333333333
@@ -435,11 +438,14 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
     bounds.
 
     >>> y = lambda x: 1 if x<=0 else 0
-    >>> integrate.quad(y, -1, 1)
+    >>> res = integrate.quad(y, -1, 1)
+    >>> (res.integral, res.abserr)
     (1.0, 1.1102230246251565e-14)
-    >>> integrate.quad(y, -1, 100)
+    >>> res = integrate.quad(y, -1, 100)
+    >>> (res.integral, res.abserr)
     (1.0000000002199108, 1.0189464580163188e-08)
-    >>> integrate.quad(y, -1, 10000)
+    >>> res = integrate.quad(y, -1, 10000)
+    >>> (res.integral, res.abserr)
     (0.0, 0.0)
 
     """
@@ -539,9 +545,9 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         else:
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
             if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
-                return QuadResult(*retval[:-2], infodict=retval[-1], message=msg, explain=explain)
+                return QuadResult(*retval[:-2], infodict=retval[-2], message=msg, explain=explain)
             else:
-                return QuadResult(*retval[:-2], infodict=retval[-1], message=msg, explain="")
+                return QuadResult(*retval[:-2], infodict=retval[-2], message=msg, explain="")
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
