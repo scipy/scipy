@@ -2209,8 +2209,6 @@ class TestScoreatpercentile:
 @pytest.mark.filterwarnings('ignore::FutureWarning')
 class TestMode:
 
-    deprecation_msg = r"Support for non-numeric arrays has been deprecated"
-
     def test_empty(self):
         vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
@@ -2292,11 +2290,7 @@ class TestMode:
     def test_mode_shape_gh_9955(self, axis, dtype=np.float64):
         rng = np.random.default_rng(984213899)
         a = rng.uniform(size=(3, 4, 5)).astype(dtype)
-        if dtype == 'object':
-            with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
-                res = stats.mode(a, axis=axis, keepdims=False)
-        else:
-            res = stats.mode(a, axis=axis, keepdims=False)
+        res = stats.mode(a, axis=axis, keepdims=False)
         reference_shape = list(a.shape)
         reference_shape.pop(axis)
         np.testing.assert_array_equal(res.mode.shape, reference_shape)
