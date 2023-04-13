@@ -1737,6 +1737,15 @@ class dweibull_gen(rv_continuous):
         fac = np.power(-np.log(fac), 1.0 / c)
         return np.where(q > 0.5, fac, -fac)
 
+    def _sf(self, x, c):
+        half_weibull_min_sf = 0.5 * stats.weibull_min._sf(np.abs(x), c)
+        return np.where(x > 0, half_weibull_min_sf, 1 - half_weibull_min_sf)
+
+    def _isf(self, q, c):
+        double_q = 2. * np.where(q <= 0.5, q, 1. - q)
+        weibull_min_isf = stats.weibull_min._isf(double_q, c)
+        return np.where(q > 0.5, -weibull_min_isf, weibull_min_isf)
+
     def _munp(self, n, c):
         return (1 - (n % 2)) * sc.gamma(1.0 + 1.0 * n / c)
 
@@ -2436,14 +2445,17 @@ class weibull_min_gen(rv_continuous):
     def _cdf(self, x, c):
         return -sc.expm1(-pow(x, c))
 
+    def _ppf(self, q, c):
+        return pow(-sc.log1p(-q), 1.0/c)
+
     def _sf(self, x, c):
-        return np.exp(-pow(x, c))
+        return np.exp(self._logsf(x, c))
 
     def _logsf(self, x, c):
         return -pow(x, c)
 
-    def _ppf(self, q, c):
-        return pow(-sc.log1p(-q), 1.0/c)
+    def _isf(self, q, c):
+        return (-np.log(q))**(1/c)
 
     def _munp(self, n, c):
         return sc.gamma(1.0+n*1.0/c)

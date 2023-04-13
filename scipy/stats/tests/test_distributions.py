@@ -6349,6 +6349,20 @@ class TestWeibull:
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
 
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def weibull_sf_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.exp(-x**c))
+
+    @pytest.mark.parametrize('x, c, ref', [(50, 1, 1.9287498479639178e-22),
+                                           (1000, 0.8,
+                                            8.131269637872743e-110)])
+    def test_sf_isf(self, x, c, ref):
+        assert_allclose(stats.weibull_min.sf(x, c), ref, rtol=5e-14)
+        assert_allclose(stats.weibull_min.isf(ref, c), x, rtol=5e-14)
+
 
 class TestDweibull:
     def test_entropy(self):
@@ -6362,6 +6376,16 @@ class TestDweibull:
         c = 10**rng.normal(scale=100, size=10)
         res = stats.dweibull.entropy(c)
         ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
+
+    def test_sf(self):
+        # test that for positive values the dweibull survival function is half
+        # the weibull_min survival function
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=1, size=10)
+        x = 10 * rng.uniform()
+        res = stats.dweibull.sf(x, c)
+        ref = 0.5 * stats.weibull_min.sf(x, c)
         assert_allclose(res, ref, rtol=1e-15)
 
 
