@@ -2807,14 +2807,19 @@ def _exact_factorialx_array(n, k=1):
     for lane in range(0, k):
         ul = un[(un % k) == lane] if k > 1 else un
         if ul.size:
+            # after np.unique, un resp. ul are sorted, ul[0] is the smallest;
             # cast to python ints to avoid overflow with np.int-types
             val = _range_prod(1, int(ul[0]), k=k)
             out[n == ul[0]] = val
             for i in range(len(ul) - 1):
-                prev = ul[i] + 1
+                # by the filtering above, we have ensured that prev & current
+                # are a multiple of k apart
+                prev = ul[i]
                 current = ul[i + 1]
+                # we already multiplied all factors until prev; continue
+                # building the full factorial from the following (`prev + 1`);
                 # use int() for the same reason as above
-                val *= _range_prod(int(prev), int(current), k=k)
+                val *= _range_prod(int(prev + 1), int(current), k=k)
                 out[n == current] = val
 
     if np.isnan(n).any():
