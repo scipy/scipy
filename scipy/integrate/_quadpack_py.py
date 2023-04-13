@@ -76,8 +76,8 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         (``complex_func=False``: default) or complex (``complex_func=True``).
         In both cases, the function's argument is real.
         The `infodict`, `message`, and
-        `explain` for the real and complex components are returned in
-        a dictionary with keys "real output" and "imag output".
+        `explain` for the real and complex components are
+        a dictionaries with keys "real output" and "imag output".
 
     Returns
     -------
