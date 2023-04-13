@@ -117,7 +117,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         singularities, discontinuities). The sequence does not have
         to be sorted. Note that this option cannot be used in conjunction
         with ``weight``.
-    weight : float or int, optional
+    weight : str, optional
         String indicating weighting function. Full explanation for this
         and the remaining arguments can be found below.
     wvar : optional
