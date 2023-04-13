@@ -21,7 +21,11 @@ class IntegrationWarning(UserWarning):
     pass
 
 
-def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
+QuadResult = _make_tuple_bunch("QuadResult", ["integral", "abserr"],
+                                             ["infodict", "message",
+                                              "explain"])
+
+def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50, complex_func=False):
     """
@@ -62,28 +66,36 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
+        
+        .. deprecated:: 1.11.0
+           Parameter `full_output` is deprecated and will be removed in
+           version 1.13.0. When `full_output` is unspecified, the contents
+           of ``infodict`` are provided as attributes of the result object.
     complex_func : bool, optional
         Indicate if the function's (`func`) return type is real
         (``complex_func=False``: default) or complex (``complex_func=True``).
         In both cases, the function's argument is real.
-        If full_output is also non-zero, the `infodict`, `message`, and
+        The `infodict`, `message`, and
         `explain` for the real and complex components are returned in
         a dictionary with keys "real output" and "imag output".
 
     Returns
     -------
-    y : float
-        The integral of func from `a` to `b`.
-    abserr : float
-        An estimate of the absolute error in the result.
-    infodict : dict
-        A dictionary containing additional information.
-    message
-        A convergence message.
-    explain
-        Appended only with 'cos' or 'sin' weighting and infinite
-        integration limits, it contains an explanation of the codes in
-        infodict['ierlst']
+    res : QuadResult
+        A result object with the following attributes:
+
+        integral : float
+            The integral of func from `a` to `b`.
+        abserr : float
+            An estimate of the absolute error in the result.
+        infodict : dict
+            A dictionary containing additional information.
+        message
+            A convergence message.
+        explain
+            Appended only with 'cos' or 'sin' weighting and infinite
+            integration limits, it contains an explanation of the codes in
+            infodict['ierlst']
 
     Other Parameters
     ----------------
@@ -138,8 +150,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     **Extra information for quad() inputs and outputs**
 
-    If full_output is non-zero, then the third output argument
-    (infodict) is a dictionary with entries as tabulated below. For
+    `infodict` is a dictionary with entries as tabulated below. For
     infinite limits, the range is transformed to (0,1) and the
     optional outputs are given with respect to this transformed range.
     Let M be the input argument limit and let K be infodict['last'].
@@ -218,7 +229,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     For the 'cos' and 'sin' weighting, additional inputs and outputs are
     available.
 
-    For finite integration limits, the integration is performed using a
+    For finite integration limits, the integration is performed using a/f
     Clenshaw-Curtis method which uses Chebyshev moments. For repeated
     calculations, these moments are saved in the output dictionary:
 
@@ -240,7 +251,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         the first element.
 
     If one of the integration limits is infinite, then a Fourier integral is
-    computed (assuming w neq 0). If full_output is 1 and a numerical error
+    computed (assuming w neq 0). If a numerical error
     is encountered, besides the error message attached to the output tuple,
     a dictionary is also appended to the output tuple which translates the
     error codes in the array ``info['ierlst']`` to English messages. The
@@ -432,6 +443,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     (0.0, 0.0)
 
     """
+    if full_output is not None:
+        msg = ("Use of parameter 'full_output' is deprecated as of SciPy "
+               "1.11.0 and will be removed in 1.13.0 . Please leave "
+               "'full_output' unspecified; the contents of 'infodict' can "
+               "now be accessed as attributes of the object returned by "
+               "'scipy.integrate.quad'.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -445,32 +464,38 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         def refunc(x, *args):
             return np.real(func(x, *args))
 
-        re_retval = quad(refunc, a, b, args, full_output, epsabs,
+        re_retval = quad(refunc, a, b, args, None, epsabs,
                          epsrel, limit, points, weight, wvar, wopts,
                          maxp1, limlst, complex_func=False)
-        im_retval = quad(imfunc, a, b, args, full_output, epsabs,
+        im_retval = quad(imfunc, a, b, args, None, epsabs,
                          epsrel, limit, points, weight, wvar, wopts,
                          maxp1, limlst, complex_func=False)
-        integral = re_retval[0] + 1j*im_retval[0]
-        error_estimate = re_retval[1] + 1j*im_retval[1]
-        retval = integral, error_estimate
+        integral = re_retval.integral + 1j*im_retval.integral
+        error_estimate = re_retval.abserr + 1j*im_retval.abserr
+        
         if full_output:
+            retval = integral, error_estimate
             msgexp = {}
             msgexp["real"] = re_retval[2:]
             msgexp["imag"] = im_retval[2:]
-            retval = retval + (msgexp,)
+            return retval + (msgexp,)
+        else:
+            infodict = {"real" : re_retval.infodict, "imag": re_retval.infodict}
+            message = {"real" : re_retval.message, "imag": re_retval.message}
+            explain = {"real" : re_retval.explain, "imag": re_retval.explain}
+            return QuadResult(integral=integral, abserr=error_estimate,
+                              infodict=infodict, message=message,
+                              explain=explain)
 
-        return retval
 
     if weight is None:
-        retval = _quad(func, a, b, args, full_output, epsabs, epsrel, limit,
-                       points)
+        retval = _quad(func, a, b, args, epsabs, epsrel, limit, points)
     else:
         if points is not None:
             msg = ("Break points cannot be specified when using weighted integrand.\n"
                    "Continuing, ignoring specified points.")
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-        retval = _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
+        retval = _quad_weight(func, a, b, args, epsabs, epsrel,
                               limlst, limit, maxp1, weight, wvar, wopts)
 
     if flip:
@@ -478,7 +503,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     ier = retval[-1]
     if ier == 0:
-        return retval[:-1]
+        return QuadResult(*retval[:-1], message="", explain="")
 
     msgs = {80: "A Python error occurred possibly while calling the function.",
              1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
@@ -513,7 +538,10 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
                 return retval[:-1] + (msg,)
         else:
             warnings.warn(msg, IntegrationWarning, stacklevel=2)
-            return retval[:-1]
+            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
+                return QuadResult(*retval[:-1], msg, explain)
+            else:
+                return QuadResult(retval[:-1], msg)
 
     elif ier == 6:  # Forensic decision tree when QUADPACK throws ier=6
         if epsabs <= 0:  # Small error tolerance - applies to all methods
@@ -557,7 +585,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     raise ValueError(msg)
 
 
-def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
+def _quad(func, a, b, args, epsabs, epsrel, limit, points):
     infbounds = 0
     if (b != Inf and a != -Inf):
         pass   # standard integration
@@ -575,9 +603,11 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
 
     if points is None:
         if infbounds == 0:
-            return _quadpack._qagse(func,a,b,args,full_output,epsabs,epsrel,limit)
+            return _quadpack._qagse(func, a, b, args, 1, epsabs, epsrel,
+                                    limit)
         else:
-            return _quadpack._qagie(func,bound,infbounds,args,full_output,epsabs,epsrel,limit)
+            return _quadpack._qagie(func, bound, infbounds, args, 1, epsabs,
+                                    epsrel,limit)
     else:
         if infbounds != 0:
             raise ValueError("Infinity inputs cannot be used with break points.")
@@ -587,10 +617,11 @@ def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
             the_points = the_points[a < the_points]
             the_points = the_points[the_points < b]
             the_points = np.concatenate((the_points, (0., 0.)))
-            return _quadpack._qagpe(func,a,b,the_points,args,full_output,epsabs,epsrel,limit)
+            return _quadpack._qagpe(func, a, b, the_points, args, 1, epsabs, epsrel, limit)
 
 
-def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weight,wvar,wopts):
+def _quad_weight(func, a, b, args, epsabs, epsrel, limlst, limit, maxp1,
+                 weight, wvar, wopts):
     if weight not in ['cos','sin','alg','alg-loga','alg-logb','alg-log','cauchy']:
         raise ValueError("%s not a recognized weighting function." % weight)
 
@@ -600,17 +631,17 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         integr = strdict[weight]
         if (b != Inf and a != -Inf):  # finite limits
             if wopts is None:         # no precomputed Chebyshev moments
-                return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
-                                        epsabs, epsrel, limit, maxp1,1)
+                return _quadpack._qawoe(func, a, b, wvar, integr, args, 1,
+                                        epsabs, epsrel, limit, maxp1, 1)
             else:                     # precomputed Chebyshev moments
                 momcom = wopts[0]
                 chebcom = wopts[1]
-                return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
+                return _quadpack._qawoe(func, a, b, wvar, integr, args, 1,
                                         epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
 
         elif (b == Inf and a != -Inf):
-            return _quadpack._qawfe(func, a, wvar, integr, args, full_output,
-                                    epsabs,limlst,limit,maxp1)
+            return _quadpack._qawfe(func, a, wvar, integr, args, 1,
+                                    epsabs, limlst, limit, maxp1)
         elif (b != Inf and a == -Inf):  # remap function and interval
             if weight == 'cos':
                 def thefunc(x,*myargs):
@@ -625,8 +656,8 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                     myargs = (y,) + myargs[1:]
                     return -func(*myargs)
             args = (func,) + args
-            return _quadpack._qawfe(thefunc, -b, wvar, integr, args,
-                                    full_output, epsabs, limlst, limit, maxp1)
+            return _quadpack._qawfe(thefunc, -b, wvar, integr, args, 1,
+                                    epsabs, limlst, limit, maxp1)
         else:
             raise ValueError("Cannot integrate with this weight from -Inf to +Inf.")
     else:
@@ -635,11 +666,11 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
 
         if weight.startswith('alg'):
             integr = strdict[weight]
-            return _quadpack._qawse(func, a, b, wvar, integr, args,
-                                    full_output, epsabs, epsrel, limit)
-        else:  # weight == 'cauchy'
-            return _quadpack._qawce(func, a, b, wvar, args, full_output,
+            return _quadpack._qawse(func, a, b, wvar, integr, args, 1,
                                     epsabs, epsrel, limit)
+        else:  # weight == 'cauchy'
+            return _quadpack._qawce(func, a, b, wvar, args, epsabs, epsrel, 1,
+                                    limit)
 
 
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
@@ -678,7 +709,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Returns
     -------
-    res : QuadResult
+    res : QuadratureResult
         An object with the following attributes:
 
         integral : float
@@ -820,7 +851,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Returns
     -------
-    res : QuadResult
+    res : QuadratureResult
         An object with the following attributes:
 
         integral : float
@@ -1016,7 +1047,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
 
     Returns
     -------
-    res : QuadResult
+    res : QuadratureResult
         An object with the following attributes:
 
         integral : float
@@ -1202,7 +1233,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    res = _NQuad(func, ranges, opts, True).integrate(*args)
+    res = _NQuad(func, ranges, opts).integrate(*args)
 
     if full_output is not None:
         msg = ("Use of parameter `full_output` is deprecated. Please leave "
@@ -1240,15 +1271,13 @@ class _OptFunc:
 
 
 class _NQuad:
-    def __init__(self, func, ranges, opts, full_output):
+    def __init__(self, func, ranges, opts):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
         self.opts = opts
         self.maxdepth = len(ranges)
-        self.full_output = full_output
-        if self.full_output:
-            self.out_dict = {'neval': 0}
+        self.out_dict = {'neval': 0}
 
     def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
@@ -1268,23 +1297,18 @@ class _NQuad:
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
-        quad_r = quad(f, low, high, args=args, full_output=self.full_output,
-                      **opt)
-        value = quad_r[0]
-        abserr = quad_r[1]
-        if self.full_output:
-            infodict = quad_r[2]
-            # The 'neval' parameter in full_output returns the total
-            # number of times the integrand function was evaluated.
-            # Therefore, only the innermost integration loop counts.
-            if depth + 1 == self.maxdepth:
-                self.out_dict['neval'] += infodict['neval']
+        quad_r = quad(f, low, high, args=args, **opt)
+        value = quad_r.integral
+        abserr = quad_r.abserr
+        infodict = quad_r.infodict
+        # The 'neval' parameter in full_output returns the total
+        # number of times the integrand function was evaluated.
+        # Therefore, only the innermost integration loop counts.
+        if depth + 1 == self.maxdepth:
+            self.out_dict['neval'] += infodict['neval']
         self.abserr = max(self.abserr, abserr)
         if depth > 0:
             return value
         else:
             # Final result of N-D integration with error
-            if self.full_output:
-                return value, self.abserr, self.out_dict
-            else:
-                return value, self.abserr
+            return value, self.abserr, self.out_dict

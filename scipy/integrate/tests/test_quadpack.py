@@ -234,8 +234,8 @@ class TestQuad:
         def f(x):
             return 1.0
 
-        res_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0), full_output=True)
-        res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0), full_output=True)
+        res_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0))
+        res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0))
         err = max(res_1[1], res_2[1])
         assert_allclose(res_1[0], -res_2[0], atol=err)
 
@@ -517,7 +517,7 @@ class TestQuad:
         # to return an error message.  The output is compared
         # against what is returned by explicit integration
         # of the parts.
-        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+        kwargs = {'a': 0, 'b': np.inf,
                   'weight': 'cos', 'wvar': 1}
         res_c = quad(tfunc, complex_func=True, **kwargs)
         res_r = quad(lambda x: np.real(np.exp(1j*x)),
