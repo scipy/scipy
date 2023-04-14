@@ -57,8 +57,10 @@ axis_nan_policy_cases = [
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
     (stats.ttest_rel, tuple(), dict(), 2, 7, True, unpack_ttest_result),
+    (stats.ttest_ind, tuple(), dict(), 2, 7, False, unpack_ttest_result),
     (_get_ttest_ci(stats.ttest_1samp), (0,), dict(), 1, 2, False, None),
     (_get_ttest_ci(stats.ttest_rel), tuple(), dict(), 2, 2, True, None),
+    (_get_ttest_ci(stats.ttest_ind), tuple(), dict(), 2, 2, False, None),
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count))
 ]
 
@@ -398,7 +400,11 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             else:
                 assert_equal(res1db, res1da)
                 assert_equal(res1dc, res1da)
-
+                for item in list(res1da) + list(res1db) + list(res1dc):
+                    # Most functions naturally return NumPy numbers, which
+                    # are drop-in replacements for the Python versions but with
+                    # desirable attributes. Make sure this is consistent.
+                    assert np.issubdtype(item.dtype, np.number)
 
 # Test keepdims for:
 #     - single-output and multi-output functions (gmean and mannwhitneyu)

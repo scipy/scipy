@@ -51,6 +51,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'myst_nb',
 ]
 
 
@@ -165,6 +166,23 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# docutils warnings when using notebooks (see gh-17322)
+# these will hopefully be removed in the near future
+for key in (
+    r"The frontend.OptionParser class will be replaced",
+    r"The frontend.Option class will be removed",
+    ):
+    warnings.filterwarnings('ignore', message=key, category=DeprecationWarning)
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*is obsoleted by Node.findall()',
+    category=PendingDeprecationWarning,
+)
+warnings.filterwarnings(
+    'ignore',
+    message=r'There is no current event loop',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -194,7 +212,7 @@ if 'versionwarning' in tags:  # noqa
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);');
+           'document.head.appendChild(script);')
     html_context = {
         'VERSIONCHECK_JS': src
     }
@@ -329,6 +347,12 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
+
+# -----------------------------------------------------------------------------
+# Notebook tutorials with MyST-NB
+# -----------------------------------------------------------------------------
+
+nb_execution_mode = "auto"
 
 # -----------------------------------------------------------------------------
 # Source code links

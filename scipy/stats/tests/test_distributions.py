@@ -4220,6 +4220,13 @@ class TestBetaPrime:
         assert y < 1.0
         assert_allclose(y, expected, rtol=2e-5)
 
+    def test_fit_stats_gh18274(self):
+        # gh-18274 reported spurious warning emitted when fitting `betaprime`
+        # to data. Some of these were emitted by stats, too. Check that the
+        # warnings are no longer emitted.
+        stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
+        stats.betaprime(a=1, b=1).stats('mvsk')
+
 
 class TestGamma:
     def test_pdf(self):
@@ -6342,6 +6349,20 @@ class TestWeibull:
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
 
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # def weibull_sf_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.exp(-x**c))
+
+    @pytest.mark.parametrize('x, c, ref', [(50, 1, 1.9287498479639178e-22),
+                                           (1000, 0.8,
+                                            8.131269637872743e-110)])
+    def test_sf_isf(self, x, c, ref):
+        assert_allclose(stats.weibull_min.sf(x, c), ref, rtol=5e-14)
+        assert_allclose(stats.weibull_min.isf(ref, c), x, rtol=5e-14)
+
 
 class TestDweibull:
     def test_entropy(self):
@@ -6355,6 +6376,16 @@ class TestDweibull:
         c = 10**rng.normal(scale=100, size=10)
         res = stats.dweibull.entropy(c)
         ref = stats.weibull_min.entropy(c) - np.log(0.5)
+        assert_allclose(res, ref, rtol=1e-15)
+
+    def test_sf(self):
+        # test that for positive values the dweibull survival function is half
+        # the weibull_min survival function
+        rng = np.random.default_rng(8486259129157041777)
+        c = 10**rng.normal(scale=1, size=10)
+        x = 10 * rng.uniform()
+        res = stats.dweibull.sf(x, c)
+        ref = 0.5 * stats.weibull_min.sf(x, c)
         assert_allclose(res, ref, rtol=1e-15)
 
 
@@ -8728,6 +8759,95 @@ def test_moment_order_4():
     # has since been made more accurate and efficient, so now this test
     # is expected to pass.
     assert stats.skewnorm._munp(4, 0) == 3.0
+
+
+class TestRelativisticBW:
+    @pytest.fixture
+    def ROOT_pdf_sample_data(self):
+        """Sample data points for pdf computed with CERN's ROOT
+
+        See - https://root.cern/
+
+        Uses ROOT.TMath.BreitWignerRelativistic, available in ROOT
+        versions 6.27+
+
+        pdf calculated for Z0 Boson, W Boson, and Higgs Boson for
+        x in `np.linspace(0, 200, 401)`.
+        """
+        data = np.load(
+            Path(__file__).parent /
+            'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
+        )
+        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        return data
+
+    @pytest.mark.parametrize(
+        "rho,gamma,rtol", [
+            (36.545206797050334, 2.4952, 5e-14),  # Z0 Boson
+            (38.55107913669065, 2.085, 1e-14),  # W Boson
+            (96292.3076923077, 0.0013, 5e-13),  # Higgs Boson
+        ]
+    )
+    def test_pdf_against_ROOT(self, ROOT_pdf_sample_data, rho, gamma, rtol):
+        data = ROOT_pdf_sample_data[
+            (ROOT_pdf_sample_data['rho'] == rho)
+            & (ROOT_pdf_sample_data['gamma'] == gamma)
+        ]
+        x, pdf = data['x'], data['pdf']
+        assert_allclose(
+            pdf, stats.rel_breitwigner.pdf(x, rho, scale=gamma), rtol=rtol
+        )
+
+    @pytest.mark.parametrize("rho, Gamma, rtol", [
+              (36.545206797050334, 2.4952, 5e-13),  # Z0 Boson
+              (38.55107913669065, 2.085, 5e-13),  # W Boson
+              (96292.3076923077, 0.0013, 5e-10),  # Higgs Boson
+          ]
+      )
+    def test_pdf_against_simple_implementation(self, rho, Gamma, rtol):
+        # reference implementation straight from formulas on Wikipedia [1]
+        def pdf(E, M, Gamma):
+            gamma = np.sqrt(M**2 * (M**2 + Gamma**2))
+            k = (2 * np.sqrt(2) * M * Gamma * gamma
+                 / (np.pi * np.sqrt(M**2 + gamma)))
+            return k / ((E**2 - M**2)**2 + M**2*Gamma**2)
+        # get reasonable values at which to evaluate the CDF
+        p = np.linspace(0.05, 0.95, 10)
+        x = stats.rel_breitwigner.ppf(p, rho, scale=Gamma)
+        res = stats.rel_breitwigner.pdf(x, rho, scale=Gamma)
+        ref = pdf(x, rho*Gamma, Gamma)
+        assert_allclose(res, ref, rtol=rtol)
+
+    @pytest.mark.parametrize(
+        "rho,gamma", [
+            pytest.param(
+                36.545206797050334, 2.4952, marks=pytest.mark.slow
+            ),  # Z0 Boson
+            pytest.param(
+                38.55107913669065, 2.085, marks=pytest.mark.xslow
+            ),  # W Boson
+            pytest.param(
+                96292.3076923077, 0.0013, marks=pytest.mark.xslow
+            ),  # Higgs Boson
+        ]
+    )
+    def test_fit_floc(self, rho, gamma):
+        """Tests fit for cases where floc is set.
+
+        `rel_breitwigner` has special handling for these cases.
+        """
+        seed = 6936804688480013683
+        rng = np.random.default_rng(seed)
+        data = stats.rel_breitwigner.rvs(
+            rho, scale=gamma, size=1000, random_state=rng
+        )
+        fit = stats.rel_breitwigner.fit(data, floc=0)
+        assert_allclose((fit[0], fit[2]), (rho, gamma), rtol=2e-1)
+        assert fit[1] == 0
+        # Check again with fscale set.
+        fit = stats.rel_breitwigner.fit(data, floc=0, fscale=gamma)
+        assert_allclose(fit[0], rho, rtol=1e-2)
+        assert (fit[1], fit[2]) == (0, gamma)
 
 
 class TestJohnsonSU:

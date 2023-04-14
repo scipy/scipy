@@ -20,7 +20,7 @@ from scipy.sparse.csgraph._validation import validate_graph
 cimport cython
 
 from libc.stdlib cimport malloc, free
-from numpy.math cimport INFINITY
+from libc.math cimport INFINITY
 
 np.import_array()
 

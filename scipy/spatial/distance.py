@@ -544,9 +544,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {\\|u-v\\|}_2^2
-
-       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
+       \\sum_i{w_i |u_i - v_i|^2}
 
     Parameters
     ----------
@@ -888,7 +886,14 @@ def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
 
-    The standardized Euclidean distance between `u` and `v`.
+    The standardized Euclidean distance between two n-vectors `u` and `v` is
+
+    .. math::
+
+       \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
+
+    ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
+    components of the points. If not passed, it is automatically computed.
 
     Parameters
     ----------
