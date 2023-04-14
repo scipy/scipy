@@ -671,19 +671,24 @@ def _cumulative_simpson_equal_intervals(
     y = y.swapaxes(0, axis)
     dx = dx.swapaxes(0, axis)
 
-    # Consider a quadratic interpolation over any 3 adjacent points, 
+    # Consider a quadratic interpolation over each set of 3 adjacent points, 
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2 
     # (in this case, h1 = h2 = dx)
     
-    # Calculate integral over subinterval h1 for every set of 3 points.
+    # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
     sub_integrals_h1 = dx[:-1] / 3 * \
         (5 * y[:-2] / 4 + 2 * y[1:-1] - y[2:] / 4)
+    sub_integrals_h1[1::2] = 0
 
-    # Calculate integral over subinterval h2 for every set of 3 points.
+    # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
     sub_integrals_h2 = dx[:-1] / 3 * \
         (-y[:-2] / 4 + 2 * y[1:-1] + 5 * y[2:] / 4)
+    if y.shape[0] % 2 == 0:
+        sub_integrals_h2[1:-1:2] = 0
+    else:
+        sub_integrals_h2[1::2] = 0
 
     # Addition of above formulae gives Simpson's 1/3 rule, see 
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_1/3_rule
@@ -701,9 +706,7 @@ def _cumulative_simpson_equal_intervals(
             [
                 # Integral over first subinterval can only be calculated from formula for h1
                 sub_integrals_h1[0:1],
-                # For subintegrals that can be calculated with formulae for h1 or h2,
-                # average the result
-                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]) / 2,
+                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]),
                 # Integral over last subinterval can only be calculated from formula for h2
                 sub_integrals_h2[-1:],
             ],
@@ -731,24 +734,29 @@ def _cumulative_simpson_unequal_intervals(
     y2 = y[1:-1]
     y3 = y[2:]
 
-    # Consider a quadratic interpolation over any 3 adjacent points, 
+    # Consider a quadratic interpolation over each set of 3 adjacent points, 
     # a, a+h1, a+h1+h2. The subinterval widths are h1 and h2 
     
-    # Calculate integral over subinterval h1 for every set of 3 points.
+    # Calculate integral over the h1 subintervals.
     # Calculate for all but last subinterval of y.
     sub_integrals_h1 = (
         y1 * (2 * h1 + 3 * h2) / (h1 + h2) * h1 / 6
         + y2 * (h1 + 3 * h2) * h1 / (6 * h2)
         - y3 * (h1**3 / (6 * h2)) / (h1 + h2)
     )
+    sub_integrals_h1[1::2] = 0
 
-    # Calculate integral over subinterval h2 for every set of 3 points.
+    # Calculate integral over the h2 subintervals.
     # Calculate for all but first subinterval of y.
     sub_integrals_h2 = (
         -y1 * (h2**3 / (6 * h1)) / (h1 + h2)
         + y2 * (3 * h1 + h2) * h2 / (6 * h1)
         + y3 * (3 * h1 + 2 * h2) / (h1 + h2) * h2 / 6
     )
+    if y.shape[0] % 2 == 0:
+        sub_integrals_h2[1:-1:2] = 0
+    else:
+        sub_integrals_h2[1::2] = 0
 
     # Addition of above formulae gives Simpson's 1/3 rule for unequal intervals, see 
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
@@ -766,9 +774,7 @@ def _cumulative_simpson_unequal_intervals(
             [
                 # Integral over first subinterval can only be calculated from formula for h1
                 sub_integrals_h1[0:1],
-                # For subintegrals that can be calculated with formulae for h1 or h2,
-                # average the result
-                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]) / 2,
+                (sub_integrals_h1[1:] + sub_integrals_h2[:-1]),
                 # Integral over last subinterval can only be calculated from formula for h2
                 sub_integrals_h2[-1:],
             ],
