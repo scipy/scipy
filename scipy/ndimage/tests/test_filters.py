@@ -722,9 +722,9 @@ class TestNdimageFilters:
     def test_filter_axes(self, filter_func, size0, size, axes):
         # Note: `size` is called `sigma` in `gaussian_filter`
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        axes = numpy.array(axes)
 
-        axes = tuple(ax % array.ndim for ax in axes)
-        if len(tuple(set(axes))) != len(axes):
+        if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError, match="axes must be unique"):
                 filter_func(array, size, axes=axes)
@@ -732,7 +732,8 @@ class TestNdimageFilters:
         output = filter_func(array, size, axes=axes)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
-        all_sizes = (size if ax in axes else size0 for ax in range(array.ndim))
+        all_sizes = (size if ax in (axes % array.ndim) else size0
+                     for ax in range(array.ndim))
         expected = filter_func(array, all_sizes)
         assert_allclose(output, expected)
 
@@ -1243,15 +1244,16 @@ class TestNdimageFilters:
         array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
         # use 2D triangular footprint because it is non-separable
         footprint = numpy.tri(5)
-        axes = tuple(ax % array.ndim for ax in axes)
-        if len(tuple(set(axes))) != len(axes):
+        axes = numpy.array(axes)
+
+        if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
             with pytest.raises(ValueError):
                 filter_func(array, footprint=footprint, axes=axes)
             return
         output = filter_func(array, footprint=footprint, axes=axes)
 
-        missing_axis = tuple(set(range(3)) - set(axes))[0]
+        missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
         footprint_3d = numpy.expand_dims(footprint, missing_axis)
         expected = filter_func(array, footprint=footprint_3d)
         assert_allclose(output, expected)
