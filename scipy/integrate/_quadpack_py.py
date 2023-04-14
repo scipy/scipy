@@ -70,14 +70,14 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         .. deprecated:: 1.11.0
            Parameter `full_output` is deprecated and will be removed in
            version 1.13.0. When `full_output` is unspecified, the contents
-           of ``infodict`` are provided as attributes of the result object.
+           of `infodict` are provided as attributes of the result object.
     complex_func : bool, optional
         Indicate if the function's (`func`) return type is real
         (``complex_func=False``: default) or complex (``complex_func=True``).
         In both cases, the function's argument is real.
         The `infodict`, `message`, and
         `explain` for the real and complex components are
-       dictionaries with keys "real" and "imag".
+        dictionaries with keys "real" and "imag".
 
     Returns
     -------
