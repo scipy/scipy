@@ -1,5 +1,3 @@
-#
-
 import warnings
 from functools import partial
 
@@ -16,6 +14,7 @@ from .._distn_infrastructure import rv_continuous, _ShapeInfo
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
 from scipy._lib.doccer import inherit_docstring_from
+from scipy.integrate._quadpack_py import IntegrationWarning
 
 
 __all__ = ["levy_stable", "levy_stable_gen", "pdf_from_cf_with_fft"]
@@ -93,31 +92,31 @@ def _pdf_single_value_cf_integrate(Phi, x, alpha, beta, **kwds):
         )
 
     with np.errstate(invalid="ignore"):
-        int1, *ret1 = integrate.quad(
-            integrand1,
-            0,
-            np.inf,
-            weight="cos",
-            wvar=x,
-            limit=1000,
-            epsabs=quad_eps,
-            epsrel=quad_eps,
-            full_output=1,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=IntegrationWarning)
+            int1 = integrate.quad(
+                integrand1,
+                0,
+                np.inf,
+                weight="cos",
+                wvar=x,
+                limit=1000,
+                epsabs=quad_eps,
+                epsrel=quad_eps,
+            )
 
-        int2, *ret2 = integrate.quad(
-            integrand2,
-            0,
-            np.inf,
-            weight="sin",
-            wvar=x,
-            limit=1000,
-            epsabs=quad_eps,
-            epsrel=quad_eps,
-            full_output=1,
-        )
+            int2 = integrate.quad(
+                integrand2,
+                0,
+                np.inf,
+                weight="sin",
+                wvar=x,
+                limit=1000,
+                epsabs=quad_eps,
+                epsrel=quad_eps,
+            )
 
-    return (int1 + int2) / np.pi
+    return (int1.integral + int2.integral) / np.pi
 
 
 _pdf_single_value_cf_integrate_Z0 = partial(
@@ -273,18 +272,20 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [0, peak] + tail_points
-        intg, *ret = integrate.quad(
-            integrand,
-            -xi,
-            np.pi / 2,
-            points=intg_points,
-            limit=100,
-            epsrel=quad_eps,
-            epsabs=0,
-            full_output=1,
-        )
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=IntegrationWarning)
+            intg = integrate.quad(
+                integrand,
+                -xi,
+                np.pi / 2,
+                points=intg_points,
+                limit=100,
+                epsrel=quad_eps,
+                epsabs=0,
+            )
 
-    return c2 * intg
+    return c2 * intg.integral
 
 
 def _cdf_single_value_piecewise_Z1(x, alpha, beta, **kwds):
@@ -393,18 +394,19 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
                 )
                 right_support = res.x[0]
 
-        intg, *ret = integrate.quad(
-            integrand,
-            left_support,
-            right_support,
-            points=[left_support, right_support],
-            limit=100,
-            epsrel=quad_eps,
-            epsabs=0,
-            full_output=1,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=IntegrationWarning)
+            intg = integrate.quad(
+                integrand,
+                left_support,
+                right_support,
+                points=[left_support, right_support],
+                limit=100,
+                epsrel=quad_eps,
+                epsabs=0,
+            )
 
-    return c1 + c3 * intg
+    return c1 + c3 * intg.integral
 
 
 def _rvs_Z1(alpha, beta, size=None, random_state=None):
