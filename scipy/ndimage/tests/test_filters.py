@@ -789,9 +789,11 @@ class TestNdimageFilters:
             for key, val in kwargs.items():
                 yield filter_func, kwargs, key, val
 
+    # TODO: Remove .__func__ from _cases_axes_tuple_length_mismatch below
+    #       once minimum supported Python version is 3.10.
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
-                             _cases_axes_tuple_length_mismatch())
+                             _cases_axes_tuple_length_mismatch.__func__())
     def test_filter_tuple_length_mismatch(self, n_mismatch, filter_func,
                                           kwargs, key, val):
         # Test for the intended RuntimeError when a kwargs has an invalid size
