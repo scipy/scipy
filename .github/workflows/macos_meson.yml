@@ -3,7 +3,6 @@ name: macOS tests (meson)
 on:
   push:
     branches:
-      - main
       - maintenance/**
   pull_request:
     branches:

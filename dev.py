@@ -1035,6 +1035,11 @@ TARGETS: Sphinx build targets [default: 'html']
         if parallel:
             make_params.append(f'SPHINXOPTS="-j{parallel}"')
 
+        # Environment variables needed for notebooks
+        # See gh-17322
+        make_params.append('SQLALCHEMY_SILENCE_UBER_WARNING=1')
+        make_params.append('JUPYTER_PLATFORM_DIRS=1')
+
         return {
             'actions': [
                 # move to doc/ so local scipy does not get imported

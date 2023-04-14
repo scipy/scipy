@@ -2750,7 +2750,8 @@ class rv_continuous(rv_generic):
         muhat = tmp.mean()
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
-        Lhat = muhat - Shat*mu
+        with np.errstate(invalid='ignore'):
+            Lhat = muhat - Shat*mu
         if not np.isfinite(Lhat):
             Lhat = 0
         if not (np.isfinite(Shat) and (0 < Shat)):
