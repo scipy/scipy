@@ -272,7 +272,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
             # exp_height = 1 is handled by peak
         ]
         intg_points = [0, peak] + tail_points
-        
+
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=IntegrationWarning)
             intg = integrate.quad(

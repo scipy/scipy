@@ -546,7 +546,7 @@ class TestQuad:
             return x**2 + 1
 
         res = quad(func, 0, 4)
-        
+
         msg = "Use of parameter 'full_output' is deprecated as of SciPy "
         with pytest.deprecated_call(match=msg):
             res2 = quad(func, 0, 4, full_output=0)

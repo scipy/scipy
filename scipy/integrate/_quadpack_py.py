@@ -66,7 +66,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
         Non-zero to return a dictionary of integration information.
         If non-zero, warning messages are also suppressed and the
         message is appended to the output tuple.
-        
+
         .. deprecated:: 1.11.0
            Parameter `full_output` is deprecated and will be removed in
            version 1.13.0. When `full_output` is unspecified, the contents
@@ -456,7 +456,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
                "now be accessed as attributes of the object returned by "
                "'scipy.integrate.quad'.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    
+
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -478,7 +478,7 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
                          maxp1, limlst, complex_func=False)
         integral = re_retval.integral + 1j*im_retval.integral
         error_estimate = re_retval.abserr + 1j*im_retval.abserr
-        
+
         if full_output:
             retval = integral, error_estimate
             msgexp = {}
