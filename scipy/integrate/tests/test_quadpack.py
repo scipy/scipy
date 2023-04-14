@@ -536,6 +536,29 @@ class TestQuad:
 
         assert res_c.infodict['imag']['lst'] == res_i.infodict['lst']
 
+    def test_result_object(self):
+        # Check that result object contains attributes `integral`, `abserr`,
+        # `infodict`, `message` and `explains`. During the `full_output`
+        # deprecation period, also check that specifying `full_output`
+        # produces a warning and that values are the same whether
+        # `full_output` is True, False, or unspecified.
+        def func(x):
+            return x**2 + 1
+
+        res = quad(func, 0, 4)
+        
+        msg = "Use of parameter 'full_output' is deprecated as of SciPy "
+        with pytest.deprecated_call(match=msg):
+            res2 = quad(func, 0, 4, full_output=0)
+        with pytest.deprecated_call(match=msg):
+            res3 = quad(func, 0, 4, full_output=1)
+
+        assert_equal(res, res2)
+        assert res.integral == res2.integral
+        assert res.abserr == res2.abserr
+
+        assert_equal(res, res3[:2])
+
 
 class TestNQuad:
     def test_fixed_limits(self):
