@@ -16,6 +16,7 @@
 pyproject.toml  @rgommers
 setup.py  @rgommers @larsoner
 environment.yml  @rgommers
+meson*  @rgommers
 
 # SciPy submodules (please keep in alphabetical order)
 scipy/fft/*  @peterbell10
@@ -33,9 +34,11 @@ scipy/stats/_continuous_distns  @andyfaff
 scipy/stats/_covariance.py  @mdhaber
 scipy/stats/_hypothesis.py  @tupui
 scipy/stats/*qmc.*  @tupui
+scipy/stats/_multicomp.py  @tupui @mdhaber
 scipy/stats/_resampling.py  @mdhaber
 scipy/stats/*sobol*  @tupui
 scipy/stats/_sensitivity_analysis.py  @tupui
+scipy/stats/_survival.py  @tupui @mdhaber
 scipy/stats/.unuran/*  @tirthasheshpatel
 
 # Testing infrastructure
@@ -53,7 +56,6 @@ benchmarks/asv.conf.json  @larsoner
 .circleci/*  @larsoner
 .github/*  @larsoner @andyfaff
 azure-pipelines.yml  @larsoner
-.travis.yml  @larsoner
 
 # Doc
 doc_requirements.txt  @tupui
