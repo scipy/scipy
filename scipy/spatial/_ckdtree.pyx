@@ -10,12 +10,11 @@ import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport INFINITY
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp cimport bool
-from libc.math cimport isinf
+from libc.math cimport isinf, INFINITY
 
 cimport cython
 import os

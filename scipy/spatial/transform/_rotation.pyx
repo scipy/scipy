@@ -7,8 +7,7 @@ from ._rotation_groups import create_group
 cimport numpy as np
 cimport cython
 from cython.view cimport array
-from libc.math cimport sqrt, sin, cos, atan2, acos, hypot
-from numpy.math cimport PI as pi, NAN, isnan # avoid MSVC error
+from libc.math cimport sqrt, sin, cos, atan2, acos, hypot, isnan, NAN, pi
 
 np.import_array()
 

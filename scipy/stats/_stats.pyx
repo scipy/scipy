@@ -1,11 +1,10 @@
 from cpython cimport bool
 from libc cimport math
+from libc.math cimport NAN, INFINITY, M_PI as PI
 cimport cython
 cimport numpy as np
-from numpy.math cimport PI
-from numpy.math cimport INFINITY
-from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
+
 import warnings
 import numpy as np
 import scipy.stats, scipy.special

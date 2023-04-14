@@ -95,15 +95,14 @@ existence of (possibly partial) alternatives, *including those inside SciPy*.
 
 Continuous integration
 ``````````````````````
-Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
+Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
 of our dependencies and building release quality wheels. Reliability of CI has
-not been good recently (H2 2021), due to the large amount of configurations to
-support and some CI jobs needing an overhaul. We aim to reduce build times,
-improve caching, move more jobs to GitHub Actions, drop TravisCI and Appveyor
-in the `scipy-wheels repo <https://github.com/MacPython/scipy-wheels>`_,
-move from ``multibuild`` to ``cibuildwheel`` for building wheels for releases,
-and make the set of configurations in CI jobs more orthogonal.
+not been good recently (H1 2023), due to the large amount of configurations to
+support and some CI jobs needing an overhaul. We aim to reduce build times by
+removing the remaining distutils-based jobs when we drop that build system,
+move more jobs from Azure Pipelines to GitHub Actions, and make the set of
+configurations in CI jobs more orthogonal.
 
 
 Size of binaries

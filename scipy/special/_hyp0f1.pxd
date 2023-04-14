@@ -1,5 +1,4 @@
-from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
-from numpy.math cimport NAN, isinf
+from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, NAN, fabs, isinf
 cimport numpy as np
 
 from ._cephes cimport iv, jv, Gamma, lgam, gammasgn
