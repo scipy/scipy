@@ -253,7 +253,7 @@ cpdef double _test_ddot(double[:] dx, double[:] dy) nogil:
     return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
 cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
-                double[:,:] c) nogil except -1:
+                double[:,:] c) except -1 nogil:
     cdef:
         char *transa
         char *transb
