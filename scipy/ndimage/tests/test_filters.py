@@ -67,6 +67,23 @@ def _complex_correlate(array, kernel, real_dtype, convolve=False,
     return output
 
 
+def _cases_axes_tuple_length_mismatch():
+    # Generate combinations of filter function, valid kwargs, and
+    # keyword-value pairs for which the value will become with mismatched
+    # (invalid) size
+    filter_func = ndimage.gaussian_filter
+    kwargs = dict(radius=3, mode='constant', sigma=1.0, order=0)
+    for key, val in kwargs.items():
+        yield filter_func, kwargs, key, val
+
+    filter_funcs = [ndimage.uniform_filter, ndimage.minimum_filter,
+                    ndimage.maximum_filter]
+    kwargs = dict(size=3, mode='constant', origin=0)
+    for filter_func in filter_funcs:
+        for key, val in kwargs.items():
+            yield filter_func, kwargs, key, val
+
+
 class TestNdimageFilters:
 
     def _validate_complex(self, array, kernel, type2, mode='reflect', cval=0):
@@ -772,28 +789,9 @@ class TestNdimageFilters:
         with pytest.raises(error_class, match=match):
             filter_func(array, size, axes=axes)
 
-    @staticmethod
-    def _cases_axes_tuple_length_mismatch():
-        # Generate combinations of filter function, valid kwargs, and
-        # keyword-value pairs for which the value will become with mismatched
-        # (invalid) size
-        filter_func = ndimage.gaussian_filter
-        kwargs = dict(radius=3, mode='constant', sigma=1.0, order=0)
-        for key, val in kwargs.items():
-            yield filter_func, kwargs, key, val
-
-        filter_funcs = [ndimage.uniform_filter, ndimage.minimum_filter,
-                        ndimage.maximum_filter]
-        kwargs = dict(size=3, mode='constant', origin=0)
-        for filter_func in filter_funcs:
-            for key, val in kwargs.items():
-                yield filter_func, kwargs, key, val
-
-    # TODO: Remove .__func__ from _cases_axes_tuple_length_mismatch below
-    #       once minimum supported Python version is 3.10.
     @pytest.mark.parametrize('n_mismatch', [1, 3])
     @pytest.mark.parametrize('filter_func, kwargs, key, val',
-                             _cases_axes_tuple_length_mismatch.__func__())
+                             _cases_axes_tuple_length_mismatch())
     def test_filter_tuple_length_mismatch(self, n_mismatch, filter_func,
                                           kwargs, key, val):
         # Test for the intended RuntimeError when a kwargs has an invalid size
