@@ -446,7 +446,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     Parameters
     ----------
     a : array_like
-        n-dimensional array of which to find mode(s).
+        Numeric, n-dimensional array of which to find mode(s).
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
@@ -501,6 +501,12 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     """  # noqa: E501
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
+    if not np.issubdtype(a.dtype, np.number):
+        message = ("Argument `a` is not recognized as numeric. "
+                   "Support for input that cannot be coerced to a numeric "
+                   "array was deprecated in SciPy 1.9.0 and removed in SciPy "
+                   "1.11.0. Please consider `pandas.DataFrame.mode`.")
+        raise TypeError(message)
 
     if a.size == 0:
         NaN = _get_nan(a)
