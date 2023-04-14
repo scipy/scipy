@@ -269,6 +269,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------
@@ -349,7 +353,7 @@ class GradientEstimationWarning(Warning):
     pass
 
 @cython.cdivision(True)
-cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
+cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
                                        int maxiter, double tol,
                                        double *y) nogil:
     """
@@ -870,6 +874,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
         Nearest-neighbor interpolation in N > 1 dimensions.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------

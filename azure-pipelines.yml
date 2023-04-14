@@ -18,10 +18,10 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.21
-# and should be updated to match scipy-wheels as appropriate
+# the version of OpenBLAS used is currently 0.3.21.dev
+# and should be updated to match tools/openblas_support as appropriate
 variables:
-    openblas_version: 0.3.21
+    openblas_version: 0.3.21.dev
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -183,7 +183,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.32 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
             apt-get -y install build-essential gfortran wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -300,7 +300,7 @@ stages:
 
     - script: >-
         python -m pip install
-        cython==0.29.32
+        cython==0.29.33
         matplotlib
         mpmath
         numpy==1.23.5

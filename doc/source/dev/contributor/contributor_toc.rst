@@ -27,8 +27,6 @@ Development environment
 - :ref:`system-level` shows how to install system-level dependencies for Linux, Mac or Windows (needed if you're not using conda).
 - :ref:`conda-guide` presents a step-by-step process for setting up a convenient SciPy development environment with conda *(recommended)*.
 - :ref:`ubuntu-guide` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu Linux.
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
-- :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
 
 .. _editing-scipy:
 
@@ -88,3 +86,28 @@ Compiled code
 .. _Cython: https://cython.org/
 
 .. |*| replace:: \ :sup:`*` \
+
+.. toctree::
+    :hidden:
+
+    conda_guide
+    ubuntu_guide
+    development_workflow
+    building
+    meson
+    pep8
+    ../gitwash/gitwash
+    ../../reference/index
+    reviewing_prs
+    ../triage
+    adding_new
+    ../core-dev/index
+    ../missing-bits
+    NumPy testing guidelines <https://numpy.org/devdocs/reference/testing.html>
+    devpy_test
+    How to contribute documentation <https://numpy.org/devdocs/dev/howto-docs.html>
+    rendering_documentation
+    benchmarking
+    cython
+    compiled_code
+    public_cython_api

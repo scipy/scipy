@@ -16,6 +16,10 @@ cython_linalg = custom_target('cython_linalg',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  depend_files: [
+    'cython_blas_signatures.txt',
+    'cython_lapack_signatures.txt',
+  ],
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
@@ -65,7 +69,7 @@ py3.extension_module('_fblas',
   [fblas_module, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
   link_args: version_link_args,
-  dependencies: [blas, lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -85,7 +89,7 @@ py3.extension_module('_flapack',
   [flapack_module, g77_abi_wrappers],
   c_args: [numpy_nodepr_api, Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -207,10 +211,10 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
   link_args: version_link_args,
-  dependencies: [blas, lapack, np_dep],
+  dependencies: [lapack, blas, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -222,10 +226,10 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
   link_args: version_link_args,
-  dependencies: [blas, lapack, np_dep],
+  dependencies: [lapack, blas, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'

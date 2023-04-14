@@ -528,12 +528,51 @@ def n_primes(n: IntNumber) -> list[int]:
     return primes
 
 
+def _van_der_corput_permutations(
+    base: IntNumber, *, random_state: SeedType = None
+) -> np.ndarray:
+    """Permutations for scrambling a Van der Corput sequence.
+
+    Parameters
+    ----------
+    base : int
+        Base of the sequence.
+    random_state : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(seed)``.
+        If `seed` is already a ``Generator`` instance, then the provided
+        instance is used.
+
+    Returns
+    -------
+    permutations : array_like
+        Permutation indices.
+
+    Notes
+    -----
+    In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
+    created for each positive integer `k` such that `1 - base**-k < 1`
+    using floating-point arithmetic. For double precision floats, the
+    condition `1 - base**-k < 1` can also be written as `base**-k >
+    2**-54`, which makes it more apparent how many permutations we need
+    to create.
+    """
+    rng = check_random_state(random_state)
+    count = math.ceil(54 / math.log2(base)) - 1
+    permutations = np.repeat(np.arange(base)[None], count, axis=0)
+    for perm in permutations:
+        rng.shuffle(perm)
+
+    return permutations
+
+
 def van_der_corput(
         n: IntNumber,
         base: IntNumber = 2,
         *,
         start_index: IntNumber = 0,
         scramble: bool = False,
+        permutations: npt.ArrayLike | None = None,
         seed: SeedType = None,
         workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
@@ -555,6 +594,8 @@ def van_der_corput(
     scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
+    permutations : array_like, optional
+        Permutations used for scrambling.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(seed)``.
@@ -579,17 +620,12 @@ def van_der_corput(
         raise ValueError("'base' must be at least 2")
 
     if scramble:
-        rng = check_random_state(seed)
-        # In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
-        # created for each positive integer `k` such that `1 - base**-k < 1`
-        # using floating-point arithmetic. For double precision floats, the
-        # condition `1 - base**-k < 1` can also be written as `base**-k >
-        # 2**-54`, which makes it more apparent how many permutations we need
-        # to create.
-        count = math.ceil(54 / math.log2(base)) - 1
-        permutations = np.repeat(np.arange(base)[None], count, axis=0)
-        for perm in permutations:
-            rng.shuffle(perm)
+        if permutations is None:
+            permutations = _van_der_corput_permutations(
+                base=base, random_state=seed
+            )
+        else:
+            permutations = np.asarray(permutations)
 
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
@@ -983,8 +1019,26 @@ class Halton(QMCEngine):
                            'optimization': optimization}
         super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
-        self.base = n_primes(d)
+
+        # important to have ``type(bdim) == int`` for performance reason
+        self.base = [int(bdim) for bdim in n_primes(d)]
         self.scramble = scramble
+
+        self._initialize_permutations()
+
+    def _initialize_permutations(self) -> None:
+        """Initialize permutations for all Van der Corput sequences.
+
+        Permutations are only needed for scrambling.
+        """
+        self._permutations: list = [None] * len(self.base)
+        if self.scramble:
+            for i, bdim in enumerate(self.base):
+                permutations = _van_der_corput_permutations(
+                    base=bdim, random_state=self.rng
+                )
+
+                self._permutations[i] = permutations
 
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
@@ -1008,12 +1062,11 @@ class Halton(QMCEngine):
         """
         workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
-        # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
+        sample = [van_der_corput(n, bdim, start_index=self.num_generated,
                                  scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed),
+                                 permutations=self._permutations[i],
                                  workers=workers)
-                  for bdim in self.base]
+                  for i, bdim in enumerate(self.base)]
 
         return np.array(sample).T.reshape(n, self.d)
 

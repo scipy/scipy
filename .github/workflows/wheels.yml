@@ -83,7 +83,7 @@ jobs:
         - [macos-11, macosx, x86_64]
         - [windows-2019, win, AMD64]
 
-        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11.0-alpha - 3.11.0"]]
+        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -100,7 +100,7 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4.2.0
+      - uses: actions/setup-python@v4
         with:
           python-version: 3.9
 
@@ -124,7 +124,7 @@ jobs:
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.0
+        uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
@@ -133,9 +133,9 @@ jobs:
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
           # MACOS_DEPLOYMENT_TARGET is set because of
-          # https://github.com/pypa/cibuildwheel/issues/1419. Once that
-          # is closed and an update to pypa/cibuildwheel is done, then
-          # that environment variable can be removed.
+          # https://github.com/mesonbuild/meson-python/pull/309. Once
+          # an update is released, then that environment variable can
+          # be removed.
           CIBW_ENVIRONMENT_MACOS: >
             SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk
             LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
@@ -151,13 +151,26 @@ jobs:
           path: ./wheelhouse/*.whl
           name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
 
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          # for installation of anaconda-client, required for upload to
+          # anaconda.org
+          # default (and activated) environment name is test
+          # Note that this step is *after* specific pythons have been used to
+          # build and test the wheel
+          auto-update-conda: true
+          python-version: "3.10"
+
       - name: Upload wheels
         if: success()
-        shell: bash
+        shell: bash -el {0}
+        # see https://github.com/marketplace/actions/setup-miniconda for why
+        # `-el {0}` is required.
         env:
           SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
           SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
         run: |
+          conda install -y anaconda-client
           source tools/wheels/upload_wheels.sh
           set_upload_vars
           # For cron jobs (restricted to main branch) or "Run workflow" trigger

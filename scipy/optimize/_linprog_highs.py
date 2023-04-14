@@ -15,7 +15,7 @@ References
 
 import inspect
 import numpy as np
-from ._optimize import _check_unknown_options, OptimizeWarning, OptimizeResult
+from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
@@ -302,8 +302,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     .. [16] Goldfarb, Donald, and John Ker Reid. "A practicable steepest-edge
             simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
-
-    _check_unknown_options(unknown_options)
+    if unknown_options:
+        message = (f"Unrecognized options detected: {unknown_options}. "
+                   "These will be passed to HiGHS verbatim.")
+        warn(message, OptimizeWarning, stacklevel=3)
 
     # Map options to HiGHS enum values
     simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
@@ -353,6 +355,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
     }
+    options.update(unknown_options)
 
     # np.inf doesn't work; use very large constant
     rhs = _replace_inf(rhs)

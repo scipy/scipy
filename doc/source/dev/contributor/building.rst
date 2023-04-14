@@ -1,5 +1,3 @@
-:orphan:
-
 .. _building:
 
 Building from sources

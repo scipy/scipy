@@ -11,7 +11,10 @@ with the SciPy source code.  If you have git already set up, skip to
 Basic Git setup
 ###############
 
-* :ref:`git-intro`.
+* Developing with git can be done entirely without GitHub. Git is a distributed
+  version control system. In order to use git on your machine you must first
+  `install git <https://git-scm.com/downloads>`__.
+
 * Introduce yourself to Git::
 
       git config --global user.email you@yourdomain.example.com
@@ -22,40 +25,17 @@ Basic Git setup
 Making your own copy (fork) of SciPy
 ####################################
 
-You need to do this only once.  The instructions here are very similar
-to the instructions at http://help.github.com/forking/ - please see that
-page for more detail.  We're repeating some of it here just to give the
-specifics for the SciPy_ project, and to suggest some default names.
+You need to do this only once.
 
-Set up and configure a github_ account
-======================================
+#. Set up and configure a github_ account
 
-If you don't have a github_ account, go to the github_ page, and make one.
+   If you don't have a github_ account, go to the github_ page, and make one.
 
-You then need to configure your account to allow write access - see the
-``Generating SSH keys`` help on `github help`_.
+   You then need to configure your account to allow write access - see the
+   ``Generating SSH keys`` help on `github help`_.
 
-Create your own forked copy of SciPy_
-=========================================
-
-#. Log into your github_ account.
-#. Go to the SciPy_ github home at `SciPy github`_.
-#. Click on the *fork* button:
-
-   .. image:: forking_button.png
-
-   After a short pause, you should find yourself at the home page for
-   your own forked copy of SciPy_.
-
-.. include:: git_links.inc
-
-
-.. _set-up-fork:
-
-Set up your fork
-################
-
-First you follow the instructions for :ref:`forking`.
+#. Next, create your own `forked copy of SciPy
+   <https://docs.github.com/get-started/quickstart/fork-a-repo>`__.
 
 Overview
 ========
@@ -65,6 +45,7 @@ Overview
    git clone https://github.com/your-user-name/scipy.git
    cd scipy
    git remote add upstream https://github.com/scipy/scipy.git
+   git submodule update --init
 
 In detail
 =========
@@ -135,5 +116,21 @@ Your config file should now look something like (from
    [branch "main"]
            remote = upstream
            merge = refs/heads/main
+
+
+Update submodules
+-----------------
+
+Initialize git submodules::
+
+   git submodule update --init
+
+This fetches and updates any submodules that SciPy needs (such as `Boost`).
+
+Next steps
+==========
+
+You are now ready to start developing with SciPy. Check the
+:ref:`contributor-toc` for more details.
 
 .. include:: git_links.inc
