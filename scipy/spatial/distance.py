@@ -544,9 +544,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {\\|u-v\\|}_2^2
-
-       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
+       \\sum_i{w_i |u_i - v_i|^2}
 
     Parameters
     ----------
@@ -737,6 +735,8 @@ def hamming(u, v, w=None):
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
+        if w.shape != u.shape:
+            raise ValueError("'w' should have the same length as 'u' and 'v'.")
     return np.average(u_ne_v, weights=w)
 
 
@@ -886,7 +886,14 @@ def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
 
-    The standardized Euclidean distance between `u` and `v`.
+    The standardized Euclidean distance between two n-vectors `u` and `v` is
+
+    .. math::
+
+       \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
+
+    ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
+    components of the points. If not passed, it is automatically computed.
 
     Parameters
     ----------

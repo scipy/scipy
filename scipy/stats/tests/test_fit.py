@@ -52,6 +52,7 @@ mle_use_floc0 = [
     'powerlaw',  # distfn.nnlf(est2, rvs) > distfn.nnlf(est1, rvs) otherwise
     'powerlognorm',
     'wrapcauchy',
+    'rel_breitwigner',
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
@@ -62,8 +63,9 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'skewcauchy', 't', 'trapezoid', 'triang', 'truncpareto',
-                   'truncweibull_min', 'tukeylambda', 'studentized_range']
+                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'truncpareto', 'truncweibull_min', 'tukeylambda',
+                   'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -241,9 +243,9 @@ def cases_test_fit_mle():
                        'hypergeom', 'kappa4', 'loguniform',
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'nct', 'ncx2', 'nhypergeom',
-                       'powerlognorm', 'reciprocal', 'skellam',
-                       'trapezoid', 'triang', 'truncnorm', 'tukeylambda',
-                       'zipfian'}
+                       'powerlognorm', 'reciprocal', 'rel_breitwigner',
+                       'skellam', 'trapezoid', 'triang', 'truncnorm',
+                       'tukeylambda', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -296,7 +298,7 @@ def cases_test_fit_mse():
                        'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'nct', 'ncx2',
                        'pearson3', 'powerlaw', 'powerlognorm',
-                       'rdist', 'reciprocal', 'rice',
+                       'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
                        'trapezoid', 'truncnorm', 'tukeylambda',
                        'zipfian'}
 
