@@ -4278,6 +4278,8 @@ class multivariate_t_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Log of the probability density function.
+    cdf(x, loc=None, shape=1, df=1, allow_singular=False)
+        Cumulative distribution function.
     rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
 
