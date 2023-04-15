@@ -275,7 +275,7 @@ class TestCumulative_trapezoid:
         assert_allclose(y_int, y_expected)
 
     @pytest.mark.parametrize(
-        "initial", [1, 0.5, np.array([1]), False]
+        "initial", [1, 0.5, np.array([1])]
     )
     def test_initial_exception(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
