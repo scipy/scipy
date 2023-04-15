@@ -475,7 +475,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
-        if initial is not 0:
+        if initial != 0:
             raise ValueError("`initial` parameter can only be None or 0.")
 
         shape = list(res.shape)
