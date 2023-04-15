@@ -18,8 +18,8 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.21
-# and should be updated to match scipy-wheels as appropriate
+# the version of OpenBLAS used is currently 0.3.21.dev
+# and should be updated to match tools/openblas_support as appropriate
 variables:
     openblas_version: 0.3.21.dev
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple

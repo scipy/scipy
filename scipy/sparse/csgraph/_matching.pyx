@@ -3,7 +3,7 @@ import warnings
 cimport cython
 import numpy as np
 cimport numpy as np
-from numpy.math cimport INFINITY
+from libc.math cimport INFINITY
 
 
 from scipy.sparse import isspmatrix_coo, isspmatrix_csc, isspmatrix_csr
