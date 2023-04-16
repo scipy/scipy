@@ -4545,6 +4545,8 @@ class multivariate_t_gen(multi_rv_generic):
         return self._cdf(x, loc, shape, df, dim, maxpts,
                          lower_limit, random_state)
 
+    def _entropy(self, shape=1, df=1, log_pdet=1):
+        
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """Draw random samples from a multivariate t-distribution.
 
