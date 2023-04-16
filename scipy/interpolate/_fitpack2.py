@@ -960,8 +960,8 @@ class _BivariateSplineBase:
             sorted to increasing order.
 
             The ordering of axes is consistent with 
-            np.meshgrid(..., indexing="ij") and inconsistent with the
-            default ordering np.meshgrid(..., indexing="xy").
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int
             Order of x-derivative
 
@@ -1199,8 +1199,8 @@ class BivariateSpline(_BivariateSplineBase):
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
             The ordering of axes is consistent with 
-            np.meshgrid(..., indexing="ij") and inconsistent with the
-            default ordering np.meshgrid(..., indexing="xy").
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int, optional
             Order of x-derivative
 
@@ -1221,7 +1221,7 @@ class BivariateSpline(_BivariateSplineBase):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
 
         We sample the function on a coarse grid and set up the interpolator. Note that
-        the default indexing="xy" of meshgrid would result in an unexpected (transposed)
+        the default ``indexing="xy"`` of meshgrid would result in an unexpected (transposed)
         result after interpolation.
 
         >>> xarr = np.linspace(-3, 3, 21)
@@ -1670,8 +1670,8 @@ class SphereBivariateSpline(_BivariateSplineBase):
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
             The ordering of axes is consistent with 
-            np.meshgrid(..., indexing="ij") and inconsistent with the
-            default ordering np.meshgrid(..., indexing="xy").
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dtheta : int, optional
             Order of theta-derivative
 
