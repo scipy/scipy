@@ -959,7 +959,7 @@ class _BivariateSplineBase:
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
 
-            The ordering of axes is consistent with 
+            The ordering of axes is consistent with
             ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
             default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int
@@ -1198,7 +1198,7 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-            The ordering of axes is consistent with 
+            The ordering of axes is consistent with
             ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
             default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int, optional
@@ -1669,7 +1669,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
-            The ordering of axes is consistent with 
+            The ordering of axes is consistent with
             ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
             default ordering ``np.meshgrid(..., indexing="xy")``.
         dtheta : int, optional
@@ -1745,7 +1745,7 @@ class SphereBivariateSpline(_BivariateSplineBase):
         ----------
         theta, phi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
-            The ordering of axes is consistent with 
+            The ordering of axes is consistent with
             np.meshgrid(..., indexing="ij") and inconsistent with the
             default ordering np.meshgrid(..., indexing="xy").
         dtheta : int, optional
