@@ -4278,6 +4278,9 @@ class multivariate_t_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Log of the probability density function.
+    cdf(x, loc=None, shape=1, df=1, allow_singular=False, *,
+        maxpts=None, lower_limit=None, random_state=None)
+        Cumulative distribution function.
     rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
 
@@ -4298,7 +4301,7 @@ class multivariate_t_gen(multi_rv_generic):
 
     .. math::
 
-        f(x) = \frac{\Gamma(\nu + p)/2}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
+        f(x) = \frac{\Gamma((\nu + p)/2)}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
                \left[1 + \frac{1}{\nu} (\mathbf{x} - \boldsymbol{\mu})^{\top}
                \boldsymbol{\Sigma}^{-1}
                (\mathbf{x} - \boldsymbol{\mu}) \right]^{-(\nu + p)/2},
