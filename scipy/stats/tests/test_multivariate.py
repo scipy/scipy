@@ -532,7 +532,7 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.cdf(x), multivariate_normal.cdf(x, mean, cov))
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
-    
+
     @pytest.mark.parametrize(
         'covariance',
         [
@@ -2548,6 +2548,19 @@ class TestMultivariateT:
         res = stats.multivariate_t(shape=A).cdf([0] * dim, random_state=rng)
         ref = 1 / (dim + 1)
         assert_allclose(res, ref, rtol=5e-5)
+
+    def test_entropy_inf_df(self):
+        cov = np.eye(3, 3)
+        df = np.inf
+        mvt_entropy = stats.multivariate_t.entropy(cov, df)
+        mvn_entropy = stats.multivariate_normal.entropy(None, cov)
+        assert mvt_entropy == mvn_entropy
+
+    @pytest.mark.parametrize("df", [1, 10, 100])
+    def test_entropy_1d(self, df):
+        mvt_entropy = stats.multivariate_t.entropy(shape=1., df=df)
+        t_entropy = stats.t.entropy(df=df)
+        assert_allclose(mvt_entropy, t_entropy, rtol=1e-13)
 
 
 class TestMultivariateHypergeom:

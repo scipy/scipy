@@ -4310,6 +4310,12 @@ class multivariate_t_gen(multi_rv_generic):
 
     .. versionadded:: 1.6.0
 
+    References
+    ----------
+    [1]     Arellano-Valle et al. "Shannon Entropy and Mutual Information for
+            Multivariate Skew-Elliptical Distributions". Scandinavian Journal
+            of Statistics. Vol. 40, issue 1.
+
     Examples
     --------
     The object may be called (as a function) to fix the `loc`, `shape`,
@@ -4545,8 +4551,35 @@ class multivariate_t_gen(multi_rv_generic):
         return self._cdf(x, loc, shape, df, dim, maxpts,
                          lower_limit, random_state)
 
-    def _entropy(self, shape=1, df=1, log_pdet=1):
-        
+    def _entropy(self, dim, df=1, shape=1):
+        if df == np.inf:
+            return multivariate_normal(None, cov=shape).entropy()
+
+        shape_info = _PSD(shape)
+        halfsum = 0.5 * (dim + df)
+        half_df = 0.5 * df
+        return (-gammaln(halfsum) + gammaln(half_df)
+                + 0.5 * dim * np.log(df * np.pi) + halfsum
+                * (psi(halfsum) - psi(half_df))
+                + 0.5 * shape_info.log_pdet)
+
+    def entropy(self, shape=1, df=1):
+        """Calculate the differential entropy of a multivariate
+        t-distribution.
+
+        Parameters
+        ----------
+        %(_mvt_doc_default_callparams)s
+
+        Returns
+        -------
+        h : float
+            Differential entropy
+
+        """
+        dim, loc, shape, df = self._process_parameters(None, shape, df)
+        return self._entropy(dim, df, shape)
+
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """Draw random samples from a multivariate t-distribution.
 
@@ -4719,6 +4752,9 @@ class multivariate_t_frozen(multi_rv_frozen):
                               df=self.df,
                               size=size,
                               random_state=random_state)
+
+    def entropy(self):
+        return self._dist._entropy(self.dim, self.df, self.shape)
 
 
 multivariate_t = multivariate_t_gen()
