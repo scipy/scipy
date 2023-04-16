@@ -557,6 +557,14 @@ class TestCumulativeSimpson:
                     ]
                 ),
             ),
+            (
+                # Test case with cubic y
+                np.array([[0, 1, 8]]),
+                1,
+                None,
+                None,
+                np.array([[0.0, 4.0]]),
+            ),
         ],
     )
     def test_simpson_multi_dx(self, y, dx, initial, axis, int_y):
