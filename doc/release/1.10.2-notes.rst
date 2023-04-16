@@ -12,13 +12,51 @@ compared to 1.10.1.
 Authors
 =======
 * Name (commits)
+* Peter Bell (1)
+* CJ Carey (2)
+* Hood Chatham (1)
+* DWesl (1)
+* Ralf Gommers (2)
+* Matt Haberland (2)
+* Julien Jerphanion (1)
+* Guillaume Lemaitre (1) +
+* OmarManzoor (1) +
+* Tyler Reddy (15)
+* Pamphile Roy (1)
+* Omar Salman (1) +
+
+A total of 12 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 
 
 Issues closed for 1.10.2
 ------------------------
 
+* `#8678 <https://github.com/scipy/scipy/issues/8678>`__: csr_matrix.astype raise ValueError when indices are not sorted...
+* `#17925 <https://github.com/scipy/scipy/issues/17925>`__: BUG: Import error with Cygwin (tested versions 1.9.0, 1.9.3,...
+* `#18007 <https://github.com/scipy/scipy/issues/18007>`__: DOC: PyPI SciPy logo still missing
+* `#18108 <https://github.com/scipy/scipy/issues/18108>`__: BUG, TST: test_cdist_out crashing on Windows
+* `#18111 <https://github.com/scipy/scipy/issues/18111>`__: BUG: sparse.csr_array.argmax() returns 2D numpy.matrix instead...
+* `#18176 <https://github.com/scipy/scipy/issues/18176>`__: BUG: scipy.stats.logistic.fit() returns negative \`scale\`
+* `#18202 <https://github.com/scipy/scipy/issues/18202>`__: BUG: MemoryError when using "+=" operator with scipy.sparse.lil_matrix
+* `#18218 <https://github.com/scipy/scipy/issues/18218>`__: CI: Meson Python 3.11 MacOS job is failing
 
 
 Pull requests for 1.10.2
 ------------------------
+
+* `#17993 <https://github.com/scipy/scipy/pull/17993>`__: BLD: Fix meson build on Cygwin.
+* `#18009 <https://github.com/scipy/scipy/pull/18009>`__: REL, MAINT: prep for 1.10.2
+* `#18011 <https://github.com/scipy/scipy/pull/18011>`__: DOC: fix readme logo
+* `#18121 <https://github.com/scipy/scipy/pull/18121>`__: BUG: sparse: Use _ascontainer for argmin/argmax
+* `#18124 <https://github.com/scipy/scipy/pull/18124>`__: MAINT: correctly forward-declare \`print_soln\` in SuperLU
+* `#18153 <https://github.com/scipy/scipy/pull/18153>`__: FIX: add const with fused type memory view in evaluate_spline
+* `#18154 <https://github.com/scipy/scipy/pull/18154>`__: BLD: Update to Cython 0.29.33
+* `#18159 <https://github.com/scipy/scipy/pull/18159>`__: FIX: const with double_or_complex memory views in _bspl.pyx
+* `#18169 <https://github.com/scipy/scipy/pull/18169>`__: MAINT: Windows distutils cdist/pdist shims
+* `#18177 <https://github.com/scipy/scipy/pull/18177>`__: MAINT: stats.logistic.fit: ensure scale is positive
+* `#18192 <https://github.com/scipy/scipy/pull/18192>`__: FIX trigger indptr/indices copy when data are copied in astype
+* `#18211 <https://github.com/scipy/scipy/pull/18211>`__: BUG: sparse: Fix LIL full-matrix assignment
+* `#18220 <https://github.com/scipy/scipy/pull/18220>`__: CI: clear cache for macOS conda job, and use mamba to install...
