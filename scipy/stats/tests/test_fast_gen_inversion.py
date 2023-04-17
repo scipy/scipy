@@ -22,8 +22,8 @@ def test_bad_args():
     with pytest.raises(ValueError, match="'test' cannot be used to seed"):
         FastGeneratorInversion("norm", random_state="test")
 
-    with pytest.raises(ValueError, match="'xyz' is not a valid name of"):
-        FastGeneratorInversion("xyz")
+    with pytest.raises(ValueError, match="Distribution 'xy' is not supported"):
+        FastGeneratorInversion("xy")
 
     dist = stats.norm()
     with pytest.raises(TypeError, match="distname must be a string."):

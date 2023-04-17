@@ -506,13 +506,13 @@ class FastGeneratorInversion:
     used to generate random variates.
 
     Supported distributions (`distname`) are:
-    alpha, anglit, argus, beta, betaprime, bradford,
-    burr, burr12, cauchy, chi, chi2, cosine,
-    crystalball, expon, gamma, gennorm, geninvgauss,
-    gumbel_l, gumbel_r, hypsecant, invgamma, invgauss,
-    invweibull, laplace, logistic, maxwell, moyal,
-    norm, pareto, powerlaw, t, rayleigh, semicircular,
-    wald, weibull_max, weibull_min.
+    ``alpha``, ``anglit``, ``argus``, ``beta``, ``betaprime``, ``bradford``,
+    ``burr``, ``burr12``, ``cauchy``, ``chi``, ``chi2``, ``cosine``,
+    ``crystalball``, ``expon``, ``gamma``, ``gennorm``, ``geninvgauss``,
+    ``gumbel_l``, ``gumbel_r``, ``hypsecant``, ``invgamma``, ``invgauss``,
+    ``invweibull``, ``laplace``, ``logistic``, ``maxwell``, ``moyal``,
+    ``norm``, ``pareto``, ``powerlaw``, ``t``, ``rayleigh``, ``semicircular``,
+    ``wald``, ``weibull_max``, ``weibull_min``.
 
     `rvs` relies on the accuracy of the numerical inversion. If very extreme
     shape parameters are used, the numerical inversion might not work. However,
@@ -652,11 +652,8 @@ class FastGeneratorInversion:
 
         if not isinstance(distname, str):
             raise TypeError("distname must be a string.")
-        if distname not in set(_distn_names):
-            raise ValueError(
-                f"'{distname}' is not a valid name of a continuous"
-                "distribution in scipy.stats."
-            )
+        if distname not in PINV_CONFIG.keys():
+            raise ValueError(f"Distribution '{distname}' is not supported.")
         if not np.isscalar(loc):
             raise ValueError("loc must be scalar.")
         if not np.isscalar(scale):
@@ -699,51 +696,48 @@ class FastGeneratorInversion:
         # domain_pinv will not be the same as self._domain
         self._domain_pinv = self._domain
 
-        if distname in PINV_CONFIG.keys():
-            # get information about the distribution from the config to set up
-            # the generator
-            dist = self._process_config(distname, args)
+        # get information about the distribution from the config to set up
+        # the generator
+        dist = self._process_config(distname, args)
 
-            if self._rvs_transform_inv is not None:
-                d0 = self._rvs_transform_inv(self._domain[0], *args)
-                d1 = self._rvs_transform_inv(self._domain[1], *args)
-                if d0 > d1:
-                    # swap values if transformation if decreasing
-                    d0, d1 = d1, d0
-                # only update _domain_pinv and not _domain
-                # _domain refers to the original distribution, _domain_pinv
-                # to the transformed distribution
-                self._domain_pinv = d0, d1
+        if self._rvs_transform_inv is not None:
+            d0 = self._rvs_transform_inv(self._domain[0], *args)
+            d1 = self._rvs_transform_inv(self._domain[1], *args)
+            if d0 > d1:
+                # swap values if transformation if decreasing
+                d0, d1 = d1, d0
+            # only update _domain_pinv and not _domain
+            # _domain refers to the original distribution, _domain_pinv
+            # to the transformed distribution
+            self._domain_pinv = d0, d1
 
-            # self._center has been set by the call self._process_config
-            # check if self._center is inside the transformed domain
-            # _domain_pinv, otherwise move it to the endpoint that is closer
-            if self._center is not None:
-                if self._center < self._domain_pinv[0]:
-                    self._center = self._domain_pinv[0]
-                elif self._center > self._domain_pinv[1]:
-                    self._center = self._domain_pinv[1]
+        # self._center has been set by the call self._process_config
+        # check if self._center is inside the transformed domain
+        # _domain_pinv, otherwise move it to the endpoint that is closer
+        if self._center is not None:
+            if self._center < self._domain_pinv[0]:
+                self._center = self._domain_pinv[0]
+            elif self._center > self._domain_pinv[1]:
+                self._center = self._domain_pinv[1]
 
-            # only suppress runtime warning in the setup if the
-            # recommended parameter ranges are used
-            if self._ignore_shape_range:
+        # only suppress runtime warning in the setup if the
+        # recommended parameter ranges are used
+        if self._ignore_shape_range:
+            self.rng = NumericalInversePolynomial(
+                dist,
+                random_state=self.random_state,
+                domain=self._domain_pinv,
+                center=self._center,
+            )
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
                 self.rng = NumericalInversePolynomial(
                     dist,
                     random_state=self.random_state,
                     domain=self._domain_pinv,
                     center=self._center,
                 )
-            else:
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", category=RuntimeWarning)
-                    self.rng = NumericalInversePolynomial(
-                        dist,
-                        random_state=self.random_state,
-                        domain=self._domain_pinv,
-                        center=self._center,
-                    )
-        else:
-            raise ValueError(f"Unknown distname: {distname}")
 
     @property
     def random_state(self):
