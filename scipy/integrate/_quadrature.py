@@ -406,9 +406,9 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     axis : int, optional
         Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
-        `initial` can be 0 or None. If `initial` = 0, insert 0 at the beginning 
-        of the returned result. Default is None, which means no value at ``x[0]`` 
-        is returned and `res` has one element less than `y` along the axis of 
+        `initial` can be 0 or None. If `initial` = 0, insert 0 at the beginning
+        of the returned result. Default is None, which means no value at ``x[0]``
+        is returned and `res` has one element less than `y` along the axis of
         integration.
 
         .. versionchanged:: 1.11.0
