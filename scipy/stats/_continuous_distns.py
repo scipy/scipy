@@ -1659,6 +1659,7 @@ class dgamma_gen(rv_continuous):
 
     def _entropy(self, a):
         a = np.asarray([a])
+
         def h1(a):
             h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
             return h1
@@ -1956,6 +1957,25 @@ class exponnorm_gen(rv_continuous):
 exponnorm = exponnorm_gen(name='exponnorm')
 
 
+def _pow1pm1(x, y):
+    """
+    Compute (1 + x)**y - 1.
+
+    Uses expm1 and xlog1py to avoid loss of precision when
+    (1 + x)**y is close to 1.
+
+    Note that the inverse of this function with respect to x is
+    ``_pow1pm1(x, 1/y)``.  That is, if
+
+        t = _pow1pm1(x, y)
+
+    then
+
+        x = _pow1pm1(t, 1/y)
+    """
+    return np.expm1(sc.xlog1py(y, x))
+
+
 class exponweib_gen(rv_continuous):
     r"""An exponentiated Weibull continuous random variable.
 
@@ -2020,6 +2040,12 @@ class exponweib_gen(rv_continuous):
 
     def _ppf(self, q, a, c):
         return (-sc.log1p(-q**(1.0/a)))**np.asarray(1.0/c)
+
+    def _sf(self, x, a, c):
+        return -_pow1pm1(-np.exp(-x**c), a)
+
+    def _isf(self, p, a, c):
+        return (-np.log(-_pow1pm1(-p, 1/a)))**(1/c)
 
 
 exponweib = exponweib_gen(a=0.0, name='exponweib')
@@ -4264,7 +4290,7 @@ class halfnorm_gen(rv_continuous):
         return 2 * _norm_sf(x)
 
     def _isf(self, p):
-        return  _norm_isf(p/2)
+        return _norm_isf(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -4466,6 +4492,7 @@ class invgamma_gen(rv_continuous):
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
         return h
+
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -7231,6 +7258,7 @@ class t_gen(rv_continuous):
         h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
         return h
 
+
 t = t_gen(name='t')
 
 
@@ -9933,6 +9961,11 @@ class vonmises_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    scipy.stats.vonmises_fisher : Von-Mises Fisher distribution on a
+                                  hypersphere
+
     Notes
     -----
     The probability density function for `vonmises` and `vonmises_line` is:
@@ -9946,7 +9979,7 @@ class vonmises_gen(rv_continuous):
 
     `vonmises` is a circular distribution which does not restrict the
     distribution to a fixed interval. Currently, there is no circular
-    distribution framework in scipy. The ``cdf`` is implemented such that
+    distribution framework in SciPy. The ``cdf`` is implemented such that
     ``cdf(x + 2*np.pi) == cdf(x) + 1``.
 
     `vonmises_line` is the same distribution, defined on :math:`[-\pi, \pi]`

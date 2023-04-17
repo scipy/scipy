@@ -133,32 +133,7 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.21.6"
         use_wheel: true
-  - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
-    pool:
-      vmImage: 'ubuntu-22.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - script: >-
-        python -m pip install ruff cython-lint
-      displayName: 'Install tools'
-      failOnStderr: false
-    - script: |
-        set -euo pipefail
-        # for Travis CI we used to do: git fetch --unshallow
-        # but apparently Azure clones are not as shallow
-        # so does not appear to be needed to fetch maintenance
-        # branches (which Azure logs show being checked out
-        # in Checkout stage)
-        python tools/lint.py --diff-against origin/$(System.PullRequest.TargetBranch)
-        tools/unicode-check.py
-        tools/check_test_name.py
-      displayName: 'Run Lint Checks'
-      failOnStderr: true
+
   - job: Linux_Python_39_32bit_full
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges

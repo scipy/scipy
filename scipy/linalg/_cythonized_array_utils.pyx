@@ -15,7 +15,7 @@ __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) nogil:
+cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) noexcept nogil:
     """Recursive matrix transposition for square arrays"""
     cdef int i, j, ith_row, r2, c2
     cdef lapack_t *bb=b
@@ -129,7 +129,7 @@ def bandwidth_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
+cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -160,7 +160,7 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
+cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -295,7 +295,7 @@ def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -308,7 +308,7 @@ cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -438,7 +438,7 @@ def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -450,7 +450,7 @@ cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) no
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):

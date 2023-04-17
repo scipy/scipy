@@ -53,6 +53,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Piecewise linear interpolant in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     Notes
     -----
@@ -177,6 +181,10 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     Notes
     -----

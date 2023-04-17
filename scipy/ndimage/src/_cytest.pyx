@@ -65,7 +65,7 @@ def filter1d_capsule(intp filter_size):
 
 
 cdef int _filter2d(double *buffer, intp filter_size, double *res,
-	           void *callback_data):
+	           void *callback_data) noexcept:
     cdef intp i
     cdef double *weights = <double *>callback_data
 
@@ -111,7 +111,7 @@ def filter2d_capsule(seq):
 
 
 cdef int _transform(intp *output_coordinates, double *input_coordinates,
-	            int output_rank, int input_rank, void *callback_data):
+	            int output_rank, int input_rank, void *callback_data) noexcept:
     cdef intp i
     cdef double shift = (<double *>callback_data)[0]
 

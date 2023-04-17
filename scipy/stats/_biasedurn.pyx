@@ -108,7 +108,7 @@ cdef class _PyStochasticLib3:
     def SetAccuracy(self, double accur):
         return self.c_sl3.get().SetAccuracy(accur)
 
-    cdef void HandleRng(self, random_state=None):
+    cdef void HandleRng(self, random_state=None) noexcept:
         self.capsule = make_rng(random_state)
 
         # get the bitgen_t pointer

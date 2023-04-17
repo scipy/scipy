@@ -984,7 +984,7 @@ cdef class _Qhull:
 
 
 cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
-                         setT *centers, boolT unbounded):
+                         setT *centers, boolT unbounded) noexcept:
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
     cdef list cur_vertices
@@ -1020,7 +1020,7 @@ cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
     return
 
 
-cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex):
+cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex) noexcept:
     if nd == 3:
         qh_order_vertexneighbors(qh, vertex)
     elif nd >= 4:
@@ -1136,7 +1136,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     return Tinvs
 
 @cython.boundscheck(False)
-cdef double _matrix_norm1(int n, double *a) nogil:
+cdef double _matrix_norm1(int n, double *a) noexcept nogil:
     """Compute the 1-norm of a square matrix given in in Fortran order"""
     cdef double maxsum = 0, colsum
     cdef int i, j
@@ -1151,7 +1151,7 @@ cdef double _matrix_norm1(int n, double *a) nogil:
     return maxsum
 
 cdef int _barycentric_inside(int ndim, double *transform,
-                             const double *x, double *c, double eps) nogil:
+                             const double *x, double *c, double eps) noexcept nogil:
     """
     Check whether point is inside a simplex, using barycentric
     coordinates.  `c` will be filled with barycentric coordinates, if
@@ -1173,7 +1173,7 @@ cdef int _barycentric_inside(int ndim, double *transform,
     return 1
 
 cdef void _barycentric_coordinate_single(int ndim, double *transform,
-                                         const double *x, double *c, int i) nogil:
+                                         const double *x, double *c, int i) noexcept nogil:
     """
     Compute a single barycentric coordinate.
 
@@ -1193,7 +1193,7 @@ cdef void _barycentric_coordinate_single(int ndim, double *transform,
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
 
 cdef void _barycentric_coordinates(int ndim, double *transform,
-                                   const double *x, double *c) nogil:
+                                   const double *x, double *c) noexcept nogil:
     """
     Compute barycentric coordinates.
 
@@ -1211,7 +1211,7 @@ cdef void _barycentric_coordinates(int ndim, double *transform,
 # N-D geometry
 #------------------------------------------------------------------------------
 
-cdef void _lift_point(DelaunayInfo_t *d, const double *x, double *z) nogil:
+cdef void _lift_point(DelaunayInfo_t *d, const double *x, double *z) noexcept nogil:
     cdef int i
     z[d.ndim] = 0
     for i in range(d.ndim):
@@ -1220,7 +1220,7 @@ cdef void _lift_point(DelaunayInfo_t *d, const double *x, double *z) nogil:
     z[d.ndim] *= d.paraboloid_scale
     z[d.ndim] += d.paraboloid_shift
 
-cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
+cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) noexcept nogil:
     """
     qh_distplane
     """
@@ -1237,7 +1237,7 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
 #------------------------------------------------------------------------------
 
 cdef int _is_point_fully_outside(DelaunayInfo_t *d, const double *x,
-                                 double eps) nogil:
+                                 double eps) noexcept nogil:
     """
     Is the point outside the bounding box of the triangulation?
 
@@ -1251,7 +1251,7 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, const double *x,
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
                                   const double *x, double eps,
-                                  double eps_broad) nogil:
+                                  double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` by going through all simplices.
 
@@ -1309,7 +1309,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
                                 const double *x, int *start, double eps,
-                                double eps_broad) nogil:
+                                double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` via a directed walk in the tessellation.
 
@@ -1410,7 +1410,7 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c,
                        const double *x, int *start, double eps,
-                       double eps_broad) nogil:
+                       double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` by walking the triangulation.
 
