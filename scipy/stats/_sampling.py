@@ -455,8 +455,6 @@ class FastGeneratorInversion:
         high, raise a ValueError. If True, any shape parameters that are valid
         for the distribution are accepted. This can be useful for testing.
         The default is False.
-        If set to True, warnings are not suppresed that might occur when an
-        instance of the class is created.
     random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
@@ -519,8 +517,9 @@ class FastGeneratorInversion:
     for all implemented distributions, the admissible shape parameters have
     been tested, and an error will be raised if the user supplies values
     outside of the allowed range. The u-error should not exceed 1e-10 for all
-    valid parameters. To check numerical accuracy, the method
-    `evaluate_error` can be used.
+    valid parameters. Note that warnings might be raised even if parameters
+    are within the valid range when the object is instantiated.
+    To check numerical accuracy, the method `evaluate_error` can be used.
 
     Note that all implemented distributions are also part of `scipy.stats`, and
     the object created by `FastGeneratorInversion` relies on methods like
@@ -720,24 +719,12 @@ class FastGeneratorInversion:
             elif self._center > self._domain_pinv[1]:
                 self._center = self._domain_pinv[1]
 
-        # only suppress runtime warning in the setup if the
-        # recommended parameter ranges are used
-        if self._ignore_shape_range:
-            self.rng = NumericalInversePolynomial(
-                dist,
-                random_state=self.random_state,
-                domain=self._domain_pinv,
-                center=self._center,
+        self.rng = NumericalInversePolynomial(
+            dist,
+            random_state=self.random_state,
+            domain=self._domain_pinv,
+            center=self._center,
             )
-        else:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", category=RuntimeWarning)
-                self.rng = NumericalInversePolynomial(
-                    dist,
-                    random_state=self.random_state,
-                    domain=self._domain_pinv,
-                    center=self._center,
-                )
 
     @property
     def random_state(self):
