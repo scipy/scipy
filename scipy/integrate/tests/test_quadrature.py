@@ -401,7 +401,7 @@ class TestQMCQuad:
 
 class TestCumulativeSimpson:
     @pytest.mark.parametrize(
-        "y_func,x,dx,initial,int_y_func",
+        ("y_func", "x", "dx", "initial", "int_y_func"),
         [
             (lambda y: y, None, 1.0, 0, lambda y: y**2 / 2),
             (lambda y: y, None, 0.5, 5, lambda y: y**2 / 2 + 5),
@@ -430,7 +430,7 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        "y_func,x,initial,axis,int_y_func",
+        ("y_func", "x", "initial", "axis", "int_y_func"),
         [
             # Unit tests with inputs for x, dx is None
             (
@@ -484,7 +484,7 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        "y,dx,initial,axis,int_y",
+        ("y", "dx", "initial", "axis", "int_y"),
         [
             (
                 # Default dx value
@@ -581,7 +581,7 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        "y_func,x,dx,initial,axis,int_y_func",
+        ("y_func", "x", "dx", "initial", "axis", "int_y_func"),
         [
             (
                 # Non-unique values in x
