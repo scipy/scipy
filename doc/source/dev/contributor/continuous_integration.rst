@@ -52,8 +52,8 @@ Azure
   `python -OO`
 * ``source_distribution``: install via ``sdist``, then run the test suite
 * ``refguide_check``: doctests from examples and benchmarks
-* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
-  dependencies and check coverage
+* ``prerelease_deps_64bit_blas``: use pre-released version of the
+  dependencies
 
 CircleCI
 --------
