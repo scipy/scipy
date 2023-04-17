@@ -222,17 +222,15 @@ jobs:
           sudo apt-get -y update
           sudo apt install -y g++-8 gcc-8 gfortran-8
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
-            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev
-
-          # install openblas
-          chmod +x tools/wheels/cibw_before_build_linux.sh
-          sudo tools/wheels/cibw_before_build_linux.sh .
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
 
       - name: Setup Python deps
         run: |
-          pip install --upgrade "numpy==1.21.6" &&
-          pip install --upgrade pip setuptools==59.6.0 wheel build meson meson-python ninja &&
-          pip install "cython<3.0b1" gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
+          pip install "numpy==1.21.6" &&
+          # build deps
+          pip install build meson-python ninja pythran pybind11 cython
+          # test deps
+          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
 
       - name: Build wheel and install
         run: |
@@ -240,15 +238,13 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --no-isolation
-          pip install dist/scipy*.whl
+          CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python -m pip install dist/scipy*.whl
 
       - name: Run tests
         run: |
-          export PYTHONOPTIMIZE=2
-          set -xeuo pipefail
-
           # can't be in source directory
           pushd $RUNNER_TEMP
-          bash $GITHUB_WORKSPACE/tools/wheels/cibw_test_command.sh $GITHUB_WORKSPACE
+          export PYTHONOPTIMIZE=2
+          python -m pytest --pyargs scipy -n2 --durations=10
           popd
