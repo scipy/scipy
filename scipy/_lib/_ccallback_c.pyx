@@ -14,7 +14,7 @@ from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCAL
 # PyCapsule helpers
 #
 
-cdef void raw_capsule_destructor(object capsule):
+cdef void raw_capsule_destructor(object capsule) noexcept:
     cdef const char *name
     name = PyCapsule_GetName(capsule)
     free(<char*>name)

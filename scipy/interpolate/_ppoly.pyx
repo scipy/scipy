@@ -564,7 +564,7 @@ cdef int find_interval_descending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
-                                 bint extrapolate=1) nogil:
+                                 bint extrapolate=1) noexcept nogil:
     """
     Find an interval such that x[interval + 1] < xval <= x[interval], assuming
     that x are sorted in the descending order.
@@ -648,7 +648,7 @@ cdef int find_interval_descending(const double *x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, int ci, int cj, int dx) nogil:
+cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, int ci, int cj, int dx) noexcept nogil:
     """
     Evaluate polynomial, derivative, or antiderivative in a single interval.
 
@@ -932,7 +932,7 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
 @cython.cdivision(True)
 cdef double_or_complex evaluate_bpoly1(double_or_complex s,
                                        double_or_complex[:,:,::1] c,
-                                       int ci, int cj) nogil:
+                                       int ci, int cj) noexcept nogil:
     """
     Evaluate polynomial in the Bernstein basis in a single interval.
 
@@ -985,7 +985,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
                                              double_or_complex[:,:,::1] c,
                                              int ci, int cj,
                                              int nu,
-                                             double_or_complex[:,:,::1] wrk) nogil:
+                                             double_or_complex[:,:,::1] wrk) noexcept nogil:
     """
     Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.

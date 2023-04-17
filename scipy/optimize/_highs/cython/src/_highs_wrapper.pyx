@@ -68,7 +68,7 @@ for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
 
 
-cdef str _opt_warning(string name, val, valid_set=None):
+cdef str _opt_warning(string name, val, valid_set=None) noexcept:
     cdef OptionRecord * r = _ref_opt_lookup[name]
 
     # BOOL
@@ -113,7 +113,7 @@ cdef str _opt_warning(string name, val, valid_set=None):
            'See documentation for valid options. '
            'Using default.' % (name.decode(), str(val)))
 
-cdef apply_options(dict options, Highs & highs):
+cdef apply_options(dict options, Highs & highs) noexcept:
     '''Take options from dictionary and apply to HiGHS object.'''
 
     # Initialize for error checking
