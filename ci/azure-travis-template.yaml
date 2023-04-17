@@ -14,9 +14,6 @@ parameters:
 - name: refguide_check
   type: boolean
   default: false
-- name: asv_check
-  type: boolean
-  default: false
 - name: use_wheel
   type: boolean
   default: false
@@ -98,9 +95,6 @@ steps:
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'
-- ${{ if eq(parameters.asv_check, true) }}:
-  - script: pip install "asv>=0.4.1"
-    displayName: 'Install asv'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
 - script: git submodule update --init
@@ -162,13 +156,6 @@ steps:
 - ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
   - script: python runtests.py -g --refguide-check
     displayName: 'Refguide Check'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.asv_check, true)) }}:
-  - script: |
-      set -euo pipefail
-      cd benchmarks
-      python -masv check -E existing
-      # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-      ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
