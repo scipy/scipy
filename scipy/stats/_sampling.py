@@ -1,10 +1,8 @@
 import math
-import warnings
 import numbers
 import numpy as np
 from scipy import stats
 from scipy import special as sc
-from ._continuous_distns import _distn_names
 from ._qmc import check_random_state, Halton, QMCEngine
 from ._unuran.unuran_wrapper import NumericalInversePolynomial
 
