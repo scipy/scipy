@@ -43,7 +43,7 @@ from ._cephes cimport iv
 
 # Fused type wrappers
 
-cdef inline number_t cbesj(double v, number_t z) nogil:
+cdef inline number_t cbesj(double v, number_t z) noexcept nogil:
     cdef npy_cdouble r
     if number_t is double:
         return cbesj_wrap_real(v, z)
@@ -51,7 +51,7 @@ cdef inline number_t cbesj(double v, number_t z) nogil:
         r = cbesj_wrap(v, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
-cdef inline number_t cbesy(double v, number_t z) nogil:
+cdef inline number_t cbesy(double v, number_t z) noexcept nogil:
     cdef npy_cdouble r
     if number_t is double:
         return cbesy_wrap_real(v, z)
@@ -59,7 +59,7 @@ cdef inline number_t cbesy(double v, number_t z) nogil:
         r = cbesy_wrap(v, npy_cdouble_from_double_complex(z))
         return double_complex_from_npy_cdouble(r)
 
-cdef inline number_t cbesk(double v, number_t z) nogil:
+cdef inline number_t cbesk(double v, number_t z) noexcept nogil:
     cdef npy_cdouble r
     if number_t is double:
         return cbesk_wrap_real(v, z)
@@ -71,7 +71,7 @@ cdef inline number_t cbesk(double v, number_t z) nogil:
 # Spherical Bessel functions
 
 @cython.cdivision(True)
-cdef inline double spherical_jn_real(long n, double x) nogil:
+cdef inline double spherical_jn_real(long n, double x) noexcept nogil:
     cdef double s0, s1, sn
     cdef int idx
 
@@ -110,7 +110,7 @@ cdef inline double spherical_jn_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_jn_complex(long n, double complex z) nogil:
+cdef inline double complex spherical_jn_complex(long n, double complex z) noexcept nogil:
     cdef double complex out
     if zisnan(z):
         return z
@@ -139,7 +139,7 @@ cdef inline double complex spherical_jn_complex(long n, double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double spherical_yn_real(long n, double x) nogil:
+cdef inline double spherical_yn_real(long n, double x) noexcept nogil:
     cdef double s0, s1, sn
     cdef int idx
 
@@ -174,7 +174,7 @@ cdef inline double spherical_yn_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_yn_complex(long n, double complex z) nogil:
+cdef inline double complex spherical_yn_complex(long n, double complex z) noexcept nogil:
 
     if zisnan(z):
         return z
@@ -195,7 +195,7 @@ cdef inline double complex spherical_yn_complex(long n, double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double spherical_in_real(long n, double z) nogil:
+cdef inline double spherical_in_real(long n, double z) noexcept nogil:
 
     if isnan(z):
         return z
@@ -219,7 +219,7 @@ cdef inline double spherical_in_real(long n, double z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_in_complex(long n, double complex z) nogil:
+cdef inline double complex spherical_in_complex(long n, double complex z) noexcept nogil:
     cdef npy_cdouble s
 
     if zisnan(z):
@@ -248,7 +248,7 @@ cdef inline double complex spherical_in_complex(long n, double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double spherical_kn_real(long n, double z) nogil:
+cdef inline double spherical_kn_real(long n, double z) noexcept nogil:
 
     if isnan(z):
         return z
@@ -268,7 +268,7 @@ cdef inline double spherical_kn_real(long n, double z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_kn_complex(long n, double complex z) nogil:
+cdef inline double complex spherical_kn_complex(long n, double complex z) noexcept nogil:
 
     if zisnan(z):
         return z
@@ -293,7 +293,7 @@ cdef inline double complex spherical_kn_complex(long n, double complex z) nogil:
 # Derivatives
 
 @cython.cdivision(True)
-cdef inline double spherical_jn_d_real(long n, double x) nogil:
+cdef inline double spherical_jn_d_real(long n, double x) noexcept nogil:
     if n == 0:
         return -spherical_jn_real(1, x)
     else:
@@ -310,7 +310,7 @@ cdef inline double spherical_jn_d_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_jn_d_complex(long n, double complex x) nogil:
+cdef inline double complex spherical_jn_d_complex(long n, double complex x) noexcept nogil:
     if n == 0:
         return -spherical_jn_complex(1, x)
     else:
@@ -319,7 +319,7 @@ cdef inline double complex spherical_jn_d_complex(long n, double complex x) nogi
 
 
 @cython.cdivision(True)
-cdef inline double spherical_yn_d_real(long n, double x) nogil:
+cdef inline double spherical_yn_d_real(long n, double x) noexcept nogil:
     if n == 0:
         return -spherical_yn_real(1, x)
     else:
@@ -328,7 +328,7 @@ cdef inline double spherical_yn_d_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_yn_d_complex(long n, double complex x) nogil:
+cdef inline double complex spherical_yn_d_complex(long n, double complex x) noexcept nogil:
     if n == 0:
         return -spherical_yn_complex(1, x)
     else:
@@ -337,7 +337,7 @@ cdef inline double complex spherical_yn_d_complex(long n, double complex x) nogi
 
 
 @cython.cdivision(True)
-cdef inline double spherical_in_d_real(long n, double x) nogil:
+cdef inline double spherical_in_d_real(long n, double x) noexcept nogil:
     if n == 0:
         return spherical_in_real(1, x)
     else:
@@ -348,7 +348,7 @@ cdef inline double spherical_in_d_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_in_d_complex(long n, double complex x) nogil:
+cdef inline double complex spherical_in_d_complex(long n, double complex x) noexcept nogil:
     if n == 0:
         return spherical_in_complex(1, x)
     else:
@@ -359,7 +359,7 @@ cdef inline double complex spherical_in_d_complex(long n, double complex x) nogi
 
 
 @cython.cdivision(True)
-cdef inline double spherical_kn_d_real(long n, double x) nogil:
+cdef inline double spherical_kn_d_real(long n, double x) noexcept nogil:
     if n == 0:
         return -spherical_kn_real(1, x)
     else:
@@ -368,7 +368,7 @@ cdef inline double spherical_kn_d_real(long n, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex spherical_kn_d_complex(long n, double complex x) nogil:
+cdef inline double complex spherical_kn_d_complex(long n, double complex x) noexcept nogil:
     if n == 0:
         return -spherical_kn_complex(1, x)
     else:

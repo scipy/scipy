@@ -62,7 +62,6 @@ static PyObject *fitpack_error;
 
 /*  module_methods:
  * {"_curfit", fitpack_curfit, METH_VARARGS, doc_curfit},
- * {"_spl_", fitpack_spl_, METH_VARARGS, doc_spl_},
  * {"_parcur", fitpack_parcur, METH_VARARGS, doc_parcur},
  * {"_surfit", fitpack_surfit, METH_VARARGS, doc_surfit},
  * {"_bispev", fitpack_bispev, METH_VARARGS, doc_bispev},
@@ -82,8 +81,6 @@ static PyObject *fitpack_error;
 	#else
 		#define CURFIT CURFIT_
 		#define PERCUR PERCUR_
-		#define SPLDER SPLDER_
-		#define SPLEV  SPLEV_
 		#define SPLINT SPLINT_
 		#define PARCUR PARCUR_
 		#define CLOCUR CLOCUR_
@@ -96,8 +93,6 @@ static PyObject *fitpack_error;
 	#if defined(NO_APPEND_FORTRAN)
 		#define CURFIT curfit
 		#define PERCUR percur
-		#define SPLDER splder
-		#define SPLEV splev
 		#define SPLINT splint
 		#define PARCUR parcur
 		#define CLOCUR clocur
@@ -108,8 +103,6 @@ static PyObject *fitpack_error;
 	#else
 		#define CURFIT curfit_
 		#define PERCUR percur_
-		#define SPLDER splder_
-		#define SPLEV splev_
 		#define SPLINT splint_
 		#define PARCUR parcur_
 		#define CLOCUR clocur_
@@ -126,9 +119,6 @@ void CURFIT(F_INT*,F_INT*,double*,double*,double*,double*,
 void PERCUR(F_INT*,F_INT*,double*,double*,double*,F_INT*,
         double*,F_INT*,F_INT*,double*,double*,double*,
         double*,F_INT*,F_INT*,F_INT*);
-void SPLDER(double*,F_INT*,double*,F_INT*,F_INT*,double*,
-        double*,F_INT*,F_INT*,double*,F_INT*);
-void SPLEV(double*,F_INT*,double*,F_INT*,double*,double*,F_INT*,F_INT*,F_INT*);
 double SPLINT(double*,F_INT*,double*,F_INT*,double*,double*,double*);
 void PARCUR(F_INT*,F_INT*,F_INT*,F_INT*,double*,F_INT*,double*,
         double*,double*,double*,F_INT*,double*,F_INT*,F_INT*,
@@ -657,62 +647,6 @@ fail:
     Py_XDECREF(ap_iwrk);
     return NULL;
 }
-
-static char doc_spl_[] = " [y,ier] = _spl_(x,nu,t,c,k,e)";
-static PyObject *
-fitpack_spl_(PyObject *dummy, PyObject *args)
-{
-    F_INT n, nu, ier, k, m, e=0;
-    npy_intp dims[1];
-    double *x, *y, *t, *c, *wrk = NULL;
-    PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_t = NULL, *ap_c = NULL;
-    PyObject *x_py = NULL, *t_py = NULL, *c_py = NULL;
-
-    if (!PyArg_ParseTuple(args, ("O" F_INT_PYFMT "OO" F_INT_PYFMT F_INT_PYFMT),
-                          &x_py, &nu, &t_py, &c_py, &k, &e)) {
-        return NULL;
-    }
-    ap_x = (PyArrayObject *)PyArray_ContiguousFromObject(x_py, NPY_DOUBLE, 0, 1);
-    ap_t = (PyArrayObject *)PyArray_ContiguousFromObject(t_py, NPY_DOUBLE, 0, 1);
-    ap_c = (PyArrayObject *)PyArray_ContiguousFromObject(c_py, NPY_DOUBLE, 0, 1);
-    if ((ap_x == NULL || ap_t == NULL || ap_c == NULL)) {
-        goto fail;
-    }
-    x = (double *)PyArray_DATA(ap_x);
-    m = PyArray_DIMS(ap_x)[0];
-    t = (double *)PyArray_DATA(ap_t);
-    c = (double *)PyArray_DATA(ap_c);
-    n = PyArray_DIMS(ap_t)[0];
-    dims[0] = m;
-    ap_y = (PyArrayObject *)PyArray_SimpleNew(1,dims,NPY_DOUBLE);
-    if (ap_y == NULL) {
-        goto fail;
-    }
-    y = (double *)PyArray_DATA(ap_y);
-    if ((wrk = malloc(n*sizeof(double))) == NULL) {
-        PyErr_NoMemory();
-        goto fail;
-    }
-    if (nu) {
-        SPLDER(t, &n, c, &k, &nu, x, y, &m, &e, wrk, &ier);
-    }
-    else {
-        SPLEV(t, &n, c, &k, x, y, &m, &e, &ier);
-    }
-    free(wrk);
-    Py_DECREF(ap_x);
-    Py_DECREF(ap_c);
-    Py_DECREF(ap_t);
-    return Py_BuildValue(("N" F_INT_PYFMT), PyArray_Return(ap_y), ier);
-
-fail:
-    free(wrk);
-    Py_XDECREF(ap_x);
-    Py_XDECREF(ap_c);
-    Py_XDECREF(ap_t);
-    return NULL;
-}
-
 
 static char doc_insert[] = " [tt,cc,ier] = _insert(iopt,t,c,k,x,m)";
 static PyObject *
@@ -1372,9 +1306,6 @@ static struct PyMethodDef fitpack_module_methods[] = {
 {"_curfit",
     fitpack_curfit,
     METH_VARARGS, doc_curfit},
-{"_spl_",
-    fitpack_spl_,
-    METH_VARARGS, doc_spl_},
 {"_parcur",
     fitpack_parcur,
     METH_VARARGS, doc_parcur},

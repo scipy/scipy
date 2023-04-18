@@ -18,8 +18,8 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.21
-# and should be updated to match scipy-wheels as appropriate
+# the version of OpenBLAS used is currently 0.3.21.dev
+# and should be updated to match tools/openblas_support as appropriate
 variables:
     openblas_version: 0.3.21.dev
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
@@ -55,24 +55,7 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: prerelease_deps_coverage_64bit_blas
-    timeoutInMinutes: 90
-    pool:
-      vmImage: 'ubuntu-22.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
-        coverage: true
-        numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        other_spec: "--pre --upgrade --timeout=60"
-        use_64bit_blas: true
-  - job: refguide_asv_check
+  - job: refguide_check
     timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-22.04'
@@ -87,7 +70,6 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.23.5"
         refguide_check: true
-        asv_check: true
         use_wheel: true
   - job: source_distribution
     timeoutInMinutes: 90
@@ -104,61 +86,6 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.21.6"
         use_sdist: true
-  - job: wheel_optimized_gcc8
-    timeoutInMinutes: 90
-    pool:
-      vmImage: 'ubuntu-20.04'  # 22.04 does not have gfortran-8
-    variables:
-      # The following is needed for optimized "-OO" test run but since we use
-      # pytest-xdist plugin for load scheduling its workers don't pick up the
-      # flag. This environment variable starts all Py instances in -OO mode.
-      PYTHONOPTIMIZE: 2
-      # Use gcc version 6
-      CC: gcc-8
-      CXX: g++-8
-      FC: gfortran-8
-    steps:
-    - script: |
-        set -euo pipefail
-        sudo apt update -y
-        sudo apt install -y g++-8 gcc-8 gfortran-8
-      displayName: 'Install GCC 8'
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "numpy==1.21.6"
-        use_wheel: true
-  - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
-    pool:
-      vmImage: 'ubuntu-22.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - script: >-
-        python -m pip install ruff cython-lint
-      displayName: 'Install tools'
-      failOnStderr: false
-    - script: |
-        set -euo pipefail
-        # for Travis CI we used to do: git fetch --unshallow
-        # but apparently Azure clones are not as shallow
-        # so does not appear to be needed to fetch maintenance
-        # branches (which Azure logs show being checked out
-        # in Checkout stage)
-        python tools/lint.py --diff-against origin/$(System.PullRequest.TargetBranch)
-        tools/unicode-check.py
-        tools/check_test_name.py
-      displayName: 'Run Lint Checks'
-      failOnStderr: true
   - job: Linux_Python_39_32bit_full
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges

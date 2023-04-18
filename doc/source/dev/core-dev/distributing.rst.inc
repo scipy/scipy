@@ -48,6 +48,7 @@ are:
 - `PyData Sphinx theme`_ (docs)
 - `Sphinx-Design`_  (docs)
 - matplotlib_ (docs)
+- MyST-NB_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
@@ -147,16 +148,14 @@ and distributing them on PyPI or elsewhere.
 - Build against the lowest NumPy version that you need to support, then it will
   work for all NumPy versions with the same major version number (NumPy does
   maintain backwards ABI compatibility).
+- The easiest available toolchain for building portable SciPy binaries
+  is our ``cibuildwheel`` infrastructure for common platforms, with
+  details available in our CI infrastructure code and available via the
+  ``cibuildwheel`` command on Windows, Linux, and MacOS, albeit with some extra
+  external dependencies required in some cases
 
 **Windows**
 
-- The currently most easily available toolchain for building
-  Python.org compatible binaries for SciPy is installing MSVC (see
-  https://wiki.python.org/moin/WindowsCompilers) and mingw64-gfortran.
-  Support for this configuration requires numpy.distutils from
-  NumPy >= 1.14.dev and a gcc/gfortran-compiled static ``openblas.a``.
-  This configuration is currently used in the Appveyor configuration for
-  https://github.com/MacPython/scipy-wheels
 - For 64-bit Windows installers built with a free toolchain, use the method
   documented at https://github.com/numpy/numpy/wiki/Mingw-static-toolchain.
   That method will likely be used for SciPy itself once it's clear that the
@@ -179,22 +178,12 @@ and distributing them on PyPI or elsewhere.
   longer supported, g77 support isn't needed anymore and SciPy can now include
   Fortran 90/95 code.
 
-**OS X**
-
-- To produce OS X wheels that work with various Python versions (from
-  python.org, Homebrew, MacPython), use the build method provided by
-  https://github.com/MacPython/scipy-wheels.
-- DMG installers for the Python from python.org on OS X can still be produced
-  by ``tools/scipy-macosx-installer/``.  SciPy doesn't distribute those
-  installers anymore though, now that there are binary wheels on PyPi.
-
 **Linux**
 
-- PyPi-compatible Linux wheels can be produced via the manylinux_ project.
-  The corresponding build setup for TravisCI for SciPy is set up in
-  https://github.com/MacPython/scipy-wheels.
+- PyPI-compatible Linux wheels can be produced via the manylinux_ project,
+  which is used under the hood by our ``cibuildwheel`` infrastructure.
 
-Other Linux build-setups result to PyPi incompatible wheels, which
+Other Linux build-setups result in PyPI incompatible wheels, which
 would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
@@ -223,3 +212,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
 .. _threadpoolctl: https://github.com/joblib/threadpoolctl
+.. _MyST-NB: https://myst-nb.readthedocs.io/

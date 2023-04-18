@@ -389,7 +389,7 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                           np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                          DTYPE_t null_value):
+                          DTYPE_t null_value) noexcept:
     # data, indices, indptr are the csr attributes of the sparse input.
     # on input, graph should be filled with infinities, and should be
     # of size [N, N], which is also the size of the sparse matrix
@@ -592,7 +592,7 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                                  np.ndarray[ITYPE_t, ndim=2] pred,
                                  np.ndarray[DTYPE_t, ndim=2] dist,
                                  int directed,
-                                 DTYPE_t null_value):
+                                 DTYPE_t null_value) noexcept:
     # All matrices should be size N x N
     # note that graph will be modified if directed == False
     # dist should be all zero on entry

@@ -3,7 +3,7 @@ import warnings
 cimport cython
 import numpy as np
 cimport numpy as np
-from numpy.math cimport INFINITY
+from libc.math cimport INFINITY
 
 
 from scipy.sparse import isspmatrix_coo, isspmatrix_csc, isspmatrix_csr
@@ -502,7 +502,7 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
                          ITYPE_t[:] kk,
                          DTYPE_t[:] cc,
                          ITYPE_t nr,
-                         ITYPE_t nc):
+                         ITYPE_t nc) noexcept:
     """Solves the minimum weight bipartite matching problem using LAPJVsp.
 
     The implementation at hand is a straightforward port of the original Pascal

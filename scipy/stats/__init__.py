@@ -131,6 +131,7 @@ Continuous distributions
    powernorm         -- Power normal
    rdist             -- R-distribution
    rayleigh          -- Rayleigh
+   rel_breitwigner   -- Relativistic Breit-Wigner
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
@@ -186,6 +187,7 @@ Multivariate distributions
    multivariate_hypergeom -- Multivariate hypergeometric distribution
    random_table           -- Distribution of random tables with given marginals
    uniform_direction      -- Uniform distribution on S(N-1)
+   vonmises_fisher        -- Von Mises-Fisher distribution
 
 `scipy.stats.multivariate_normal` methods accept instances
 of the following class to represent the covariance.
@@ -522,6 +524,7 @@ Fitting / Survival Analysis
 
    fit
    ecdf
+   logrank
 
 Directional statistical functions
 ---------------------------------

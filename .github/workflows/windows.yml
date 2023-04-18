@@ -3,7 +3,6 @@ name: Windows Meson tests
 on:
   push:
     branches:
-      - main
       - maintenance/**
   pull_request:
     branches:

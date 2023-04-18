@@ -210,7 +210,7 @@ in this doc section to explain what is happening):
     build scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o: c_COMPILER scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/_decomp_update.c
      DEPFILE = scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o.d
      DEPFILE_UNQUOTED = scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o.d
-     ARGS = -Iscipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p -Iscipy/linalg -I../scipy/linalg -I/home/username/anaconda3/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/include -I/home/username/anaconda3/envs/scipy-dev/include/python3.10 -fvisibility=hidden -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -std=c99 -O2 -g -Wno-unused-but-set-variable -Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types -fPIC -Wno-cpp
+     ARGS = -Iscipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p -Iscipy/linalg -I../scipy/linalg -I/home/username/anaconda3/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/include -I/home/username/anaconda3/envs/scipy-dev/include/python3.10 -fvisibility=hidden -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -std=c99 -O2 -g -Wno-unused-but-set-variable -Wno-unused-function -Wno-conversion -Wno-misleading-indentation -fPIC -Wno-cpp
 
     # step 4: generate a symbol file (uses `meson --internal symbolextractor`); you can safely ignore this step
     build scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/_decomp_update.cpython-310-x86_64-linux-gnu.so.symbols: SHSYM scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so
@@ -293,7 +293,6 @@ interest shows:
                     "-Wno-unused-function",
                     "-Wno-conversion",
                     "-Wno-misleading-indentation",
-                    "-Wno-incompatible-pointer-types",
                     "-fPIC",
                     "-Wno-cpp"
                 ],
