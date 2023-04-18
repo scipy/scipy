@@ -58,7 +58,7 @@ class UNURANError(RuntimeError):
     pass
 
 
-ctypedef double (*URNG_FUNCT)(void *) nogil
+ctypedef double (*URNG_FUNCT)(void *) noexcept nogil
 
 cdef object get_numpy_rng(object seed = None):
     """
