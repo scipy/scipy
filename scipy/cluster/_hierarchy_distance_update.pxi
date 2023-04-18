@@ -24,7 +24,7 @@ d_xyi : double
 """
 ctypedef double (*linkage_distance_update)(double d_xi, double d_yi,
                                            double d_xy, int size_x,
-                                           int size_y, int size_i)
+                                           int size_y, int size_i) noexcept
 
 
 cdef double _single(double d_xi, double d_yi, double d_xy,
