@@ -254,7 +254,6 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps and 64-bit BLAS
-    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
