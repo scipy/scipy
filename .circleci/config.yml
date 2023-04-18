@@ -169,7 +169,7 @@ jobs:
       - apt-install
 
       - run:
-          name: build docs
+          name: refguide_check
           no_output_timeout: 25m
           command: |
             sudo apt-get install -y wamerican-small
