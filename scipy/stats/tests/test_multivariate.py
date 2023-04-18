@@ -1872,7 +1872,7 @@ class TestOrthoGroup:
         rng = np.random.default_rng(6796248956179332344)
         dist = ortho_group(dim=dim)
         rvs = dist.rvs(size=5000, random_state=rng)
-        dets = np.linalg.det(rvs)
+        dets = scipy.linalg.det(rvs)
         k = np.sum(dets > 0)
         n = len(dets)
         res = stats.binomtest(k, n)
