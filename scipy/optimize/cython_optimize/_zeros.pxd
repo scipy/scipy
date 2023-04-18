@@ -4,7 +4,7 @@
 # should be made to this file** --- any API additions/changes should be
 # done in `cython_optimize.pxd` (see gh-11793).
 
-ctypedef double (*callback_type)(double, void*)
+ctypedef double (*callback_type)(double, void*) noexcept
 
 ctypedef struct zeros_parameters:
     callback_type function

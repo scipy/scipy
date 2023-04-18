@@ -6,8 +6,63 @@ from scipy.linalg._cythonized_array_utils cimport (
 	np_complex_numeric_t,
 	np_numeric_t
     )
+from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
+from libc.stdlib cimport malloc, free
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
+
+
+# =========================== find_det_from_lu : s, d, c, z ==================
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.initializedcheck(False)
+def find_det_from_lu(lapack_t[:, ::1] a):
+    cdef int n = a.shape[0], k, perm = 0, info = 0
+    cdef double det = 1.
+    cdef double complex detj = 1.+0.j
+    cdef int *piv = <int *>malloc(<int>n * sizeof(int))
+    try:
+        if not piv:
+            raise MemoryError('Internal memory allocation request for LU '
+                              'factorization failed in "find_det_from_lu".')
+
+        if lapack_t is float:
+            sgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is double:
+            dgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is floatcomplex:
+            cgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+        else:
+            zgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+
+        if info < 0:
+            raise ValueError('find_det_from_lu has encountered an internal'
+                             ' error in ?getrf routine with invalid'
+                             f' value at {-info}-th parameter.'
+                             )
+        if lapack_t is float or lapack_t is double:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                det *= a[k, k]
+            return -det if perm % 2 else det
+        else:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                detj *= a[k, k]
+            return -detj if perm % 2 else detj
+    finally:
+        free(piv)
+# ============================================================================
 
 
 # ====================== swap_c_and_f_layout : s, d, c, z ====================

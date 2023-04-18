@@ -55,22 +55,6 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: prerelease_deps_64bit_blas
-    timeoutInMinutes: 90
-    pool:
-      vmImage: 'ubuntu-22.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: full
-        numpy_spec: "--pre --upgrade --timeout=60 -i $PRE_WHEELS numpy"
-        other_spec: "--pre --upgrade --timeout=60"
-        use_64bit_blas: true
   - job: refguide_check
     timeoutInMinutes: 90
     pool:
@@ -102,36 +86,6 @@ stages:
         test_mode: fast
         numpy_spec: "numpy==1.21.6"
         use_sdist: true
-  - job: wheel_optimized_gcc8
-    timeoutInMinutes: 90
-    pool:
-      vmImage: 'ubuntu-20.04'  # 22.04 does not have gfortran-8
-    variables:
-      # The following is needed for optimized "-OO" test run but since we use
-      # pytest-xdist plugin for load scheduling its workers don't pick up the
-      # flag. This environment variable starts all Py instances in -OO mode.
-      PYTHONOPTIMIZE: 2
-      # Use gcc version 6
-      CC: gcc-8
-      CXX: g++-8
-      FC: gfortran-8
-    steps:
-    - script: |
-        set -euo pipefail
-        sudo apt update -y
-        sudo apt install -y g++-8 gcc-8 gfortran-8
-      displayName: 'Install GCC 8'
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "numpy==1.21.6"
-        use_wheel: true
-
   - job: Linux_Python_39_32bit_full
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
