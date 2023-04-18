@@ -292,7 +292,7 @@ jobs:
         #       have been ironed out.
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-        python -m pip install --pre --upgrade pytest pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -326,4 +326,4 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
         export OPENBLAS_NUM_THREADS=1
-        python dev.py test -j2 --mode full
+        python dev.py test -j2 --mode full --coverage --gcov
