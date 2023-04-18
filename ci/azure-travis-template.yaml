@@ -11,9 +11,6 @@ parameters:
 - name: coverage
   type: boolean
   default: false
-- name: refguide_check
-  type: boolean
-  default: false
 - name: use_wheel
   type: boolean
   default: false
@@ -84,11 +81,6 @@ steps:
 - ${{ if eq(parameters.coverage, true) }}:
   - script: pip install pytest-cov coverage
     displayName: 'Install coverage dependencies'
-- ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx numpydoc pooch
-    displayName: 'Install documentation dependencies'
-  - script: sudo apt-get install -y wamerican-small
-    displayName: 'Install word list (for csgraph tutorial)'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
 - script: git submodule update --init
@@ -147,9 +139,6 @@ steps:
   ${{ if eq(parameters.coverage, false) }}:
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
-  - script: python runtests.py -g --refguide-check
-    displayName: 'Refguide Check'
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
