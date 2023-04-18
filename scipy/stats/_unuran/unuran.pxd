@@ -90,7 +90,7 @@ cdef extern from "unuran.h" nogil:
 
     int unur_gen_resetsub(UNUR_GEN* generator)
 
-    ctypedef double (*_unur_urng_new_sampleunif_ft)(void* state) except *
+    ctypedef double (*_unur_urng_new_sampleunif_ft)(void* state)
 
     UNUR_URNG* unur_urng_new(_unur_urng_new_sampleunif_ft sampleunif, void* state)
 
