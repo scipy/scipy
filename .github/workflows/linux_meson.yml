@@ -315,7 +315,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build -j2
+        python dev.py build -j2 --gcov
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -326,4 +326,4 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
         export OPENBLAS_NUM_THREADS=1
-        python dev.py test -j2 --mode full --coverage --gcov
+        python dev.py test -j2 --mode full --coverage
