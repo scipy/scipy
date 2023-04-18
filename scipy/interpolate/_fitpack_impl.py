@@ -588,7 +588,10 @@ def splev(x, tck, der=0, ext=0):
         x = asarray(x)
         shape = x.shape
         x = atleast_1d(x).ravel()
-        y, ier = _fitpack._spl_(x, der, t, c, k, ext)
+        if der == 0:
+            y, ier = dfitpack.splev(t, c, k, x, ext)
+        else:
+            y, ier = dfitpack.splder(t, c, k, x, der, ext)
 
         if ier == 10:
             raise ValueError("Invalid input data")

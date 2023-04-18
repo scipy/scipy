@@ -8,7 +8,7 @@ from ._complexstuff cimport *
 from libc.math cimport cos, sqrt, fabs, NAN, M_PI
 from libc.stdlib cimport abs
 
-cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) nogil:
+cdef inline double complex sph_harmonic(int m, int n, double theta, double phi) noexcept nogil:
     cdef double x, prefactor
     cdef double complex val
     cdef int mp
