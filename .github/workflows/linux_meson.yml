@@ -252,13 +252,17 @@ jobs:
 
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
+    # TODO: re-enable ILP64 build.
     name: Prerelease deps and 64-bit BLAS
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.9]
+
+    #    env:
+    #      NPY_USE_BLAS_ILP64: 1
 
     steps:
     - uses: actions/checkout@v3
@@ -272,9 +276,12 @@ jobs:
 
     - name: Install Ubuntu dependencies
       run: |
-        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+
+        # Install OpenBLAS a la cibuildwheel.
+        chmod +x tools/wheels/cibw_before_build_linux.sh
+        sudo tools/wheels/cibw_before_build_linux.sh .        
 
     - name: Caching Python dependencies
       uses: actions/cache@v3
@@ -285,21 +292,20 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install ninja meson==0.60.3
+        # TODO: unpin cython and move to -pre once issues with cython 3.0
+        #       have been ironed out.
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-        python -m pip install --pre --upgrade --timeout=60 cython pytest pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl
-        python -m pip install matplotlib scikit-umfpack scikit-sparse
-        python -m pip uninstall -y scipy
-        python -m pip install pytest-cov coverage codecov gcovr
+        python -m pip install --pre --upgrade --timeout=60 pytest pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
 
     - name:  Prepare compiler cache
       id:    prep-ccache
       shell: bash
       run: |
         mkdir -p "${CCACHE_DIR}"
-        echo "::set-output name=dir::$CCACHE_DIR"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
         NOW=$(date -u +"%F-%T")
-        echo "::set-output name=timestamp::${NOW}"
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
       uses:  actions/cache@v3
@@ -312,24 +318,12 @@ jobs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
-        # need to be updated to be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-
 
-    - name: Setup 64-bit BLAS
-      run: |
-        # target=$(python tools/openblas_support.py)
-        # FIXME add support for ILP64
-        # echo "[openblas64_]" > site.cfg
-        # echo "library_dirs = $target/lib" >> site.cfg
-        # echo "include_dirs = $target/include" >> site.cfg
-        # echo "runtime_library_dirs = $target/lib" >> site.cfg
-        # export PKG_CONFIG_PATH=...
-
     - name: Build and install SciPy
       run: |
-        python dev.py -j 2 --build-only --gcov
+        python dev.py build -j2
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -337,19 +331,7 @@ jobs:
 
     - name: Test SciPy
       run: |
-        export OPENBLAS_NUM_THREADS=1
-        python dev.py -n -j 2 --mode full --coverage
+        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
-    - name: Upload coverage information
-      run: |
-        set -euo pipefail
-        RUN_DIR=`echo build-install/lib/python*/site-packages`
-        # Produce gcov output for codecov to find
-        find build -name '*.gcno' -type f -exec gcov -pb {} +
-        mv *.gcov "$RUN_DIR/"
-        # Run codecov
-        cd "$RUN_DIR"
-        curl https://codecov.io/bash -o codecov-upload.sh
-        chmod +x codecov-upload.sh
-        # Skip running gcov since we have already done it
-        ./codecov-upload.sh -X gcov
+        export OPENBLAS_NUM_THREADS=1
+        python dev.py test -j2 --mode full
