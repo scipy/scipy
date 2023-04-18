@@ -55,7 +55,8 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: refguide_asv_check
+  - job: refguide_check
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-22.04'
     steps:
