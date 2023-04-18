@@ -292,7 +292,9 @@ jobs:
         #       have been ironed out.
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        # Use pytest-xdist 2.5.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
+        # can update once pytest-cov>4.0
+        python -m pip install --pre --upgrade pytest pytest-cov==2.5.0 pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
 
     - name:  Prepare compiler cache
       id:    prep-ccache
