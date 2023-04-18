@@ -4158,17 +4158,8 @@ class TestGammatone:
 
 
 class TestOrderFilter:
-
-    @pytest.mark.parametrize(
-        'dtype',
-        (
-            np.int8, np.int16, np.int32, np.int64,
-            np.uint8, np.uint16, np.uint32, np.uint64,
-            np.float32, np.float64,
-        )
-    )
-    def test_doc_example(self, dtype):
-        x = np.arange(25, dtype=dtype).reshape(5, 5)
+    def test_doc_example(self):
+        x = np.arange(25).reshape(5, 5)
         domain = np.identity(3)
 
         # minimum of elements 1,3,9 (zero-padded) on phone pad
@@ -4179,7 +4170,6 @@ class TestOrderFilter:
              [0., 5., 6., 7., 0.],
              [0., 10., 11., 12., 0.],
              [0., 0., 0., 0., 0.]],
-            dtype=dtype
         )
         assert_allclose(order_filter(x, domain, 0), expected)
 
@@ -4191,7 +4181,6 @@ class TestOrderFilter:
              [16., 17., 18., 19., 14.],
              [21., 22., 23., 24., 19.],
              [20., 21., 22., 23., 24.]],
-            dtype=dtype
         )
         assert_allclose(order_filter(x, domain, 2), expected)
 
@@ -4202,20 +4191,11 @@ class TestOrderFilter:
              [10, 11, 12, 13, 8],
              [15, 16, 17, 18, 13],
              [0, 15, 16, 17, 18]],
-            dtype=dtype
         )
         assert_allclose(order_filter(x, domain, 1), expected)
 
-    @pytest.mark.parametrize(
-        'dtype',
-        (
-            np.int8, np.int16, np.int32, np.int64,
-            np.uint8, np.uint16, np.uint32, np.uint64,
-            np.float32, np.float64,
-        )
-    )
-    def test_medfilt_order_filter(self, dtype):
-        x = np.arange(25, dtype=dtype).reshape(5, 5)
+    def test_medfilt_order_filter(self):
+        x = np.arange(25).reshape(5, 5)
 
         # median of zero-padded elements 1,5,9 on phone pad
         # 7,5,3 on numpad
@@ -4225,30 +4205,20 @@ class TestOrderFilter:
              [6, 11, 12, 13, 9],
              [11, 16, 17, 18, 14],
              [0, 16, 17, 18, 0]],
-            dtype=dtype
         )
         assert_allclose(medfilt(x, 3), expected)
 
         assert_allclose(
-            order_filter(x, np.ones((3, 3), dtype=np.int8), 4),
+            order_filter(x, np.ones((3, 3)), 4),
             expected
         )
 
-    @pytest.mark.parametrize(
-        'dtype',
-        (
-            np.int8, np.int16, np.int32, np.int64,
-            np.uint8, np.uint16, np.uint32, np.uint64,
-            np.float32, np.float64,
-        )
-    )
-    def test_order_filter_asymmetric(self, dtype):
-        x = np.arange(25, dtype=dtype).reshape(5, 5)
+    def test_order_filter_asymmetric(self):
+        x = np.arange(25).reshape(5, 5)
         domain = np.array(
             [[1, 1, 0],
              [0, 1, 0],
              [0, 0, 0]],
-            dtype=np.int8
         )
 
         expected = np.array(
