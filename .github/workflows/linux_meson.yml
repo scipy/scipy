@@ -120,6 +120,7 @@ jobs:
         export SCIPY_USE_PROPACK=1
         python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
 
+  #################################################################################
   test_venv_install:
     name: Pip install into venv
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
@@ -174,6 +175,7 @@ jobs:
         python -c "import scipy.linalg"
         python -c "from scipy import cluster; cluster.test()"
 
+  #################################################################################
   python_debug:
     name: Python-debug & ATLAS
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
@@ -198,3 +200,51 @@ jobs:
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
           python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
+
+  #################################################################################
+  gcc8:
+    # Purpose is to examine builds with oldest-supported gcc.
+    name: Build with gcc-8
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Setup OS
+        run: |
+          sudo apt-get -y update
+          sudo apt install -y g++-8 gcc-8 gfortran-8
+          sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
+
+      - name: Setup Python deps
+        run: |
+          pip install "numpy==1.21.6" &&
+          # build deps
+          pip install build meson-python ninja pythran pybind11 cython wheel
+          # test deps
+          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
+
+      - name: Build wheel and install
+        run: |
+          set -euo pipefail
+          export PYTHONOPTIMIZE=2
+
+          # specify which compilers to use using environment variables
+          CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python -m pip install dist/scipy*.whl
+
+      - name: Run tests
+        run: |
+          # can't be in source directory
+          pushd $RUNNER_TEMP
+          export PYTHONOPTIMIZE=2
+          python -m pytest --pyargs scipy -n2 --durations=10
+          popd
