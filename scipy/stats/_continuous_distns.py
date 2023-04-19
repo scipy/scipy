@@ -10082,7 +10082,7 @@ class vonmises_gen(rv_continuous):
 
             if r > 0:
                 def solve_for_kappa(kappa):
-                        return sc.i1e(kappa)/sc.i0e(kappa) - r
+                    return sc.i1e(kappa)/sc.i0e(kappa) - r
 
                 root_res = root_scalar(solve_for_kappa, method="brentq",
                                        bracket=(np.finfo(float).tiny, 1e16))
