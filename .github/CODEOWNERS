@@ -41,7 +41,6 @@ tools/*  @larsoner @rgommers
 runtests.py  @larsoner
 pytest.ini  @larsoner
 tox.ini  @larsoner
-codecov.yml  @larsoner
 .coveragerc  @larsoner
 benchmarks/asv.conf.json  @larsoner
 

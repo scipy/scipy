@@ -1,6 +1,6 @@
 from libc.math cimport log, fabs, expm1, log1p, isnan, NAN, INFINITY
 
-cdef inline double entr(double x) nogil:
+cdef inline double entr(double x) noexcept nogil:
     if isnan(x):
         return x
     elif x > 0:
@@ -10,7 +10,7 @@ cdef inline double entr(double x) nogil:
     else:
         return -INFINITY
 
-cdef inline double kl_div(double x, double y) nogil:
+cdef inline double kl_div(double x, double y) noexcept nogil:
     if isnan(x) or isnan(y):
         return NAN
     elif x > 0 and y > 0:
@@ -20,7 +20,7 @@ cdef inline double kl_div(double x, double y) nogil:
     else:
         return INFINITY
 
-cdef inline double rel_entr(double x, double y) nogil:
+cdef inline double rel_entr(double x, double y) noexcept nogil:
     if isnan(x) or isnan(y):
         return NAN
     elif x > 0 and y > 0:
@@ -30,7 +30,7 @@ cdef inline double rel_entr(double x, double y) nogil:
     else:
         return INFINITY
 
-cdef inline double huber(double delta, double r) nogil:
+cdef inline double huber(double delta, double r) noexcept nogil:
     if delta < 0:
         return INFINITY
     elif fabs(r) <= delta:
@@ -38,7 +38,7 @@ cdef inline double huber(double delta, double r) nogil:
     else:
         return delta * (fabs(r) - 0.5 * delta);
 
-cdef inline double pseudo_huber(double delta, double r) nogil:
+cdef inline double pseudo_huber(double delta, double r) noexcept nogil:
     cdef double u, v
     if delta < 0:
         return INFINITY

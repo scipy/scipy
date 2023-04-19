@@ -71,10 +71,10 @@ cdef class _PyWalleniusNCHypergeometric:
 
 
 cdef bitgen_t* _glob_rng
-cdef double next_double() nogil:
+cdef double next_double() noexcept nogil:
     global _glob_rng
     return _glob_rng.next_double(_glob_rng.state)
-cdef double next_normal(const double m, const double s) nogil:
+cdef double next_normal(const double m, const double s) noexcept nogil:
     global _glob_rng
     return random_normal(_glob_rng, m, s)
 
@@ -108,7 +108,7 @@ cdef class _PyStochasticLib3:
     def SetAccuracy(self, double accur):
         return self.c_sl3.get().SetAccuracy(accur)
 
-    cdef void HandleRng(self, random_state=None):
+    cdef void HandleRng(self, random_state=None) noexcept:
         self.capsule = make_rng(random_state)
 
         # get the bitgen_t pointer

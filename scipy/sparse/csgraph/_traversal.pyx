@@ -357,7 +357,7 @@ cdef unsigned int _breadth_first_directed(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors) noexcept:
     # Inputs:
     #  head_node: (input) index of the node from which traversal starts
     #  indices: (input) CSR indices of graph
@@ -398,7 +398,7 @@ cdef unsigned int _breadth_first_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors) noexcept:
     # Inputs:
     #  head_node: (input) index of the node from which traversal starts
     #  indices1: (input) CSR indices of graph
@@ -545,7 +545,7 @@ cdef unsigned int _depth_first_directed(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
     cdef unsigned int i, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
@@ -591,7 +591,7 @@ cdef unsigned int _depth_first_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] node_list,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] predecessors,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] root_list,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] flag) noexcept:
     cdef unsigned int i, i_nl_end, cnode, pnode
     cdef unsigned int N = node_list.shape[0]
     cdef int no_children, i_root
@@ -647,7 +647,7 @@ cdef unsigned int _depth_first_undirected(
 cdef int _connected_components_directed(
                                  np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                                  np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
-                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
+                                 np.ndarray[ITYPE_t, ndim=1, mode='c'] labels) noexcept:
     """
     Uses an iterative version of Tarjan's algorithm to find the
     strongly connected components of a directed graph represented as a
@@ -771,7 +771,7 @@ cdef int _connected_components_undirected(
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr1,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indices2,
                            np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr2,
-                           np.ndarray[ITYPE_t, ndim=1, mode='c'] labels):
+                           np.ndarray[ITYPE_t, ndim=1, mode='c'] labels) noexcept:
 
     cdef int v, w, j, label, SS_head
     cdef int N = labels.shape[0]
