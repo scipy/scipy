@@ -32,7 +32,7 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
 from scipy.stats import _covariance, Covariance
 from scipy import stats
 
-from scipy.integrate import romb, qmc_quad, tplquad
+from scipy.integrate import romb, qmc_quad, tplquad, dblquad
 from scipy.special import multigammaln
 from scipy._lib._pep440 import Version
 
@@ -2562,6 +2562,22 @@ class TestMultivariateT:
         t_entropy = stats.t.entropy(df=df)
         assert_allclose(mvt_entropy, t_entropy, rtol=1e-13)
 
+    def test_entropy_vs_numerical_integration(self):
+
+        def integrand(x, y, mvt):
+            vec = np.array([x, y])
+            return -mvt.logpdf(vec) * mvt.pdf(vec)
+
+        df = 3
+        shape = [[1, 1], [0, 3]]
+        dim = 2
+        loc = np.zeros((dim, ))
+        mvt = stats.multivariate_t(loc, shape, df)
+        limit = 1e5
+        numerical_result, _ = dblquad(integrand, -limit, limit,
+                                      -limit, limit, args=(mvt, ))
+        analytical_result = mvt.entropy()
+        assert_allclose(analytical_result, numerical_result, rtol=1e-6)
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
