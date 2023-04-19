@@ -376,33 +376,6 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     Uses the line search algorithm to enforce strong Wolfe
     conditions. See Wright and Nocedal, 'Numerical Optimization',
     1999, pp. 59-61.
-    
-    Examples
-    --------
-    >>> from scipy.optimize import line_search
-    
-    # Define the function and its gradient
-    >>> f = lambda x: (x - 1)**2
-    >>> fprime = lambda x: 2 * (x - 1)
-
-    # Set the starting point and initial step sizes
-    >>> x0 = 0
-    >>> p_small = 1
-    >>> p_large = 1e5
-
-    # Perform the line search with a small initial step size
-    >>> print('Small initial step size:')
-    >>> print(line_search(f, fprime, x0, p_small))
-    Small initial step size:
-    (1.0, 2, 1, 0.0, 1.0, 0.0)
- 
-
-    # Perform the line search with a large initial step size
-    >>> print('Large initial step size:')
-    >>> print(line_search(f, fprime, x0, p_large, maxiter=100))
-    Large initial step size:
-    (1.0, 2, 1, 0.0, 1.0, 0.0)
-    
     """
 
     if phi0 is None:
