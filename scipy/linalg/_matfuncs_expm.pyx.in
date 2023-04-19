@@ -36,7 +36,7 @@ prefixes = ['s', 'd', 'c', 'z']
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef double norm1(lapack_t[:, ::1] A):
+cdef double norm1(lapack_t[:, ::1] A) noexcept:
     """
     Fast 1-norm computation for C-contiguous square arrays.
     Regardless of the dtype we work in double precision to prevent overflows
@@ -79,7 +79,7 @@ cdef double norm1(lapack_t[:, ::1] A):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, int spins):
+cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, int spins) noexcept:
     cdef int k, int_one = 1, intn = <int>n
     cdef double one =1., zero = 0.
     for k in range(spins):
@@ -97,7 +97,7 @@ cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
+cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am) noexcept:
     cdef Py_ssize_t n = Am.shape[1], i, j, k
     cdef int lm = 0, s = 0, intn = <int>n, n2= intn*intn, int_one = 1
     cdef {{ tname }}[:, :, ::1] Amv = Am
@@ -221,7 +221,7 @@ cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogil:
+cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) noexcept nogil:
     cdef {{ tname }} b[7]
     cdef int *ipiv = <int*>malloc(n*sizeof(int))
     cdef int i, info, n2 = n*n, int_one = 1
@@ -317,7 +317,7 @@ cdef void pade_357_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n, int m) nogi
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) nogil:
+cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) noexcept nogil:
     cdef {{ tname }} b[9]
     cdef {{ tname }} *work = <{{ tname }}*>malloc(n*n*sizeof({{ tname }}))
     cdef int *ipiv = <int*>malloc(n*sizeof(int))
@@ -382,7 +382,7 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) nogil:
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void pade_13_UV_calc_{{ pfx }}({{ tname }}[:, :, ::1]Am, int n) nogil:
+cdef void pade_13_UV_calc_{{ pfx }}({{ tname }}[:, :, ::1]Am, int n) noexcept nogil:
     cdef {{ tname }} *work2 = <{{ tname }}*>malloc(n*n*sizeof({{ tname }}))
     cdef {{ tname }} *work3 = <{{ tname }}*>malloc(n*n*sizeof({{ tname }}))
     cdef {{ tname }} *work4 = <{{ tname }}*>malloc(n*n*sizeof({{ tname }}))
