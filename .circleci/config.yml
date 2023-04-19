@@ -158,6 +158,24 @@ jobs:
           path: benchmarks/html
           destination: html-benchmarks
 
+# Reference guide checking
+  refguide_check:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - check-skip
+      - apt-install
+
+      - run:
+          name: refguide_check
+          no_output_timeout: 25m
+          command: |
+            sudo apt-get install -y wamerican-small
+            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
+            python dev.py --no-build refguide-check
+
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/
@@ -203,6 +221,9 @@ workflows:
           requires:
             - build_scipy
       - run_benchmarks:
+          requires:
+            - build_scipy
+      - refguide_check:
           requires:
             - build_scipy
       - deploy:
