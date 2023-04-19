@@ -8,9 +8,6 @@ parameters:
   values:
     - fast
     - full
-- name: refguide_check
-  type: boolean
-  default: false
 - name: use_wheel
   type: boolean
   default: false
@@ -76,11 +73,6 @@ steps:
 - ${{ if eq(parameters.test_mode, 'full') }}:
   - script: pip install matplotlib pooch
     displayName: 'Install full mode optional dependencies'
-- ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx numpydoc pooch
-    displayName: 'Install documentation dependencies'
-  - script: sudo apt-get install -y wamerican-small
-    displayName: 'Install word list (for csgraph tutorial)'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
 - script: git submodule update --init
@@ -133,9 +125,6 @@ steps:
       USE_WHEEL_BUILD: '--no-build'
   condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
-  - script: python runtests.py -g --refguide-check
-    displayName: 'Refguide Check'
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
