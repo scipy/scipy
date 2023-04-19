@@ -243,3 +243,127 @@ class Interpolate(Benchmark):
             interpolate.interp1d(self.x, self.y, kind="linear")
         else:
             np.interp(self.z, self.x, self.y)
+
+
+class RegularGridInterpolator(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="linear".
+    """
+    param_names = ['ndim', 'max_coord_size', 'n_samples', 'flipped']
+    params = [
+        [2, 3, 4],
+        [10, 40, 200],
+        [10, 100, 1000, 10000],
+        [1, -1]
+    ]
+
+    def setup(self, ndim, max_coord_size, n_samples, flipped):
+        rng = np.random.default_rng(314159)
+
+        # coordinates halve in size over the dimensions
+        coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
+        self.points = [np.sort(rng.random(size=s))[::flipped]
+                       for s in coord_sizes]
+        self.values = rng.random(size=coord_sizes)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, max_coord_size,
+                                    n_samples, flipped):
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+        )
+
+    def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
+        self.interp(self.xi)
+
+
+class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
+    def __init__(self, points, xi, **kwargs):
+        # create fake values for initialization
+        values = np.zeros(tuple([len(pt) for pt in points]))
+        super().__init__(points, values, **kwargs)
+        self._is_initialized = False
+        # precompute values
+        (self.xi, self.xi_shape, self.ndim,
+         self.nans, self.out_of_bounds) = self._prepare_xi(xi)
+        self.indices, self.norm_distances = self._find_indices(xi.T)
+        self._is_initialized = True
+
+    def _prepare_xi(self, xi):
+        if not self._is_initialized:
+            return super()._prepare_xi(xi)
+        else:
+            # just give back precomputed values
+            return (self.xi, self.xi_shape, self.ndim,
+                    self.nans, self.out_of_bounds)
+
+    def _find_indices(self, xi):
+        if not self._is_initialized:
+            return super()._find_indices(xi)
+        else:
+            # just give back pre-computed values
+            return self.indices, self.norm_distances
+
+    def __call__(self, values, method=None):
+        values = self._check_values(values)
+        # check fillvalue
+        self._check_fill_value(values, self.fill_value)
+        # check dimensionality
+        self._check_dimensionality(self.grid, values)
+        # flip, if needed
+        self.values = np.flip(values, axis=self._descending_dimensions)
+        return super().__call__(self.xi, method=method)
+
+
+class RegularGridInterpolatorSubclass(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="linear".
+    """
+    param_names = ['ndim', 'max_coord_size', 'n_samples', 'flipped']
+    params = [
+        [2, 3, 4],
+        [10, 40, 200],
+        [10, 100, 1000, 10000],
+        [1, -1]
+    ]
+
+    def setup(self, ndim, max_coord_size, n_samples, flipped):
+        rng = np.random.default_rng(314159)
+
+        # coordinates halve in size over the dimensions
+        coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
+        self.points = [np.sort(rng.random(size=s))[::flipped]
+                       for s in coord_sizes]
+        self.values = rng.random(size=coord_sizes)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = RegularGridInterpolatorValues(
+            self.points,
+            self.xi,
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, max_coord_size,
+                                    n_samples, flipped):
+        self.interp = RegularGridInterpolatorValues(
+            self.points,
+            self.xi,
+        )
+
+    def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
+        self.interp(self.values)

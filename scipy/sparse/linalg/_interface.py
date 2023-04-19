@@ -138,13 +138,15 @@ class LinearOperator:
     """
 
     ndim = 2
+    # Necessary for right matmul with numpy arrays.
+    __array_ufunc__ = None
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
             # Operate as _CustomLinearOperator factory.
-            return super(LinearOperator, cls).__new__(_CustomLinearOperator)
+            return super().__new__(_CustomLinearOperator)
         else:
-            obj = super(LinearOperator, cls).__new__(cls)
+            obj = super().__new__(cls)
 
             if (type(obj)._matvec == LinearOperator._matvec
                     and type(obj)._matmat == LinearOperator._matmat):
@@ -165,7 +167,7 @@ class LinearOperator:
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
+            raise ValueError(f"invalid shape {shape!r} (must be 2-d)")
 
         self.dtype = dtype
         self.shape = shape
@@ -438,7 +440,42 @@ class LinearOperator:
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            return NotImplemented
+            return self._rdot(x)
+
+    def _rdot(self, x):
+        """Matrix-matrix or matrix-vector multiplication from the right.
+
+        Parameters
+        ----------
+        x : array_like
+            1-d or 2-d array, representing a vector or matrix.
+
+        Returns
+        -------
+        xA : array
+            1-d or 2-d array (depending on the shape of x) that represents
+            the result of applying this linear operator on x from the right.
+
+        Notes
+        -----
+        This is copied from dot to implement right multiplication.
+        """
+        if isinstance(x, LinearOperator):
+            return _ProductLinearOperator(x, self)
+        elif np.isscalar(x):
+            return _ScaledLinearOperator(self, x)
+        else:
+            x = np.asarray(x)
+
+            # We use transpose instead of rmatvec/rmatmat to avoid
+            # unnecessary complex conjugation if possible.
+            if x.ndim == 1 or x.ndim == 2 and x.shape[0] == 1:
+                return self.T.matvec(x.T).T
+            elif x.ndim == 2:
+                return self.T.matmat(x.T).T
+            else:
+                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
+                                 % x)
 
     def __pow__(self, p):
         if np.isscalar(p):
@@ -552,6 +589,7 @@ class _CustomLinearOperator(LinearOperator):
 
 class _AdjointLinearOperator(LinearOperator):
     """Adjoint of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -572,6 +610,7 @@ class _AdjointLinearOperator(LinearOperator):
 
 class _TransposedLinearOperator(LinearOperator):
     """Transposition of arbitrary Linear Operator"""
+
     def __init__(self, A):
         shape = (A.shape[1], A.shape[0])
         super().__init__(dtype=A.dtype, shape=shape)
@@ -598,7 +637,7 @@ def _get_dtype(operators, dtypes=None):
     for obj in operators:
         if obj is not None and hasattr(obj, 'dtype'):
             dtypes.append(obj.dtype)
-    return np.find_common_type(dtypes, [])
+    return np.result_type(*dtypes)
 
 
 class _SumLinearOperator(LinearOperator):
@@ -790,6 +829,7 @@ def aslinearoperator(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> M = np.array([[1,2,3],[4,5,6]], dtype=np.int32)
     >>> aslinearoperator(M)

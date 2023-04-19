@@ -11,7 +11,6 @@ Spherical Voronoi Code
 # Distributed under the same BSD license as SciPy.
 #
 
-import warnings
 import numpy as np
 import scipy
 from . import _voronoi
@@ -112,6 +111,7 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
@@ -183,7 +183,7 @@ class SphericalVoronoi:
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=threshold * self.radius)
         if self._rank < self._dim:
-            raise ValueError("Rank of input points must be at least {0}".format(self._dim))
+            raise ValueError(f"Rank of input points must be at least {self._dim}")
 
         if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")

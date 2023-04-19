@@ -4,7 +4,7 @@ import os
 
 def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
-    from scipy._build_utils.system_info import get_info, numpy_info
+    from numpy.distutils.system_info import get_info, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
     from scipy._build_utils import (get_g77_abi_wrappers, gfortran_legacy_flag_hook,
                                     blas_ilp64_pre_build_hook, get_f2py_int64_options,
@@ -17,7 +17,7 @@ def configuration(parent_package='', top_path=None):
     atlas_version = ([v[3:-3] for k, v in lapack_opt.get('define_macros', [])
                       if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
-        print(('ATLAS version: %s' % atlas_version))
+        print('ATLAS version: %s' % atlas_version)
 
     if uses_blas64():
         lapack_ilp64_opt = get_info('lapack_ilp64_opt', 2)

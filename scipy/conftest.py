@@ -17,6 +17,11 @@ def pytest_configure(config):
         "xslow: mark test as extremely slow (not run unless explicitly requested)")
     config.addinivalue_line("markers",
         "xfail_on_32bit: mark test as failing on 32-bit platforms")
+    try:
+        import pytest_timeout  # noqa:F401
+    except Exception:
+        config.addinivalue_line(
+            "markers", 'timeout: mark a test for a non-default timeout')
 
 
 def _get_mark(item, name):
@@ -38,7 +43,7 @@ def pytest_runtest_setup(item):
             pytest.skip("very slow test; set environment variable SCIPY_XSLOW=1 to run it")
     mark = _get_mark(item, 'xfail_on_32bit')
     if mark is not None and np.intp(0).itemsize < 8:
-        pytest.xfail('Fails on our 32-bit test platform(s): %s' % (mark.args[0],))
+        pytest.xfail(f'Fails on our 32-bit test platform(s): {mark.args[0]}')
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441
@@ -85,6 +90,6 @@ def check_fpu_mode(request):
     new_mode = get_fpu_mode()
 
     if old_mode != new_mode:
-        warnings.warn("FPU mode changed from {0:#x} to {1:#x} during "
+        warnings.warn("FPU mode changed from {:#x} to {:#x} during "
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)

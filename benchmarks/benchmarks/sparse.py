@@ -14,7 +14,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import sparse
-    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+    from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
 
 

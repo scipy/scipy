@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 import sys
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
-import warnings
 
 import pytest
 from pytest import raises as assert_raises
@@ -1291,7 +1289,7 @@ class TestResample:
         x = np.arange(10, dtype=np.float32)
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
-        assert(y.dtype == np.float32)
+        assert y.dtype == np.float32
 
     @pytest.mark.parametrize('padtype', padtype_options)
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -1299,7 +1297,7 @@ class TestResample:
         # Test that the dtype of x is preserved per issue #14733
         x = np.arange(10, dtype=dtype)
         y = signal.resample_poly(x, 1, 2, padtype=padtype)
-        assert(y.dtype == x.dtype)
+        assert y.dtype == x.dtype
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -1580,8 +1578,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -1608,8 +1608,10 @@ class _TestLinearFilter:
             zi = self.convert_dtype(np.ones(zi_shape))
             zi1 = self.convert_dtype([1, 1])
             y, zf = lfilter(b, a, x, axis, zi)
-            lf0 = lambda w: lfilter(b, a, w, zi=zi1)[0]
-            lf1 = lambda w: lfilter(b, a, w, zi=zi1)[1]
+            def lf0(w):
+                return lfilter(b, a, w, zi=zi1)[0]
+            def lf1(w):
+                return lfilter(b, a, w, zi=zi1)[1]
             y_r = np.apply_along_axis(lf0, axis, x)
             zf_r = np.apply_along_axis(lf1, axis, x)
             assert_array_almost_equal(y, y_r)
@@ -1887,6 +1889,8 @@ class TestLinearFilterObject(_TestLinearFilter):
 def test_lfilter_bad_object():
     # lfilter: object arrays with non-numeric objects raise TypeError.
     # Regression test for ticket #1452.
+    if hasattr(sys, 'abiflags') and 'd' in sys.abiflags:
+        pytest.skip('test is flaky when run with python3-dbg')
     assert_raises(TypeError, lfilter, [1.0], [1.0], [1.0, None, 2.0])
     assert_raises(TypeError, lfilter, [1.0], [None], [1.0, 2.0, 3.0])
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
@@ -2601,6 +2605,85 @@ class TestDecimate:
         x_out = signal.decimate(x, 30, ftype='fir')
         assert_array_less(np.linalg.norm(x_out), 0.01)
 
+    def test_long_float32(self):
+        # regression: gh-15072.  With 32-bit float and either lfilter
+        # or filtfilt, this is numerically unstable
+        x = signal.decimate(np.ones(10_000, dtype=np.float32), 10)
+        assert not any(np.isnan(x))
+
+    def test_float16_upcast(self):
+        # float16 must be upcast to float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
+
+    def test_complex_iir_dlti(self):
+        # regression: gh-17845
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+
+        z, p, k = signal.butter(2, 2*np.pi*fwidth/2, output='zpk', fs=fs)
+        z = z.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        p = p.astype(complex) * np.exp(2j * np.pi * fcentre/fs)
+        system = signal.dlti(z, p, k)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.lfilter(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
+                                 u)[::2]
+
+        assert_equal(yzp, yzpref)
+
+    def test_complex_fir_dlti(self):
+        # centre frequency for filter [Hz]
+        fcentre = 50
+        # filter passband width [Hz]
+        fwidth = 5
+        # sample rate [Hz]
+        fs = 1e3
+        numtaps = 20
+
+        # FIR filter about 0Hz
+        bbase = signal.firwin(numtaps, fwidth/2, fs=fs)
+
+        # rotate these to desired frequency
+        zbase = np.roots(bbase)
+        zrot = zbase * np.exp(2j * np.pi * fcentre/fs)
+        # FIR filter about 50Hz, maintaining passband gain of 0dB
+        bz = bbase[0] * np.poly(zrot)
+
+        system = signal.dlti(bz, 1)
+
+        t = np.arange(200) / fs
+
+        # input
+        u = (np.exp(2j * np.pi * fcentre * t)
+             + 0.5 * np.exp(-2j * np.pi * fcentre * t))
+
+        ynzp = signal.decimate(u, 2, ftype=system, zero_phase=False)
+        ynzpref = signal.upfirdn(bz, u, up=1, down=2)[:100]
+
+        assert_equal(ynzp, ynzpref)
+
+        yzp = signal.decimate(u, 2, ftype=system, zero_phase=True)
+        yzpref = signal.resample_poly(u, 1, 2, window=bz)
+
+        assert_equal(yzp, yzpref)
+
 
 class TestHilbert:
 
@@ -3290,6 +3373,7 @@ class TestSOSFilt:
         # Test simple IIR
         y_r = np.array([0, 2, 4, 6, 8, 10.]).astype(dt)
         sos = cast_tf2sos(b, a)
+        assert sos.dtype.char == dt
         assert_array_almost_equal(sosfilt(cast_tf2sos(b, a), x), y_r)
 
         # Test simple FIR

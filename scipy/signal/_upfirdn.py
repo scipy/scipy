@@ -165,19 +165,20 @@ def upfirdn(h, x, up=1, down=1, axis=-1, mode='constant', cval=0):
     --------
     Simple operations:
 
+    >>> import numpy as np
     >>> from scipy.signal import upfirdn
     >>> upfirdn([1, 1, 1], [1, 1, 1])   # FIR filter
     array([ 1.,  2.,  3.,  2.,  1.])
     >>> upfirdn([1], [1, 2, 3], 3)  # upsampling with zeros insertion
-    array([ 1.,  0.,  0.,  2.,  0.,  0.,  3.,  0.,  0.])
+    array([ 1.,  0.,  0.,  2.,  0.,  0.,  3.])
     >>> upfirdn([1, 1, 1], [1, 2, 3], 3)  # upsampling with sample-and-hold
     array([ 1.,  1.,  1.,  2.,  2.,  2.,  3.,  3.,  3.])
     >>> upfirdn([.5, 1, .5], [1, 1, 1], 2)  # linear interpolation
-    array([ 0.5,  1. ,  1. ,  1. ,  1. ,  1. ,  0.5,  0. ])
+    array([ 0.5,  1. ,  1. ,  1. ,  1. ,  1. ,  0.5])
     >>> upfirdn([1], np.arange(10), 1, 3)  # decimation by 3
     array([ 0.,  3.,  6.,  9.])
     >>> upfirdn([.5, 1, .5], np.arange(10), 2, 3)  # linear interp, rate 2/3
-    array([ 0. ,  1. ,  2.5,  4. ,  5.5,  7. ,  8.5,  0. ])
+    array([ 0. ,  1. ,  2.5,  4. ,  5.5,  7. ,  8.5])
 
     Apply a single filter to multiple signals:
 

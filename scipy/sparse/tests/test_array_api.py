@@ -59,6 +59,23 @@ def test_mean(A):
 
 
 @parametrize_sparrays
+def test_min_max(A):
+    # Some formats don't support min/max operations, so we skip those here.
+    if hasattr(A, 'min'):
+        assert not isinstance(A.min(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'max'):
+        assert not isinstance(A.max(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmin'):
+        assert not isinstance(A.argmin(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmax'):
+        assert not isinstance(A.argmax(axis=1), np.matrix), \
+            "Expected array, got matrix"
+
+
+@parametrize_sparrays
 def test_todense(A):
     assert not isinstance(A.todense(), np.matrix), \
         "Expected array, got matrix"
@@ -331,3 +348,9 @@ def test_spilu():
     ])
     LU = spla.spilu(X)
     npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+
+
+@parametrize_sparrays
+def test_power_operator(A):
+    # https://github.com/scipy/scipy/issues/15948
+    npt.assert_equal((A**2).todense(), (A.todense())**2)

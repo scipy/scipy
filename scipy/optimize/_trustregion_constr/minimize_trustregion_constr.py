@@ -193,7 +193,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
 
         The methods 'NormalEquation' and 'AugmentedSystem' can be used only
         with sparse constraints. The projections required by the algorithm
-        will be computed using, respectively, the the normal equation  and the
+        will be computed using, respectively, the normal equation  and the
         augmented system approaches explained in [1]_. 'NormalEquation'
         computes the Cholesky factorization of ``A A.T`` and 'AugmentedSystem'
         performs the LU factorization of an augmented system. They usually
@@ -428,9 +428,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                           state.cg_stop_cond)
             state.status = None
             state.niter = state.nit  # Alias for callback (backward-compatibility)
-            if callback is not None and callback(np.copy(state.x), state):
-                state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            if callback is not None:
+                callback_stop = False
+                try:
+                    callback_stop = callback(state)
+                except StopIteration:
+                    callback_stop = True
+                if callback_stop:
+                    state.status = 3
+                    return True
+            if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
@@ -466,9 +473,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.cg_stop_cond)
             state.status = None
             state.niter = state.nit  # Alias for callback (backward compatibility)
-            if callback is not None and callback(np.copy(state.x), state):
-                state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            if callback is not None:
+                callback_stop = False
+                try:
+                    callback_stop = callback(state)
+                except StopIteration:
+                    callback_stop = True
+                if callback_stop:
+                    state.status = 3
+                    return True
+            if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):

@@ -36,28 +36,23 @@ MacPorts, Fink).
 Compilers (C/C++/FORTRAN/Cython/Pythran)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Though virtually any commercial C/C++ compiler may be used with SciPy, Clang
-C/C++ compiler, which is a Xcode command line tool, can be used for OS X. The
-only thing missing is the GNU FORTRAN compiler.
+Though virtually any C/C++ compiler may be used with SciPy, on macOS we
+recommend using the default Clang C/C++ compiler. It can be installed as
+an Xcode command line tool (this is what the ``xcode-select`` command given
+higher up has already done).
 
-We recommend gfortran; this is a free, open source, F95 compiler. We suggest you
-use the following binaries:
-
-* gfortran installed via `Homebrew <https://brew.sh/>`__, or,
-* http://r.research.att.com/tools/gcc-42-5666.3-darwin11.pkg (for Xcode
-  4.2 or higher)
-
-See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
+The only thing missing is a Fortran compiler.  We recommend you
+use ``gfortran``, and install it with `Homebrew <https://brew.sh/>`__.
 
 BLAS/LAPACK Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 You will also need to install a library providing the BLAS and LAPACK
-interfaces. ATLAS, OpenBLAS, and MKL all work. OpenBLAS can be installed
-via `Homebrew <https://brew.sh/>`.
+interfaces. OpenBLAS, ATLAS and MKL all work. OpenBLAS can be installed
+via `Homebrew <https://brew.sh/>`, and is the library we recommend using.
 
 .. note::
 
-    As of SciPy version 1.2.0, we do not support compiling against the system
+    As of SciPy >=1.2.0, we do not support compiling against the system
     Accelerate library for BLAS and LAPACK. It does not support a sufficiently
     recent LAPACK interface.

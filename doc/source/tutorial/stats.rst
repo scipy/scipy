@@ -25,6 +25,7 @@ Note: This documentation is work in progress.
    stats/discrete
    stats/continuous
    stats/sampling
+   stats/resampling
 
 
 Random variables
@@ -100,7 +101,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 106
+    number of continuous distributions: 107
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 
@@ -382,8 +383,7 @@ i.e., the percent point function, requires a different definition:
 
     ppf(q) = min{x : cdf(x) >= q, x integer}
 
-For further info, see the docs `here
-<https://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+For further info, see the docs :ref:`here<discrete-ppf>`.
 
 
 We can look at the hypergeometric distribution as an example
@@ -614,11 +614,13 @@ the probabilities.
 
 .. plot:: tutorial/examples/normdiscr_plot1.py
    :align: center
+   :alt: "An X-Y histogram plot showing the distribution of random variates. A blue trace shows a normal bell curve. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
 .. plot:: tutorial/examples/normdiscr_plot2.py
    :align: center
+   :alt: "An X-Y histogram plot showing the cumulative distribution of random variates. A blue trace shows a CDF for a typical normal distribution. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
@@ -936,6 +938,7 @@ sampled from the PDF are shown as blue dashes at the bottom of the figure (this
 is called a rug plot):
 
 .. plot::
+    :alt: " "
 
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -974,6 +977,7 @@ get a less smoothed-out result.
 
 .. plot:: tutorial/stats/plots/kde_plot2.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 We see that if we set bandwidth to be very narrow, the obtained estimate for
@@ -988,6 +992,7 @@ distribution we take a Student's T distribution with 5 degrees of freedom.
 
 .. plot:: tutorial/stats/plots/kde_plot3.py
    :align: center
+   :alt: " "
    :include-source: 1
 
 We now take a look at a bimodal distribution with one wider and one narrower
@@ -1031,6 +1036,7 @@ each feature.
 
 .. plot:: tutorial/stats/plots/kde_plot4.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 As expected, the KDE is not as close to the true PDF as we would like due to
@@ -1085,6 +1091,7 @@ the individual data points on top.
 
 .. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
+   :alt: "An X-Y plot showing a random scattering of points around a 2-D gaussian. The distribution has a semi-major axis at 45 degrees with a semi-minor axis about half as large. Each point in the plot is highlighted with the outer region in red, then yellow, then green, with the center in blue. "
    :include-source: 0
 
 
@@ -1157,6 +1164,7 @@ The simulation relationship can be plotted below:
 
 .. plot:: tutorial/stats/plots/mgc_plot1.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Now, we can see the test statistic, p-value, and MGC map visualized below. The
@@ -1171,6 +1179,7 @@ optimal scale is shown on the map as a red "x":
 
 .. plot:: tutorial/stats/plots/mgc_plot2.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 It is clear from here, that MGC is able to determine a relationship between the
@@ -1193,6 +1202,7 @@ The simulation relationship can be plotted below:
 
 .. plot:: tutorial/stats/plots/mgc_plot3.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Now, we can see the test statistic, p-value, and MGC map visualized below. The
@@ -1207,6 +1217,7 @@ optimal scale is shown on the map as a red "x":
 
 .. plot:: tutorial/stats/plots/mgc_plot4.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 It is clear from here, that MGC is able to determine a relationship again
@@ -1237,6 +1248,7 @@ of random points can produce radically different results.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 In both cases in the plot above, points are generated randomly without any
@@ -1258,6 +1270,7 @@ theoretical rate of :math:`O(n^{-1/2})`.
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Although the convergence is ensured, practitioners tend to want to have an
@@ -1285,6 +1298,7 @@ This exponential growth is called "the curse of dimensionality".
 
 .. plot:: tutorial/stats/plots/qmc_plot_curse.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 To mitigate this issue, QMC methods have been designed. They are
@@ -1296,6 +1310,7 @@ sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_mc_qmc.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 This figure presents 2 sets of 256 points. The design of the left is a plain
@@ -1313,6 +1328,7 @@ that the *Sobol'* method has a rate of :math:`O(n^{-1})`:
 
 .. plot:: tutorial/stats/plots/qmc_plot_conv_mc_sobol.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 We refer to the documentation of :mod:`scipy.stats.qmc` for
@@ -1341,6 +1357,7 @@ The lower the discrepancy, the more uniform a sample is.
 
 .. plot:: tutorial/stats/plots/qmc_plot_discrepancy.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Using a QMC engine
@@ -1352,6 +1369,7 @@ sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_sobol_halton.py
    :align: center
+   :alt: " "
    :include-source: 1
 
 .. warning:: QMC methods require particular care and the user must read the
@@ -1421,8 +1439,7 @@ defined. Following is an example wrapping `numpy.random.Generator`.
     ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...
-    ...     def random(self, n=1):
-    ...         self.num_generated += n
+    ...     def _random(self, n=1, *, workers=1):
     ...         return self.rng.random((n, self.d))
     ...
     ...

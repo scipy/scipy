@@ -524,3 +524,10 @@ class TestODR:
             # remove output files for clean up
             shutil.rmtree(tmp_dir)
 
+    def test_odr_model_default_meta(self):
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        p.set_meta(name='Sample Model Meta', ref='ODRPACK')
+        assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})

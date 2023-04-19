@@ -146,7 +146,7 @@ class TestConstructUtils:
                                                     [0, 1, -2]]))
 
         for d, o, shape, result in cases:
-            err_msg = "%r %r %r %r" % (d, o, shape, result)
+            err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
             assert_equal(construct.diags(d, o, shape=shape).toarray(),
                          result, err_msg=err_msg)
 
@@ -430,7 +430,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc()], [B.tocsc()]])
-        excinfo.match(r'Mismatching dimensions along axis 1: {1, 2}')
+        excinfo.match(r'Mismatching dimensions along axis 1: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A, C]])
@@ -438,7 +438,7 @@ class TestConstructUtils:
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsr(), C.tocsr()]])
-        excinfo.match(r'Mismatching dimensions along axis 0: {1, 2}')
+        excinfo.match(r'Mismatching dimensions along axis 0: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
             construct.bmat([[A.tocsc(), C.tocsc()]])

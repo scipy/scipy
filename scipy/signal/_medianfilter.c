@@ -10,7 +10,7 @@
 void f_medfilt2(float*,float*,npy_intp*,npy_intp*);
 void d_medfilt2(double*,double*,npy_intp*,npy_intp*);
 void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
-extern char *check_malloc (int);
+extern char *check_malloc (size_t);
 
 
 /* 2-D median filter with zero-padding on edges. */

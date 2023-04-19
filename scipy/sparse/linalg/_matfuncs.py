@@ -225,7 +225,7 @@ class ProductOperator(LinearOperator):
                                 'must all have the same shape.')
             self.shape = (n, n)
             self.ndim = len(self.shape)
-        self.dtype = np.find_common_type([x.dtype for x in args], [])
+        self.dtype = np.result_type(*[x.dtype for x in args])
         self._operator_sequence = args
 
     def _matvec(self, x):

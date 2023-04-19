@@ -17,7 +17,7 @@ __all__ = ['_local_maxima_1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']
 
 
-def _local_maxima_1d(np.float64_t[::1] x not None):
+def _local_maxima_1d(const np.float64_t[::1] x not None):
     """
     Find local maxima in a 1D array.
 
@@ -163,7 +163,7 @@ class PeakPropertyWarning(RuntimeWarning):
     pass
 
 
-def _peak_prominences(np.float64_t[::1] x not None,
+def _peak_prominences(const np.float64_t[::1] x not None,
                       np.intp_t[::1] peaks not None,
                       np.intp_t wlen):
     """
@@ -261,7 +261,7 @@ def _peak_prominences(np.float64_t[::1] x not None,
     return prominences.base, left_bases.base, right_bases.base
 
 
-def _peak_widths(np.float64_t[::1] x not None,
+def _peak_widths(const np.float64_t[::1] x not None,
                  np.intp_t[::1] peaks not None,
                  np.float64_t rel_height,
                  np.float64_t[::1] prominences not None,

@@ -11,7 +11,7 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_cosine', 'general_gaussian', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-           'dpss', 'get_window']
+           'dpss', 'get_window', 'lanczos']
 
 
 def _len_guards(M):
@@ -54,6 +54,11 @@ def general_cosine(M, a, sym=True):
         design.
         When False, generates a periodic window, for use in spectral analysis.
 
+    Returns
+    -------
+    w : ndarray
+        The array of window values.
+
     References
     ----------
     .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
@@ -84,6 +89,7 @@ def general_cosine(M, a, sym=True):
     Figure 42 by plotting the window and its frequency response, and confirm
     the sidelobe level in red:
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_cosine
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -128,8 +134,8 @@ def boxcar(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         Whether the window is symmetric. (Has no effect for boxcar.)
 
@@ -142,6 +148,7 @@ def boxcar(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -178,8 +185,8 @@ def triang(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -199,6 +206,7 @@ def triang(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -242,8 +250,8 @@ def parzen(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -264,6 +272,7 @@ def parzen(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -306,8 +315,8 @@ def bohman(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -323,6 +332,7 @@ def bohman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -367,8 +377,8 @@ def blackman(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -414,6 +424,7 @@ def blackman(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -448,8 +459,8 @@ def nuttall(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -475,6 +486,7 @@ def nuttall(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -505,8 +517,8 @@ def blackmanharris(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -522,6 +534,7 @@ def blackmanharris(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -552,8 +565,8 @@ def flattop(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -583,6 +596,7 @@ def flattop(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -620,8 +634,8 @@ def bartlett(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -673,6 +687,7 @@ def bartlett(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -716,8 +731,8 @@ def hann(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -762,6 +777,7 @@ def hann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -794,8 +810,8 @@ def tukey(M, alpha=0.5, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float, optional
         Shape parameter of the Tukey window, representing the fraction of the
         window inside the cosine tapered region.
@@ -824,6 +840,7 @@ def tukey(M, alpha=0.5, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -877,8 +894,8 @@ def barthann(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -894,6 +911,7 @@ def barthann(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -935,8 +953,8 @@ def general_hamming(M, alpha, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float
         The window coefficient, :math:`\alpha`
     sym : bool, optional
@@ -950,6 +968,10 @@ def general_hamming(M, alpha, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    hamming, hann
+
     Notes
     -----
     The generalized Hamming window is defined as
@@ -961,9 +983,17 @@ def general_hamming(M, alpha, sym=True):
     generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
     0.5, respectively [2]_.
 
-    See Also
-    --------
-    hamming, hann
+    References
+    ----------
+    .. [1] DSPRelated, "Generalized Hamming Window Family",
+           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function
+    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
+           Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
+    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
 
     Examples
     --------
@@ -974,6 +1004,7 @@ def general_hamming(M, alpha, sym=True):
     :math:`\alpha` values include 0.75, 0.7 and 0.52 [4]_. As an example, we
     plot these different windows.
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_hamming
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -998,17 +1029,6 @@ def general_hamming(M, alpha, sym=True):
     >>> freq_plot.legend(loc="upper right")
     >>> spatial_plot.legend(loc="upper right")
 
-    References
-    ----------
-    .. [1] DSPRelated, "Generalized Hamming Window Family",
-           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
-    .. [2] Wikipedia, "Window function",
-           https://en.wikipedia.org/wiki/Window_function
-    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
-           Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
-    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
     """
     return general_cosine(M, [alpha, 1. - alpha], sym)
 
@@ -1022,8 +1042,8 @@ def hamming(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1066,6 +1086,7 @@ def hamming(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1099,8 +1120,8 @@ def kaiser(M, beta, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     beta : float
         Shape parameter, determines trade-off between main-lobe width and
         side lobe level. As beta gets large, the window narrows.
@@ -1175,6 +1196,7 @@ def kaiser(M, beta, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1215,8 +1237,9 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned. Note that this window is only defined for an even
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
+        Note that this window is only defined for an even
         number of points.
     beta : float
         Kaiser window shape parameter.
@@ -1255,6 +1278,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Plot the Kaiser-Bessel derived window based on the wikipedia
     reference [2]_:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
@@ -1299,8 +1323,8 @@ def gaussian(M, std, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     std : float
         The standard deviation, sigma.
     sym : bool, optional
@@ -1324,6 +1348,7 @@ def gaussian(M, std, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1362,8 +1387,8 @@ def general_gaussian(M, p, sig, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     p : float
         Shape parameter.  p = 1 is identical to `gaussian`, p = 0.5 is
         the same shape as the Laplace distribution.
@@ -1394,6 +1419,7 @@ def general_gaussian(M, p, sig, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1433,8 +1459,8 @@ def chebwin(M, at, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     at : float
         Attenuation (in dB).
     sym : bool, optional
@@ -1491,6 +1517,7 @@ def chebwin(M, at, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1559,8 +1586,8 @@ def cosine(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1581,6 +1608,7 @@ def cosine(M, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1618,8 +1646,8 @@ def exponential(M, center=None, tau=1., sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     center : float, optional
         Parameter defining the center location of the window function.
         The default value if not given is ``center = (M-1) / 2``.  This
@@ -1654,6 +1682,7 @@ def exponential(M, center=None, tau=1., sym=True):
     --------
     Plot the symmetric window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1716,8 +1745,8 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an
-        empty array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     nbar : int, optional
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     sll : float, optional
@@ -1758,6 +1787,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -2075,6 +2105,104 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     return (windows, ratios) if return_ratios else windows
 
 
+def lanczos(M, *, sym=True):
+    r"""Return a Lanczos window also known as a sinc window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    Returns
+    -------
+    w : ndarray
+        The window, with the maximum value normalized to 1 (though the value 1
+        does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    The Lanczos window is defined as
+
+    .. math::  w(n) = sinc \left( \frac{2n}{M - 1} - 1 \right)
+
+    where
+
+    .. math::  sinc(x) = \frac{\sin(\pi x)}{\pi x}
+
+    The Lanczos window has reduced Gibbs oscillations and is widely used for
+    filtering climate timeseries with good properties in the physical and
+    spectral domains.
+
+    .. versionadded:: 1.10
+
+    References
+    ----------
+    .. [1] Lanczos, C., and Teichmann, T. (1957). Applied analysis.
+           Physics Today, 10, 44.
+    .. [2] Duchon C. E. (1979) Lanczos Filtering in One and Two Dimensions.
+           Journal of Applied Meteorology, Vol 18, pp 1016-1022.
+    .. [3] Thomson, R. E. and Emery, W. J. (2014) Data Analysis Methods in
+           Physical Oceanography (Third Edition), Elsevier, pp 593-637.
+    .. [4] Wikipedia, "Window function",
+           http://en.wikipedia.org/wiki/Window_function
+
+    Examples
+    --------
+    Plot the window
+
+    >>> import numpy as np
+    >>> from scipy.signal.windows import lanczos
+    >>> from scipy.fft import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1)
+    >>> window = lanczos(51)
+    >>> ax.plot(window)
+    >>> ax.set_title("Lanczos window")
+    >>> ax.set_ylabel("Amplitude")
+    >>> ax.set_xlabel("Sample")
+    >>> fig.tight_layout()
+    >>> plt.show()
+
+    and its frequency response:
+
+    >>> fig, ax = plt.subplots(1)
+    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> ax.plot(freq, response)
+    >>> ax.set_xlim(-0.5, 0.5)
+    >>> ax.set_ylim(-120, 0)
+    >>> ax.set_title("Frequency response of the lanczos window")
+    >>> ax.set_ylabel("Normalized magnitude [dB]")
+    >>> ax.set_xlabel("Normalized frequency [cycles per sample]")
+    >>> fig.tight_layout()
+    >>> plt.show()
+    """
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
+    # To make sure that the window is symmetric, we concatenate the right hand
+    # half of the window and the flipped one which is the left hand half of
+    # the window.
+    def _calc_right_side_lanczos(n, m):
+        return np.sinc(2. * np.arange(n, m) / (m - 1) - 1.0)
+
+    if M % 2 == 0:
+        wh = _calc_right_side_lanczos(M/2, M)
+        w = np.r_[np.flip(wh), wh]
+    else:
+        wh = _calc_right_side_lanczos((M+1)/2, M)
+        w = np.r_[np.flip(wh), 1.0, wh]
+
+    return _truncate(w, needs_trunc)
+
+
 def _fftautocorr(x):
     """Compute the autocorrelation of a real array and crop the result."""
     N = x.shape[-1]
@@ -2109,6 +2237,7 @@ _win_equiv_raw = {
     ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
     ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
+    ('lanczos', 'sinc'): (lanczos, False),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('taylor', 'taylorwin'): (taylor, False),
@@ -2170,6 +2299,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.exponential`
     - `~scipy.signal.windows.tukey`
     - `~scipy.signal.windows.taylor`
+    - `~scipy.signal.windows.lanczos`
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.kaiser_bessel_derived` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)

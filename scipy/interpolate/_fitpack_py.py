@@ -1,12 +1,11 @@
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
-import warnings
 
 import numpy as np
 
 # These are in the API for fitpack even if not used in fitpack.py itself.
-from ._fitpack_impl import bisplrep, bisplev, dblint
+from ._fitpack_impl import bisplrep, bisplev, dblint  # noqa: F401
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
 
@@ -64,8 +63,9 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
         standard-deviation of y, then a good `s` value should be found in
         the range ``(m-sqrt(2*m),m+sqrt(2*m))``, where m is the number of
         data points in x, y, and w.
-    t : int, optional
-        The knots needed for task=-1.
+    t : array, optional
+        The knots needed for ``task=-1``.
+        There must be at least ``2*k+2`` knots.
     full_output : int, optional
         If non-zero, then return optional outputs.
     nest : int, optional
@@ -78,8 +78,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
        returned.  Values of ``y[m-1]`` and ``w[m-1]`` are not used.
     quiet : int, optional
          Non-zero to suppress messages.
-         This parameter is deprecated; use standard Python warning filters
-         instead.
 
     Returns
     -------
@@ -131,6 +129,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     --------
     Generate a discretization of a limacon curve in the polar coordinates:
 
+    >>> import numpy as np
     >>> phi = np.linspace(0, 2.*np.pi, 40)
     >>> r = 0.5 + np.cos(phi)         # polar coords
     >>> x, y = r * np.cos(phi), r * np.sin(phi)    # convert to cartesian
@@ -214,8 +213,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         y[m-1] and w[m-1] are not used.
     quiet : bool, optional
         Non-zero to suppress messages.
-        This parameter is deprecated; use standard Python warning filters
-        instead.
 
     Returns
     -------
@@ -277,6 +274,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     Further examples are given in
     :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
     >>> x = np.linspace(0, 10, 10)
@@ -331,16 +329,16 @@ def splev(x, tck, der=0, ext=0):
         the points in `x`.  If `tck` was returned from `splprep`, then this
         is a list of arrays representing the curve in an N-D space.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, sproot, spalde, splint
     bisplrep, bisplev
     BSpline
+
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using `BSpline` objects.
 
     References
     ----------
@@ -398,6 +396,12 @@ def splint(a, b, tck, full_output=0):
         defined on the set of knots.
         (Only returned if `full_output` is non-zero)
 
+    See Also
+    --------
+    splprep, splrep, sproot, spalde, splev
+    bisplrep, bisplev
+    BSpline
+
     Notes
     -----
     `splint` silently assumes that the spline function is zero outside the data
@@ -405,12 +409,6 @@ def splint(a, b, tck, full_output=0):
 
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
-
-    See Also
-    --------
-    splprep, splrep, sproot, spalde, splev
-    bisplrep, bisplev
-    BSpline
 
     References
     ----------
@@ -462,17 +460,16 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    Notes
-    -----
-    Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
-
     See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
     BSpline
 
+    Notes
+    -----
+    Manipulating the tck-tuples directly is not recommended. In new code,
+    prefer using the `BSpline` objects.
 
     References
     ----------
@@ -485,7 +482,32 @@ def sproot(tck, mest=10):
 
     Examples
     --------
-    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
+    For some data, this method may miss a root. This happens when one of
+    the spline knots (which FITPACK places automatically) happens to
+    coincide with the true root. A workaround is to convert to `PPoly`,
+    which uses a different root-finding algorithm.
+
+    For example,
+
+    >>> x = [1.96, 1.97, 1.98, 1.99, 2.00, 2.01, 2.02, 2.03, 2.04, 2.05]
+    >>> y = [-6.365470e-03, -4.790580e-03, -3.204320e-03, -1.607270e-03,
+    ...      4.440892e-16,  1.616930e-03,  3.243000e-03,  4.877670e-03,
+    ...      6.520430e-03,  8.170770e-03]
+    >>> from scipy.interpolate import splrep, sproot, PPoly
+    >>> tck = splrep(x, y, s=0)
+    >>> sproot(tck)
+    array([], dtype=float64)
+
+    Converting to a PPoly object does find the roots at `x=2`:
+
+    >>> ppoly = PPoly.from_spline(tck)
+    >>> ppoly.roots(extrapolate=False)
+    array([2.])
+
+
+    Further examples are given :ref:`in the tutorial
+    <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):
@@ -605,6 +627,7 @@ def insert(x, tck, m=1, per=0):
     You can insert knots into a B-spline.
 
     >>> from scipy.interpolate import splrep, insert
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 5)
     >>> y = np.sin(x)
     >>> tck = splrep(x, y)
@@ -661,21 +684,22 @@ def splder(tck, n=1):
         A tuple is returned iff the input argument `tck` is a tuple, otherwise
         a BSpline object is constructed and returned.
 
-    Notes
-    -----
-
-    .. versionadded:: 0.13.0
-
     See Also
     --------
     splantider, splev, spalde
     BSpline
+
+    Notes
+    -----
+
+    .. versionadded:: 0.13.0
 
     Examples
     --------
     This can be used for finding maxima of a curve:
 
     >>> from scipy.interpolate import splrep, splder, sproot
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 70)
     >>> y = np.sin(x)
     >>> spl = splrep(x, y, k=4)
@@ -733,6 +757,7 @@ def splantider(tck, n=1):
     Examples
     --------
     >>> from scipy.interpolate import splrep, splder, splantider, splev
+    >>> import numpy as np
     >>> x = np.linspace(0, np.pi/2, 70)
     >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
     >>> spl = splrep(x, y)

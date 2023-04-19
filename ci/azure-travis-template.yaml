@@ -11,12 +11,6 @@ parameters:
 - name: coverage
   type: boolean
   default: false
-- name: refguide_check
-  type: boolean
-  default: false
-- name: asv_check
-  type: boolean
-  default: false
 - name: use_wheel
   type: boolean
   default: false
@@ -64,33 +58,29 @@ steps:
   displayName: 'Install common apt dependencies'
 - script: 'echo "##vso[task.prependpath]/usr/lib/ccache"'
   displayName: 'Add ccache to path'
+# Use pytest-xdist 2.5.0 until https://github.com/pytest-dev/pytest-cov/issues/557
+# is resolved.
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
     pip install --upgrade pip setuptools==59.6.0 wheel build meson meson-python &&
     pip install ${{parameters.other_spec}}
-    cython
+    "cython==0.29.33"
     gmpy2
     threadpoolctl
     mpmath
+    pooch
     pythran
     pybind11
     pytest
-    pytest-xdist
+    pytest-xdist==2.5.0
+    pytest-timeout
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
-  - script: pip install matplotlib scikit-umfpack scikit-sparse
-    displayName: 'Install full mode dependencies'
+  - script: pip install matplotlib pooch
+    displayName: 'Install full mode optional dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
-  - script: pip install pytest-cov coverage codecov
+  - script: pip install pytest-cov coverage
     displayName: 'Install coverage dependencies'
-- ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx numpydoc
-    displayName: 'Install documentation dependencies'
-  - script: sudo apt-get install -y wamerican-small
-    displayName: 'Install word list (for csgraph tutorial)'
-- ${{ if eq(parameters.asv_check, true) }}:
-  - script: pip install "asv>=0.4.1"
-    displayName: 'Install asv'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
 - script: git submodule update --init
@@ -138,7 +128,7 @@ steps:
   displayName: 'Build SciPy'
 - script: |
     set -euo pipefail
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 2>&1 | tee runtests.log
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:
@@ -149,16 +139,6 @@ steps:
   ${{ if eq(parameters.coverage, false) }}:
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
-  - script: python runtests.py -g --refguide-check
-    displayName: 'Refguide Check'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.asv_check, true)) }}:
-  - script: |
-      set -euo pipefail
-      cd benchmarks
-      python -masv check -E existing
-      # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-      ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')

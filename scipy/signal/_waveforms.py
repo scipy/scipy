@@ -45,6 +45,7 @@ def sawtooth(t, width=1):
     --------
     A 5 Hz waveform sampled at 500 Hz for 1 second:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(0, 1, 500)
@@ -114,6 +115,7 @@ def square(t, duty=0.5):
     --------
     A 5 Hz waveform sampled at 500 Hz for 1 second:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(0, 1, 500, endpoint=False)
@@ -210,6 +212,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     Plot real component, imaginary component, and envelope for a 5 Hz pulse,
     sampled at 100 Hz for 2 seconds:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 2 * 100, endpoint=False)
@@ -345,6 +348,7 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
     --------
     The following will be used in the examples:
 
+    >>> import numpy as np
     >>> from scipy.signal import chirp, spectrogram
     >>> import matplotlib.pyplot as plt
 
@@ -370,11 +374,13 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     >>> def plot_spectrogram(title, w, fs):
     ...     ff, tt, Sxx = spectrogram(w, fs=fs, nperseg=256, nfft=576)
-    ...     plt.pcolormesh(tt, ff[:145], Sxx[:145], cmap='gray_r', shading='gouraud')
-    ...     plt.title(title)
-    ...     plt.xlabel('t (sec)')
-    ...     plt.ylabel('Frequency (Hz)')
-    ...     plt.grid()
+    ...     fig, ax = plt.subplots()
+    ...     ax.pcolormesh(tt, ff[:145], Sxx[:145], cmap='gray_r',
+    ...                   shading='gouraud')
+    ...     ax.set_title(title)
+    ...     ax.set_xlabel('t (sec)')
+    ...     ax.set_ylabel('Frequency (Hz)')
+    ...     ax.grid(True)
     ...
 
     Quadratic chirp from 1500 Hz to 250 Hz
@@ -536,6 +542,7 @@ def sweep_poly(t, poly, phi=0):
 
     over the interval 0 <= t <= 10.
 
+    >>> import numpy as np
     >>> from scipy.signal import sweep_poly
     >>> p = np.poly1d([0.025, -0.36, 1.25, 2.0])
     >>> t = np.linspace(0, 10, 5001)
@@ -639,6 +646,7 @@ def unit_impulse(shape, idx=None, dtype=float):
     >>> b, a = signal.butter(4, 0.2)
     >>> response = signal.lfilter(b, a, imp)
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(np.arange(-50, 50), imp)
     >>> plt.plot(np.arange(-50, 50), response)

@@ -90,6 +90,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     --------
 
     >>> # Constructing an empty matrix
+    >>> import numpy as np
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
@@ -290,9 +291,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
+            raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+                              "dimensions is the only logical permutation.")
 
         M, N = self.shape
         return self.__class__((self.data, (self.col, self.row)),

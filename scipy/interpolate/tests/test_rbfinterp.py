@@ -155,7 +155,7 @@ class _TestRBFInterpolator:
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
     @pytest.mark.slow
-    def test_chunking(self):
+    def test_chunking(self, monkeypatch):
         # If the observed data comes from a polynomial, then the interpolant
         # should be able to reproduce the polynomial exactly, provided that
         # `degree` is sufficiently high.
@@ -163,7 +163,7 @@ class _TestRBFInterpolator:
         seq = Halton(2, scramble=False, seed=rng)
         degree = 3
 
-        largeN = 1000000 + 33
+        largeN = 1000 + 33
         # this is large to check that chunking of the RBFInterpolator is tested
         x = seq.random(50)
         xitp = seq.random(largeN)
@@ -175,8 +175,15 @@ class _TestRBFInterpolator:
 
         y = P.dot(poly_coeffs)
         yitp1 = Pitp.dot(poly_coeffs)
-        yitp2 = self.build(x, y, degree=degree)(xitp)
+        interp = self.build(x, y, degree=degree)
+        ce_real = interp._chunk_evaluator
 
+        def _chunk_evaluator(*args, **kwargs):
+            kwargs.update(memory_budget=100)
+            return ce_real(*args, **kwargs)
+
+        monkeypatch.setattr(interp, '_chunk_evaluator', _chunk_evaluator)
+        yitp2 = interp(xitp)
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
     def test_vector_data(self):

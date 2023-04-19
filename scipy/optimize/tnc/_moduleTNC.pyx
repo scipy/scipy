@@ -3,7 +3,6 @@
 from libc.string cimport memcpy
 import numpy as np
 cimport numpy as np
-cimport cython
 
 
 np.import_array()
@@ -112,8 +111,8 @@ cdef void callback_function(double x[], void *state) except *:
         x_data = <float64_t *>np.PyArray_DATA(xcopy)
         memcpy(x_data, x, sizeof(double) * n)
 
-        # TODO examine val to see if we should halt?
-        val = (<object>py_state.py_callback)(xcopy)
+        # TODO examine return value to see if we should halt?
+        (<object>py_state.py_callback)(xcopy)
     except BaseException as exc:
         py_state.failed = 1
         raise exc

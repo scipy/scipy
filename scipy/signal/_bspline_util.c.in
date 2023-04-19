@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "_splinemodule.h"
+
 #define NO_IMPORT_ARRAY
 #include "numpy/arrayobject.h"
 
@@ -43,11 +45,12 @@ compute_root_from_lambda(lambda, r, omega)
 CNAME = ['C', 'Z']
 CTYPE = ['__complex__ float', '__complex__ double']
 
-RNAME = ['D', 'S']
-RTYPE = ['double', 'float']
+RNAME = ['S', 'D']
+RTYPE = ['float', 'double']
 
 NAMES = CNAME + RNAME
 TYPES = CTYPE + RTYPE
+RTYPES = RTYPE + RTYPE
 
 }}
 
@@ -174,17 +177,17 @@ void {{SUB}}_IIR_order2_cascade({{TYP}} cs, {{TYP}} z1, {{TYP}} z2,
 
 */
 
-{{for SUB, TYP in zip(NAMES, TYPES)}}
+{{for SUB, TYP, RTYP in zip(NAMES, TYPES, RTYPES)}}
 {{if SUB in CNAME}}
 #ifdef __GNUC__
 {{endif}}
 int {{SUB}}_IIR_forback1({{TYP}} c0, {{TYP}} z1, {{TYP}} *x, {{TYP}} *y,
-               int N, int stridex, int stridey, float precision)
+                   int N, int stridex, int stridey, {{RTYP}} precision)
 {
     {{TYP}} *yp = NULL;
     {{TYP}} *xptr = x;
     {{TYP}} yp0, powz1, diff;
-    float err;
+    {{RTYP}} err;
     int k;
 
     if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
@@ -430,7 +433,7 @@ static {{TYP}} {{SUB}}_hs(int, {{TYP}}, double, double);
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_IIR_forback2 (double r, double omega, {{TYP}} *x, {{TYP}} *y,
-		int N, int stridex, int stridey, float precision) {
+		int N, int stridex, int stridey, {{TYP}} precision) {
     {{TYP}} cs;
     {{TYP}} *yp = NULL;
     {{TYP}} *yptr;

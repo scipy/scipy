@@ -113,7 +113,7 @@ class TestExpM:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
                 observed = expm(A)
-                expected = exp(scale) * eye(3, dtype=dtype)
+                expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_complex(self):
@@ -121,7 +121,7 @@ class TestExpM:
             for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
                 A = scale * eye(3, dtype=dtype)
                 observed = expm(A)
-                expected = exp(scale) * eye(3, dtype=dtype)
+                expected = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
                 assert_array_almost_equal_nulp(observed, expected, nulp=100)
 
     def test_padecases_dtype_sparse_float(self):
@@ -129,7 +129,7 @@ class TestExpM:
         dtype = np.float64
         for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
-            e = exp(scale) * eye(3, dtype=dtype)
+            e = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
                            "Changing the sparsity structure of a csc_matrix is expensive.")

@@ -118,6 +118,7 @@ def whiten(obs, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.cluster.vq import whiten
     >>> features  = np.array([[1.9, 2.3, 1.7],
     ...                       [1.5, 2.5, 2.2],
@@ -186,13 +187,13 @@ def vq(obs, code_book, check_finite=True):
 
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq
-    >>> code_book = array([[1.,1.,1.],
-    ...                    [2.,2.,2.]])
-    >>> features  = array([[  1.9,2.3,1.7],
-    ...                    [  1.5,2.5,2.2],
-    ...                    [  0.8,0.6,1.7]])
+    >>> code_book = np.array([[1.,1.,1.],
+    ...                       [2.,2.,2.]])
+    >>> features  = np.array([[  1.9,2.3,1.7],
+    ...                       [  1.5,2.5,2.2],
+    ...                       [  0.8,0.6,1.7]])
     >>> vq(features,code_book)
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
@@ -281,14 +282,14 @@ def _kmeans(obs, guess, thresh=1e-5):
     --------
     Note: not whitened in this example.
 
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import _kmeans
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 1.0,1.0]])
-    >>> book = array((features[0],features[2]))
+    >>> features  = np.array([[ 1.9,2.3],
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 1.0,1.0]])
+    >>> book = np.array((features[0],features[2]))
     >>> _kmeans(features,book)
     (array([[ 1.7       ,  2.4       ],
            [ 0.73333333,  1.13333333]]), 0.40563916697728591)
@@ -306,7 +307,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         code_book = code_book[has_members]
-        diff = prev_avg_dists[0] - prev_avg_dists[1]
+        diff = np.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
@@ -359,9 +360,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
 
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         Seed for initializing the pseudo-random number generator.
         If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -406,18 +405,18 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
 
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq, kmeans, whiten
     >>> import matplotlib.pyplot as plt
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 0.1,0.1],
-    ...                    [ 0.2,1.8],
-    ...                    [ 2.0,0.5],
-    ...                    [ 0.3,1.5],
-    ...                    [ 1.0,1.0]])
+    >>> features  = np.array([[ 1.9,2.3],
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 0.1,0.1],
+    ...                       [ 0.2,1.8],
+    ...                       [ 2.0,0.5],
+    ...                       [ 0.3,1.5],
+    ...                       [ 1.0,1.0]])
     >>> whitened = whiten(features)
     >>> book = np.array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
@@ -665,9 +664,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default: True
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         Seed for initializing the pseudo-random number generator.
         If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -700,6 +697,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     --------
     >>> from scipy.cluster.vq import kmeans2
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     Create z, an array with shape (100, 2) containing a mixture of samples
     from three multivariate normal distributions.
@@ -745,7 +743,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     try:
         miss_meth = _valid_miss_meth[missing]
     except KeyError as e:
-        raise ValueError("Unknown missing method %r" % (missing,)) from e
+        raise ValueError(f"Unknown missing method {missing!r}") from e
 
     data = _asarray_validated(data, check_finite=check_finite)
     if data.ndim == 1:
@@ -778,14 +776,14 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         try:
             init_meth = _valid_init_meth[minit]
         except KeyError as e:
-            raise ValueError("Unknown init method %r" % (minit,)) from e
+            raise ValueError(f"Unknown init method {minit!r}") from e
         else:
             rng = check_random_state(seed)
             code_book = init_meth(data, k, rng)
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
-        label = vq(data, code_book)[0]
+        label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():

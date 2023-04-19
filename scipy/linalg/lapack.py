@@ -705,6 +705,21 @@ All functions
    ctpttr
    ztpttr
 
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
+
    strsyl
    dtrsyl
    ctrsyl
@@ -820,10 +835,6 @@ except ImportError:
     HAS_ILP64 = False
     _flapack_64 = None
 
-# Backward compatibility
-from scipy._lib._util import DeprecatedImport as _DeprecatedImport
-clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
-flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
@@ -914,8 +925,10 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     norm of an array. We pass our array in order to get the correct 'lange'
     flavor.
 
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
+
     >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
@@ -930,8 +943,6 @@ def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     to the function which is often wrapped as a standalone function and
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
-    >>> import scipy.linalg as LA
-    >>> rng = np.random.default_rng()
     >>> a = rng.random((1000, 1000))
     >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array

@@ -49,6 +49,10 @@ class _sparray:
     def __rmul__(self, *args, **kwargs):
         return self.multiply(*args, **kwargs)
 
+    # Restore elementwise power
+    def __pow__(self, *args, **kwargs):
+        return self.power(*args, **kwargs)
+
 
 def _matrix_doc_to_array(docstr):
     # For opimized builds with stripped docstrings

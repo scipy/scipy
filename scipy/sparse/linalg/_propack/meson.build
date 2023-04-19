@@ -3,14 +3,6 @@ if not fs.exists('PROPACK/README')
   error('Missing the `PROPACK` submodule! Run `git submodule update --init` to fix this.')
 endif
 
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable',
-  '-Wno-uninitialized', '-Wno-intrinsic-shadow'
-]
-
 s_src = [
   'PROPACK/single/printstat.F',
   'PROPACK/single/sblasext.F',
@@ -79,7 +71,7 @@ z_src = [
   'PROPACK/complex16/zsafescal.F'
 ]
 
-if meson.get_compiler('cpp', native: true).sizeof('void*') > 4
+if meson.get_compiler('cpp').sizeof('void*') > 4
   s_src += ['PROPACK/single/smgs.risc.F']
   d_src += ['PROPACK/double/dmgs.risc.F']
   c_src += ['PROPACK/complex8/cmgs.risc.F']
@@ -93,10 +85,24 @@ elements = [
   ['_zpropack', z_src, 'zpropack.pyf']
 ]
 
+cargs_propack = ['-D_OPENMP']  # FIXME: _OPENMP is needed now, but not good!
+if use_g77_abi
+  # This define needs to be removed from PROPACK code, in favor of using
+  # `wcdotc` unconditionally, like is done in ARPACK.
+  cargs_propack += ['-DSCIPY_USE_G77_CDOTC_WRAP=1']
+endif
 foreach ele: elements
-  propack_lib = static_library('lib_' + ele[0], ele[1],
-    c_args: ['_OPENMP'],
-    fortran_args: fortran_ignore_warnings
+  # PROPACK integration is pretty much broken, see for example gh-15108.
+  # Note that in setup.py, adding `g77_abi_wrappers` is skipped for 32-bit
+  # architectures (stated reason: "it blows up").
+  propack_lib = static_library('lib_' + ele[0],
+    [ele[1], g77_abi_wrappers],
+    c_args: cargs_propack,
+    fortran_args: [
+      fortran_ignore_warnings, 
+      _fflag_Wno_intrinsic_shadow,
+      _fflag_Wno_uninitialized,
+    ],
   )
 
   propack_module = custom_target('propack_module' + ele[0],
@@ -106,11 +112,12 @@ foreach ele: elements
   )
 
   propacklib = py3.extension_module(ele[0],
-    [propack_module, fortranobject_c],
+    propack_module,
     link_with: propack_lib,
-    c_args: ['-U_OPENMP', '-Wno-maybe-uninitialized', '-Wno-cpp'],
-    dependencies: [py3_dep, lapack],
-    include_directories: [inc_np, inc_f2py],
+    c_args: ['-U_OPENMP', _cpp_Wno_cpp],
+    fortran_args: _fflag_Wno_maybe_uninitialized,
+    dependencies: [lapack, blas, fortranobject_dep],
+    link_args: version_link_args,
     install: true,
     link_language: 'fortran',
     subdir: 'scipy/sparse/linalg/_propack'

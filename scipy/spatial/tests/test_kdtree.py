@@ -79,7 +79,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d**2, np.sum((x-self.data[near_i])**2))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 2) < d**2+eps), hits)
 
     def test_points_near_l1(self):
@@ -93,7 +93,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], 1))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 1) < d+eps), hits)
 
     def test_points_near_linf(self):
@@ -107,7 +107,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], np.inf))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, np.inf) < d+eps), hits)
 
     def test_approx(self):
@@ -782,6 +782,20 @@ def test_kdtree_query_pairs(kdtree_type):
     assert_array_equal(l0, l2)
 
 
+def test_query_pairs_eps(kdtree_type):
+    spacing = np.sqrt(2)
+    # irrational spacing to have potential rounding errors
+    x_range = np.linspace(0, 3 * spacing, 4)
+    y_range = np.linspace(0, 3 * spacing, 4)
+    xy_array = [(xi, yi) for xi in x_range for yi in y_range]
+    tree = kdtree_type(xy_array)
+    pairs_eps = tree.query_pairs(r=spacing, eps=.1)
+    # result: 24 with eps, 16 without due to rounding
+    pairs = tree.query_pairs(r=spacing * 1.01)
+    # result: 24
+    assert_equal(pairs, pairs_eps)
+
+
 def test_ball_point_ints(kdtree_type):
     # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
@@ -1444,3 +1458,13 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_kdtree_nan():
+    vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
+    n = len(vals)
+    data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+
+    query_with_nans = KDTree(data).query_pairs(2)
+    query_without_nans = KDTree(data[:n]).query_pairs(2)
+    assert query_with_nans == query_without_nans

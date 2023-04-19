@@ -12,11 +12,9 @@ from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
 from scipy.optimize import rosen, minimize
 from scipy.sparse import csr_matrix
 from scipy import stats
-from scipy._lib._pep440 import Version
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_allclose,
-                           assert_almost_equal, assert_array_equal,
+from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
                            assert_string_equal, assert_, suppress_warnings)
 from pytest import raises as assert_raises, warns
 import pytest
@@ -221,6 +219,18 @@ class TestDifferentialEvolutionSolver:
         self.dummy_solver.limits = np.array([[100], [0.]])
         assert_equal(0.3, self.dummy_solver._unscale_parameters(trial))
 
+    def test_equal_bounds(self):
+        with np.errstate(invalid='raise'):
+            solver = DifferentialEvolutionSolver(
+                self.quadratic,
+                bounds=[(2.0, 2.0), (1.0, 3.0)]
+            )
+            v = solver._unscale_parameters([2.0, 2.0])
+            assert_allclose(v, 0.5)
+
+        res = differential_evolution(self.quadratic, [(2.0, 2.0), (3.0, 3.0)])
+        assert_equal(res.x, [2.0, 3.0])
+
     def test__ensure_constraint(self):
         trial = np.array([1.1, -100, 0.9, 2., 300., -0.00001])
         self.dummy_solver._ensure_constraint(trial)
@@ -412,8 +422,6 @@ class TestDifferentialEvolutionSolver:
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_random_generator(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -483,7 +491,7 @@ class TestDifferentialEvolutionSolver:
         _, fun_prev = next(solver)
         for i, soln in enumerate(solver):
             x_current, fun_current = soln
-            assert(fun_prev >= fun_current)
+            assert fun_prev >= fun_current
             _, fun_prev = x_current, fun_current
             # need to have this otherwise the solver would never stop.
             if i == 50:
@@ -802,8 +810,7 @@ class TestDifferentialEvolutionSolver:
         fn = solver._accept_trial
         # both solutions are feasible, select lower energy
         assert fn(0.1, True, np.array([0.]), 1.0, True, np.array([0.]))
-        assert (fn(1.0, True, np.array([0.]), 0.1, True, np.array([0.]))
-               == False)
+        assert (fn(1.0, True, np.array([0.0]), 0.1, True, np.array([0.0])) is False)
         assert fn(0.1, True, np.array([0.]), 0.1, True, np.array([0.]))
 
         # trial is feasible, original is not
@@ -815,8 +822,7 @@ class TestDifferentialEvolutionSolver:
                   1.0, False, np.array([1., 1.0])))
         assert (fn(0.1, False, np.array([0.5, 0.5]),
                   1.0, False, np.array([1., 0.50])))
-        assert (fn(1.0, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 0.4])) == False)
+        assert (fn(1.0, False, np.array([0.5, 0.5]), 1.0, False, np.array([1.0, 0.4])) is False)
 
     def test_constraint_wrapper(self):
         lb = np.array([0, 20, 30])
@@ -1463,3 +1469,26 @@ class TestDifferentialEvolutionSolver:
                                       polish=False)
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
+
+    def test_constraint_violation_error_message(self):
+
+        def func(x):
+            return np.cos(x[0]) + np.sin(x[1])
+
+        # Intentionally infeasible constraints.
+        c0 = NonlinearConstraint(lambda x: x[1] - (x[0]-1)**2, 0, np.inf)
+        c1 = NonlinearConstraint(lambda x: x[1] + x[0]**2, -np.inf, 0)
+
+        result = differential_evolution(func,
+                                        bounds=[(-1, 2), (-1, 1)],
+                                        constraints=[c0, c1],
+                                        maxiter=10,
+                                        polish=False,
+                                        seed=864197532)
+        assert result.success is False
+        # The numerical value in the error message might be sensitive to
+        # changes in the implementation.  It can be updated if the code is
+        # changed.  The essential part of the test is that there is a number
+        # after the '=', so if necessary, the text could be reduced to, say,
+        # "MAXCV = 0.".
+        assert "MAXCV = 0.404" in result.message

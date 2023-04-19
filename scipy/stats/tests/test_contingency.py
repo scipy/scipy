@@ -209,6 +209,13 @@ def test_chi2_contingency_yates_gh13875():
     assert_allclose(p, 1, rtol=1e-12)
 
 
+@pytest.mark.parametrize("correction", [False, True])
+def test_result(correction):
+    obs = np.array([[1, 2], [1, 2]])
+    res = chi2_contingency(obs, correction=correction)
+    assert_equal((res.statistic, res.pvalue, res.dof, res.expected_freq), res)
+
+
 def test_bad_association_args():
     # Invalid Test Statistic
     assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")

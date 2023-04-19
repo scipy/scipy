@@ -46,6 +46,7 @@ desired `numpy` type object to the output argument. For example:
 .. code:: python
 
     >>> from scipy.ndimage import correlate
+    >>> import numpy as np
     >>> correlate(np.arange(10), [1, 2.5])
     array([ 0,  2,  6,  9, 13, 16, 20, 23, 27, 30])
     >>> correlate(np.arange(10), [1, 2.5], output=np.float64)
@@ -235,6 +236,7 @@ Smoothing filters
 
   .. plot:: tutorial/examples/gaussian_filter_plot1.py
       :align: center
+      :alt: " "
       :include-source: 0
 
   .. note::
@@ -813,6 +815,7 @@ while modes `mirror` and `wrap` treat the image as if it's extent ends exactly
 at the first and last sample point rather than 0.5 samples past it.
 
 .. plot:: tutorial/examples/plot_boundary_modes.py
+   :alt: " "
    :include-source: False
 
 The coordinates of image samples fall on integer sampling locations
@@ -824,6 +827,7 @@ illustrate the sampling locations involved in the interpolation of the value at
 the location of the red x.
 
 .. plot:: tutorial/examples/plot_interp_grid.py
+   :alt: " "
    :include-source: False
 
 
@@ -974,6 +978,7 @@ This is a viusal presentation of `generate_binary_structure` in 3D:
 
   .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
       :align: center
+      :alt: " "
       :include-source: 0
 
 Most binary morphology functions can be expressed in terms of the
@@ -981,6 +986,7 @@ basic operations erosion and dilation, which can be seen here:
 
   .. plot:: tutorial/examples/morphology_binary_dilation_erosion.py
       :align: center
+      :alt: " "
       :include-source: 0
 
 - The :func:`binary_erosion` function implements binary erosion of
@@ -1749,25 +1755,11 @@ We can also implement the callback function with the following C code:
 
 More information on writing Python extension modules can be found
 `here`__. If the C code is in the file ``example.c``, then it can be
-compiled with the following ``setup.py``,
+compiled after adding it to ``meson.build`` (see examples inside
+``meson.build`` files) and follow what's there. After that is done,
+running the script:
 
-__ https://docs.python.org/2/extending/extending.html
-
-.. code:: python
-
-   from distutils.core import setup, Extension
-   import numpy
-
-   shift = Extension('example',
-                     ['example.c'],
-                     include_dirs=[numpy.get_include()]
-   )
-
-   setup(name='example',
-         ext_modules=[shift]
-   )
-
-and now running the script
+__ https://docs.python.org/3/extending/index.html
 
 .. code:: python
 
