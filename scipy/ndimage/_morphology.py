@@ -1931,8 +1931,15 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     Notes
     -----
     This function employs a slow brute force algorithm, see also the
-    function distance_transform_cdt for more efficient taxicab and
-    chessboard algorithms.
+    function `distance_transform_cdt` for more efficient taxicab [1]_ and
+    chessboard algorithms [2]_.
+
+    References
+    ----------
+    .. [1] Taxicab distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Taxicab_geometry
+    .. [2] Chessboard distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Chebyshev_distance
 
     Examples
     --------
