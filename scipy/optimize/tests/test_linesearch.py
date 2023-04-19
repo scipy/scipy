@@ -143,11 +143,23 @@ class TestLineSearch:
 
         assert c > 3  # check that the iterator really works...
 
-    @pytest.mark.parametrize("maxiter",[5, 10, 15, 20, 100])
-    def test_scalar_search_wolfe2(self, maxiter):
+    def test_scalar_search_wolfe2_with_maxiter(self):
+        def phi(alpha):
+            return (alpha - 1) ** 2
+
+        def derphi(alpha):
+            return 2 * (alpha - 1)
+        
+        p_large = 1e5
+        s, _, _, derphi1 = ls.scalar_search_wolfe2(
+                phi, derphi, phi(0), p_large, maxiter=100)
+        assert s is not None
+        assert derphi1 is not None
+
+    def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
             s, phi1, phi0, derphi1 = ls.scalar_search_wolfe2(
-                phi, derphi, phi(0), old_phi0, derphi(0), maxiter=maxiter)
+                phi, derphi, phi(0), old_phi0, derphi(0))
             assert_fp_equal(phi0, phi(0), name)
             assert_fp_equal(phi1, phi(s), name)
             if derphi1 is not None:
