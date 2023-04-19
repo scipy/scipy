@@ -290,7 +290,7 @@ jobs:
       run: |
         # TODO: unpin cython and move to -pre once issues with cython 3.0
         #       have been ironed out.
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "git+https://github.com/matusvalo/cython.git@struct_visibility"
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         python -m pip install --pre --upgrade pytest pytest-xdist pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
 
