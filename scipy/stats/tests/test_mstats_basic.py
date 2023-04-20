@@ -1040,8 +1040,11 @@ def test_siegelslopes_namedtuple_consistency():
 
 
 def test_sen_seasonal_slopes():
-    x = np.random.default_rng().random(size=(100, 4))
+    rng = np.random.default_rng(5765986256978575148)
+    x = rng.random(size=(100, 4))
     intra_slope, inter_slope = mstats.sen_seasonal_slopes(x)
+
+    # reference implementation from the `sen_seasonal_slopes` documentation
     def dijk(yi):
         n = len(yi)
         x = np.arange(n)
