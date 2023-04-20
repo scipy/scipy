@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   test:
-    name: cp39 (meson) fast
+    name: cp310 (meson) fast
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
