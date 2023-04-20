@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # Implement Spence's function, a.k.a. the dilogarithm, for complex
 # arguments. Note that our definition differs from that in the sources
 # by the mapping z -> 1 - z.

@@ -1,3 +1,4 @@
+# cython: cpow=True
 """
 Simple N-D interpolation
 

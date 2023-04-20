@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 from cpython cimport bool
 from libc cimport math
 from libc.math cimport NAN, INFINITY, M_PI as PI

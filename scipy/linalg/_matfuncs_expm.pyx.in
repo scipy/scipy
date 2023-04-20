@@ -1,4 +1,5 @@
 # cython: language_level=3
+# cython: cpow=True
 cimport cython
 import math
 import random

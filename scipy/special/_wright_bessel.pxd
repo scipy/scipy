@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # -*-cython-*-
 #
 # Implementation of Wright's generalized Bessel function Phi, see
