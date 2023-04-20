@@ -90,33 +90,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-# pybind11 include directory - needed in several submodules
-#
-# first check if the user specified a path in a cross file
-incdir_pybind11 = meson.get_external_property('pybind11-include-dir', 'not-given')
-if incdir_pybind11 == 'not-given'
-  # in meson 1.1.0, this will find the pyproject.toml build-requires version
-  pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
-  if not pybind11_dep.found()
-    incdir_pybind11 = run_command(py3,
-      [
-        '-c',
-        '''from os.path import relpath
-import pybind11
-try:
-  incdir = relpath(pybind11.get_include())
-except Exception:
-  incdir = pybind11.get_include()
-print(incdir)
-'''
-      ],
-      check: true
-    ).stdout().strip()
-    pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-  endif
-else
-  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-endif
+pybind11_dep = dependency('pybind11', version: '>=2.10.4')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -196,10 +170,10 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
-# TODO: Add `pybind11` when available as a dependency
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
+  'PYBIND11': pybind11_dep,
 }
 
 # FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
