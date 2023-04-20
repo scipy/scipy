@@ -16,7 +16,8 @@ if is_windows
     # https://bugs.python.org/issue28267
     bitness = run_command('_build_utils/gcc_build_bitness.py', check: true).stdout().strip()
     if bitness == '64'
-      add_project_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+      # The `=` is a little odd, but avoids redefinition warnings (see meson#11592)
+      add_project_arguments('-DMS_WIN64=', language: ['c', 'cpp', 'fortran'])
     endif
     # Silence warnings emitted by PyOS_snprintf for (%zd), see
     # https://github.com/rgommers/scipy/issues/118.
