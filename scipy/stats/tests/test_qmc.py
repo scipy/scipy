@@ -471,8 +471,9 @@ class QMCEngineTests:
     scramble = [True, False]
     ids = ["Scrambled", "Unscrambled"]
 
-    def engine(self, scramble: bool, **kwargs) -> QMCEngine:
-        seed = np.random.default_rng(170382760648021597650530316304495310428)
+    def engine(self, scramble: bool, seed=None, **kwargs) -> QMCEngine:
+        if seed is None:
+            seed = np.random.default_rng(170382760648021597650530316304495310428)
         if self.can_scramble:
             return self.qmce(scramble=scramble, seed=seed, **kwargs)
         else:
@@ -605,6 +606,18 @@ class QMCEngineTests:
 
         assert metric_ < metric_ref
 
+    def test_consume_prng_state(self):
+        rng = np.random.default_rng(0xa29cabb11cfdf44ff6cac8bec254c2a0)
+        sample = []
+        for i in range(3):
+            engine = self.engine(d=2, scramble=True, seed=rng)
+            sample.append(engine.random(4))
+
+        with pytest.raises(AssertionError, match="Arrays are not equal"):
+            assert_equal(sample[0], sample[1])
+        with pytest.raises(AssertionError, match="Arrays are not equal"):
+            assert_equal(sample[0], sample[2])
+
 
 class TestHalton(QMCEngineTests):
     qmce = qmc.Halton
@@ -615,14 +628,14 @@ class TestHalton(QMCEngineTests):
                               [1 / 8, 4 / 9], [5 / 8, 7 / 9],
                               [3 / 8, 2 / 9], [7 / 8, 5 / 9]])
     # theoretical values unknown: convergence properties checked
-    scramble_nd = np.array([[0.50246036, 0.09937553],
-                            [0.00246036, 0.43270887],
-                            [0.75246036, 0.7660422],
-                            [0.25246036, 0.32159776],
-                            [0.62746036, 0.65493109],
-                            [0.12746036, 0.98826442],
-                            [0.87746036, 0.21048664],
-                            [0.37746036, 0.54381998]])
+    scramble_nd = np.array([[0.50246036, 0.93382481],
+                            [0.00246036, 0.26715815],
+                            [0.75246036, 0.60049148],
+                            [0.25246036, 0.8227137 ],
+                            [0.62746036, 0.15604704],
+                            [0.12746036, 0.48938037],
+                            [0.87746036, 0.71160259],
+                            [0.37746036, 0.04493592]])
 
     def test_workers(self):
         ref_sample = self.reference(scramble=True)
@@ -641,7 +654,7 @@ class TestHalton(QMCEngineTests):
 
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
-    can_scramble = False
+    can_scramble = True
 
     def test_continuing(self, *args):
         pytest.skip("Not applicable: not a sequence.")

@@ -68,7 +68,7 @@ for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
 
 
-cdef str _opt_warning(string name, val, valid_set=None):
+cdef str _opt_warning(string name, val, valid_set=None) noexcept:
     cdef OptionRecord * r = _ref_opt_lookup[name]
 
     # BOOL
@@ -113,7 +113,7 @@ cdef str _opt_warning(string name, val, valid_set=None):
            'See documentation for valid options. '
            'Using default.' % (name.decode(), str(val)))
 
-cdef apply_options(dict options, Highs & highs):
+cdef apply_options(dict options, Highs & highs) noexcept:
     '''Take options from dictionary and apply to HiGHS object.'''
 
     # Initialize for error checking
@@ -126,10 +126,9 @@ cdef apply_options(dict options, Highs & highs):
             'dual_simplex_cleanup_strategy',
             'ipm_iteration_limit',
             'keep_n_rows',
-            'max_threads',
+            'threads',
             'mip_max_nodes',
             'highs_debug_level',
-            'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
             'simplex_dualise_strategy',
@@ -150,6 +149,9 @@ cdef apply_options(dict options, Highs & highs):
                 opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
                 if opt_status != HighsStatusOK:
                     warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+                else:
+                    if opt == "threads":
+                        highs.resetGlobalScheduler(blocking=True)
 
     # Do all the doubles
     for opt in set([
@@ -333,7 +335,7 @@ def _highs_wrapper(
             - less_infeasible_DSE_choose_row : bool
                 Undocumented advanced option.
 
-            - max_threads : int
+            - threads : int
                 Maximum number of threads in parallel execution.
 
             - message_level : int {0, 1, 2, 4, 7}
@@ -359,9 +361,6 @@ def _highs_wrapper(
                 ``message_level`` behaves like a bitmask, i.e., any
                 combination of levels is possible using the bit-or
                 operator.
-
-            - min_threads : int
-                Minimum number of threads in parallel execution.
 
             - mps_parser_type_free : bool
                 Use free format MPS parsing.

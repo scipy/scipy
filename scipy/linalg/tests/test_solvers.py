@@ -510,8 +510,11 @@ def test_solve_discrete_are():
     #
     min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 14, 13,
                    14, 13, 13, 14, 12, 2, 5, 6, 10)
+    max_tol = [1.5 * 10**-ind for ind in min_decimal]
+    # relaxed tolerance in gh-18012 after bump to OpenBLAS
+    max_tol[11] = 2.5e-13
 
-    def _test_factory(case, dec):
+    def _test_factory(case, atol):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
@@ -522,10 +525,14 @@ def test_solve_discrete_are():
         res -= a.conj().T.dot(x.dot(b)).dot(
                     solve(r+b.conj().T.dot(x.dot(b)), b.conj().T).dot(x.dot(a))
                     )
-        assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
+        # changed from
+        # assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
+        # in gh-18012 as it's easier to relax a tolerance and allclose is
+        # preferred
+        assert_allclose(res, np.zeros_like(res), atol=atol)
 
     for ind, case in enumerate(cases):
-        _test_factory(case, min_decimal[ind])
+        _test_factory(case, max_tol[ind])
 
     # An infeasible example taken from https://arxiv.org/abs/1505.04861v1
     A = np.triu(np.ones((3, 3)))

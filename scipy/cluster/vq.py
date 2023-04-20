@@ -307,7 +307,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         code_book = code_book[has_members]
-        diff = prev_avg_dists[0] - prev_avg_dists[1]
+        diff = np.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
@@ -783,7 +783,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
-        label = vq(data, code_book)[0]
+        label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():

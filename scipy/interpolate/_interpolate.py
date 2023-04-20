@@ -125,7 +125,8 @@ class interp2d:
         `CloughTocher2DInterpolator`.
 
         For more details see
-        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff
+        <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
 
 
     Interpolate over a 2-D grid.
@@ -383,6 +384,8 @@ def _do_extrapolate(fill_value):
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
+
+    .. legacy:: class
 
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses

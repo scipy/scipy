@@ -198,6 +198,16 @@ class TestBounds:
         assert b1.ub == b2.ub
 
     def test_input_validation(self):
+        message = "Lower and upper bounds must be dense arrays."
+        with pytest.raises(ValueError, match=message):
+            Bounds(sps.coo_array([1, 2]), [1, 2])
+        with pytest.raises(ValueError, match=message):
+            Bounds([1, 2], sps.coo_array([1, 2]))
+
+        message = "`keep_feasible` must be a dense array."
+        with pytest.raises(ValueError, match=message):
+            Bounds([1, 2], [1, 2], keep_feasible=sps.coo_array([True, True]))
+
         message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
         with pytest.raises(ValueError, match=message):
             Bounds([1, 2], [1, 2, 3])
@@ -221,6 +231,17 @@ class TestLinearConstraint:
         message = "`lb`, `ub`, and `keep_feasible` must be broadcastable"
         with pytest.raises(ValueError, match=message):
             LinearConstraint(A, [1, 2], [1, 2, 3])
+
+        message = "Constraint limits must be dense arrays"
+        with pytest.raises(ValueError, match=message):
+            LinearConstraint(A, sps.coo_array([1, 2]), [2, 3])
+        with pytest.raises(ValueError, match=message):
+            LinearConstraint(A, [1, 2], sps.coo_array([2, 3]))
+
+        message = "`keep_feasible` must be a dense array"
+        with pytest.raises(ValueError, match=message):
+            keep_feasible = sps.coo_array([True, True])
+            LinearConstraint(A, [1, 2], [2, 3], keep_feasible=keep_feasible)
 
         A = np.empty((4, 3, 5))
         message = "`A` must have exactly two dimensions."
