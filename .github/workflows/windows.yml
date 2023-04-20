@@ -97,7 +97,7 @@ jobs:
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
-      - name: Install OpenBlas
+      - name: Install OpenBLAS
         shell: bash
         run: |
           set -xe
@@ -112,11 +112,11 @@ jobs:
 
       - name: Build
         run: |
-          $env:SCIPY_USE_PYTHRAN=1
+          # TODO: remove the build-dir and install-prefix flags once dev.py
+          # supplies meson with absolute paths. This is due to a pathlib bug
+          # on cp39-win.
           python dev.py --build-dir=$pwd\build --install-prefix=$pwd\build-install build -j 2 --win-cp-openblas
-          cd build
-          meson install
-          cd ..
+          meson install -C build
           cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
           python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
 
