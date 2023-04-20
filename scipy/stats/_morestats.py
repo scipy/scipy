@@ -1881,6 +1881,10 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
+    # `swilk` can return negative p-values for N==3; see gh-18322.
+    if N == 3:
+        # Potential improvement: precision for small p-values
+        pw = 1 - 6/np.pi*np.arccos(np.sqrt(w))
     return ShapiroResult(w, pw)
 
 
