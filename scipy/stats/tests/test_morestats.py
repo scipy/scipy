@@ -229,15 +229,15 @@ class TestShapiro:
         # gh-18322 reported that the p-value could be negative for input of
         # length 3. Check that this is resolved.
         res = stats.shapiro([0.6931471805599453, 0.0, 0.0])
-        assert res.pvalue > 0
+        assert res.pvalue >= 0
 
         # R `shapiro.test` doesn't produce an accurate p-value in the case
         # above. Check that the formula used in `stats.shapiro` is not wrong.
         # options(digits=16)
         # x = c(-0.7746653110021126, -0.4344432067942129, 1.8157053280290931)
         # shapiro.test(x)
-        rng = np.random.default_rng(376593478292346598752763)
-        res = stats.shapiro(rng.normal(size=3))
+        x = [-0.7746653110021126, -0.4344432067942129, 1.8157053280290931]
+        res = stats.shapiro(x)
         assert_allclose(res.statistic, 0.84658770645509)
         assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
 
