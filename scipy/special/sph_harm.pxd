@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 from . cimport sf_error
 from ._cephes cimport poch
 
