@@ -321,7 +321,6 @@ class Dirs:
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
-        print(self.site)
 
     def add_sys_path(self):
         """Add site dir to sys.path / PYTHONPATH"""
@@ -618,7 +617,6 @@ class Build(Task):
         # Look in bin subdirectory for OpenBLAS binaries.
         bin_path = openblas_lib_path.parent / 'bin'
         # Locate, make output .libs directory in Scipy install directory.
-        print(dirs.site)
         scipy_path = dirs.site / 'scipy'
         libs_path = scipy_path / '.libs'
         libs_path.mkdir(exist_ok=True)

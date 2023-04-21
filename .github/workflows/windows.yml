@@ -35,7 +35,7 @@ jobs:
           architecture: 'x64'
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
-      - name: install-rtools
+      - name: Install rtools (mingw-w64)
         run: |
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
@@ -46,32 +46,25 @@ jobs:
       - name: pip-packages
         run: |
           pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
-      - name: Install OpenBlas
+      - name: Install OpenBLAS
         shell: bash
         run: |
           # same OpenBLAS install method as cibuildwheel
           set -xe
           bash tools/wheels/cibw_before_build_win.sh .
           echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
-      - name: build
+      - name: Build
         run: |
           echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
           python dev.py build -j 2 --win-cp-openblas
-
-          # following steps are required because the build step does not put
-          # the *.pyd files in build-install! Furthermore the --win-cp-openblas
-          # option does not seem to copy libopenblas*.dll, so manually copy it.
-          cd build
-          meson install
-          cd ..
+          # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
+          # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
+          # when things are split over drives.
           cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
-          echo "PYTHONPATH=$PWD\build-install\Lib\site-packages" >> $env:GITHUB_ENV
           python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
-      - name: test
+      - name: Test
         run: |
-          Get-ChildItem env:
-          cd $env:PYTHONPATH
-          python -c "import sys; import scipy; sys.exit(not scipy.test())"
+          python dev.py test -j2
 
 
   #############################################################################
@@ -91,9 +84,8 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
 
-      - name: Win_amd64 - install rtools
+      - name: Install rtools (mingw-w64)
         run: |
-          # mingw-w64
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
@@ -113,9 +105,7 @@ jobs:
       - name: Build
         run: |
           python dev.py build -j 2 --win-cp-openblas
-          # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
-          # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
-          # when things are split over drives.
+          # Copy OpenBLAS DLL, write distributor-init (see first job in this file for why)
           cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
           python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
 
