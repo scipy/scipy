@@ -162,7 +162,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          python -m pip install numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+          python -m pip install build numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
 
       - name: Build
         run: |
