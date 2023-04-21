@@ -1302,7 +1302,7 @@ class TestBetaInc:
         assert_equal(special.betaincc(1, 1, x), 1 - x)
         assert_equal(special.betainccinv(1, 1, x), 1 - x)
 
-    # Nontrival expected values computed with mpmath:
+    # Nontrivial expected values computed with mpmath:
     #    from mpmath import mp
     #    mp.dps = 100
     #    p = mp.betainc(a, b, 0, x, regularized=True)
@@ -1353,6 +1353,26 @@ class TestBetaInc:
         assert_allclose(p1, p, rtol=5e-15)
         x1 = special.betainccinv(a, b, p)
         assert_allclose(x1, x, rtol=8e-15)
+
+    def test_betaincinv_tiny_x(self):
+        # Regression test for an issue in the boost code;
+        # see https://github.com/boostorg/math/issues/961
+        #
+        # The expected value was computed with mpmath:
+        #
+        #   from mpmath import mp
+        #   mp.dps = 400
+        #   a = 14.208308325339239
+        #   p = 7.703145458496392e-307
+        #   x = mp.findroot(lambda t: mp.betainc(a, a, 0, t,
+        #                                        regularized=True) - p,
+        #                   x0=8.566e-23)
+        #   print(float(x))
+        #
+        a = 14.208308325339239
+        p = 7.703145458496392e-307
+        x = special.betaincinv(a, a, p)
+        assert assert_allclose(x, 8.566004561846704e-23, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
                                       special.betaincc, special.betainccinv])
