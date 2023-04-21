@@ -167,10 +167,10 @@ jobs:
       - name: Build
         run: |
           python -m build -Csetup-args="-Duse-pythran=false"
-          python -m pip install dist/scipy*.whl
+          python -m pip install --only-binary=scipy --no-index --find-links=dist scipy
 
       - name: Test
         run: |
           cd $RUNNER_TEMP
-          python -k test --pyargs scipy
+          pytest -k test --pyargs scipy
           cd $GITHUB_WORKSPACE
