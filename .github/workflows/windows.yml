@@ -162,11 +162,15 @@ jobs:
 
       - name: pip-packages
         run: |
-          python -m pip install build numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+          python -m pip install build delvewheel numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
 
       - name: Build
         run: |
           python -m build -Csetup-args="-Duse-pythran=false"
+
+          $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
+          delvewheel repair --add-path c/opt/openblas/openblas_dll -w dist $env:wheel_name
+          
           python -m pip install --only-binary=scipy --no-index --find-links=dist scipy
 
       - name: Test
