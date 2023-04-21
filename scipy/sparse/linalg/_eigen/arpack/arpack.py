@@ -2,7 +2,7 @@
 Find a few eigenvectors and eigenvalues of a matrix.
 
 
-Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
+Uses ARPACK: https://github.com/opencollab/arpack-ng
 
 """
 # Wrapper implementation notes
@@ -35,13 +35,6 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-__docformat__ = "restructuredtext en"
-
-__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
-
-from . import _arpack
-arpack_int = _arpack.timing.nbx.dtype
-
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
@@ -51,6 +44,13 @@ from scipy.sparse._sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
+
+from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
+__docformat__ = "restructuredtext en"
+
+__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -370,7 +370,7 @@ class _ArpackParams:
         try:
             ev, vec = self.extract(True)
         except ArpackError as err:
-            msg = "%s [%s]" % (msg, err)
+            msg = f"{msg} [{err}]"
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))
             k_ok = 0
@@ -1234,7 +1234,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     References
     ----------
-    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [1] ARPACK Software, https://github.com/opencollab/arpack-ng
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
@@ -1254,7 +1254,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'
@@ -1543,7 +1543,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     References
     ----------
-    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [1] ARPACK Software, https://github.com/opencollab/arpack-ng
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
@@ -1582,7 +1582,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             return ret.real
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
             raise ValueError('wrong M dimensions %s, should be %s'

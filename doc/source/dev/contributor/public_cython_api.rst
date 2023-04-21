@@ -1,5 +1,3 @@
-:orphan:
-
 .. _public-cython-api:
 
 Public Cython APIs

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ''' Nose test generators
 
 Need function load / save / roundtrip tests
@@ -17,7 +16,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, assert_warns)
+                           assert_equal, assert_, assert_warns, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -269,7 +268,7 @@ def _check_level(label, expected, actual):
         return
     # This is an ndarray-like thing
     assert_(expected.shape == actual.shape,
-            msg='Expected shape %s, got %s at %s' % (expected.shape,
+            msg='Expected shape {}, got {} at {}'.format(expected.shape,
                                                      actual.shape,
                                                      label))
     ex_dtype = expected.dtype
@@ -282,7 +281,7 @@ def _check_level(label, expected, actual):
         return
     if ex_dtype.fields:  # probably recarray
         for fn in ex_dtype.fields:
-            level_label = "%s, field %s, " % (label, fn)
+            level_label = f"{label}, field {fn}, "
             _check_level(level_label,
                          expected[fn], actual[fn])
         return
@@ -298,16 +297,16 @@ def _check_level(label, expected, actual):
 def _load_check_case(name, files, case):
     for file_name in files:
         matdict = loadmat(file_name, struct_as_record=True)
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
         for k, expected in case.items():
-            k_label = "%s, variable %s" % (label, k)
+            k_label = f"{label}, variable {k}"
             assert_(k in matdict, "Missing key at %s" % k_label)
             _check_level(k_label, expected, matdict[k])
 
 
 def _whos_check_case(name, files, case, classes):
     for file_name in files:
-        label = "test %s; file %s" % (name, file_name)
+        label = f"test {name}; file {file_name}"
 
         whos = whosmat(file_name)
 
@@ -317,7 +316,7 @@ def _whos_check_case(name, files, case, classes):
         whos.sort()
         expected_whos.sort()
         assert_equal(whos, expected_whos,
-                     "%s: %r != %r" % (label, whos, expected_whos)
+                     f"{label}: {whos!r} != {expected_whos!r}"
                      )
 
 
@@ -347,7 +346,7 @@ def _cases(version, filt='test%(name)s_*.mat'):
             use_filt = pjoin(test_data_path, filt % dict(name=name))
             files = glob(use_filt)
             assert len(files) > 0, \
-                "No files for test %s using filter %s" % (name, filt)
+                f"No files for test {name} using filter {filt}"
         classes = case['classes']
         yield name, files, expected, classes
 
@@ -1063,7 +1062,7 @@ def test_fieldnames():
     savemat(stream, {'a': {'a':1, 'b':2}})
     res = loadmat(stream)
     field_names = res['a'].dtype.names
-    assert_equal(set(field_names), set(('a', 'b')))
+    assert_equal(set(field_names), {'a', 'b'})
 
 
 def test_loadmat_varnames():
@@ -1233,8 +1232,19 @@ def test_bad_utf8():
 
 def test_save_unicode_field(tmpdir):
     filename = os.path.join(str(tmpdir), 'test.mat')
-    test_dict = {u'a':{u'b':1,u'c':'test_str'}}
+    test_dict = {'a':{'b':1,'c':'test_str'}}
     savemat(filename, test_dict)
+
+
+def test_save_custom_array_type(tmpdir):
+    class CustomArray:
+        def __array__(self):
+            return np.arange(6.0).reshape(2, 3)
+    a = CustomArray()
+    filename = os.path.join(str(tmpdir), 'test.mat')
+    savemat(filename, {'a': a})
+    out = loadmat(filename)
+    assert_array_equal(out['a'], np.array(a))
 
 
 def test_filenotfound():
@@ -1267,7 +1277,7 @@ def test_matfile_version(version, filt, regex):
     if regex is not None:
         files = [file for file in files if re.match(regex, file) is not None]
     assert len(files) > 0, \
-        "No files for version %s using filter %s" % (version, filt)
+        f"No files for version {version} using filter {filt}"
     for file in files:
         got_version = matfile_version(file)
         assert got_version[0] == version
@@ -1289,3 +1299,24 @@ def test_deprecation():
     # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
         from scipy.io.matlab.miobase import MatReadError  # noqa
+
+
+def test_gh_17992(tmp_path):
+    rng = np.random.default_rng(12345)
+    outfile = tmp_path / "lists.mat"
+    array_one = rng.random((5,3))
+    array_two = rng.random((6,3))
+    list_of_arrays = [array_one, array_two]
+    # warning suppression only needed for NumPy < 1.24.0
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(np.VisibleDeprecationWarning)
+        savemat(outfile,
+                {'data': list_of_arrays},
+                long_field_names=True,
+                do_compression=True)
+    # round trip check
+    new_dict = {}
+    loadmat(outfile,
+            new_dict)
+    assert_allclose(new_dict["data"][0][0], array_one)
+    assert_allclose(new_dict["data"][0][1], array_two)

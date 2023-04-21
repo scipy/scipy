@@ -215,9 +215,6 @@ class TestApproxDerivativesDense:
             [-x[1] * np.sin(x[0] * x[1]), -x[0] * np.sin(x[0] * x[1])]
         ])
 
-    def fun_non_numpy(self, x):
-        return math.exp(x)
-
     def jac_non_numpy(self, x):
         # x can be a scalar or an array [val].
         # Cast to true scalar before handing over to math.exp
@@ -452,16 +449,20 @@ class TestApproxDerivativesDense:
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
 
         # parameter vector is float64, func output is float32
-        err_fp32 = lambda p: err(p, x, y).astype(np.float32)
+        def err_fp32(p):
+            return err(p, x, y).astype(np.float32)
         jac_fp = approx_derivative(err_fp32, p0,
                                    method='2-point')
         assert err_fp32(p0).dtype == np.float32
         assert_allclose(jac_fp, jac_fp64, atol=1e-3)
 
         # check upper bound of error on the derivative for 2-point
-        f = lambda x: np.sin(x)
-        g = lambda x: np.cos(x)
-        hess = lambda x: -np.sin(x)
+        def f(x):
+            return np.sin(x)
+        def g(x):
+            return np.cos(x)
+        def hess(x):
+            return -np.sin(x)
 
         def calc_atol(h, x0, f, hess, EPS):
             # truncation error

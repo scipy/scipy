@@ -10,12 +10,11 @@ import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport INFINITY
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp cimport bool
-from libc.math cimport isinf
+from libc.math cimport isinf, INFINITY
 
 cimport cython
 import os
@@ -343,7 +342,7 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level) noexcept:
         cdef cKDTreeNode n1, n2
         self.level = level
         self.split_dim = node.split_dim
@@ -775,8 +774,7 @@ cdef class cKDTree:
         """
 
         cdef:
-            np.intp_t n, i, j
-            int overflown
+            np.intp_t n
             const np.float64_t [:, ::1] xx
             np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
             ckdtree *cself = self.cself
@@ -1546,9 +1544,8 @@ cdef class cKDTree:
 
     def __getstate__(cKDTree self):
         cdef object state
-        cdef np.intp_t size
         cdef ckdtree * cself = self.cself
-        size = cself.tree_buffer.size() * sizeof(ckdtreenode)
+        cdef np.intp_t size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
         cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 

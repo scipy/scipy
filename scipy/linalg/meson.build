@@ -16,29 +16,44 @@ cython_linalg = custom_target('cython_linalg',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  depend_files: [
+    'cython_blas_signatures.txt',
+    'cython_lapack_signatures.txt',
+  ],
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/linalg'
 )
 
+# This dummy custom target is only needed to establish a dependency on
+# cython_linalg in a generator below. Adding that dependency directly yields
+# warnings about multiple outputs. And using `depends: cython_linalg[2]` does
+# not work, because that generator depends does not accept CustomTargetIndex,
+# only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
+cython_blas_pxd = custom_target(
+  output: '_dummy_cython_blas.pxd',
+  input: cython_linalg[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
-linalg_init_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_init_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py])
 
 # pyx -> c, pyx -> cpp generators, depending on _cythonized_array_utils.pxd
-linalg_init_utils_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_init_utils_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
-linalg_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+linalg_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, __init__py, cython_linalg])
+  depends : [_cython_tree, __init__py, cython_blas_pxd])#, cython_linalg])
 
 # fblas
 fblas_module = custom_target('fblas_module',
@@ -53,9 +68,8 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   [fblas_module, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
-  dependencies: [blas, lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -74,9 +88,8 @@ flapack_module = custom_target('flapack_module',
 py3.extension_module('_flapack',
   [flapack_module, g77_abi_wrappers],
   c_args: [numpy_nodepr_api, Wno_empty_body],
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -94,7 +107,6 @@ flinalg_module = custom_target('flinalg_module',
 py3.extension_module('_flinalg',
   ['src/det.f', 'src/lu.f', flinalg_module],
   c_args: numpy_nodepr_api,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -156,7 +168,6 @@ py3.extension_module('_interpolative',
   ],
   c_args: numpy_nodepr_api,
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   install: true,
@@ -168,7 +179,7 @@ py3.extension_module('_interpolative',
 py3.extension_module('_solve_toeplitz',
   linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
   c_args: cython_c_args,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -178,7 +189,7 @@ py3.extension_module('_solve_toeplitz',
 py3.extension_module('_matfuncs_sqrtm_triu',
   linalg_init_cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
   c_args: cython_c_args,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -200,11 +211,10 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
-  include_directories: inc_np,
   link_args: version_link_args,
-  dependencies: [blas, lapack],
+  dependencies: [lapack, blas, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -216,11 +226,10 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
-  include_directories: inc_np,
   link_args: version_link_args,
-  dependencies: [blas, lapack],
+  dependencies: [lapack, blas, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -235,7 +244,7 @@ _decomp_update_pyx = custom_target('_decomp_update',
 py3.extension_module('_decomp_update',
   linalg_cython_gen.process(_decomp_update_pyx),
   c_args: cython_c_args,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -251,7 +260,7 @@ _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
 py3.extension_module('_matfuncs_expm',
   linalg_cython_gen.process(_matfuncs_expm_pyx),
   c_args: cython_c_args,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -260,7 +269,7 @@ py3.extension_module('_matfuncs_expm',
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: [inc_np],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
@@ -327,7 +336,7 @@ py3.install_sources(
 #       see https://github.com/mesonbuild/meson/issues/3206
 #
 #       For the below code to work, the script generating the files should use
-#       a different filename, and then it should be moved to the final location 
+#       a different filename, and then it should be moved to the final location
 #       (e.g. with `fs.copyfile`). Either that, or split the codegen scripts and
 #       call it twice: once for the installable files, and once for the
 #       non-installable files.

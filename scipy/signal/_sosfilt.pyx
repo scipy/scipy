@@ -28,7 +28,7 @@ ctypedef fused DTYPE_t:
 @cython.wraparound(False)
 cdef void _sosfilt_float(DTYPE_floating_t [:, ::1] sos,
                          DTYPE_floating_t [:, ::1] x,
-                         DTYPE_floating_t [:, :, ::1] zi) nogil:
+                         DTYPE_floating_t [:, :, ::1] zi) noexcept nogil:
     # Modifies x and zi in place
     cdef Py_ssize_t n_signals = x.shape[0]
     cdef Py_ssize_t n_samples = x.shape[1]

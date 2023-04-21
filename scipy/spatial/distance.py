@@ -105,11 +105,12 @@ __all__ = [
 ]
 
 
+import os
 import warnings
 import numpy as np
 import dataclasses
 
-from typing import List, Optional, Set, Callable
+from typing import Optional, Callable
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
@@ -120,6 +121,25 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
+
+
+def _extra_windows_error_checks(x, out, required_shape, **kwargs):
+    # TODO: remove this function when distutils
+    # build system is removed because pybind11 error
+    # handling should suffice per gh-18108
+    if os.name == "nt" and out is not None:
+        if out.shape != required_shape:
+            raise ValueError("Output array has incorrect shape.")
+        if not out.flags["C_CONTIGUOUS"]:
+            raise ValueError("Output array must be C-contiguous.")
+        if not np.can_cast(x.dtype, out.dtype):
+            raise ValueError("Wrong out dtype.")
+    if os.name == "nt" and "w" in kwargs:
+        w = kwargs["w"]
+        if w is not None:
+            if (w < 0).sum() > 0:
+                raise ValueError("Input weights should be all non-negative")
+
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -338,6 +358,10 @@ def directed_hausdorff(u, v, seed=0):
         An exception is thrown if `u` and `v` do not have
         the same number of columns.
 
+    See Also
+    --------
+    scipy.spatial.procrustes : Another similarity test for two data sets
+
     Notes
     -----
     Uses the early break technique and the random sampling approach
@@ -358,10 +382,6 @@ def directed_hausdorff(u, v, seed=0):
            calculating the exact Hausdorff distance." IEEE Transactions On
            Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
            2015.
-
-    See Also
-    --------
-    scipy.spatial.procrustes : Another similarity test for two data sets
 
     Examples
     --------
@@ -524,9 +544,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {\\|u-v\\|}_2^2
-
-       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
+       \\sum_i{w_i |u_i - v_i|^2}
 
     Parameters
     ----------
@@ -717,6 +735,8 @@ def hamming(u, v, w=None):
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
+        if w.shape != u.shape:
+            raise ValueError("'w' should have the same length as 'u' and 'v'.")
     return np.average(u_ne_v, weights=w)
 
 
@@ -866,7 +886,14 @@ def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
 
-    The standardized Euclidean distance between `u` and `v`.
+    The standardized Euclidean distance between two n-vectors `u` and `v` is
+
+    .. math::
+
+       \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
+
+    ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
+    components of the points. If not passed, it is automatically computed.
 
     Parameters
     ----------
@@ -1681,7 +1708,7 @@ class MetricInfo:
     # Name of python distance function
     canonical_name: str
     # All aliases, including canonical_name
-    aka: Set[str]
+    aka: set[str]
     # unvectorized distance function
     dist_func: Callable
     # Optimized cdist function
@@ -1694,7 +1721,7 @@ class MetricInfo:
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
-    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    types: list[str] = dataclasses.field(default_factory=lambda: ['double'])
     # true if out array must be C-contiguous
     requires_contiguous_out: bool = True
 
@@ -1864,9 +1891,9 @@ _METRIC_INFOS = [
 ]
 
 _METRICS = {info.canonical_name: info for info in _METRIC_INFOS}
-_METRIC_ALIAS = dict((alias, info)
+_METRIC_ALIAS = {alias: info
                      for info in _METRIC_INFOS
-                     for alias in info.aka)
+                     for alias in info.aka}
 
 _METRICS_NAMES = list(_METRICS.keys())
 
@@ -1892,6 +1919,9 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
+    out : ndarray
+        The output array.
+        If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional
         Extra arguments to `metric`: refer to each metric documentation for a
         list of all possible arguments.
@@ -1912,10 +1942,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         VI : ndarray
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(X.T)).T
-
-        out : ndarray.
-        The output array
-        If not None, condensed distance matrix Y is stored in this array.
 
     Returns
     -------
@@ -2132,6 +2158,33 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
           dm = pdist(X, 'sokalsneath')
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist
+
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` with no additional arguments computes the 10 pairwise
+    Euclidean distances:
+
+    >>> pdist(x)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    The following computes the pairwise Minkowski distances with ``p = 3.5``:
+
+    >>> pdist(x, metric='minkowski', p=3.5)
+    array([2.04898923, 5.1154929 , 7.02700737, 2.43802731, 4.19042714,
+           6.03956994, 1.        , 4.45128103, 4.10636143, 5.0619695 ])
+
+    The pairwise city block or Manhattan distances:
+
+    >>> pdist(x, metric='cityblock')
+    array([ 3., 11., 10.,  4.,  8.,  9.,  1.,  9.,  7.,  8.])
+
     """
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
@@ -2163,6 +2216,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
+            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2229,8 +2283,42 @@ def squareform(X, force="no", checks=True):
     In SciPy 0.19.0, ``squareform`` stopped casting all input types to
     float64, and started returning arrays of the same dtype as the input.
 
-    """
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import pdist, squareform
 
+    ``x`` is an array of five points in three-dimensional space.
+
+    >>> x = np.array([[2, 0, 2], [2, 2, 3], [-2, 4, 5], [0, 1, 9], [2, 2, 4]])
+
+    ``pdist(x)`` computes the Euclidean distances between each pair of
+    points in ``x``.  The distances are returned in a one-dimensional
+    array with length ``5*(5 - 1)/2 = 10``.
+
+    >>> distvec = pdist(x)
+    >>> distvec
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+
+    ``squareform(distvec)`` returns the 5x5 distance matrix.
+
+    >>> m = squareform(distvec)
+    >>> m
+    array([[0.        , 2.23606798, 6.40312424, 7.34846923, 2.82842712],
+           [2.23606798, 0.        , 4.89897949, 6.40312424, 1.        ],
+           [6.40312424, 4.89897949, 0.        , 5.38516481, 4.58257569],
+           [7.34846923, 6.40312424, 5.38516481, 0.        , 5.47722558],
+           [2.82842712, 1.        , 4.58257569, 5.47722558, 0.        ]])
+
+    When given a square distance matrix ``m``, ``squareform(m)`` returns
+    the one-dimensional condensed distance vector associated with the
+    matrix.  In this case, we recover ``distvec``.
+
+    >>> squareform(m)
+    array([2.23606798, 6.40312424, 7.34846923, 2.82842712, 4.89897949,
+           6.40312424, 1.        , 5.38516481, 4.58257569, 5.47722558])
+    """
     X = np.ascontiguousarray(X)
 
     s = X.shape
@@ -2335,6 +2423,37 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     the diagonal are ignored if they are within the tolerance specified
     by `tol`.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.spatial.distance import is_valid_dm
+
+    This matrix is a valid distance matrix.
+
+    >>> d = np.array([[0.0, 1.1, 1.2, 1.3],
+    ...               [1.1, 0.0, 1.0, 1.4],
+    ...               [1.2, 1.0, 0.0, 1.5],
+    ...               [1.3, 1.4, 1.5, 0.0]])
+    >>> is_valid_dm(d)
+    True
+
+    In the following examples, the input is not a valid distance matrix.
+
+    Not square:
+
+    >>> is_valid_dm([[0, 2, 2], [2, 0, 2]])
+    False
+
+    Nonzero diagonal element:
+
+    >>> is_valid_dm([[0, 1, 1], [1, 2, 3], [1, 3, 0]])
+    False
+
+    Not symmetric:
+
+    >>> is_valid_dm([[0, 1, 3], [2, 0, 1], [3, 1, 0]])
+    False
+
     """
     D = np.asarray(D, order='c')
     valid = True
@@ -2410,6 +2529,29 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     name : bool, optional
         Used when referencing the offending variable in the
         warning or exception message.
+
+    Returns
+    -------
+    bool
+        True if the input array is a valid condensed distance matrix,
+        False otherwise.
+
+    Examples
+    --------
+    >>> from scipy.spatial.distance import is_valid_y
+
+    This vector is a valid condensed distance matrix.  The length is 6,
+    which corresponds to ``n = 4``, since ``4*(4 - 1)/2`` is 6.
+
+    >>> v = [1.0, 1.2, 1.0, 0.5, 1.3, 0.9]
+    >>> is_valid_y(v)
+    True
+
+    An input vector with length, say, 7, is not a valid condensed distance
+    matrix.
+
+    >>> is_valid_y([1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7])
+    False
 
     """
     y = np.asarray(y, order='c')
@@ -2860,6 +3002,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
+            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)

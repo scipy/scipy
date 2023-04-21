@@ -7,7 +7,6 @@ import sys
 import math
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
-from numpy.lib import NumpyVersion
 from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
@@ -699,7 +698,7 @@ class TestDiscreteAliasUrn:
     def test_sampling_with_pv(self, pv):
         pv = np.asarray(pv, dtype=np.float64)
         rng = DiscreteAliasUrn(pv, random_state=123)
-        rvs = rng.rvs(100_000)
+        rng.rvs(100_000)
         pv = pv / pv.sum()
         variates = np.arange(0, len(pv))
         # test if the first few moments match
@@ -807,21 +806,28 @@ class TestNumericalInversePolynomial:
         rng = NumericalInversePolynomial(dist, random_state=42)
         check_cont_samples(rng, dist, mv_ex)
 
-    very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
-                       'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
-                       'gausshyper', 'anglit']
-    # for these distributions, some assertions fail due to minor
-    # numerical differences. They can be avoided either by changing
-    # the seed or by increasing the u_resolution.
-    fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gibrat', 'lognorm', 'ncx2', 't']
-
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)
     def test_basic_all_scipy_dists(self, distname, params):
-        if distname in self.very_slow_dists:
+
+        very_slow_dists = ['anglit', 'gausshyper', 'kappa4',
+                           'ksone', 'kstwo', 'levy_l',
+                           'levy_stable', 'studentized_range',
+                           'trapezoid', 'triang', 'vonmises']
+        # for these distributions, some assertions fail due to minor
+        # numerical differences. They can be avoided either by changing
+        # the seed or by increasing the u_resolution.
+        fail_dists = ['chi2', 'fatiguelife', 'gibrat',
+                      'halfgennorm', 'lognorm', 'ncf',
+                      'ncx2', 'pareto', 't']
+        # for these distributions, skip the check for agreement between sample
+        # moments and true moments. We cannot expect them to pass due to the
+        # high variance of sample moments.
+        skip_sample_moment_check = ['rel_breitwigner']
+
+        if distname in very_slow_dists:
             pytest.skip(f"PINV too slow for {distname}")
-        if distname in self.fail_dists:
+        if distname in fail_dists:
             pytest.skip(f"PINV fails for {distname}")
         dist = (getattr(stats, distname)
                 if isinstance(distname, str)
@@ -830,6 +836,8 @@ class TestNumericalInversePolynomial:
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             rng = NumericalInversePolynomial(dist, random_state=42)
+        if distname in skip_sample_moment_check:
+            return
         check_cont_samples(rng, dist, [dist.mean(), dist.var()])
 
     @pytest.mark.parametrize("pdf, err, msg", bad_pdfs_common)

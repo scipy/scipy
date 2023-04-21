@@ -372,7 +372,7 @@ class MMFile:
             # read and validate header line
             line = stream.readline()
             mmid, matrix, format, field, symmetry = \
-                [asstr(part.strip()) for part in line.split()]
+                (asstr(part.strip()) for part in line.split())
             if not mmid.startswith('%%MatrixMarket'):
                 raise ValueError('source is not in Matrix Market format')
             if not matrix.lower() == 'matrix':
@@ -386,8 +386,11 @@ class MMFile:
 
             # skip comments
             # line.startswith('%')
-            while line and line[0] in ['%', 37]:
-                line = stream.readline()
+            while line:
+                if line.lstrip() and line.lstrip()[0] in ['%', 37]:
+                    line = stream.readline()
+                else:
+                    break
 
             # skip empty lines
             while not line.strip():
@@ -629,8 +632,8 @@ class MMFile:
         invalid_keys = set(kwargs.keys()) - set(public_attrs)
 
         if invalid_keys:
-            raise ValueError('''found %s invalid keyword arguments, please only
-                                use %s''' % (tuple(invalid_keys),
+            raise ValueError('''found {} invalid keyword arguments, please only
+                                use {}'''.format(tuple(invalid_keys),
                                              public_attrs))
 
         for attr in attrs:

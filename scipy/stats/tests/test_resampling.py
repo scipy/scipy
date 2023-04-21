@@ -123,9 +123,6 @@ def test_bootstrap_vectorized(method, axis, paired):
     # CI and standard_error of each axis-slice is the same as those of the
     # original 1d sample
 
-    if not paired and method == 'BCa':
-        # should re-assess when BCa is extended
-        pytest.xfail(reason="BCa currently for 1-sample statistics only")
     np.random.seed(0)
 
     def my_statistic(x, y, z, axis=-1):
@@ -167,17 +164,26 @@ def test_bootstrap_vectorized(method, axis, paired):
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
-    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
+    rng = np.random.default_rng(2442101192988600726)
+    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=rng)
     alpha = 0.95
     dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
     expected_interval = dist.interval(confidence=alpha)
     expected_se = dist.std()
 
-    res = bootstrap((data,), np.mean, n_resamples=5000,
-                    confidence_level=alpha, method=method,
-                    random_state=0)
+    config = dict(data=(data,), statistic=np.mean, n_resamples=5000,
+                  method=method, random_state=rng)
+    res = bootstrap(**config, confidence_level=alpha)
     assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
     assert_allclose(res.standard_error, expected_se, atol=3e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='less')
+    assert_allclose(res.confidence_interval.high, dist.ppf(alpha), rtol=5e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='greater')
+    assert_allclose(res.confidence_interval.low, dist.ppf(1-alpha), rtol=5e-4)
 
 
 tests_R = {"basic": (23.77, 79.12),
@@ -393,7 +399,7 @@ def test_bootstrap_against_itself_2samp(method, expected):
 def test_bootstrap_vectorized_3samp(method, axis):
     def statistic(*data, axis=0):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -491,7 +497,7 @@ def test_bootstrap_min():
 
 
 @pytest.mark.parametrize("additional_resamples", [0, 1000])
-def test_re_boostrap(additional_resamples):
+def test_re_bootstrap(additional_resamples):
     # Test behavior of parameter `bootstrap_result`
     rng = np.random.default_rng(8958153316228384)
     x = rng.random(size=100)
@@ -514,6 +520,28 @@ def test_re_boostrap(additional_resamples):
     assert_allclose(res.standard_error, ref.standard_error, rtol=1e-14)
     assert_allclose(res.confidence_interval, ref.confidence_interval,
                     rtol=1e-14)
+
+
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+def test_bootstrap_alternative(method):
+    rng = np.random.default_rng(5894822712842015040)
+    dist = stats.norm(loc=2, scale=4)
+    data = (dist.rvs(size=(100), random_state=rng),)
+
+    config = dict(data=data, statistic=np.std, random_state=rng, axis=-1)
+    t = stats.bootstrap(**config, confidence_level=0.9)
+
+    config.update(dict(n_resamples=0, bootstrap_result=t))
+    l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
+    g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
+
+    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
+    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert np.isneginf(l.confidence_interval.low)
+    assert np.isposinf(g.confidence_interval.high)
+
+    with pytest.raises(ValueError, match='`alternative` must be one of'):
+        stats.bootstrap(**config, alternative='ekki-ekki')
 
 
 def test_jackknife_resample():
@@ -600,7 +628,7 @@ def test_vectorize_statistic(axis):
 
     def statistic(*data, axis):
         # an arbitrary, vectorized statistic
-        return sum((sample.mean(axis) for sample in data))
+        return sum(sample.mean(axis) for sample in data)
 
     def statistic_1d(*data):
         # the same statistic, not vectorized
@@ -621,7 +649,6 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
-@pytest.mark.xslow()
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_vector_valued_statistic(method):
     # Generate 95% confidence interval around MLE of normal distribution
@@ -636,11 +663,12 @@ def test_vector_valued_statistic(method):
     params = 1, 0.5
     sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
 
-    def statistic(data):
-        return stats.norm.fit(data)
+    def statistic(data, axis):
+        return np.asarray([np.mean(data, axis),
+                           np.std(data, axis, ddof=1)])
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    vectorized=False, n_resamples=9999)
+                    n_resamples=9999, batch=200)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
@@ -651,6 +679,44 @@ def test_vector_valued_statistic(method):
     assert res.confidence_interval.high.shape == (2, 100)
     assert res.standard_error.shape == (2, 100)
     assert res.bootstrap_distribution.shape == (2, 100, 9999)
+
+
+@pytest.mark.slow
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+def test_vector_valued_statistic_gh17715():
+    # gh-17715 reported a mistake introduced in the extension of BCa to
+    # multi-sample statistics; a `len` should have been `.shape[-1]`. Check
+    # that this is resolved.
+
+    rng = np.random.default_rng(141921000979291141)
+
+    def concordance(x, y, axis):
+        xm = x.mean(axis)
+        ym = y.mean(axis)
+        cov = ((x - xm[..., None]) * (y - ym[..., None])).mean(axis)
+        return (2 * cov) / (x.var(axis) + y.var(axis) + (xm - ym) ** 2)
+
+    def statistic(tp, tn, fp, fn, axis):
+        actual = tp + fp
+        expected = tp + fn
+        return np.nan_to_num(concordance(actual, expected, axis))
+
+    def statistic_extradim(*args, axis):
+        return statistic(*args, axis)[np.newaxis, ...]
+
+    data = [[4, 0, 0, 2],  # (tp, tn, fp, fn)
+            [2, 1, 2, 1],
+            [0, 6, 0, 0],
+            [0, 6, 3, 0],
+            [0, 8, 1, 0]]
+    data = np.array(data).T
+
+    res = bootstrap(data, statistic_extradim, random_state=rng, paired=True)
+    ref = bootstrap(data, statistic, random_state=rng, paired=True)
+    assert_allclose(res.confidence_interval.low[0],
+                    ref.confidence_interval.low, atol=1e-15)
+    assert_allclose(res.confidence_interval.high[0],
+                    ref.confidence_interval.high, atol=1e-15)
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
@@ -1574,8 +1640,8 @@ def test_all_partitions_concatenated():
         partitioning = np.split(partition_concatenated, nc[:-1])
         all_partitions.add(tuple([frozenset(i) for i in partitioning]))
 
-    expected = np.product([special.binom(sum(n[i:]), sum(n[i+1:]))
-                           for i in range(len(n)-1)])
+    expected = np.prod([special.binom(sum(n[i:]), sum(n[i+1:]))
+                        for i in range(len(n)-1)])
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)

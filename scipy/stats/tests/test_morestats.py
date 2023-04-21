@@ -7,15 +7,16 @@ import sys
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (assert_array_equal,
-    assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, suppress_warnings)
+from numpy.testing import (assert_array_equal, assert_almost_equal,
+                           assert_array_less, assert_array_almost_equal,
+                           assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 import re
 from scipy import optimize
 from scipy import stats
-from scipy.stats._morestats import _abw_state
+from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -310,9 +311,47 @@ class TestAnderson:
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    def test_weibull_min_case_A(self):
+        # data and reference values from `anderson` reference [7]
+        x = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
+        res = stats.anderson(x, 'weibull_min')
+        m, loc, scale = res.fit_result.params
+        assert_allclose((m, loc, scale), (2.38, 99.02, 78.23), rtol=2e-3)
+        assert_allclose(res.statistic, 0.260, rtol=1e-3)
+        assert res.statistic < res.critical_values[0]
+
+        c = 1 / m  # ~0.42
+        assert_allclose(c, 1/2.38, rtol=2e-3)
+        # interpolate between rows for c=0.4 and c=0.45, indices -3 and -2
+        As40 = _Avals_weibull[-3]
+        As45 = _Avals_weibull[-2]
+        As_ref = As40 + (c - 0.4)/(0.45 - 0.4) * (As45 - As40)
+        # atol=1e-3 because results are rounded up to the next third decimal
+        assert np.all(res.critical_values > As_ref)
+        assert_allclose(res.critical_values, As_ref, atol=1e-3)
+
+    def test_weibull_min_case_B(self):
+        # From `anderson` reference [7]
+        x = np.array([74, 57, 48, 29, 502, 12, 70, 21,
+                      29, 386, 59, 27, 153, 26, 326])
+        message = "Maximum likelihood estimation has converged to "
+        with pytest.raises(ValueError, match=message):
+            stats.anderson(x, 'weibull_min')
+
+    def test_weibull_warning_error(self):
+        # Check for warning message when there are too few observations
+        # This is also an example in which an error occurs during fitting
+        x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
+        wmessage = "Critical values of the test statistic are given for the..."
+        emessage = "An error occurred while fitting the Weibull distribution..."
+        wcontext = pytest.warns(UserWarning, match=wmessage)
+        econtext = pytest.raises(ValueError, match=emessage)
+        with wcontext, econtext:
+            stats.anderson(x, 'weibull_min')
+
     @pytest.mark.parametrize('distname',
                              ['norm', 'expon', 'gumbel_l', 'extreme1',
-                              'gumbel', 'gumbel_r', 'logistic'])
+                              'gumbel', 'gumbel_r', 'logistic', 'weibull_min'])
     def test_anderson_fit_params(self, distname):
         # check that anderson now returns a FitResult
         rng = np.random.default_rng(330691555377792039)
@@ -323,6 +362,12 @@ class TestAnderson:
         x = dist.rvs(*params, size=1000, random_state=rng)
         res = stats.anderson(x, distname)
         assert res.fit_result.success
+
+    def test_anderson_weibull_As(self):
+        m = 1  # "when mi < 2, so that c > 0.5, the last line...should be used"
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[-1])
+        m = np.inf
+        assert_equal(_get_As_weibull(1/m), _Avals_weibull[0])
 
 
 class TestAndersonKSamp:
@@ -359,7 +404,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -384,19 +428,13 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                          t9, t10, t11, t12, t13, t14),
+                                         midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
-
-        rng = np.random.default_rng(6989860141921615054)
-        res = stats.anderson_ksamp(samples, midrank=False,
-                                   n_resamples=9999, random_state=rng)
-        assert_array_equal(res.statistic, Tk)
-        assert_array_equal(res.critical_values, tm)
-        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -1049,7 +1087,10 @@ class TestFligner:
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
-        _perturb = lambda g: (np.asarray(g) + 1e-10*rs.randn(len(g))).tolist()
+
+        def _perturb(g):
+            return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
+
         g1_ = _perturb(g1)
         g2_ = _perturb(g2)
         g3_ = _perturb(g3)
@@ -1127,6 +1168,7 @@ def mood_cases_with_ties():
         x, y = np.split(xy, 2)
         yield x, y, 'less', *expected_results[si]
 
+
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
@@ -1191,22 +1233,22 @@ class TestMood:
     def test_mood_with_axis_none(self):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
-               1.59528080213779, 0.329507771815361, -0.820468384118015,
-               0.487429052428485, 0.738324705129217, 0.575781351653492,
+              1.59528080213779, 0.329507771815361, -0.820468384118015,
+              0.487429052428485, 0.738324705129217, 0.575781351653492,
               -0.305388387156356, 1.51178116845085, 0.389843236411431,
               -0.621240580541804, -2.2146998871775, 1.12493091814311,
               -0.0449336090152309, -0.0161902630989461, 0.943836210685299,
-               0.821221195098089, 0.593901321217509]
+              0.821221195098089, 0.593901321217509]
 
         x2 = [-0.896914546624981, 0.184849184646742, 1.58784533120882,
               -1.13037567424629, -0.0802517565509893, 0.132420284381094,
-               0.707954729271733, -0.23969802417184, 1.98447393665293,
+              0.707954729271733, -0.23969802417184, 1.98447393665293,
               -0.138787012119665, 0.417650750792556, 0.981752777463662,
               -0.392695355503813, -1.03966897694891, 1.78222896030858,
               -2.31106908460517, 0.878604580921265, 0.035806718015226,
-               1.01282869212708, 0.432265154539617, 2.09081920524915,
+              1.01282869212708, 0.432265154539617, 2.09081920524915,
               -1.19992581964387, 1.58963820029007, 1.95465164222325,
-               0.00493777682814261, -2.45170638784613, 0.477237302613617,
+              0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
         x1 = np.array(x1)
@@ -1834,6 +1876,7 @@ _boxcox_data = [
     724126, 3166209, 175913, 159211, 1182095, 86734, 1921472, 513546, 326016,
     1891609
 ]
+
 
 class TestBoxcox:
 
@@ -2678,3 +2721,69 @@ class TestDirectionalStats:
         assert_allclose(res.mean_direction, ref.mean_direction)
         assert_allclose(res.mean_resultant_length,
                         ref.mean_resultant_length)
+
+
+class TestFDRControl:
+    def test_input_validation(self):
+        message = "`ps` must include only numbers between 0 and 1"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([-1, 0.5, 0.7])
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 2])
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, np.nan])
+
+        message = "Unrecognized `method` 'YAK'"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], method='YAK')
+
+        message = "`axis` must be an integer or `None`"
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], axis=1.5)
+        with pytest.raises(ValueError, match=message):
+            stats.false_discovery_control([0.5, 0.7, 0.9], axis=(1, 2))
+
+    def test_against_TileStats(self):
+        # See reference [3] of false_discovery_control
+        ps = [0.005, 0.009, 0.019, 0.022, 0.051, 0.101, 0.361, 0.387]
+        res = stats.false_discovery_control(ps)
+        ref = [0.036, 0.036, 0.044, 0.044, 0.082, 0.135, 0.387, 0.387]
+        assert_allclose(res, ref, atol=1e-3)
+
+    @pytest.mark.parametrize("case",
+                             [([0.24617028, 0.01140030, 0.05652047, 0.06841983,
+                                0.07989886, 0.01841490, 0.17540784, 0.06841983,
+                                0.06841983, 0.25464082], 'bh'),
+                              ([0.72102493, 0.03339112, 0.16554665, 0.20039952,
+                                0.23402122, 0.05393666, 0.51376399, 0.20039952,
+                                0.20039952, 0.74583488], 'by')])
+    def test_against_R(self, case):
+        # Test against p.adjust, e.g.
+        # p = c(0.22155325, 0.00114003,..., 0.0364813 , 0.25464082)
+        # p.adjust(p, "BY")
+        ref, method = case
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=10, random_state=rng)
+        ps[3] = ps[7]  # force a tie
+        res = stats.false_discovery_control(ps, method=method)
+        assert_allclose(res, ref, atol=1e-6)
+
+    def test_axis_None(self):
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        res = stats.false_discovery_control(ps, axis=None)
+        ref = stats.false_discovery_control(ps.ravel())
+        assert_equal(res, ref)
+
+    @pytest.mark.parametrize("axis", [0, 1, -1])
+    def test_axis(self, axis):
+        rng = np.random.default_rng(6134137338861652935)
+        ps = stats.loguniform.rvs(1e-3, 0.5, size=(3, 4, 5), random_state=rng)
+        res = stats.false_discovery_control(ps, axis=axis)
+        ref = np.apply_along_axis(stats.false_discovery_control, axis, ps)
+        assert_equal(res, ref)
+
+    def test_edge_cases(self):
+        assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
+        assert_array_equal(stats.false_discovery_control(0.25), 0.25)
+        assert_array_equal(stats.false_discovery_control([]), [])

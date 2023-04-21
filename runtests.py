@@ -39,8 +39,6 @@ SAMPLE_SUBMODULE = "optimize"
 EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
               '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
 
-# ---------------------------------------------------------------------
-
 
 if __doc__ is None:
     __doc__ = "Run without -OO if you want usage info"
@@ -48,13 +46,16 @@ else:
     __doc__ = __doc__.format(**globals())
 
 
+# ---------------------------------------------------------------------
+# ruff: noqa E402
+
 import sys
 import os
 import errno
 # the following multiprocessing import is necessary to prevent tests that use
 # multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
 # import is enough...
-import multiprocessing
+import multiprocessing  # noqa: F401
 
 
 # In case we are run from the source directory, we don't want to import the
@@ -68,6 +69,7 @@ import subprocess
 import time
 import datetime
 from types import ModuleType as new_module  # noqa: E402
+
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
@@ -128,7 +130,7 @@ def main(argv):
     parser.add_argument("args", metavar="ARGS", default=[], nargs=REMAINDER,
                         help="Arguments to pass to Nose, Python or shell")
     parser.add_argument("--pep8", action="store_true", default=False,
-                        help="Perform pep8 check with flake8.")
+                        help="Perform pep8 check.")
     parser.add_argument("--mypy", action="store_true", default=False,
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
@@ -136,12 +138,8 @@ def main(argv):
     args = parser.parse_args(argv)
 
     if args.pep8:
-        # Lint the source using the configuration in tox.ini.
-        os.system("flake8 scipy benchmarks/benchmarks")
-        # Lint just the diff since branching off of main using a
-        # stricter configuration.
-        lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
-        os.system(lint_diff)
+        linter = os.path.join(ROOT_DIR, 'tools', 'lint.py')
+        os.system(linter + " --diff-against=main")
         sys.exit(0)
 
     if args.mypy:

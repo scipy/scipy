@@ -44,7 +44,7 @@ def _int_overflow(x, msg=None):
     """
     if x > iinfo(dfitpack_int).max:
         if msg is None:
-            msg = '%r cannot fit into an %r' % (x, dfitpack_int)
+            msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
         raise OverflowError(msg)
     return dfitpack_int.type(x)
 
@@ -588,7 +588,10 @@ def splev(x, tck, der=0, ext=0):
         x = asarray(x)
         shape = x.shape
         x = atleast_1d(x).ravel()
-        y, ier = _fitpack._spl_(x, der, t, c, k, ext)
+        if der == 0:
+            y, ier = dfitpack.splev(t, c, k, x, ext)
+        else:
+            y, ier = dfitpack.splder(t, c, k, x, der, ext)
 
         if ier == 10:
             raise ValueError("Invalid input data")
@@ -625,16 +628,16 @@ def splint(a, b, tck, full_output=0):
         An array containing the integrals of the normalized B-splines
         defined on the set of knots.
 
-    Notes
-    -----
-    splint silently assumes that the spline function is zero outside the data
-    interval (a, b).
-
     See Also
     --------
     splprep, splrep, sproot, spalde, splev
     bisplrep, bisplev
     UnivariateSpline, BivariateSpline
+
+    Notes
+    -----
+    splint silently assumes that the spline function is zero outside the data
+    interval (a, b).
 
     References
     ----------
@@ -688,7 +691,6 @@ def sproot(tck, mest=10):
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev
     UnivariateSpline, BivariateSpline
-
 
     References
     ----------
@@ -1166,14 +1168,14 @@ def splder(tck, n=1):
         Spline of order k2=k-n representing the derivative
         of the input spline.
 
+    See Also
+    --------
+    splantider, splev, spalde
+
     Notes
     -----
 
     .. versionadded:: 0.13.0
-
-    See Also
-    --------
-    splantider, splev, spalde
 
     Examples
     --------
@@ -1202,8 +1204,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = %r) must be <= "
-                          "order of spline (k = %r)") % (n, tck[2]))
+        raise ValueError(("Order of derivative (n = {!r}) must be <= "
+                          "order of spline (k = {!r})").format(n, tck[2]))
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))

@@ -5,18 +5,30 @@
 #              and Jake Vanderplas, August 2012
 
 from warnings import warn
+from itertools import product
 import numpy as np
 from numpy import atleast_1d, atleast_2d
-from ._flinalg_py import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
+from ._cythonized_array_utils import find_det_from_lu
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
+
+
+# The numpy facilities for type-casting checks are too slow for small sized
+# arrays and eat away the time budget for the checkups. Here we set a
+# precomputed dict container of the numpy.can_cast() table.
+
+# It can be used to determine quickly what a dtype can be cast to LAPACK
+# compatible types, i.e., 'float32, float64, complex64, complex128'.
+# Then it can be checked via "casting_dict[arr.dtype.char]"
+lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
+                    for x in np.typecodes['All']}
 
 
 # Linear equations
@@ -686,7 +698,7 @@ def _get_axis_len(aname, a, axis):
         ax += a.ndim
     if 0 <= ax < a.ndim:
         return a.shape[ax]
-    raise ValueError("'%saxis' entry is out of bounds" % (aname,))
+    raise ValueError(f"'{aname}axis' entry is out of bounds")
 
 
 def solve_circulant(c, b, singular='raise', tol=None,
@@ -970,21 +982,13 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     Compute the determinant of a matrix
 
-    The determinant of a square matrix is a value derived arithmetically
-    from the coefficients of the matrix.
-
-    The determinant for a 3x3 matrix, for example, is computed as follows::
-
-        a    b    c
-        d    e    f = A
-        g    h    i
-
-        det(A) = a*e*i + b*f*g + c*d*h - c*e*g - b*d*i - a*f*h
+    The determinant is a scalar that is a function of the associated square
+    matrix coefficients. The determinant value is zero for singular matrices.
 
     Parameters
     ----------
-    a : (M, M) array_like
-        A square matrix.
+    a : (..., M, M) array_like
+        Input array to compute determinants for.
     overwrite_a : bool, optional
         Allow overwriting data in a (may enhance performance).
     check_finite : bool, optional
@@ -994,35 +998,108 @@ def det(a, overwrite_a=False, check_finite=True):
 
     Returns
     -------
-    det : float or complex
-        Determinant of `a`.
+    det : (...) float or complex
+        Determinant of `a`. For stacked arrays, a scalar is returned for each
+        (m, m) slice in the last two dimensions of the input. For example, an
+        input of shape (p, q, m, m) will produce a result of shape (p, q).
 
     Notes
     -----
-    The determinant is computed via LU factorization, LAPACK routine z/dgetrf.
+    The determinant is computed by performing an LU factorization of the
+    input with LAPACK routine 'getrf', and then calculating the product of
+    diagonal entries of the U factor.
+
+    Even the input array is single precision (float32 or complex64), the result
+    will be returned in double precision (float64 or complex128) to prevent
+    overflows.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import linalg
-    >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])
+    >>> a = np.array([[1,2,3], [4,5,6], [7,8,9]])  # A singular matrix
     >>> linalg.det(a)
     0.0
-    >>> a = np.array([[0,2,3], [4,5,6], [7,8,9]])
-    >>> linalg.det(a)
+    >>> b = np.array([[0,2,3], [4,5,6], [7,8,9]])
+    >>> linalg.det(b)
     3.0
-
+    >>> # An array with the shape (3, 2, 2, 2)
+    >>> c = np.array([[[[1., 2.], [3., 4.]],
+    ...                [[5., 6.], [7., 8.]]],
+    ...               [[[9., 10.], [11., 12.]],
+    ...                [[13., 14.], [15., 16.]]],
+    ...               [[[17., 18.], [19., 20.]],
+    ...                [[21., 22.], [23., 24.]]]])
+    >>> linalg.det(c)  # The resulting shape is (3, 2)
+    array([[-2., -2.],
+           [-2., -2.],
+           [-2., -2.]])
+    >>> linalg.det(c[0, 0])  # Confirm the (0, 0) slice, [[1, 2], [3, 4]]
+    -2.0
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    fdet, = get_flinalg_funcs(('det',), (a1,))
-    a_det, info = fdet(a1, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal '
-                         'det.getrf' % -info)
-    return a_det
+    # The goal is to end up with a writable contiguous array to pass to Cython
+
+    # First we check and make arrays.
+    a1 = np.asarray_chkfinite(a) if check_finite else np.asarray(a)
+    if a1.ndim < 2:
+        raise ValueError('The input array must be at least two-dimensional.')
+    if a1.shape[-1] != a1.shape[-2]:
+        raise ValueError('Last 2 dimensions of the array must be square'
+                         f' but received shape {a1.shape}.')
+
+    # Also check if dtype is LAPACK compatible
+    if a1.dtype.char not in 'fdFD':
+        dtype_char = lapack_cast_dict[a1.dtype.char]
+        if not dtype_char:  # No casting possible
+            raise TypeError(f'The dtype "{a1.dtype.name}" cannot be cast '
+                            'to float(32, 64) or complex(64, 128).')
+
+        a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
+        overwrite_a = True
+
+    # Empty array has determinant 1 because math.
+    if min(*a1.shape) == 0:
+        if a1.ndim == 2:
+            return np.float64(1.)
+        else:
+            return np.ones(shape=a1.shape[:-2], dtype=np.float64)
+
+    # Scalar case
+    if a1.shape[-2:] == (1, 1):
+        if a1.dtype.char in 'dD':
+            return np.squeeze(a1)
+        else:
+            return (np.squeeze(a1).astype('d') if a1.dtype.char == 'f' else
+                    np.squeeze(a1).astype('D'))
+
+    # Then check overwrite permission
+    if not _datacopied(a1, a):  # "a"  still alive through "a1"
+        if not overwrite_a:
+            # Data belongs to "a" so make a copy
+            a1 = a1.copy(order='C')
+        #  else: Do nothing we'll use "a" if possible
+    # else:  a1 has its own data thus free to scratch
+
+    # Then layout checks, might happen that overwrite is allowed but original
+    # array was read-only or non-C-contiguous.
+    if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
+        a1 = a1.copy(order='C')
+
+    if a1.ndim == 2:
+        det = find_det_from_lu(a1)
+        # Convert float, complex to to NumPy scalars
+        return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
+
+    # loop over the stacked array, and avoid overflows for single precision
+    # Cf. np.linalg.det(np.diag([1e+38, 1e+38]).astype(np.float32))
+    dtype_char = a1.dtype.char
+    if dtype_char in 'fF':
+        dtype_char = 'd' if dtype_char.islower() else 'D'
+
+    det = np.empty(a1.shape[:-2], dtype=dtype_char)
+    for ind in product(*[range(x) for x in a1.shape[:-2]]):
+        det[ind] = find_det_from_lu(a1[ind])
+    return det
 
 
 # Linear Least Squares
@@ -1294,16 +1371,55 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     LinAlgError
         If SVD computation does not converge.
 
+    See Also
+    --------
+    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+
+    Notes
+    -----
+    If ``A`` is invertible then the Moore-Penrose pseudoinverse is exactly
+    the inverse of ``A`` [1]_. If ``A`` is not invertible then the
+    Moore-Penrose pseudoinverse computes the ``x`` solution to ``Ax = b`` such
+    that ``||Ax - b||`` is minimized [1]_.
+
+    References
+    ----------
+    .. [1] Penrose, R. (1956). On best approximate solutions of linear matrix
+           equations. Mathematical Proceedings of the Cambridge Philosophical
+           Society, 52(1), 17-19. doi:10.1017/S0305004100030929
+
     Examples
     --------
+
+    Given an ``m x n`` matrix ``A`` and an ``n x m`` matrix ``B`` the four
+    Moore-Penrose conditions are:
+
+    1. ``ABA = A`` (``B`` is a generalized inverse of ``A``),
+    2. ``BAB = B`` (``A`` is a generalized inverse of ``B``),
+    3. ``(AB)* = AB`` (``AB`` is hermitian),
+    4. ``(BA)* = BA`` (``BA`` is hermitian) [1]_.
+
+    Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
+    pseudoinverse is a unique ``B`` that satisfies all four of these
+    conditions and exists for any ``A``. Note that, unlike the standard
+    matrix inverse, ``A`` does not have to be square or have
+    independant columns/rows.
+
+    As an example, we can calculate the Moore-Penrose pseudoinverse of a
+    random non-square matrix and verify it satisfies the four conditions.
+
     >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
-    >>> a = rng.standard_normal((9, 6))
-    >>> B = linalg.pinv(a)
-    >>> np.allclose(a, a @ B @ a)
+    >>> A = rng.standard_normal((9, 6))
+    >>> B = linalg.pinv(A)
+    >>> np.allclose(A @ B @ A, A)  # Condition 1
     True
-    >>> np.allclose(B, B @ a @ B)
+    >>> np.allclose(B @ A @ B, B)  # Condition 2
+    True
+    >>> np.allclose((A @ B).conj().T, A @ B)  # Condition 3
+    True
+    >>> np.allclose((B @ A).conj().T, B @ A)  # Condition 4
     True
 
     """
@@ -1388,8 +1504,15 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     LinAlgError
         If eigenvalue algorithm does not converge.
 
+    See Also
+    --------
+    pinv : Moore-Penrose pseudoinverse of a matrix.
+
     Examples
     --------
+
+    For a more detailed example see `pinv`.
+
     >>> import numpy as np
     >>> from scipy.linalg import pinvh
     >>> rng = np.random.default_rng()

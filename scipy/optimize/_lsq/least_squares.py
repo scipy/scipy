@@ -93,7 +93,7 @@ def call_minpack(fun, x0, jac, ftol, xtol, gtol, max_nfev, x_scale, diff_step):
 
 
 def prepare_bounds(bounds, n):
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
     if lb.ndim == 0:
         lb = np.resize(lb, n)
 
@@ -775,7 +775,7 @@ def least_squares(
         raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
 
     if loss not in IMPLEMENTED_LOSSES and not callable(loss):
-        raise ValueError("`loss` must be one of {0} or a callable."
+        raise ValueError("`loss` must be one of {} or a callable."
                          .format(IMPLEMENTED_LOSSES.keys()))
 
     if method == 'lm' and loss != 'linear':
@@ -831,7 +831,7 @@ def least_squares(
 
     if f0.ndim != 1:
         raise ValueError("`fun` must return at most 1-d array_like. "
-                         "f0.shape: {0}".format(f0.shape))
+                         "f0.shape: {}".format(f0.shape))
 
     if not np.all(np.isfinite(f0)):
         raise ValueError("Residuals are not finite in the initial point.")
@@ -881,7 +881,7 @@ def least_squares(
                                  "`jac_sparsity`.")
 
             if jac != '2-point':
-                warn("jac='{0}' works equivalently to '2-point' "
+                warn("jac='{}' works equivalently to '2-point' "
                      "for method='lm'.".format(jac))
 
             J0 = jac_wrapped = None
@@ -906,8 +906,8 @@ def least_squares(
     if J0 is not None:
         if J0.shape != (m, n):
             raise ValueError(
-                "The return value of `jac` has wrong shape: expected {0}, "
-                "actual {1}.".format((m, n), J0.shape))
+                "The return value of `jac` has wrong shape: expected {}, "
+                "actual {}.".format((m, n), J0.shape))
 
         if not isinstance(J0, np.ndarray):
             if method == 'lm':
@@ -955,8 +955,8 @@ def least_squares(
 
     if verbose >= 1:
         print(result.message)
-        print("Function evaluations {0}, initial cost {1:.4e}, final cost "
-              "{2:.4e}, first-order optimality {3:.2e}."
+        print("Function evaluations {}, initial cost {:.4e}, final cost "
+              "{:.4e}, first-order optimality {:.2e}."
               .format(result.nfev, initial_cost, result.cost,
                       result.optimality))
 

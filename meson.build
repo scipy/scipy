@@ -1,6 +1,6 @@
 project(
   'SciPy',
-  'c', 'cpp',
+  'c', 'cpp', 'cython',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
@@ -9,6 +9,7 @@ project(
   meson_version: '>= 0.64.0',
   default_options: [
     'buildtype=debugoptimized',
+    'b_ndebug=if-release',
     'c_std=c99',
     'cpp_std=c++14',
     'fortran_std=legacy',
@@ -17,8 +18,26 @@ project(
   ],
 )
 
+# https://mesonbuild.com/Python-module.html
+py_mod = import('python')
+py3 = py_mod.find_installation(pure: false)
+py3_dep = py3.dependency()
+
+# Emit a warning for 32-bit Python installs on Windows; users are getting
+# unexpected from-source builds there because we no longer provide wheels.
+is_windows = host_machine.system() == 'windows'
+if is_windows and py3.has_variable('EXT_SUFFIX')
+  ext_suffix = py3.get_variable('EXT_SUFFIX')
+  if ext_suffix.contains('win32')
+    warning('You are building from source on a 32-bit Python install. SciPy does not provide 32-bit wheels; install 64-bit Python if you are having issues!')
+  endif
+endif
+
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
+cy = meson.get_compiler('cython')
+# generator() doesn't accept compilers, only found programs - cast it.
+cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
@@ -31,15 +50,15 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
+if not cy.version().version_compare('>=0.29.33')
+  error('SciPy requires Cython >= 0.29.33')
+endif
 
-# TODO: the below -Wno flags are all needed to silence warnings in
-# f2py-generated code. This should be fixed in f2py itself.
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
   '-Wno-unused-function',
   '-Wno-conversion',
   '-Wno-misleading-indentation',
-  '-Wno-incompatible-pointer-types',
 )
 add_project_arguments(_global_c_args, language : 'c')
 
@@ -65,8 +84,6 @@ ff = meson.get_compiler('fortran')
 if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
-
-is_windows = host_machine.system() == 'windows'
 
 # Intel compilers default to fast-math, so disable it if we detect Intel
 # compilers. A word of warning: this may not work with the conda-forge
@@ -112,26 +129,12 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
   version_link_args = []
 endif
 
-cython = find_program('cython')
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 
-# https://mesonbuild.com/Python-module.html
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
-py3_dep = py3.dependency()
-
-# For now, keep supporting this environment variable (same as in setup.py)
-# Once setup.py-based builds are gone, we can convert this to a command-line flag, or make Pythran non-optional.
-use_pythran = run_command(py3,
-  [
-    '-c',
-    'import os; print(os.environ.get("SCIPY_USE_PYTHRAN", 1))'
-  ],
-  check: true
-).stdout().strip() == '1'
+use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran')
+  pythran = find_program('pythran', native: true)
 endif
 
 subdir('scipy')

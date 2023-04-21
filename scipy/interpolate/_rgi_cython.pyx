@@ -17,7 +17,7 @@ np.import_array()
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
 def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
-                       long[:, :] indices,             # unless prior
+                       const long[:, :] indices,       # unless prior
                        double[:, :] norm_distances,    # np.ascontiguousarray
                        tuple grid not None,
                        double_or_complex[:] out):
@@ -72,11 +72,13 @@ def evaluate_linear_2d(double_or_complex[:, :] values, # cannot declare as ::1
 @cython.boundscheck(False)
 @cython.cdivision(True)
 @cython.initializedcheck(False)
-def find_indices(tuple grid not None, double[:, :] xi):
+def find_indices(tuple grid not None, const double[:, :] xi):
+    # const is required for xi above in case xi is read-only
     cdef:
         long i, j, grid_i_size
         double denom, value
-        double[::1] grid_i
+        # const is required in case grid is read-only
+        const double[::1] grid_i
 
         # Axes to iterate over
         long I = xi.shape[0]

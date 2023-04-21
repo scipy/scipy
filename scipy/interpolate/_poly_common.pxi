@@ -14,7 +14,7 @@ cdef int find_interval_ascending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
-                                 bint extrapolate=1) nogil:
+                                 bint extrapolate=1) noexcept nogil:
     """
     Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
     that x is sorted in the ascending order.

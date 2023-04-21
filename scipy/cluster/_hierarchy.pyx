@@ -18,7 +18,7 @@ cdef linkage_distance_update *linkage_methods = [
 include "_structures.pxi"
 
 cdef inline np.npy_int64 condensed_index(np.npy_int64 n, np.npy_int64 i,
-                                         np.npy_int64 j):
+                                         np.npy_int64 j) noexcept:
     """
     Calculate the condensed index of element (i, j) in an n x n condensed
     matrix.
@@ -29,21 +29,21 @@ cdef inline np.npy_int64 condensed_index(np.npy_int64 n, np.npy_int64 i,
         return n * j - (j * (j + 1) / 2) + (i - j - 1)
 
 
-cdef inline int is_visited(uchar *bitset, int i):
+cdef inline int is_visited(uchar *bitset, int i) noexcept:
     """
     Check if node i was visited.
     """
     return bitset[i >> 3] & (1 << (i & 7))
 
 
-cdef inline void set_visited(uchar *bitset, int i):
+cdef inline void set_visited(uchar *bitset, int i) noexcept:
     """
     Mark node i as visited.
     """
     bitset[i >> 3] |= 1 << (i & 7)
 
 
-cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n):
+cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n) noexcept:
     """
     Calculate the size of each cluster. The result is the fourth column of
     the linkage matrix.
@@ -142,7 +142,7 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
 
 
 cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                                     int n, int max_nc):
+                                     int n, int max_nc) noexcept:
     """
     Form flat clusters by maxclust_monocrit criterion.
 
@@ -228,7 +228,7 @@ cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
 
 
 cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
-                            double cutoff, int n):
+                            double cutoff, int n) noexcept:
     """
     Form flat clusters by monocrit criterion.
 
@@ -368,7 +368,7 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
 
 
 cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
-                                           double[:] max_rfs, int n, int rf):
+                                           double[:] max_rfs, int n, int rf) noexcept:
     """
     Get the maximum statistic for each non-singleton cluster. For the i'th
     non-singleton cluster, max_rfs[i] = max{R[j, rf] j is a descendent of i}.
@@ -431,7 +431,7 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     PyMem_Free(visited)
 
 
-cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
+cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n) noexcept:
     """
     Get the maximum inconsistency coefficient for each non-singleton cluster.
 
@@ -933,7 +933,7 @@ def nn_chain(double[:] dists, int n, int method):
     cdef int[:] cluster_chain = np.ndarray(n, dtype=np.intc)
     cdef int chain_length = 0
 
-    cdef int i, j, k, x, y = 0, nx, ny, ni
+    cdef int i, k, x, y = 0, nx, ny, ni
     cdef double dist, current_min
 
     for k in range(n - 1):
@@ -1080,7 +1080,7 @@ cdef class LinkageUnionFind:
         self.next_label = n
         self.size = np.ones(2 * n - 1, dtype=np.intc)
 
-    cdef int merge(self, int x, int y):
+    cdef int merge(self, int x, int y) noexcept:
         self.parent[x] = self.next_label
         self.parent[y] = self.next_label
         cdef int size = self.size[x] + self.size[y]
@@ -1088,7 +1088,7 @@ cdef class LinkageUnionFind:
         self.next_label += 1
         return size
 
-    cdef find(self, int x):
+    cdef find(self, int x) noexcept:
         cdef int p = x
 
         while self.parent[x] != x:
@@ -1100,7 +1100,7 @@ cdef class LinkageUnionFind:
         return x
 
 
-cdef label(double[:, :] Z, int n):
+cdef label(double[:, :] Z, int n) noexcept:
     """Correctly label clusters in unsorted dendrogram."""
     cdef LinkageUnionFind uf = LinkageUnionFind(n)
     cdef int i, x, y, x_root, y_root

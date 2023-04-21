@@ -5,7 +5,6 @@ import warnings
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
-import numpy.linalg as linalg
 from numpy.random import random
 
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
@@ -556,7 +555,7 @@ class TestSolve:
     def test_simple_sym_complexb(self):
         a = [[5, 2], [2, -4]]
         for b in ([1j, 0],
-                  [[1j, 1j],[0, 2]]
+                  [[1j, 1j], [0, 2]]
                   ):
             x = solve(a, b, assume_a='sym')
             assert_array_almost_equal(dot(a, x), b)
@@ -931,40 +930,124 @@ class TestInv:
 
 class TestDet:
     def setup_method(self):
-        np.random.seed(1234)
+        self.rng = np.random.default_rng(1680305949878959)
 
-    def test_simple(self):
-        a = [[1, 2], [3, 4]]
-        a_det = det(a)
-        assert_almost_equal(a_det, -2.0)
+    def test_1by1_stacked_input_output(self):
+        a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
+        deta = det(a)
+        assert deta.dtype.char == 'd'
+        assert deta.shape == (4, 5)
+        assert_allclose(deta, np.squeeze(a))
 
-    def test_simple_complex(self):
-        a = [[1, 2], [3, 4j]]
-        a_det = det(a)
-        assert_almost_equal(a_det, -6+4j)
+        a = self.rng.random([4, 5, 1, 1], dtype=np.float32)*np.complex64(1.j)
+        deta = det(a)
+        assert deta.dtype.char == 'D'
+        assert deta.shape == (4, 5)
+        assert_allclose(deta, np.squeeze(a))
 
-    def test_random(self):
-        basic_det = linalg.det
-        n = 20
-        for i in range(4):
-            a = random([n, n])
-            d1 = det(a)
-            d2 = basic_det(a)
-            assert_almost_equal(d1, d2)
+    @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
+    def test_simple_det_shapes_real_complex(self, shape):
+        a = self.rng.uniform(-1., 1., size=shape)
+        d1, d2 = det(a), np.linalg.det(a)
+        assert_allclose(d1, d2)
 
-    def test_random_complex(self):
-        basic_det = linalg.det
-        n = 20
-        for i in range(4):
-            a = random([n, n]) + 2j*random([n, n])
-            d1 = det(a)
-            d2 = basic_det(a)
-            assert_allclose(d1, d2, rtol=1e-13)
+        b = self.rng.uniform(-1., 1., size=shape)*1j
+        b += self.rng.uniform(-0.5, 0.5, size=shape)
+        d3, d4 = det(b), np.linalg.det(b)
+        assert_allclose(d3, d4)
 
-    def test_check_finite(self):
-        a = [[1, 2], [3, 4]]
-        a_det = det(a, check_finite=False)
-        assert_almost_equal(a_det, -2.0)
+    def test_for_known_det_values(self):
+        # Hadamard8
+        a = np.array([[1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, -1, 1, -1, 1, -1, 1, -1],
+                      [1, 1, -1, -1, 1, 1, -1, -1],
+                      [1, -1, -1, 1, 1, -1, -1, 1],
+                      [1, 1, 1, 1, -1, -1, -1, -1],
+                      [1, -1, 1, -1, -1, 1, -1, 1],
+                      [1, 1, -1, -1, -1, -1, 1, 1],
+                      [1, -1, -1, 1, -1, 1, 1, -1]])
+        assert_allclose(det(a), 4096.)
+
+        # consecutive number array always singular
+        assert_allclose(det(np.arange(25).reshape(5, 5)), 0.)
+
+        # simple anti-diagonal block array
+        # Upper right has det (-2+1j) and lower right has (-2-1j)
+        # det(a) = - (-2+1j) (-2-1j) = 5.
+        a = np.array([[0.+0.j, 0.+0.j, 0.-1.j, 1.-1.j],
+                      [0.+0.j, 0.+0.j, 1.+0.j, 0.-1.j],
+                      [0.+1.j, 1.+1.j, 0.+0.j, 0.+0.j],
+                      [1.+0.j, 0.+1.j, 0.+0.j, 0.+0.j]], dtype=np.complex64)
+        assert_allclose(det(a), 5.+0.j)
+
+        # Fiedler companion complexified
+        # >>> a = scipy.linalg.fiedler_companion(np.arange(1, 10))
+        a = np.array([[-2., -3., 1., 0., 0., 0., 0., 0.],
+                      [1., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., -4., 0., -5., 1., 0., 0., 0.],
+                      [0., 1., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., -6., 0., -7., 1., 0.],
+                      [0., 0., 0., 1., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., -8., 0., -9.],
+                      [0., 0., 0., 0., 0., 1., 0., 0.]])*1.j
+        assert_allclose(det(a), 9.)
+
+    # g and G dtypes are handled differently in windows and other platforms
+    @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
+                                     if x not in 'gG'])
+    def test_sample_compatible_dtype_input(self, typ):
+        n = 4
+        a = self.rng.random([n, n]).astype(typ)  # value is not important
+        assert isinstance(det(a), (np.float64, np.complex128))
+
+    def test_incompatible_dtype_input(self):
+        # Double backslashes needed for escaping pytest regex.
+        msg = 'cannot be cast to float\\(32, 64\\)'
+
+        for c, t in zip('SUO', ['bytes8', 'str32', 'object']):
+            with assert_raises(TypeError, match=msg):
+                det(np.array([['a', 'b']]*2, dtype=c))
+        with assert_raises(TypeError, match=msg):
+            det(np.array([[b'a', b'b']]*2, dtype='V'))
+        with assert_raises(TypeError, match=msg):
+            det(np.array([[100, 200]]*2, dtype='datetime64[s]'))
+        with assert_raises(TypeError, match=msg):
+            det(np.array([[100, 200]]*2, dtype='timedelta64[s]'))
+
+    def test_empty_edge_cases(self):
+        assert_allclose(det(np.empty([0, 0])), 1.)
+        assert_allclose(det(np.empty([0, 0, 0])), np.array([]))
+        assert_allclose(det(np.empty([3, 0, 0])), np.array([1., 1., 1.]))
+        with assert_raises(ValueError, match='Last 2 dimensions'):
+            det(np.empty([0, 0, 3]))
+        with assert_raises(ValueError, match='at least two-dimensional'):
+            det(np.array([]))
+        with assert_raises(ValueError, match='Last 2 dimensions'):
+            det(np.array([[]]))
+        with assert_raises(ValueError, match='Last 2 dimensions'):
+            det(np.array([[[]]]))
+
+    def test_overwrite_a(self):
+        # If all conditions are met then input should be overwritten;
+        #   - dtype is one of 'fdFD'
+        #   - C-contiguous
+        #   - writeable
+        a = np.arange(9).reshape(3, 3).astype(np.float32)
+        ac = a.copy()
+        deta = det(ac, overwrite_a=True)
+        assert_allclose(deta, 0.)
+        assert not (a == ac).all()
+
+    def test_readonly_array(self):
+        a = np.array([[2., 0., 1.], [5., 3., -1.], [1., 1., 1.]])
+        a.setflags(write=False)
+        # overwrite_a will be overridden
+        assert_allclose(det(a, overwrite_a=True), 10.)
+
+    def test_simple_check_finite(self):
+        a = [[1, 2], [3, np.inf]]
+        with assert_raises(ValueError, match='array must not contain'):
+            det(a)
 
 
 def direct_lstsq(a, b, cmplx=0):
@@ -1111,8 +1194,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1150,8 +1233,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank %s, '
-                                    'got %s' % (n, r))
+                            assert_(r == n, 'expected efficient rank {}, '
+                                    'got {}'.format(n, r))
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1184,8 +1267,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1213,8 +1296,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank %s, '
-                                    'got %s' % (m, r))
+                            assert_(r == m, 'expected efficient rank {}, '
+                                    'got {}'.format(m, r))
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
@@ -1324,9 +1407,9 @@ class TestPinv:
         n = 12
         # get a random ortho matrix for shuffling
         q, _ = qr(np.random.rand(n, n))
-        a_m = np.arange(35.0).reshape(7,5)
+        a_m = np.arange(35.0).reshape(7, 5)
         a = a_m.copy()
-        a[0,0] = 0.001
+        a[0, 0] = 0.001
         atol = 1e-5
         rtol = 0.05
         # svds of a_m is ~ [116.906, 4.234, tiny, tiny, tiny]
