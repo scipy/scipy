@@ -9875,7 +9875,7 @@ add_newdoc("nbdtr",
     See also
     --------
     nbdtrc : Negative binomial survival function
-    nbdtri : Negative binomial quantile function
+    nbdtrik : Negative binomial quantile function
     scipy.stats.nbinom : Negative binomial distribution
 
     Notes
@@ -10002,7 +10002,7 @@ add_newdoc("nbdtrc",
     See also
     --------
     nbdtr : Negative binomial cumulative distribution function
-    nbdtri : Negative binomial quantile function
+    nbdtrik : Negative binomial quantile function
     scipy.stats.nbinom : Negative binomial distribution
 
     Notes
@@ -10097,8 +10097,6 @@ add_newdoc(
     r"""
     nbdtri(k, n, y, out=None)
 
-    Negative binomial distribution quantile function.
-
     Returns the inverse with respect to the parameter `p` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
     function.
@@ -10127,6 +10125,7 @@ add_newdoc(
     scipy.stats.nbinom : negative binomial distribution.
     nbdtrik : Inverse with respect to `k` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
@@ -10200,7 +10199,7 @@ add_newdoc("nbdtrik",
     r"""
     nbdtrik(y, n, p, out=None)
 
-    Inverse of `nbdtr` vs `k`.
+    Negative binomial quantile function.
 
     Returns the inverse with respect to the parameter `k` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
@@ -10225,8 +10224,10 @@ add_newdoc("nbdtrik",
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtrik : Negative binomial quantile function.
     nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
@@ -10267,6 +10268,7 @@ add_newdoc("nbdtrik",
 
     >>> nbdtrik(cdf_value, n, p)
     5.0
+
     """)
 
 add_newdoc("nbdtrin",
