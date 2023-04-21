@@ -130,12 +130,6 @@ stages:
             TEST_MODE: fast
             BITS: 32
             SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-full:
-            PYTHON_VERSION: '3.9'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: full
-            BITS: 64
-            SCIPY_USE_PYTHRAN: 0
           Python311-64bit-full-ilp64:
             PYTHON_VERSION: '3.11'
             PYTHON_ARCH: 'x64'
