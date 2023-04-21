@@ -46,7 +46,7 @@ def arg_names_and_types(args):
 pyx_func_template = """
 cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
-cdef {ret_type} {name}({args}) nogil:
+cdef {ret_type} {name}({args}) noexcept nogil:
     cdef {ret_type} out
     _fortran_{name}(&out, {argnames})
     return out
@@ -94,7 +94,7 @@ def pyx_decl_func(name, ret_type, args, header_name):
 
 pyx_sub_template = """cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-cdef void {name}({args}) nogil:
+cdef void {name}({args}) noexcept nogil:
     _fortran_{name}({argnames})
 """
 
@@ -222,30 +222,30 @@ blas_py_wrappers = """
 
 # Python-accessible wrappers for testing:
 
-cdef inline bint _is_contiguous(double[:,:] a, int axis) nogil:
+cdef inline bint _is_contiguous(double[:,:] a, int axis) noexcept nogil:
     return (a.strides[axis] == sizeof(a[0,0]) or a.shape[axis] == 1)
 
-cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) nogil:
+cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
     return cdotc(&n, &cx[0], &incx, &cy[0], &incy)
 
-cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) nogil:
+cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
     return cdotu(&n, &cx[0], &incx, &cy[0], &incy)
 
-cpdef double _test_dasum(double[:] dx) nogil:
+cpdef double _test_dasum(double[:] dx) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
     return dasum(&n, &dx[0], &incx)
 
-cpdef double _test_ddot(double[:] dx, double[:] dy) nogil:
+cpdef double _test_ddot(double[:] dx, double[:] dy) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
@@ -331,87 +331,87 @@ cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
             raise ValueError("Input 'c' is neither C nor Fortran contiguous.")
     return 0
 
-cpdef double _test_dnrm2(double[:] x) nogil:
+cpdef double _test_dnrm2(double[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return dnrm2(&n, &x[0], &incx)
 
-cpdef double _test_dzasum(double complex[:] zx) nogil:
+cpdef double _test_dzasum(double complex[:] zx) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
     return dzasum(&n, &zx[0], &incx)
 
-cpdef double _test_dznrm2(double complex[:] x) nogil:
+cpdef double _test_dznrm2(double complex[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return dznrm2(&n, &x[0], &incx)
 
-cpdef int _test_icamax(float complex[:] cx) nogil:
+cpdef int _test_icamax(float complex[:] cx) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
     return icamax(&n, &cx[0], &incx)
 
-cpdef int _test_idamax(double[:] dx) nogil:
+cpdef int _test_idamax(double[:] dx) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
     return idamax(&n, &dx[0], &incx)
 
-cpdef int _test_isamax(float[:] sx) nogil:
+cpdef int _test_isamax(float[:] sx) noexcept nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
     return isamax(&n, &sx[0], &incx)
 
-cpdef int _test_izamax(double complex[:] zx) nogil:
+cpdef int _test_izamax(double complex[:] zx) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
     return izamax(&n, &zx[0], &incx)
 
-cpdef float _test_sasum(float[:] sx) nogil:
+cpdef float _test_sasum(float[:] sx) noexcept nogil:
     cdef:
         int n = sx.shape[0]
-        int incx = sx.shape[0] // sizeof(sx[0])
+        int incx = sx.strides[0] // sizeof(sx[0])
     return sasum(&n, &sx[0], &incx)
 
-cpdef float _test_scasum(float complex[:] cx) nogil:
+cpdef float _test_scasum(float complex[:] cx) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
     return scasum(&n, &cx[0], &incx)
 
-cpdef float _test_scnrm2(float complex[:] x) nogil:
+cpdef float _test_scnrm2(float complex[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return scnrm2(&n, &x[0], &incx)
 
-cpdef float _test_sdot(float[:] sx, float[:] sy) nogil:
+cpdef float _test_sdot(float[:] sx, float[:] sy) noexcept nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
         int incy = sy.strides[0] // sizeof(sy[0])
     return sdot(&n, &sx[0], &incx, &sy[0], &incy)
 
-cpdef float _test_snrm2(float[:] x) nogil:
+cpdef float _test_snrm2(float[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
-        int incx = x.shape[0] // sizeof(x[0])
+        int incx = x.strides[0] // sizeof(x[0])
     return snrm2(&n, &x[0], &incx)
 
-cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) nogil:
+cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
         int incy = zy.strides[0] // sizeof(zy[0])
     return zdotc(&n, &zx[0], &incx, &zy[0], &incy)
 
-cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) nogil:
+cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
@@ -457,10 +457,10 @@ def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     return preamble + funcs + subs + lapack_py_wrappers
 
 
-pxd_template = """ctypedef {ret_type} {name}_t({args}) nogil
+pxd_template = """ctypedef {ret_type} {name}_t({args}) noexcept nogil
 cdef {name}_t *{name}_f
 """
-pxd_template = """cdef {ret_type} {name}({args}) nogil
+pxd_template = """cdef {ret_type} {name}({args}) noexcept nogil
 """
 
 

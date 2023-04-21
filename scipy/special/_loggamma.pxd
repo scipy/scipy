@@ -35,7 +35,7 @@ DEF SMALLY = 7
 DEF TAYLOR_RADIUS = 0.2
 
 
-cdef inline double loggamma_real(double x) nogil:
+cdef inline double loggamma_real(double x) noexcept nogil:
     if x < 0.0:
         return NAN
 
@@ -43,7 +43,7 @@ cdef inline double loggamma_real(double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma(double complex z) nogil:
+cdef inline double complex loggamma(double complex z) noexcept nogil:
     """Compute the principal branch of log-Gamma."""
     cdef double tmp
 
@@ -71,7 +71,7 @@ cdef inline double complex loggamma(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_recurrence(double complex z) nogil:
+cdef inline double complex loggamma_recurrence(double complex z) noexcept nogil:
     """Backward recurrence relation.
 
     See Proposition 2.2 in [1] and the Julia implementation [2].
@@ -94,7 +94,7 @@ cdef inline double complex loggamma_recurrence(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_stirling(double complex z) nogil:
+cdef inline double complex loggamma_stirling(double complex z) noexcept nogil:
     """Stirling series for log-Gamma.
 
     The coefficients are B[2*n]/(2*n*(2*n - 1)) where B[2*n] is the
@@ -115,7 +115,7 @@ cdef inline double complex loggamma_stirling(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex loggamma_taylor(double complex z) nogil:
+cdef inline double complex loggamma_taylor(double complex z) noexcept nogil:
     """Taylor series for log-Gamma around z = 1.
 
     It is
@@ -145,7 +145,7 @@ cdef inline double complex loggamma_taylor(double complex z) nogil:
     return z*cevalpoly(coeffs, 22, z)
 
 
-cdef inline double complex cgamma(double complex z) nogil:
+cdef inline double complex cgamma(double complex z) noexcept nogil:
     """Compute Gamma(z) using loggamma."""
     if z.real <= 0 and z == floor(z.real):
         # Poles
@@ -154,7 +154,7 @@ cdef inline double complex cgamma(double complex z) nogil:
     return zexp(loggamma(z))
 
 
-cdef inline double complex crgamma(double complex z) nogil:
+cdef inline double complex crgamma(double complex z) noexcept nogil:
     """Compute 1/Gamma(z) using loggamma."""
     if z.real <= 0 and z == floor(z.real):
         # Zeros at 0, -1, -2, ...
