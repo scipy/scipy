@@ -25,10 +25,6 @@ def test_bad_args():
     with pytest.raises(ValueError, match="Distribution 'xy' is not supported"):
         FastGeneratorInversion("xy")
 
-    dist = stats.norm()
-    with pytest.raises(TypeError, match="distname must be a string."):
-        FastGeneratorInversion(dist)
-
 
 def test_random_state():
     # fixed seed
@@ -373,7 +369,7 @@ class TestQRVS:
         (4, (4,)),
         ((4,), (4,)),
         ((2, 4), (2, 4)),
-    ]  # type: ignore
+    ]
     # Neither `d=None` nor `d=1` should add anything to the shape
     ds = [(None, tuple()), (1, tuple()), (3, (3,))]
 
