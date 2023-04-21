@@ -67,7 +67,7 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
 typedef int (*CompareFunction)(const void * const, const void * const);
 extern void *quick_select(void *base, const size_t num_elements,
                    const size_t element_size,
-		   const CompareFunction comparison_function,
+		   CompareFunction comparison_function,
 		   const size_t element_to_return);
 extern int FLOAT_compare(const float *const ip1, const float *const ip2);
 extern int DOUBLE_compare(const double *const ip1, const double *const ip2);
