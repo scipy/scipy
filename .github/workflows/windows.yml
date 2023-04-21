@@ -112,11 +112,10 @@ jobs:
 
       - name: Build
         run: |
-          # TODO: remove the build-dir and install-prefix flags once dev.py
-          # supplies meson with absolute paths. This is due to a pathlib bug
-          # on cp39-win.
-          python dev.py --build-dir=$pwd\build --install-prefix=$pwd\build-install build -j 2 --win-cp-openblas
-          meson install -C build
+          python dev.py build -j 2 --win-cp-openblas
+          # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
+          # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
+          # when things are split over drives.
           cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
           python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
 

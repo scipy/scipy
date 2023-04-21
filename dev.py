@@ -306,14 +306,22 @@ class Dirs:
         self.root = Path(__file__).parent.absolute()
         if not args:
             return
+
         self.build = Path(args.build_dir).resolve()
         if args.install_prefix:
             self.installed = Path(args.install_prefix).resolve()
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
+
+        if sys.platform == 'win32' and sys.version_info < (3, 10):
+            # Work around a pathlib bug; these must be absolute paths
+            self.build = Path(os.path.abspath(self.build))
+            self.installed = Path(os.path.abspath(self.installed))
+
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
+        print(self.site)
 
     def add_sys_path(self):
         """Add site dir to sys.path / PYTHONPATH"""
@@ -595,7 +603,8 @@ class Build(Task):
                   'command did not manage to find OpenBLAS '
                   'succesfully. Try running manually on the '
                   'command prompt for more information.')
-            return result.returncode
+            print("OpenBLAS copy failed!")
+            sys.exit(result.returncode)
 
         # Skip the drive letter of the path -> /c to get Windows drive
         # to be appended correctly to avoid "C:\c\..." from stdout.
@@ -609,6 +618,7 @@ class Build(Task):
         # Look in bin subdirectory for OpenBLAS binaries.
         bin_path = openblas_lib_path.parent / 'bin'
         # Locate, make output .libs directory in Scipy install directory.
+        print(dirs.site)
         scipy_path = dirs.site / 'scipy'
         libs_path = scipy_path / '.libs'
         libs_path.mkdir(exist_ok=True)
@@ -623,9 +633,10 @@ class Build(Task):
         # so OpenBLAS gets found
         openblas_support = import_module_from_path(
             'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py')
+            dirs.root / 'tools' / 'openblas_support.py'
+        )
         openblas_support.make_init(scipy_path)
-        return 0
+        print('OpenBLAS copied')
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -642,11 +653,7 @@ class Build(Task):
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
             if args.win_cp_openblas and platform.system() == 'Windows':
-                if cls.copy_openblas(dirs) == 0:
-                    print('OpenBLAS copied')
-                else:
-                    print("OpenBLAS copy failed!")
-                    sys.exit(1)
+                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
