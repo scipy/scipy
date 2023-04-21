@@ -1570,7 +1570,7 @@ def medfilt(volume, kernel_size=None):
 
     if volume.dtype in [np.bool_, np.cfloat, np.cdouble,
                                        np.clongdouble, np.float16,]:
-        raise ValueError("_order_filterND")
+        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
     if volume.dtype in [object, 'float128']:
         mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "

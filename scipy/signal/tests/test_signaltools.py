@@ -1100,7 +1100,7 @@ class TestMedFilt:
         in_typed = np.array(self.IN, dtype=dtype)
         msg = "Using medfilt with arrays of dtype"
         with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt(in_typed).dtype, type)
+            assert_equal(signal.medfilt(in_typed).dtype, dtype)
         with pytest.deprecated_call(match=msg):
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
@@ -1109,10 +1109,10 @@ class TestMedFilt:
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
 
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt2d(in_typed)
 
     def test_none(self):
