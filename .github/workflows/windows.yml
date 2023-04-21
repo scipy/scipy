@@ -169,7 +169,7 @@ jobs:
           python -m build -Csetup-args="-Duse-pythran=false"
 
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
-          delvewheel repair --add-path c/opt/openblas/openblas_dll -w dist $env:wheel_name
+          delvewheel repair --add-path c:\opt\openblas\openblas_dll -w dist $env:wheel_name
           
           python -m pip install --only-binary=scipy --no-index --find-links=dist scipy
 
