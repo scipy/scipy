@@ -171,4 +171,6 @@ jobs:
 
       - name: Test
         run: |
+          cd $RUNNER_TEMP
           python -k test --pyargs scipy
+          cd $GITHUB_WORKSPACE
