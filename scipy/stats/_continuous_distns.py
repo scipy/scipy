@@ -10085,7 +10085,7 @@ class vonmises_gen(rv_continuous):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                    bracket=(1e-8, 1e12))
+                                       bracket=(np.finfo(float).tiny, 1e16))
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
