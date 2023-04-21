@@ -4285,6 +4285,8 @@ class multivariate_t_gen(multi_rv_generic):
         Cumulative distribution function.
     rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
+    entropy(shape=1, df=1)
+        Differential entropy.
 
     Parameters
     ----------
@@ -4766,8 +4768,8 @@ multivariate_t = multivariate_t_gen()
 
 
 # Set frozen generator docstrings from corresponding docstrings in
-# matrix_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+# multivariate_t_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'rvs', 'cdf', 'entropy']:
     method = multivariate_t_gen.__dict__[name]
     method_frozen = multivariate_t_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__,
