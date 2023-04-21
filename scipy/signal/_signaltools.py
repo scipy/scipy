@@ -3,6 +3,7 @@
 
 import operator
 import math
+from math import prod as _prod
 import timeit
 from scipy.spatial import cKDTree
 from . import _sigtools
@@ -10,7 +11,6 @@ from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
-from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
