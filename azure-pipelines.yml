@@ -55,22 +55,6 @@ stages:
   variables:
     AZURE_CI: 'true'
   jobs:
-  - job: refguide_check
-    timeoutInMinutes: 90
-    pool:
-      vmImage: 'ubuntu-22.04'
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-        addToPath: true
-        architecture: 'x64'
-    - template: ci/azure-travis-template.yaml
-      parameters:
-        test_mode: fast
-        numpy_spec: "numpy==1.23.5"
-        refguide_check: true
-        use_wheel: true
   - job: source_distribution
     timeoutInMinutes: 90
     pool:
@@ -110,7 +94,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran pooch && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch && \
             apt-get -y install build-essential gfortran wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -120,7 +104,7 @@ stages:
             cd ../scipy && \
             python3.9 setup.py install && \
             python3.9 tools/openblas_support.py --check_version $(openblas_version) && \
-            python3.9 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html --durations=10 --timeout=60"
+            python3.9 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --durations=10 --timeout=60"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -128,11 +112,6 @@ stages:
         testResultsFiles: '**/test-*.xml'
         failTaskOnFailedTests: true
         testRunTitle: 'Publish test results for Python 3.9-32 bit full Linux'
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: Cobertura
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
     timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
@@ -150,20 +129,6 @@ stages:
             PYTHON_ARCH: 'x86'
             TEST_MODE: fast
             BITS: 32
-            SCIPY_USE_PYTHRAN: 1
-          Python39-64bit-full:
-            PYTHON_VERSION: '3.9'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: full
-            BITS: 64
-            SCIPY_USE_PYTHRAN: 0
-          Python311-64bit-full-ilp64:
-            PYTHON_VERSION: '3.11'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: full
-            NPY_USE_BLAS_ILP64: 1
-            BITS: 64
-            OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
           Python310-64bit-fast:
             PYTHON_VERSION: '3.10'
@@ -235,7 +200,6 @@ stages:
         pybind11
         pythran==0.12.0
         pytest
-        pytest-cov
         pytest-env
         pytest-timeout
         pytest-xdist

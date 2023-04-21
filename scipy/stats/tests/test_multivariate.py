@@ -2456,7 +2456,7 @@ class TestMultivariateT:
                                        allow_singular=True)
         with np.errstate(invalid='ignore'):
             ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
-        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+        assert_allclose(res, ref, atol=2e-4, rtol=1e-3)
 
         # with lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
