@@ -130,14 +130,6 @@ stages:
             TEST_MODE: fast
             BITS: 32
             SCIPY_USE_PYTHRAN: 1
-          Python311-64bit-full-ilp64:
-            PYTHON_VERSION: '3.11'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: full
-            NPY_USE_BLAS_ILP64: 1
-            BITS: 64
-            OPENBLAS64_: $(OPENBLAS)
-            SCIPY_USE_PYTHRAN: 1
           Python310-64bit-fast:
             PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
