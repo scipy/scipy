@@ -1497,8 +1497,8 @@ def order_filter(a, domain, rank):
     a = np.asarray(a)
     if a.dtype in [object, 'float128']:
         mesg = (f"Using order_filter with arrays of dtype {a.dtype} is "
-                f"  deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
-        warnings.warn(mesg, DeprecationWarning)
+                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
+        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
 
         result = _sigtools._order_filterND(a, domain, rank)
     else:
@@ -1574,8 +1574,8 @@ def medfilt(volume, kernel_size=None):
 
     if volume.dtype in [object, 'float128']:
         mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "
-               f"  deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
-        warnings.warn(mesg, DeprecationWarning)
+                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
+        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
 
         result = _sigtools._order_filterND(volume, domain, order)
     else:

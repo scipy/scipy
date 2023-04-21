@@ -1097,10 +1097,11 @@ class TestMedFilt:
 
     def test_types_deprecated(self):
         dtype = np.longdouble
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            in_typed = np.array(self.IN, dtype=dtype)
-            assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        in_typed = np.array(self.IN, dtype=dtype)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
+            assert_equal(signal.medfilt(in_typed).dtype, type)
+        with pytest.deprecated_call(match=msg):
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
 
@@ -1143,8 +1144,8 @@ class TestMedFilt:
         assert_equal(x, [a, a])
 
     def test_object(self,):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
             in_object = np.array(self.IN, dtype=object)
             out_object = np.array(self.OUT, dtype=object)
             assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
