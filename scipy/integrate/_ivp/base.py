@@ -15,7 +15,7 @@ def check_arguments(fun, y0, support_complex):
 
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
-    
+
     if not np.isfinite(y0).all():
         raise ValueError("All components of the initial state `y0` must be finite.")
 
