@@ -67,7 +67,7 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
 typedef int (*CompareFunction)(const void * const, const void * const);
 extern void *quick_select(void *base, const size_t num_elements,
                    const size_t element_size,
-		   CompareFunction comparison_function,
+		   const CompareFunction comparison_function,
 		   const size_t element_to_return);
 extern int FLOAT_compare(const float *const ip1, const float *const ip2);
 extern int DOUBLE_compare(const double *const ip1, const double *const ip2);
@@ -75,15 +75,15 @@ extern int UBYTE_compare(const npy_byte *const ip1, const npy_byte *const ip2);
 
 /* index = (n - 1) / 2; use lower of middle values for even-length arrays */
 float f_quick_select(float arr[], const int n) {
-  float *result = quick_select(arr, n, sizeof(float), FLOAT_compare, (n - 1) / 2);
+  float *result = quick_select(arr, n, sizeof(float), (const CompareFunction) FLOAT_compare, (n - 1) / 2);
   return *result;
 }
 double d_quick_select(double arr[], const int n) {
-  double *result = quick_select(arr, n, sizeof(double), DOUBLE_compare, (n - 1) / 2);
+  double *result = quick_select(arr, n, sizeof(double), (const CompareFunction) DOUBLE_compare, (n - 1) / 2);
   return *result;
 }
 unsigned char b_quick_select(unsigned char arr[], const int n) {
-  unsigned char *result = quick_select(arr, n, sizeof(unsigned char), UBYTE_compare, (n - 1) / 2);
+  unsigned char *result = quick_select(arr, n, sizeof(unsigned char), (const CompareFunction) UBYTE_compare, (n - 1) / 2);
   return *result;
 }
 
