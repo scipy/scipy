@@ -9132,8 +9132,7 @@ class truncexpon_gen(rv_continuous):
             return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
         else:
             # return generic for higher moments
-            # return rv_continuous._mom1_sc(self, n, b)
-            return self._mom1_sc(n, b)
+            return super()._munp(n, b)
 
     def _entropy(self, b):
         eB = np.exp(b)
@@ -9155,7 +9154,6 @@ def _log_diff(log_p, log_q):
 
 def _log_gauss_mass(a, b):
     """Log of Gaussian probability mass within an interval"""
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
     a, b = np.broadcast_arrays(a, b)
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -9765,8 +9763,8 @@ class FitUniformFixedScaleDataError(FitDataError):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood estimation with "
             "the uniform distribution and fixed scale requires that "
-            "data.ptp() <= fscale, but data.ptp() = %r and fscale = %r." %
-            (ptp, fscale),
+            f"data.ptp() <= fscale, but data.ptp() = {ptp} and "
+            f"fscale = {fscale}."
         )
 
 
@@ -11148,7 +11146,8 @@ class studentized_range_gen(rv_continuous):
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
 
         # clip p-values to ensure they are in [0, 1].
-        return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
+        res = np.asarray(ufunc(x, k, df), dtype=np.float64)
+        return np.clip(res, 0, 1)
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
