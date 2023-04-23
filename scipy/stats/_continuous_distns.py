@@ -1658,18 +1658,7 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _entropy(self, a):
-        a = np.asarray([a])
-
-        def h1(a):
-            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
-            return h1
-
-        def h2(a):
-            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
-            return h2
-
-        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
-        return h
+        return stats.gamma._entropy(a) - np.log(0.5)
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
