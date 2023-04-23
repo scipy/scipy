@@ -392,8 +392,10 @@ class LinearOperator:
         return self.dot(x)
 
     def __truediv__(self, other):
-        if np.isscalar(other):
-            return _ScaledLinearOperator(self, 1.0/other)
+        if not np.isscalar(other):
+            raise ValueError("Can only divide a linear operator by a scalar.")
+
+        return _ScaledLinearOperator(self, 1.0/other)
 
     def dot(self, x):
         """Matrix-matrix or matrix-vector multiplication.
