@@ -9,10 +9,9 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
-from scipy import optimize
-from scipy import special
+from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from . import _statlib
 from . import _stats_py
@@ -24,8 +23,6 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
-from scipy import stats, interpolate
-from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
@@ -1884,6 +1881,10 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
+    # `swilk` can return negative p-values for N==3; see gh-18322.
+    if N == 3:
+        # Potential improvement: precision for small p-values
+        pw = 1 - 6/np.pi*np.arccos(np.sqrt(w))
     return ShapiroResult(w, pw)
 
 
@@ -2281,7 +2282,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2299,20 +2300,6 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
-    n_resamples : int, default: 0
-        If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values. Typically 9999 is
-        sufficient for at least two digits of accuracy.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
 
     Returns
     -------
@@ -2325,8 +2312,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. If `n_resamples` is not
-            provided, the value is floored / capped at 0.1% / 25%.
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2384,9 +2371,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> samples = [rng.normal(size=50), rng.normal(size=30),
-    ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2398,14 +2384,7 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    In such cases where the p-value is capped or when sample sizes are
-    small, a permutation test may be more accurate.
-
-    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
-    >>> res.pvalue
-    0.5254
-
-    """  # noqa
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2424,18 +2403,9 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
                          "observations")
 
     if midrank:
-        A2kN_fun = _anderson_ksamp_midrank
+        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
     else:
-        A2kN_fun = _anderson_ksamp_right
-    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    def statistic(*samples):
-        return A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    if n_resamples:
-        res = permutation_test(samples, statistic, n_resamples=n_resamples,
-                               random_state=random_state,
-                               alternative='greater')
+        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2458,22 +2428,18 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min() and not n_resamples:
+    if A2 < critical.min():
         p = sig.max()
-        message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif A2 > critical.max() and not n_resamples:
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
         p = sig.min()
-        message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif not n_resamples:
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-
-    p = res.pvalue if n_resamples else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -4104,9 +4070,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        res = WilcoxonResult(np.nan, np.nan)
+        NaN = _get_nan(d)
+        res = WilcoxonResult(NaN, NaN)
         if method == 'approx':
-            res.zstatistic = np.nan
+            res.zstatistic = NaN
         return res
 
     if mode == "auto":

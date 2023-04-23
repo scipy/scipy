@@ -390,12 +390,13 @@ class TestDunnett:
         with pytest.raises(ValueError, match="Confidence level must"):
             res.confidence_interval(confidence_level=3)
 
+    @pytest.mark.filterwarnings("ignore:Computation of the confidence")
     @pytest.mark.parametrize('n_samples', [1, 2, 3])
     def test_shapes(self, n_samples):
         rng = np.random.default_rng(689448934110805334)
         samples = rng.normal(size=(n_samples, 10))
         control = rng.normal(size=10)
-        res = stats.dunnett(*samples, control=control)
+        res = stats.dunnett(*samples, control=control, random_state=rng)
         assert res.statistic.shape == (n_samples,)
         assert res.pvalue.shape == (n_samples,)
         ci = res.confidence_interval()

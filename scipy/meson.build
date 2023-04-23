@@ -14,9 +14,10 @@ if is_windows
     add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
     # Manual add of MS_WIN64 macro when not using MSVC.
     # https://bugs.python.org/issue28267
-    bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
+    bitness = run_command('_build_utils/gcc_build_bitness.py', check: true).stdout().strip()
     if bitness == '64'
-      add_project_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+      # The `=` is a little odd, but avoids redefinition warnings (see meson#11592)
+      add_project_arguments('-DMS_WIN64=', language: ['c', 'cpp', 'fortran'])
     endif
     # Silence warnings emitted by PyOS_snprintf for (%zd), see
     # https://github.com/rgommers/scipy/issues/118.
@@ -90,33 +91,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-# pybind11 include directory - needed in several submodules
-#
-# first check if the user specified a path in a cross file
-incdir_pybind11 = meson.get_external_property('pybind11-include-dir', 'not-given')
-if incdir_pybind11 == 'not-given'
-  # in meson 1.1.0, this will find the pyproject.toml build-requires version
-  pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
-  if not pybind11_dep.found()
-    incdir_pybind11 = run_command(py3,
-      [
-        '-c',
-        '''from os.path import relpath
-import pybind11
-try:
-  incdir = relpath(pybind11.get_include())
-except Exception:
-  incdir = pybind11.get_include()
-print(incdir)
-'''
-      ],
-      check: true
-    ).stdout().strip()
-    pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-  endif
-else
-  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-endif
+pybind11_dep = dependency('pybind11', version: '>=2.10.4')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -196,10 +171,10 @@ endif
 blas = dependency(blas_name)
 lapack = dependency(lapack_name)
 
-# TODO: Add `pybind11` when available as a dependency
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
+  'PYBIND11': pybind11_dep,
 }
 
 # FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
@@ -207,7 +182,9 @@ dependency_map = {
 #        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
 #        in general to enable the ILP64 interface (also for OpenBLAS).
 uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
-if uses_mkl or get_option('use-g77-abi')
+uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
+use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
+if use_g77_abi
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'
@@ -294,6 +271,7 @@ Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')

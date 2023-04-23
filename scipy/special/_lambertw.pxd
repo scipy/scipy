@@ -31,7 +31,7 @@ DEF OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_scalar(double complex z, long k, double tol) nogil:
+cdef inline double complex lambertw_scalar(double complex z, long k, double tol) noexcept nogil:
     cdef int i
     cdef double absz, p
     cdef double complex w
@@ -101,7 +101,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_branchpt(double complex z) nogil:
+cdef inline double complex lambertw_branchpt(double complex z) noexcept nogil:
     """Series for W(z, 0) around the branch point; see 4.22 in [1]."""
     cdef double *coeffs = [-1.0/3.0, 1.0, -1.0]
     cdef double complex p = zsqrt(2*(M_E*z + 1))
@@ -110,7 +110,7 @@ cdef inline double complex lambertw_branchpt(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_pade0(double complex z) nogil:
+cdef inline double complex lambertw_pade0(double complex z) noexcept nogil:
     """(3, 2) Pade approximation for W(z, 0) around 0."""
     cdef:
         double *num = [
@@ -131,7 +131,7 @@ cdef inline double complex lambertw_pade0(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex lambertw_asy(double complex z, long k) nogil:
+cdef inline double complex lambertw_asy(double complex z, long k) noexcept nogil:
     """Compute the W function using the first two terms of the
     asymptotic series. See 4.20 in [1].
 

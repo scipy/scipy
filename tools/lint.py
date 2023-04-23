@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 
 CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
-    'ruff.toml',
+    'lint.toml',
 )
 
 
