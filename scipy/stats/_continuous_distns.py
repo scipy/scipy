@@ -11146,8 +11146,7 @@ class studentized_range_gen(rv_continuous):
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
 
         # clip p-values to ensure they are in [0, 1].
-        res = np.asarray(ufunc(x, k, df), dtype=np.float64)
-        return np.clip(res, 0, 1)
+        return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
