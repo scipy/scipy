@@ -429,7 +429,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            x = np.asarray(x)
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
 
             if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
                 return self.matvec(x)
@@ -480,7 +482,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            x = np.asarray(x)
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
 
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
