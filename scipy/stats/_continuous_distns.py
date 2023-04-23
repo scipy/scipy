@@ -9240,7 +9240,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logcdf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        logcdf = np.asarray(_log_gauss_mass(a, x) - _log_gauss_mass(a, b))
         i = logcdf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
@@ -9251,7 +9251,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logsf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        logsf = np.asarray(_log_gauss_mass(x, b) - _log_gauss_mass(a, b))
         i = logsf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
