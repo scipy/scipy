@@ -1724,25 +1724,46 @@ class ResamplingMethod:
         the statistic. Batch sizes >>1 tend to be faster when the statistic
         is vectorized, but memory usage scales linearly with the batch size.
         Default is ``None``, which processes all resamples in a single batch.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples or
-        Monte Carlo samples.
-
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance, then that instance is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
     """
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
-    random_state: object = None
 
     def _asdict(self):
         return asdict(self)
+
+
+@dataclass
+class MonteCarloMethod(ResamplingMethod):
+    """Configuration information for a Monte Carlo hypothesis test.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a Monte Carlo version of the
+    hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int, optional
+        The number of Monte Carlo samples to draw. Default is 9999.
+    batch : int, optional
+        The number of Monte Carlo samples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all samples in a single batch.
+    rvs : callable or tuple of callables, optional
+        A callable or sequence of callables that generates random variates
+        under the null hypothesis. Each element of `rvs` must be a callable
+        that accepts keyword argument ``size`` (e.g. ``rvs(size=(m, n))``) and
+        returns an N-d array sample of that shape. If `rvs` is a sequence, the
+        number of callables in `rvs` must match the number of samples passed
+        to the hypothesis test in which the `MonteCarloMethod` is used. Default
+        is ``None``, in which case the hypothesis test function chooses values
+        to match the standard version of the hypothesis test. For example,
+        the null hypothesis of `scipy.stats.pearsonr` is typically that the
+        samples are drawn from the standard normal distribution, so
+        ``rvs = (rng.normal, rng.normal)`` where
+        ``rng = np.random.default_rng()``.
+    """
+    rvs: object = None
 
 
 @dataclass
@@ -1755,8 +1776,8 @@ class PermutationMethod(ResamplingMethod):
 
     Attributes
     ----------
-    n_resamples : int
-        The number of resamples to perform.
+    n_resamples : int, optional
+        The number of resamples to perform. Default is 9999.
     batch : int, optional
         The number of resamples to process in each vectorized call to
         the statistic. Batch sizes >>1 tend to be faster when the statistic
@@ -1774,7 +1795,7 @@ class PermutationMethod(ResamplingMethod):
         If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
     """
-    pass
+    random_state: object = None
 
 
 @dataclass
@@ -1787,8 +1808,8 @@ class BootstrapMethod(ResamplingMethod):
 
     Attributes
     ----------
-    n_resamples : int
-        The number of resamples to perform.
+    n_resamples : int, optional
+        The number of resamples to perform. Default is 9999.
     batch : int, optional
         The number of resamples to process in each vectorized call to
         the statistic. Batch sizes >>1 tend to be faster when the statistic
@@ -1806,9 +1827,10 @@ class BootstrapMethod(ResamplingMethod):
         If `random_state` is ``None`` (default), the
         `numpy.random.RandomState` singleton is used.
 
-    method : {'percentile', 'basic', 'bca'}
+    method : {'bca', 'percentile', 'basic'}
         Whether to use the 'percentile' bootstrap ('percentile'), the 'basic'
         (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
-        accelerated bootstrap ('BCa').
+        accelerated bootstrap ('BCa', default).
     """
-    method : str = 'BCa'
+    random_state: object = None
+    method: str = 'BCa'

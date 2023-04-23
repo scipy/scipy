@@ -493,13 +493,18 @@ class TestCorrPearsonr:
             stats.pearsonr(x, y)
 
     @pytest.mark.xslow
-    def test_permutation_pvalue(self):
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
+    def test_resampling_pvalue(self, method, alternative):
         rng = np.random.default_rng(24623935790378923)
-        x = rng.normal(size=100)
-        y = rng.normal(size=100)
-        method = stats.PermutationMethod(random_state=rng)
-        res = stats.pearsonr(x, y, method=method)
-        ref = stats.pearsonr(x, y)
+        size = 100 if method == 'permutation' else 1000
+        x = rng.normal(size=size)
+        y = rng.normal(size=size)
+        methods = {'permutation': stats.PermutationMethod(random_state=rng),
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
+        method = methods[method]
+        res = stats.pearsonr(x, y, alternative=alternative, method=method)
+        ref = stats.pearsonr(x, y, alternative=alternative)
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
@@ -525,7 +530,6 @@ class TestCorrPearsonr:
         res = stats.pearsonr([1, 2], [3, 4])
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
-
 
 
 class TestFisherExact:

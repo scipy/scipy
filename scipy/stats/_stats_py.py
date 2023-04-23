@@ -52,8 +52,9 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from dataclasses import dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
-from ._resampling import (_batch_generator, PermutationMethod, BootstrapMethod,
-                          permutation_test, bootstrap)
+from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
+                          monte_carlo_test, permutation_test, bootstrap,
+                          _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -4552,12 +4553,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
         * 'greater':  the correlation is positive (greater than zero)
 
         .. versionadded:: 1.9.0
-    method : PermutationMethod, optional
+    method : ResamplingMethod, optional
         Defines the method used to compute the p-value. If `method` is an
-        instance of `PermutationMethod`, the p-value is computed using
-        `scipy.stats.permutation_test` with the provided configuration options
-        and other appropriate settings. Otherwise, the p-value is computed
-        as documented in the notes.
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed as documented in the notes.
 
         .. versionadded:: 1.11.0
 
@@ -4674,6 +4676,12 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     >>> stats.pearsonr(x, y, method=method)
     PearsonRResult(statistic=-0.7869777947370797, pvalue=0.07777777777777778)
 
+    To perform the test under the null hypothesis that the data were drawn from
+    *uniform* distributions:
+    >>> method = stats.MonteCarloMethod(rvs=(rng.uniform, rng.uniform))
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.0658)
+
     To produce an asymptotic 90% confidence interval:
 
     >>> res.confidence_interval(confidence_level=0.9)
@@ -4761,6 +4769,20 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
             return statistic
 
         res = permutation_test((y,), statistic, permutation_type='pairings',
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative, x=x, y=y)
+    elif isinstance(method, MonteCarloMethod):
+        def statistic(x, y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        if method.rvs is None:
+            rng = np.random.default_rng()
+            method.rvs = rng.normal, rng.normal
+
+        res = monte_carlo_test((x, y,), statistic=statistic,
                                alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
