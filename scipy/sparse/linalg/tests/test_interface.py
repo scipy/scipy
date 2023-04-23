@@ -120,7 +120,9 @@ class TestLinearOperator:
             assert_((2j*A).dtype == np.complex_)
 
             # Test division by non-scalar
-            assert_raises(ValueError, lambda: A / np.array([1, 2]))
+            msg = "Can only divide a linear operator by a scalar."
+            with assert_raises(ValueError, match=msg):
+                A / np.array([1, 2])
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
