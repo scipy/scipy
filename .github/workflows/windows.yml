@@ -55,7 +55,6 @@ jobs:
           echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
       - name: Build
         run: |
-          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
           python dev.py build -j 2 --win-cp-openblas
           # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
           # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
