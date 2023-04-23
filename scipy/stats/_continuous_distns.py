@@ -32,6 +32,7 @@ from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
 from ._censored_data import CensoredData
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
+from scipy.optimize._zeros_py import _bracketer
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
 
@@ -10084,8 +10085,10 @@ class vonmises_gen(rv_continuous):
                 def solve_for_kappa(kappa):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
+                bracket = _bracketer(solve_for_kappa, a=1,
+                                     min=np.finfo(float).tiny, batch=10)
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                       bracket=(np.finfo(float).tiny, 1e16))
+                                       bracket=bracket)
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,

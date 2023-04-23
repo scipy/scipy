@@ -1392,3 +1392,125 @@ def toms748(f, a, b, args=(), k=1,
                           maxiter=maxiter, disp=disp)
     x, function_calls, iterations, flag = result
     return _results_select(full_output, (x, function_calls, iterations, flag))
+
+
+def _bracketer(f, a, b=None, min=None, max=None, factor=2, batch=100):
+    """Bracket the root of a monotonic scalar function of one variable
+
+    Parameters
+    ----------
+    f : callable
+        The function for which the root is to be bracketed.
+    a, b : float
+        Starting guess of bracket, which need not contain a root. If `b` is
+        not provided, ``b = a + 1``.
+    min, max : float
+        Minimum and maximum allowable endpoints of the bracket, inclusive.
+    factor : float
+        The factor used to grow the bracket. See notes for details.
+    batch : int
+        The maximum number of arguments passed to the callable `f` at once.
+
+    Returns
+    -------
+    l, r : float
+        The left and right endpoints of the bracket such that
+        ``f(l) < 0 < f(r)``.
+
+    Notes
+    -----
+    This function generalizes an algorithm found in pieces throughout
+    `scipy.stats`. The strategy is to iteratively grow the bracket `(l, r)`
+     until ``f(l) < 0 < f(r)``.
+
+    - If `min` is not provided, the distance between `b` and `l` is iteratively
+      increased by `factor`.
+    - If `min` is provided, the distance between `min` and `l` is iteratively
+      decreased by `factor`. Note that this *increases* the bracket size.
+
+    Growth of the bracket to the right is analogous.
+
+    Growth of the bracket in one direction stops when the endpoint is no longer
+    finite, the function value at the endpoint is no longer finite, or the
+    endpoint reaches its limiting value (`min` or `max`). Iteration terminates
+    when the bracket stops growing in both directions, the bracket surrounds
+    the root, or a root is found (accidentally).
+
+    If multiple brackets are found, only the leftmost one is returned.
+    If roots of the function are found, both `l` and `r` are set to the
+    leftmost root.
+
+    `_bracket` takes advantage of vectorized callables by evaluating `f` at
+    `batch` arguments in each call.
+
+    As a private function, there is no input validation. It is assumed that
+    `min <= a <= b <= max`.
+
+    """
+    # Todo:
+    # - find bracket with sign change in specified direction
+    # - Add tolerance
+    # - Vectorize (i.e. support callables with array output)
+
+    if b is None:
+        b = a + 1
+
+    a, b, factor = np.float64(a), np.float64(b), np.float64(factor)
+    d = b - a
+    i = np.arange(batch, dtype=np.float64)  # avoid int to negative int power
+    x, fx = np.array([]), np.array([])
+    left_stop = right_stop = False
+
+    def _explore(t, v, i, limit, stop):
+        # Generate candidate bracket endpoints based on starting values `t`,
+        # `v`, and exponents `i`. Determine whether bracket growth should
+        # `stop` due to non-finite endpoint, non-finite function value, or
+        # endpoint reaching `limit`. Return candidate bracket endpoints and
+        # corresponding function values.
+        if stop:
+            w, fw = np.array([]), np.array([])
+
+        else:
+            # See `_bracket` notes for explanation. For bracket growth to the
+            # left, `t = a`, `v = b`, and `limit = min`. For bracket growth to
+            # the right, `t = b`, `v = a`, and `limit = max`.
+            sign = 1 if t < v else -1  # positive grows to the left
+            if limit is None:
+                w = v - sign * d * factor**i
+            else:
+                w = limit + (t - limit) * factor**(-i)
+
+            w = w[np.isfinite(w)]
+            fw = f(w)
+
+            jf = np.isfinite(fw)
+            w, fw = w[jf], fw[jf]
+
+            if fw.size != i.size or w[-1] == limit:
+                stop = True
+
+        return w, fw, stop
+
+    while not (left_stop and right_stop):
+
+        l, fl, left_stop = _explore(a, b, i, min, left_stop)
+        r, fr, right_stop = _explore(b, a, i, max, right_stop)
+
+        # we really only need to retain the leftmost and rightmost elements of
+        # `x` and the corresponding `fx`, but copying everything is simpler.
+        # Optimization can be done later, if there is a need.
+        x = np.concatenate((l[::-1], x, r))  # keeps points in order
+        fx = np.concatenate((fl[::-1], fx, fr))
+        sfx = np.sign(fx)
+
+        j = np.where(sfx == 0)[0]  # get leftmost root if one is found
+        if j.size:
+            return x[j[0]], x[j[0]]
+
+        j = np.where(np.abs(np.diff(sfx)))[0]  # get leftmost bracket
+        if j.size:
+            return x[j[0]], x[j[0]+1]
+
+        i += batch
+
+    return None, None  # no bracket found
