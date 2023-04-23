@@ -336,7 +336,14 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._matmat(X)
+        try:
+            Y = self._matmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator first."
+                ) from e
 
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
@@ -376,7 +383,15 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._rmatmat(X)
+        try:
+            Y = self._rmatmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator() first."
+                ) from e
+
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
         return Y

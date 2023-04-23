@@ -451,3 +451,9 @@ def test_transpose_noconjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
+
+def test_sparse_matmat_exception():
+    A = interface.LinearOperator((2, 2), matvec=lambda x: x)
+    B = sparse.identity(2)
+    assert_raises(TypeError, A * B)
+    assert_raises(TypeError, B * A)
