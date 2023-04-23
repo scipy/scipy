@@ -3407,7 +3407,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 # don't annoy him
                 err_msg = (
                     "Convergence was not reached after maxiter iterations.\n"
-                    f"You asked for a tolerance of {rtol}, we got {cur_tol}."
+                    f"You asked for a tolerance of {rtol}, we got {cur_rtol}."
                     )
                 warnings.warn(err_msg, stacklevel=2)
 
