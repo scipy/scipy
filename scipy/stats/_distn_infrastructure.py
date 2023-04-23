@@ -927,8 +927,7 @@ class rv_generic:
                   for (bcdim, szdim) in zip(bcast_shape, size_)])
         if not ok:
             raise ValueError("size does not match the broadcast shape of "
-                             "the parameters. {}, {}, {}".format(size, size_,
-                                                             bcast_shape))
+                             f"the parameters. {size}, {size_}, {bcast_shape}")
 
         param_bcast = all_bcast[:-2]
         loc_bcast = all_bcast[-2]
@@ -2461,10 +2460,9 @@ class rv_continuous(rv_generic):
         Likelihood Estimation (MLE), but Method of Moments (MM)
         is also available.
 
-        Starting estimates for
-        the fit are given by input arguments; for any arguments not provided
-        with starting estimates, ``self._fitstart(data)`` is called to generate
-        such.
+        Starting estimates for the fit are given by input arguments;
+        for any arguments not provided with starting estimates,
+        ``self._fitstart(data)`` is called to generate such.
 
         One can hold some parameters fixed to specific values by passing in
         keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters)
@@ -2752,7 +2750,8 @@ class rv_continuous(rv_generic):
         muhat = tmp.mean()
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
-        Lhat = muhat - Shat*mu
+        with np.errstate(invalid='ignore'):
+            Lhat = muhat - Shat*mu
         if not np.isfinite(Lhat):
             Lhat = 0
         if not (np.isfinite(Shat) and (0 < Shat)):

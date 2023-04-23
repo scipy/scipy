@@ -7,18 +7,22 @@ from numpy import asarray_chkfinite, asarray
 from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
-from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
+from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
+                           ive, loggamma)
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
-
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
+from ._qmvnt import _qmvt
+from ._morestats import directional_stats
+from scipy.optimize import root_scalar
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
            'dirichlet',
+           'dirichlet_multinomial',
            'wishart',
            'invwishart',
            'multinomial',
@@ -29,7 +33,8 @@ __all__ = ['multivariate_normal',
            'multivariate_t',
            'multivariate_hypergeom',
            'random_table',
-           'uniform_direction']
+           'uniform_direction',
+           'vonmises_fisher']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -839,6 +844,10 @@ class multivariate_normal_frozen(multi_rv_frozen):
         self.abseps = abseps
         self.releps = releps
 
+    @property
+    def cov(self):
+        return self.cov_object.covariance
+
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_object)
@@ -1381,7 +1390,7 @@ def _dirichlet_check_parameters(alpha):
         raise ValueError("All parameters must be greater than 0")
     elif alpha.ndim != 1:
         raise ValueError("Parameter vector 'a' must be one dimensional, "
-                         "but a.shape = {}.".format(alpha.shape ))
+                         "but a.shape = {}.".format(alpha.shape))
     return alpha
 
 
@@ -3265,11 +3274,11 @@ class multinomial_gen(multi_rv_generic):
         # replace values for which x was out of the domain; broadcast
         # xcond to the right shape
         xcond_ = xcond | np.zeros(npcond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
+        result = self._checkresult(result, xcond_, -np.inf)
 
         # replace values bad for n or p; broadcast npcond to the right shape
         npcond_ = npcond | np.zeros(xcond.shape, dtype=np.bool_)
-        return self._checkresult(result, npcond_, np.NAN)
+        return self._checkresult(result, npcond_, np.nan)
 
     def pmf(self, x, n, p):
         """Multinomial probability mass function.
@@ -3305,7 +3314,7 @@ class multinomial_gen(multi_rv_generic):
         """
         n, p, npcond = self._process_parameters(n, p)
         result = n[..., np.newaxis]*p
-        return self._checkresult(result, npcond, np.NAN)
+        return self._checkresult(result, npcond, np.nan)
 
     def cov(self, n, p):
         """Covariance matrix of the multinomial distribution.
@@ -4271,6 +4280,9 @@ class multivariate_t_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, loc=None, shape=1, df=1, allow_singular=False)
         Log of the probability density function.
+    cdf(x, loc=None, shape=1, df=1, allow_singular=False, *,
+        maxpts=None, lower_limit=None, random_state=None)
+        Cumulative distribution function.
     rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
 
@@ -4291,7 +4303,7 @@ class multivariate_t_gen(multi_rv_generic):
 
     .. math::
 
-        f(x) = \frac{\Gamma(\nu + p)/2}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
+        f(x) = \frac{\Gamma((\nu + p)/2)}{\Gamma(\nu/2)\nu^{p/2}\pi^{p/2}|\Sigma|^{1/2}}
                \left[1 + \frac{1}{\nu} (\mathbf{x} - \boldsymbol{\mu})^{\top}
                \boldsymbol{\Sigma}^{-1}
                (\mathbf{x} - \boldsymbol{\mu}) \right]^{-(\nu + p)/2},
@@ -4372,7 +4384,7 @@ class multivariate_t_gen(multi_rv_generic):
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
         >>> multivariate_t.pdf(x, loc, shape, df)
-        array([0.00075713])
+        0.00075713
 
         """
         dim, loc, shape, df = self._process_parameters(loc, shape, df)
@@ -4404,7 +4416,7 @@ class multivariate_t_gen(multi_rv_generic):
         >>> shape = [[1, 0.1], [0.1, 1]]
         >>> df = 7
         >>> multivariate_t.logpdf(x, loc, shape, df)
-        array([-7.1859802])
+        -7.1859802
 
         See Also
         --------
@@ -4459,6 +4471,84 @@ class multivariate_t_gen(multi_rv_generic):
         E = -t * np.log(1 + (1./df) * maha)
 
         return _squeeze_output(A - B - C - D + E)
+
+    def _cdf(self, x, loc, shape, df, dim, maxpts=None, lower_limit=None,
+             random_state=None):
+
+        # All of this -  random state validation, maxpts, apply_along_axis,
+        # etc. needs to go in this private method unless we want
+        # frozen distribution's `cdf` method to duplicate it or call `cdf`,
+        # which would require re-processing parameters
+        if random_state is not None:
+            rng = check_random_state(random_state)
+        else:
+            rng = self._random_state
+
+        if not maxpts:
+            maxpts = 1000 * dim
+
+        x = self._process_quantiles(x, dim)
+        lower_limit = (np.full(loc.shape, -np.inf)
+                       if lower_limit is None else lower_limit)
+
+        # remove the mean
+        x, lower_limit = x - loc, lower_limit - loc
+
+        b, a = np.broadcast_arrays(x, lower_limit)
+        i_swap = b < a
+        signs = (-1)**(i_swap.sum(axis=-1))  # odd # of swaps -> negative
+        a, b = a.copy(), b.copy()
+        a[i_swap], b[i_swap] = b[i_swap], a[i_swap]
+        n = x.shape[-1]
+        limits = np.concatenate((a, b), axis=-1)
+
+        def func1d(limits):
+            a, b = limits[:n], limits[n:]
+            return _qmvt(maxpts, df, shape, a, b, rng)[0]
+
+        res = np.apply_along_axis(func1d, -1, limits) * signs
+        # Fixing the output shape for existing distributions is a separate
+        # issue. For now, let's keep this consistent with pdf.
+        return _squeeze_output(res)
+
+    def cdf(self, x, loc=None, shape=1, df=1, allow_singular=False, *,
+            maxpts=None, lower_limit=None, random_state=None):
+        """Multivariate t-distribution cumulative distribution function.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the cumulative distribution function.
+        %(_mvt_doc_default_callparams)s
+        maxpts : int, optional
+            Maximum number of points to use for integration. The default is
+            1000 times the number of dimensions.
+        lower_limit : array_like, optional
+            Lower limit of integration of the cumulative distribution function.
+            Default is negative infinity. Must be broadcastable with `x`.
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        cdf : ndarray or scalar
+            Cumulative distribution function evaluated at `x`.
+
+        Examples
+        --------
+        >>> from scipy.stats import multivariate_t
+        >>> x = [0.4, 5]
+        >>> loc = [0, 1]
+        >>> shape = [[1, 0.1], [0.1, 1]]
+        >>> df = 7
+        >>> multivariate_t.cdf(x, loc, shape, df)
+        0.64798491
+
+        """
+        dim, loc, shape, df = self._process_parameters(loc, shape, df)
+        shape = _PSD(shape, allow_singular=allow_singular)._M
+
+        return self._cdf(x, loc, shape, df, dim, maxpts,
+                         lower_limit, random_state)
 
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """Draw random samples from a multivariate t-distribution.
@@ -4617,6 +4707,11 @@ class multivariate_t_frozen(multi_rv_frozen):
         log_pdet = self.shape_info.log_pdet
         return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim,
                                   self.shape_info.rank)
+
+    def cdf(self, x, *, maxpts=None, lower_limit=None, random_state=None):
+        x = self._dist._process_quantiles(x, self.dim)
+        return self._dist._cdf(x, self.loc, self.shape, self.df, self.dim,
+                               maxpts, lower_limit, random_state)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
@@ -4915,7 +5010,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # replace values for which x was out of the domain; broadcast
         # xcond to the right shape
         xcond_ = xcond_reduced | np.zeros(mncond.shape, dtype=np.bool_)
-        result = self._checkresult(result, xcond_, np.NINF)
+        result = self._checkresult(result, xcond_, -np.inf)
 
         # replace values bad for n or m; broadcast
         # mncond to the right shape
@@ -5739,3 +5834,1024 @@ def _sample_uniform_direction(dim, size, random_state):
     samples = random_state.standard_normal(samples_shape)
     samples /= np.linalg.norm(samples, axis=-1, keepdims=True)
     return samples
+
+
+_dirichlet_mn_doc_default_callparams = """\
+alpha : array_like
+    The concentration parameters. The number of entries along the last axis
+    determines the dimensionality of the distribution. Each entry must be
+    strictly positive.
+n : int or array_like
+    The number of trials. Each element must be a strictly positive integer.
+"""
+
+_dirichlet_mn_doc_frozen_callparams = ""
+
+_dirichlet_mn_doc_frozen_callparams_note = """\
+See class definition for a detailed description of parameters."""
+
+dirichlet_mn_docdict_params = {
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_default_callparams,  # noqa
+    '_doc_random_state': _doc_random_state
+}
+
+dirichlet_mn_docdict_noparams = {
+    '_dirichlet_mn_doc_default_callparams': _dirichlet_mn_doc_frozen_callparams, # noqa
+    '_doc_random_state': _doc_random_state
+}
+
+
+def _dirichlet_multinomial_check_parameters(alpha, n, x=None):
+
+    alpha = np.asarray(alpha)
+    n = np.asarray(n)
+
+    if x is not None:
+        # Ensure that `x` and `alpha` are arrays. If the shapes are
+        # incompatible, NumPy will raise an appropriate error.
+        try:
+            x, alpha = np.broadcast_arrays(x, alpha)
+        except ValueError as e:
+            msg = "`x` and `alpha` must be broadcastable."
+            raise ValueError(msg) from e
+
+        x_int = np.floor(x)
+        if np.any(x < 0) or np.any(x != x_int):
+            raise ValueError("`x` must contain only non-negative integers.")
+        x = x_int
+
+    if np.any(alpha <= 0):
+        raise ValueError("`alpha` must contain only positive values.")
+
+    n_int = np.floor(n)
+    if np.any(n <= 0) or np.any(n != n_int):
+        raise ValueError("`n` must be a positive integer.")
+    n = n_int
+
+    sum_alpha = np.sum(alpha, axis=-1)
+    sum_alpha, n = np.broadcast_arrays(sum_alpha, n)
+
+    return (alpha, sum_alpha, n) if x is None else (alpha, sum_alpha, n, x)
+
+
+class dirichlet_multinomial_gen(multi_rv_generic):
+    r"""A Dirichlet multinomial random variable.
+
+    The Dirichlet multinomial distribution is a compound probability
+    distribution: it is the multinomial distribution with number of trials
+    `n` and class probabilities ``p`` randomly sampled from a Dirichlet
+    distribution with concentration parameters ``alpha``.
+
+    Methods
+    -------
+    logpmf(x, alpha, n):
+        Log of the probability mass function.
+    pmf(x, alpha, n):
+        Probability mass function.
+    mean(alpha, n):
+        Mean of the Dirichlet multinomial distribution.
+    var(alpha, n):
+        Variance of the Dirichlet multinomial distribution.
+    cov(alpha, n):
+        The covariance of the Dirichlet multinomial distribution.
+
+    Parameters
+    ----------
+    %(_dirichlet_mn_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    See Also
+    --------
+    scipy.stats.dirichlet : The dirichlet distribution.
+    scipy.stats.multinomial : The multinomial distribution.
+
+    References
+    ----------
+    .. [1] Dirichlet-multinomial distribution, Wikipedia,
+           https://www.wikipedia.org/wiki/Dirichlet-multinomial_distribution
+
+    Examples
+    --------
+    >>> from scipy.stats import dirichlet_multinomial
+
+    Get the PMF
+
+    >>> n = 6  # number of trials
+    >>> alpha = [3, 4, 5]  # concentration parameters
+    >>> x = [1, 2, 3]  # counts
+    >>> dirichlet_multinomial.pmf(x, alpha, n)
+    0.08484162895927604
+
+    If the sum of category counts does not equal the number of trials,
+    the probability mass is zero.
+
+    >>> dirichlet_multinomial.pmf(x, alpha, n=7)
+    0.0
+
+    Get the log of the PMF
+
+    >>> dirichlet_multinomial.logpmf(x, alpha, n)
+    -2.4669689491013327
+
+    Get the mean
+
+    >>> dirichlet_multinomial.mean(alpha, n)
+    array([1.5, 2. , 2.5])
+
+    Get the variance
+
+    >>> dirichlet_multinomial.var(alpha, n)
+    array([1.55769231, 1.84615385, 2.01923077])
+
+    Get the covariance
+
+    >>> dirichlet_multinomial.cov(alpha, n)
+    array([[ 1.55769231, -0.69230769, -0.86538462],
+           [-0.69230769,  1.84615385, -1.15384615],
+           [-0.86538462, -1.15384615,  2.01923077]])
+
+    Alternatively, the object may be called (as a function) to fix the
+    `alpha` and `n` parameters, returning a "frozen" Dirichlet multinomial
+    random variable.
+
+    >>> dm = dirichlet_multinomial(alpha, n)
+    >>> dm.pmf(x)
+    0.08484162895927579
+
+    All methods are fully vectorized. Each element of `x` and `alpha` is
+    a vector (along the last axis), each element of `n` is an
+    integer (scalar), and the result is computed element-wise.
+
+    >>> x = [[1, 2, 3], [4, 5, 6]]
+    >>> alpha = [[1, 2, 3], [4, 5, 6]]
+    >>> n = [6, 15]
+    >>> dirichlet_multinomial.pmf(x, alpha, n)
+    array([0.06493506, 0.02626937])
+
+    >>> dirichlet_multinomial.cov(alpha, n).shape  # both covariance matrices
+    (2, 3, 3)
+
+    Broadcasting according to standard NumPy conventions is supported. Here,
+    we have four sets of concentration parameters (each a two element vector)
+    for each of three numbers of trials (each a scalar).
+
+    >>> alpha = [[3, 4], [4, 5], [5, 6], [6, 7]]
+    >>> n = [[6], [7], [8]]
+    >>> dirichlet_multinomial.mean(alpha, n).shape
+    (3, 4, 2)
+
+    """
+    def __init__(self, seed=None):
+        super().__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__,
+                                        dirichlet_mn_docdict_params)
+
+    def __call__(self, alpha, n, seed=None):
+        return dirichlet_multinomial_frozen(alpha, n, seed=seed)
+
+    def logpmf(self, x, alpha, n):
+        """The log of the probability mass function.
+
+        Parameters
+        ----------
+        x: ndarray
+            Category counts (non-negative integers). Must be broadcastable
+            with shape parameter ``alpha``. If multidimensional, the last axis
+            must correspond with the categories.
+        %(_dirichlet_mn_doc_default_callparams)s
+
+        Returns
+        -------
+        out: ndarray or scalar
+            Log of the probability mass function.
+
+        """
+
+        a, Sa, n, x = _dirichlet_multinomial_check_parameters(alpha, n, x)
+
+        out = np.asarray(loggamma(Sa) + loggamma(n + 1) - loggamma(n + Sa))
+        out += (loggamma(x + a) - (loggamma(a) + loggamma(x + 1))).sum(axis=-1)
+        np.place(out, n != x.sum(axis=-1), -np.inf)
+        return out[()]
+
+    def pmf(self, x, alpha, n):
+        """Probability mass function for a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        x: ndarray
+            Category counts (non-negative integers). Must be broadcastable
+            with shape parameter ``alpha``. If multidimensional, the last axis
+            must correspond with the categories.
+        %(_dirichlet_mn_doc_default_callparams)s
+
+        Returns
+        -------
+        out: ndarray or scalar
+            Probability mass function.
+
+        """
+        return np.exp(self.logpmf(x, alpha, n))
+
+    def mean(self, alpha, n):
+        """Mean of a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_mn_doc_default_callparams)s
+
+        Returns
+        -------
+        out: ndarray
+            Mean of a Dirichlet multinomial distribution.
+
+        """
+        a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        n, Sa = n[..., np.newaxis], Sa[..., np.newaxis]
+        return n * a / Sa
+
+    def var(self, alpha, n):
+        """The variance of the Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_mn_doc_default_callparams)s
+
+        Returns
+        -------
+        out: array_like
+            The variances of the components of the distribution. This is
+            the diagonal of the covariance matrix of the distribution.
+
+        """
+        a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        n, Sa = n[..., np.newaxis], Sa[..., np.newaxis]
+        return n * a / Sa * (1 - a/Sa) * (n + Sa) / (1 + Sa)
+
+    def cov(self, alpha, n):
+        """Covariance matrix of a Dirichlet multinomial distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_mn_doc_default_callparams)s
+
+        Returns
+        -------
+        out : array_like
+            The covariance matrix of the distribution.
+
+        """
+        a, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        var = dirichlet_multinomial.var(a, n)
+
+        n, Sa = n[..., np.newaxis, np.newaxis], Sa[..., np.newaxis, np.newaxis]
+        aiaj = a[..., :, np.newaxis] * a[..., np.newaxis, :]
+        cov = -n * aiaj / Sa ** 2 * (n + Sa) / (1 + Sa)
+
+        ii = np.arange(cov.shape[-1])
+        cov[..., ii, ii] = var
+        return cov
+
+
+dirichlet_multinomial = dirichlet_multinomial_gen()
+
+
+class dirichlet_multinomial_frozen(multi_rv_frozen):
+    def __init__(self, alpha, n, seed=None):
+        alpha, Sa, n = _dirichlet_multinomial_check_parameters(alpha, n)
+        self.alpha = alpha
+        self.n = n
+        self._dist = dirichlet_multinomial_gen(seed)
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, self.alpha, self.n)
+
+    def pmf(self, x):
+        return self._dist.pmf(x, self.alpha, self.n)
+
+    def mean(self):
+        return self._dist.mean(self.alpha, self.n)
+
+    def var(self):
+        return self._dist.var(self.alpha, self.n)
+
+    def cov(self):
+        return self._dist.cov(self.alpha, self.n)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# dirichlet_multinomial and fill in default strings in class docstrings.
+for name in ['logpmf', 'pmf', 'mean', 'var', 'cov']:
+    method = dirichlet_multinomial_gen.__dict__[name]
+    method_frozen = dirichlet_multinomial_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, dirichlet_mn_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+                                      dirichlet_mn_docdict_params)
+
+
+class vonmises_fisher_gen(multi_rv_generic):
+    r"""A von Mises-Fisher variable.
+
+    The `mu` keyword specifies the mean direction vector. The `kappa` keyword
+    specifies the concentration parameter.
+
+    Methods
+    -------
+    pdf(x, mu=None, kappa=1)
+        Probability density function.
+    logpdf(x, mu=None, kappa=1)
+        Log of the probability density function.
+    rvs(mu=None, kappa=1, size=1, random_state=None)
+        Draw random samples from a von Mises-Fisher distribution.
+    entropy(mu=None, kappa=1)
+        Compute the differential entropy of the von Mises-Fisher distribution.
+    fit(data)
+        Fit a von Mises-Fisher distribution to data.
+
+    Parameters
+    ----------
+    mu : array_like
+        Mean direction of the distribution. Must be a one-dimensional unit
+        vector of norm 1.
+    kappa : float
+        Concentration parameter. Must be positive.
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
+    See Also
+    --------
+    scipy.stats.vonmises : Von-Mises Fisher distribution in 2D on a circle
+    uniform_direction : uniform distribution on the surface of a hypersphere
+
+    Notes
+    -----
+    The von Mises-Fisher distribution is a directional distribution on the
+    surface of the unit hypersphere. The probability density
+    function of a unit vector :math:`\mathbf{x}` is
+
+    .. math::
+
+        f(\mathbf{x}) = \frac{\kappa^{d/2-1}}{(2\pi)^{d/2}I_{d/2-1}(\kappa)}
+               \exp\left(\kappa \mathbf{\mu}^T\mathbf{x}\right),
+
+    where :math:`\mathbf{\mu}` is the mean direction, :math:`\kappa` the
+    concentration parameter, :math:`d` the dimension and :math:`I` the
+    modified Bessel function of the first kind. As :math:`\mu` represents
+    a direction, it must be a unit vector or in other words, a point
+    on the hypersphere: :math:`\mathbf{\mu}\in S^{d-1}`. :math:`\kappa` is a
+    concentration parameter, which means that it must be positive
+    (:math:`\kappa>0`) and that the distribution becomes more narrow with
+    increasing :math:`\kappa`. In that sense, the reciprocal value
+    :math:`1/\kappa` resembles the variance parameter of the normal
+    distribution.
+
+    The von Mises-Fisher distribution often serves as an analogue of the
+    normal distribution on the sphere. Intuitively, for unit vectors, a
+    useful distance measure is given by the angle :math:`\alpha` between
+    them. This is exactly what the scalar product
+    :math:`\mathbf{\mu}^T\mathbf{x}=\cos(\alpha)` in the
+    von Mises-Fisher probability density function describes: the angle
+    between the mean direction :math:`\mathbf{\mu}` and the vector
+    :math:`\mathbf{x}`. The larger the angle between them, the smaller the
+    probability to observe :math:`\mathbf{x}` for this particular mean
+    direction :math:`\mathbf{\mu}`.
+
+    In dimensions 2 and 3, specialized algorithms are used for fast sampling
+    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    described in [4]_ is utilized. This implementation is partially based on
+    the geomstats package [5]_, [6]_.
+
+    .. versionadded:: 1.11
+
+    References
+    ----------
+    .. [1] Von Mises-Fisher distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Von_Mises%E2%80%93Fisher_distribution
+    .. [2] Mardia, K., and Jupp, P. Directional statistics. Wiley, 2000.
+    .. [3] J. Wenzel. Numerically stable sampling of the von Mises Fisher
+           distribution on S2.
+           https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
+    .. [4] Wood, A. Simulation of the von mises fisher distribution.
+           Communications in statistics-simulation and computation 23,
+           1 (1994), 157-164. https://doi.org/10.1080/03610919408813161
+    .. [5] geomstats, Github. MIT License. Accessed: 06.01.2023.
+           https://github.com/geomstats/geomstats
+    .. [6] Miolane, N. et al. Geomstats:  A Python Package for Riemannian
+           Geometry in Machine Learning. Journal of Machine Learning Research
+           21 (2020). http://jmlr.org/papers/v21/19-027.html
+
+    Examples
+    --------
+    **Visualization of the probability density**
+
+    Plot the probability density in three dimensions for increasing
+    concentration parameter. The density is calculated by the ``pdf``
+    method.
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import vonmises_fisher
+    >>> from matplotlib.colors import Normalize
+    >>> n_grid = 100
+    >>> u = np.linspace(0, np.pi, n_grid)
+    >>> v = np.linspace(0, 2 * np.pi, n_grid)
+    >>> u_grid, v_grid = np.meshgrid(u, v)
+    >>> vertices = np.stack([np.cos(v_grid) * np.sin(u_grid),
+    ...                      np.sin(v_grid) * np.sin(u_grid),
+    ...                      np.cos(u_grid)],
+    ...                     axis=2)
+    >>> x = np.outer(np.cos(v), np.sin(u))
+    >>> y = np.outer(np.sin(v), np.sin(u))
+    >>> z = np.outer(np.ones_like(u), np.cos(u))
+    >>> def plot_vmf_density(ax, x, y, z, vertices, mu, kappa):
+    ...     vmf = vonmises_fisher(mu, kappa)
+    ...     pdf_values = vmf.pdf(vertices)
+    ...     pdfnorm = Normalize(vmin=pdf_values.min(), vmax=pdf_values.max())
+    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1,
+    ...                     facecolors=plt.cm.viridis(pdfnorm(pdf_values)),
+    ...                     linewidth=0)
+    ...     ax.set_aspect('equal')
+    ...     ax.view_init(azim=-130, elev=0)
+    ...     ax.axis('off')
+    ...     ax.set_title(rf"$\kappa={kappa}$")
+    >>> fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(9, 4),
+    ...                          subplot_kw={"projection": "3d"})
+    >>> left, middle, right = axes
+    >>> mu = np.array([-np.sqrt(0.5), -np.sqrt(0.5), 0])
+    >>> plot_vmf_density(left, x, y, z, vertices, mu, 5)
+    >>> plot_vmf_density(middle, x, y, z, vertices, mu, 20)
+    >>> plot_vmf_density(right, x, y, z, vertices, mu, 100)
+    >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0, right=1.0, wspace=0.)
+    >>> plt.show()
+
+    As we increase the concentration parameter, the points are getting more
+    clustered together around the mean direction.
+
+    **Sampling**
+
+    Draw 5 samples from the distribution using the ``rvs`` method resulting
+    in a 5x3 array.
+
+    >>> rng = np.random.default_rng()
+    >>> mu = np.array([0, 0, 1])
+    >>> samples = vonmises_fisher(mu, 20).rvs(5, random_state=rng)
+    >>> samples
+    array([[ 0.3884594 , -0.32482588,  0.86231516],
+           [ 0.00611366, -0.09878289,  0.99509023],
+           [-0.04154772, -0.01637135,  0.99900239],
+           [-0.14613735,  0.12553507,  0.98126695],
+           [-0.04429884, -0.23474054,  0.97104814]])
+
+    These samples are unit vectors on the sphere :math:`S^2`. To verify,
+    let us calculate their euclidean norms:
+
+    >>> np.linalg.norm(samples, axis=1)
+    array([1., 1., 1., 1., 1.])
+
+    Plot 20 observations drawn from the von Mises-Fisher distribution for
+    increasing concentration parameter :math:`\kappa`. The red dot highlights
+    the mean direction :math:`\mu`.
+
+    >>> def plot_vmf_samples(ax, x, y, z, mu, kappa):
+    ...     vmf = vonmises_fisher(mu, kappa)
+    ...     samples = vmf.rvs(20)
+    ...     ax.plot_surface(x, y, z, rstride=1, cstride=1, linewidth=0,
+    ...                     alpha=0.2)
+    ...     ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2], c='k', s=5)
+    ...     ax.scatter(mu[0], mu[1], mu[2], c='r', s=30)
+    ...     ax.set_aspect('equal')
+    ...     ax.view_init(azim=-130, elev=0)
+    ...     ax.axis('off')
+    ...     ax.set_title(rf"$\kappa={kappa}$")
+    >>> mu = np.array([-np.sqrt(0.5), -np.sqrt(0.5), 0])
+    >>> fig, axes = plt.subplots(nrows=1, ncols=3,
+    ...                          subplot_kw={"projection": "3d"},
+    ...                          figsize=(9, 4))
+    >>> left, middle, right = axes
+    >>> plot_vmf_samples(left, x, y, z, mu, 5)
+    >>> plot_vmf_samples(middle, x, y, z, mu, 20)
+    >>> plot_vmf_samples(right, x, y, z, mu, 100)
+    >>> plt.subplots_adjust(top=1, bottom=0.0, left=0.0,
+    ...                     right=1.0, wspace=0.)
+    >>> plt.show()
+
+    The plots show that with increasing concentration :math:`\kappa` the
+    resulting samples are centered more closely around the mean direction.
+
+    **Fitting the distribution parameters**
+
+    The distribution can be fitted to data using the ``fit`` method returning
+    the estimated parameters. As a toy example let's fit the distribution to
+    samples drawn from a known von Mises-Fisher distribution.
+
+    >>> mu, kappa = np.array([0, 0, 1]), 20
+    >>> samples = vonmises_fisher(mu, kappa).rvs(1000, random_state=rng)
+    >>> mu_fit, kappa_fit = vonmises_fisher.fit(samples)
+    >>> mu_fit, kappa_fit
+    (array([0.01126519, 0.01044501, 0.99988199]), 19.306398751730995)
+
+    We see that the estimated parameters `mu_fit` and `kappa_fit` are
+    very close to the ground truth parameters.
+
+    """
+    def __init__(self, seed=None):
+        super().__init__(seed)
+
+    def __call__(self, mu=None, kappa=1, seed=None):
+        """Create a frozen von Mises-Fisher distribution.
+
+        See `vonmises_fisher_frozen` for more information.
+        """
+        return vonmises_fisher_frozen(mu, kappa, seed=seed)
+
+    def _process_parameters(self, mu, kappa):
+        """
+        Infer dimensionality from mu and ensure that mu is a one-dimensional
+        unit vector and kappa positive.
+        """
+        mu = np.asarray(mu)
+        if mu.ndim > 1:
+            raise ValueError("'mu' must have one-dimensional shape.")
+        if not np.allclose(np.linalg.norm(mu), 1.):
+            raise ValueError("'mu' must be a unit vector of norm 1.")
+        if not mu.size > 1:
+            raise ValueError("'mu' must have at least two entries.")
+        kappa_error_msg = "'kappa' must be a positive scalar."
+        if not np.isscalar(kappa) or kappa < 0:
+            raise ValueError(kappa_error_msg)
+        if float(kappa) == 0.:
+            raise ValueError("For 'kappa=0' the von Mises-Fisher distribution "
+                             "becomes the uniform distribution on the sphere "
+                             "surface. Consider using "
+                             "'scipy.stats.uniform_direction' instead.")
+        dim = mu.size
+
+        return dim, mu, kappa
+
+    def _check_data_vs_dist(self, x, dim):
+        if x.shape[-1] != dim:
+            raise ValueError("The dimensionality of the last axis of 'x' must "
+                             "match the dimensionality of the "
+                             "von Mises Fisher distribution.")
+        if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
+            msg = "'x' must be unit vectors of norm 1 along last dimension."
+            raise ValueError(msg)
+
+    def _log_norm_factor(self, dim, kappa):
+        # normalization factor is given by
+        # c = kappa**(dim/2-1)/((2*pi)**(dim/2)*I[dim/2-1](kappa))
+        #   = kappa**(dim/2-1)*exp(-kappa) /
+        #     ((2*pi)**(dim/2)*I[dim/2-1](kappa)*exp(-kappa)
+        #   = kappa**(dim/2-1)*exp(-kappa) /
+        #     ((2*pi)**(dim/2)*ive[dim/2-1](kappa)
+        # Then the log is given by
+        # log c = 1/2*(dim -1)*log(kappa) - kappa - -1/2*dim*ln(2*pi) -
+        #         ive[dim/2-1](kappa)
+        halfdim = 0.5 * dim
+        return (0.5 * (dim - 2)*np.log(kappa) - halfdim * _LOG_2PI -
+                np.log(ive(halfdim - 1, kappa)) - kappa)
+
+    def _logpdf(self, x, dim, mu, kappa):
+        """Log of the von Mises-Fisher probability density function.
+
+        As this function does no argument checking, it should not be
+        called directly; use 'logpdf' instead.
+
+        """
+        x = np.asarray(x)
+        self._check_data_vs_dist(x, dim)
+        dotproducts = np.einsum('i,...i->...', mu, x)
+        return self._log_norm_factor(dim, kappa) + kappa * dotproducts
+
+    def logpdf(self, x, mu=None, kappa=1):
+        """Log of the von Mises-Fisher probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimensionality as the distribution.
+        mu : array_like, default: None
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float, default: 1
+            Concentration parameter. Must be positive.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            Log of the probability density function evaluated at `x`.
+
+        """
+        dim, mu, kappa = self._process_parameters(mu, kappa)
+        return self._logpdf(x, dim, mu, kappa)
+
+    def pdf(self, x, mu=None, kappa=1):
+        """Von Mises-Fisher probability density function.
+
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimensionality as the distribution.
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Probability density function evaluated at `x`.
+
+        """
+        dim, mu, kappa = self._process_parameters(mu, kappa)
+        return np.exp(self._logpdf(x, dim, mu, kappa))
+
+    def _rvs_2d(self, mu, kappa, size, random_state):
+        """
+        In 2D, the von Mises-Fisher distribution reduces to the
+        von Mises distribution which can be efficiently sampled by numpy.
+        This method is much faster than the general rejection
+        sampling based algorithm.
+
+        """
+        mean_angle = np.arctan2(mu[1], mu[0])
+        angle_samples = random_state.vonmises(mean_angle, kappa, size=size)
+        samples = np.stack([np.cos(angle_samples), np.sin(angle_samples)],
+                           axis=-1)
+        return samples
+
+    def _rvs_3d(self, kappa, size, random_state):
+        """
+        Generate samples from a von Mises-Fisher distribution
+        with mu = [1, 0, 0] and kappa. Samples then have to be
+        rotated towards the desired mean direction mu.
+        This method is much faster than the general rejection
+        sampling based algorithm.
+        Reference: https://www.mitsuba-renderer.org/~wenzel/files/vmf.pdf
+
+        """
+        if size is None:
+            sample_size = 1
+        else:
+            sample_size = size
+
+        # compute x coordinate acc. to equation from section 3.1
+        x = random_state.random(sample_size)
+        x = 1. + np.log(x + (1. - x) * np.exp(-2 * kappa))/kappa
+
+        # (y, z) are random 2D vectors that only have to be
+        # normalized accordingly. Then (x, y z) follow a VMF distribution
+        temp = np.sqrt(1. - np.square(x))
+        uniformcircle = _sample_uniform_direction(2, sample_size, random_state)
+        samples = np.stack([x, temp * uniformcircle[..., 0],
+                            temp * uniformcircle[..., 1]],
+                           axis=-1)
+        if size is None:
+            samples = np.squeeze(samples)
+        return samples
+
+    def _rejection_sampling(self, dim, kappa, size, random_state):
+        """
+        Generate samples from a n-dimensional von Mises-Fisher distribution
+        with mu = [1, 0, ..., 0] and kappa via rejection sampling.
+        Samples then have to be rotated towards the desired mean direction mu.
+        Reference: https://doi.org/10.1080/03610919408813161
+        """
+        dim_minus_one = dim - 1
+        # calculate number of requested samples
+        if size is not None:
+            if not np.iterable(size):
+                size = (size, )
+            n_samples = math.prod(size)
+        else:
+            n_samples = 1
+        # calculate envelope for rejection sampler (eq. 4)
+        sqrt = np.sqrt(4 * kappa ** 2. + dim_minus_one ** 2)
+        envelop_param = (-2 * kappa + sqrt) / dim_minus_one
+        if envelop_param == 0:
+            # the regular formula suffers from loss of precision for high
+            # kappa. This can only be detected by checking for 0 here.
+            # Workaround: expansion for sqrt variable
+            # https://www.wolframalpha.com/input?i=sqrt%284*x%5E2%2Bd%5E2%29
+            # e = (-2 * k + sqrt(k**2 + d**2)) / d
+            #   ~ (-2 * k + 2 * k + d**2/(4 * k) - d**4/(64 * k**3)) / d
+            #   = d/(4 * k) - d**3/(64 * k**3)
+            envelop_param = (dim_minus_one/4 * kappa**-1.
+                             - dim_minus_one**3/64 * kappa**-3.)
+        # reference step 0
+        node = (1. - envelop_param) / (1. + envelop_param)
+        # t = ln(1 - ((1-x)/(1+x))**2)
+        #   = ln(4 * x / (1+x)**2)
+        #   = ln(4) + ln(x) - 2*log1p(x)
+        correction = (kappa * node + dim_minus_one
+                      * (np.log(4) + np.log(envelop_param)
+                      - 2 * np.log1p(envelop_param)))
+        n_accepted = 0
+        x = np.zeros((n_samples, ))
+        halfdim = 0.5 * dim_minus_one
+        # main loop
+        while n_accepted < n_samples:
+            # generate candidates acc. to reference step 1
+            sym_beta = random_state.beta(halfdim, halfdim,
+                                         size=n_samples - n_accepted)
+            coord_x = (1 - (1 + envelop_param) * sym_beta) / (
+                1 - (1 - envelop_param) * sym_beta)
+            # accept or reject: reference step 2
+            # reformulation for numerical stability:
+            # t = ln(1 - (1-x)/(1+x) * y)
+            #   = ln((1 + x - y +x*y)/(1 +x))
+            accept_tol = random_state.random(n_samples - n_accepted)
+            criterion = (
+                kappa * coord_x
+                + dim_minus_one * (np.log((1 + envelop_param - coord_x
+                + coord_x * envelop_param) / (1 + envelop_param)))
+                - correction) > np.log(accept_tol)
+            accepted_iter = np.sum(criterion)
+            x[n_accepted:n_accepted + accepted_iter] = coord_x[criterion]
+            n_accepted += accepted_iter
+        # concatenate x and remaining coordinates: step 3
+        coord_rest = _sample_uniform_direction(dim_minus_one, n_accepted,
+                                               random_state)
+        coord_rest = np.einsum(
+            '...,...i->...i', np.sqrt(1 - x ** 2), coord_rest)
+        samples = np.concatenate([x[..., None], coord_rest], axis=1)
+        # reshape output to (size, dim)
+        if size is not None:
+            samples = samples.reshape(size + (dim, ))
+        else:
+            samples = np.squeeze(samples)
+        return samples
+
+    def _rotate_samples(self, samples, mu, dim):
+        """A QR decomposition is used to find the rotation that maps the
+        north pole (1, 0,...,0) to the vector mu. This rotation is then
+        applied to all samples.
+
+        Parameters
+        ----------
+        samples: array_like, shape = [..., n]
+        mu : array-like, shape=[n, ]
+            Point to parametrise the rotation.
+
+        Returns
+        -------
+        samples : rotated samples
+
+        """
+        base_point = np.zeros((dim, ))
+        base_point[0] = 1.
+        embedded = np.concatenate([mu[None, :], np.zeros((dim - 1, dim))])
+        rotmatrix, _ = np.linalg.qr(np.transpose(embedded))
+        if np.allclose(np.matmul(rotmatrix, base_point[:, None])[:, 0], mu):
+            rotsign = 1
+        else:
+            rotsign = -1
+
+        # apply rotation
+        samples = np.einsum('ij,...j->...i', rotmatrix, samples) * rotsign
+        return samples
+
+    def _rvs(self, dim, mu, kappa, size, random_state):
+        if dim == 2:
+            samples = self._rvs_2d(mu, kappa, size, random_state)
+        elif dim == 3:
+            samples = self._rvs_3d(kappa, size, random_state)
+        else:
+            samples = self._rejection_sampling(dim, kappa, size,
+                                               random_state)
+
+        if dim != 2:
+            samples = self._rotate_samples(samples, mu, dim)
+        return samples
+
+    def rvs(self, mu=None, kappa=1, size=1, random_state=None):
+        """Draw random samples from a von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        mu : array_like
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float
+            Concentration parameter. Must be positive.
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
+        random_state : {None, int, np.random.RandomState, np.random.Generator},
+                        optional
+            Used for drawing random variates.
+            If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used, seeded
+            with seed.
+            If `seed` is already a ``RandomState`` or ``Generator`` instance,
+            then that object is used.
+            Default is `None`.
+
+        Returns
+        -------
+        rvs : ndarray
+            Random variates of shape (`size`, `N`), where `N` is the
+            dimension of the distribution.
+
+        """
+        dim, mu, kappa = self._process_parameters(mu, kappa)
+        random_state = self._get_random_state(random_state)
+        samples = self._rvs(dim, mu, kappa, size, random_state)
+        return samples
+
+    def _entropy(self, dim, kappa):
+        halfdim = 0.5 * dim
+        return (-self._log_norm_factor(dim, kappa) - kappa *
+                ive(halfdim, kappa) / ive(halfdim - 1, kappa))
+
+    def entropy(self, mu=None, kappa=1):
+        """Compute the differential entropy of the von Mises-Fisher
+        distribution.
+
+        Parameters
+        ----------
+        mu : array_like, default: None
+            Mean direction of the distribution. Must be a one-dimensional unit
+            vector of norm 1.
+        kappa : float, default: 1
+            Concentration parameter. Must be positive.
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the von Mises-Fisher distribution.
+
+        """
+        dim, _, kappa = self._process_parameters(mu, kappa)
+        return self._entropy(dim, kappa)
+
+    def fit(self, x):
+        """Fit the von Mises-Fisher distribution to data.
+
+        Parameters
+        ----------
+        x : array-like
+            Data the distribution is fitted to. The last axis of `x` must
+            be unit vectors of norm 1.
+
+        Returns
+        -------
+        mu : ndarray
+            Estimated mean direction.
+        kappa : float
+            Estimated concentration parameter.
+
+        """
+        # validate input data
+        x = np.asarray(x)
+        if x.ndim == 1:
+            raise ValueError("'x' must be at least two dimensional.")
+        if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
+            msg = "'x' must be unit vectors of norm 1 along last dimension."
+            raise ValueError(msg)
+        dim = x.shape[-1]
+        if x.ndim > 2:
+            x = x.reshape((math.prod(x.shape[:-1]), dim))
+
+        # mu is simply the directional mean
+        dirstats = directional_stats(x)
+        mu = dirstats.mean_direction
+        r = dirstats.mean_resultant_length
+
+        # kappa is the solution to the equation:
+        # r = I[dim/2](kappa) / I[dim/2 -1](kappa)
+        #   = I[dim/2](kappa) * exp(-kappa) / I[dim/2 -1](kappa) * exp(-kappa)
+        #   = ive(dim/2, kappa) / ive(dim/2 -1, kappa)
+
+        halfdim = 0.5 * dim
+
+        def solve_for_kappa(kappa):
+            bessel_vals = ive([halfdim, halfdim - 1], kappa)
+            return bessel_vals[0]/bessel_vals[1] - r
+
+        root_res = root_scalar(solve_for_kappa, method="brentq",
+                               bracket=(1e-8, 1e9))
+        kappa = root_res.root
+        return mu, kappa
+
+
+vonmises_fisher = vonmises_fisher_gen()
+
+
+class vonmises_fisher_frozen(multi_rv_frozen):
+    def __init__(self, mu=None, kappa=1, seed=None):
+        """Create a frozen von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        mu : array_like, default: None
+            Mean direction of the distribution.
+        kappa : float, default: 1
+            Concentration parameter. Must be positive.
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        """
+        self._dist = vonmises_fisher_gen(seed)
+        self.dim, self.mu, self.kappa = (
+            self._dist._process_parameters(mu, kappa)
+        )
+
+    def logpdf(self, x):
+        """
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimensionality as the distribution.
+
+        Returns
+        -------
+        logpdf : ndarray or scalar
+            Log of probability density function evaluated at `x`.
+
+        """
+        return self._dist._logpdf(x, self.dim, self.mu, self.kappa)
+
+    def pdf(self, x):
+        """
+        Parameters
+        ----------
+        x : array_like
+            Points at which to evaluate the log of the probability
+            density function. The last axis of `x` must correspond
+            to unit vectors of the same dimensionality as the distribution.
+
+        Returns
+        -------
+        pdf : ndarray or scalar
+            Probability density function evaluated at `x`.
+
+        """
+        return np.exp(self.logpdf(x))
+
+    def rvs(self, size=1, random_state=None):
+        """Draw random variates from the Von Mises-Fisher distribution.
+
+        Parameters
+        ----------
+        size : int or tuple of ints, optional
+            Given a shape of, for example, (m,n,k), m*n*k samples are
+            generated, and packed in an m-by-n-by-k arrangement.
+            Because each sample is N-dimensional, the output shape
+            is (m,n,k,N). If no shape is specified, a single (N-D)
+            sample is returned.
+        random_state : {None, int, `numpy.random.Generator`,
+                        `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of size (`size`, `N`), where `N` is the
+            dimension of the distribution.
+
+        """
+        random_state = self._dist._get_random_state(random_state)
+        return self._dist._rvs(self.dim, self.mu, self.kappa, size,
+                               random_state)
+
+    def entropy(self):
+        """
+        Calculate the differential entropy of the von Mises-Fisher
+        distribution.
+
+        Returns
+        -------
+        h: float
+            Entropy of the Von Mises-Fisher distribution.
+
+        """
+        return self._dist._entropy(self.dim, self.kappa)

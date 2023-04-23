@@ -366,8 +366,10 @@ class TestQMCQuad:
         logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
                           n_points=n_points, n_estimates=n_estimates,
                           log=True, qrng=qrng)
-        assert_allclose(np.exp(logres.integral), res.integral)
+        assert_allclose(np.exp(logres.integral), res.integral, rtol=1e-14)
         assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
+        assert_allclose(np.exp(logres.standard_error),
+                        res.standard_error, rtol=1e-14, atol=1e-16)
 
     @pytest.mark.parametrize("n_points", [2**8, 2**12])
     @pytest.mark.parametrize("n_estimates", [8, 16])

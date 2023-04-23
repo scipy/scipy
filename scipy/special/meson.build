@@ -219,6 +219,7 @@ mach_sources = [
 
 ufuncs_sources = [
   '_cosine.c',
+  'scaled_exp1.c',
   'amos_wrappers.c',
   'cdf_wrappers.c',
   'specfun_wrappers.c',
@@ -238,8 +239,8 @@ ufuncs_cxx_sources = [
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
-  dependencies: py3_dep,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  dependencies: [py3_dep, np_dep],
 )
 
 amos_lib = static_library('amos',
@@ -275,7 +276,6 @@ specfun_module = custom_target('specfun_module',
 py3.extension_module('_specfun',
   specfun_module,
   c_args: numpy_nodepr_api,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
@@ -306,6 +306,14 @@ cython_special = custom_target('cython_special',
   install_dir: py3.get_install_dir() / 'scipy/special'
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+cython_special_pxd = custom_target('_dummy_cython_special.pxd',
+  output: '_dummy_cython_special.pxd',
+  input: cython_special[7],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
   arguments : cython_args,
@@ -323,10 +331,11 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
     npymath_lib,
+    np_dep,
   ],
   link_args: version_link_args,
   link_with: [
@@ -362,11 +371,11 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: cython_cpp_args,
-  include_directories: [inc_np, '../_lib/boost', '../_lib',
+  cpp_args: [cython_cpp_args, '-DBOOST_MATH_STANDALONE=1'],
+  include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [ellint_dep],
+  dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -374,9 +383,9 @@ py3.extension_module('_ufuncs_cxx',
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
   c_args: cython_c_args,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  include_directories: ['../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [lapack],
+  dependencies: [lapack, np_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -385,15 +394,16 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
+    'scaled_exp1.c',
     'amos_wrappers.c',
     'cdf_wrappers.c',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
+  include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
   link_args: version_link_args,
-  dependencies: [npymath_lib, lapack],
+  dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -417,8 +427,8 @@ dd_dep = declare_dependency(sources: ['cephes/dd_real.c'])
 
 py3.extension_module('_test_internal',
   cython_gen.process('_test_internal.pyx'),
-  include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, dd_dep],
+  include_directories: ['cephes', '../_lib', '../_build_utils/src'],
+  dependencies: [np_dep, dd_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'

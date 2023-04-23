@@ -26,10 +26,12 @@ implementations on conda-forge), use::
 
 Other options that should work (as long as they're installed with
 ``pkg-config`` or CMake support) include ``mkl`` and ``blis``. Note that using
-``pip install`` or ``pip wheel`` doesn't work (as of Jan'23) because we need
-two ``setup-args`` flags for specifying both ``blas`` and ``lapack`` here, and
-``pip`` does not yet support specifying ``--config-settings`` with the same key
-twice, while ``build`` does support that.
+``pip install`` or ``pip wheel`` doesn't work (pending release of the fix for
+`pip#11681 <https://github.com/pypa/pip/issues/11681>`__, likely in Pip
+23.1.0) because we need two ``setup-args`` flags for specifying both ``blas``
+and ``lapack`` here, and ``pip`` does not yet support specifying
+``--config-settings`` with the same key twice, while ``build`` does support
+that.
 
 .. note::
 
@@ -60,6 +62,31 @@ twice, while ``build`` does support that.
         -L/path/to/library-dir -larmpl_lp64
         $ pkg-config --cflags armpl_lp64
         -I/path/to/include-dir
+
+
+Cross compilation
+=================
+
+Cross compilation is a complex topic, we only add some hopefully helpful hints
+here (for now). Please see
+`Meson's documentation on cross compilation <https://mesonbuild.com/Cross-compilation.html>`__
+for context.
+
+One common hiccup is that ``numpy`` and ``pythran`` require
+running Python code in order to obtain their include directories. This tends to
+not work well, either accidentally picking up the packages from the build
+(native) Python rather than the host (cross) Python or requiring ``crossenv``
+or QEMU to run the host Python. To avoid this problem, specify the paths to the
+relevant directories in your *cross file*:
+
+.. code:: ini
+
+    [constants]
+    sitepkg = '/abspath/to/host-pythons/site-packages/'
+
+    [properties]
+    numpy-include-dir = sitepkg + 'numpy/core/include'
+    pythran-include-dir = sitepkg + 'pythran'
 
 
 Use different build types with Meson
@@ -182,7 +209,7 @@ in this doc section to explain what is happening):
     build scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o: c_COMPILER scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/_decomp_update.c
      DEPFILE = scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o.d
      DEPFILE_UNQUOTED = scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/meson-generated__decomp_update.c.o.d
-     ARGS = -Iscipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p -Iscipy/linalg -I../scipy/linalg -I/home/username/anaconda3/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/include -I/home/username/anaconda3/envs/scipy-dev/include/python3.10 -fvisibility=hidden -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -std=c99 -O2 -g -Wno-unused-but-set-variable -Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types -fPIC -Wno-cpp
+     ARGS = -Iscipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p -Iscipy/linalg -I../scipy/linalg -I/home/username/anaconda3/envs/scipy-dev/lib/python3.10/site-packages/numpy/core/include -I/home/username/anaconda3/envs/scipy-dev/include/python3.10 -fvisibility=hidden -fdiagnostics-color=always -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -std=c99 -O2 -g -Wno-unused-but-set-variable -Wno-unused-function -Wno-conversion -Wno-misleading-indentation -fPIC -Wno-cpp
 
     # step 4: generate a symbol file (uses `meson --internal symbolextractor`); you can safely ignore this step
     build scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so.p/_decomp_update.cpython-310-x86_64-linux-gnu.so.symbols: SHSYM scipy/linalg/_decomp_update.cpython-310-x86_64-linux-gnu.so
@@ -265,7 +292,6 @@ interest shows:
                     "-Wno-unused-function",
                     "-Wno-conversion",
                     "-Wno-misleading-indentation",
-                    "-Wno-incompatible-pointer-types",
                     "-fPIC",
                     "-Wno-cpp"
                 ],

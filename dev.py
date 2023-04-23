@@ -143,9 +143,12 @@ console_theme = Theme({
     "cmd": "italic gray50",
 })
 
-
-class EMOJI:
-    cmd = ":computer:"
+if sys.platform == 'win32':
+    class EMOJI:
+        cmd = ">"
+else:
+    class EMOJI:
+        cmd = ":computer:"
 
 
 rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
@@ -303,11 +306,18 @@ class Dirs:
         self.root = Path(__file__).parent.absolute()
         if not args:
             return
+
         self.build = Path(args.build_dir).resolve()
         if args.install_prefix:
             self.installed = Path(args.install_prefix).resolve()
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
+
+        if sys.platform == 'win32' and sys.version_info < (3, 10):
+            # Work around a pathlib bug; these must be absolute paths
+            self.build = Path(os.path.abspath(self.build))
+            self.installed = Path(os.path.abspath(self.installed))
+
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
@@ -436,6 +446,13 @@ class Build(Task):
                 raise RuntimeError("Can't build into non-empty directory "
                                    f"'{build_dir.absolute()}'")
 
+        if sys.platform == "cygwin":
+            # Cygwin only has netlib lapack, but can link against
+            # OpenBLAS rather than netlib blas at runtime.  There is
+            # no libopenblas-devel to enable linking against
+            # openblas-specific functions or OpenBLAS Lapack
+            cmd.extend(["-Dlapack=lapack", "-Dblas=blas"])
+
         build_options_file = (
             build_dir / "meson-info" / "intro-buildoptions.json")
         if build_options_file.exists():
@@ -547,6 +564,11 @@ class Build(Task):
         with open(dirs.installed / ".gitignore", "w") as f:
             f.write("*")
 
+        if sys.platform == "cygwin":
+            rebase_cmd = ["/usr/bin/rebase", "--database", "--oblivious"]
+            rebase_cmd.extend(Path(dirs.installed).glob("**/*.dll"))
+            subprocess.check_call(rebase_cmd)
+
         print("Installation OK")
         return
 
@@ -580,7 +602,8 @@ class Build(Task):
                   'command did not manage to find OpenBLAS '
                   'succesfully. Try running manually on the '
                   'command prompt for more information.')
-            return result.returncode
+            print("OpenBLAS copy failed!")
+            sys.exit(result.returncode)
 
         # Skip the drive letter of the path -> /c to get Windows drive
         # to be appended correctly to avoid "C:\c\..." from stdout.
@@ -608,9 +631,10 @@ class Build(Task):
         # so OpenBLAS gets found
         openblas_support = import_module_from_path(
             'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py')
+            dirs.root / 'tools' / 'openblas_support.py'
+        )
         openblas_support.make_init(scipy_path)
-        return 0
+        print('OpenBLAS copied')
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -627,11 +651,7 @@ class Build(Task):
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
             if args.win_cp_openblas and platform.system() == 'Windows':
-                if cls.copy_openblas(dirs) == 0:
-                    print('OpenBLAS copied')
-                else:
-                    print("OpenBLAS copy failed!")
-                    sys.exit(1)
+                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
@@ -881,7 +901,12 @@ class Bench(Task):
 # linters
 
 def emit_cmdstr(cmd):
-    """Print the command that's being run to stdout"""
+    """Print the command that's being run to stdout
+
+    Note: cannot use this in the below tasks (yet), because as is these command
+    strings are always echoed to the console, even if the command isn't run
+    (but for example the `build` command is run).
+    """
     console = Console(theme=console_theme)
     # The [cmd] square brackets controls the font styling, typically in italics
     # to differentiate it from other stdout content
@@ -891,7 +916,7 @@ def emit_cmdstr(cmd):
 def task_lint():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
-    emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
     return {
         'basename': 'lint',
         'actions': [str(Dirs().root / 'tools' / 'lint.py') +
@@ -901,7 +926,7 @@ def task_lint():
 
 
 def task_unicode_check():
-    emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
+    # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
     return {
         'basename': 'unicode-check',
         'actions': [str(Dirs().root / 'tools' / 'unicode-check.py')],
@@ -911,7 +936,7 @@ def task_unicode_check():
 
 
 def task_check_test_name():
-    emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
+    # emit_cmdstr(os.path.join('tools', 'check_test_name.py'))
     return {
         "basename": "check-testname",
         "actions": [str(Dirs().root / "tools" / "check_test_name.py")],
@@ -1014,6 +1039,11 @@ TARGETS: Sphinx build targets [default: 'html']
         make_params = [f'PYTHON="{sys.executable}"']
         if parallel:
             make_params.append(f'SPHINXOPTS="-j{parallel}"')
+
+        # Environment variables needed for notebooks
+        # See gh-17322
+        make_params.append('SQLALCHEMY_SILENCE_UBER_WARNING=1')
+        make_params.append('JUPYTER_PLATFORM_DIRS=1')
 
         return {
             'actions': [

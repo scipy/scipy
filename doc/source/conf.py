@@ -1,28 +1,33 @@
-import sys
+import math
 import os
+from os.path import relpath, dirname
 import re
-from datetime import date
+import sys
 import warnings
+from datetime import date
+from docutils import nodes
+from docutils.parsers.rst import Directive
 
-# Currently required to build scipy.fft docs
-os.environ['_SCIPY_BUILDING_DOC'] = 'True'
+import matplotlib
+import matplotlib.pyplot as plt
+from numpydoc.docscrape_sphinx import SphinxDocString
+from sphinx.util import inspect
 
-# Check Sphinx version
-import sphinx  # noqa: E402
-if sphinx.__version__ < "2.0":
-    raise RuntimeError("Sphinx 2.0 or newer required")
-
-needs_sphinx = '2.0'
-
+import scipy
+from scipy._lib._util import _rng_html_rewrite
 # Workaround for sphinx-doc/sphinx#6573
 # ua._Function should not be treated as an attribute
-from sphinx.util import inspect  # noqa: E402
-import scipy._lib.uarray as ua  # noqa: E402
+import scipy._lib.uarray as ua
 from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
 from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
+
+
 old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
+
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -46,18 +51,13 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'myst_nb',
 ]
 
-# Determine if the matplotlib has a recent enough version of the
-# plot_directive.
-from matplotlib.sphinxext import plot_directive  # noqa: E402
-if plot_directive.__version__ < 2:
-    raise RuntimeError("You need a recent enough version of matplotlib")
+
 # Do some matplotlib config in case users have a matplotlibrc that will break
 # things
-import matplotlib  # noqa: E402
 matplotlib.use('agg')
-import matplotlib.pyplot as plt  # noqa: E402
 plt.ioff()
 
 # Add any paths that contain templates here, relative to this directory.
@@ -75,7 +75,6 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-import scipy  # noqa: E402
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
@@ -167,6 +166,23 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# docutils warnings when using notebooks (see gh-17322)
+# these will hopefully be removed in the near future
+for key in (
+    r"The frontend.OptionParser class will be replaced",
+    r"The frontend.Option class will be removed",
+    ):
+    warnings.filterwarnings('ignore', message=key, category=DeprecationWarning)
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*is obsoleted by Node.findall()',
+    category=PendingDeprecationWarning,
+)
+warnings.filterwarnings(
+    'ignore',
+    message=r'There is no current event loop',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -190,13 +206,13 @@ html_theme_options = {
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "dev"
 
-if 'versionwarning' in tags:  # noqa: F821
+if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.
     # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);');
+           'document.head.appendChild(script);')
     html_context = {
         'VERSIONCHECK_JS': src
     }
@@ -315,7 +331,6 @@ plot_formats = [('png', 96)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
 
-import math  # noqa: E402
 phi = (math.sqrt(5) + 1)/2
 
 font_size = 13*72/96.0  # 13 px
@@ -337,12 +352,17 @@ plot_rcparams = {
 }
 
 # -----------------------------------------------------------------------------
+# Notebook tutorials with MyST-NB
+# -----------------------------------------------------------------------------
+
+nb_execution_mode = "auto"
+
+# -----------------------------------------------------------------------------
 # Source code links
 # -----------------------------------------------------------------------------
 
-import re  # noqa: E402
+# Not the same as from sphinx.util import inspect and needed here
 import inspect  # noqa: E402
-from os.path import relpath, dirname  # noqa: E402
 
 for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
     try:
@@ -353,6 +373,7 @@ for name in ['sphinx.ext.linkcode', 'linkcode', 'numpydoc.linkcode']:
         pass
 else:
     print("NOTE: linkcode extension not found -- no links to source generated")
+
 
 def linkcode_resolve(domain, info):
     """
@@ -409,12 +430,73 @@ def linkcode_resolve(domain, info):
 
     if fn.startswith('scipy/'):
         m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
-        prefix = "https://github.com/scipy/scipy/blob"
+        base_url = "https://github.com/scipy/scipy/blob"
         if m:
-            return f"{prefix}/{m.group(1)}/{fn}{linespec}"
+            return f"{base_url}/{m.group(1)}/{fn}{linespec}"
         elif 'dev' in scipy.__version__:
-            return f"{prefix}/main/{fn}{linespec}"
+            return f"{base_url}/main/{fn}{linespec}"
         else:
-            return f"{prefix}/v{scipy.__version__}/{fn}{linespec}"
+            return f"{base_url}/v{scipy.__version__}/{fn}{linespec}"
     else:
         return None
+
+
+# Tell overwrite numpydoc's logic to render examples containing rng.
+SphinxDocString._str_examples = _rng_html_rewrite(
+    SphinxDocString._str_examples
+)
+
+
+class LegacyDirective(Directive):
+    """
+    Adapted from docutils/parsers/rst/directives/admonitions.py
+
+    Uses a default text if the directive does not have contents. If it does,
+    the default text is concatenated to the contents.
+
+    """
+    has_content = True
+    node_class = nodes.admonition
+    optional_arguments = 1
+
+    def run(self):
+        try:
+            obj = self.arguments[0]
+        except IndexError:
+            # Argument is empty; use default text
+            obj = "submodule"
+        text = (f"This {obj} is considered legacy and will no longer receive "
+                "updates. This could also mean it will be removed in future "
+                "SciPy versions.")
+
+        try:
+            self.content[0] = text+" "+self.content[0]
+        except IndexError:
+            # Content is empty; use the default text
+            source, lineno = self.state_machine.get_source_and_line(
+                self.lineno
+            )
+            self.content.append(
+                text,
+                source=source,
+                offset=lineno
+            )
+        text = '\n'.join(self.content)
+        # Create the admonition node, to be populated by `nested_parse`
+        admonition_node = self.node_class(rawsource=text)
+        # Set custom title
+        title_text = "Legacy"
+        textnodes, _ = self.state.inline_text(title_text, self.lineno)
+        title = nodes.title(title_text, '', *textnodes)
+        # Set up admonition node
+        admonition_node += title
+        # Select custom class for CSS styling
+        admonition_node['classes'] = ['admonition-legacy']
+        # Parse the directive contents
+        self.state.nested_parse(self.content, self.content_offset,
+                                admonition_node)
+        return [admonition_node]
+
+
+def setup(app):
+    app.add_directive("legacy", LegacyDirective)

@@ -34,7 +34,7 @@ cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
-                       bint extrapolate) nogil:
+                       bint extrapolate) noexcept nogil:
     """
     Find an interval such that t[interval] <= xval < t[interval+1].
 
@@ -91,7 +91,7 @@ cdef inline int find_interval(const double[::1] t,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def evaluate_spline(const double[::1] t,
-             double_or_complex[:, ::1] c,
+             const double_or_complex[:, ::1] c,
              int k,
              const double[::1] xp,
              int nu,
@@ -118,7 +118,7 @@ def evaluate_spline(const double[::1] t,
 
     """
 
-    cdef int ip, jp, n, a
+    cdef int ip, jp, a
     cdef int interval
     cdef double xval
 
@@ -132,7 +132,6 @@ def evaluate_spline(const double[::1] t,
     if nu < 0:
         raise NotImplementedError("Cannot do derivative order %s." % nu)
 
-    n = c.shape[0]
     cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
 
     # evaluate
@@ -260,7 +259,6 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
         skip this many rows
 
     """
-    cdef int nt = t.shape[0] - k - 1
     cdef int left, j, a, kl, ku, clmn
     cdef double xval
 
@@ -340,7 +338,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 double_or_complex[:, ::1] y,
+                 const double_or_complex[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
                  double_or_complex[::1, :] rhs):

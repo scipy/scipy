@@ -15,10 +15,12 @@ from .common_tests import check_named_results
 import pytest
 from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
-    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose, assert_array_equal)
+                                assert_array_almost_equal,
+                                assert_array_almost_equal_nulp, assert_,
+                                assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
+
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -46,6 +48,7 @@ def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     x = mstats.gmean(array_like, axis=axis, dtype=dtype)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
+
 
 def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     x = stats.hmean(array_like, axis=axis, dtype=dtype)
@@ -150,22 +153,22 @@ class TestRanking:
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
-                           [1,3,3,3,5,6,7,8.5,8.5,10])
+                            [1,3,3,3,5,6,7,8.5,8.5,10])
         x[[3,4]] = masked
         assert_almost_equal(mstats.rankdata(x),
-                           [1,2.5,2.5,0,0,4,5,6.5,6.5,8])
+                            [1,2.5,2.5,0,0,4,5,6.5,6.5,8])
         assert_almost_equal(mstats.rankdata(x, use_missing=True),
                             [1,2.5,2.5,4.5,4.5,4,5,6.5,6.5,8])
         x = ma.array([0,1,5,1,2,4,3,5,1,6,])
         assert_almost_equal(mstats.rankdata(x),
-                           [1,3,8.5,3,5,7,6,8.5,3,10])
+                            [1,3,8.5,3,5,7,6,8.5,3,10])
         x = ma.array([[0,1,1,1,2], [3,4,5,5,6,]])
         assert_almost_equal(mstats.rankdata(x),
                             [[1,3,3,3,5], [6,7,8.5,8.5,10]])
         assert_almost_equal(mstats.rankdata(x, axis=1),
-                           [[1,3,3,3,5], [1,2,3.5,3.5,5]])
+                            [[1,3,3,3,5], [1,2,3.5,3.5,5]])
         assert_almost_equal(mstats.rankdata(x,axis=0),
-                           [[1,1,1,1,1], [2,2,2,2,2,]])
+                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
 class TestCorr:
@@ -219,14 +222,14 @@ class TestCorr:
         assert_almost_equal(mstats.spearmanr(x,y)[0], -0.6324555)
 
         x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
-              1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
+             1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7]
         y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
-              0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
+             0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4]
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
         x = [2.0, 47.4, 42.0, 10.8, 60.1, 1.7, 64.0, 63.1,
-              1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7, np.nan]
+             1.0, 1.4, 7.9, 0.3, 3.9, 0.3, 6.7, np.nan]
         y = [22.6, 8.3, 44.4, 11.9, 24.6, 0.6, 5.7, 41.6,
-              0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
+             0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
         # Next test is to make sure calculation uses sufficient precision.
@@ -547,6 +550,26 @@ class TestTrimming:
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
 
+    def test_trimmedvar(self):
+        # Basic test. Additional tests of all arguments, edge cases,
+        # input validation, and proper treatment of masked arrays are needed.
+        rng = np.random.default_rng(3262323289434724460)
+        data_orig = rng.random(size=20)
+        data = np.sort(data_orig)
+        data = ma.array(data, mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+        assert_allclose(mstats.trimmed_var(data_orig, 0.1), data.var())
+
+    def test_trimmedstd(self):
+        # Basic test. Additional tests of all arguments, edge cases,
+        # input validation, and proper treatment of masked arrays are needed.
+        rng = np.random.default_rng(7121029245207162780)
+        data_orig = rng.random(size=20)
+        data = np.sort(data_orig)
+        data = ma.array(data, mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+        assert_allclose(mstats.trimmed_std(data_orig, 0.1), data.std())
+
     def test_trimmed_stde(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
@@ -579,6 +602,7 @@ class TestTrimming:
         assert_equal(mstats.winsorize(data, (0.8, 0.8), nan_policy='omit'),
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
+
 class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
@@ -591,16 +615,16 @@ class TestMoments:
     testmathworks = ma.fix_invalid([1.165, 0.6268, 0.0751, 0.3516, -0.6965,
                                     np.nan])
     testcase_2d = ma.array(
-    np.array([[0.05245846, 0.50344235, 0.86589117, 0.36936353, 0.46961149],
-           [0.11574073, 0.31299969, 0.45925772, 0.72618805, 0.75194407],
-           [0.67696689, 0.91878127, 0.09769044, 0.04645137, 0.37615733],
-           [0.05903624, 0.29908861, 0.34088298, 0.66216337, 0.83160998],
-           [0.64619526, 0.94894632, 0.27855892, 0.0706151, 0.39962917]]),
-    mask=np.array([[True, False, False, True, False],
-           [True, True, True, False, True],
-           [False, False, False, False, False],
-           [True, True, True, True, True],
-           [False, False, True, False, False]], dtype=bool))
+        np.array([[0.05245846, 0.50344235, 0.86589117, 0.36936353, 0.46961149],
+                  [0.11574073, 0.31299969, 0.45925772, 0.72618805, 0.75194407],
+                  [0.67696689, 0.91878127, 0.09769044, 0.04645137, 0.37615733],
+                  [0.05903624, 0.29908861, 0.34088298, 0.66216337, 0.83160998],
+                  [0.64619526, 0.94894632, 0.27855892, 0.0706151, 0.39962917]]),
+        mask=np.array([[True, False, False, True, False],
+                       [True, True, True, False, True],
+                       [False, False, False, False, False],
+                       [True, True, True, True, True],
+                       [False, False, True, False, False]], dtype=bool))
 
     def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
         expect = np.asarray(expect)
@@ -1013,6 +1037,27 @@ def test_siegelslopes_namedtuple_consistency():
     # note both returned values are distinct here
     assert_equal(slope, result.slope)
     assert_equal(intercept, result.intercept)
+
+
+def test_sen_seasonal_slopes():
+    rng = np.random.default_rng(5765986256978575148)
+    x = rng.random(size=(100, 4))
+    intra_slope, inter_slope = mstats.sen_seasonal_slopes(x)
+
+    # reference implementation from the `sen_seasonal_slopes` documentation
+    def dijk(yi):
+        n = len(yi)
+        x = np.arange(n)
+        dy = yi - yi[:, np.newaxis]
+        dx = x - x[:, np.newaxis]
+        mask = np.triu(np.ones((n, n), dtype=bool), k=1)
+        return dy[mask]/dx[mask]
+
+    for i in range(4):
+        assert_allclose(np.median(dijk(x[:, i])), intra_slope[i])
+
+    all_slopes = np.concatenate([dijk(x[:, i]) for i in range(x.shape[1])])
+    assert_allclose(np.median(all_slopes), inter_slope)
 
 
 def test_plotting_positions():

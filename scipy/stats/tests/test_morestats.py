@@ -7,9 +7,10 @@ import sys
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (assert_array_equal,
-    assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_, assert_allclose, assert_equal, suppress_warnings)
+from numpy.testing import (assert_array_equal, assert_almost_equal,
+                           assert_array_less, assert_array_almost_equal,
+                           assert_, assert_allclose, assert_equal,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 import re
@@ -224,6 +225,22 @@ class TestShapiro:
 
         assert_allclose(res, ref, rtol=1e-5)
 
+    def test_length_3_gh18322(self):
+        # gh-18322 reported that the p-value could be negative for input of
+        # length 3. Check that this is resolved.
+        res = stats.shapiro([0.6931471805599453, 0.0, 0.0])
+        assert res.pvalue >= 0
+
+        # R `shapiro.test` doesn't produce an accurate p-value in the case
+        # above. Check that the formula used in `stats.shapiro` is not wrong.
+        # options(digits=16)
+        # x = c(-0.7746653110021126, -0.4344432067942129, 1.8157053280290931)
+        # shapiro.test(x)
+        x = [-0.7746653110021126, -0.4344432067942129, 1.8157053280290931]
+        res = stats.shapiro(x)
+        assert_allclose(res.statistic, 0.84658770645509)
+        assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
+
 
 class TestAnderson:
     def test_normal(self):
@@ -342,7 +359,7 @@ class TestAnderson:
         # This is also an example in which an error occurs during fitting
         x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
         wmessage = "Critical values of the test statistic are given for the..."
-        emessage = "An error occured while fitting the Weibull distribution..."
+        emessage = "An error occurred while fitting the Weibull distribution..."
         wcontext = pytest.warns(UserWarning, match=wmessage)
         econtext = pytest.raises(ValueError, match=emessage)
         with wcontext, econtext:
@@ -403,7 +420,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -428,19 +444,13 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                          t9, t10, t11, t12, t13, t14),
+                                         midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
-
-        rng = np.random.default_rng(6989860141921615054)
-        res = stats.anderson_ksamp(samples, midrank=False,
-                                   n_resamples=9999, random_state=rng)
-        assert_array_equal(res.statistic, Tk)
-        assert_array_equal(res.critical_values, tm)
-        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -1093,8 +1103,10 @@ class TestFligner:
         # Perturb input to break ties in the transformed data
         # See https://github.com/scipy/scipy/pull/8042 for more details
         rs = np.random.RandomState(123)
+
         def _perturb(g):
             return (np.asarray(g) + 1e-10 * rs.randn(len(g))).tolist()
+
         g1_ = _perturb(g1)
         g2_ = _perturb(g2)
         g3_ = _perturb(g3)
@@ -1172,6 +1184,7 @@ def mood_cases_with_ties():
         x, y = np.split(xy, 2)
         yield x, y, 'less', *expected_results[si]
 
+
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
@@ -1236,22 +1249,22 @@ class TestMood:
     def test_mood_with_axis_none(self):
         # Test with axis = None, compare with results from R
         x1 = [-0.626453810742332, 0.183643324222082, -0.835628612410047,
-               1.59528080213779, 0.329507771815361, -0.820468384118015,
-               0.487429052428485, 0.738324705129217, 0.575781351653492,
+              1.59528080213779, 0.329507771815361, -0.820468384118015,
+              0.487429052428485, 0.738324705129217, 0.575781351653492,
               -0.305388387156356, 1.51178116845085, 0.389843236411431,
               -0.621240580541804, -2.2146998871775, 1.12493091814311,
               -0.0449336090152309, -0.0161902630989461, 0.943836210685299,
-               0.821221195098089, 0.593901321217509]
+              0.821221195098089, 0.593901321217509]
 
         x2 = [-0.896914546624981, 0.184849184646742, 1.58784533120882,
               -1.13037567424629, -0.0802517565509893, 0.132420284381094,
-               0.707954729271733, -0.23969802417184, 1.98447393665293,
+              0.707954729271733, -0.23969802417184, 1.98447393665293,
               -0.138787012119665, 0.417650750792556, 0.981752777463662,
               -0.392695355503813, -1.03966897694891, 1.78222896030858,
               -2.31106908460517, 0.878604580921265, 0.035806718015226,
-               1.01282869212708, 0.432265154539617, 2.09081920524915,
+              1.01282869212708, 0.432265154539617, 2.09081920524915,
               -1.19992581964387, 1.58963820029007, 1.95465164222325,
-               0.00493777682814261, -2.45170638784613, 0.477237302613617,
+              0.00493777682814261, -2.45170638784613, 0.477237302613617,
               -0.596558168631403, 0.792203270299649, 0.289636710177348]
 
         x1 = np.array(x1)
@@ -1879,6 +1892,7 @@ _boxcox_data = [
     724126, 3166209, 175913, 159211, 1182095, 86734, 1921472, 513546, 326016,
     1891609
 ]
+
 
 class TestBoxcox:
 

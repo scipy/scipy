@@ -14,10 +14,10 @@ from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCAL
 # PyCapsule helpers
 #
 
-cdef void raw_capsule_destructor(object capsule):
-    cdef char *name
+cdef void raw_capsule_destructor(object capsule) noexcept:
+    cdef const char *name
     name = PyCapsule_GetName(capsule)
-    free(name)
+    free(<char*>name)
 
 
 def get_raw_capsule(func_obj, name_obj, context_obj):
@@ -40,9 +40,9 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
     cdef:
         void *func
         void *context
-        char *capsule_name
-        char *name
-        char *name_copy
+        const char *capsule_name
+        const char *name
+        const char *name_copy
 
     if name_obj is None:
         name = NULL
@@ -84,7 +84,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
 
 
 def get_capsule_signature(capsule_obj):
-    cdef char *name
+    cdef const char *name
     name = PyCapsule_GetName(capsule_obj)
     if name == NULL:
         raise ValueError("Capsule has no signature")
@@ -169,7 +169,6 @@ def test_call_cython(callback_obj, double value):
     cdef:
         ccallback_t callback
         int error_flag = 0
-        int ret
         double result
 
     ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS)

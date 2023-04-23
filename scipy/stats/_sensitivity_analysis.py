@@ -156,8 +156,8 @@ def saltelli_2010(
 
 @dataclass
 class BootstrapSobolResult:
-    first_order: BootstrapResult  # type: ignore[valid-type]
-    total_order: BootstrapResult  # type: ignore[valid-type]
+    first_order: BootstrapResult
+    total_order: BootstrapResult
 
 
 @dataclass
@@ -171,13 +171,13 @@ class SobolResult:
     _A: np.ndarray | None = None
     _B: np.ndarray | None = None
     _AB: np.ndarray | None = None
-    _bootstrap_result: BootstrapResult = None  # type: ignore[valid-type]
+    _bootstrap_result: BootstrapResult | None = None
 
     def bootstrap(
         self,
         confidence_level: DecimalNumber = 0.95,
         n_resamples: IntNumber = 999
-    ) -> BootstrapResult:  # type: ignore[valid-type]
+    ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
         Parameters
@@ -447,7 +447,7 @@ def sobol_indices(
     Remember, Sobol' indices assumes that samples are independently
     distributed. In this case we use a uniform distribution on each marginals.
 
-    >>> import numpy as  np
+    >>> import numpy as np
     >>> from scipy.stats import sobol_indices, uniform
     >>> rng = np.random.default_rng()
     >>> def f_ishigami(x):

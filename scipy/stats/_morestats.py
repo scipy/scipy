@@ -9,10 +9,9 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
-from scipy import optimize
-from scipy import special
+from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from . import _statlib
 from . import _stats_py
@@ -24,8 +23,6 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
-from scipy import stats, interpolate
-from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
@@ -1884,6 +1881,10 @@ def shapiro(x):
     if N > 5000:
         warnings.warn("p-value may not be accurate for N > 5000.")
 
+    # `swilk` can return negative p-values for N==3; see gh-18322.
+    if N == 3:
+        # Potential improvement: precision for small p-values
+        pw = 1 - 6/np.pi*np.arccos(np.sqrt(w))
     return ShapiroResult(w, pw)
 
 
@@ -1977,7 +1978,7 @@ def _weibull_fit_check(params, x):
             raise ValueError(message)
 
     except (FloatingPointError, ValueError) as e:
-        message = ("An error occured while fitting the Weibull distribution "
+        message = ("An error occurred while fitting the Weibull distribution "
                    "to the data, so `anderson` cannot continue. " + suggestion)
         raise ValueError(message) from e
 
@@ -2281,7 +2282,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2299,20 +2300,6 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
-    n_resamples : int, default: 0
-        If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values. Typically 9999 is
-        sufficient for at least two digits of accuracy.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
 
     Returns
     -------
@@ -2325,8 +2312,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. If `n_resamples` is not
-            provided, the value is floored / capped at 0.1% / 25%.
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2384,9 +2371,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> samples = [rng.normal(size=50), rng.normal(size=30),
-    ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2398,14 +2384,7 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    In such cases where the p-value is capped or when sample sizes are
-    small, a permutation test may be more accurate.
-
-    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
-    >>> res.pvalue
-    0.5254
-
-    """  # noqa
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2424,18 +2403,9 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
                          "observations")
 
     if midrank:
-        A2kN_fun = _anderson_ksamp_midrank
+        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
     else:
-        A2kN_fun = _anderson_ksamp_right
-    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    def statistic(*samples):
-        return A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    if n_resamples:
-        res = permutation_test(samples, statistic, n_resamples=n_resamples,
-                               random_state=random_state,
-                               alternative='greater')
+        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2458,22 +2428,18 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min() and not n_resamples:
+    if A2 < critical.min():
         p = sig.max()
-        message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif A2 > critical.max() and not n_resamples:
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
         p = sig.min()
-        message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif not n_resamples:
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-
-    p = res.pvalue if n_resamples else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -2898,12 +2864,10 @@ def bartlett(*samples):
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
-    >>> import numpy as np
-    >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
-    >>> stat, p = bartlett(a, b, c)
+    >>> stat, p = stats.bartlett(a, b, c)
     >>> p
     1.1254782518834628e-05
 
@@ -3179,14 +3143,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Yci = np.empty(k, 'd')
 
     if center == 'median':
+
         def func(x):
             return np.median(x, axis=0)
+
     elif center == 'mean':
+
         def func(x):
             return np.mean(x, axis=0)
+
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
                         for sample in samples)
+
         def func(x):
             return np.mean(x, axis=0)
 
@@ -3572,14 +3541,19 @@ def fligner(*samples, center='median', proportiontocut=0.05):
         raise ValueError("Must enter at least two input sample vectors.")
 
     if center == 'median':
+
         def func(x):
             return np.median(x, axis=0)
+
     elif center == 'mean':
+
         def func(x):
             return np.mean(x, axis=0)
+
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(sample, proportiontocut)
                         for sample in samples)
+
         def func(x):
             return np.mean(x, axis=0)
 
@@ -3880,6 +3854,17 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if ``x`` is the first set of
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
+
+        .. warning::
+            When `y` is provided, `wilcoxon` calculates the test statistic
+            based on the ranks of the absolute values of ``d = x - y``.
+            Roundoff error in the subtraction can result in elements of ``d``
+            being assigned different ranks even when they would be tied with
+            exact arithmetic. Rather than passing `x` and `y` separately,
+            consider computing the difference ``x - y``, rounding as needed to
+            ensure that only truly unique elements are numerically distinct,
+            and passing the result as `x`, leaving `y` at the default (None).
+
     zero_method : {"wilcox", "pratt", "zsplit"}, optional
         There are different conventions for handling pairs of observations
         with equal values ("zero-differences", or "zeros").
@@ -4019,6 +4004,43 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     of ranks of positive differences) whereas it is 24 in the two-sided
     case (the minimum of sum of ranks above and below zero).
 
+    In the example above, the differences in height between paired plants are
+    provided to `wilcoxon` directly. Alternatively, `wilcoxon` accepts two
+    samples of equal length, calculates the differences between paired
+    elements, then performs the test. Consider the samples ``x`` and ``y``:
+
+    >>> import numpy as np
+    >>> x = np.array([0.5, 0.825, 0.375, 0.5])
+    >>> y = np.array([0.525, 0.775, 0.325, 0.55])
+    >>> res = wilcoxon(x, y, alternative='greater')
+    >>> res
+    WilcoxonResult(statistic=5.0, pvalue=0.5625)
+
+    Note that had we calculated the differences by hand, the test would have
+    produced different results:
+
+    >>> d = [-0.025, 0.05, 0.05, -0.05]
+    >>> ref = wilcoxon(d, alternative='greater')
+    >>> ref
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
+    The substantial difference is due to roundoff error in the results of
+    ``x-y``:
+
+    >>> d - (x-y)
+    array([2.08166817e-17, 6.93889390e-17, 1.38777878e-17, 4.16333634e-17])
+
+    Even though we expected all the elements of ``(x-y)[1:]`` to have the same
+    magnitude ``0.05``, they have slightly different magnitudes in practice,
+    and therefore are assigned different ranks in the test. Before performing
+    the test, consider calculating ``d`` and adjusting it as necessary to
+    ensure that theoretically identically values are not numerically distinct.
+    For example:
+
+    >>> d2 = np.around(x - y, decimals=3)
+    >>> wilcoxon(d2, alternative='greater')
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
     """
     mode = method
 
@@ -4043,12 +4065,15 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
             raise ValueError('The samples x and y must have the same length.')
+        # Future enhancement: consider warning when elements of `d` appear to
+        # be tied but are numerically distinct.
         d = x - y
 
     if len(d) == 0:
-        res = WilcoxonResult(np.nan, np.nan)
+        NaN = _get_nan(d)
+        res = WilcoxonResult(NaN, NaN)
         if method == 'approx':
-            res.zstatistic = np.nan
+            res.zstatistic = NaN
         return res
 
     if mode == "auto":
@@ -4745,7 +4770,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         mean_resultant_length : ndarray
             The mean resultant length [1]_.
 
-    See also
+    See Also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
     circvar: circular variance; i.e. directional variance for 2D *angles*

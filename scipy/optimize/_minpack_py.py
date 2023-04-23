@@ -278,8 +278,8 @@ LEASTSQ_SUCCESS = [1, 2, 3, 4]
 LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
-def leastsq(func, x0, args=(), Dfun=None, full_output=0,
-            col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
+def leastsq(func, x0, args=(), Dfun=None, full_output=False,
+            col_deriv=False, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
     Minimize the sum of squares of a set of equations.
@@ -303,9 +303,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
     full_output : bool, optional
-        non-zero to return all optional outputs.
+        If ``True``, return all optional outputs (not just `x` and `ier`).
     col_deriv : bool, optional
-        non-zero to specify that the Jacobian function computes derivatives
+        If ``True``, specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
     ftol : float, optional
         Relative error desired in the sum of squares.
@@ -340,7 +340,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the Hessian. A value of None indicates a singular matrix,
         which means the curvature in parameters `x` is numerically flat. To
         obtain the covariance matrix of the parameters `x`, `cov_x` must be
-        multiplied by the variance of the residuals -- see curve_fit.
+        multiplied by the variance of the residuals -- see curve_fit. Only
+        returned if `full_output` is ``True``.
     infodict : dict
         a dictionary of optional outputs with the keys:
 
@@ -364,8 +365,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         ``qtf``
             The vector (transpose(q) * fvec).
 
+        Only returned if `full_output` is ``True``.
     mesg : str
         A string message giving information about the cause of failure.
+        Only returned if `full_output` is ``True``.
     ier : int
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
@@ -624,8 +627,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True. Note that if `nan_policy` is
-        specified explicitly (not None), this value will be ignored.
+        do contain nans. Default is True if `nan_policy` is not specified
+        explicitly and False otherwise.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -904,8 +907,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             raise ValueError("`nan_policy='propagate'` is not supported "
                              "by this function.")
 
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+        policies = [None, 'raise', 'omit']
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
+                                                   policies=policies)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
+                                                   policies=policies)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays

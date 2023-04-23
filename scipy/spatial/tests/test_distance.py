@@ -1160,7 +1160,7 @@ class TestPdist:
     def test_pdist_jensenshannon_iris(self):
         if _is_32bit():
             # Test failing on 32-bit Linux on Azure otherwise, see gh-12810
-            eps = 1.5e-10
+            eps = 2.5e-10
         else:
             eps = 1e-12
 
@@ -1933,6 +1933,15 @@ def test_hamming_unequal_length():
     y = [1, 0, 1, 0]
     # Used to give an AttributeError from ndarray.mean called on bool
     assert_raises(ValueError, whamming, x, y)
+
+
+def test_hamming_unequal_length_with_w():
+    u = [0, 0, 1]
+    v = [0, 0, 1]
+    w = [1, 0, 1, 0]
+    msg = "'w' should have the same length as 'u' and 'v'."
+    with assert_raises(ValueError, match=msg):
+        whamming(u, v, w)
 
 
 def test_hamming_string_array():

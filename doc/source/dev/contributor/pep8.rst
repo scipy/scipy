@@ -1,5 +1,3 @@
-:orphan:
-
 .. _pep8-scipy:
 
 ==============
@@ -34,7 +32,7 @@ compliance before pushing your code:
 
    The easiest way to do so is to install our pre-commit hook (once)::
 
-     cp tools/pre-commit-hook.sh .git/hooks/pre-commit
+     cp tools/pre-commit-hook.py .git/hooks/pre-commit
 
    This will run linting checks before each commit is made.
 

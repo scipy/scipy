@@ -1,7 +1,7 @@
 from ._cephes cimport Gamma
 
 
-cdef inline double _factorial(double n) nogil:
+cdef inline double _factorial(double n) noexcept nogil:
     if n < 0:
         return 0
     else:

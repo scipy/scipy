@@ -2095,7 +2095,7 @@ def bilinear(b, a, fs=1.0):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -2615,7 +2615,7 @@ def bilinear_zpk(z, p, k, fs):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -3047,6 +3047,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     the polynomial coefficients is a numerically sensitive operation,
     even for N >= 4. It is recommended to work with the SOS
     representation.
+
+    .. warning::
+        Designing high-order and narrowband IIR filters in TF form can
+        result in unstable or incorrect filtering due to floating point
+        numerical precision issues. Consider inspecting output filter
+        characteristics `freqz` or designing the filters with second-order
+        sections via ``output='sos'``.
 
     Examples
     --------
@@ -4498,7 +4505,7 @@ def _arc_jac_sn(w, m):
         if niter > _ARC_JAC_SN_MAXITER:
             raise ValueError('Landen transformation not converging')
 
-    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+    K = np.prod(1 + np.array(ks[1:])) * np.pi/2
 
     wns = [w]
 
