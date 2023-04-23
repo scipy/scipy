@@ -329,12 +329,10 @@ class LinearOperator:
         X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError(f'expected 2-d ndarray or matrix, not {X.ndim}-d')
 
         if X.shape[0] != self.shape[1]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         Y = self._matmat(X)
 
@@ -373,8 +371,7 @@ class LinearOperator:
                              % X.ndim)
 
         if X.shape[0] != self.shape[0]:
-            raise ValueError('dimension mismatch: %r, %r'
-                             % (self.shape, X.shape))
+            raise ValueError(f'dimension mismatch: {self.shape}, {X.shape}')
 
         Y = self._rmatmat(X)
         if isinstance(Y, np.matrix):
@@ -650,8 +647,7 @@ class _SumLinearOperator(LinearOperator):
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape != B.shape:
-            raise ValueError('cannot add %r and %r: shape mismatch'
-                             % (A, B))
+            raise ValueError(f'cannot add {A} and {B}: shape mismatch')
         self.args = (A, B)
         super().__init__(_get_dtype([A, B]), A.shape)
 
@@ -678,8 +674,7 @@ class _ProductLinearOperator(LinearOperator):
                 not isinstance(B, LinearOperator):
             raise ValueError('both operands have to be a LinearOperator')
         if A.shape[1] != B.shape[0]:
-            raise ValueError('cannot multiply %r and %r: shape mismatch'
-                             % (A, B))
+            raise ValueError(f'cannot multiply {A} and {B}: shape mismatch')
         super().__init__(_get_dtype([A, B]),
                                                      (A.shape[0], B.shape[1]))
         self.args = (A, B)
