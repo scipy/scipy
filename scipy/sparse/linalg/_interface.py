@@ -707,6 +707,12 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
+        if isinstance(A, type(self)):
+            A, alpha_original = A.args
+            # Avoid in-place multiplication so that we don't accidentally mutate
+            # the original prefactor.
+            alpha = alpha * alpha_original
+
         dtype = _get_dtype([A], [type(alpha)])
         super().__init__(dtype, A.shape)
         self.args = (A, alpha)
