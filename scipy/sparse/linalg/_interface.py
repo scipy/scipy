@@ -394,6 +394,10 @@ class LinearOperator:
     def __mul__(self, x):
         return self.dot(x)
 
+    def __truediv__(self, other):
+        if np.isscalar(other):
+            return _ScaledLinearOperator(self, 1.0/other)
+
     def dot(self, x):
         """Matrix-matrix or matrix-vector multiplication.
 

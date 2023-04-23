@@ -113,6 +113,8 @@ class TestLinearOperator:
             assert_(isinstance(A+A, interface._SumLinearOperator))
             assert_(isinstance(-A, interface._ScaledLinearOperator))
             assert_(isinstance(A-A, interface._SumLinearOperator))
+            assert_(isinstance(A/2, interface._ScaledLinearOperator))
+            assert_(isinstance(A/2j, interface._ScaledLinearOperator))
 
             assert_((2j*A).dtype == np.complex_)
 
