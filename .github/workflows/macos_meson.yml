@@ -128,7 +128,6 @@ jobs:
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        export SCIPY_USE_PROPACK=1
         python dev.py -n test -j2
 
     - name: Ccache statistics
