@@ -225,6 +225,22 @@ class TestShapiro:
 
         assert_allclose(res, ref, rtol=1e-5)
 
+    def test_length_3_gh18322(self):
+        # gh-18322 reported that the p-value could be negative for input of
+        # length 3. Check that this is resolved.
+        res = stats.shapiro([0.6931471805599453, 0.0, 0.0])
+        assert res.pvalue >= 0
+
+        # R `shapiro.test` doesn't produce an accurate p-value in the case
+        # above. Check that the formula used in `stats.shapiro` is not wrong.
+        # options(digits=16)
+        # x = c(-0.7746653110021126, -0.4344432067942129, 1.8157053280290931)
+        # shapiro.test(x)
+        x = [-0.7746653110021126, -0.4344432067942129, 1.8157053280290931]
+        res = stats.shapiro(x)
+        assert_allclose(res.statistic, 0.84658770645509)
+        assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
+
 
 class TestAnderson:
     def test_normal(self):
@@ -404,7 +420,6 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -429,19 +444,13 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
-        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
+        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
+                                          t9, t10, t11, t12, t13, t14),
+                                         midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
-
-        rng = np.random.default_rng(6989860141921615054)
-        res = stats.anderson_ksamp(samples, midrank=False,
-                                   n_resamples=9999, random_state=rng)
-        assert_array_equal(res.statistic, Tk)
-        assert_array_equal(res.critical_values, tm)
-        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of

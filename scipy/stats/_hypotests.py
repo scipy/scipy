@@ -1,5 +1,5 @@
 from collections import namedtuple
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from math import comb
 import numpy as np
 import warnings
@@ -694,8 +694,11 @@ def _somers_d(A, alternative='two-sided'):
     return d, p
 
 
-SomersDResult = make_dataclass("SomersDResult",
-                               ("statistic", "pvalue", "table"))
+@dataclass
+class SomersDResult:
+    statistic: float
+    pvalue: float
+    table: np.ndarray
 
 
 def somersd(x, y=None, alternative='two-sided'):
@@ -903,9 +906,10 @@ def _compute_log_combinations(n):
     return gammaln(n + 1) - gammaln_arr - gammaln_arr[::-1]
 
 
-BarnardExactResult = make_dataclass(
-    "BarnardExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BarnardExactResult:
+    statistic: float
+    pvalue: float
 
 
 def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
@@ -1173,9 +1177,10 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     return BarnardExactResult(wald_stat_obs, p_value)
 
 
-BoschlooExactResult = make_dataclass(
-    "BoschlooExactResult", [("statistic", float), ("pvalue", float)]
-)
+@dataclass
+class BoschlooExactResult:
+    statistic: float
+    pvalue: float
 
 
 def boschloo_exact(table, alternative="two-sided", n=32):
