@@ -4413,7 +4413,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
-def _pearsonr_bootstrap_ci(confidence_level, method, x, y):
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
     """
     Compute the confidence interval for Pearson's R using the bootstrap.
     """
@@ -4422,7 +4422,9 @@ def _pearsonr_bootstrap_ci(confidence_level, method, x, y):
         return statistic
 
     res = bootstrap((x, y), statistic, confidence_level=confidence_level,
-                    paired=True, **method._asdict())
+                    paired=True, alternative=alternative, **method._asdict())
+    # for one-sided confidence intervals, bootstrap gives +/- inf on one side
+    res.confidence_interval = tuple(np.clip(res.confidence_interval, -1, 1))
 
     return res.confidence_interval
 
@@ -4505,7 +4507,7 @@ class PearsonRResult(PearsonRResultBase):
         """
         if isinstance(method, BootstrapMethod):
             ci = _pearsonr_bootstrap_ci(confidence_level, method,
-                                        self._x, self._y)
+                                        self._x, self._y, self._alternative)
         elif method is None:
             ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
                                      self._alternative)

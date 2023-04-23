@@ -504,11 +504,12 @@ class TestCorrPearsonr:
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
     @pytest.mark.xslow
-    def test_bootstrap_ci(self):
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(24623935790378923)
         x = rng.normal(size=100)
         y = rng.normal(size=100)
-        res = stats.pearsonr(x, y)
+        res = stats.pearsonr(x, y, alternative=alternative)
 
         method = stats.BootstrapMethod(random_state=rng)
         res_ci = res.confidence_interval(method=method)
