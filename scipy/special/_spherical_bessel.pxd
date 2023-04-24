@@ -1,5 +1,6 @@
 # -*-cython-*-
-#
+# cython: cpow=True
+
 # Implementation of spherical Bessel functions and modified spherical Bessel
 # functions of the first and second kinds, as well as their derivatives.
 #

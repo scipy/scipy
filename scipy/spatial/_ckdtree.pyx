@@ -4,6 +4,8 @@
 # Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
 
+# cython: cpow=True
+
 # distutils: language = c++
 
 import numpy as np
