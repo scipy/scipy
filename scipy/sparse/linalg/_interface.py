@@ -325,8 +325,8 @@ class LinearOperator:
         _matmat method to ensure that y has the correct type.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
@@ -372,8 +372,8 @@ class LinearOperator:
         This rmatmat wraps the user-specified rmatmat routine.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
