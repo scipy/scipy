@@ -5,6 +5,8 @@ import re
 import sys
 import warnings
 from datetime import date
+from docutils import nodes
+from docutils.parsers.rst import Directive
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -49,6 +51,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'myst_nb',
 ]
 
 
@@ -163,6 +166,23 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# docutils warnings when using notebooks (see gh-17322)
+# these will hopefully be removed in the near future
+for key in (
+    r"The frontend.OptionParser class will be replaced",
+    r"The frontend.Option class will be removed",
+    ):
+    warnings.filterwarnings('ignore', message=key, category=DeprecationWarning)
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*is obsoleted by Node.findall()',
+    category=PendingDeprecationWarning,
+)
+warnings.filterwarnings(
+    'ignore',
+    message=r'There is no current event loop',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -192,7 +212,7 @@ if 'versionwarning' in tags:  # noqa
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);');
+           'document.head.appendChild(script);')
     html_context = {
         'VERSIONCHECK_JS': src
     }
@@ -329,6 +349,12 @@ plot_rcparams = {
 }
 
 # -----------------------------------------------------------------------------
+# Notebook tutorials with MyST-NB
+# -----------------------------------------------------------------------------
+
+nb_execution_mode = "auto"
+
+# -----------------------------------------------------------------------------
 # Source code links
 # -----------------------------------------------------------------------------
 
@@ -416,3 +442,58 @@ def linkcode_resolve(domain, info):
 SphinxDocString._str_examples = _rng_html_rewrite(
     SphinxDocString._str_examples
 )
+
+
+class LegacyDirective(Directive):
+    """
+    Adapted from docutils/parsers/rst/directives/admonitions.py
+
+    Uses a default text if the directive does not have contents. If it does,
+    the default text is concatenated to the contents.
+
+    """
+    has_content = True
+    node_class = nodes.admonition
+    optional_arguments = 1
+
+    def run(self):
+        try:
+            obj = self.arguments[0]
+        except IndexError:
+            # Argument is empty; use default text
+            obj = "submodule"
+        text = (f"This {obj} is considered legacy and will no longer receive "
+                "updates. This could also mean it will be removed in future "
+                "SciPy versions.")
+
+        try:
+            self.content[0] = text+" "+self.content[0]
+        except IndexError:
+            # Content is empty; use the default text
+            source, lineno = self.state_machine.get_source_and_line(
+                self.lineno
+            )
+            self.content.append(
+                text,
+                source=source,
+                offset=lineno
+            )
+        text = '\n'.join(self.content)
+        # Create the admonition node, to be populated by `nested_parse`
+        admonition_node = self.node_class(rawsource=text)
+        # Set custom title
+        title_text = "Legacy"
+        textnodes, _ = self.state.inline_text(title_text, self.lineno)
+        title = nodes.title(title_text, '', *textnodes)
+        # Set up admonition node
+        admonition_node += title
+        # Select custom class for CSS styling
+        admonition_node['classes'] = ['admonition-legacy']
+        # Parse the directive contents
+        self.state.nested_parse(self.content, self.content_offset,
+                                admonition_node)
+        return [admonition_node]
+
+
+def setup(app):
+    app.add_directive("legacy", LegacyDirective)

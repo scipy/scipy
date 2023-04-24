@@ -1,11 +1,15 @@
 import logging
+
 import numpy
+import numpy as np
 import time
+from multiprocessing import Pool
 from numpy.testing import assert_allclose
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
-                            rosen_der, rosen_hess)
+                            rosen_der, rosen_hess, NonlinearConstraint)
+from scipy.optimize._constraints import new_constraint_to_old
 from scipy.optimize._shgo import SHGO
 
 
@@ -115,6 +119,7 @@ class StructTest3(StructTestFunction):
 
     """
 
+    # amended to test vectorisation of constraints
     def f(self, x):
         return 0.01 * (x[0]) ** 2 + (x[1]) ** 2
 
@@ -124,10 +129,15 @@ class StructTest3(StructTestFunction):
     def g2(x):
         return x[0] ** 2 + x[1] ** 2 - 25.0
 
-    g = (g1, g2)
+    # g = (g1, g2)
+    # cons = wrap_constraints(g)
 
-    cons = wrap_constraints(g)
+    def g(x):
+        return x[0] * x[1] - 25.0, x[0] ** 2 + x[1] ** 2 - 25.0
 
+    # this checks that shgo can be sent new-style constraints
+    __nlc = NonlinearConstraint(g, 0, np.inf)
+    cons = (__nlc,)
 
 test3_1 = StructTest3(bounds=[(2, 50), (0, 50)],
                       expected_x=[250 ** 0.5, 2.5 ** 0.5],
@@ -775,8 +785,12 @@ class TestShgoArguments:
     def test_19_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 
-        run_test(test1_1, n=30, workers=1)  # Constrained
-        run_test(test_s, n=30, workers=1)  # Unconstrained
+        with Pool(2) as p:
+            run_test(test1_1, n=30, workers=p.map)  # Constrained
+        run_test(test1_1, n=30, workers=map)  # Constrained
+        with Pool(2) as p:
+            run_test(test_s, n=30, workers=p.map)  # Unconstrained
+        run_test(test_s, n=30, workers=map)  # Unconstrained
 
     def test_20_constrained_args(self):
         """Test that constraints can be passed to arguments"""
@@ -1051,3 +1065,92 @@ class TestShgoReturns:
 
         result = shgo(fun, bounds, sampling_method='sobol')
         numpy.testing.assert_equal(fun.nfev, result.nfev)
+
+
+def test_vector_constraint():
+    # gh15514
+    def quad(x):
+        x = np.asarray(x)
+        return [np.sum(x ** 2)]
+
+    nlc = NonlinearConstraint(quad, [2.2], [3])
+    oldc = new_constraint_to_old(nlc, np.array([1.0, 1.0]))
+
+    res = shgo(rosen, [(0, 10), (0, 10)], constraints=oldc, sampling_method='sobol')
+    assert np.all(np.sum((res.x)**2) >= 2.2)
+    assert np.all(np.sum((res.x) ** 2) <= 3.0)
+    assert res.success
+
+
+@pytest.mark.filterwarnings("ignore:delta_grad")
+def test_trust_constr():
+    def quad(x):
+        x = np.asarray(x)
+        return [np.sum(x ** 2)]
+
+    nlc = NonlinearConstraint(quad, [2.6], [3])
+    minimizer_kwargs = {'method': 'trust-constr'}
+    # note that we don't supply the constraints in minimizer_kwargs,
+    # so if the final result obeys the constraints we know that shgo
+    # passed them on to 'trust-constr'
+    res = shgo(
+        rosen,
+        [(0, 10), (0, 10)],
+        constraints=nlc,
+        sampling_method='sobol',
+        minimizer_kwargs=minimizer_kwargs
+    )
+    assert np.all(np.sum((res.x)**2) >= 2.6)
+    assert np.all(np.sum((res.x) ** 2) <= 3.0)
+    assert res.success
+
+
+def test_equality_constraints():
+    # gh16260
+    bounds = [(0.9, 4.0)] * 2  # Constrain probabilities to 0 and 1.
+
+    def faulty(x):
+        return x[0] + x[1]
+
+    nlc = NonlinearConstraint(faulty, 3.9, 3.9)
+    res = shgo(rosen, bounds=bounds, constraints=nlc)
+    assert_allclose(np.sum(res.x), 3.9)
+
+    def faulty(x):
+        return x[0] + x[1] - 3.9
+
+    constraints = {'type': 'eq', 'fun': faulty}
+    res = shgo(rosen, bounds=bounds, constraints=constraints)
+    assert_allclose(np.sum(res.x), 3.9)
+
+    bounds = [(0, 1.0)] * 4
+    # sum of variable should equal 1.
+    def faulty(x):
+        return x[0] + x[1] + x[2] + x[3] - 1
+
+    # options = {'minimize_every_iter': True, 'local_iter':10}
+    constraints = {'type': 'eq', 'fun': faulty}
+    res = shgo(
+        lambda x: - np.prod(x),
+        bounds=bounds,
+        constraints=constraints,
+        sampling_method='sobol'
+    )
+    assert_allclose(np.sum(res.x), 1.0)
+
+def test_gh16971():
+    def cons(x):
+        return np.sum(x**2) - 0
+
+    c = {'fun': cons, 'type': 'ineq'}
+    minimizer_kwargs = {
+        'method': 'COBYLA',
+        'options': {'rhobeg': 5, 'tol': 5e-1, 'catol': 0.05}
+    }
+
+    s = SHGO(
+        rosen, [(0, 10)]*2, constraints=c, minimizer_kwargs=minimizer_kwargs
+    )
+
+    assert s.minimizer_kwargs['method'].lower() == 'cobyla'
+    assert s.minimizer_kwargs['options']['catol'] == 0.05

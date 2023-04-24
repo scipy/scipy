@@ -9874,7 +9874,9 @@ add_newdoc("nbdtr",
 
     See also
     --------
-    nbdtrc
+    nbdtrc : Negative binomial survival function
+    nbdtrik : Negative binomial quantile function
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
@@ -9889,11 +9891,78 @@ add_newdoc("nbdtr",
 
     Wrapper for the Cephes [1]_ routine `nbdtr`.
 
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can improve performance
+    compared to the ``cdf`` method of `scipy.stats.nbinom` (see last example).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    Compute the function for ``k=10`` and ``n=5`` at ``p=0.5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtr
+    >>> nbdtr(10, 5, 0.5)
+    0.940765380859375
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtr(10, 5, p)
+    array([0.01272048, 0.78272229, 0.99998754])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtr_vals = nbdtr(k, n, x)
+    ...     ax.plot(x, nbdtr_vals, label=rf"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial cumulative distribution function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtr` directly can be much faster than
+    calling the ``cdf`` method of `scipy.stats.nbinom`, especially for small
+    arrays or individual values. To get the same results one must use the
+    following parametrization: ``nbinom(n, p).cdf(k)=nbdtr(k, n, p)``.
+
+    >>> from scipy.stats import nbinom
+    >>> k, n, p = 5, 3, 0.5
+    >>> nbdtr_res = nbdtr(k, n, p)  # this will often be faster than below
+    >>> stats_res = nbinom(n, p).cdf(k)
+    >>> stats_res, nbdtr_res  # test that results are equal
+    (0.85546875, 0.85546875)
+
+    `nbdtr` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtr(k, 5, p)
+    array([[0.15026833, 0.62304687, 0.95265101, 0.9998531 ],
+           [0.48450894, 0.94076538, 0.99932777, 0.99999999],
+           [0.76249222, 0.99409103, 0.99999445, 1.        ]])
     """)
 
 add_newdoc("nbdtrc",
@@ -9930,6 +9999,12 @@ add_newdoc("nbdtrc",
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
+    See also
+    --------
+    nbdtr : Negative binomial cumulative distribution function
+    nbdtrik : Negative binomial quantile function
+    scipy.stats.nbinom : Negative binomial distribution
+
     Notes
     -----
     If floating point values are passed for `k` or `n`, they will be truncated
@@ -9943,17 +10018,84 @@ add_newdoc("nbdtrc",
 
     Wrapper for the Cephes [1]_ routine `nbdtrc`.
 
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtrc` directly can improve performance
+    compared to the ``sf`` method of `scipy.stats.nbinom` (see last example).
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
+
+    Examples
+    --------
+    Compute the function for ``k=10`` and ``n=5`` at ``p=0.5``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtrc
+    >>> nbdtrc(10, 5, 0.5)
+    0.059234619140624986
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtrc(3, 5, p)
+    array([0.99956835, 0.8263296 , 0.0562816 ])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 30, 1000)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtrc_vals = nbdtrc(k, n, x)
+    ...     ax.plot(x, nbdtrc_vals, label=rf"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial survival function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtrc` directly can be much faster than
+    calling the ``sf`` method of `scipy.stats.nbinom`, especially for small
+    arrays or individual values. To get the same results one must use the
+    following parametrization: ``nbinom(n, p).sf(k)=nbdtrc(k, n, p)``.
+
+    >>> from scipy.stats import nbinom
+    >>> k, n, p = 3, 5, 0.5
+    >>> nbdtr_res = nbdtrc(k, n, p)  # this will often be faster than below
+    >>> stats_res = nbinom(n, p).sf(k)
+    >>> stats_res, nbdtr_res  # test that results are equal
+    (0.6367187499999999, 0.6367187499999999)
+
+    `nbdtrc` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtrc(k, 5, p)
+    array([[8.49731667e-01, 3.76953125e-01, 4.73489874e-02, 1.46902600e-04],
+           [5.15491059e-01, 5.92346191e-02, 6.72234070e-04, 9.29610100e-09],
+           [2.37507779e-01, 5.90896606e-03, 5.55025308e-06, 3.26346760e-13]])
     """)
 
-add_newdoc("nbdtri",
-    """
+add_newdoc(
+    "nbdtri",
+    r"""
     nbdtri(k, n, y, out=None)
-
-    Inverse of `nbdtr` vs `p`.
 
     Returns the inverse with respect to the parameter `p` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
@@ -9979,25 +10121,85 @@ add_newdoc("nbdtri",
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtrc : Negative binomial survival function.
+    scipy.stats.nbinom : negative binomial distribution.
     nbdtrik : Inverse with respect to `k` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
     Wrapper for the Cephes [1]_ routine `nbdtri`.
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. Using `nbdtri` directly can improve performance
+    compared to the ``ppf`` method of `scipy.stats.nbinom`.
 
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/
 
+    Examples
+    --------
+    `nbdtri` is the inverse of `nbdtr`: up to floating point errors
+    the following holds: ``nbdtri(k, n, nbdtr(k, n, p))=p``.
+
+    >>> import numpy as np
+    >>> from scipy.special import nbdtri, nbdtr
+    >>> k, n, p = 5, 10, 0.2
+    >>> cdf_val = nbdtr(k, n, p)
+    >>> nbdtri(k, n, cdf_val)
+    0.20000000000000004
+
+    Compute the function for ``k=10`` and ``n=5`` at several points by
+    providing a NumPy array or list for `p`.
+
+    >>> p = np.array([0.1, 0.4, 0.8])
+    >>> nbdtri(3, 5, p)
+    array([0.34462319, 0.51653095, 0.69677416])
+
+    Plot the function for three different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> k_parameters = [1, 5, 30]
+    >>> n_parameters = [5, 5, 5]
+    >>> linestyles = ['solid', 'dashed', 'dotted']
+    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    ...                            linestyles))
+    >>> x = np.linspace(0, 1, 500)
+    >>> fig, ax = plt.subplots()
+    >>> for parameter_set in parameters_list:
+    ...     k, n, style = parameter_set
+    ...     nbdtri_vals = nbdtri(k, n, x)
+    ...     ax.plot(x, nbdtri_vals, label=f"$k={k},\, n={n}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_xlabel("$p$")
+    >>> ax.set_title("Negative binomial quantile function")
+    >>> plt.show()
+
+    `nbdtri` can evaluate different parameter sets by providing arrays with
+    shapes compatible for broadcasting for `k`, `n` and `p`. Here we compute
+    the function for three different `k` at four locations `p`, resulting in
+    a 3x4 array.
+
+    >>> k = np.array([[5], [10], [15]])
+    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, p.shape
+    ((3, 1), (4,))
+
+    >>> nbdtri(k, 5, p)
+    array([[0.37258157, 0.45169416, 0.53249956, 0.64578407],
+           [0.24588501, 0.30451981, 0.36778453, 0.46397088],
+           [0.18362101, 0.22966758, 0.28054743, 0.36066188]])
     """)
 
 add_newdoc("nbdtrik",
     r"""
     nbdtrik(y, n, p, out=None)
 
-    Inverse of `nbdtr` vs `k`.
+    Negative binomial quantile function.
 
     Returns the inverse with respect to the parameter `k` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
@@ -10024,6 +10226,7 @@ add_newdoc("nbdtrik",
     nbdtr : Cumulative distribution function of the negative binomial.
     nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
+    scipy.stats.nbinom : Negative binomial distribution
 
     Notes
     -----
@@ -10048,6 +10251,22 @@ add_newdoc("nbdtrik",
     .. [2] Milton Abramowitz and Irene A. Stegun, eds.
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
+
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> from scipy.special import nbdtr, nbdtrik
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrik` recovers the original value for `k`.
+
+    >>> nbdtrik(cdf_value, n, p)
+    5.0
 
     """)
 
@@ -10107,6 +10326,22 @@ add_newdoc("nbdtrin",
            Handbook of Mathematical Functions with Formulas,
            Graphs, and Mathematical Tables. New York: Dover, 1972.
 
+    Examples
+    --------
+    Compute the negative binomial cumulative distribution function for an
+    exemplary parameter set.
+
+    >>> from scipy.special import nbdtr, nbdtrin
+    >>> k, n, p = 5, 2, 0.5
+    >>> cdf_value = nbdtr(k, n, p)
+    >>> cdf_value
+    0.9375
+
+    Verify that `nbdtrin` recovers the original value for `n` up to floating
+    point accuracy.
+
+    >>> nbdtrin(k, cdf_value, p)
+    1.999999999998137
     """)
 
 add_newdoc("ncfdtr",
@@ -12952,11 +13187,12 @@ add_newdoc("tandg",
 
     """)
 
-add_newdoc("tklmbda",
-    """
+add_newdoc(
+    "tklmbda",
+    r"""
     tklmbda(x, lmbda, out=None)
 
-    Tukey-Lambda cumulative distribution function
+    Cumulative distribution function of the Tukey lambda distribution.
 
     Parameters
     ----------
@@ -12968,7 +13204,105 @@ add_newdoc("tklmbda",
     Returns
     -------
     cdf : scalar or ndarray
-        Value of the Tukey-Lambda CDF
+        Value of the Tukey lambda CDF
+
+    See Also
+    --------
+    scipy.stats.tukeylambda : Tukey lambda distribution
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.special import tklmbda, expit
+
+    Compute the cumulative distribution function (CDF) of the Tukey lambda
+    distribution at several ``x`` values for `lmbda` = -1.5.
+
+    >>> x = np.linspace(-2, 2, 9)
+    >>> x
+    array([-2. , -1.5, -1. , -0.5,  0. ,  0.5,  1. ,  1.5,  2. ])
+    >>> tklmbda(x, -1.5)
+    array([0.34688734, 0.3786554 , 0.41528805, 0.45629737, 0.5       ,
+           0.54370263, 0.58471195, 0.6213446 , 0.65311266])
+
+    When `lmbda` is 0, the function is the logistic sigmoid function,
+    which is implemented in `scipy.special` as `expit`.
+
+    >>> tklmbda(x, 0)
+    array([0.11920292, 0.18242552, 0.26894142, 0.37754067, 0.5       ,
+           0.62245933, 0.73105858, 0.81757448, 0.88079708])
+    >>> expit(x)
+    array([0.11920292, 0.18242552, 0.26894142, 0.37754067, 0.5       ,
+           0.62245933, 0.73105858, 0.81757448, 0.88079708])
+
+    When `lmbda` is 1, the Tukey lambda distribution is uniform on the
+    interval [-1, 1], so the CDF increases linearly.
+
+    >>> t = np.linspace(-1, 1, 9)
+    >>> tklmbda(t, 1)
+    array([0.   , 0.125, 0.25 , 0.375, 0.5  , 0.625, 0.75 , 0.875, 1.   ])
+
+    In the following, we generate plots for several values of `lmbda`.
+
+    The first figure shows graphs for `lmbda` <= 0.
+
+    >>> styles = ['-', '-.', '--', ':']
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-12, 12, 500)
+    >>> for k, lmbda in enumerate([-1.0, -0.5, 0.0]):
+    ...     y = tklmbda(x, lmbda)
+    ...     ax.plot(x, y, styles[k], label=f'$\lambda$ = {lmbda:-4.1f}')
+
+    >>> ax.set_title('tklmbda(x, $\lambda$)')
+    >>> ax.set_label('x')
+    >>> ax.legend(framealpha=1, shadow=True)
+    >>> ax.grid(True)
+
+    The second figure shows graphs for `lmbda` > 0.  The dots in the
+    graphs show the bounds of the support of the distribution.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(-4.2, 4.2, 500)
+    >>> lmbdas = [0.25, 0.5, 1.0, 1.5]
+    >>> for k, lmbda in enumerate(lmbdas):
+    ...     y = tklmbda(x, lmbda)
+    ...     ax.plot(x, y, styles[k], label=f'$\lambda$ = {lmbda}')
+
+    >>> ax.set_prop_cycle(None)
+    >>> for lmbda in lmbdas:
+    ...     ax.plot([-1/lmbda, 1/lmbda], [0, 1], '.', ms=8)
+
+    >>> ax.set_title('tklmbda(x, $\lambda$)')
+    >>> ax.set_xlabel('x')
+    >>> ax.legend(framealpha=1, shadow=True)
+    >>> ax.grid(True)
+
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    The CDF of the Tukey lambda distribution is also implemented as the
+    ``cdf`` method of `scipy.stats.tukeylambda`.  In the following,
+    ``tukeylambda.cdf(x, -0.5)`` and ``tklmbda(x, -0.5)`` compute the
+    same values:
+
+    >>> from scipy.stats import tukeylambda
+    >>> x = np.linspace(-2, 2, 9)
+
+    >>> tukeylambda.cdf(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    >>> tklmbda(x, -0.5)
+    array([0.21995157, 0.27093858, 0.33541677, 0.41328161, 0.5       ,
+           0.58671839, 0.66458323, 0.72906142, 0.78004843])
+
+    The implementation in ``tukeylambda`` also provides location and scale
+    parameters, and other methods such as ``pdf()`` (the probability
+    density function) and ``ppf()`` (the inverse of the CDF), so for
+    working with the Tukey lambda distribution, ``tukeylambda`` is more
+    generally useful.  The primary advantage of ``tklmbda`` is that it is
+    significantly faster than ``tukeylambda.cdf``.
     """)
 
 add_newdoc("wofz",

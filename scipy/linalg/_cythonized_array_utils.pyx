@@ -6,8 +6,63 @@ from scipy.linalg._cythonized_array_utils cimport (
 	np_complex_numeric_t,
 	np_numeric_t
     )
+from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
+from libc.stdlib cimport malloc, free
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
+
+
+# =========================== find_det_from_lu : s, d, c, z ==================
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.initializedcheck(False)
+def find_det_from_lu(lapack_t[:, ::1] a):
+    cdef int n = a.shape[0], k, perm = 0, info = 0
+    cdef double det = 1.
+    cdef double complex detj = 1.+0.j
+    cdef int *piv = <int *>malloc(<int>n * sizeof(int))
+    try:
+        if not piv:
+            raise MemoryError('Internal memory allocation request for LU '
+                              'factorization failed in "find_det_from_lu".')
+
+        if lapack_t is float:
+            sgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is double:
+            dgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is floatcomplex:
+            cgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+        else:
+            zgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+
+        if info < 0:
+            raise ValueError('find_det_from_lu has encountered an internal'
+                             ' error in ?getrf routine with invalid'
+                             f' value at {-info}-th parameter.'
+                             )
+        if lapack_t is float or lapack_t is double:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                det *= a[k, k]
+            return -det if perm % 2 else det
+        else:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                detj *= a[k, k]
+            return -detj if perm % 2 else detj
+    finally:
+        free(piv)
+# ============================================================================
 
 
 # ====================== swap_c_and_f_layout : s, d, c, z ====================
@@ -15,7 +70,7 @@ __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) nogil:
+cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) noexcept nogil:
     """Recursive matrix transposition for square arrays"""
     cdef int i, j, ith_row, r2, c2
     cdef lapack_t *bb=b
@@ -129,7 +184,7 @@ def bandwidth_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
+cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -160,7 +215,7 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
+cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -295,7 +350,7 @@ def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -308,7 +363,7 @@ cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -438,7 +493,7 @@ def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -450,7 +505,7 @@ cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) no
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):

@@ -4,18 +4,19 @@
 # Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
 
+# cython: cpow=True
+
 # distutils: language = c++
 
 import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport INFINITY
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp cimport bool
-from libc.math cimport isinf
+from libc.math cimport isinf, INFINITY
 
 cimport cython
 import os
@@ -343,7 +344,7 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level) noexcept:
         cdef cKDTreeNode n1, n2
         self.level = level
         self.split_dim = node.split_dim

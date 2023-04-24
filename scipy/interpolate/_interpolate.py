@@ -1,5 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
+from math import prod
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
@@ -7,7 +8,6 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
-from scipy._lib._util import prod
 
 from . import _fitpack_py
 from . import dfitpack
@@ -384,6 +384,8 @@ def _do_extrapolate(fill_value):
 class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
+
+    .. legacy:: class
 
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses

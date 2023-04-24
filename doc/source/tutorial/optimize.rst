@@ -288,7 +288,7 @@ For example, the Hessian when :math:`N=5` is
 
 .. math::
 
-    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{bmatrix}.
+    \mathbf{H}=\begin{bmatrix} 1200x_{0}^{2}+2\mkern-2em\\&1200x_{1}^{2}+202\mkern-2em\\&&1200x_{1}^{2}+202\mkern-2em\\&&&1200x_{3}^{2}+202\mkern-1em\\&&&&200\end{bmatrix}-400\begin{bmatrix} x_1 & x_0 \\ x_0 & x_2 & x_1 \\ & x_1 & x_3 & x_2\\ & & x_2 & x_4 & x_3 \\ & & & x_3 & 0\end{bmatrix}.
 
 The code which computes this Hessian along with the code to minimize
 the function using Newton-CG method is shown in the following example:
