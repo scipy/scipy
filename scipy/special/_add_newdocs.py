@@ -10224,7 +10224,6 @@ add_newdoc("nbdtrik",
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
-    nbdtrik : Negative binomial quantile function.
     nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
     scipy.stats.nbinom : Negative binomial distribution
