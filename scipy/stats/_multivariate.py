@@ -807,12 +807,13 @@ class multivariate_normal_gen(multi_rv_generic):
 
         # flatten array so that vectors are in last axis
         dim = x.shape[-1]
-        x = x.reshape((math.prod(x.shape[:-1]), dim))
+        n_vectors = math.prod(x.shape[:-1])
+        x = x.reshape((n_vectors, dim))
 
         # parameter estimation
         mean = x.mean(axis=0)
         centered_data = x - mean
-        cov = centered_data.T @ centered_data / (x.shape[0] - 1)
+        cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
 

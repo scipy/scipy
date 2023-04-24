@@ -803,6 +803,21 @@ class TestMultivariateNormal:
         ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
         assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
+    def test_fit_error(self):
+        data = [1, 3]
+        error_msg = "`x` must be at least two-dimensional."
+        with pytest.raises(ValueError, match=error_msg):
+            multivariate_normal.fit(data)
+
+    def test_fit_shape(self):
+        rng = np.random.default_rng(2777937887058094419)
+        x = rng.random((5, 3, 3))
+        mean_unflattened, cov_unflattened = multivariate_normal.fit(x)
+        x_flattened = x.reshape((x.shape[0] * x.shape[1], 3))
+        mean_flattened, cov_flattened = multivariate_normal.fit(x_flattened)
+        assert_equal(mean_unflattened, mean_flattened)
+        assert_equal(cov_flattened, cov_unflattened)
+
 
 class TestMatrixNormal:
 
