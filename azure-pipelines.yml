@@ -115,12 +115,6 @@ stages:
             TEST_MODE: fast
             BITS: 32
             SCIPY_USE_PYTHRAN: 1
-          Python310-64bit-fast:
-            PYTHON_VERSION: '3.10'
-            PYTHON_ARCH: 'x64'
-            TEST_MODE: fast
-            BITS: 64
-            SCIPY_USE_PYTHRAN: 0
     steps:
     - task: UsePythonVersion@0
       inputs:
