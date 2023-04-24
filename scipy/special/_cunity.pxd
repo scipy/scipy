@@ -36,7 +36,7 @@ from ._cephes cimport log1p, expm1, cosm1
 # This expression suffers from cancellation when x < 0 and
 # y = +/-sqrt(2*fabs(x)). To get around this cancellation problem, we use
 # double-double precision when necessary.
-cdef inline double complex clog1p(double complex z) nogil:
+cdef inline double complex clog1p(double complex z) noexcept nogil:
     cdef double zr, zi, x, y, az, azi
     cdef np.npy_cdouble ret
 
@@ -65,7 +65,7 @@ cdef inline double complex clog1p(double complex z) nogil:
     ret = npy_clog(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(ret)
 
-cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
+cdef inline double complex clog1p_ddouble(double zr, double zi) noexcept nogil:
     cdef double x, y
     cdef double2 r, i, two, rsqr, isqr, rtwo, absm1
 
@@ -90,7 +90,7 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
 # z.real = -log(cos(z.imag)).  There isn't a way around this problem  that
 # doesn't involve computing exp(z.real) and/or cos(z.imag) to higher
 # precision.
-cdef inline double complex cexpm1(double complex z) nogil:
+cdef inline double complex cexpm1(double complex z) noexcept nogil:
     cdef double zr, zi, ezr, x, y
     cdef np.npy_cdouble ret
 

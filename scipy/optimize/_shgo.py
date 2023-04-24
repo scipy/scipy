@@ -11,6 +11,7 @@ from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize, Bounds
 from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
+from scipy.optimize._minimize import standardize_constraints
 from scipy._lib._util import _FunctionWrapper
 
 from scipy.optimize._shgo_lib._complex import Complex
@@ -44,33 +45,15 @@ def shgo(
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
-    constraints : dict or sequence of dict, optional
-        Constraints definition.
-        Function(s) ``R**n`` in the form::
-
-            g(x) >= 0 applied as g : R^n -> R^m
-            h(x) == 0 applied as h : R^n -> R^p
-
-        Each constraint is defined in a dictionary with fields:
-
-            type : str
-                Constraint type: 'eq' for equality, 'ineq' for inequality.
-            fun : callable
-                The function defining the constraint.
-            jac : callable, optional
-                The Jacobian of `fun` (only for SLSQP).
-            args : sequence, optional
-                Extra arguments to be passed to the function and Jacobian.
-
-        Equality constraint means that the constraint function result is to
-        be zero whereas inequality means that it is to be non-negative.
-        Note that COBYLA only supports inequality constraints.
+    constraints : {Constraint, dict} or List of {Constraint, dict}, optional
+        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
+        See the tutorial [5]_ for further details on specifying constraints.
 
         .. note::
 
-           Only the COBYLA and SLSQP local minimize methods currently
-           support constraint arguments. If the ``constraints`` sequence
-           used in the local optimization problem is not defined in
+           Only COBYLA, SLSQP, and trust-constr local minimize methods
+           currently support constraint arguments. If the ``constraints``
+           sequence used in the local optimization problem is not defined in
            ``minimizer_kwargs`` and a constrained method is used then the
            global ``constraints`` will be used.
            (Defining a ``constraints`` sequence in ``minimizer_kwargs``
@@ -78,6 +61,11 @@ def shgo(
            constraints and so forth need to be added then the inequality
            functions in ``constraints`` need to be added to
            ``minimizer_kwargs`` too).
+           COBYLA only supports inequality constraints.
+
+        .. versionchanged:: 1.11.0
+
+           ``constraints`` accepts `NonlinearConstraint`, `LinearConstraint`.
 
     n : int, optional
         Number of sampling points used in the construction of the simplicial
@@ -226,9 +214,17 @@ def shgo(
         sampling points of dimension ``dim`` per call and output an array of
         sampling points with shape `n x dim`.
 
-    workers : int  optional
-        Uses `multiprocessing.Pool <multiprocessing>`) to sample and run the
-        local serial minimizatons in parrallel.
+    workers : int or map-like callable, optional
+        Sample and run the local serial minimizations in parallel.
+        Supply -1 to use all available CPU cores, or an int to use
+        that many Processes (uses `multiprocessing.Pool <multiprocessing>`).
+
+        Alternatively supply a map-like callable, such as
+        `multiprocessing.Pool.map` for parallel evaluation.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        Requires that `func` be pickleable.
+
+        .. versionadded:: 1.11.0
 
     Returns
     -------
@@ -298,6 +294,7 @@ def shgo(
     .. [4] Wales, DJ (2015) "Perspective: Insight into reaction coordinates and
            dynamics from the potential energy landscape",
            Journal of Chemical Physics, 142(13), 2015.
+    .. [5] https://docs.scipy.org/doc/scipy/tutorial/optimize.html#constrained-minimization-of-multivariate-scalar-functions-minimize
 
     Examples
     --------
@@ -446,14 +443,15 @@ def shgo(
         bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
 
     # Initiate SHGO class
-    shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,
+    # use in context manager to make sure that any parallelization
+    # resources are freed.
+    with SHGO(func, bounds, args=args, constraints=constraints, n=n,
                iters=iters, callback=callback,
                minimizer_kwargs=minimizer_kwargs,
                options=options, sampling_method=sampling_method,
-               workers=workers)
-
-    # Run the algorithm, process results and test success
-    shc.iterate_all()
+               workers=workers) as shc:
+        # Run the algorithm, process results and test success
+        shc.iterate_all()
 
     if not shc.break_routine:
         if shc.disp:
@@ -538,12 +536,19 @@ class SHGO:
             self.min_cons = constraints
             self.g_cons = []
             self.g_args = []
-            if (type(constraints) is not tuple) and (type(constraints)
-                                                     is not list):
-                constraints = (constraints,)
 
-            for cons in constraints:
-                if cons['type'] == 'ineq':
+            # shgo internals deals with old-style constraints
+            # self.constraints is used to create Complex, so need
+            # to be stored internally in old-style.
+            # `minimize` takes care of normalising these constraints
+            # for slsqp/cobyla/trust-constr.
+            self.constraints = standardize_constraints(
+                constraints,
+                np.empty(self.dim, float),
+                'old'
+            )
+            for cons in self.constraints:
+                if cons['type'] in ('ineq'):
                     self.g_cons.append(cons['fun'])
                     try:
                         self.g_args.append(cons['args'])
@@ -569,11 +574,15 @@ class SHGO:
         else:
             self.minimizer_kwargs['options'] = {'ftol': 1e-12}
 
-        if (self.minimizer_kwargs['method'] in ('SLSQP', 'COBYLA') and
-                (minimizer_kwargs is not None and
-                 'constraints' not in minimizer_kwargs and
-                 constraints is not None) or
-                (self.g_cons is not None)):
+        if (
+            self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla', 'trust-constr') and
+            (
+                minimizer_kwargs is not None and
+                'constraints' not in minimizer_kwargs and
+                constraints is not None
+            ) or
+            (self.g_cons is not None)
+        ):
             self.minimizer_kwargs['constraints'] = self.min_cons
 
         # Process options dict
@@ -615,13 +624,13 @@ class SHGO:
             'newton-cg': ['jac', 'hess', 'hessp'],
             'l-bfgs-b': ['jac', 'bounds'],
             'tnc': ['jac', 'bounds'],
-            'cobyla': ['constraints'],
+            'cobyla': ['constraints', 'catol'],
             'slsqp': ['jac', 'bounds', 'constraints'],
             'dogleg': ['jac', 'hess'],
             'trust-ncg': ['jac', 'hess', 'hessp'],
             'trust-krylov': ['jac', 'hess', 'hessp'],
             'trust-exact': ['jac', 'hess'],
-            'trust-constr': ['jac', 'hess', 'hessp'],
+            'trust-constr': ['jac', 'hess', 'hessp', 'constraints'],
         }
         method = self.minimizer_kwargs['method']
         self.min_solver_args += solver_args[method.lower()]
@@ -794,6 +803,9 @@ class SHGO:
 
         # Feedback
         self.disp = options.get('disp', False)
+
+    def __enter__(self):
+        return self
 
     def __exit__(self, *args):
         return self.HC.V._mapwrapper.__exit__(*args)
@@ -1081,7 +1093,7 @@ class SHGO:
 
         if self.disp:
             logging.info('Triangulation completed, evaluating all '
-                         'contraints and objective function values.')
+                         'constraints and objective function values.')
 
         if hasattr(self, 'Tri'):
             self.HC.vf_to_vv(self.Tri.points, self.Tri.simplices)
@@ -1450,7 +1462,16 @@ class SHGO:
         """Find subspace of feasible points from g_func definition"""
         # Subspace of feasible points.
         for ind, g in enumerate(self.g_cons):
-            self.C = self.C[g(self.C.T, *self.g_args[ind]) >= 0.0]
+            # C.shape = (Z, dim) where Z is the number of sampling points to
+            # evaluate and dim is the dimensionality of the problem.
+            # the constraint function may not be vectorised so have to step
+            # through each sampling point sequentially.
+            feasible = np.array(
+                [np.all(g(x_C, *self.g_args[ind]) >= 0.0) for x_C in self.C],
+                dtype=bool
+            )
+            self.C = self.C[feasible]
+
             if self.C.size == 0:
                 self.res.message = ('No sampling point found within the '
                                     + 'feasible set. Increasing sampling '

@@ -8,15 +8,6 @@ parameters:
   values:
     - fast
     - full
-- name: coverage
-  type: boolean
-  default: false
-- name: refguide_check
-  type: boolean
-  default: false
-- name: asv_check
-  type: boolean
-  default: false
 - name: use_wheel
   type: boolean
   default: false
@@ -64,13 +55,11 @@ steps:
   displayName: 'Install common apt dependencies'
 - script: 'echo "##vso[task.prependpath]/usr/lib/ccache"'
   displayName: 'Add ccache to path'
-# Use pytest-xdist 2.5.0 until https://github.com/pytest-dev/pytest-cov/issues/557
-# is resolved.
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
     pip install --upgrade pip setuptools==59.6.0 wheel build meson meson-python &&
     pip install ${{parameters.other_spec}}
-    "cython<3.0b1"
+    "cython==0.29.33"
     gmpy2
     threadpoolctl
     mpmath
@@ -78,29 +67,12 @@ steps:
     pythran
     pybind11
     pytest
-    pytest-xdist==2.5.0
+    pytest-xdist
     pytest-timeout
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
-  - script: >-
-      pip install matplotlib pooch &&
-      pip install scikit-umfpack scikit-sparse --no-deps --no-build-isolation
-      # The above two scikits both depend on scipy, so use `--no-deps`
-      # Also note that they don't provide wheels, so we build them from
-      # source (only in this job, it's a small optional dependency so test
-      # only in a single place)
+  - script: pip install matplotlib pooch
     displayName: 'Install full mode optional dependencies'
-- ${{ if eq(parameters.coverage, true) }}:
-  - script: pip install pytest-cov coverage codecov
-    displayName: 'Install coverage dependencies'
-- ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx numpydoc pooch
-    displayName: 'Install documentation dependencies'
-  - script: sudo apt-get install -y wamerican-small
-    displayName: 'Install word list (for csgraph tutorial)'
-- ${{ if eq(parameters.asv_check, true) }}:
-  - script: pip install "asv>=0.4.1"
-    displayName: 'Install asv'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
 - script: git submodule update --init
@@ -139,51 +111,21 @@ steps:
       #       messes with build isolation.
       pip install scipy*.tar.gz -v
     displayName: 'Install SciPy from SDist'
-- script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
+- script: 'python -u runtests.py -g -j2 --build-only ${USE_WHEEL_BUILD:-}'
   env:
-    ${{ if eq(parameters.coverage, true) }}:
-      COVERAGE: '--coverage --gcov'
     ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
       USE_WHEEL_BUILD: '--no-build'
   displayName: 'Build SciPy'
 - script: |
     set -euo pipefail
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
-    ${{ if eq(parameters.coverage, true) }}:
-      COVERAGE: '--coverage --gcov'
     ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
       USE_WHEEL_BUILD: '--no-build'
-  # Only run tests on main for the coverage build
-  ${{ if eq(parameters.coverage, false) }}:
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
+  condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
-  - script: python runtests.py -g --refguide-check
-    displayName: 'Refguide Check'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.asv_check, true)) }}:
-  - script: |
-      set -euo pipefail
-      cd benchmarks
-      python -masv check -E existing
-      # pyfftw missing should raise an error when running benchmarks with SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-      ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
   condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
   failOnStderr: true
-- ${{ if eq(parameters.coverage, true) }}:
-  - script: |
-      set -euo pipefail
-      RUN_DIR=`echo build/testenv/lib/python*/site-packages`
-      # Produce gcov output for codecov to find
-      find build -name '*.gcno' -type f -exec gcov -pb {} +
-      mv *.gcov "$RUN_DIR/"
-      # Run codecov
-      cd "$RUN_DIR"
-      curl https://codecov.io/bash -o codecov-upload.sh
-      chmod +x codecov-upload.sh
-      # Skip running gcov since we have already done it
-      ./codecov-upload.sh -X gcov
-    displayName: 'Upload coverage information'

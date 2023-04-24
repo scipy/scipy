@@ -34,7 +34,7 @@ cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
-                       bint extrapolate) nogil:
+                       bint extrapolate) noexcept nogil:
     """
     Find an interval such that t[interval] <= xval < t[interval+1].
 
