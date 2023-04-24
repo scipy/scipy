@@ -344,6 +344,7 @@ class LinearOperator:
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator first."
                 ) from e
+            raise
 
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
@@ -391,6 +392,7 @@ class LinearOperator:
                     "Unable to multiply a LinearOperator with a sparse matrix."
                     " Wrap the matrix in aslinearoperator() first."
                 ) from e
+            raise
 
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)

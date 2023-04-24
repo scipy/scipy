@@ -455,5 +455,12 @@ def test_transpose_noconjugate():
 def test_sparse_matmat_exception():
     A = interface.LinearOperator((2, 2), matvec=lambda x: x)
     B = sparse.identity(2)
-    assert_raises(TypeError, A * B)
-    assert_raises(TypeError, B * A)
+    msg = "Unable to multiply a LinearOperator with a sparse matrix."
+    with assert_raises(TypeError, match=msg):
+        A * B
+    with assert_raises(TypeError, match=msg):
+        B * A
+    with assert_raises(ValueError):
+        A * np.identity(4)
+    with assert_raises(ValueError):
+        np.identity(4) * A
