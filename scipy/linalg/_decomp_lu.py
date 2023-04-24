@@ -266,6 +266,32 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
         a1 = a1.astype(dtype_char[0])  # makes a copy, free to scratch
         overwrite_a = True
 
+    *nd, m, n = a1.shape
+    k = min(m, n)
+    real_dchar = 'f' if a1.dtype.char in 'fF' else 'd'
+
+    # Empty input
+    if min(*a1.shape) == 0:
+        if permute_l:
+            PL = np.empty(shape=[*nd, m, k], dtype=a1.dtype)
+            U = np.empty(shape=[*nd, k, n], dtype=a1.dtype)
+            return PL, U
+        else:
+            P = (np.empty([*nd, 0], dtype=int) if p_indices else
+                 np.empty([*nd, 0, 0], dtype=real_dchar))
+            L = np.empty(shape=[*nd, m, k], dtype=a1.dtype)
+            U = np.empty(shape=[*nd, k, n], dtype=a1.dtype)
+            return P, L, U
+
+    # Scalar case
+    if a1.shape[-2:] == (1, 1):
+        if permute_l:
+            return np.ones_like(a1), (a1 if overwrite_a else a1.copy())
+        else:
+            P = (np.zeros(shape=[*nd, m], dtype=int) if p_indices
+                 else np.ones_like(a1))
+            return P, np.ones_like(a1), (a1 if overwrite_a else a1.copy())
+
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"
         if not overwrite_a:
@@ -279,9 +305,6 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     if not (a1.flags['C_CONTIGUOUS'] and a1.flags['WRITEABLE']):
         a1 = a1.copy(order='C')
-
-    *nd, m, n = a1.shape
-    k = min(m, n)
 
     if not nd:  # 2D array
 
@@ -311,13 +334,13 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     # permute_l=False needed to enter here to avoid wasted efforts
     if (not p_indices) and (not permute_l):
         if nd:
-            Pa = np.zeros([*nd, m, m], dtype=int)
+            Pa = np.zeros([*nd, m, m], dtype=real_dchar)
             # An unreadable index hack - One-hot encoding for perm matrices
             nd_ix = np.ix_(*([np.arange(x) for x in nd]+[np.arange(m)]))
             Pa[(*nd_ix, P)] = 1
             P = Pa
         else:  # 2D case
-            Pa = np.zeros([m, m])
+            Pa = np.zeros([m, m], dtype=real_dchar)
             Pa[np.arange(m), P] = 1
             P = Pa
 
