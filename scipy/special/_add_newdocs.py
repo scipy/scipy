@@ -9924,7 +9924,7 @@ add_newdoc("nbdtr",
     >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
     >>> parameters_list = list(zip(p_parameters, n_parameters,
     ...                            linestyles))
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
     ...     p, n, style = parameter_set
     ...     nbdtr_vals = nbdtr(k, n, p)
@@ -10050,7 +10050,7 @@ add_newdoc("nbdtrc",
     >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
     >>> parameters_list = list(zip(p_parameters, n_parameters,
     ...                            linestyles))
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
     ...     p, n, style = parameter_set
     ...     nbdtrc_vals = nbdtrc(k, n, p)
@@ -10166,7 +10166,7 @@ add_newdoc(
     >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
     >>> parameters_list = list(zip(n_parameters, k_parameters, linestyles))
     >>> cdf_vals = np.linspace(0, 1, 1000)
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
     ...     n, k, style = parameter_set
     ...     nbdtri_vals = nbdtri(k, n, cdf_vals)
@@ -10278,7 +10278,7 @@ add_newdoc("nbdtrik",
     >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
     >>> parameters_list = list(zip(p_parameters, n_parameters, linestyles))
     >>> cdf_vals = np.linspace(0, 1, 1000)
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
     ...     p, n, style = parameter_set
     ...     nbdtrik_vals = nbdtrik(cdf_vals, n, p)
