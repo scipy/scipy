@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 import cython
 
 from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
