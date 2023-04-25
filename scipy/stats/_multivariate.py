@@ -4570,7 +4570,7 @@ class multivariate_t_gen(multi_rv_generic):
                 * (psi(halfsum) - psi(half_df))
                 + 0.5 * shape_info.log_pdet)
 
-    def entropy(self, shape=1, df=1):
+    def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
         t-distribution.
 

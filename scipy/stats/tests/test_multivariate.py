@@ -2552,7 +2552,7 @@ class TestMultivariateT:
     def test_entropy_inf_df(self):
         cov = np.eye(3, 3)
         df = np.inf
-        mvt_entropy = stats.multivariate_t.entropy(cov, df)
+        mvt_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
         mvn_entropy = stats.multivariate_normal.entropy(None, cov)
         assert mvt_entropy == mvn_entropy
 
