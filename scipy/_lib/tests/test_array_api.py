@@ -31,7 +31,7 @@ def test_asarray(xp):
 
 @array_api_compatible
 def test_asarray_namespace(xp):
-    x, y = [0, 1, 2], np.arange(3)
+    x, y = [0, 1, 2], xp.arange(3)
     x, y, xp_ = asarray_namespace(x, y)
     assert xp_.__name__ == 'array_api_compat.numpy'
     ref = np.array([0, 1, 2])

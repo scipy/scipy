@@ -9,6 +9,7 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 import os
 
 import numpy as np
+import numpy.array_api
 # probably want to vendor it (submodule)
 import array_api_compat
 import array_api_compat.numpy
@@ -27,6 +28,10 @@ def namespace_from_arrays(*arrays, single_namespace=True):
             namespaces.add(array_api_compat.array_namespace(array))
         except TypeError:
             namespaces.add(array_api_compat.numpy)
+
+    if numpy.array_api in namespaces:
+        namespaces.remove(numpy.array_api)
+        namespaces.add(array_api_compat.numpy)
 
     if single_namespace and len(namespaces) != 1:
         raise ValueError(
