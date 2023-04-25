@@ -919,7 +919,7 @@ class TestMultinomialQMC:
         seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         n_trials = 100
-        expected = (n_trials * p).astype(int)
+        expected = np.atleast_2d(n_trials * p).astype(int)
         engine = qmc.MultinomialQMC(p, n_trials=n_trials, seed=seed)
         assert_allclose(engine.random(1), expected, atol=1)
 
@@ -944,9 +944,10 @@ class TestMultinomialQMC:
         # same as test_MultinomialBasicDraw with different engine
         seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([[12, 26, 5, 35, 22]])
+        n_trials = 100
+        expected = np.atleast_2d(n_trials * p).astype(int)
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
-        engine = qmc.MultinomialQMC(p, n_trials=100, engine=base_engine,
+        engine = qmc.MultinomialQMC(p, n_trials=n_trials, engine=base_engine,
                                     seed=seed)
         assert_allclose(engine.random(1), expected, atol=1)
 
