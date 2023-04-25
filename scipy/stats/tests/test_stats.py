@@ -7289,9 +7289,6 @@ class TestWassersteinDistance:
         assert_almost_equal(stats.wasserstein_distance(
             [0, 1, 2], [1, 2, 3]),
             1)
-        uv, vv, uw, vw = [[0, 1], [1, 0]], [[1, 1]], [1, 1], [1]
-        distance = stats.wasserstein_distance(uv, vv, uw, vw)
-        assert_almost_equal(distance, 1)
 
     def test_same_distribution(self):
         # Any distribution moved to itself should have a Wasserstein distance
@@ -7301,17 +7298,26 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
                                        [1, 1, 1, 1], [1, 3]),
             0)
-        uv, vv = [[0, 0], [15, 0.2]], [[15, 0.2], [0, 0]]
-        distance = stats.wasserstein_distance(uv, vv)
-        assert_almost_equal(distance, 0)
-        uv, vv, uw, vw = [[1, 1], [2, 2]], [[2, 2], [1, 1]], [2, 4], [4, 2]
-        distance = stats.wasserstein_distance(uv, vv, uw, vw)
-        assert_almost_equal(distance, 0)
-        uv, vv, uw, vw = [[0, 0], [2, 3], [2, 3], [2, 3], [0, 0]], \
-                         [[2, 3], [0, 0], [2, 3]],                 \
-                         [1, 1, 1, 1, 1], [1, 2, 2]
-        distance = stats.wasserstein_distance(uv, vv, uw, vw)
-        assert_almost_equal(distance, 0)
+    
+    @pytest.mark.parametrize('n_value', (4, 15, 35))
+    @pytest.mark.parametrize('ndim', (3, 4, 7))
+    @pytest.mark.parametrize('max_repeats', (5, 10))
+    def test_same_distribution_nD(self, ndim, n_value, max_repeats):
+        # Any distribution moved to itself should have a Wasserstein distance
+        # of zero.
+        rng = np.random.default_rng(363836384995579937222333)
+        repeats = rng.integers(1, max_repeats, size=n_value)
+
+        u_values = rng.random(size=(n_value, ndim))
+        v_values = np.repeat(u_values, repeats, axis=0)
+        v_weights = rng.random(np.sum(repeats))
+        range_repeat = np.repeat(np.arange(len(repeats)), repeats)
+        u_weights = np.bincount(range_repeat, weights = v_weights)
+        index = rng.permutation(len(v_weights))
+        v_values, v_weights = v_values[index], v_weights[index]
+
+        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, 0, atol=1e-15)
 
     def test_shift(self):
         # If the whole distribution is shifted by x, then the Wasserstein
@@ -7335,15 +7341,6 @@ class TestWassersteinDistance:
                 [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
             stats.wasserstein_distance([5, 0, 1], [0, 4, 3],
                                        [1, 2, 4], [1, 2, 4]))
-        uv_1 = [[0, 0], [0, 0], [0, 1], [0, 1], [1, 1], [2, 1]]
-        vv_1 = [[0, 5], [0, 5], [2, 4], [4, 2], [3, 4], [3, 4]]
-        uw_1, vw_1 = [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]
-        distance_1 = stats.wasserstein_distance(uv_1, vv_1, uw_1, vw_1)
-        uv_2 = [[0, 0], [0, 1], [1, 1], [2, 1]]
-        vv_2 = [[0, 5], [2, 4], [4, 2], [3, 4]]
-        uw_2, vw_2 = [2, 2, 1, 1], [2, 1, 1, 2]
-        distance_2 = stats.wasserstein_distance(uv_2, vv_2, uw_2, vw_2)
-        assert_almost_equal(distance_1, distance_2)
 
     def test_collapse(self):
         # Collapsing a distribution to a point distribution at zero is
@@ -7381,13 +7378,25 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([1, 2, 100000], [1, 1],
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
-        uv_1, vv_1 = [[1, 0], [2, 2], [100000, 0.00001]], [[1, 0], [2, 2]]
-        uw_1, vw_1 = [1, 1, 0], [1, 1]
-        distance_1 = stats.wasserstein_distance(uv_1, vv_1, uw_1, vw_1)
-        uv_2, vv_2 = [[1, 0], [2, 2]], [[1, 0], [2, 2]]
-        uw_2, vw_2 = [1, 1], [1, 1]
-        distance_2 = stats.wasserstein_distance(uv_2, vv_2, uw_2, vw_2)
-        assert_almost_equal(distance_1, distance_2)
+
+    @pytest.mark.parametrize('nu', (8, 16, 32))
+    @pytest.mark.parametrize('nv', (8, 16, 32))
+    @pytest.mark.parametrize('ndim', (1, 2, 6))
+    def test_zero_weight_nD(self, nu, nv, ndim):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        rng = np.random.default_rng(38573488467338826109)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+
+        add_row, nrows = rng.integers(0, nu, size = 2) 
+        add_value = rng.random(size=(nrows, ndim))
+        u_values = np.r_[u_values[:add_row, :], add_value, u_values[add_row:, :]]
+        u_weights = np.concatenate((u_weights[:add_row], np.zeros(nrows), u_weights[add_row:]))
+        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        assert_almost_equal(res, ref)
 
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
@@ -7415,79 +7424,63 @@ class TestWassersteinDistance:
             distance = stats.wasserstein_distance(uv, vv)
             assert_equal(distance, np.nan)
 
-    def test_multi_dim(self):
+    @pytest.mark.parametrize('nu', (10, 15, 20))
+    @pytest.mark.parametrize('nv', (10, 15, 20))
+    @pytest.mark.parametrize('ndim', (1, 3, 5))
+    def test_multi_dim_nD(self, nu, nv, ndim):
         # Adding dimension on distributions do not affect the result
-        uv_1, vv_1 = [[1, 0], [2, 0], [3, 0]], [[-1, 0], [5, 0], [1, 0]]
-        distance_1 = stats.wasserstein_distance(uv_1, vv_1)
-        uv_2, vv_2 = [1, 2, 3], [-1, 5, 1]
-        distance_2 = stats.wasserstein_distance(uv_2, vv_2)
-        assert_almost_equal(distance_1, distance_2)
-        uv_1, vv_1 = [[0, 1, 2]], [[0, 1, 1]]
-        distance_1 = stats.wasserstein_distance(uv_1, vv_1)
-        uv_2, vv_2 = [[1, 2]], [[1, 1]]
-        distance_2 = stats.wasserstein_distance(uv_2, vv_2)
-        assert_almost_equal(distance_1, distance_2)
-        uv_1 = [[-1, 0], [0, 0], [4, 0], [8, 0]]
-        vv_1 = [[-1, 0], [3, 0], [2, 0], [0, 0]]
-        uw_1, vw_1 = [1, 3, 5, 7], [2, 4, 6, 8]
-        distance_1 = stats.wasserstein_distance(uv_1, vv_1, uw_1, vw_1)
-        uv_2, vv_2 = [[-1], [0], [4], [8]], [[-1], [3], [2], [0]]
-        uw_2, vw_2 = [1, 3, 5, 7], [2, 4, 6, 8]
-        distance_2 = stats.wasserstein_distance(uv_2, vv_2, uw_2, vw_2)
-        assert_almost_equal(distance_1, distance_2)
+        rng = np.random.default_rng(2736495738494849509)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
 
-    @pytest.mark.parametrize('input_dim', (2, 3, 7, 15, 60))
-    @pytest.mark.parametrize('data_volumn', ((3, 5), (12, 16), (20, 20),
-                                             (1, 200), (15, 15)))
-    def test_shift_nD(self, input_dim, data_volumn):
-        # Moving across n-dimensional space does not change the outcome.
-        rng = np.random.default_rng(734825773)
-        uu = rng.random((data_volumn[0], input_dim))
-        vv = rng.random((data_volumn[1], input_dim))
-        expected = stats.wasserstein_distance(uu, vv)
-        shift = rng.random(input_dim)
-        uu_shift, vv_shift = uu + shift, vv + shift
-        shift_result = stats.wasserstein_distance(uu_shift, vv_shift)
-        assert_almost_equal(expected, shift_result)
+        add_dim = rng.integers(0, ndim, size = 1)[0]
+        add_value = rng.random()
 
-    @pytest.mark.parametrize('input_dim', (3, 4, 5, 22))
-    @pytest.mark.parametrize('data_volumn', ((6, 3), (10, 10), (30, 8),
-                                             (6, 150), (20, 14)))
-    def test_rotation_reflection_nD(self, input_dim, data_volumn):
-        # Rotating or reflecting across across n-dimensional
-        # space does not change the outcome.
-        rng = np.random.default_rng(734826773)
+        u_values = np.c_[u_values[:, :add_dim], 
+                         np.full(nu, add_value), 
+                         u_values[:, add_dim:]]
+        v_values = np.c_[v_values[:, :add_dim], 
+                         np.full(nv, add_value), 
+                         v_values[:, add_dim:]]
+        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        assert_almost_equal(res, ref)
 
-        uu = rng.random((data_volumn[0], input_dim))
-        vv = rng.random((data_volumn[1], input_dim))
-        expected = stats.wasserstein_distance(uu, vv)
-        diag_value = rng.choice([-1, 1], size=input_dim)
-        # random reflection matrix
-        reflection_matrix = np.diag(diag_value)
-        combinations = []
-        for i in range(input_dim - 1):
-            for j in range(i + 1, input_dim):
-                combinations.append((i, j))
+    @pytest.mark.parametrize('nu', (7, 13, 19))
+    @pytest.mark.parametrize('nv', (7, 13, 19))
+    @pytest.mark.parametrize('ndim', (2, 4, 7))
+    def test_orthogonal_nD(self, nu, nv, ndim):
+        # orthogonal transformations do not affect the result of the 
+        # wasserstein_distance
+        rng = np.random.default_rng(34746837464536)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
 
-        def rotation(index):
-            # generate random nD rotation matrix
-            # rotation is not uniformly distributed on unit sphere!
-            index_i, index_j = index
-            rotation_matrix = np.identity(input_dim)
+        dist = stats.ortho_group(ndim)
+        transform = dist.rvs(random_state=rng)
+        shift = rng.random(size=ndim)
+        res = stats.wasserstein_distance(u_values @ transform + shift,
+                                   v_values @ transform + shift,
+                                   u_weights, v_weights)
+        assert_almost_equal(res, ref)
 
-            rotation_angle = np.pi * rng.uniform(0, 1)
-            rotation_matrix[index_i, index_i] = np.cos(rotation_angle)
-            rotation_matrix[index_i, index_j] = - np.sin(rotation_angle)
-            rotation_matrix[index_j, index_i] = np.sin(rotation_angle)
-            rotation_matrix[index_j, index_j] = np.cos(rotation_angle)
-            return rotation_matrix
-        rotations = [rotation(index) for index in combinations]
-        rotation_matrix = np.linalg.multi_dot(rotations)
-        rotation_reflection = reflection_matrix @ rotation_matrix
-        uu_rr, vv_rr = uu @ rotation_reflection, vv @ rotation_reflection
-
-        shift_result = stats.wasserstein_distance(uu_rr, vv_rr)
-        assert_almost_equal(expected, shift_result)
+    @pytest.mark.parametrize('nu', (4, 5, 21))
+    @pytest.mark.parametrize('nv', (6, 7, 35))
+    def test_error_code(self, nu, nv):
+        rng = np.random.default_rng(52473644737485644836320101)
+        with pytest.raises(ValueError) as excinfo:
+            u_values = rng.random(size = (nu, 10))
+            v_values = rng.random(size = (nv, 2))
+            res = stats.wasserstein_distance(u_values, v_values)
+        excinfo.match('Invalid input values. Please provide two numpy'
+                      'arrays with either both one-dimensional or both'
+                      'two-dimensional arrays with the same number of'
+                      'columns.')
 
 
 class TestEnergyDistance:
