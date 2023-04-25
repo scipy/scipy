@@ -4,10 +4,13 @@ import pytest
 import warnings
 
 import numpy as np
+import numpy.array_api
 import numpy.testing as npt
+
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
+from scipy._lib._array_api import USE_ARRAY_API
 
 
 def pytest_configure(config):
@@ -93,3 +96,7 @@ def check_fpu_mode(request):
         warnings.warn("FPU mode changed from {:#x} to {:#x} during "
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)
+
+array_api_compatible = pytest.mark.parametrize(
+    "xp", [np, *((numpy.array_api,) if USE_ARRAY_API else ())]
+)
