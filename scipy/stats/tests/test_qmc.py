@@ -537,7 +537,11 @@ class QMCEngineTests:
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     @pytest.mark.parametrize(
         "seed",
-        (170382760648021597650530316304495310428, None),
+        (
+            170382760648021597650530316304495310428,
+            np.random.default_rng(170382760648021597650530316304495310428),
+            None,
+        ),
     )
     def test_reset(self, scramble, seed):
         engine = self.engine(d=2, scramble=scramble, seed=seed)
