@@ -457,10 +457,10 @@ def test_sparse_matmat_exception():
     B = sparse.identity(2)
     msg = "Unable to multiply a LinearOperator with a sparse matrix."
     with assert_raises(TypeError, match=msg):
-        A * B
+        A @ B
     with assert_raises(TypeError, match=msg):
-        B * A
+        B @ A
     with assert_raises(ValueError):
-        A * np.identity(4)
+        A @ np.identity(4)
     with assert_raises(ValueError):
-        np.identity(4) * A
+        np.identity(4) @ A
