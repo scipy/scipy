@@ -918,8 +918,9 @@ class TestMultinomialQMC:
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([[12, 26, 5, 35, 22]])
-        engine = qmc.MultinomialQMC(p, n_trials=100, seed=seed)
+        n_trials = 100
+        expected = (n_trials * p).astype(int)
+        engine = qmc.MultinomialQMC(p, n_trials=n_trials, seed=seed)
         assert_allclose(engine.random(1), expected, atol=1)
 
     def test_MultinomialDistribution(self):
