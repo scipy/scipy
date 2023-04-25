@@ -7,7 +7,6 @@ from libc.string cimport memcpy
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
 from scipy.linalg._cythonized_array_utils cimport lapack_t, swap_c_and_f_layout
 
-import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 
@@ -23,7 +22,7 @@ ctypedef float complex floatComplex
 cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
                        cnp.ndarray[lapack_t, ndim=2] lu,
                        int[::1] perm,
-                       bint permute_l):
+                       bint permute_l) noexcept:
     """LU decomposition and copy operations using ?getrf routines
     
     This function overwrites inputs. For interfacing LAPACK,

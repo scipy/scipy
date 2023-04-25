@@ -3,8 +3,8 @@ cimport cython
 import numpy as np
 from scipy.linalg._cythonized_array_utils cimport (
     lapack_t,
-	np_complex_numeric_t,
-	np_numeric_t
+    np_complex_numeric_t,
+    np_numeric_t
     )
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
 from libc.stdlib cimport malloc, free
@@ -70,9 +70,12 @@ def find_det_from_lu(lapack_t[:, ::1] a):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) nogil:
-    """Copy+transpose for Cython LAPACK interfaces"""
-    cdef int row, col, k, ith_row, r2, c2
+cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noexcept nogil:
+    """
+    Swap+copy the memory layout of same sized buffers mainly
+    for Cython LAPACK interfaces.
+    """
+    cdef int row, col, ith_row
     cdef lapack_t *bb = b
     cdef lapack_t *aa = a
 

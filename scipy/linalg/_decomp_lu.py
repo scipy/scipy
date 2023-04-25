@@ -277,7 +277,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
             U = np.empty(shape=[*nd, k, n], dtype=a1.dtype)
             return PL, U
         else:
-            P = (np.empty([*nd, 0], dtype=int) if p_indices else
+            P = (np.empty([*nd, 0], dtype=np.int32) if p_indices else
                  np.empty([*nd, 0, 0], dtype=real_dchar))
             L = np.empty(shape=[*nd, m, k], dtype=a1.dtype)
             U = np.empty(shape=[*nd, k, n], dtype=a1.dtype)
@@ -308,7 +308,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
 
     if not nd:  # 2D array
 
-        p = np.empty(m, dtype=int)
+        p = np.empty(m, dtype=np.int32)
         u = np.zeros([k, k], dtype=a1.dtype)
         lu_dispatcher(a1, u, p, permute_l)
         P, L, U = (p, a1, u) if m > n else (p, u, a1)
@@ -316,7 +316,7 @@ def lu(a, permute_l=False, overwrite_a=False, check_finite=True,
     else:  # Stacked array
 
         # Prepare the contiguous data holders
-        P = np.empty([*nd, m], dtype=int)  # perm vecs
+        P = np.empty([*nd, m], dtype=np.int32)  # perm vecs
 
         if m > n:  # Tall arrays, U will be created
             U = np.zeros([*nd, k, k], dtype=a1.dtype)
