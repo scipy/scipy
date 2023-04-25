@@ -7306,7 +7306,7 @@ class TestWassersteinDistance:
         # Any distribution moved to itself should have a Wasserstein distance
         # of zero.
         rng = np.random.default_rng(363836384995579937222333)
-        repeats = rng.integers(1, max_repeats, size=n_value)
+        repeats = rng.integers(1, max_repeats, size=n_value, dtype = int)
 
         u_values = rng.random(size=(n_value, ndim))
         v_values = np.repeat(u_values, repeats, axis=0)
