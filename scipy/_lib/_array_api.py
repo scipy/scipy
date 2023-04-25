@@ -6,9 +6,15 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
+import os
+
 import numpy as np
 # probably want to vendor it (submodule)
 import array_api_compat
+import array_api_compat.numpy
+
+# SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
+USE_ARRAY_API = os.environ.get("array_api_dispatch", False)
 
 __all__ = ['namespace_from_arrays', 'asarray', 'asarray_namespace']
 
