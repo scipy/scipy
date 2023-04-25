@@ -10291,7 +10291,7 @@ add_newdoc("nbdtrik",
     >>> plt.show()
 
     The negative binomial distribution is also available as
-    `scipy.stats.nbinom`. The percentile function `scipy.stats.nbinom.ppf`
+    `scipy.stats.nbinom`. The percentile function  method ``ppf``
     returns the result of `nbdtrik` rounded up to integers:
 
     >>> from scipy.stats import nbinom
