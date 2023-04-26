@@ -184,7 +184,7 @@ jobs:
           cache: 'pip'
           cache-dependency-path: 'environment.yml'
 
-      - name: Win_amd64 - install rtools + clang-cl
+      - name: Win_amd64 - install rtools
         run: |
           # mingw-w64
           choco install rtools --no-progress
