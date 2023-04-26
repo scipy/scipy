@@ -15,7 +15,8 @@ import array_api_compat
 import array_api_compat.numpy
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
-USE_ARRAY_API = os.environ.get("array_api_dispatch", False)
+array_api_dispatch = os.environ.get("array_api_dispatch", False)
+SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
 
 __all__ = ['array_namespace', 'asarray', 'asarray_namespace']
 
@@ -29,10 +30,6 @@ def array_namespace(*arrays, single_namespace=True):
             namespaces.add(array_api_compat.array_namespace(array))
         except TypeError:
             namespaces.add(array_api_compat.numpy)
-
-    if numpy.array_api in namespaces:
-        namespaces.remove(numpy.array_api)
-        namespaces.add(array_api_compat.numpy)
 
     if single_namespace and len(namespaces) != 1:
         raise ValueError(
