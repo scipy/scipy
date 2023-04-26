@@ -4,12 +4,12 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, array_namespace, asarray, asarray_namespace,
+    _GLOBAL_CONFIG, array_namespace, asarray, asarray_namespace,
     to_numpy
 )
 
 
-if not SCIPY_ARRAY_API:
+if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
     pytest.skip(
         "Array API test; set environment variable array_api_dispatch=1 to run it",
         allow_module_level=True
@@ -20,6 +20,11 @@ def test_array_namespace():
     x, y = [0, 1, 2], np.arange(3)
     xp = array_namespace(x, y)
     assert xp.__name__ == 'array_api_compat.numpy'
+
+    _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
+    xp = array_namespace(x, y)
+    assert xp.__name__ == 'numpy'
+    _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
 @array_api_compatible
@@ -38,6 +43,11 @@ def test_asarray_namespace():
     assert_equal(x, ref)
     assert_equal(y, ref)
     assert type(x) == type(y)
+
+    _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
+    x, y, xp_ = asarray_namespace(x, y)
+    assert xp_.__name__ == 'numpy'
+    _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
 @array_api_compatible

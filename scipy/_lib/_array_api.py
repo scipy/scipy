@@ -14,11 +14,14 @@ import numpy.array_api
 import array_api_compat
 import array_api_compat.numpy
 
+__all__ = ['array_namespace', 'asarray', 'asarray_namespace']
+
+
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
 array_api_dispatch = os.environ.get("array_api_dispatch", False)
 SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
 
-__all__ = ['array_namespace', 'asarray', 'asarray_namespace']
+_GLOBAL_CONFIG = {"SCIPY_ARRAY_API": SCIPY_ARRAY_API}
 
 
 def compliance_scipy(*arrays):
@@ -32,7 +35,7 @@ def compliance_scipy(*arrays):
 def array_namespace(*arrays, single_namespace=True):
     compliance_scipy(*arrays)
 
-    if not SCIPY_ARRAY_API:
+    if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         return np
 
     # if we cannot get the namespace, np is used
