@@ -7793,12 +7793,15 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Returns
     -------
-    statistic : float or ndarray
-        The Cressie-Read power divergence test statistic.  The value is
-        a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
-    pvalue : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `stat` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+
+        statistic : float or ndarray
+            The Cressie-Read power divergence test statistic.  The value is
+            a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `stat` are scalars.
 
     See Also
     --------
@@ -7999,12 +8002,15 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Returns
     -------
-    chisq : float or ndarray
-        The chi-squared test statistic.  The value is a float if `axis` is
-        None or `f_obs` and `f_exp` are 1-D.
-    p : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `chisq` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+        
+        chisq : float or ndarray
+            The chi-squared test statistic.  The value is a float if `axis` is
+            None or `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `chisq` are scalars.
 
     See Also
     --------
