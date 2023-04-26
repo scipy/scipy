@@ -4,7 +4,8 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, array_namespace, asarray, asarray_namespace
+    SCIPY_ARRAY_API, array_namespace, asarray, asarray_namespace,
+    to_numpy
 )
 
 
@@ -37,3 +38,10 @@ def test_asarray_namespace():
     assert_equal(x, ref)
     assert_equal(y, ref)
     assert type(x) == type(y)
+
+
+@array_api_compatible
+def test_to_numpy(xp):
+    x = xp.asarray([0, 1, 2])
+    x = to_numpy(x, xp=xp)
+    assert isinstance(x, np.ndarray)

@@ -99,3 +99,20 @@ def asarray_namespace(*arrays):
         arrays[i] = asarray(array, xp=xp)
 
     return *arrays, xp
+
+
+def to_numpy(array, xp):
+    """Convert `array` into a NumPy ndarray on the CPU.
+
+    This is specially useful to pass arrays to Cython.
+    """
+    xp_name = xp.__name__
+
+    if xp_name in {"array_api_compat.torch", "torch"}:
+        return array.cpu().numpy()
+    elif xp_name == "cupy.array_api":
+        return array._array.get()
+    elif xp_name in {"array_api_compat.cupy", "cupy"}:  # pragma: nocover
+        return array.get()
+
+    return np.asarray(array)
