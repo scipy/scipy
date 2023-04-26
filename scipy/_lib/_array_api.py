@@ -17,11 +17,12 @@ import array_api_compat.numpy
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
 USE_ARRAY_API = os.environ.get("array_api_dispatch", False)
 
-__all__ = ['namespace_from_arrays', 'asarray', 'asarray_namespace']
+__all__ = ['array_namespace', 'asarray', 'asarray_namespace']
 
 
-def namespace_from_arrays(*arrays, single_namespace=True):
+def array_namespace(*arrays, single_namespace=True):
     # if we cannot get the namespace, np is used
+    # here until moved upstream
     namespaces = set()
     for array in arrays:
         try:
@@ -55,7 +56,7 @@ def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
     container validation without memory copies for both downstream use cases
     """
     if xp is None:
-        xp = namespace_from_arrays(array)
+        xp = array_namespace(array)
     if xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}:
         # Use NumPy API to support order
         if copy is True:
@@ -95,7 +96,7 @@ def asarray_namespace(*arrays):
 
     """
     arrays = list(arrays)  # probably not good
-    xp = namespace_from_arrays(*arrays)
+    xp = array_namespace(*arrays)
 
     for i, array in enumerate(arrays):
         arrays[i] = asarray(array, xp=xp)

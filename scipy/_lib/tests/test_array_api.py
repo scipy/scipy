@@ -4,7 +4,7 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    USE_ARRAY_API, namespace_from_arrays, asarray, asarray_namespace
+    USE_ARRAY_API, array_namespace, asarray, asarray_namespace
 )
 
 
@@ -15,9 +15,9 @@ if not USE_ARRAY_API:
     )
 
 
-def test_namespace_from_arrays():
+def test_array_namespace():
     x, y = [0, 1, 2], np.arange(3)
-    xp = namespace_from_arrays(x, y)
+    xp = array_namespace(x, y)
     assert xp.__name__ == 'array_api_compat.numpy'
 
 
