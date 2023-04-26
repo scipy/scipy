@@ -22,6 +22,9 @@ __all__ = ['array_namespace', 'asarray', 'asarray_namespace']
 
 
 def array_namespace(*arrays, single_namespace=True):
+    if not SCIPY_ARRAY_API:
+        return np
+
     # if we cannot get the namespace, np is used
     # here until moved upstream
     namespaces = set()
@@ -66,6 +69,7 @@ def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
         return xp.asarray(array)
     else:
         return xp.asarray(array, dtype=dtype, copy=copy)
+
 
 def asarray_namespace(*arrays):
     """Validate and convert arrays to a common namespace.
