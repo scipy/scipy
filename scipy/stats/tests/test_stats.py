@@ -3688,12 +3688,16 @@ def test_gh_chisquare_12282():
 
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
-def test_chiquare_data_types(n, dtype):
-    # Regression test for gh-10159.
+def test_chiquare_data_types_attributes(n, dtype):
+    # Regression test for gh-10159 and gh-18368
     obs = np.array([n, 0], dtype=dtype)
     exp = np.array([n // 2, n // 2], dtype=dtype)
-    stat, p = stats.chisquare(obs, exp)
+    res = stats.chisquare(obs, exp)
+    stat, p = res
     assert_allclose(stat, n, rtol=1e-13)
+    # check that attributes are identical to unpacked outputs - see gh-18368
+    assert_equal(res.statistic, stat)
+    assert_equal(res.pvalue, p)
 
 
 def test_chisquare_masked_arrays():
