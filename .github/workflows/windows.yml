@@ -189,9 +189,6 @@ jobs:
           # mingw-w64
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-          
-          #          choco install -y llvm --no-progress
-          #          echo "C:\Program Files\LLVM\bin;" >> $env:GITHUB_PATH
 
       - name: Install OpenBLAS
         shell: bash
