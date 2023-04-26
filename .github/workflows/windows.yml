@@ -37,10 +37,8 @@ jobs:
           cache-dependency-path: 'environment.yml'
       - name: Install rtools (mingw-w64)
         run: |
-          choco install rtools --no-progress
+          choco install rtools --no-progress --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-          choco install pkgconfiglite
-          echo "C:\ProgramData\chocolatey\bin\;" >> $env:GITHUB_PATH
 
       - name: show-gfortran
         run: |
