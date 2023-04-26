@@ -21,7 +21,7 @@ jobs:
     name: cp310 (meson) fast
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'andyfaff/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -39,6 +39,9 @@ jobs:
         run: |
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+          choco install pkgconfiglite
+          echo "C:\ProgramData\chocolatey\bin\;" >> $env:GITHUB_PATH
+
       - name: show-gfortran
         run: |
           gcc --version
