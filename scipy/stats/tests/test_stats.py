@@ -7306,13 +7306,13 @@ class TestWassersteinDistance:
         # Any distribution moved to itself should have a Wasserstein distance
         # of zero.
         rng = np.random.default_rng(363836384995579937222333)
-        repeats = rng.integers(1, max_repeats, size=n_value, dtype = int)
+        repeats = rng.integers(1, max_repeats, size=n_value, dtype=int)
 
         u_values = rng.random(size=(n_value, ndim))
         v_values = np.repeat(u_values, repeats, axis=0)
         v_weights = rng.random(np.sum(repeats))
         range_repeat = np.repeat(np.arange(len(repeats)), repeats)
-        u_weights = np.bincount(range_repeat, weights = v_weights)
+        u_weights = np.bincount(range_repeat, weights=v_weights)
         index = rng.permutation(len(v_weights))
         v_values, v_weights = v_values[index], v_weights[index]
 
@@ -7357,20 +7357,22 @@ class TestWassersteinDistance:
         assert_almost_equal(
             stats.wasserstein_distance(u, v, u_weights, v_weights),
             np.average(np.abs(u), weights=u_weights))
-        # test collapse for n dimentional values
+
+    @pytest.mark.parametrize('nu', (8, 9, 38))
+    @pytest.mark.parametrize('nv', (8, 12, 17))
+    @pytest.mark.parametrize('ndim', (3, 5, 23))
+    def test_collapse_nD(self, nu, nv, ndim):
+        # test collapse for n dimensional values
         # Collapsing a n-D distribution to a point distribution at zero
         # is equivalent to taking the average of the norm of data.
-        u = np.arange(-10, 30, 0.4).reshape((-1, 10))
-        v = np.zeros_like(u)
-        assert_almost_equal(
-            stats.wasserstein_distance(u, v),
-            np.mean(np.linalg.norm(u, axis=1)))
-
-        u_weights = np.arange(len(u))
-        v_weights = u_weights[::-1]
-        assert_almost_equal(
-            stats.wasserstein_distance(u, v, u_weights, v_weights),
-            np.average(np.linalg.norm(u, axis=1), weights=u_weights))
+        rng = np.random.default_rng(38573488467338826109)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = np.zeros((nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = np.average(np.linalg.norm(u_values, axis=1), weights=u_weights)
+        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        assert_almost_equal(res, ref)
 
     def test_zero_weight(self):
         # Values with zero weight have no impact on the Wasserstein distance.
@@ -7391,10 +7393,12 @@ class TestWassersteinDistance:
         v_weights = rng.random(size=nv)
         ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
 
-        add_row, nrows = rng.integers(0, nu, size = 2) 
+        add_row, nrows = rng.integers(0, nu, size=2) 
         add_value = rng.random(size=(nrows, ndim))
-        u_values = np.r_[u_values[:add_row, :], add_value, u_values[add_row:, :]]
-        u_weights = np.concatenate((u_weights[:add_row], np.zeros(nrows), u_weights[add_row:]))
+        u_values = np.insert(u_values, add_row, add_value, axis=0)
+        u_weights = np.concatenate((u_weights[:add_row], 
+                                    np.zeros(nrows), 
+                                    u_weights[add_row:]))
         res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
         assert_almost_equal(res, ref)
 
@@ -7436,15 +7440,11 @@ class TestWassersteinDistance:
         v_weights = rng.random(size=nv)
         ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
 
-        add_dim = rng.integers(0, ndim, size = 1)[0]
+        add_dim = rng.integers(0, ndim)
         add_value = rng.random()
 
-        u_values = np.c_[u_values[:, :add_dim], 
-                         np.full(nu, add_value), 
-                         u_values[:, add_dim:]]
-        v_values = np.c_[v_values[:, :add_dim], 
-                         np.full(nv, add_value), 
-                         v_values[:, add_dim:]]
+        u_values = np.insert(u_values, add_dim, add_value, axis=1)
+        v_values = np.insert(v_values, add_dim, add_value, axis=1)
         res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
         assert_almost_equal(res, ref)
 
@@ -7465,22 +7465,16 @@ class TestWassersteinDistance:
         transform = dist.rvs(random_state=rng)
         shift = rng.random(size=ndim)
         res = stats.wasserstein_distance(u_values @ transform + shift,
-                                   v_values @ transform + shift,
-                                   u_weights, v_weights)
+                                         v_values @ transform + shift,
+                                         u_weights, v_weights)
         assert_almost_equal(res, ref)
 
-    @pytest.mark.parametrize('nu', (4, 5, 21))
-    @pytest.mark.parametrize('nv', (6, 7, 35))
-    def test_error_code(self, nu, nv):
+    def test_error_code(self):
         rng = np.random.default_rng(52473644737485644836320101)
-        with pytest.raises(ValueError) as excinfo:
-            u_values = rng.random(size = (nu, 10))
-            v_values = rng.random(size = (nv, 2))
-            res = stats.wasserstein_distance(u_values, v_values)
-        excinfo.match('Invalid input values. Please provide two numpy'
-                      'arrays with either both one-dimensional or both'
-                      'two-dimensional arrays with the same number of'
-                      'columns.')
+        with pytest.raises(ValueError, match='Invalid input values. Please'):
+            u_values = rng.random(size=(4, 10))
+            v_values = rng.random(size=(6, 2))
+            _ = stats.wasserstein_distance(u_values, v_values)
 
 
 class TestEnergyDistance:
