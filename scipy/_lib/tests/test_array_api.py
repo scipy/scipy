@@ -45,3 +45,15 @@ def test_to_numpy(xp):
     x = xp.asarray([0, 1, 2])
     x = to_numpy(x, xp=xp)
     assert isinstance(x, np.ndarray)
+
+
+@pytest.mark.filterwarnings("ignore: the matrix subclass")
+def test_raises():
+    msg = "'numpy.ma.MaskedArray' are not supported"
+    with pytest.raises(TypeError, match=msg):
+        array_namespace(np.ma.array(1), np.array(1))
+
+    msg = "'numpy.matrix' are not supported"
+    with pytest.raises(TypeError, match=msg):
+        array_namespace(np.array(1), np.matrix(1))
+

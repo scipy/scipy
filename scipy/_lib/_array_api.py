@@ -21,7 +21,17 @@ SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
 __all__ = ['array_namespace', 'asarray', 'asarray_namespace']
 
 
+def compliance_scipy(*arrays):
+    for array in arrays:
+        if isinstance(array, np.ma.MaskedArray):
+            raise TypeError("'numpy.ma.MaskedArray' are not supported")
+        elif isinstance(array, np.matrix):
+            raise TypeError("'numpy.matrix' are not supported")
+
+
 def array_namespace(*arrays, single_namespace=True):
+    compliance_scipy(*arrays)
+
     if not SCIPY_ARRAY_API:
         return np
 
