@@ -33,10 +33,12 @@ def compliance_scipy(*arrays):
 
 
 def array_namespace(*arrays, single_namespace=True):
-    compliance_scipy(*arrays)
 
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
+        # here we could wrap the namespace if needed
         return np
+
+    compliance_scipy(*arrays)
 
     # if we cannot get the namespace, np is used
     # here until moved upstream
@@ -55,6 +57,7 @@ def array_namespace(*arrays, single_namespace=True):
 
     (xp,) = namespaces
 
+    # here we could wrap the namespace if needed
     return xp
 
 
@@ -113,7 +116,7 @@ def asarray_namespace(*arrays):
     xp = array_namespace(*arrays)
 
     for i, array in enumerate(arrays):
-        arrays[i] = asarray(array, xp=xp)
+        arrays[i] = xp.asarray(array)
 
     return *arrays, xp
 
