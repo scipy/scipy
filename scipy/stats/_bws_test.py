@@ -90,7 +90,7 @@ def bws_test(x, y, axis=0, alternative="two-sided", variant="naive", n_resamples
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
     the null hypothesis that the distribution underlying sample `x` 
     is the same as the distribution underlying sample `y`. Unlike 
-    the Kolmogorv-Smirnov, Wilcoxon, and Cramer-Von Mises tests, 
+    the Kolmogorov-Smirnov, Wilcoxon, and Cramer-Von Mises tests, 
     the BWS test weights the integral by the variance of the difference
     in CDFs, emphasizing the tails of the distributions, which increases
     the power of the test for a lot of applications.
