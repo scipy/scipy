@@ -9,7 +9,6 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 import os
 
 import numpy as np
-import numpy.array_api
 # probably want to vendor it (submodule)
 import array_api_compat
 import array_api_compat.numpy
@@ -30,9 +29,11 @@ def compliance_scipy(*arrays):
             raise TypeError("'numpy.ma.MaskedArray' are not supported")
         elif isinstance(array, np.matrix):
             raise TypeError("'numpy.matrix' are not supported")
+        elif not array_api_compat.is_array_api_obj(array):
+            raise TypeError("Only support Array API compatible arrays")
 
 
-def array_namespace(*arrays, single_namespace=True):
+def array_namespace(*arrays):
 
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         # here we could wrap the namespace if needed
@@ -40,25 +41,7 @@ def array_namespace(*arrays, single_namespace=True):
 
     compliance_scipy(*arrays)
 
-    # if we cannot get the namespace, np is used
-    # here until moved upstream
-    namespaces = set()
-    for array in arrays:
-        try:
-            namespaces.add(array_api_compat.array_namespace(array))
-        except TypeError:
-            namespaces.add(array_api_compat.numpy)
-
-    if single_namespace and len(namespaces) != 1:
-        raise ValueError(
-            f"Expected a single common namespace for array inputs, \
-              but got: {[n.__name__ for n in namespaces]}"
-        )
-
-    (xp,) = namespaces
-
-    # here we could wrap the namespace if needed
-    return xp
+    return array_api_compat.array_namespace(*arrays)
 
 
 def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
@@ -112,7 +95,7 @@ def asarray_namespace(*arrays):
     (array([0, 1, 2]]), array([0, 1, 2]))
 
     """
-    arrays = list(arrays)  # probably not good
+    arrays = list(arrays)
     xp = array_namespace(*arrays)
 
     for i, array in enumerate(arrays):
@@ -124,7 +107,7 @@ def asarray_namespace(*arrays):
 def to_numpy(array, xp):
     """Convert `array` into a NumPy ndarray on the CPU.
 
-    This is specially useful to pass arrays to Cython.
+    ONLY FOR TESTING
     """
     xp_name = xp.__name__
 

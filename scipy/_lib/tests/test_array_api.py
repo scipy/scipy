@@ -17,7 +17,7 @@ if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
 
 
 def test_array_namespace():
-    x, y = [0, 1, 2], np.arange(3)
+    x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
     xp = array_namespace(x, y)
     assert xp.__name__ == 'array_api_compat.numpy'
 
@@ -36,7 +36,7 @@ def test_asarray(xp):
 
 
 def test_asarray_namespace():
-    x, y = [0, 1, 2], np.arange(3)
+    x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
     x, y, xp_ = asarray_namespace(x, y)
     assert xp_.__name__ == 'array_api_compat.numpy'
     ref = np.array([0, 1, 2])
@@ -67,3 +67,9 @@ def test_raises():
     with pytest.raises(TypeError, match=msg):
         array_namespace(np.array(1), np.matrix(1))
 
+    msg = "Only support Array API"
+    with pytest.raises(TypeError, match=msg):
+        array_namespace([0, 1, 2])
+
+    with pytest.raises(TypeError, match=msg):
+        array_namespace(1)
