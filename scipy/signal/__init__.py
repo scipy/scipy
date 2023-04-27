@@ -89,6 +89,7 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
+   fwind1        -- Windowed FIR filter design, with frequency response for 2D using 1D design.
    freqs         -- Analog filter frequency response from TF coefficients.
    freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
    freqz         -- Digital filter frequency response from TF coefficients.
@@ -334,16 +335,40 @@ from .windows import get_window  # keep this one in signal namespace
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
-    bsplines, filter_design, fir_filter_design, lti_conversion, ltisys,
-    spectral, signaltools, waveforms, wavelets, spline
+    bsplines,
+    filter_design,
+    fir_filter_design,
+    lti_conversion,
+    ltisys,
+    spectral,
+    signaltools,
+    waveforms,
+    wavelets,
+    spline,
 )
 
 # deal with * -> windows.* doc-only soft-deprecation
-deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
-                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey')
+deprecated_windows = (
+    "boxcar",
+    "triang",
+    "parzen",
+    "bohman",
+    "blackman",
+    "nuttall",
+    "blackmanharris",
+    "flattop",
+    "bartlett",
+    "barthann",
+    "hamming",
+    "kaiser",
+    "gaussian",
+    "general_gaussian",
+    "chebwin",
+    "cosine",
+    "hann",
+    "exponential",
+    "tukey",
+)
 
 
 def deco(name):
@@ -354,22 +379,27 @@ def deco(name):
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
-    wrapped.__module__ = 'scipy.signal'
-    if hasattr(f, '__qualname__'):
+    wrapped.__module__ = "scipy.signal"
+    if hasattr(f, "__qualname__"):
         wrapped.__qualname__ = f.__qualname__
 
     if f.__doc__:
         lines = f.__doc__.splitlines()
         for li, line in enumerate(lines):
-            if line.strip() == 'Parameters':
+            if line.strip() == "Parameters":
                 break
         else:
-            raise RuntimeError('dev error: badly formatted doc')
-        spacing = ' ' * line.find('P')
-        lines.insert(li, ('{0}.. warning:: scipy.signal.{1} is deprecated,\n'
-                          '{0}             use scipy.signal.windows.{1} '
-                          'instead.\n'.format(spacing, name)))
-        wrapped.__doc__ = '\n'.join(lines)
+            raise RuntimeError("dev error: badly formatted doc")
+        spacing = " " * line.find("P")
+        lines.insert(
+            li,
+            (
+                "{0}.. warning:: scipy.signal.{1} is deprecated,\n"
+                "{0}             use scipy.signal.windows.{1} "
+                "instead.\n".format(spacing, name)
+            ),
+        )
+        wrapped.__doc__ = "\n".join(lines)
 
     return wrapped
 
@@ -379,8 +409,9 @@ for name in deprecated_windows:
 
 del deprecated_windows, name, deco
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith("_")]
 
 from scipy._lib._testutils import PytestTester
+
 test = PytestTester(__name__)
 del PytestTester

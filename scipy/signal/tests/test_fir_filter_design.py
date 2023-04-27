@@ -743,42 +743,47 @@ class TestMinimumPhase:
 class TestFwind1:
     def test_invalid_args(self):
         # Test invalid input arguments
-        with pytest.raises(ValueError, match="`numtaps` must be odd"):
-            fwind1(50, cutoff=0.4, window="hamming")
-        with pytest.raises(ValueError, match="`cutoff` must be between 0 and 1"):
-            fwind1(51, cutoff=1.5, window="hamming")
-        with pytest.raises(ValueError, match="`window` must be one of"):
-            fwind1(51, cutoff=0.5, window="invalid_window")
+        with pytest.raises(ValueError, match="hsize must be a 2-element tuple or list"):
+            fwind1((50,), window=((("kaiser", 5.0)), "boxcar"), fc=0.4)
+        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+            fwind1((51, 51), window=("hamming",), fc=0.5)
+        with pytest.raises(ValueError, match="Invalid window specified"):
+            fwind1((51, 51), window=((("invalid_window",), None), ("hann", None)), fc=0.5)
 
     def test_filter_design(self):
         # Test filter design
-        numtaps = 51
-        cutoff = 0.4
-        taps_hamming = fwind1(numtaps, cutoff=cutoff, window="hamming")
-        taps_kaiser = fwind1(numtaps, cutoff=cutoff, window=("kaiser", 8.0))
+        hsize = (51, 51)
+        window = ((("kaiser", 8.0),), ("kaiser", 8.0))
+        fc = 0.4
+        taps_kaiser = fwind1(hsize, window, fc)
+        window = ("hamming", "hamming")
+        taps_hamming = fwind1(hsize, window, fc)
         assert_array_almost_equal(taps_hamming, taps_kaiser, decimal=5)
 
     def test_impulse_response(self):
         # Test the impulse response of the filter
-        numtaps = 31
-        cutoff = 0.4
-        taps = fwind1(numtaps, cutoff=cutoff, window="hamming")
-        h = dimpulse(([1], taps, 1))
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+        h = dimpulse(([1], taps), n=30)
         expected_impulse_response = np.squeeze(h[1])
         assert_array_almost_equal(expected_impulse_response, taps, decimal=5)
 
     def test_frequency_response(self):
         # Test the frequency response of the filter
-        numtaps = 31
-        cutoff = 0.4
-        taps = fwind1(numtaps, cutoff=cutoff, window="hamming")
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
         w, h = freqz(taps)
         assert_array_almost_equal(abs(h), 1.0, decimal=3)
-        assert_array_less(abs(w), cutoff * np.pi, err_msg="Filter does not meet cutoff frequency")
+        assert_array_less(abs(w), fc * np.pi, err_msg="Filter does not meet cutoff frequency")
 
     def test_symmetry(self):
         # Test symmetry of the filter coefficients
-        numtaps = 51
-        cutoff = 0.4
-        taps = fwind1(numtaps, cutoff=cutoff, window="hamming")
+        hsize = (51, 51)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
         assert_array_almost_equal(taps, np.flip(taps), decimal=5)
