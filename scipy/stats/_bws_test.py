@@ -202,7 +202,7 @@ def bws_test(x, y, axis=0, alternative="two-sided", variant="naive", n_resamples
     5.132167152575315
 
     This agrees with :math:`B = 5.132` reported in [1]_. The *p*-value produced
-    by `bws_test` agrees with :math:`p = 0.0029` reported in [1]_.
+    by `bws_test` also agrees with :math:`p = 0.0029` reported in [1]_.
 
     >>> print(p)
     0.002913752913752914
