@@ -6706,8 +6706,10 @@ class vonmises_fisher_gen(multi_rv_generic):
         Parameters
         ----------
         x : array-like
-            Data the distribution is fitted to. The last axis of `x` must
-            be unit vectors of norm 1.
+            Data the distribution is fitted to. Must be two dimensional.
+            The second axis of `x` must be unit vectors of norm 1 and
+            determine the dimensionality of the fitted
+            von Mises-Fisher distribution.
 
         Returns
         -------
@@ -6719,14 +6721,12 @@ class vonmises_fisher_gen(multi_rv_generic):
         """
         # validate input data
         x = np.asarray(x)
-        if x.ndim == 1:
-            raise ValueError("'x' must be at least two dimensional.")
+        if x.ndim != 2:
+            raise ValueError("'x' must be two dimensional.")
         if not np.allclose(np.linalg.norm(x, axis=-1), 1.):
             msg = "'x' must be unit vectors of norm 1 along last dimension."
             raise ValueError(msg)
         dim = x.shape[-1]
-        if x.ndim > 2:
-            x = x.reshape((math.prod(x.shape[:-1]), dim))
 
         # mu is simply the directional mean
         dirstats = directional_stats(x)
