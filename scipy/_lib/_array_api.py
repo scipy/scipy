@@ -24,6 +24,13 @@ _GLOBAL_CONFIG = {"SCIPY_ARRAY_API": SCIPY_ARRAY_API}
 
 
 def compliance_scipy(*arrays):
+    """Raise exceptions on known-bad subclasses.
+
+    The following subclasses are not supported and raise and error:
+    - `np.ma.MaskedArray`
+    - `numpy.matrix`
+    - Any array-like which is not Array API compatible
+    """
     for array in arrays:
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("'numpy.ma.MaskedArray' are not supported")
@@ -34,7 +41,31 @@ def compliance_scipy(*arrays):
 
 
 def array_namespace(*arrays):
+    """Get the array API compatible namespace for the arrays xs.
 
+    Parameters
+    ----------
+    *arrays : sequence of array_like
+        Arrays used to infer the common namespace.
+
+    Returns
+    -------
+    namespace : module
+        Common namespace.
+
+    Notes
+    -----
+    Thin wrapper around `array_api_compat.array_namespace`.
+
+    1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
+       dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
+    2. `compliance_scipy` raise exceptions on known-bad subclasses. See
+       it's definition for more details.
+
+    When the global switch is False, it defaults to the `numpy` namespace.
+    In that case, there is no compliance check. This is a convenience to
+    ease the adoption. Otherwise, arrays must comply with the new rules.
+    """
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         # here we could wrap the namespace if needed
         return np
@@ -52,7 +83,7 @@ def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
     is NumPy based, otherwise `order` is just silently ignored.
 
     The purpose of this helper is to make it possible to share code for data
-    container validation without memory copies for both downstream use cases
+    container validation without memory copies for both downstream use cases.
     """
     if xp is None:
         xp = array_namespace(array)
@@ -85,14 +116,27 @@ def asarray_namespace(*arrays):
     namespace : module
         Common namespace.
 
+    Notes
+    -----
+    This function is meant to be called from each public function in a SciPy
+    submodule it does the following:
+
+    1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
+       dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
+    2. `compliance_scipy` raise exceptions on known-bad subclasses. See
+       it's definition for more details.
+    3. Determine the namespace, without doing any coercion of array(-like)
+       inputs.
+    4. Call `xp.asarray` on all array.
+
     Examples
     --------
     >>> import numpy as np
-    >>> x, y, xp = asarray_namespace([0, 1, 2], np.arange(3))
+    >>> x, y, xp = asarray_namespace(np.array([0, 1, 2]), np.array([0, 1, 2]))
     >>> xp.__name__
     'array_api_compat.numpy'
     >>> x, y
-    (array([0, 1, 2]]), array([0, 1, 2]))
+    (array([0, 1, 2]), array([0, 1, 2]))
 
     """
     arrays = list(arrays)
