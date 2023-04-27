@@ -7,12 +7,11 @@ from scipy._lib._array_api import (
 from pytest import raises as assert_raises
 import pytest
 
-from scipy.fft import fft
+from scipy.fft import fft, fft2, fftshift
 from scipy.special import sinc
-from scipy.signal import (kaiser_beta, kaiser_atten, kaiserord,
-    firwin, firwin2, freqz, remez, firls, minimum_phase
-)
-
+from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
+    firwin, firwin2, freqz, remez, firls, minimum_phase, fwind1, \
+    firwin, convolve2d
 
 def test_kaiser_beta():
     b = kaiser_beta(58.7)
@@ -652,3 +651,90 @@ class TestMinimumPhase:
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         xp_assert_close(m, k, rtol=2e-3)
+
+
+class TestFwind1:
+    def test_invalid_args(self):
+        with pytest.raises(ValueError, match="hsize must be a 2-element tuple or list"):
+            fwind1((50,), window=(("kaiser", 5.0), "boxcar"), fc=0.4)
+        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+            fwind1((51, 51), window=("hamming",), fc=0.5)
+        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+            fwind1((51, 51), window="invalid_window", fc=0.5)
+
+    def test_filter_design(self):
+        hsize = (51, 51)
+        window = (("kaiser", 8.0), ("kaiser", 8.0))
+        fc = 0.4
+        taps_kaiser = fwind1(hsize, window, fc)
+        assert taps_kaiser.shape == (51, 51)
+
+        window = ("hamming", "hamming")
+        taps_hamming = fwind1(hsize, window, fc)
+        assert taps_hamming.shape == (51, 51)
+
+    def test_impulse_response(self):
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+
+        impulse = np.zeros((63, 63))
+        impulse[31, 31] = 1
+
+        response = convolve2d(impulse, taps, mode='same')
+
+        expected_response = taps
+        xp_assert_close(response[16:47, 16:47], expected_response, rtol=1e-5)
+
+    def test_frequency_response(self):
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+
+        freq_response = fftshift(fft2(taps))
+
+        magnitude = np.abs(freq_response)
+        assert np.isclose(magnitude.max(), 1.0, atol=0.01), f"Max magnitude is {magnitude.max()}"
+        assert magnitude.min() >= 0.0, f"Min magnitude is {magnitude.min()}"
+
+    def test_symmetry(self):
+        hsize = (51, 51)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+        xp_assert_close(taps, np.flip(taps), rtol=1e-5)
+
+    def test_circular_symmetry(self):
+        hsize = (51, 51)
+        window = "hamming"
+        taps = fwind1(hsize, window, circular=True)
+        center = hsize[0] // 2
+        for i in range(hsize[0]):
+            for j in range(hsize[1]):
+                xp_assert_close(taps[i, j], taps[center - (i - center), center - (j - center)], rtol=1e-5)
+
+    def test_edge_case_circular(self):
+        hsize = (3, 3)
+        window = "hamming"
+        taps_small = fwind1(hsize, window, circular=True)
+        assert taps_small.shape == (3, 3)
+
+        hsize = (101, 101)
+        taps_large = fwind1(hsize, window, circular=True)
+        assert taps_large.shape == (101, 101)
+
+    def test_known_result(self):
+        hsize = (5, 5)
+        window = ('kaiser', 8.0)
+        fc = 0.1
+        fs = 2
+
+        row_filter = firwin(hsize[0], cutoff=fc, window=window, fs=fs)
+        col_filter = firwin(hsize[1], cutoff=fc, window=window, fs=fs)
+        known_result = np.outer(row_filter, col_filter)
+
+        taps = fwind1(hsize, (window, window), fc)
+        assert taps.shape == known_result.shape, f"Shape mismatch: {taps.shape} vs {known_result.shape}"
+        assert np.allclose(taps, known_result, rtol=1e-1), f"Filter shape mismatch: {taps} vs {known_result}"
