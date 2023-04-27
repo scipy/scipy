@@ -411,3 +411,14 @@ class TestCloughTocher2DInterpolator:
         ip.set_values(y)
         yi = ip(x)
         assert_almost_equal(y, yi)
+
+        y = np.arange(x.shape[0], dtype=np.double)
+        y1 = y - 3j*y
+        y2 = y - 5j*y
+        ip = interpnd.CloughTocher2DInterpolator(x, y1)
+        ip.set_interpolation_points(x)
+        yi = ip()
+        assert_almost_equal(y1, yi)
+        ip.set_values(y2)
+        yi = ip()
+        assert_almost_equal(y2, yi)
