@@ -1394,7 +1394,7 @@ def toms748(f, a, b, args=(), k=1,
     return _results_select(full_output, (x, function_calls, iterations, flag))
 
 
-def _bracketer(f, a, b=None, min=None, max=None, factor=2, batch=100):
+def _bracketer(f, a, b=None, *, min=None, max=None, factor=2, batch=100):
     """Bracket the root of a monotonic scalar function of one variable
 
     Parameters
