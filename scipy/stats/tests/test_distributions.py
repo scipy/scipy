@@ -8759,7 +8759,12 @@ def test_cosine_ppf_isf(p, expected):
 
 
 def test_cosine_logpdf_endpoints():
-    logp = stats.cosine.logpdf([-np.pi, np.pi])
+    x = [-np.pi, np.pi]
+    c = np.cos(x)
+    assert_equal(c, -1)
+    res = np.log1p(c) - np.log(2 * np.pi)
+    assert_equal(res, -np.inf)
+    logp = stats.cosine.logpdf(x)
     assert_equal(logp, [-np.inf, -np.inf])
 
 
