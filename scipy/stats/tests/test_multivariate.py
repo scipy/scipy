@@ -3136,7 +3136,6 @@ class TestVonMises_Fisher:
         # test that no warnings are encountered for high values
         rng = np.random.default_rng(2777937887058094419)
         mu = np.full((dim, ), 1/np.sqrt(dim))
-        #mu[0] = 1.
         vmf_dist = vonmises_fisher(mu, kappa, seed=rng)
         vmf_dist.rvs(10)
 
@@ -3340,7 +3339,7 @@ class TestVonMises_Fisher:
         mu = np.full((dim, ), 1/np.sqrt(dim))
         vmf_dist = vonmises_fisher(mu, kappa)
         rng = np.random.default_rng(2777937887058094419)
-        n_samples = (100, 100)
+        n_samples = 10000
         samples = vmf_dist.rvs(n_samples, random_state=rng)
         mu_fit, kappa_fit = vonmises_fisher.fit(samples)
         angular_error = np.arccos(mu.dot(mu_fit))
@@ -3349,7 +3348,7 @@ class TestVonMises_Fisher:
 
     def test_fit_error_one_dimensional_data(self):
         x = np.zeros((3, ))
-        msg = "'x' must be at least two dimensional."
+        msg = "'x' must be two dimensional."
         with pytest.raises(ValueError, match=msg):
             vonmises_fisher.fit(x)
 
