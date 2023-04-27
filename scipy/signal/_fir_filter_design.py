@@ -11,17 +11,7 @@ from scipy.linalg import toeplitz, hankel, solve, LinAlgError, LinAlgWarning, ls
 
 from . import _sigtools
 
-__all__ = [
-    "kaiser_beta",
-    "kaiser_atten",
-    "kaiserord",
-    "firwin",
-    "firwin2",
-    "remez",
-    "firls",
-    "minimum_phase",
-    "fwind1",
-]
+__all__ = ["kaiser_beta", "kaiser_atten", "kaiserord", "firwin", "firwin2", "remez", "firls", "minimum_phase", "fwind1"]
 
 
 def _get_fs(fs, nyq):
