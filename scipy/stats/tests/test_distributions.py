@@ -8762,8 +8762,9 @@ def test_cosine_logpdf_endpoints():
     x = [-np.pi, np.pi]
     c = np.cos(x)
     assert_equal(c, -1)
-    res = np.log1p(c) - np.log(2 * np.pi)
-    assert_equal(res, -np.inf)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = np.log1p(c) - np.log(2 * np.pi)
+        assert_equal(res, -np.inf)
     logp = stats.cosine.logpdf(x)
     assert_equal(logp, [-np.inf, -np.inf])
 
