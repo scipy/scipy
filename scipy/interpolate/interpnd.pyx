@@ -19,6 +19,7 @@ Simple N-D interpolation
 #
 
 cimport cython
+cimport numpy
 
 from libc.float cimport DBL_EPSILON
 from libc.math cimport fabs, sqrt
@@ -97,6 +98,8 @@ class NDInterpolatorBase:
             self._set_values(values)
         else:
             self.values = None
+        
+        self._xi = None
 
 
     def _set_values(self, values):
@@ -136,6 +139,27 @@ class NDInterpolatorBase:
         else:
             return (xi - self.offset) / self.scale
 
+    def set_interpolation_points(self, *args):
+        """
+        interpolator.set_interpolation_points(*args)
+
+        Sets the points to be interpolated.
+
+        Parameters
+        ----------
+        x1, x2, ... xn: array-like of float
+            Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
+        """
+        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
+        xi = self._check_call_shape(xi)
+        self._interpolation_points_shape = xi.shape
+        xi = xi.reshape(-1, xi.shape[-1])
+        xi = np.ascontiguousarray(xi, dtype=np.double)
+
+        self._xi = self._scale_x(xi)
+
     def __call__(self, *args):
         """
         interpolator(xi)
@@ -150,19 +174,17 @@ class NDInterpolatorBase:
             or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
-        xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
-        xi = self._check_call_shape(xi)
-        shape = xi.shape
-        xi = xi.reshape(-1, shape[-1])
-        xi = np.ascontiguousarray(xi, dtype=np.double)
+        if len(args) > 0:
+            self.set_interpolation_points(*args)
+        elif self._xi = None:
+            raise ValueError("Interpolation was called without required points")
 
-        xi = self._scale_x(xi)
         if self.is_complex:
-            r = self._evaluate_complex(xi)
+            r = self._evaluate_complex(self._xi)
         else:
-            r = self._evaluate_double(xi)
+            r = self._evaluate_double(self._xi)
 
-        return np.asarray(r).reshape(shape[:-1] + self.values_shape)
+        return np.asarray(r).reshape(self._interpolation_points_shape[:-1] + self.values_shape)
 
 
 cpdef _ndim_coords_from_arrays(points, ndim=None):
@@ -927,6 +949,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         
         self.tol = tol
         self.maxiter = maxiter
+        self._points_simplices = None
 
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
@@ -937,11 +960,25 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                  tol=self.tol, maxiter=self.maxiter)
 
-    def _evaluate_double(self, xi):
+    def _evaluate_double(self, xi=None):
+        if xi is None:
+            xi = self._xi
+            # self._points_simplices = self._points_simplices
+        #else:
+        #    self._points_simplices = self.tri.find_simplex(xi)
         return self._do_evaluate(xi, 1.0)
 
-    def _evaluate_complex(self, xi):
+    def _evaluate_complex(self, xi=None):
+        if xi is None:
+            xi = self._xi
+        #else:
+        #    self._points_simplices = self.tri.find_simplex(xi)
         return self._do_evaluate(xi, 1.0j)
+    
+    def set_interpolation_points(self, *args):
+        NDInterpolatorBase.set_interpolation_points(self, *args)
+        self._points_simplices = None
+        self._points_barycentric_coordinates = None
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -950,7 +987,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
-        cdef double c[NPY_MAXDIMS]
+        cdef double[:,:] c
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
@@ -958,6 +995,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
+        cdef int[:] isimplices
 
         ndim = xi.shape[1]
         start = 0
@@ -972,14 +1010,28 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         eps = 100 * DBL_EPSILON
         eps_broad = sqrt(eps)
 
+        if self._points_simplices is None:
+            c = np.zeros((xi.shape[0], NPY_MAXDIMS))
+            isimplices = np.zeros(xi.shape[0], np.int32)
+            with nogil:
+                for i in range(xi.shape[0]):
+                    # 1) Find the simplex
+
+                    isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
+                                                &xi[i,0],
+                                                &start, eps, eps_broad)
+            self._points_simplices = np.copy(isimplices)
+            self._points_barycentric_coordinates = np.copy(c)
+        else:
+            isimplices = self._points_simplices
+            c = self._points_barycentric_coordinates
+
         with nogil:
             for i in range(xi.shape[0]):
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(&info, c,
-                                               &xi[i,0],
-                                               &start, eps, eps_broad)
-
+                isimplex = isimplices[i]
+                
                 # 2) Clough-Tocher interpolation
 
                 if isimplex == -1:
@@ -994,7 +1046,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]
 
-                    w = _clough_tocher_2d_single(&info, isimplex, c, f, df)
+                    w = _clough_tocher_2d_single(&info, isimplex, &c[i, 0], f, df)
                     out[i,k] = w
 
         return out
