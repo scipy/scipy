@@ -15,20 +15,34 @@ import argparse
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 fortran_types = {'int': 'integer',
+                 'const int': 'integer',
                  'c': 'complex',
+                 'const c': 'complex',
                  'd': 'double precision',
+                 'const d': 'double precision',
                  's': 'real',
+                 'const s': 'real',
                  'z': 'complex*16',
+                 'const z': 'complex*16',
                  'char': 'character',
-                 'bint': 'logical'}
+                 'const char': 'character',
+                 'bint': 'logical',
+                 'const bint': 'logical'}
 
 c_types = {'int': 'int',
+           'const int': 'const int',
            'c': 'npy_complex64',
+           'const c': 'const npy_complex64',
            'd': 'double',
+           'const d': 'const double',
            's': 'float',
+           'const s': 'const float',
            'z': 'npy_complex128',
+           'const z': 'const npy_complex128',
            'char': 'char',
+           'const char': 'const char',
            'bint': 'int',
+           'const bint': 'const int',
            'cselect1': '_cselect1',
            'cselect2': '_cselect2',
            'dselect2': '_dselect2',
@@ -201,14 +215,14 @@ from numpy cimport npy_complex64, npy_complex128
 cdef extern from "_lapack_subroutines.h":
     # Function pointer type declarations for
     # gees and gges families of functions.
-    ctypedef bint _cselect1(npy_complex64*)
-    ctypedef bint _cselect2(npy_complex64*, npy_complex64*)
-    ctypedef bint _dselect2(d*, d*)
-    ctypedef bint _dselect3(d*, d*, d*)
-    ctypedef bint _sselect2(s*, s*)
-    ctypedef bint _sselect3(s*, s*, s*)
-    ctypedef bint _zselect1(npy_complex128*)
-    ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
+    ctypedef bint _cselect1(const npy_complex64*)
+    ctypedef bint _cselect2(const npy_complex64*, const npy_complex64*)
+    ctypedef bint _dselect2(const d*, const d*)
+    ctypedef bint _dselect3(const d*, const d*, const d*)
+    ctypedef bint _sselect2(const s*, const s*)
+    ctypedef bint _sselect3(const s*, const s*, const s*)
+    ctypedef bint _zselect1(const npy_complex128*)
+    ctypedef bint _zselect2(const npy_complex128*, const npy_complex128*)
 
 '''
 
@@ -511,14 +525,14 @@ ctypedef double complex z
 
 # Function pointer type declarations for
 # gees and gges families of functions.
-ctypedef bint cselect1(c*)
-ctypedef bint cselect2(c*, c*)
-ctypedef bint dselect2(d*, d*)
-ctypedef bint dselect3(d*, d*, d*)
-ctypedef bint sselect2(s*, s*)
-ctypedef bint sselect3(s*, s*, s*)
-ctypedef bint zselect1(z*)
-ctypedef bint zselect2(z*, z*)
+ctypedef bint cselect1(const c*)
+ctypedef bint cselect2(const c*, const c*)
+ctypedef bint dselect2(const d*, const d*)
+ctypedef bint dselect3(const d*, const d*, const d*)
+ctypedef bint sselect2(const s*, const s*)
+ctypedef bint sselect3(const s*, const s*, const s*)
+ctypedef bint zselect1(const z*)
+ctypedef bint zselect2(const z*, const z*)
 
 """
 
@@ -621,14 +635,14 @@ c_preamble = """#ifndef SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
 """
 
 lapack_decls = """
-typedef int (*_cselect1)(npy_complex64*);
-typedef int (*_cselect2)(npy_complex64*, npy_complex64*);
-typedef int (*_dselect2)(double*, double*);
-typedef int (*_dselect3)(double*, double*, double*);
-typedef int (*_sselect2)(float*, float*);
-typedef int (*_sselect3)(float*, float*, float*);
-typedef int (*_zselect1)(npy_complex128*);
-typedef int (*_zselect2)(npy_complex128*, npy_complex128*);
+typedef int (*_cselect1)(const npy_complex64*);
+typedef int (*_cselect2)(const npy_complex64*, const npy_complex64*);
+typedef int (*_dselect2)(const double*, const double*);
+typedef int (*_dselect3)(const double*, const double*, const double*);
+typedef int (*_sselect2)(const float*, const float*);
+typedef int (*_sselect3)(const float*, const float*, const float*);
+typedef int (*_zselect1)(const npy_complex128*);
+typedef int (*_zselect2)(const npy_complex128*, const npy_complex128*);
 """
 
 cpp_guard = """
