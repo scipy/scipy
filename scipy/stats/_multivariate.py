@@ -791,24 +791,25 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Parameters
         ----------
-        x : data the distribution is fitted to. The last axis determines the
-            dimension of the fitted distribution.
+        x : ndarray (m, n)
+            Data the distribution is fitted to. Must be two dimensional.
+            The second axis determines the dimensionality of the fitted
+            distribution.
 
         Returns
         -------
-        mean : Estimated mean vector
-        cov : Estimated covariance matrix
+        mean : ndarray (n, )
+            Estimated mean vector
+        cov : ndarray (n, n)
+            Estimated covariance matrix
 
         """
         # input validation
         x = np.asarray(x)
-        if x.ndim < 2:
-            raise ValueError("`x` must be at least two-dimensional.")
+        if x.ndim != 2:
+            raise ValueError("`x` must be two-dimensional.")
 
-        # flatten array so that vectors are in last axis
-        dim = x.shape[-1]
-        n_vectors = math.prod(x.shape[:-1])
-        x = x.reshape((n_vectors, dim))
+        n_vectors, dim = x.shape
 
         # parameter estimation
         mean = x.mean(axis=0)
