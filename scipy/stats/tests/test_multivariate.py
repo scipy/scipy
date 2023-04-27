@@ -2572,17 +2572,19 @@ class TestMultivariateT:
     #     dim = cov.shape[0]
     #     loc = np.zeros((dim, ))
     #     mvt = stats.multivariate_t(loc, cov, df)
-    #     limit = 1e5
+    #     limit = 100
     #     return -integrate.dblquad(integrand, -limit, limit, -limit, limit,
     #                               args=(mvt, ))[0]
 
-    @pytest.mark.parametrize("df, ref", [(2, 3.837877037304658),
-                                         (1, 4.837519844622141)])
-    def test_entropy_vs_numerical_integration(self, df, ref):
-        shape = np.eye(2)
+    @pytest.mark.parametrize("df, cov, ref, tol",
+                             [(10, np.eye(2, 2), 3.0378770664093313, 1e-14),
+                              (100, np.array([[0.5, 1], [1, 10]]),
+                               3.55102424550609, 1e-8)])
+    def test_entropy_vs_numerical_integration(self, df, cov, ref, tol):
         loc = np.zeros((2, ))
-        mvt = stats.multivariate_t(loc, shape, df)
-        assert_allclose(mvt.entropy(), ref, rtol=1e-3)
+        mvt = stats.multivariate_t(loc, cov, df)
+        assert_allclose(mvt.entropy(), ref, rtol=tol)
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
