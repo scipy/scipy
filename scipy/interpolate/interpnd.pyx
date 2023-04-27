@@ -73,35 +73,14 @@ class NDInterpolatorBase:
         else:
             self.tri = None
 
+        self.ndim = ndim
         points = _ndim_coords_from_arrays(points)
-        values = np.asarray(values)
 
-        _check_init_shape(points, values, ndim=ndim)
+        self.need_contiguous = need_contiguous
+        self._original_fill_value = fill_value
 
-        if need_contiguous:
+        if self.need_contiguous:
             points = np.ascontiguousarray(points, dtype=np.double)
-
-        if need_values:
-            self.values_shape = values.shape[1:]
-            if values.ndim == 1:
-                self.values = values[:,None]
-            elif values.ndim == 2:
-                self.values = values
-            else:
-                self.values = values.reshape(values.shape[0],
-                                             np.prod(values.shape[1:]))
-
-            # Complex or real?
-            self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
-            if self.is_complex:
-                if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values,
-                                                       dtype=np.complex128)
-                self.fill_value = complex(fill_value)
-            else:
-                if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values, dtype=np.double)
-                self.fill_value = float(fill_value)
 
         if not rescale:
             self.scale = None
@@ -113,6 +92,37 @@ class NDInterpolatorBase:
             self.scale = self.points.ptp(axis=0)
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
+        
+        if need_values:
+            self._set_values(values)
+        else:
+            self.values = None
+
+
+    def _set_values(self, values):
+        values = np.asarray(values)
+        _check_init_shape(self.points, values, ndim=self.ndim)
+
+        self.values_shape = values.shape[1:]
+        if values.ndim == 1:
+            self.values = values[:,None]
+        elif values.ndim == 2:
+            self.values = values
+        else:
+            self.values = values.reshape(values.shape[0],
+                                            np.prod(values.shape[1:]))
+
+        # Complex or real?
+        self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
+        if self.is_complex:
+            if self.need_contiguous:
+                self.values = np.ascontiguousarray(self.values,
+                                                    dtype=np.complex128)
+            self.fill_value = complex(self._original_fill_value)
+        else:
+            if self.need_contiguous:
+                self.values = np.ascontiguousarray(self.values, dtype=np.double)
+            self.fill_value = float(self._original_fill_value)
 
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
@@ -907,14 +917,25 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan,
+    def __init__(self, points, values=None, fill_value=np.nan,
                  tol=1e-6, maxiter=400, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
-                                    fill_value=fill_value, rescale=rescale)
+                                    fill_value=fill_value, rescale=rescale,
+                                    need_values=not values is None)
         if self.tri is None:
             self.tri = qhull.Delaunay(self.points)
+        
+        self.tol = tol
+        self.maxiter = maxiter
+
+        if self.values is not None:
+            self.grad = estimate_gradients_2d_global(self.tri, self.values,
+                                                    tol=self.tol, maxiter=self.maxiter)
+    
+    def set_values(self, values):
+        self._set_values(values)
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
-                                                 tol=tol, maxiter=maxiter)
+                                                 tol=self.tol, maxiter=self.maxiter)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
