@@ -4285,8 +4285,8 @@ class multivariate_t_gen(multi_rv_generic):
         Cumulative distribution function.
     rvs(loc=None, shape=1, df=1, size=1, random_state=None)
         Draw random samples from a multivariate t-distribution.
-    entropy(shape=1, df=1)
-        Differential entropy.
+    entropy(loc=None, shape=1, df=1)
+        Differential entropy of a multivariate t-distribution.
 
     Parameters
     ----------
