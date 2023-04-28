@@ -154,7 +154,8 @@ def bws_test(x, y, axis=0, alternative="two-sided", variant="naive", n_resamples
             The BWS statistic corresponding with sample `x` and `y`.
         pvalue : float
             The associated *p*-value for the chosen `alternative`.
-    See Also
+            
+    See also
     --------
     scipy.stats.wilcoxon, scipy.stats.mannwhitneyu, scipy.stats.ttest_ind
 
