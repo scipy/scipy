@@ -10,9 +10,11 @@ from operator import itemgetter
 import os
 from stat import ST_MTIME
 import argparse
+import textwrap
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+INDENTATION = '    ' # 4 spaces
 
 fortran_types = {'int': 'integer',
                  'const int': 'integer',
@@ -52,34 +54,82 @@ c_types = {'int': 'int',
            'zselect1': '_zselect1',
            'zselect2': '_zselect2'}
 
+complex_types = {'c',
+                 'const c',
+                 'z',
+                 'const z',
+                 'npy_complex64',
+                 'const npy_complex64',
+                 'npy_complex128',
+                 'const npy_complex128'}
+
 
 def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
 
+pyx_complex_union_template = """
+cdef native_{type}_ptr complex_{index}
+complex_{index}.native = {name}"""
 
 pyx_func_template = """
 cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
+    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({wrp_ret_type} *out, {fort_args}) nogil
 cdef {ret_type} {name}({args}) noexcept nogil:
-    cdef {ret_type} out
-    _fortran_{name}(&out, {argnames})
+    cdef {ret_type} out{complex_out_union}{complex_arg_union}
+    _fortran_{name}({wrp_ret_value}, {argnames}){assign_to_out}
     return out
 """
 
-npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
+npy_types = {'c': 'npy_complex64', 'const c': 'const npy_complex64',
+             'z': 'npy_complex128', 'const z': 'const npy_complex128',
              'cselect1': '_cselect1', 'cselect2': '_cselect2',
              'dselect2': '_dselect2', 'dselect3': '_dselect3',
              'sselect2': '_sselect2', 'sselect3': '_sselect3',
              'zselect1': '_zselect1', 'zselect2': '_zselect2'}
 
 
-def arg_casts(arg):
-    if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
+def arg_casts(argname, argtype, index):
+    if argtype in complex_types:
+        # If the argument type is a complex number, we do the following:
+        # 1. Create a union with two members: one ptr to native complex number and a ptr to npy_complex64/128
+        # 2. We assign the native argument to the corresponding union field
+        # 3. Pass the npy_complex to the wrapped Fortran subroutine
+        is_const = argtype.startswith('const')
+        union_type = argtype if not is_const else '_'.join(argtype.split(' '))
+        complex_union = textwrap.indent(
+            pyx_complex_union_template.format(name=argname, type=union_type, index=index),
+            INDENTATION,
+        )
+        return f'complex_{index}.numpy', complex_union
+    if argtype in ['_cselect1', '_cselect2',
                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
                '_zselect1', '_zselect2']:
-        return f'<{arg}*>'
-    return ''
+        return f'<{argtype}*>{argname}', ''
+    return argname, ''
 
+
+def setup_args_and_unions(argnames, argtypes):
+    final_argnames = []
+    complex_union = []
+    for index, (name, type) in enumerate(zip(argnames, argtypes)):
+        after_cast, arg_complex_union = arg_casts(name, type, index)
+        final_argnames.append(after_cast)
+        complex_union.append(arg_complex_union)
+    return final_argnames, ''.join(complex_union)
+
+
+def setup_return(ret_type):
+    if ret_type not in complex_types:
+        return ret_type, '&out', '', ''
+    # If the return type is a complex number, we do the following:
+    # 1. Create a union with two members: one native complex number and an npy_complex64/128
+    # 2. We pass the npy_complex to the wrapped Fortran subroutine
+    # 3. Assign the native complex number to 'out' and return that
+    wrp_ret_type = npy_types[ret_type]
+    complex_out_union = f"\n{INDENTATION}cdef native_{wrp_ret_type} complex_out"
+    assign_to_out = f"\n{INDENTATION}out = complex_out.native"
+    wrp_ret_value = '&complex_out.numpy'
+    return wrp_ret_type, wrp_ret_value, complex_out_union, assign_to_out
 
 def pyx_decl_func(name, ret_type, args, header_name):
     argtypes, argnames = arg_names_and_types(args)
@@ -93,22 +143,25 @@ def pyx_decl_func(name, ret_type, args, header_name):
                     for n in argnames]
         args = ', '.join([' *'.join([n, t])
                           for n, t in zip(argtypes, argnames)])
+    wrp_ret_type, wrp_ret_value, complex_out_union, assign_to_out = setup_return(ret_type)
     argtypes = [npy_types.get(t, t) for t in argtypes]
     fort_args = ', '.join([' *'.join([n, t])
                            for n, t in zip(argtypes, argnames)])
-    argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
+    argnames, complex_arg_union = setup_args_and_unions(argnames, argtypes)
     argnames = ', '.join(argnames)
-    c_ret_type = c_types[ret_type]
     args = args.replace('lambda', 'lambda_')
     return pyx_func_template.format(name=name, upname=name.upper(), args=args,
                                     fort_args=fort_args, ret_type=ret_type,
-                                    c_ret_type=c_ret_type, argnames=argnames,
-                                    header_name=header_name)
+                                    argnames=argnames, header_name=header_name,
+                                    complex_arg_union=complex_arg_union,
+                                    wrp_ret_type=wrp_ret_type, wrp_ret_value=wrp_ret_value,
+                                    complex_out_union=complex_out_union,
+                                    assign_to_out=assign_to_out)
 
 
 pyx_sub_template = """cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-cdef void {name}({args}) noexcept nogil:
+cdef void {name}({args}) nogil:{complex_union}
     _fortran_{name}({argnames})
 """
 
@@ -119,12 +172,13 @@ def pyx_decl_sub(name, args, header_name):
     argnames = [n if n not in ['lambda', 'in'] else n + '_' for n in argnames]
     fort_args = ', '.join([' *'.join([n, t])
                            for n, t in zip(argtypes, argnames)])
-    argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
+    argnames, complex_union = setup_args_and_unions(argnames, argtypes)
     argnames = ', '.join(argnames)
     args = args.replace('*lambda,', '*lambda_,').replace('*in,', '*in_,')
     return pyx_sub_template.format(name=name, upname=name.upper(),
                                    args=args, fort_args=fort_args,
-                                   argnames=argnames, header_name=header_name)
+                                   argnames=argnames, header_name=header_name,
+                                   complex_union=complex_union)
 
 
 blas_pyx_preamble = '''# cython: boundscheck = False
@@ -483,7 +537,34 @@ def pxd_decl(name, ret_type, args):
     return pxd_template.format(name=name, ret_type=ret_type, args=args)
 
 
-blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
+complex_union_defs = """\
+cdef union native_npy_complex64_ptr:
+    c *native
+    npy_complex64 *numpy
+
+cdef union native_const_npy_complex64_ptr:
+    const c *native
+    const npy_complex64 *numpy
+
+cdef union native_npy_complex128_ptr:
+    z *native
+    npy_complex128 *numpy
+
+cdef union native_const_npy_complex128_ptr:
+    const z *native
+    const npy_complex128 *numpy
+
+cdef union native_npy_complex64:
+    c native
+    npy_complex64 numpy
+
+cdef union native_npy_complex128:
+    z native
+    npy_complex128 numpy\
+"""
+
+blas_pxd_preamble = f"""\
+# Within scipy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_blas
 # from scipy.linalg cimport cython_blas
@@ -494,10 +575,14 @@ blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative o
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
+from numpy cimport npy_complex64, npy_complex128
+
 ctypedef float s
 ctypedef double d
 ctypedef float complex c
 ctypedef double complex z
+
+{complex_union_defs}
 
 """
 
@@ -507,7 +592,8 @@ def generate_blas_pxd(all_sigs):
     return blas_pxd_preamble + body
 
 
-lapack_pxd_preamble = """# Within SciPy, these wrappers can be used via relative or absolute cimport.
+lapack_pxd_preamble = f"""\
+# Within SciPy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_lapack
 # from scipy.linalg cimport cython_lapack
@@ -518,10 +604,14 @@ lapack_pxd_preamble = """# Within SciPy, these wrappers can be used via relative
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
+from numpy cimport npy_complex64, npy_complex128
+
 ctypedef float s
 ctypedef double d
 ctypedef float complex c
 ctypedef double complex z
+
+{complex_union_defs}
 
 # Function pointer type declarations for
 # gees and gges families of functions.

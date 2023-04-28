@@ -211,7 +211,7 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: [cython_c_args, Wno_incompatible_pointer_types],
+  c_args: cython_c_args,
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
@@ -226,7 +226,7 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: [cython_c_args, Wno_incompatible_pointer_types],
+  c_args: cython_c_args,
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
