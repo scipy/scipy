@@ -678,6 +678,8 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
+        message = "overflow encountered in _beta_pdf"
+        warnings.filterwarnings('ignore', message=message)
         return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
