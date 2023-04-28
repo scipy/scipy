@@ -903,3 +903,111 @@ def test_maxiter_int_check_gh10236(method):
     message = "'float' object cannot be interpreted as an integer"
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
+
+
+class TestBracketer:
+    @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
+    @pytest.mark.parametrize("use_min", (False, True))
+    @pytest.mark.parametrize("other_side", (False, True))
+    def test_basic(self, seed, use_min, other_side):
+        # Property-based test to confirm that _bracketer is behaving correctly
+        # The basic case is when root < a < b.
+        # The number of times bracket expands (per side) can be found by
+        # setting the expression for the end of the bracket to zero
+        # (the root of f), solving for i, and rounding up. The corresponding
+        # lower and upper ends of the bracket are found by plugging this back
+        # into the expression for the ends of the bracket.
+        # `other_side=True` is the case that a < b < root
+        # Special cases like a < root < b are tested separately
+
+        rng = np.random.default_rng(seed)
+        a, d, factor = rng.random(size=3) * [1e5, 10, 5]
+        factor = 1 + factor  # factor must be greater than 1
+        b = a + d  # b must be greater than a in basic case
+
+        def f(x):
+            f.count += 1
+            return x
+
+        if use_min:
+            min = -rng.random()
+            n = np.ceil(np.log(-(a - min) / min) / np.log(factor))
+            l, u = min + (a - min)*factor**-n, min + (a - min)*factor**-(n - 1)
+            kwargs = dict(a=a, b=b, factor=factor, min=min)
+        else:
+            n = np.ceil(np.log(b/d) / np.log(factor))
+            l, u = b - d*factor**n, b - d*factor**(n-1)
+            kwargs = dict(a=a, b=b, factor=factor)
+
+        if other_side:
+            kwargs['a'], kwargs['b'] = -kwargs['b'], -kwargs['a']
+            l, u = -u, -l
+            if 'min' in kwargs:
+                kwargs['max'] = -kwargs.pop('min')
+
+        # Add 1 because function evaluations correspond with 0, 1, ..., n
+        # Multiply by two because bracket expands to the left and right
+        f.count = 0
+        bracket = zeros._bracketer(f, batch=1, **kwargs)
+        count = f.count
+        assert_equal(count, 2*(n + 1))
+        assert_allclose(bracket, (l, u))
+        signs = np.sign(f(bracket))
+        assert signs[0] == -signs[1]
+
+        f.count = 0
+        batch = rng.integers(2, 10)
+        bracket_batch = zeros._bracketer(f, batch=batch, **kwargs)
+        count_batch = f.count
+        assert_equal(count_batch, np.ceil(count/2/batch)*2)
+        assert_allclose(bracket_batch, bracket)
+
+        if other_side:
+            kwargs['min'] = -b
+        else:
+            kwargs['max'] = b
+
+        f.count = 0
+        bracket = zeros._bracketer(f, batch=1, **kwargs)
+        count = f.count
+        # Because max=b, bracket only evaluates once on the right
+        assert_equal(count, (n + 1) + 1)
+        assert_allclose(bracket, (l, u))
+
+        f.count = 0
+        bracket_batch = zeros._bracketer(f, batch=batch, **kwargs)
+        count_batch = f.count
+        assert_equal(count_batch, np.ceil((count - 1)/batch) + 1)
+        assert_allclose(bracket_batch, bracket)
+
+    @pytest.mark.parametrize('batch', (1, 10))
+    def test_edge(self, batch):
+        # Test edge cases
+
+        def f(x):
+            f.count += 1
+            return x
+
+        # 1. root lies within guess of bracket
+        f.count = 0
+        bracket = zeros._bracketer(f, -10, 20, batch=batch)
+        assert_equal(f.count, 2)
+
+        # 2. bracket endpoint hits root exactly
+        f.count = 0
+        bracket = zeros._bracketer(f, 5, 10, batch=batch)
+        assert_equal(f.count, 4 if batch == 1 else 2)
+        assert_allclose(bracket, 0, atol=1e-15)
+
+        # 3. bracket limit hits root exactly
+        with np.errstate(over='ignore'):
+            bracket = zeros._bracketer(f, 5, 10, min=0, batch=batch)
+        assert_allclose(bracket[0], 0, atol=1e-15)
+        with np.errstate(over='ignore'):
+            bracket = zeros._bracketer(f, -10, -5, max=0, batch=batch)
+        assert_allclose(bracket[1], 0, atol=1e-15)
+
+        # 4. bracket not within min, max
+        with np.errstate(over='ignore'):
+            bracket = zeros._bracketer(f, 5, 10, min=1, batch=batch)
+        assert_equal(bracket, (None, None))
