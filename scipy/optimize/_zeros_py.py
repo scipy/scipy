@@ -54,11 +54,10 @@ class RootResults(OptimizeResult):
         self.iterations = iterations
         self.function_calls = function_calls
         self.converged = flag == _ECONVERGED
-        self.flag = None
-        try:
+        if flag in flag_map:
             self.flag = flag_map[flag]
-        except KeyError:
-            self.flag = 'unknown error %d' % (flag,)
+        else:
+            self.flag = flag
 
 
 def results_c(full_output, r):
@@ -89,12 +88,17 @@ def _wrap_nan_raise(f):
 
     def f_raise(x, *args):
         fx = f(x, *args)
+        f_raise._function_calls += 1
         if np.isnan(fx):
             msg = (f'The function value at x={x} is NaN; '
                    'solver cannot continue.')
-            raise ValueError(msg)
+            err = ValueError(msg)
+            err._x = x
+            err._function_calls = f_raise._function_calls
+            raise err
         return fx
 
+    f_raise._function_calls = 0
     return f_raise
 
 

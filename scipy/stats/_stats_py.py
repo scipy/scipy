@@ -38,7 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
@@ -49,7 +49,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import _batch_generator
@@ -115,80 +115,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _shape_with_dropped_axis(a, axis):
-    """
-    Given an array `a` and an integer `axis`, return the shape
-    of `a` with the `axis` dimension removed.
-
-    Examples
-    --------
-    >>> a = np.zeros((3, 5, 2))
-    >>> _shape_with_dropped_axis(a, 1)
-    (3, 2)
-
-    """
-    shp = list(a.shape)
-    try:
-        del shp[axis]
-    except IndexError:
-        raise np.AxisError(axis, a.ndim) from None
-    return tuple(shp)
-
-
-def _broadcast_shapes(shape1, shape2):
-    """
-    Given two shapes (i.e. tuples of integers), return the shape
-    that would result from broadcasting two arrays with the given
-    shapes.
-
-    Examples
-    --------
-    >>> _broadcast_shapes((2, 1), (4, 1, 3))
-    (4, 2, 3)
-    """
-    d = len(shape1) - len(shape2)
-    if d <= 0:
-        shp1 = (1,)*(-d) + shape1
-        shp2 = shape2
-    else:
-        shp1 = shape1
-        shp2 = (1,)*d + shape2
-    shape = []
-    for n1, n2 in zip(shp1, shp2):
-        if n1 == 1:
-            n = n2
-        elif n2 == 1 or n1 == n2:
-            n = n1
-        else:
-            raise ValueError(f'shapes {shape1} and {shape2} could not be '
-                             'broadcast together')
-        shape.append(n)
-    return tuple(shape)
-
-
-def _broadcast_shapes_with_dropped_axis(a, b, axis):
-    """
-    Given two arrays `a` and `b` and an integer `axis`, find the
-    shape of the broadcast result after dropping `axis` from the
-    shapes of `a` and `b`.
-
-    Examples
-    --------
-    >>> a = np.zeros((5, 2, 1))
-    >>> b = np.zeros((1, 9, 3))
-    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
-    (5, 3)
-    """
-    shp1 = _shape_with_dropped_axis(a, axis)
-    shp2 = _shape_with_dropped_axis(b, axis)
-    try:
-        shp = _broadcast_shapes(shp1, shp2)
-    except ValueError:
-        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
-                         'broadcast together') from None
-    return shp
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -520,7 +446,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     Parameters
     ----------
     a : array_like
-        n-dimensional array of which to find mode(s).
+        Numeric, n-dimensional array of which to find mode(s).
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
@@ -575,9 +501,16 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     """  # noqa: E501
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
+    if not np.issubdtype(a.dtype, np.number):
+        message = ("Argument `a` is not recognized as numeric. "
+                   "Support for input that cannot be coerced to a numeric "
+                   "array was deprecated in SciPy 1.9.0 and removed in SciPy "
+                   "1.11.0. Please consider `pandas.DataFrame.mode`.")
+        raise TypeError(message)
 
     if a.size == 0:
-        return ModeResult(np.nan, np.int64(0))
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
     vals, cnts = np.unique(a, return_counts=True)
     modes, counts = vals[cnts.argmax()], cnts.max()
@@ -1260,10 +1193,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
             nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
             np.place(vals, can_correct, nval)
 
-    if vals.ndim == 0:
-        return vals.item()
-
-    return vals
+    return vals[()]
 
 
 @_axis_nan_policy_factory(
@@ -1374,10 +1304,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
             np.place(vals, can_correct, nval + 3.0)
 
-    if vals.ndim == 0:
-        vals = vals.item()  # array scalar
-
-    return vals - 3 if fisher else vals
+    return vals[()] - 3 if fisher else vals[()]
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -3480,7 +3407,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     # This check prevents percentile from raising an error later. Also, it is
     # consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        return _get_nan(x)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -4301,10 +4228,13 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Returns
     -------
-    statistic : float
-        The computed A statistic of the test.
-    pvalue : float
-        The associated p-value from the chi-squared distribution.
+    res : AlexanderGovernResult
+        An object with attributes:
+
+        statistic : float
+            The computed A statistic of the test.
+        pvalue : float
+            The associated p-value from the chi-squared distribution.
 
     Warns
     -----
@@ -4437,8 +4367,10 @@ def _alexandergovern_input_validation(samples, nan_policy):
     return samples
 
 
-AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
-                                                                 "pvalue"))
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
@@ -5820,9 +5752,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
-        return ((cnt * (cnt - 1) // 2).sum(),
-                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+        # Python ints to avoid overflow down the line
+        return (int((cnt * (cnt - 1) // 2).sum()),
+                int((cnt * (cnt - 1.) * (cnt - 2)).sum()),
+                int((cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -5839,7 +5772,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
 
-    ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
+    ntie = int((cnt * (cnt - 1) // 2).sum())  # joint ties
     xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
     ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
@@ -6694,8 +6627,9 @@ class TtestResult(TtestResultBase):
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
-    # at most one unique value
-    alternative = np.atleast_1d(alternative).ravel()
+    # at most one unique non-NaN value
+    alternative = np.atleast_1d(alternative)  # can't index 0D object
+    alternative = alternative[np.isfinite(alternative)]
     alternative = alternative[0] if alternative.size else np.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
@@ -7117,50 +7051,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-def _ttest_nans(a, b, axis, namedtuple_type):
-    """
-    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
-
-    This function is used by ttest_ind and ttest_rel to create the return
-    value when one of the inputs has size 0.
-
-    The shapes of the arrays are determined by dropping `axis` from the
-    shapes of `a` and `b` and broadcasting what is left.
-
-    The return value is a named tuple of the type given in `namedtuple_type`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a = np.zeros((9, 2))
-    >>> b = np.zeros((5, 1))
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
-
-    >>> a = np.zeros((3, 0, 9))
-    >>> b = np.zeros((1, 10))
-    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
-    >>> stat
-    array([], shape=(3, 0), dtype=float64)
-    >>> p
-    array([], shape=(3, 0), dtype=float64)
-
-    >>> a = np.zeros(10)
-    >>> b = np.zeros(7)
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=nan, pvalue=nan)
-
-    """
-    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
-    if len(shp) == 0:
-        t = np.nan
-        p = np.nan
-    else:
-        t = np.full(shp, fill_value=np.nan)
-        p = t.copy()
-    return namedtuple_type(t, p)
-
-
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
               trim=0):
@@ -7249,10 +7141,30 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Returns
     -------
-    statistic : float or array
-        The calculated t-statistic.
-    pvalue : float or array
-        The p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or ndarray
+            The t-statistic.
+        pvalue : float or ndarray
+            The p-value associated with the given alternative.
+        df : float or ndarray
+            The number of degrees of freedom used in calculation of the
+            t-statistic. This is always NaN for a permutation t-test.
+
+            .. versionadded:: 1.11.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the difference in
+            population means for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields ``low`` and ``high``.
+            When a permutation t-test is performed, the confidence interval
+            is not computed, and fields ``low`` and ``high`` contain NaN.
+
+            .. versionadded:: 1.11.0
 
     Notes
     -----
@@ -7391,27 +7303,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    # check both a and b
-    cna, npa = _contains_nan(a, nan_policy)
-    cnb, npb = _contains_nan(b, nan_policy)
-    contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
-
-    if contains_nan and nan_policy == 'omit':
-        if permutations or trim != 0:
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by permutation tests or "
-                             "trimmed tests.")
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var, alternative)
+    NaN = _get_nan(a, b)
 
     if a.size == 0 or b.size == 0:
-        return _ttest_nans(a, b, axis, Ttest_indResult)
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     if permutations is not None and permutations != 0:
         if trim != 0:
@@ -7421,11 +7318,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                 int(permutations) != permutations):
             raise ValueError("Permutations must be a non-negative integer.")
 
-        res = _permutation_ttest(a, b, permutations=permutations,
-                                 axis=axis, equal_var=equal_var,
-                                 nan_policy=nan_policy,
-                                 random_state=random_state,
-                                 alternative=alternative)
+        t, prob = _permutation_ttest(a, b, permutations=permutations,
+                                     axis=axis, equal_var=equal_var,
+                                     nan_policy=nan_policy,
+                                     random_state=random_state,
+                                     alternative=alternative)
+        df, denom, estimate = NaN, NaN, NaN
 
     else:
         n1 = a.shape[axis]
@@ -7449,9 +7347,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-    return Ttest_indResult(*res)
+        # when nan_policy='omit', `df` can be different for different axis-slices
+        df = np.broadcast_to(df, t.shape)[()]
+        estimate = m1-m2
+
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=estimate)
 
 
 def _ttest_trim_var_mean_len(a, trim, axis):
@@ -7762,8 +7667,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     if na == 0 or nb == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
-        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
-                           standard_error=np.nan, estimate=np.nan)
+        NaN = _get_nan(a, b)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     n = a.shape[axis]
     df = n - 1
@@ -8003,7 +7909,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     if f_exp is not None:
         f_exp = np.asanyarray(f_exp)
-        bshape = _broadcast_shapes(f_obs_float.shape, f_exp.shape)
+        bshape = np.broadcast_shapes(f_obs_float.shape, f_exp.shape)
         f_obs_float = _m_broadcast_to(f_obs_float, bshape)
         f_exp = _m_broadcast_to(f_exp, bshape)
         rtol = 1e-8  # to pass existing tests
@@ -9254,7 +9160,8 @@ def kruskal(*samples, nan_policy='propagate'):
 
     for sample in samples:
         if sample.size == 0:
-            return KruskalResult(np.nan, np.nan)
+            NaN = _get_nan(*samples)
+            return KruskalResult(NaN, NaN)
         elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
@@ -9335,6 +9242,35 @@ def friedmanchisquare(*samples):
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
+    .. [2] P. Sprent and N.C. Smeeton, "Applied Nonparametric Statistical
+           Methods, Third Edition". Chapter 6, Section 6.3.2.
+
+    Examples
+    --------
+    In [2]_, the pulse rate (per minute) of a group of seven students was
+    measured before exercise, immediately after exercise and 5 minutes
+    after exercise. Is there evidence to suggest that the pulse rates on
+    these three occasions are similar?
+
+    We begin by formulating a null hypothesis :math:`H_0`:
+
+        The pulse rates are identical on these three occasions.
+
+    Let's assess the plausibility of this hypothesis with a Friedman test.
+
+    >>> from scipy.stats import friedmanchisquare
+    >>> before = [72, 96, 88, 92, 74, 76, 82]
+    >>> immediately_after = [120, 120, 132, 120, 101, 96, 112]
+    >>> five_min_after = [76, 95, 104, 96, 84, 72, 76]
+    >>> res = friedmanchisquare(before, immediately_after, five_min_after)
+    >>> res.statistic
+    10.57142857142857
+    >>> res.pvalue
+    0.005063414171757498
+
+    Using a significance level of 5%, we would reject the null hypothesis in
+    favor of the alternative hypothesis: "the pulse rates are different on
+    these three occasions".
 
     """
     k = len(samples)

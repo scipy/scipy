@@ -30,7 +30,6 @@ mle_failing_fits = [
         'ncf',
         'ncx2',
         'truncexpon',
-        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
@@ -53,6 +52,7 @@ mle_use_floc0 = [
     'powerlaw',  # distfn.nnlf(est2, rvs) > distfn.nnlf(est1, rvs) otherwise
     'powerlognorm',
     'wrapcauchy',
+    'rel_breitwigner',
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
@@ -63,8 +63,9 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'skewcauchy', 't', 'trapezoid', 'triang', 'truncpareto',
-                   'truncweibull_min', 'tukeylambda', 'studentized_range']
+                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'truncpareto', 'truncweibull_min', 'tukeylambda',
+                   'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -73,6 +74,7 @@ mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -135,6 +137,7 @@ def test_cont_fit(distname, arg, method):
                 msg = ('Different results fitting uncensored data wrapped as'
                        f' CensoredData: {distfn.name}: est={est} est1={est1}')
                 assert_allclose(est1, est, rtol=1e-10, err_msg=msg)
+            if method == 'MLE' and distname not in fail_interval_censored:
                 # Convert the first `nic` values in rvs to interval-censored
                 # values. The interval is small, so est2 should be close to
                 # est.
@@ -218,24 +221,31 @@ def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
                       'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
-    slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
-                      'exponpow', 'rdist', 'norminvgauss', 'betaprime',
-                      'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
-                      'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto',
-                      'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
-                      'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
-                      'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
-                      'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'randint', 'genextreme'}
-    xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
-                       'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
-                       'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
-                       'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
-                       'truncnorm', 'powerlognorm', 'beta',
-                       'loguniform', 'reciprocal', 'trapezoid', 'nct',
-                       'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
-                       'burr', 'triang'}
+
+    # Please keep this list in alphabetical order...
+    slow_basic_fit = {'alpha', 'arcsine',
+                      'betaprime', 'binom', 'bradford', 'burr12',
+                      'chi', 'crystalball', 'dweibull', 'exponpow',
+                      'f', 'fatiguelife', 'fisk', 'foldcauchy',
+                      'genexpon', 'genextreme', 'gennorm', 'genpareto',
+                      'gompertz', 'halfgennorm', 'invgauss', 'invweibull',
+                      'johnsonsb', 'johnsonsu', 'kappa3', 'kstwobign',
+                      'loglaplace', 'lognorm', 'lomax', 'mielke',
+                      'nakagami', 'nbinom', 'norminvgauss',
+                      'pareto', 'pearson3', 'powerlaw', 'powernorm',
+                      'randint', 'rdist', 'recipinvgauss', 'rice',
+                      't', 'uniform', 'weibull_max', 'wrapcauchy'}
+
+    # Please keep this list in alphabetical order...
+    xslow_basic_fit = {'beta', 'betabinom', 'burr', 'exponweib',
+                       'gausshyper', 'gengamma', 'genhalflogistic',
+                       'genhyperbolic', 'geninvgauss',
+                       'hypergeom', 'kappa4', 'loguniform',
+                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
+                       'nct', 'ncx2', 'nhypergeom',
+                       'powerlognorm', 'reciprocal', 'rel_breitwigner',
+                       'skellam', 'trapezoid', 'triang', 'truncnorm',
+                       'tukeylambda', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -260,27 +270,38 @@ def cases_test_fit_mse():
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'argus',  # close, but doesn't meet tolerance
                       'vonmises'}  # can have negative CDF; doesn't play nice
-    slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
-                      'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
-                      'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
-                      'laplace_asymmetric', 'lognorm', 'foldcauchy',
-                      'genpareto', 'powernorm', 'loglaplace', 'foldnorm',
-                      'recipinvgauss', 'exponpow', 'bradford', 'weibull_max',
-                      'gompertz', 'dweibull', 'truncpareto', 'weibull_min',
-                      'johnsonsu', 'loggamma', 'kappa3', 'fatiguelife',
-                      'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
-                      'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
-                      't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
-                      'mielke', 'chi', 'johnsonsb', 'exponweib',
-                      'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
-                      'betabinom'}
-    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
-                       'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
-                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
-                       'loguniform', 'betaprime', 'rice', 'gennorm',
-                       'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
-                       'beta', 'genexpon', 'tukeylambda', 'zipfian',
-                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
+
+    # Please keep this list in alphabetical order...
+    slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
+                      'chi', 'chi2', 'crystalball', 'dgamma', 'dweibull',
+                      'erlang', 'exponnorm', 'exponpow', 'exponweib',
+                      'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
+                      'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
+                      'genlogistic', 'genpareto', 'gompertz',
+                      'hypergeom', 'invweibull', 'johnsonsb', 'johnsonsu',
+                      'kappa3', 'kstwobign',
+                      'laplace_asymmetric', 'loggamma', 'loglaplace',
+                      'lognorm', 'lomax',
+                      'maxwell', 'mielke', 'nakagami', 'nhypergeom',
+                      'pareto', 'powernorm', 'randint', 'recipinvgauss',
+                      'semicircular',
+                      't', 'triang', 'truncexpon', 'truncpareto',
+                      'truncweibull_min',
+                      'uniform', 'vonmises_line',
+                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+
+    # Please keep this list in alphabetical order...
+    xslow_basic_fit = {'beta', 'betaprime', 'burr', 'burr12',
+                       'f', 'gengamma', 'gennorm',
+                       'halfgennorm', 'invgamma', 'invgauss',
+                       'kappa4', 'loguniform',
+                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
+                       'nct', 'ncx2',
+                       'pearson3', 'powerlaw', 'powerlognorm',
+                       'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
+                       'trapezoid', 'truncnorm', 'tukeylambda',
+                       'zipfian'}
+
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
     for dist in dict(distdiscrete + distcont):
