@@ -136,10 +136,10 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                >>> import numpy as np
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import bicg
-               >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
-               >>> b = np.array([2, 4, -1], dtype=float)
+               >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
+               >>> b = np.array([2., 4., -1.])
                >>> x, exitCode = bicg(A, b)
-               >>> print(exitCode)            # 0 indicates successful convergence
+               >>> print(exitCode)  # 0 indicates successful convergence
                0
                >>> np.allclose(A.dot(x), b)
                True
@@ -147,8 +147,9 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                """
                )
 @non_reentrant()
-def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
-    A,M,x,b,postprocess = make_system(A, M, x0, b)
+def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
+         callback=None, atol=0.):
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
     if maxiter is None:
@@ -414,77 +415,110 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
                True
                """
                )
-@non_reentrant()
-def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
-
     n = len(b)
+
+    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
+        dotprod = np.vdot
+    else:
+        dotprod = np.dot
+
     if maxiter is None:
         maxiter = n*10
 
     matvec = A.matvec
     psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgsrevcom')
 
-    def get_residual():
-        return np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cgs')
-    if atol == 'exit':
-        return postprocess(x), 0
+    if A.dtype.char in 'fF':
+        rhotol = np.finfo(np.float32).eps ** 2
+    else:
+        rhotol = np.spacing(1.) ** 2
 
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(7*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+    r = b - matvec(x)
+
+    # Deprecate the legacy usage
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+        tol = float(tol)
+
+        if np.linalg.norm(b) == 0:
+            atol = tol
+        else:
+            atol = tol * float(np.linalg.norm(b))
+    else:
+        atol = max(float(atol), tol * float(np.linalg.norm(b)))
+
+    # Is there any tolerance set? since b can be all 0.
+    if atol == 0.:
+        atol = 10*n*np.finfo(A.dtype).eps
+
+    rtilde = r.copy()
+    bnorm = np.linalg.norm(b)
+    if bnorm == 0:
+        bnorm = 1
+
+    # Dummy values to initialize vars, silence linter warnings
+    rho_prev, p, u, q = None, None, None, None
+
+    for iteration in range(maxiter):
+        if np.linalg.norm(r) < atol:  # Are we done?
+            return postprocess(x), 0
+
+        rho_cur = dotprod(rtilde, r)
+        if np.abs(rho_cur) < rhotol:  # Breakdown case
+            # It brokedown but maybe converged?
+            if np.linalg.norm(r) < atol:
+                return postprocess(x), 0
+            else:
+                return postprocess, -10
+
+        if iteration > 0:
+            beta = rho_cur / rho_prev
+
+            # u = r + beta * q
+            # p = u + beta * (q + beta * p);
+            u[:] = r[:]
+            u += beta*q
+
+            p *= beta
+            p += q
+            p *= beta
+            p += u
+
+        else:  # First spin
+            p = np.empty_like(r)
+            u = np.empty_like(r)
+            q = np.empty_like(r)
+            p[:] = r[:]
+            u[:] = r[:]
+
+        phat = psolve(p)
+        vhat = matvec(phat)
+        rv = dotprod(rtilde, vhat)
+
+        if rv == 0:  # Dot product breakdown
+            return postprocess(x), -11
+
+        alpha = rho_cur / rv
+        q[:] = u[:]
+        q -= alpha*vhat
+        uhat = psolve(u + q)
+        x += alpha*uhat
+        qhat = matvec(uhat)
+        r -= alpha*qhat
+        rho_prev = rho_cur
+
+        if callback:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-            if info == 1 and iter_ > 1:
-                # recompute residual and recheck, to avoid
-                # accumulating rounding error
-                work[slice1] = b - matvec(x)
-                resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
 
-    if info == -10:
-        # termination due to breakdown: check for convergence
-        resid, ok = _stoptest(b - matvec(x), atol)
-        if ok:
-            info = 0
-
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+    else:  # for loop exhausted
+        # Return incomplete progress
+        return postprocess(x), maxiter
 
 
 @non_reentrant()
