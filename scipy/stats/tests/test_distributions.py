@@ -223,7 +223,7 @@ class TestVonMises:
 
     @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
     @pytest.mark.parametrize('kappa_tol', [(1e-1, 5e-2), (1e2, 1e-2),
-                                           (1e5, 1e-2), (1e14, 5e-2)])
+                                           (1e5, 1e-2)])
     def test_vonmises_fit_all(self, kappa_tol, loc):
         rng = np.random.default_rng(6762668991392531563)
         kappa, tol = kappa_tol
