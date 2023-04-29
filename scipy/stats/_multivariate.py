@@ -794,7 +794,7 @@ class multivariate_normal_gen(multi_rv_generic):
         x : ndarray (m, n)
             Data the distribution is fitted to. Must be two dimensional.
             The second axis determines the dimensionality of the fitted
-            distribution.
+            distribution `n`.
 
         Returns
         -------
@@ -812,6 +812,7 @@ class multivariate_normal_gen(multi_rv_generic):
         n_vectors, dim = x.shape
 
         # parameter estimation
+        # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
         mean = x.mean(axis=0)
         centered_data = x - mean
         cov = centered_data.T @ centered_data / n_vectors

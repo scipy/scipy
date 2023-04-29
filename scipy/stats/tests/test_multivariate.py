@@ -809,6 +809,12 @@ class TestMultivariateNormal:
         with pytest.raises(ValueError, match=error_msg):
             multivariate_normal.fit(data)
 
+    def test_fit_correctness(self):
+        x = np.array([[-1., -1., -1.], [0., 0., 0.], [1., 1., 1.]])
+        mean_est, cov_est = multivariate_normal.fit(x)
+        assert_allclose(mean_est, np.zeros((3, )), atol=1e-15)
+        assert_allclose(cov_est, np.full((3, 3), 2/3), rtol=1e-15)
+
 
 class TestMatrixNormal:
 
