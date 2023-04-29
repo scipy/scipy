@@ -4471,6 +4471,7 @@ class PearsonRResult(PearsonRResultBase):
         Compute the confidence interval for the correlation coefficient
         ``statistic`` with the given confidence level.
 
+        If `method` is not provided,
         The confidence interval is computed using the Fisher transformation
         F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
         bivariate normal distribution, F(r) approximately follows a normal
@@ -4479,6 +4480,12 @@ class PearsonRResult(PearsonRResultBase):
         ``n <= 3``, this approximation does not yield a finite, real standard
         error, so we define the confidence interval to be -1 to 1.
 
+        If `method` is an instance of `BootstrapMethod`, the confidence
+        interval is computed using `scipy.stats.bootstrap` with the provided
+        configuration options and other appropriate settings. In some cases,
+        confidence limits may be NaN due to a degenerate resample, and this is
+        typical for very small samples (~6 observations).
+
         Parameters
         ----------
         confidence_level : float
@@ -4486,12 +4493,8 @@ class PearsonRResult(PearsonRResultBase):
             coefficient confidence interval. Default is 0.95.
 
         method : BootstrapMethod, optional
-            Defines the method used to compute the confidence interval.
-            If `method` is an instance of `BootstrapMethod`, the confidence
-            interval is computed using `scipy.stats.bootstrap` with the
-            provided configuration options and other appropriate settings.
-            Otherwise, the confidence interval is computed as documented in the
-            description.
+            Defines the method used to compute the confidence interval. See
+            method description for details.
 
             .. versionadded:: 1.11.0
 
@@ -4575,11 +4578,18 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
 
         The object has the following method:
 
-        confidence_interval(confidence_level=0.95)
-            This method computes the confidence interval of the correlation
+        confidence_interval(confidence_level, method)
+            This computes the confidence interval of the correlation
             coefficient `statistic` for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
-            fields `low` and `high`.  See the Notes for more details.
+            fields `low` and `high`. If `method` is not provided, the
+            confidence interval is computed using the Fisher transformation
+            [1]_. If `method` is an instance of `BootstrapMethod`, the
+            confidence interval is computed using `scipy.stats.bootstrap` with
+            the provided configuration options and other appropriate settings.
+            In some cases, confidence limits may be NaN due to a degenerate
+            resample, and this is typical for very small samples (~6
+            observations).
 
     Warns
     -----
