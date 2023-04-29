@@ -4425,9 +4425,9 @@ def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
     res = bootstrap((x, y), statistic, confidence_level=confidence_level,
                     paired=True, alternative=alternative, **method._asdict())
     # for one-sided confidence intervals, bootstrap gives +/- inf on one side
-    res.confidence_interval = tuple(np.clip(res.confidence_interval, -1, 1))
+    res.confidence_interval = np.clip(res.confidence_interval, -1, 1)
 
-    return res.confidence_interval
+    return ConfidenceInterval(*res.confidence_interval)
 
 
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
@@ -4667,31 +4667,31 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     >>> x, y = [1, 2, 3, 4, 5, 6], [10, 9, 2.5, 6, 4, 3]
     >>> res = stats.pearsonr(x, y)
     >>> res
-    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.06323438009921392)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
 
     To perform an exact permutation version of the test:
 
     >>> rng = np.random.default_rng(7796654889291491997)
     >>> method = stats.PermutationMethod(n_resamples=np.inf, random_state=rng)
     >>> stats.pearsonr(x, y, method=method)
-    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.07777777777777778)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.028174603174603175)
 
     To perform the test under the null hypothesis that the data were drawn from
     *uniform* distributions:
     >>> method = stats.MonteCarloMethod(rvs=(rng.uniform, rng.uniform))
     >>> stats.pearsonr(x, y, method=method)
-    PearsonRResult(statistic=-0.7869777947370797, pvalue=0.0658)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.0188)
 
     To produce an asymptotic 90% confidence interval:
 
     >>> res.confidence_interval(confidence_level=0.9)
-    ConfidenceInterval(low=-0.9649414445194328, high=-0.11329711738437286)
+    ConfidenceInterval(low=-0.9644331982722841, high=-0.3460237473272273)
 
     And for a bootstrap confidence interval:
 
     >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
     >>> res.confidence_interval(confidence_level=0.9, method=method)
-    ConfidenceInterval(low=-0.9983814394570301, high=0.20707884164064552)
+    ConfidenceInterval(low=-0.9983221866852455, high=-0.23751687543846614)
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
