@@ -150,68 +150,95 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
          callback=None, atol=0.):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
-
     n = len(b)
+    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
+        dotprod = np.vdot
+    else:
+        dotprod = np.dot
+
     if maxiter is None:
         maxiter = n*10
 
     matvec, rmatvec = A.matvec, A.rmatvec
     psolve, rpsolve = M.matvec, M.rmatvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'bicgrevcom')
 
-    def get_residual():
-        return np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicg')
-    if atol == 'exit':
-        return postprocess(x), 0
+    if A.dtype.char in 'fF':
+        rhotol = np.finfo(np.float32).eps ** 2
+    else:
+        rhotol = np.spacing(1.) ** 2
 
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(6*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+    # Deprecate the legacy usage
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+        tol = float(tol)
+
+        if np.linalg.norm(b) == 0:
+            atol = tol
+        else:
+            atol = tol * float(np.linalg.norm(b))
+    else:
+        atol = max(float(atol), tol * float(np.linalg.norm(b)))
+
+    # Is there any tolerance set? since b can be all 0.
+    if atol == 0.:
+        atol = 10*n*np.finfo(A.dtype).eps
+
+    # Dummy values to initialize vars, silence linter warnings
+    rho_prev, p, ptilde = None, None, None
+
+    r = b - matvec(x) if x0 is not None else b.copy()
+    rtilde = r.copy()
+
+    for iteration in range(maxiter):
+        if np.linalg.norm(r) < atol:  # Are we done?
+            return postprocess(x), 0
+
+        z = psolve(r)
+        ztilde = rpsolve(rtilde)
+        rho_cur = dotprod(z, rtilde)
+
+        if np.abs(rho_cur) < rhotol:  # Breakdown case
+            # It brokedown but maybe converged?
+            if np.linalg.norm(r) < atol:
+                return postprocess(x), 0
+            else:
+                return postprocess, -10
+
+        if iteration > 0:
+            beta = rho_cur / rho_prev
+            p *= beta
+            p += z
+            ptilde *= beta.conj()
+            ptilde += ztilde
+        else:  # First spin
+            p = np.empty_like(r)
+            ptilde = np.empty_like(r)
+            p[:] = z[:]
+            ptilde[:] = ztilde[:]
+
+        q = matvec(p)
+        qtilde = rmatvec(ptilde)
+        rv = dotprod(ptilde, q)
+
+        if rv == 0:
+            return postprocess(x), -11
+
+        alpha = rho_cur / rv
+        x += alpha*p
+        r -= alpha*q
+        rtilde -= alpha.conj()*qtilde
+        rho_prev = rho_cur
+
+        if callback:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*rmatvec(work[slice1])
-        elif (ijob == 3):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 4):
-            work[slice1] = rpsolve(work[slice2])
-        elif (ijob == 5):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 6):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
 
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+    else:  # for loop exhausted
+        # Return incomplete progress
+        return postprocess(x), maxiter
 
 
 @set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
@@ -334,7 +361,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
 
     matvec = A.matvec
     psolve = M.matvec
-    r = b - matvec(x)
+    r = b - matvec(x) if x0 is not None else b.copy()
 
     # Deprecate the legacy usage
     if isinstance(atol, str):
@@ -357,7 +384,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
         atol = 10*n*np.finfo(A.dtype).eps
 
     # Dummy value to initialize var, silences warnings
-    rtz_prev, p = None, None
+    rho_prev, p = None, None
     if (np.iscomplexobj(A) or np.iscomplexobj(b)):
         dotprod = np.vdot
     else:
@@ -368,9 +395,9 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
             return postprocess(x), 0
 
         z = psolve(r)
-        rtz_cur = dotprod(r, z)
+        rho_cur = dotprod(r, z)
         if iteration > 0:
-            beta = rtz_cur / rtz_prev
+            beta = rho_cur / rho_prev
             p *= beta
             p += z
         else:  # First spin
@@ -378,10 +405,10 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
             p[:] = z[:]
 
         q = matvec(p)
-        alpha = rtz_cur / dotprod(p, q)
+        alpha = rho_cur / dotprod(p, q)
         x += alpha*p
         r -= alpha*q
-        rtz_prev = rtz_cur
+        rho_prev = rho_cur
 
         if callback:
             callback(x)
@@ -435,7 +462,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
     else:
         rhotol = np.spacing(1.) ** 2
 
-    r = b - matvec(x)
+    r = b - matvec(x) if x0 is not None else b.copy()
 
     # Deprecate the legacy usage
     if isinstance(atol, str):
