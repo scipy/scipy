@@ -4678,6 +4678,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
 
     To perform the test under the null hypothesis that the data were drawn from
     *uniform* distributions:
+
     >>> method = stats.MonteCarloMethod(rvs=(rng.uniform, rng.uniform))
     >>> stats.pearsonr(x, y, method=method)
     PearsonRResult(statistic=-0.7869777947370797, pvalue=0.0658)
