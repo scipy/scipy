@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose, suppress_warnings)
+                           assert_, assert_allclose, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -16,7 +16,9 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import (cg, cgs, bicg, bicgstab,
+                                         gmres, qmr, minres, lgmres,
+                                         gcrotmk, tfqmr)
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -46,7 +48,8 @@ class Case:
 class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
+                   gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -58,11 +61,11 @@ class IterativeParams:
 
         # Symmetric and Positive Definite
         N = 40
-        data = ones((3,N))
-        data[0,:] = 2
-        data[1,:] = -1
-        data[2,:] = -1
-        Poisson1D = spdiags(data, [0,-1,1], N, N, format='csr')
+        data = ones((3, N))
+        data[0, :] = 2
+        data[1, :] = -1
+        data[2, :] = -1
+        Poisson1D = spdiags(data, [0, -1, 1], N, N, format='csr')
         self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
@@ -79,14 +82,15 @@ class IterativeParams:
         # 2-dimensional Poisson equations
         Poisson2D = kronsum(Poisson1D, Poisson1D)
         self.Poisson2D = Case("poisson2d", Poisson2D)
-        # note: minres fails for 2-d poisson problem, it will be fixed in the future PR
+        # note: minres fails for 2-d poisson problem,
+        # it will be fixed in the future PR
         self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
         # note: minres fails for single precision
         self.cases.append(Case("poisson2d", Poisson2D.astype('f'),
                                skip=[minres]))
 
         # Symmetric and Indefinite
-        data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
+        data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]], dtype='d')
         RandDiag = spdiags(data, [0], 10, 10, format='csr')
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
         self.cases.append(Case("rand-diag", RandDiag.astype('f'),
@@ -145,10 +149,10 @@ class IterativeParams:
         #
         # cgs, qmr, bicg and tfqmr fail to converge on this one
         #   -- algorithmic limitation apparently
-        data = ones((2,10))
-        data[0,:] = 2
-        data[1,:] = -1
-        A = spdiags(data, [0,-1], 10, 10, format='csr')
+        data = ones((2, 10))
+        data[0, :] = 2
+        data[1, :] = -1
+        A = spdiags(data, [0, -1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
                                skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
@@ -170,7 +174,9 @@ class IterativeParams:
         assert (A == A.T).all()
         self.cases.append(Case("sym-nonpd", A, b,
                                skip=posdef_solvers,
-                               nonconvergence=[cgs,bicg,bicgstab,qmr,tfqmr]))
+                               nonconvergence=[cgs, bicg, bicgstab, qmr, tfqmr]
+                               )
+                          )
 
 
 params = IterativeParams()
@@ -226,7 +232,7 @@ def check_convergence(solver, case):
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
     if solver not in case.nonconvergence:
-        assert_equal(info,0)
+        assert_equal(info, 0)
         assert_normclose(A.dot(x), b, tol=tol)
     else:
         assert_(info != 0)
@@ -246,13 +252,13 @@ def test_convergence():
 def check_precond_dummy(solver, case):
     tol = 1e-8
 
-    def identity(b,which=None):
+    def identity(b, which=None):
         """trivial preconditioner"""
         return b
 
     A = case.A
 
-    M,N = A.shape
+    M, N = A.shape
     # Ensure the diagonal elements of A are non-zero before calculating
     # 1.0/A.diagonal()
     diagOfA = A.diagonal()
@@ -268,7 +274,7 @@ def check_precond_dummy(solver, case):
         x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
-    assert_equal(info,0)
+    assert_equal(info, 0)
     assert_normclose(A.dot(x), b, tol)
 
     A = aslinearoperator(A)
@@ -276,7 +282,7 @@ def check_precond_dummy(solver, case):
     A.rpsolve = identity
 
     x, info = solver(A, b, x0=x0, tol=tol)
-    assert_equal(info,0)
+    assert_equal(info, 0)
     assert_normclose(A@x, b, tol=tol)
 
 
@@ -293,14 +299,14 @@ def test_precond_dummy():
 def check_precond_inverse(solver, case):
     tol = 1e-8
 
-    def inverse(b,which=None):
+    def inverse(b, which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
             A = A.toarray()
         return np.linalg.solve(A, b)
 
-    def rinverse(b,which=None):
+    def rinverse(b, which=None):
         """inverse preconditioner"""
         A = case.A
         if not isinstance(A, np.ndarray):
@@ -373,7 +379,8 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    lgmres, gcrotmk])
 def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
@@ -414,7 +421,8 @@ def test_atol(solver):
         assert_(err <= 1.00025 * max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -491,7 +499,8 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -555,7 +564,7 @@ def test_show(solver, solverstring, capsys):
         assert_equal(err, '')
 
 
-#------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 class TestQMR:
     def test_leftright_precond(self):
@@ -567,11 +576,11 @@ class TestQMR:
         n = 100
 
         dat = ones(n)
-        A = spdiags([-2*dat, 4*dat, -dat], [-1,0,1],n,n)
-        b = arange(n,dtype='d')
+        A = spdiags([-2*dat, 4*dat, -dat], [-1, 0, 1], n, n)
+        b = arange(n, dtype='d')
 
-        L = spdiags([-dat/2, dat], [-1,0], n, n)
-        U = spdiags([4*dat, -dat], [0,1], n, n)
+        L = spdiags([-dat/2, dat], [-1, 0], n, n)
+        U = spdiags([4*dat, -dat], [0, 1], n, n)
 
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning,
@@ -586,19 +595,19 @@ class TestQMR:
             return U_solver.solve(b)
 
         def LT_solve(b):
-            return L_solver.solve(b,'T')
+            return L_solver.solve(b, 'T')
 
         def UT_solve(b):
-            return U_solver.solve(b,'T')
+            return U_solver.solve(b, 'T')
 
-        M1 = LinearOperator((n,n), matvec=L_solve, rmatvec=LT_solve)
-        M2 = LinearOperator((n,n), matvec=U_solve, rmatvec=UT_solve)
+        M1 = LinearOperator((n, n), matvec=L_solve, rmatvec=LT_solve)
+        M2 = LinearOperator((n, n), matvec=U_solve, rmatvec=UT_solve)
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+            x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-        assert_equal(info,0)
+        assert_equal(info, 0)
         assert_normclose(A@x, b, tol=1e-8)
 
 
@@ -620,16 +629,24 @@ class TestGMRES:
             rvec[rvec.nonzero()[0].max()+1] = r
 
         # Define, A,b
-        A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
+        A = csr_matrix(array([[-2, 1, 0, 0, 0, 0],
+                              [1, -2, 1, 0, 0, 0],
+                              [0, 1, -2, 1, 0, 0],
+                              [0, 0, 1, -2, 1, 0],
+                              [0, 0, 0, 1, -2, 1],
+                              [0, 0, 0, 0, 1, -2]]))
         b = ones((A.shape[0],))
         maxiter = 1
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
+
         def callback(r):
             return store_residual(r, rvec)
+
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+            x, flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16,
+                            maxiter=maxiter, callback=callback)
 
         # Expected output from SciPy 1.0.0
         assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
@@ -640,10 +657,13 @@ class TestGMRES:
         rvec[0] = 1.0
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter, callback=callback)
+            x, flag = gmres(A, b, M=M, tol=1e-16, maxiter=maxiter,
+                            callback=callback)
 
-        # Expected output from SciPy 1.0.0 (callback has preconditioned residual!)
-        assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
+        # Expected output from SciPy 1.0.0
+        # (callback has preconditioned residual!)
+        assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]),
+                        rtol=1e-10)
 
     def test_abi(self):
         # Check we don't segfault on gmres with complex argument
@@ -691,7 +711,7 @@ class TestGMRES:
     def test_defective_precond_breakdown(self):
         # Breakdown due to defective preconditioner
         M = np.eye(3)
-        M[2,2] = 0
+        M[2, 2] = 0
 
         b = np.array([0, 1, 1])
         x = np.array([1, 0, 0])
@@ -741,28 +761,29 @@ class TestGMRES:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             # 2 iterations is not enough to solve the problem
             cb_count = [0]
-            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50)
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+                            maxiter=2, restart=50)
             assert info == 2
             assert cb_count[0] == 2
 
         # With `callback_type` specified, no warning should be raised
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
-                        callback_type='legacy')
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+                        maxiter=2, restart=50, callback_type='legacy')
         assert info == 2
         assert cb_count[0] == 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2, restart=50,
-                        callback_type='pr_norm')
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2,
+                        restart=50, callback_type='pr_norm')
         assert info == 0
         assert cb_count[0] > 2
 
         # 2 restart cycles is enough to solve the problem
         cb_count = [0]
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2, restart=50,
-                        callback_type='x')
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=2,
+                        restart=50, callback_type='x')
         assert info == 0
         assert cb_count[0] == 2
 
@@ -781,15 +802,13 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
-                        callback_type='x')
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20,
+                        restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 21
         x_cb(x)
 
     def test_restrt_dep(self):
-        with pytest.warns(
-            DeprecationWarning,
-            match="'gmres' keyword argument 'restrt'"
-        ):
+        with pytest.warns(DeprecationWarning,
+                          match="'gmres' keyword argument 'restrt'"):
             gmres(np.array([1]), np.array([1]), restrt=10)

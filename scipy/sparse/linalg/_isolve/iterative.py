@@ -1,6 +1,6 @@
 """Iterative methods for solving linear systems"""
 
-__all__ = ['bicg','bicgstab','cg','cgs','gmres','qmr']
+__all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 import warnings
 from textwrap import dedent
@@ -13,7 +13,7 @@ from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
 
-_type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
+_type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
 
 
 # Part of the docstring common to all iterative solvers
@@ -324,71 +324,70 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                True
 
                """)
-@non_reentrant()
-def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
-
     n = len(b)
+
     if maxiter is None:
         maxiter = n*10
 
     matvec = A.matvec
     psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'cgrevcom')
+    r = b - matvec(x)
 
-    def get_residual():
-        return np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cg')
-    if atol == 'exit':
-        return postprocess(x), 0
+    # Deprecate the legacy usage
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+        tol = float(tol)
 
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(4*n,dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+        if np.linalg.norm(b) == 0:
+            atol = tol
+        else:
+            atol = tol * float(np.linalg.norm(b))
+    else:
+        atol = max(float(atol), tol * float(np.linalg.norm(b)))
+
+    # Is there any tolerance set? since b can be all 0.
+    if atol == 0.:
+        atol = 10*n*np.finfo(A.dtype).eps
+
+    # Dummy value to initialize var, silences warnings
+    rtz_prev, p = None, None
+    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
+        dotprod = np.vdot
+    else:
+        dotprod = np.dot
+
+    for iteration in range(maxiter):
+        if np.linalg.norm(r) < atol:  # Are we done?
+            return postprocess(x), 0
+
+        z = psolve(r)
+        rtz_cur = dotprod(r, z)
+        if iteration > 0:
+            beta = rtz_cur / rtz_prev
+            p *= beta
+            p += z
+        else:  # First spin
+            p = np.empty_like(r)
+            p[:] = z[:]
+
+        q = matvec(p)
+        alpha = rtz_cur / dotprod(p, q)
+        x += alpha*p
+        r -= alpha*q
+        rtz_prev = rtz_cur
+
+        if callback:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-            if info == 1 and iter_ > 1:
-                # recompute residual and recheck, to avoid
-                # accumulating rounding error
-                work[slice1] = b - matvec(x)
-                resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
 
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+    else:  # for loop exhausted
+        # Return incomplete progress
+        return postprocess(x), maxiter
 
 
 @set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
