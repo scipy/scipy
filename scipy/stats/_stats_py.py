@@ -4788,7 +4788,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y)
     elif method is not None:
-        message = '`method` must be an instance of `PermutationMethod` or None.'
+        message = ('`method` must be an instance of `PermutationMethod`,'
+                   '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
     # dtype is the data type for the calculations.  This expression ensures
