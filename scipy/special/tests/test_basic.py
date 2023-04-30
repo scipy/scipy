@@ -2126,7 +2126,7 @@ class TestFactorialFunctions:
     @pytest.mark.parametrize("content",
                              [[], [1], [1.1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
-    def test_factorial_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
         n = np.array(content, ndmin=dim, dtype=dtype)
@@ -2159,6 +2159,20 @@ class TestFactorialFunctions:
                 r = special.factorial(n.ravel(), exact=exact) if n.size else []
             expected = np.array(r, ndmin=dim, dtype=dtype)
             assert_equal(result, expected)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial_scalar_corner_cases(self, n, exact):
+        if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
+                or np.issubdtype(type(n), np.floating)):
+            # no error
+            result = special.factorial(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
 
     # use odd increment to make sure both odd & even numbers are tested!
     @pytest.mark.parametrize('n', range(30, 180, 11))
@@ -2194,7 +2208,7 @@ class TestFactorialFunctions:
     # test empty & non-empty arrays, with nans and mixed
     @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
-    def test_factorial2_corner_cases(self, content, dim, exact, dtype):
+    def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
         n = np.array(content, ndmin=dim, dtype=dtype)
@@ -2208,6 +2222,19 @@ class TestFactorialFunctions:
         else:
             with pytest.raises(ValueError, match="factorial2 does not*"):
                 special.factorial2(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial2_scalar_corner_cases(self, n, exact):
+        if n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, exact=exact)
 
     @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
     @pytest.mark.parametrize('n',
@@ -2232,7 +2259,7 @@ class TestFactorialFunctions:
     # test empty & non-empty arrays, with nans and mixed
     @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
                              ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
-    def test_factorialk_corner_cases(self, content, dim, dtype):
+    def test_factorialk_array_corner_cases(self, content, dim, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
         n = np.array(content, ndmin=dim, dtype=dtype)
@@ -2242,6 +2269,24 @@ class TestFactorialFunctions:
         else:
             with pytest.raises(ValueError, match="factorialk does not*"):
                 special.factorialk(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("k", range(1, 5))
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorialk_scalar_corner_cases(self, n, k, exact):
+        if not exact:
+            with pytest.raises(NotImplementedError):
+                special.factorialk(n, k=k, exact=exact)
+        elif n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            nan_cond = n is np.nan or n is None
+            expected = np.nan if nan_cond else special.factorialk(n, k=k)
+            assert_equal(result, expected)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, k=k, exact=exact)
 
     @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
     def test_factorialk_raises_k(self, k):

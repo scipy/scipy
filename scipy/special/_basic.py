@@ -2881,6 +2881,12 @@ def factorial(n, exact=False):
         # scalar cases
         if n is None or np.isnan(n):
             return np.nan
+        elif not (np.issubdtype(type(n), np.integer)
+                  or np.issubdtype(type(n), np.floating)):
+            raise ValueError(
+                f"Unsupported datatype for factorial: {type(n)}\n"
+                "Permitted data types are integers and floating point numbers"
+            )
         elif n < 0:
             return 0
         elif exact and np.issubdtype(type(n), np.integer):
