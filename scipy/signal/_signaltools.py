@@ -3542,21 +3542,23 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdims = np.r_[axis, 0:axis, axis + 1:rnk]
-        newdata = np.reshape(np.transpose(data, tuple(newdims)),
-                             (N, _prod(dshape) // N))
+        newdims = tuple(np.r_[axis, 0:axis, axis + 1:rnk])
+        newdata = data.transpose(newdims).reshape(N, -1)
+
         if not overwrite_data:
             newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
+
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):
             Npts = bp[m + 1] - bp[m]
             A = np.ones((Npts, 2), dtype)
-            A[:, 0] = np.cast[dtype](np.arange(1, Npts + 1) * 1.0 / Npts)
+            A[:, 0] = np.arange(1, Npts + 1, dtype=dtype) / Npts
             sl = slice(bp[m], bp[m + 1])
             coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
-            newdata[sl] = newdata[sl] - np.dot(A, coef)
+            newdata[sl] = newdata[sl] - A @ coef
+
         # Put data back in original shape.
         tdshape = np.take(dshape, newdims, 0)
         ret = np.reshape(newdata, tuple(tdshape))
