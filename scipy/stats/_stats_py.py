@@ -9648,7 +9648,6 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
         - Value of each class in the (distribution) histogram.
 
-        
         It is expected that each input represents a collection of vectors.
         If the input is a one-dimensional array-like object,
         each value should represent a class in probability mass. On the other

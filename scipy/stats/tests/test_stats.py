@@ -7293,6 +7293,25 @@ class TestWassersteinDistance:
         assert_almost_equal(stats.wasserstein_distance(
             [0, 1, 2], [1, 2, 3]),
             1)
+    
+    def test_pulished_values(self):
+        # Compare against pulished values and manually computed results.
+        # The values and computed result are posted at James D. McCaffrey's bolg,
+        # https://jamesmccaffrey.wordpress.com/2018/03/05/earth-mover-distance
+        # -wasserstein-metric-example-calculation/
+        u = [(1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1),
+             (4,2), (6,1), (6,1)]
+        v = [(2,1), (2,1), (3,2), (3,2), (3,2), (5,1), (5,1), (5,1), (5,1), (5,1),
+             (5,1), (5,1), (7,1)]
+        
+        res = stats.wasserstein_distance(u, v)
+        # In original post, the author kept two decimal places for ease of calculation.
+        # This test uses the more precise value of distance to get the precise results,
+        # for comparison please look at the table and figure in the priginal blog.
+        flow = np.array([2., 3., 5., 1., 1., 1.])
+        dist = np.array([1.00, 5**0.5, 4.00, 2**0.5, 1.00, 1.00])
+        ref = np.sum(flow * dist)/np.sum(flow)
+        assert_almost_equal(res, ref)
 
     def test_same_distribution(self):
         # Any distribution moved to itself should have a Wasserstein distance
