@@ -230,7 +230,7 @@ jobs:
         run: |
           pip install "numpy==1.21.6" &&
           # build deps
-          pip install build meson-python ninja pythran pybind11 cython wheel
+          pip install build "meson-python<0.13.0" ninja pythran pybind11 cython wheel
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
 
@@ -291,7 +291,7 @@ jobs:
       run: |
         # TODO: unpin cython and move to -pre once issues with cython 3.0
         #       have been ironed out.
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
+        python -m pip install ninja meson "meson-python<0.13.0" wheel click rich_click pydevtool "cython==0.29.33"
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
