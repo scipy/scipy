@@ -9643,9 +9643,17 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     ----------
     u_values, v_values : array_like
         could be:
+
         - Values observed in the (empirical) distribution.
 
         - Value of each class in the (distribution) histogram.
+
+        
+        It is expected that each input represents a collection of vectors.
+        If the input is a one-dimensional array-like object,
+        each value should represent a class in probability mass. On the other
+        hand, if the input is a two-dimensional array-like object, each row
+        within it should correspond to a vector.
 
     u_weights, v_weights : array_like, optional
         Weight for each value. If unspecified, each value is assigned the same
@@ -9703,14 +9711,14 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
                 u\\
                 v\\
             \end{bmatrix}
-
+    The :math:`\text{vec}()` function denotes the Vectorization fucntion.
     The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u` to :math:`v`. Summing over
     the rows of :math:`\Gamma` should give the source distribution :math:`u` :
-    :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i`s and summing
+    :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i` s and summing
     over the columns of :math:`\Gamma` should give the target distribution
-    :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all :math:`j`s.
+    :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all :math:`j` s.
     The distance matrix :math:`D` is a matrix :math:`[d_{ij}]`, in which
     :math:`d_{ij} = d(x_i, y_j)`.
 
