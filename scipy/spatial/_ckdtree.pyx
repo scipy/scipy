@@ -557,7 +557,7 @@ cdef class cKDTree:
         if data.ndim != 2:
             raise ValueError("data must be 2 dimensions")
 
-        if (~np.isfinite(data)).sum() > 0:
+        if not np.isfinite(data).all():
             raise ValueError("data must be finite, check for nan or inf values")
 
         self.data = data
