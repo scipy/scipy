@@ -205,6 +205,16 @@ def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
                           unpacker, nan_policy, axis, data_generator)
 
 
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parametrize(("axis"), (1,))
+@pytest.mark.parametrize(("data_generator"), ("all_finite",))
+def test_axis_nan_policy_None(hypotest, args, kwds, n_samples, n_outputs,
+                              paired, unpacker, axis, data_generator):
+    _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
+                          unpacker, None, axis, data_generator)
+
+
 def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator):
     # Tests the 1D and vectorized behavior of hypothesis tests against a

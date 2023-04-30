@@ -636,7 +636,9 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
 
-    if np.issubdtype(a.dtype, np.inexact):
+    if nan_policy is None:
+        contains_nan = False
+    elif np.issubdtype(a.dtype, np.inexact):
         # The summation method avoids creating a (potentially huge) array.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):

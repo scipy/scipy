@@ -267,19 +267,21 @@ def _get_axis_params(default_axis=0, _name=_name, _desc=_desc):  # bind NOW
 
 
 _name = 'nan_policy'
-_type = "{'propagate', 'omit', 'raise'}"
+_type = "{'propagate', 'omit', 'raise', None}"
 _desc = (
     """Defines how to handle input NaNs.
 
-- ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+- ``'propagate'``: if a NaN is present in the axis slice (e.g. row) along
   which the  statistic is computed, the corresponding entry of the output
   will be NaN.
-- ``omit``: NaNs will be omitted when performing the calculation.
+- ``'omit'``: NaNs will be omitted when performing the calculation.
   If insufficient data remains in the axis slice along which the
   statistic is computed, the corresponding entry of the output will be
   NaN.
-- ``raise``: if a NaN is present, a ``ValueError`` will be raised."""
-    .split('\n'))
+- ``'raise'``: if a NaN is present, a ``ValueError`` will be raised.
+- ``None``: ignore the possibility of the presence of NaNs. Behavior when
+  NaNs are present will be implementation-dependent and is subject to change
+  without notice.""".split('\n'))
 _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
@@ -494,8 +496,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
                 contains_nans = []
+                policies = ['propagate', 'raise', 'omit', None]
                 for sample in samples:
-                    contains_nan, _ = _contains_nan(sample, nan_policy)
+                    contains_nan, _ = _contains_nan(sample, nan_policy,
+                                                    policies=policies)
                     contains_nans.append(contains_nan)
 
                 # Addresses nan_policy == "propagate"
@@ -540,7 +544,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
-            contains_nan, _ = _contains_nan(x, nan_policy)
+            policies = ['propagate', 'raise', 'omit', None]
+            contains_nan, _ = _contains_nan(x, nan_policy, policies=policies)
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)

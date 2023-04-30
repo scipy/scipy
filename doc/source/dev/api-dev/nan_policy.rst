@@ -10,11 +10,11 @@ functions, we maintain a consistent API.
 The basic API
 -------------
 
-The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
-``'raise'`` and ``'propagate'``.  The meanings are:
+The parameter ``nan_policy`` accepts four possible values: ``'omit'``,
+``'raise'``, ``'propagate'``, and ``None``.  The meanings are:
 
 * ``nan_policy='omit'``:
-  Ignore occurrences of ``nan`` in the input.  Do not generate a warning
+  Eliminate occurrences of ``nan`` in the input.  Do not generate a warning
   if the input contains ``nan`` (unless the equivalent input with the
   ``nan`` values removed would generate a warning). For example, for the
   simple case of a function that accepts a single array and returns a
@@ -85,6 +85,10 @@ The parameter ``nan_policy`` accepts three possible strings: ``'omit'``,
       https://github.com/scipy/scipy/issues/7818
 
   for an example where that might lead to unexpected output.
+* ``nan_policy=None``:
+  Ignore the possibility of ``nan`` in the input;  just execute the function
+  without checking for ``nan``. Behavior with ``nan`` in the input is
+  implementation-dependent.
 
 
 ``nan_policy`` combined with an ``axis`` parameter
