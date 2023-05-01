@@ -134,8 +134,7 @@ def sqrtm(A, disp=True, blocksize=64):
     sqrtm : (N, N) ndarray
         Value of the sqrt function at `A`. The dtype is float or complex.
         The precision (data size) is determined based on the precision of
-        input `A`. The precision might be clipped by each dtype precision
-        range.
+        input `A`.
 
     errest : float
         (if disp == False)
@@ -162,7 +161,6 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
-    byte_size = np.asarray(A).dtype.itemsize
     A = _asarray_validated(A, check_finite=True, as_inexact=True)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
@@ -180,18 +178,12 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
-        if not np.iscomplexobj(X):  # output is real
-            # float byte size range: f2 ~ f16
-            X = X.astype(f"f{np.clip(byte_size, 2, 16)}", copy=False)
-        elif np.iscomplexobj(A):  # input is complex
-            X = X.astype(f"c{np.clip(byte_size, 8, 32)}", copy=False)
-        else: # input is real, output is complex
-            # complex byte size range: c8 ~ c32.
-            # c32(complex256) might not be supported in some environments.
-            if hasattr(np, 'complex256'):
-                X = X.astype(f"c{np.clip(byte_size*2, 8, 32)}", copy=False)
-            else:
-                X = X.astype(f"c{np.clip(byte_size*2, 8, 16)}", copy=False)
+
+        if A.dtype == np.float32 and not np.iscomplexobj(X):
+            X = X.astype(np.float32, copy=False)
+        elif (A.dtype == np.float32 and np.iscomplexobj(X)) or \
+                (A.dtype == np.complex64):
+            X = X.astype(np.complex64, copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)
