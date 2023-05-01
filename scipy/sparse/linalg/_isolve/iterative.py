@@ -146,7 +146,6 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
 
                """
                )
-@non_reentrant()
 def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
          callback=None, atol=0.):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -266,7 +265,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
                True
                """)
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
-             atol=None):
+             atol=0.):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     n = len(b)
 
@@ -281,8 +280,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     matvec = A.matvec
     psolve = M.matvec
 
-    # These values makes no sense but coming from original Fortran code
-    # Probably sqrt was meant instead.
+    # These values make no sense but coming from original Fortran code
+    # sqrt might have been meant instead.
     if A.dtype.char in 'fF':
         rhotol = np.finfo(np.float32).eps ** 2
     else:
@@ -829,9 +828,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     return postprocess(x), info
 
 
-@non_reentrant()
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
-        atol=None):
+        atol=0.):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
@@ -859,9 +857,9 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     x0 : ndarray
         Starting guess for the solution.
     tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is ``'legacy'``, which emulates
-        a different legacy behavior.
+        Tolerances for convergence,
+        ``norm(residual) <= max(tol*norm(b), atol)``. The default for ``atol``
+        is ``'legacy'``, which emulates a different legacy behavior.
 
         .. warning::
 
@@ -889,8 +887,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import qmr
-    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
-    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
+    >>> b = np.array([2., 4., -1.])
     >>> x, exitCode = qmr(A, b)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
@@ -901,20 +899,24 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     A, M, x, b, postprocess = make_system(A, None, x0, b)
 
     if M1 is None and M2 is None:
-        if hasattr(A_,'psolve'):
+        if hasattr(A_, 'psolve'):
             def left_psolve(b):
-                return A_.psolve(b,'left')
+                return A_.psolve(b, 'left')
 
             def right_psolve(b):
-                return A_.psolve(b,'right')
+                return A_.psolve(b, 'right')
 
             def left_rpsolve(b):
-                return A_.rpsolve(b,'left')
+                return A_.rpsolve(b, 'left')
 
             def right_rpsolve(b):
-                return A_.rpsolve(b,'right')
-            M1 = LinearOperator(A.shape, matvec=left_psolve, rmatvec=left_rpsolve)
-            M2 = LinearOperator(A.shape, matvec=right_psolve, rmatvec=right_rpsolve)
+                return A_.rpsolve(b, 'right')
+            M1 = LinearOperator(A.shape,
+                                matvec=left_psolve,
+                                rmatvec=left_rpsolve)
+            M2 = LinearOperator(A.shape,
+                                matvec=right_psolve,
+                                rmatvec=right_rpsolve)
         else:
             def id(b):
                 return b
@@ -925,62 +927,126 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     if maxiter is None:
         maxiter = n*10
 
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'qmrrevcom')
+    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
+        dotprod = np.vdot
+    else:
+        dotprod = np.dot
 
-    def get_residual():
-        return np.linalg.norm(A.matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'qmr')
-    if atol == 'exit':
-        return postprocess(x), 0
+    rhotol = np.finfo(A.dtype.char).eps
+    betatol = rhotol
+    gammatol = rhotol
+    deltatol = rhotol
+    epsilontol = rhotol
+    xitol = rhotol
 
-    resid = atol
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros(11*n,x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    while True:
-        olditer = iter_
-        x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, work, iter_, resid, info, ndx1, ndx2, ijob)
-        if callback is not None and iter_ > olditer:
+    # Deprecate the legacy usage
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+        tol = float(tol)
+
+        if np.linalg.norm(b) == 0:
+            atol = tol
+        else:
+            atol = tol * float(np.linalg.norm(b))
+    else:
+        atol = max(float(atol), tol * float(np.linalg.norm(b)))
+
+    r = b - A.matvec(x) if x0 is not None else b.copy()
+    vtilde = r.copy()
+    y = M1.matvec(vtilde)
+    rho = np.linalg.norm(y)
+    wtilde = r.copy()
+    z = M2.rmatvec(wtilde)
+    xi = np.linalg.norm(z)
+    gamma, eta, theta = 1, -1, 0
+    v = np.empty_like(vtilde)
+    w = np.empty_like(wtilde)
+
+    # Dummy values to initialize vars, silence linter warnings
+    epsilon, q, d, p, s = None, None, None, None, None
+
+    for iteration in range(maxiter):
+        if np.linalg.norm(r) < atol:  # Are we done?
+            return postprocess(x), 0
+        if np.abs(rho) < rhotol:  # rho breakdown
+            return postprocess(x), -10
+        if np.abs(xi) < xitol:  # xi breakdown
+            return postprocess(x), -15
+
+        v[:] = vtilde[:]
+        v *= (1 / rho)
+        y *= (1 / rho)
+        w[:] = wtilde[:]
+        w *= (1 / xi)
+        z *= (1 / xi)
+        delta = dotprod(z, y)
+
+        if np.abs(delta) < deltatol:  # delta breakdown
+            return postprocess(x), -13
+
+        ytilde = M2.matvec(y)
+        ztilde = M1.rmatvec(z)
+
+        if iteration > 0:
+            ytilde -= (xi * delta / epsilon) * p
+            p[:] = ytilde[:]
+            ztilde -= (rho * (delta / epsilon).conj()) * q
+            q[:] = ztilde[:]
+        else:  # First spin
+            p = ytilde.copy()
+            q = ztilde.copy()
+
+        ptilde = A.matvec(p)
+        epsilon = dotprod(q, ptilde)
+        if np.abs(epsilon) < epsilontol:  # epsilon breakdown
+            return postprocess(x), -14
+
+        beta = epsilon / delta
+        if np.abs(beta) < betatol:  # beta breakdown
+            return postprocess(x), -11
+
+        vtilde[:] = ptilde[:]
+        vtilde -= beta*v
+        y = M1.matvec(vtilde)
+
+        rho_prev = rho
+        rho = np.linalg.norm(y)
+        wtilde[:] = w[:]
+        wtilde *= - beta.conj()
+        wtilde += A.rmatvec(q)
+        z = M2.rmatvec(wtilde)
+        xi = np.linalg.norm(z)
+        gamma_prev = gamma
+        theta_prev = theta
+        theta = rho / (gamma_prev * np.abs(beta))
+        gamma = 1 / np.sqrt(1 + theta**2)
+
+        if np.abs(gamma) < gammatol:  # gamma breakdown
+            return postprocess(x), -12
+
+        eta *= -(rho_prev / beta) * (gamma / gamma_prev)**2
+
+        if iteration > 0:
+            d *= (theta_prev * gamma) ** 2
+            d += eta*p
+            s *= (theta_prev * gamma) ** 2
+            s += eta*ptilde
+        else:
+            d = p.copy()
+            d *= eta
+            s = ptilde.copy()
+            s *= eta
+
+        x += d
+        r -= s
+
+        if callback:
             callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):
-            if callback is not None:
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(work[slice1])
-        elif (ijob == 2):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.rmatvec(work[slice1])
-        elif (ijob == 3):
-            work[slice1] = M1.matvec(work[slice2])
-        elif (ijob == 4):
-            work[slice1] = M2.matvec(work[slice2])
-        elif (ijob == 5):
-            work[slice1] = M1.rmatvec(work[slice2])
-        elif (ijob == 6):
-            work[slice1] = M2.rmatvec(work[slice2])
-        elif (ijob == 7):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*A.matvec(x)
-        elif (ijob == 8):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
-        ijob = 2
 
-    if info > 0 and iter_ == maxiter and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = iter_
-
-    return postprocess(x), info
+    else:  # for loop exhausted
+        # Return incomplete progress
+        return postprocess(x), maxiter
