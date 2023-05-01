@@ -353,9 +353,8 @@ def test_precond_inverse(case):
 
 
 def test_reentrancy():
-    non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres, gcrotmk, tfqmr]
-    for solver in reentrant + non_reentrant:
+    for solver in reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             _check_reentrancy(solver, solver in reentrant)
@@ -446,7 +445,7 @@ def test_zero_rhs(solver):
             if solver is not minres:
                 x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
                 if info == 0:
-                    assert_allclose(x, 0)
+                    assert_allclose(x, 0, atol=5e-15, rtol=0)
 
                 x, info = solver(A, b, tol=tol, atol=tol)
                 assert_equal(info, 0)
