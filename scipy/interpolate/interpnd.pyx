@@ -176,7 +176,7 @@ class NDInterpolatorBase:
         """
         if len(args) > 0:
             self.set_interpolation_points(*args)
-        elif self._xi = None:
+        elif self._xi is None:
             raise ValueError("Interpolation was called without required points")
 
         if self.is_complex:
