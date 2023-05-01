@@ -247,6 +247,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Methods
     -------
     __call__
+    set_interpolation_points
 
     Parameters
     ----------
@@ -843,6 +844,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Methods
     -------
     __call__
+    set_values
+    set_interpolation_points
 
     Parameters
     ----------
@@ -878,6 +881,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 
+    Since most of the algorithm depeneds only on the triangulation of
+    the input 
+
     .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
@@ -902,6 +908,17 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
+
+    If the same interpolation should be performed many times with
+    different values, it is possible to change only the values
+    and avoid duplicate calculations:
+
+    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)))
+    >>> interp.set_interpolation_points(X, Y)
+    >>> interp.set_values(z)
+    >>> Z1 = interp()
+    >>> interp.set_values(z * 2)
+    >>> Z2 = interp()
 
     See also
     --------
@@ -956,6 +973,16 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                                                     tol=self.tol, maxiter=self.maxiter)
     
     def set_values(self, values):
+        """
+        Sets the values of the interpolation points.
+
+        Parameters
+        ----------
+        points : ndarray of floats, shape (npoints, ndims); or Delaunay
+            Data point coordinates, or a precomputed Delaunay triangulation.
+        values : ndarray of float or complex, shape (npoints, ...)
+            Data values.
+        """
         self._set_values(values)
         self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                  tol=self.tol, maxiter=self.maxiter)
@@ -963,19 +990,24 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     def _evaluate_double(self, xi=None):
         if xi is None:
             xi = self._xi
-            # self._points_simplices = self._points_simplices
-        #else:
-        #    self._points_simplices = self.tri.find_simplex(xi)
         return self._do_evaluate(xi, 1.0)
 
     def _evaluate_complex(self, xi=None):
         if xi is None:
             xi = self._xi
-        #else:
-        #    self._points_simplices = self.tri.find_simplex(xi)
         return self._do_evaluate(xi, 1.0j)
     
     def set_interpolation_points(self, *args):
+        """
+        Sets the points to be interpolated.
+        
+        Parameters
+        ----------
+        x1, x2, ... xn: array-like of float
+            Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
+        """
         NDInterpolatorBase.set_interpolation_points(self, *args)
         self._points_simplices = None
         self._points_barycentric_coordinates = None
