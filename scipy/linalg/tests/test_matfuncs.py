@@ -442,7 +442,7 @@ class TestSqrtM:
 
     def test_data_size_preservation_float_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.float16)
-        assert sqrtm(M).dtype == np.float64
+        assert sqrtm(M).dtype == np.float32
         M = np.zeros((10, 10), dtype=np.float32)
         assert sqrtm(M).dtype == np.float32
         M = np.zeros((10, 10), dtype=np.float64)
@@ -453,7 +453,7 @@ class TestSqrtM:
 
     def test_data_size_preservation_float_in_comp_out(self):
         M = np.array([[2, 4], [0, -2]], dtype=np.float16)
-        assert sqrtm(M).dtype == np.complex128
+        assert sqrtm(M).dtype == np.complex64
         M = np.array([[2, 4], [0, -2]], dtype=np.float32)
         assert sqrtm(M).dtype == np.complex64
         M = np.array([[2, 4], [0, -2]], dtype=np.float64)
