@@ -46,7 +46,7 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool gast==0.5.3
       - name: Install OpenBLAS
         shell: bash
         run: |
@@ -101,7 +101,7 @@ jobs:
         run: |
           # 1.22.3 is currently the oldest numpy usable on cp3.9 according
           # to pyproject.toml
-          python -m pip install numpy==1.22.3 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool
+          python -m pip install numpy==1.22.3 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool gast==0.5.3
 
       - name: Build
         run: |
@@ -210,7 +210,7 @@ jobs:
         run: |
           # pyproject.toml currently states this numpy minimum version.
           python -m pip install --upgrade pip "setuptools==59.6.0" wheel
-          python -m pip install cython numpy==1.22.3 pybind11 pythran pytest pooch
+          python -m pip install cython numpy==1.22.3 pybind11 pythran pytest pooch gast==0.5.3
 
       - name: Build
         run: |

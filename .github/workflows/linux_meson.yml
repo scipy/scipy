@@ -56,13 +56,13 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.10'
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch gast==0.5.3
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.11'
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch gast==0.5.3
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
@@ -164,7 +164,7 @@ jobs:
         # Install build dependencies. Use meson-python from its main branch,
         # most convenient to test in this job because we're using pip without
         # build isolation here.
-        python -m pip install numpy pybind11 pythran cython pytest ninja
+        python -m pip install numpy pybind11 pythran cython pytest ninja gast==0.5.3
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
@@ -230,7 +230,7 @@ jobs:
         run: |
           pip install "numpy==1.21.6" &&
           # build deps
-          pip install build meson-python ninja pythran pybind11 cython wheel
+          pip install build meson-python ninja pythran pybind11 cython wheel gast==0.5.3
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
 
@@ -295,7 +295,7 @@ jobs:
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
-        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib gast==0.5.3
 
     - name:  Prepare compiler cache
       id:    prep-ccache

@@ -22,6 +22,7 @@ dependencies:
   # scipy.datasets dependency
   - pooch
   - pythran>=0.11.0
+  - gast==0.5.3
   # For testing and benchmarking
   - pytest
   - pytest-cov

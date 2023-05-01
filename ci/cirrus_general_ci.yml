@@ -58,7 +58,7 @@ linux_aarch64_test_task:
     ln -s $(which python3.10) python
     export PATH=$PWD:$PATH
 
-    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran cython gast==0.5.3
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     
@@ -99,7 +99,7 @@ musllinux_amd64_test_task:
     cd $_CWD
     python -m pip install cython
     pip install --upgrade --pre -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
-    python -m pip install meson ninja pybind11 pythran pytest
+    python -m pip install meson ninja pybind11 pythran pytest gast==0.5.3
     python -m pip install click rich_click doit pydevtool pooch
 
     # pin setuptools to get around https://github.com/scipy/scipy/issues/17475
@@ -139,7 +139,7 @@ macos_arm64_test_task:
     source scipy-dev/bin/activate
     popd
 
-    python -m pip install meson ninja numpy cython pybind11 pythran cython
+    python -m pip install meson ninja numpy cython pybind11 pythran cython gast==0.5.3
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
