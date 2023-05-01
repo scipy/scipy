@@ -56,8 +56,8 @@ class NDInterpolatorBase:
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan, ndim=None,
-                 rescale=False, need_contiguous=True, need_values=True):
+    def __init__(self, points, values=None, fill_value=np.nan, ndim=None,
+                 rescale=False, need_contiguous=True, need_values=True, xi=None):
         """
         Check shape of points and values arrays, and reshape values to
         (npoints, nvalues).  Ensure the `points` and values arrays are
@@ -94,14 +94,14 @@ class NDInterpolatorBase:
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
         
-        if need_values:
+        if need_values or values is not None:
             self._set_values(values)
         else:
             self.values = None
         
-        self._xi = None
-
-
+        if xi is not None:
+            self._set_xi(*xi)
+            
     def _set_values(self, values):
         values = np.asarray(values)
         _check_init_shape(self.points, values, ndim=self.ndim)
@@ -139,19 +139,7 @@ class NDInterpolatorBase:
         else:
             return (xi - self.offset) / self.scale
 
-    def set_interpolation_points(self, *args):
-        """
-        interpolator.set_interpolation_points(*args)
-
-        Sets the points to be interpolated.
-
-        Parameters
-        ----------
-        x1, x2, ... xn: array-like of float
-            Points where to interpolate data at.
-            x1, x2, ... xn can be array-like of float with broadcastable shape.
-            or x1 can be array-like of float with shape ``(..., ndim)``
-        """
+    def _set_xi(self, *args):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         self._interpolation_points_shape = xi.shape
@@ -160,7 +148,7 @@ class NDInterpolatorBase:
 
         self._xi = self._scale_x(xi)
 
-    def __call__(self, *args):
+    def __call__(self, *args, values=None):
         """
         interpolator(xi)
 
@@ -172,12 +160,18 @@ class NDInterpolatorBase:
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
-
+        values : ndarray, optional
+            ndarray of float or complex, shape (npoints, ...)
+            Data values.
         """
         if len(args) > 0:
-            self.set_interpolation_points(*args)
+            self._set_xi(*args)
         elif self._xi is None:
             raise ValueError("Interpolation was called without required points")
+
+        if values is not None:
+            self._set_values(values)
+
 
         if self.is_complex:
             r = self._evaluate_complex(self._xi)
@@ -247,7 +241,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Methods
     -------
     __call__
-    set_interpolation_points
 
     Parameters
     ----------
@@ -844,8 +837,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Methods
     -------
     __call__
-    set_values
-    set_interpolation_points
 
     Parameters
     ----------
@@ -867,6 +858,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
+    xi : tuple of ndarrays, optional
+        The coordinates of the points to be interpolated.
 
     Notes
     -----
@@ -913,12 +906,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     different values, it is possible to change only the values
     and avoid duplicate calculations:
 
-    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)))
-    >>> interp.set_interpolation_points(X, Y)
-    >>> interp.set_values(z)
-    >>> Z1 = interp()
-    >>> interp.set_values(z * 2)
-    >>> Z2 = interp()
+    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)), xi=(X,Y))
+    >>> Z1 = interp(values=z)
 
     See also
     --------
@@ -957,22 +946,15 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     """
 
     def __init__(self, points, values=None, fill_value=np.nan,
-                 tol=1e-6, maxiter=400, rescale=False):
-        NDInterpolatorBase.__init__(self, points, values, ndim=2,
-                                    fill_value=fill_value, rescale=rescale,
-                                    need_values=not values is None)
-        if self.tri is None:
-            self.tri = qhull.Delaunay(self.points)
-        
+                 tol=1e-6, maxiter=400, rescale=False, xi=None):
         self.tol = tol
         self.maxiter = maxiter
-        self._points_simplices = None
-
-        if self.values is not None:
-            self.grad = estimate_gradients_2d_global(self.tri, self.values,
-                                                    tol=self.tol, maxiter=self.maxiter)
+        NDInterpolatorBase.__init__(self, points, values, ndim=2,
+                                    fill_value=fill_value, rescale=rescale,
+                                    need_values=False,
+                                    xi=xi)
     
-    def set_values(self, values):
+    def _set_values(self, values):
         """
         Sets the values of the interpolation points.
 
@@ -983,9 +965,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         values : ndarray of float or complex, shape (npoints, ...)
             Data values.
         """
-        self._set_values(values)
-        self.grad = estimate_gradients_2d_global(self.tri, self.values,
-                                                 tol=self.tol, maxiter=self.maxiter)
+        NDInterpolatorBase._set_values(self, values)
+        if self.tri is None:
+            self.tri = qhull.Delaunay(self.points)
+        if self.values is not None:
+            self.grad = estimate_gradients_2d_global(self.tri, self.values,
+                                                    tol=self.tol, maxiter=self.maxiter)
 
     def _evaluate_double(self, xi=None):
         if xi is None:
@@ -997,7 +982,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
             xi = self._xi
         return self._do_evaluate(xi, 1.0j)
     
-    def set_interpolation_points(self, *args):
+    def _set_xi(self, *args):
         """
         Sets the points to be interpolated.
         
@@ -1008,7 +993,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
         """
-        NDInterpolatorBase.set_interpolation_points(self, *args)
+        NDInterpolatorBase._set_xi(self, *args)
         self._points_simplices = None
         self._points_barycentric_coordinates = None
 
