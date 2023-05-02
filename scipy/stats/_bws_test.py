@@ -118,14 +118,13 @@ def bws_test(x, y, axis=0, alternative="two-sided", variant="naive", n_resamples
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
         see [3] section 5.1.
-    variant : {'shan', 'murakami', 'naive'}, optional
+    variant : {'shan-murakami', 'naive'}, optional
         Selects the method used to calculate the :math:`B` statistic.
         Default is 'naive'. The following options are available.
 
         * ``'naive'``: use the naive method in [1]_ to calculate the :math:`B` statistic.
-        * ``'murakami'``: use the variant method in p.5 (two-sided) or p.7 (one-sided) in
+        * ``'shan-murakami'``: use the variant method in p.5 (two-sided) or p.7 (one-sided) in
           [2]_ to calculate the :math:`B` statistic.
-        * ``'shan'``: same as ``'murakami'``.
     n_resamples : int or np.inf, default: 9999
         Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
