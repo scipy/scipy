@@ -172,8 +172,7 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
     Examples
     --------
     We follow the example of table 3 in [1]_: Fourteen children were divided randomly into two groups, 
-    an experimental group and a control group. For each child the number of correct identifications 
-    among 18 new examples was observed.
+    an experimental group and a control group.
 
     >>> control_group_ranks = np.array([1, 2, 3, 4, 6, 7, 8])
     >>> experimental_group_ranks = np.array([5, 9, 10, 11, 12, 13, 14])
