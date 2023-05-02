@@ -9,18 +9,13 @@ python _cython_signature_generator.py blas <blas_directory> <out_file>
 To generate the LAPACK wrapper signatures call:
 python _cython_signature_generator.py lapack <lapack_src_directory> <out_file>
 
-This script expects to be run on the root directory of the LAPACK or BLAS source code, that
-contains the Fortran implementation.
-
-It was last run with netlib's LAPACK 3.7.1 (https://netlib.org/lapack/#_lapack_version_3_7_1).
+This script expects to be run on the source directory for
+the oldest supported version of LAPACK (currently 3.4.0).
 """
 
-import pathlib
-import re
+import glob
+import os
 from numpy.f2py import crackfortran
-
-PARAM = re.compile(r"\*> \\param\[(?P<const>(in|out|in,out))\]\s+(?P<name>\w+)\s*")
-
 
 sig_types = {'integer': 'int',
              'complex': 'c',
@@ -32,50 +27,21 @@ sig_types = {'integer': 'int',
              'logical': 'bint'}
 
 
-def get_type(info, name, const_args=None):
-    argtype = sig_types[info['vars'][name]['typespec']]
-    if argtype == 'c' and info['vars'][name].get('kindselector') is not None:
+def get_type(info, arg):
+    argtype = sig_types[info['vars'][arg]['typespec']]
+    if argtype == 'c' and info['vars'][arg].get('kindselector') is not None:
         argtype = 'z'
-    if const_args is not None and name.lower() in const_args:
-        argtype = f"const {argtype}"
     return argtype
 
 
-def get_const_args(file):
-    const_args = set()
-    with open(file) as f:
-        for line in f.readlines():
-            sline = line.strip()
-            if sline.startswith("SUBROUTINE"):
-                break
-            mo = PARAM.match(line)
-            if mo is None:
-                continue
-            if 'out' not in mo.group('const'):
-                const_args.add(mo.group('name').lower())
-    return const_args
-
-
-def make_signature(file):
-    info = iter(crackfortran.crackfortran(str(file)))
-    const_args = get_const_args(file)
-
-    while True:
-        try:
-            subinfo = next(info)
-        except StopIteration:
-            return None
-
-        name = subinfo['name']
-        if subinfo['block'] == 'subroutine':
-            return_type = 'void'
-            break
-        elif subinfo['block'] == 'function':
-            return_type = get_type(subinfo, name)
-            break
-
-    arglist = [' *'.join([get_type(subinfo, arg, const_args), arg])
-               for arg in subinfo['args']]
+def make_signature(filename):
+    info = crackfortran.crackfortran(filename)[0]
+    name = info['name']
+    if info['block'] == 'subroutine':
+        return_type = 'void'
+    else:
+        return_type = get_type(info, name)
+    arglist = [' *'.join([get_type(info, arg), arg]) for arg in info['args']]
     args = ', '.join(arglist)
     # Eliminate strange variable naming that replaces rank with rank_bn.
     args = args.replace('rank_bn', 'rank')
@@ -87,19 +53,19 @@ def get_sig_name(line):
 
 
 def sigs_from_dir(directory, outfile, manual_wrappers=None, exclusions=None):
-    files = sorted(directory.glob("*.f*"))
+    if directory[-1] in ['/', '\\']:
+        directory = directory[:-1]
+    files = sorted(glob.glob(directory + '/*.f*'))
     if exclusions is None:
         exclusions = []
     if manual_wrappers is not None:
         exclusions += [get_sig_name(l) for l in manual_wrappers.split('\n')]
     signatures = []
-    for file in files:
-        name = file.stem
+    for filename in files:
+        name = os.path.splitext(os.path.basename(filename))[0]
         if name in exclusions:
             continue
-        signature = make_signature(file)
-        if signature is not None:
-            signatures.append(signature)
+        signatures.append(make_signature(filename))
     if manual_wrappers is not None:
         signatures += [l + '\n' for l in manual_wrappers.split('\n')]
     signatures.sort(key=get_sig_name)
@@ -206,17 +172,12 @@ lapack_exclusions = [
               'clarscl2', 'dlarscl2', 'slarscl2', 'zlarscl2',
               'clascl2', 'dlascl2', 'slascl2', 'zlascl2',
               'cla_wwaddw', 'dla_wwaddw', 'sla_wwaddw', 'zla_wwaddw',
-              'dbdsvdx', 'dtrevc3', 'sbdsvdx', 'strevc3', # These 4 fail, because of a bug in f2py
-                                                          # see https://github.com/numpy/numpy/issues/23533
-              'ssyconvf', # This fails because the symbol does not get exported correctly on macOS,
-                          # see gh-18247
               ]
 
 
 if __name__ == '__main__':
     from sys import argv
-    libname, src_dir_name, outfile = argv[1:]
-    src_dir = pathlib.Path(src_dir_name)
+    libname, src_dir, outfile = argv[1:]
     if libname.lower() == 'blas':
         sigs_from_dir(src_dir, outfile, exclusions=blas_exclusions)
     elif libname.lower() == 'lapack':
