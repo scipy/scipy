@@ -2,6 +2,13 @@ import numpy as np
 from ._resampling import permutation_test
 from functools import partial
 from collections import namedtuple
+from dataclasses import dataclass
+
+
+@dataclass
+class BWSResult:
+    statistic: float
+    pvalue: float
 
 
 def _bws_input_validation(x, y, alternative, variant):
@@ -76,9 +83,6 @@ def _bws_statistic(x, y, alternative, variant):
     return B
 
 
-BWSResult = namedtuple('BWSResult', ('statistic', 'pvalue'))
-
-
 def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
@@ -145,7 +149,7 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
             The BWS statistic corresponding with sample `x` and `y`.
         pvalue : float
             The associated *p*-value for the chosen `alternative`.
-            
+
     See also
     --------
     scipy.stats.wilcoxon, scipy.stats.mannwhitneyu, scipy.stats.ttest_ind
@@ -213,7 +217,8 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
 
     x, y, alternative, variant = _bws_input_validation(
         x, y, alternative, variant)
-    bws_statistic = partial(_bws_statistic, alternative=alternative, variant=variant)
+    bws_statistic = partial(
+        _bws_statistic, alternative=alternative, variant=variant)
     res = permutation_test((x, y), bws_statistic, alternative='greater',
                            n_resamples=n_resamples, random_state=random_state)
 
