@@ -4,7 +4,7 @@ from functools import partial
 from collections import namedtuple
 
 
-def _bws_input_validation(x, y, axis, alternative, variant):
+def _bws_input_validation(x, y, alternative, variant):
     ''' Input validation and standardization for bws test'''
     x, y = np.atleast_1d(x), np.atleast_1d(y)
     if np.isnan(x).any() or np.isnan(y).any():
@@ -17,22 +17,17 @@ def _bws_input_validation(x, y, axis, alternative, variant):
     if alternative not in alternatives:
         raise ValueError(f'`alternative` must be one of {alternatives}.')
 
-    if axis != int(axis):
-        raise ValueError('`axis` must be an integer.')
-
     variants = {"shan", "murakami", "naive"}
     variant = variant.lower()
     if variant not in variants:
         raise ValueError(f'`variant` must be one of {variants}.')
 
-    return x, y, axis, alternative, variant
+    return x, y, alternative, variant
 
 
-def _bws_statistic(x, y, axis, alternative, variant):
+def _bws_statistic(x, y, alternative, variant):
     '''Compute the BWS test statistic for two independent samples'''
-    # for simplicity, always work along the last axis
-    x, y = np.moveaxis(x, axis, -1), np.moveaxis(y, axis, -1)
-    Ri, Hj = np.sort(x, axis=-1), np.sort(y, axis=-1)
+    Ri, Hj = np.sort(x), np.sort(y)
     n, m = Ri.shape[-1], Hj.shape[-1]
     i, j = np.arange(1, n+1), np.arange(1, m+1)
 
@@ -50,8 +45,8 @@ def _bws_statistic(x, y, axis, alternative, variant):
             By_den = j / (m + 1) * (1 - j / (m + 1)) * \
                 n * (m + n + 1) / (m + 2)
 
-        Bx = 1 / n * np.sum(Bx_num / Bx_den, axis=-1)
-        By = 1 / m * np.sum(By_num / By_den, axis=-1)
+        Bx = 1 / n * np.sum(Bx_num / Bx_den)
+        By = 1 / m * np.sum(By_num / By_den)
 
         B = (Bx + By) * 0.5
     else:
@@ -70,8 +65,8 @@ def _bws_statistic(x, y, axis, alternative, variant):
             By_den = j / (m + 1) * (1 - j / (m + 1)) * \
                 n * (m + n + 1) / (m + 2)
 
-        Bx = 1 / n * np.sum(Bx_num / Bx_den, axis=-1)
-        By = 1 / m * np.sum(By_num / By_den, axis=-1)
+        Bx = 1 / n * np.sum(Bx_num / Bx_den)
+        By = 1 / m * np.sum(By_num / By_den)
 
         if alternative == 'greater':
             B = (Bx - By) * 0.5
@@ -84,7 +79,7 @@ def _bws_statistic(x, y, axis, alternative, variant):
 BWSResult = namedtuple('BWSResult', ('statistic', 'pvalue'))
 
 
-def bws_test(x, y, *, axis=0, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
+def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
@@ -98,10 +93,7 @@ def bws_test(x, y, *, axis=0, alternative="two-sided", variant="naive", n_resamp
     Parameters
     ----------
     x, y : array-like
-        N-d arrays of samples. The arrays must be broadcastable except along
-        the dimension given by `axis`.
-    axis : int, optional
-        Axis along which to perform the test. Default is 0.
+        1-d arrays of samples.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         Let *F(u)* and *G(u)* be the cumulative distribution functions of the
@@ -220,10 +212,9 @@ def bws_test(x, y, *, axis=0, alternative="two-sided", variant="naive", n_resamp
     null hypothesis in favor of the alternative.
     '''
 
-    x, y, axis, alternative, variant = _bws_input_validation(
-        x, y, axis, alternative, variant)
-    bws_statistic = partial(_bws_statistic, axis=axis,
-                            alternative=alternative, variant=variant)
+    x, y, alternative, variant = _bws_input_validation(
+        x, y, alternative, variant)
+    bws_statistic = partial(_bws_statistic, alternative=alternative, variant=variant)
     res = permutation_test((x, y), bws_statistic, alternative='greater',
                            n_resamples=n_resamples, random_state=random_state)
 
