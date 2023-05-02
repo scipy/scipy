@@ -4674,7 +4674,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> x, y = [1, 2, 3, 4, 5, 6], [10, 9, 2.5, 6, 4, 3]
+    >>> x, y = [1, 2, 3, 4, 5, 6, 7], [10, 9, 2.5, 6, 4, 3, 2]
     >>> res = stats.pearsonr(x, y)
     >>> res
     PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
