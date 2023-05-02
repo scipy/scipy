@@ -84,7 +84,7 @@ def _bws_statistic(x, y, axis, alternative, variant):
 BWSResult = namedtuple('BWSResult', ('statistic', 'pvalue'))
 
 
-def bws_test(x, y, axis=0, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
+def bws_test(x, y, *, axis=0, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
