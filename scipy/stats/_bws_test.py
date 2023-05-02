@@ -202,8 +202,8 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
     >>> print(p)
     0.002913752913752914
 
-    It normally takes a long time to calculate the exact *p*-value when the passing arrays
-    are large, so we can approximate *p*-value using a resampling permutation test.
+    It normally takes a long time to calculate the asymptotic *p*-value when the passing
+    arrays are large, so we can approximate *p*-value using a resampling permutation test.
     Here we use `n_resamples=10000` to perform a random permutation test with 10000 samples.
     Note that *p*-value varies depending on the number of samples.
 
