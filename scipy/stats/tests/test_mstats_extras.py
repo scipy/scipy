@@ -161,6 +161,12 @@ def test_median_cihs():
     rng = np.random.default_rng(8824288259505800535)
     x = rng.random(size=20)
     assert_allclose(ms.median_cihs(x), (0.38663198, 0.88431272))
-    # upper confidence limits don't match for the 90% confidence interval
-    # unclear whether SciPy or R implementation is wrong
-    # assert_allclose(ms.median_cihs(x, 0.1), (0.48319773, 0.90413257))
+
+    # SciPy's 90% CI upper limit doesn't match that of EnvStats eqnpar. SciPy
+    # doesn't look wrong, and it agrees with a different reference,
+    # `median_confint_hs` from `hoehleatsu/quantileCI`.
+    # In (e.g.) Colab with R runtime:
+    # devtools::install_github("hoehleatsu/quantileCI")
+    # library(quantileCI)
+    # median_confint_hs(x=x, conf.level=0.90, interpolate=TRUE)
+    assert_allclose(ms.median_cihs(x, 0.1), (0.48319773366, 0.88094268050))

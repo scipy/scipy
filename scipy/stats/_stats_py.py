@@ -942,7 +942,7 @@ def _moment_result_object(*args):
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -966,9 +966,14 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    center : float or None, optional
+       The point about which moments are taken. This can be the sample mean,
+       the origin, or any other be point. If `None` (default) compute the
+       center as the sample mean.
+
     Returns
     -------
-    n-th central moment : ndarray or float
+    n-th moment about the `center` : ndarray or float
        The appropriate moment along the given axis or over all values if axis
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
@@ -979,14 +984,15 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    The k-th central moment of a data sample is:
+    The k-th moment of a data sample is:
 
     .. math::
 
-        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - c)^k
 
-    Where n is the number of samples and x-bar is the mean. This function uses
-    exponentiation by squares [1]_ for efficiency.
+    Where `n` is the number of samples, and `c` is the center around which the
+    moment is calculated. This function uses exponentiation by squares [1]_ for
+    efficiency.
 
     Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
     one element (`moment.size == 1`) is treated the same as scalar `moment`
@@ -1007,19 +1013,20 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.moment(a, moment, axis)
-
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mean = a.mean(axis, keepdims=True)
-        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
+        mean = a.mean(axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in moment:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean))
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center))
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, mean=center)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
@@ -1031,12 +1038,13 @@ def _moment(a, moment, axis, *, mean=None):
     if a.size == 0:
         return np.mean(a, axis=axis)
 
-    if moment == 0 or moment == 1:
-        # By definition the zeroth moment about the mean is 1, and the first
+    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+    if moment == 0 or (moment == 1 and mean is None):
+        # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
         if len(shape) == 0:
             return dtype(1.0 if moment == 0 else 0.0)
@@ -1055,7 +1063,8 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        mean = (a.mean(axis, keepdims=True) if mean is None
+                else dtype(mean))
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
@@ -7779,12 +7788,15 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Returns
     -------
-    statistic : float or ndarray
-        The Cressie-Read power divergence test statistic.  The value is
-        a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
-    pvalue : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `stat` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+
+        statistic : float or ndarray
+            The Cressie-Read power divergence test statistic.  The value is
+            a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `stat` are scalars.
 
     See Also
     --------
@@ -7985,12 +7997,15 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Returns
     -------
-    chisq : float or ndarray
-        The chi-squared test statistic.  The value is a float if `axis` is
-        None or `f_obs` and `f_exp` are 1-D.
-    p : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `chisq` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+        
+        chisq : float or ndarray
+            The chi-squared test statistic.  The value is a float if `axis` is
+            None or `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `chisq` are scalars.
 
     See Also
     --------

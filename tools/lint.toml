@@ -1,17 +1,11 @@
-[tool.ruff]
 line-length = 88
 
 # Enable Pyflakes `E` and `F` codes by default.
 select = ["E", "F"]
-ignore = [
-  "E121", "E122", "E123", "E125", "E126", "E127", "E128", "E226",
-  "E251", "E265", "E266", "E302", "E402", "E712", "E721", "E731",
-  "E741", "W291", "W293", "W391", "W503", "W504"
+ignore = ["E501", "E741"]
+exclude = [
+  "scipy/datasets/_registry.py"
 ]
-excludes = [
-  'scipy/datasets/_registry.py'
-]
-per-file-ignores = {'**/__init.py', ['F401', 'F403']}
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -19,6 +13,22 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Assume Python 3.9
 target-version = "py39"
 
-[tool.ruff.mccabe]
+[per-file-ignores]
+"**/__init__.py" = ["E402", "F401", "F403", "F405"]
+"**/test_*.py" = ["D"]
+"scipy/_lib/uarray.py" = ["F403", "F401"]
+"scipy/linalg/blas.py" = ["F403", "E402"]
+"scipy/linalg/lapack.py" = ["F403", "E402", "F405"]
+"scipy/stats/distributions.py" = ["F403", "F405"]
+"scipy/stats/mstats.py" = ["F403", "F401"]
+"scipy/stats/qmc.py" = ["F403"]
+"scipy/optimize/_linprog.py" = ["F401"]
+"scipy/optimize/_linprog_ip.py" = ["F401"]
+"setup.py" = ["ALL"]
+
+[mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
+
+[pydocstyle]
+convention = "numpy"

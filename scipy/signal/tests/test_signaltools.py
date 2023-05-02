@@ -3572,6 +3572,28 @@ class TestDetrend:
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
 
+    @pytest.mark.parametrize('kind', ['linear', 'constant'])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    def test_axis(self, axis, kind):
+        data = np.arange(5*6*7).reshape(5, 6, 7)
+        detrended = detrend(data, type=kind, axis=axis)
+        assert detrended.shape == data.shape
+
+    def test_bp(self):
+        data = [0, 1, 2] + [5, 0, -5, -10]
+        detrended = detrend(data, type='linear', bp=3)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # repeat with ndim > 1 and axis
+        data = np.asarray(data)[None, :, None]
+
+        detrended = detrend(data, type="linear", bp=3, axis=1)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # breakpoint index > shape[axis]: raises
+        with assert_raises(ValueError):
+            detrend(data, type="linear", bp=3)
+
 
 class TestUniqueRoots:
     def test_real_no_repeat(self):

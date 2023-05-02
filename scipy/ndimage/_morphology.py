@@ -1922,11 +1922,103 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Returned only when `return_indices` is True and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_cdt : Faster distance transform for taxicab and
+                             chessboard metrics
+    distance_transform_edt : Faster distance transform for euclidean metric
+
     Notes
     -----
     This function employs a slow brute force algorithm, see also the
-    function distance_transform_cdt for more efficient taxicab and
-    chessboard algorithms.
+    function `distance_transform_cdt` for more efficient taxicab [1]_ and
+    chessboard algorithms [2]_.
+
+    References
+    ----------
+    .. [1] Taxicab distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Taxicab_geometry
+    .. [2] Chessboard distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Chebyshev_distance
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_bf
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(8, 8))  # set up the figure structure
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(2, 2), axes_pad=(0.4, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')  # remove axes from images
+
+    The top left image is the original binary image.
+
+    >>> binary_image = grid[0].imshow(image, cmap='gray')
+    >>> cbar_binary_image = grid.cbar_axes[0].colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> grid[0].set_title("Binary image: foreground in white")
+
+    The distance transform calculates the distance between foreground pixels
+    and the image background according to a distance metric. Available metrics
+    in `distance_transform_bf` are: ``euclidean`` (default), ``taxicab``
+    and ``chessboard``. The top right image contains the distance transform
+    based on the ``euclidean`` metric.
+
+    >>> distance_transform_euclidean = distance_transform_bf(image)
+    >>> euclidean_transform = grid[1].imshow(distance_transform_euclidean,
+    ...                                      cmap='gray')
+    >>> cbar_euclidean = grid.cbar_axes[1].colorbar(euclidean_transform)
+    >>> colorbar_ticks = [0, 10, 20]
+    >>> cbar_euclidean.set_ticks(colorbar_ticks)
+    >>> grid[1].set_title("Euclidean distance")
+
+    The lower left image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_transform_taxicab = distance_transform_bf(image,
+    ...                                                    metric='taxicab')
+    >>> taxicab_transformation = grid[2].imshow(distance_transform_taxicab,
+    ...                                         cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[2].colorbar(taxicab_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[2].set_title("Taxicab distance")
+
+    Finally, the lower right image contains the distance transform using the
+    ``chessboard`` metric.
+
+    >>> distance_transform_cb = distance_transform_bf(image,
+    ...                                               metric='chessboard')
+    >>> chessboard_transformation = grid[3].imshow(distance_transform_cb,
+    ...                                            cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[3].colorbar(chessboard_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[3].set_title("Chessboard distance")
+    >>> plt.show()
 
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
