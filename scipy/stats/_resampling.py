@@ -9,7 +9,7 @@ import inspect
 from scipy._lib._util import check_random_state, _rename_parameter
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy._lib._util import rng_integers
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -1728,9 +1728,6 @@ class ResamplingMethod:
     n_resamples: int = 9999
     batch: int = None  # type: ignore[assignment]
 
-    def _asdict(self):
-        return asdict(self)
-
 
 @dataclass
 class MonteCarloMethod(ResamplingMethod):
@@ -1765,6 +1762,11 @@ class MonteCarloMethod(ResamplingMethod):
     """
     rvs: object = None
 
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    rvs=self.rvs)
+
 
 @dataclass
 class PermutationMethod(ResamplingMethod):
@@ -1796,6 +1798,11 @@ class PermutationMethod(ResamplingMethod):
         `numpy.random.RandomState` singleton is used.
     """
     random_state: object = None
+
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    random_state=self.random_state)
 
 
 @dataclass
@@ -1834,3 +1841,8 @@ class BootstrapMethod(ResamplingMethod):
     """
     random_state: object = None
     method: str = 'BCa'
+
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    random_state=self.random_state, method=self.method)
