@@ -545,6 +545,10 @@ class anglit_gen(rv_continuous):
 anglit = anglit_gen(a=-np.pi/4, b=np.pi/4, name='anglit')
 
 
+def _arcsin_value(x):
+    return np.arcsin(2 * x - 1) / np.pi
+
+
 class arcsine_gen(rv_continuous):
     r"""An arcsine continuous random variable.
 
@@ -574,7 +578,10 @@ class arcsine_gen(rv_continuous):
             return 1.0/np.pi/np.sqrt(x*(1-x))
 
     def _cdf(self, x):
-        return 2.0/np.pi*np.arcsin(np.sqrt(x))
+        return 0.5 + _arcsin_value(x)
+
+    def _sf(self, x, *args):
+        return 0.5 - _arcsin_value(x)
 
     def _ppf(self, q):
         return np.sin(np.pi/2.0*q)**2.0
