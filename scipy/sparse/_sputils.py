@@ -4,7 +4,7 @@
 import sys
 import operator
 import numpy as np
-from scipy._lib._util import prod
+from math import prod
 import scipy.sparse as sp
 
 

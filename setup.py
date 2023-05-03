@@ -425,7 +425,7 @@ def configuration(parent_package='', top_path=None):
                 "To build Scipy from sources, BLAS & LAPACK libraries "
                 "need to be installed.\n"
                 "See site.cfg.example in the Scipy source directory and\n"
-                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "https://docs.scipy.org/doc/scipy/dev/contributor/building.html "
                 "for details.")
         raise NotFoundError(msg)
 

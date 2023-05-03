@@ -25,7 +25,7 @@ cdef extern from "sf_error.h":
     sf_action_t get_action "sf_error_get_action" (sf_error_t code) nogil
 
 
-cdef inline int _sf_error_test_function(int code) nogil:
+cdef inline int _sf_error_test_function(int code) noexcept nogil:
     """Function that can raise every sf_error category for testing
     purposes.
 

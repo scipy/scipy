@@ -32,11 +32,16 @@ by CI resources providers.
 
 GitHub Actions
 --------------
+* ``Lint``: PEP8 and code style
 * ``Windows Tests``: test suite runs for Windows (``x86_64``)
 * ``Linux Tests``: test suite runs for Linux (``x86_64``)
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
 * ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
 * ``Check the rendered docs here!``: live preview of the documentation
+* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
+  dependencies and check coverage
+* ``gcc-8``: build with minimal supported version of GCC, install the wheel,
+  then run the test suite with `python -OO`
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -45,32 +50,22 @@ and more - for details, see the ``.yml`` configuration files.
 
 Azure
 -----
-* ``Lint``: PEP8 and code style
 * ``Windows Python``: test suite runs for Windows
 * ``Linux_Python_xx_32bit_full``: 32-bit Linux
-* ``wheel_optimized_gcc``: install the wheel, then run the test suite with
-  `python -OO`
 * ``source_distribution``: install via ``sdist``, then run the test suite
-* ``refguide_asv_check``: doctests from examples and benchmarks
-* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
-  dependencies and check coverage
 
 CircleCI
 --------
 * ``build_docs``: build the documentation
 * ``build_scipy``
 * ``run_benchmarks``: verify how the changes impact performance
+* ``refguide_check``: doctests from examples and benchmarks
 
 CirrusCI
 --------
 * ``Tests``: test suite for specific architecture like
   ``musllinux, arm, aarch``
 * ``Wheels``: build and upload some wheels
-
-Codecov
--------
-* ``patch``: the impact on code coverage due to your changes
-* ``project``: the coverage of the whole project
 
 .. _skip-ci:
 

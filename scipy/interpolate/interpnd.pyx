@@ -1,3 +1,4 @@
+# cython: cpow=True
 """
 Simple N-D interpolation
 
@@ -269,6 +270,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------
@@ -351,7 +356,7 @@ class GradientEstimationWarning(Warning):
 @cython.cdivision(True)
 cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
                                        int maxiter, double tol,
-                                       double *y) nogil:
+                                       double *y) noexcept nogil:
     """
     Estimate gradients of a function at the vertices of a 2d triangulation.
 
@@ -584,7 +589,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
                                                 int isimplex,
                                                 double *b,
                                                 double_or_complex *f,
-                                                double_or_complex *df) nogil:
+                                                double_or_complex *df) noexcept nogil:
     """
     Evaluate Clough-Tocher interpolant on a 2D triangle.
 
@@ -870,6 +875,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
         Nearest-neighbor interpolation in N > 1 dimensions.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------

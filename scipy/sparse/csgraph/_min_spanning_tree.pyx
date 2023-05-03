@@ -121,7 +121,7 @@ cdef void _min_spanning_tree(DTYPE_t[::1] data,
                              ITYPE_t[::1] i_sort,
                              ITYPE_t[::1] row_indices,
                              ITYPE_t[::1] predecessors,
-                             ITYPE_t[::1] rank) nogil:
+                             ITYPE_t[::1] rank) noexcept nogil:
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.
