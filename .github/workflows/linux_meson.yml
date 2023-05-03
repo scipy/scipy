@@ -359,4 +359,4 @@ jobs:
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch meson && \
         python dev.py build && \
-        python dev.py test"
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
