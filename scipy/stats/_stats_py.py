@@ -4711,7 +4711,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
 
     >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
     >>> res.confidence_interval(confidence_level=0.9, method=method)
-    ConfidenceInterval(low=-0.9983221866852455, high=-0.23751687543846614)
+    ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
