@@ -19,12 +19,12 @@ def _bws_input_validation(x, y, alternative, variant):
     if np.size(x) == 0 or np.size(y) == 0:
         raise ValueError('`x` and `y` must be of nonzero size.')
 
-    alternatives = {"two-sided", "less", "greater"}
+    alternatives = {'two-sided', 'less', 'greater'}
     alternative = alternative.lower()
     if alternative not in alternatives:
         raise ValueError(f'`alternative` must be one of {alternatives}.')
 
-    variants = {"shan", "murakami", "naive"}
+    variants = {'shan-murakami', 'naive'}
     variant = variant.lower()
     if variant not in variants:
         raise ValueError(f'`variant` must be one of {variants}.')
