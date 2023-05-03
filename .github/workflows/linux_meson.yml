@@ -334,7 +334,7 @@ jobs:
   #################################################################################
   linux_32bit:
     name: Linux - 32 bit
-    if: "github.repository == 'andyfaff/scipy' || github.repository == ''"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
