@@ -291,7 +291,8 @@ jobs:
       run: |
         # TODO: unpin cython and move to -pre once issues with cython 3.0
         #       have been ironed out.
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "git+https://github.com/matusvalo/cython.git@struct_visibility"
+        python -m pip install "git+https://github.com/cython/cython.git"
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
