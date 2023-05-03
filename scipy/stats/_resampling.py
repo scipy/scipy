@@ -1798,6 +1798,7 @@ class PermutationMethod(ResamplingMethod):
     random_state: object = None
 
 
+@dataclass
 class BootstrapMethod(ResamplingMethod):
     """Configuration information for a permutation hypothesis test.
 
@@ -1831,13 +1832,5 @@ class BootstrapMethod(ResamplingMethod):
         (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
         accelerated bootstrap ('BCa', default).
     """
-    def __init__(self, n_resamples=9999, batch=None, random_state=None,
-                 method='BCa'):
-        self.n_resamples = n_resamples
-        self.batch = batch
-        self.random_state = random_state
-        self.method = method
-
-    def _asdict(self):
-        return dict(n_resamples=self.n_resamples, batch=self.batch,
-                    random_state=self.random_state, method=self.method)
+    random_state: object = None
+    method: str = 'BCa'
