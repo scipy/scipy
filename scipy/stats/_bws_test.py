@@ -1,8 +1,8 @@
+import math
 import numpy as np
-from ._resampling import permutation_test
 from functools import partial
-from collections import namedtuple
 from dataclasses import dataclass
+from ._resampling import permutation_test
 
 
 @dataclass
@@ -24,8 +24,7 @@ def _bws_input_validation(x, y, alternative, variant):
     if alternative not in alternatives:
         raise ValueError(f'`alternative` must be one of {alternatives}.')
 
-    variants = {"shan", "murakami", "naive"}
-    variant = variant.lower()
+    variants = {1, 2, 3, 4, 5}
     if variant not in variants:
         raise ValueError(f'`variant` must be one of {variants}.')
 
@@ -39,38 +38,64 @@ def _bws_statistic(x, y, alternative, variant):
     i, j = np.arange(1, n+1), np.arange(1, m+1)
 
     if alternative == 'two-sided':
-        if variant == 'naive':
-            Bx_num = (Ri - (m + n) / n * i) ** 2
-            By_num = (Hj - (m + n) / m * j) ** 2
-            Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n) / n
-            By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n) / m
-        else:
-            Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
-            By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
-            Bx_den = i / (n + 1) * (1 - i / (n + 1)) * \
-                m * (m + n + 1) / (n + 2)
-            By_den = j / (m + 1) * (1 - j / (m + 1)) * \
-                n * (m + n + 1) / (m + 2)
+        match variant:
+            case 1:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)
+            case 2:
+                Bx_num = (Ri - (m + n) / n * i) ** 2
+                By_num = (Hj - (m + n) / m * j) ** 2
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n) / n
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n) / m
+            case 3:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+            case 4:
+                Bx_num = abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+            case 3:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
+                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2))
+                By_den = math.log(j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2))
 
         Bx = 1 / n * np.sum(Bx_num / Bx_den)
         By = 1 / m * np.sum(By_num / By_den)
 
         B = (Bx + By) * 0.5
     else:
-        if variant == 'naive':
-            Bx_num = (Ri - (m + n) / n * i) * abs(Ri - (m + n) / n * i)
-            By_num = (Hj - (m + n) / m * j) * abs(Hj - (m + n) / m * j)
-            Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n) / n
-            By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n) / m
-        else:
-            Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * \
-                abs(Ri - (m + n + 1) / (n + 1) * i)
-            By_num = (Hj - (m + n + 1) / (m + 1) * j) * \
-                abs(Hj - (m + n + 1) / (m + 1) * j)
-            Bx_den = i / (n + 1) * (1 - i / (n + 1)) * \
-                m * (m + n + 1) / (n + 2)
-            By_den = j / (m + 1) * (1 - j / (m + 1)) * \
-                n * (m + n + 1) / (m + 2)
+        match variant:
+            case 1:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)
+            case 2:
+                Bx_num = (Ri - (m + n) / n * i) * abs(Ri - (m + n) / n * i)
+                By_num = (Hj - (m + n) / m * j) * abs(Hj - (m + n) / m * j)
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n) / n
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n) / m
+            case 3:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+            case 4:
+                Bx_num = abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+            case 5:
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2))
+                By_den = math.log(j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2))
 
         Bx = 1 / n * np.sum(Bx_num / Bx_den)
         By = 1 / m * np.sum(By_num / By_den)
@@ -83,7 +108,7 @@ def _bws_statistic(x, y, alternative, variant):
     return B
 
 
-def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999, random_state=None):
+def bws_test(x, y, *, alternative="two-sided", variant=1, n_resamples=9999, random_state=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
@@ -114,13 +139,15 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
         Under a more restrictive set of assumptions, the alternative hypotheses
         can be expressed in terms of the locations of the distributions;
         see [3] section 5.1.
-    variant : {'shan-murakami', 'naive'}, optional
+    variant : {1, 2, 3, 4, 5}, optional
         Selects the method used to calculate the :math:`B` statistic.
         Default is 'naive'. The following options are available.
 
-        * ``'naive'``: use the naive method in [1]_ to calculate the :math:`B` statistic.
-        * ``'shan-murakami'``: use the variant method in p.5 (two-sided) or p.7 (one-sided) in
-          [2]_ to calculate the :math:`B` statistic.
+        * ``1``: Murakami's `B1` statistic, from his 2012 paper [2]_.
+        * ``2``: Murakami's `B2` statistic, from his 2012 paper [2]_, which use the same method as [1]_.
+        * ``3``: Murakami's `B3` statistic, from his 2012 paper [2]_.
+        * ``4``: Murakami's `B4` statistic, from his 2012 paper [2]_.
+        * ``5``: Murakami's `B5` statistic, from his 2012 paper [2]_.
     n_resamples : int or np.inf, default: 9999
         Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
@@ -158,20 +185,12 @@ def bws_test(x, y, *, alternative="two-sided", variant="naive", n_resamples=9999
     ----------
     .. [1] Neuhäuser, M. (2005). Exact Tests Based on the Baumgartner-Wei-Schindler 
            StatisticA Survey. Statistical Papers, 46(1), 1-29.
-    .. [2] Shan, G., Ma, C., Hutson, A. D., & Wilding, G. E. (2013). Some tests 
-           for detecting trends based on the modified Baumgartner–Weiß–Schindler 
-           statistics. Computational Statistics & Data Analysis, 57(1), 246-261.
+    .. [2] Murakami, H. (2012). Modified Baumgartner statistics for the two-sample
+           and multisample problems: a numerical comparison. Journal of Statistical
+           Computation and Simulation, 82(5), 711-728.
     .. [3] Fay, M. P., & Proschan, M. A. (2010). Wilcoxon-Mann-Whitney or t-test? 
            On assumptions for hypothesis tests and multiple interpretations of 
            decision rules. Statistics surveys, 4, 1.
-    .. [4] Murakami, H. (2006). A k-sample rank test based on modified Baumgartner
-           statistic and its power comparison. Journal of the Japanese Society of 
-           Computational Statistics, 19(1), 1-13.
-    .. [5] Neuhäuser, M. (2001). One-sided two-sample and trend tests based on a 
-           modified Baumgartner-Weiß-Schindler statistic. Journal of Nonparametric 
-           Statistics, 13(5), 729-739.
-    .. [6] Good, P. (2013). Permutation tests: a practical guide to resampling 
-           methods for testing hypotheses. Springer Science & Business Media.
 
     Examples
     --------
