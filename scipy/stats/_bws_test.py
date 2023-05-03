@@ -1,14 +1,7 @@
 import math
 import numpy as np
 from functools import partial
-from dataclasses import dataclass
-from ._resampling import permutation_test
-
-
-@dataclass
-class BWSResult:
-    statistic: float
-    pvalue: float
+from scipy.stats._resampling import permutation_test
 
 
 def _bws_input_validation(x, y, alternative, variant):
@@ -42,8 +35,10 @@ def _bws_statistic(x, y, alternative, variant):
             case 1:
                 Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
                 By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
-                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)
-                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * \
+                    m * (m + n + 1) / (n + 2)
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * \
+                    n * (m + n + 1) / (m + 2)
             case 2:
                 Bx_num = (Ri - (m + n) / n * i) ** 2
                 By_num = (Hj - (m + n) / m * j) ** 2
@@ -52,18 +47,24 @@ def _bws_statistic(x, y, alternative, variant):
             case 3:
                 Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
                 By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
-                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
-                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1))
+                          * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1))
+                          * n * (m + n + 1) / (m + 2)) ** 2
             case 4:
                 Bx_num = abs(Ri - (m + n + 1) / (n + 1) * i)
                 By_num = abs(Hj - (m + n + 1) / (m + 1) * j)
-                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
-                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1))
+                          * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1))
+                          * n * (m + n + 1) / (m + 2)) ** 2
             case 3:
                 Bx_num = (Ri - (m + n + 1) / (n + 1) * i) ** 2
                 By_num = (Hj - (m + n + 1) / (m + 1) * j) ** 2
-                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2))
-                By_den = math.log(j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2))
+                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1))
+                                  * m * (m + n + 1) / (n + 2))
+                By_den = math.log(j / (m + 1) * (1 - j / (m + 1))
+                                  * n * (m + n + 1) / (m + 2))
 
         Bx = 1 / n * np.sum(Bx_num / Bx_den)
         By = 1 / m * np.sum(By_num / By_den)
@@ -72,30 +73,44 @@ def _bws_statistic(x, y, alternative, variant):
     else:
         match variant:
             case 1:
-                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
-                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
-                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)
-                By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * \
+                    abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * \
+                    abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = i / (n + 1) * (1 - i / (n + 1)) * \
+                    m * (m + n + 1) / (n + 2)
+                By_den = j / (m + 1) * (1 - j / (m + 1)) * \
+                    n * (m + n + 1) / (m + 2)
             case 2:
                 Bx_num = (Ri - (m + n) / n * i) * abs(Ri - (m + n) / n * i)
                 By_num = (Hj - (m + n) / m * j) * abs(Hj - (m + n) / m * j)
                 Bx_den = i / (n + 1) * (1 - i / (n + 1)) * m * (m + n) / n
                 By_den = j / (m + 1) * (1 - j / (m + 1)) * n * (m + n) / m
             case 3:
-                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
-                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
-                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
-                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * \
+                    abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * \
+                    abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1))
+                          * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1))
+                          * n * (m + n + 1) / (m + 2)) ** 2
             case 4:
                 Bx_num = abs(Ri - (m + n + 1) / (n + 1) * i)
                 By_num = abs(Hj - (m + n + 1) / (m + 1) * j)
-                Bx_den = (i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2)) ** 2
-                By_den = (j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2)) ** 2
+                Bx_den = (i / (n + 1) * (1 - i / (n + 1))
+                          * m * (m + n + 1) / (n + 2)) ** 2
+                By_den = (j / (m + 1) * (1 - j / (m + 1))
+                          * n * (m + n + 1) / (m + 2)) ** 2
             case 5:
-                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * abs(Ri - (m + n + 1) / (n + 1) * i)
-                By_num = (Hj - (m + n + 1) / (m + 1) * j) * abs(Hj - (m + n + 1) / (m + 1) * j)
-                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1)) * m * (m + n + 1) / (n + 2))
-                By_den = math.log(j / (m + 1) * (1 - j / (m + 1)) * n * (m + n + 1) / (m + 2))
+                Bx_num = (Ri - (m + n + 1) / (n + 1) * i) * \
+                    abs(Ri - (m + n + 1) / (n + 1) * i)
+                By_num = (Hj - (m + n + 1) / (m + 1) * j) * \
+                    abs(Hj - (m + n + 1) / (m + 1) * j)
+                Bx_den = math.log(i / (n + 1) * (1 - i / (n + 1))
+                                  * m * (m + n + 1) / (n + 2))
+                By_den = math.log(j / (m + 1) * (1 - j / (m + 1))
+                                  * n * (m + n + 1) / (m + 2))
 
         Bx = 1 / n * np.sum(Bx_num / Bx_den)
         By = 1 / m * np.sum(By_num / By_den)
@@ -169,13 +184,15 @@ def bws_test(x, y, *, alternative="two-sided", variant=1, n_resamples=9999, rand
 
     Returns
     -------
-    res : BWSResult
-        An object containing attributes:
+    res : PermutationTestResult
+    An object with attributes:
 
-        statistic : float
-            The BWS statistic corresponding with sample `x` and `y`.
-        pvalue : float
-            The associated *p*-value for the chosen `alternative`.
+    statistic : float or ndarray
+        The observed test statistic of the data.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null hypothesis.
 
     See also
     --------
@@ -241,4 +258,4 @@ def bws_test(x, y, *, alternative="two-sided", variant=1, n_resamples=9999, rand
     res = permutation_test((x, y), bws_statistic, alternative='greater',
                            n_resamples=n_resamples, random_state=random_state)
 
-    return BWSResult(res.statistic, res.pvalue)
+    return res
