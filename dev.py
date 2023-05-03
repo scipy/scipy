@@ -415,6 +415,10 @@ class Build(Task):
         ['--parallel', '-j'], default=None, metavar='N_JOBS',
         help=("Number of parallel jobs for building. "
               "This defaults to 2 * n_cpus + 2."))
+    setup_args = Option(
+        ['--setup-args', '-C'], default=[], multiple=True,
+        help=("Pass along one or more arguments to `meson setup` "
+              "Repeat the `-C` in case of multiple arguments."))
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
@@ -475,6 +479,9 @@ class Build(Task):
             cmd += ['-Db_coverage=true']
         if args.asan:
             cmd += ['-Db_sanitize=address,undefined']
+        if args.setup_args:
+            cmd += [str(arg) for arg in args.setup_args]
+
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
         cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
