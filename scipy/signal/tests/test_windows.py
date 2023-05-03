@@ -43,11 +43,14 @@ class TestBartHann:
     def test_basic(self):
         assert_allclose(windows.barthann(6, sym=True),
                         [0, 0.35857354213752, 0.8794264578624801,
-                         0.8794264578624801, 0.3585735421375199, 0])
+                         0.8794264578624801, 0.3585735421375199, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(7),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(6, False),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestBartlett:
@@ -400,16 +403,20 @@ class TestHann:
 
     def test_basic(self):
         assert_allclose(windows.hann(6, sym=False),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7, sym=False),
                         [0, 0.1882550990706332, 0.6112604669781572,
                          0.9504844339512095, 0.9504844339512095,
-                         0.6112604669781572, 0.1882550990706332])
+                         0.6112604669781572, 0.1882550990706332],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(6, True),
                         [0, 0.3454915028125263, 0.9045084971874737,
-                         0.9045084971874737, 0.3454915028125263, 0])
+                         0.9045084971874737, 0.3454915028125263, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestKaiser:
@@ -562,7 +569,7 @@ class TestTukey:
                 assert_raises(ValueError, windows.tukey, *k)
             else:
                 win = windows.tukey(*k)
-                assert_allclose(win, v, rtol=1e-14)
+                assert_allclose(win, v, rtol=1e-15, atol=1e-15)
 
     def test_extremes(self):
         # Test extremes of alpha correspond to boxcar and hann

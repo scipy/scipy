@@ -3048,6 +3048,26 @@ class TestMoments:
             dtype = expect.dtype
         assert actual.dtype == dtype
 
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
+    def test_moment_center_scalar_moment(self, size, m, c):
+        rng = np.random.default_rng(6581432544381372042)
+        x = rng.random(size=size)
+        res = stats.moment(x, m, center=c)
+        c = np.mean(x, axis=0) if c is None else c
+        ref = np.sum((x - c)**m, axis=0)/len(x)
+        assert_allclose(res, ref, atol=1e-16)
+
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('c', (None, 0, 1))
+    def test_moment_center_array_moment(self, size, c):
+        rng = np.random.default_rng(1706828300224046506)
+        x = rng.random(size=size)
+        m = [0, 1, 2, 3]
+        res = stats.moment(x, m, center=c)
+        ref = [stats.moment(x, i, center=c) for i in m]
+        assert_equal(res, ref)
+
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
         y = stats.moment(self.scalar_testcase)
@@ -3707,12 +3727,16 @@ def test_gh_chisquare_12282():
 
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
-def test_chiquare_data_types(n, dtype):
-    # Regression test for gh-10159.
+def test_chiquare_data_types_attributes(n, dtype):
+    # Regression test for gh-10159 and gh-18368
     obs = np.array([n, 0], dtype=dtype)
     exp = np.array([n // 2, n // 2], dtype=dtype)
-    stat, p = stats.chisquare(obs, exp)
+    res = stats.chisquare(obs, exp)
+    stat, p = res
     assert_allclose(stat, n, rtol=1e-13)
+    # check that attributes are identical to unpacked outputs - see gh-18368
+    assert_equal(res.statistic, stat)
+    assert_equal(res.pvalue, p)
 
 
 def test_chisquare_masked_arrays():
