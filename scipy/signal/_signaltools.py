@@ -3,6 +3,7 @@
 
 import operator
 import math
+from math import prod as _prod
 import timeit
 from scipy.spatial import cKDTree
 from . import _sigtools
@@ -10,7 +11,6 @@ from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
-from scipy._lib._util import prod as _prod
 import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
@@ -3542,21 +3542,23 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
         rnk = len(dshape)
         if axis < 0:
             axis = axis + rnk
-        newdims = np.r_[axis, 0:axis, axis + 1:rnk]
-        newdata = np.reshape(np.transpose(data, tuple(newdims)),
-                             (N, _prod(dshape) // N))
+        newdims = tuple(np.r_[axis, 0:axis, axis + 1:rnk])
+        newdata = data.transpose(newdims).reshape(N, -1)
+
         if not overwrite_data:
             newdata = newdata.copy()  # make sure we have a copy
         if newdata.dtype.char not in 'dfDF':
             newdata = newdata.astype(dtype)
+
         # Find leastsq fit and remove it for each piece
         for m in range(Nreg):
             Npts = bp[m + 1] - bp[m]
             A = np.ones((Npts, 2), dtype)
-            A[:, 0] = np.cast[dtype](np.arange(1, Npts + 1) * 1.0 / Npts)
+            A[:, 0] = np.arange(1, Npts + 1, dtype=dtype) / Npts
             sl = slice(bp[m], bp[m + 1])
             coef, resids, rank, s = linalg.lstsq(A, newdata[sl])
-            newdata[sl] = newdata[sl] - np.dot(A, coef)
+            newdata[sl] = newdata[sl] - A @ coef
+
         # Put data back in original shape.
         tdshape = np.take(dshape, newdims, 0)
         ret = np.reshape(newdata, tuple(tdshape))
@@ -4531,14 +4533,29 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         b = np.asarray(b, dtype=result_type)
         a = np.asarray(a, dtype=result_type)
     elif ftype == 'iir':
+        iir_use_sos = True
         if n is None:
             n = 8
         sos = cheby1(n, 0.05, 0.8 / q, output='sos')
         sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
         system = ftype._as_zpk()
-        sos = zpk2sos(system.zeros, system.poles, system.gain)
-        sos = np.asarray(sos, dtype=result_type)
+        if system.poles.shape[0] == 0:
+            # FIR
+            system = ftype._as_tf()
+            b, a = system.num, system.den
+            ftype = 'fir'
+        elif (any(np.iscomplex(system.poles))
+              or any(np.iscomplex(system.poles))
+              or np.iscomplex(system.gain)):
+            # sosfilt & sosfiltfilt don't handle complex coeffs
+            iir_use_sos = False
+            system = ftype._as_tf()
+            b, a = system.num, system.den
+        else:
+            iir_use_sos = True
+            sos = zpk2sos(system.zeros, system.poles, system.gain)
+            sos = np.asarray(sos, dtype=result_type)
     else:
         raise ValueError('invalid ftype')
 
@@ -4557,9 +4574,16 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = sosfiltfilt(sos, x, axis=axis)
+            if iir_use_sos:
+                y = sosfiltfilt(sos, x, axis=axis)
+            else:
+                y = filtfilt(b, a, x, axis=axis)
         else:
-            y = sosfilt(sos, x, axis=axis)
+            if iir_use_sos:
+                y = sosfilt(sos, x, axis=axis)
+            else:
+                y = lfilter(b, a, x, axis=axis)
+
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]

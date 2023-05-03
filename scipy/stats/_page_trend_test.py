@@ -3,11 +3,14 @@ import numpy as np
 import math
 from ._continuous_distns import norm
 import scipy.stats
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 
 
-PageTrendTestResult = make_dataclass("PageTrendTestResult",
-                                     ("statistic", "pvalue", "method"))
+@dataclass
+class PageTrendTestResult:
+    statistic: float
+    pvalue: float
+    method: str
 
 
 def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
@@ -433,7 +436,7 @@ class _PageL:
         rank_perms = np.array(list(permutations(ranks)))
         # compute Page's L for all possible rows
         Ls = (ranks*rank_perms).sum(axis=1)
-        # count occurences of each L value
+        # count occurrences of each L value
         counts = np.histogram(Ls, np.arange(self.a-0.5, self.b+1.5))[0]
         # factorial(k) is number of possible permutations
         return counts/math.factorial(self.k)
