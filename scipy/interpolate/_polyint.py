@@ -235,11 +235,13 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array_like, length N
+    xi : array_like, shape (npoints, )
         Known x-coordinates. Must be sorted in increasing order.
-    yi : array_like
+    yi : array_like, shape (..., npoints, ...)
         Known y-coordinates. When an xi occurs two or more times in
-        a row, the corresponding yi's represent derivative values.
+        a row, the corresponding yi's represent derivative values. The length of `yi`
+        along the *first* axis must be equal to the length of `xi`. If N-D array,
+        use ``axis`` parameter to select correct axis.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
@@ -520,12 +522,14 @@ class BarycentricInterpolator(_Interpolator1D):
 
     Parameters
     ----------
-    xi : array_like
+    xi : array_like, shape (npoints, )
         1-D array of x coordinates of the points the polynomial
         should pass through
-    yi : array_like, optional
+    yi : array_like, shape (..., npoints, ...), optional
         The y coordinates of the points the polynomial should pass through.
         If None, the y values will be supplied later via the `set_y` method.
+        The length of `yi` along the *first* axis must be equal to the length
+        of `xi`. If N-D array, use ``axis`` parameter to select correct axis.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 

@@ -164,15 +164,16 @@ class PchipInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray
+    x : ndarray, shape (npoints, )
         A 1-D array of monotonically increasing real values. ``x`` cannot
         include duplicate values (otherwise f is overspecified)
-    y : ndarray
-        A 1-D array of real values. ``y``'s length along the interpolation
+    y : ndarray, shape (..., npoints, ...)
+        A 1-D array of real values. ``y``'s length along the *first*
         axis must be equal to the length of ``x``. If N-D array, use ``axis``
         parameter to select correct axis.
     axis : int, optional
-        Axis in the y array corresponding to the x-coordinate values.
+        Axis in the y array corresponding to the x-coordinate values. Interpolation
+        defaults to the first axis of ``y``.
     extrapolate : bool, optional
         Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
@@ -374,11 +375,12 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     Parameters
     ----------
-    x : ndarray, shape (m, )
+    x : ndarray, shape (npoints, )
         1-D array of monotonically increasing real values.
-    y : ndarray, shape (m, ...)
-        N-D array of real values. The length of ``y`` along the first axis
-        must be equal to the length of ``x``.
+    y : ndarray, shape (..., npoints, ...)
+        N-D array of real values. The length of ``y`` along the *first* axis
+        must be equal to the length of ``x``. If N-D array, use ``axis``
+        parameter to select correct axis.
     axis : int, optional
         Specifies the axis of ``y`` along which to interpolate. Interpolation
         defaults to the first axis of ``y``.

@@ -136,15 +136,16 @@ class RBFInterpolator:
 
     Parameters
     ----------
-    y : (P, N) array_like
+    y : (npoints, ndims) array_like
         Data point coordinates.
-    d : (P, ...) array_like
-        Data values at `y`.
+    d : (npoints, ...) array_like
+        Data values at `y`. The length of `d` along the *first* axis must be
+        equal to the length of `y`.
     neighbors : int, optional
         If specified, the value of the interpolant at each evaluation point
         will be computed using only this many nearest data points. All the data
         points are used by default.
-    smoothing : float or (P,) array_like, optional
+    smoothing : float or (npoints, ) array_like, optional
         Smoothing parameter. The interpolant perfectly fits the data when this
         is set to 0. For large values, the interpolant approaches a least
         squares fit of a polynomial with the specified degree. Default is 0.

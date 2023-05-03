@@ -393,11 +393,12 @@ class interp1d(_Interpolator1D):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (npoints, ) array_like
         A 1-D array of real values.
-    y : (...,N,...) array_like
-        A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+    y : (..., npoints, ...) array_like
+        A N-D array of real values. The length of `y` along the *last*
+        axis must be equal to the length of `x`. If N-D array, use ``axis``
+        parameter to select correct axis.
     kind : str or int, optional
         Specifies the kind of interpolation as a string or as an integer
         specifying the order of the spline interpolator to use.
@@ -411,7 +412,7 @@ class interp1d(_Interpolator1D):
         is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
-        Interpolation defaults to the last axis of `y`.
+        Interpolation defaults to the *last* axis of `y`.
     copy : bool, optional
         If True, the class makes internal copies of x and y.
         If False, references to `x` and `y` are used. The default is to copy.
