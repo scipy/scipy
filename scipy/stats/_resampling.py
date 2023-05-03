@@ -1713,7 +1713,7 @@ class ResamplingMethod:
 
     Instances of this class can be passed into the `method` parameter of some
     hypothesis test functions to perform a resampling or Monte Carlo version
-    of the hypothesis tests.
+    of the hypothesis test.
 
     Attributes
     ----------
