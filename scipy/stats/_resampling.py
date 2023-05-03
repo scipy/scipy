@@ -1807,11 +1807,10 @@ class PermutationMethod(ResamplingMethod):
 
 @dataclass
 class BootstrapMethod(ResamplingMethod):
-    """Configuration information for a permutation hypothesis test.
+    """Configuration information for a bootstrap confidence interval.
 
     Instances of this class can be passed into the `method` parameter of some
-    hypothesis test functions to perform a permutation version of the
-    hypothesis tests.
+    confidence interval methods to generate a bootstrap confidence interval.
 
     Attributes
     ----------
