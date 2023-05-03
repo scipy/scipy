@@ -164,14 +164,12 @@ class NDInterpolatorBase:
             ndarray of float or complex, shape (npoints, ...)
             Data values.
         """
+        if values is not None:
+            self._set_values(values)
         if len(args) > 0:
             self._set_xi(*args)
         elif self._xi is None:
             raise ValueError("Interpolation was called without required points")
-
-        if values is not None:
-            self._set_values(values)
-
 
         if self.is_complex:
             r = self._evaluate_complex(self._xi)
@@ -994,9 +992,36 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
         """
         NDInterpolatorBase._set_xi(self, *args)
-        self._points_simplices = None
-        self._points_barycentric_coordinates = None
+        self._find_simplicies(self._xi)
+        #self._points_simplices = None
+        #self._points_barycentric_coordinates = None
 
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def _find_simplicies(self, const double[:,::1] xi):
+        cdef int[:] isimplices
+        cdef double[:,:] c
+        cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
+        cdef int start
+
+        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
+
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(eps)
+
+        c = np.zeros((xi.shape[0], NPY_MAXDIMS))
+        isimplices = np.zeros(xi.shape[0], np.int32)
+        with nogil:
+            for i in range(xi.shape[0]):
+                # 1) Find the simplex
+
+                isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
+                                            &xi[i,0],
+                                            &start, eps, eps_broad)
+        self._points_simplices = np.copy(isimplices)
+        self._points_barycentric_coordinates = np.copy(c)
+        
     @cython.boundscheck(False)
     @cython.wraparound(False)
     def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
@@ -1009,13 +1034,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, ndim, isimplex, start, nvalues
+        cdef int i, j, k, ndim, isimplex, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
         cdef int[:] isimplices
 
         ndim = xi.shape[1]
-        start = 0
         fill_value = self.fill_value
 
         qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
@@ -1024,24 +1048,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(eps)
-
-        if self._points_simplices is None:
-            c = np.zeros((xi.shape[0], NPY_MAXDIMS))
-            isimplices = np.zeros(xi.shape[0], np.int32)
-            with nogil:
-                for i in range(xi.shape[0]):
-                    # 1) Find the simplex
-
-                    isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
-                                                &xi[i,0],
-                                                &start, eps, eps_broad)
-            self._points_simplices = np.copy(isimplices)
-            self._points_barycentric_coordinates = np.copy(c)
-        else:
-            isimplices = self._points_simplices
-            c = self._points_barycentric_coordinates
+        
+        isimplices = self._points_simplices
+        c = self._points_barycentric_coordinates
 
         with nogil:
             for i in range(xi.shape[0]):
