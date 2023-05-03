@@ -67,6 +67,12 @@ class TestUnivariateSpline:
         spl = UnivariateSpline(x, y, k=3)
         assert_almost_equal(spl.roots()[0], 1.050290639101332)
 
+    def test_roots_length(self): # for gh18335
+        x = np.linspace(0, 50 * np.pi, 1000)
+        y = np.cos(x)
+        spl = UnivariateSpline(x, y, s=0)
+        assert_equal(len(spl.roots()), 50)
+
     def test_derivatives(self):
         x = [1, 3, 5, 7, 9]
         y = [0, 4, 9, 12, 21]

@@ -325,8 +325,8 @@ class LinearOperator:
         _matmat method to ensure that y has the correct type.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
@@ -336,7 +336,15 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._matmat(X)
+        try:
+            Y = self._matmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator first."
+                ) from e
+            raise
 
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
@@ -365,8 +373,8 @@ class LinearOperator:
         This rmatmat wraps the user-specified rmatmat routine.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
@@ -376,7 +384,16 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._rmatmat(X)
+        try:
+            Y = self._rmatmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator() first."
+                ) from e
+            raise
+
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
         return Y
@@ -414,7 +431,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            x = np.asarray(x)
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
 
             if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
                 return self.matvec(x)
@@ -465,7 +484,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            x = np.asarray(x)
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
 
             # We use transpose instead of rmatvec/rmatmat to avoid
             # unnecessary complex conjugation if possible.
