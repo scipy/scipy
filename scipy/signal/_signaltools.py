@@ -1568,11 +1568,11 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.cfloat, np.cdouble,
-                                       np.clongdouble, np.float16,]:
+    if volume.dtype in [np.bool_, np.cfloat, np.cdouble, np.clongdouble,
+                        np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
-    if volume.dtype in [object, 'float128']:
+    if volume.dtype.char in ['O', 'g']:
         mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "
                 f"deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
         warnings.warn(mesg, DeprecationWarning, stacklevel=2)
@@ -1581,7 +1581,7 @@ def medfilt(volume, kernel_size=None):
     else:
         size = math.prod(kernel_size)
         result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
-                                      mode='constant')
+                                     mode='constant')
 
     return result
 
