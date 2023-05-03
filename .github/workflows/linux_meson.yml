@@ -289,8 +289,6 @@ jobs:
 
     - name: Install Python packages
       run: |
-        # TODO: unpin cython and move to -pre once issues with cython 3.0
-        #       have been ironed out.
         python -m pip install "git+https://github.com/cython/cython.git"
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
