@@ -12,13 +12,6 @@ if is_windows
     add_project_arguments('-mlong-double-64', language: 'c')
     # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
     add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
-    # Manual add of MS_WIN64 macro when not using MSVC.
-    # https://bugs.python.org/issue28267
-    bitness = run_command('_build_utils/gcc_build_bitness.py', check: true).stdout().strip()
-    if bitness == '64'
-      # The `=` is a little odd, but avoids redefinition warnings (see meson#11592)
-      add_project_arguments('-DMS_WIN64=', language: ['c', 'cpp', 'fortran'])
-    endif
     # Silence warnings emitted by PyOS_snprintf for (%zd), see
     # https://github.com/rgommers/scipy/issues/118.
     # Use as c_args for extensions containing Cython code
