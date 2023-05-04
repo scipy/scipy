@@ -137,7 +137,59 @@ dependencies to build it on your system.
 
   .. tab-item:: Windows
 
-    See :ref:`build-windows`.
+    A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
+    This is tricker on Windows than on other platforms, because MSVC does not
+    support Fortran, and gfortran and MSVC can't be used together. You will
+    need one of these sets of compilers:
+
+    1. MSVC + Intel Fortran (``ifort``)
+    2. Intel compilers (``icc``, ``ifort``)
+    3. Mingw-w64 compilers (``gcc``, ``g++``, ``gfortran``)
+
+    Compared to macOS and Linux, building SciPy on Windows is more difficult,
+    largely due to the difficulty of setting up these compilers. It is not
+    possible to just call a one-liner on the command prompt as you would on
+    other platforms.
+
+    First, install Microsoft Visual Studio - the 2019 Community Edition or any
+    newer version will work (see the
+    `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__). 
+    This is needed even if you use the MinGW-w64 or Intel compilers, in order
+    to ensure you have the Windows Universal C Runtime.
+
+    .. tab-set::
+
+      .. tab-item:: MSVC
+
+        TODO: MSVC-specific guidance
+
+      .. tab-item:: Intel
+
+        TODO: Intel-specific guidance
+
+      .. tab-item:: MinGW-w64
+
+        TODO: MinGW-w64 specific guidance
+
+        It makes sense to use Windows ``cmd`` or Powershell for the the build as it is
+        a more native tool. This requires placing the MinGW compilers on the path.
+        Hence, make sure that the following folder (or the folder you have installed
+        MSYS to) is on the system path variable sufficiently close to the top.
+
+.. code:: shell
+
+    C:\MSYS64\MINGW64\BIN
+
+For a sanity check, restart ``cmd`` or Powershell and type:
+
+.. code:: shell
+
+    gfortran
+
+If you see a missing command error with the above, :code:`gfortran` is not
+correctly installed or is still not on the path. 
+
+
 
 Building SciPy from source
 --------------------------
