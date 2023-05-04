@@ -12,6 +12,8 @@ from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
 
+import re
+
 import numpy
 import numpy as np
 
@@ -806,7 +808,7 @@ class TestMultivariateNormal:
     def test_fit_error(self):
         data = [1, 3]
         error_msg = "`x` must be two-dimensional of shape (m, n)."
-        with pytest.raises(ValueError, match=error_msg):
+        with pytest.raises(ValueError, match=re.escape(error_msg)):
             multivariate_normal.fit(data)
 
     def test_fit_correctness(self):
