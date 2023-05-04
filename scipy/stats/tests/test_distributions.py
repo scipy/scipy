@@ -8760,7 +8760,9 @@ def test_cosine_ppf_isf(p, expected):
 
 def test_cosine_logpdf_endpoints():
     logp = stats.cosine.logpdf([-np.pi, np.pi])
-    assert_equal(logp, [-np.inf, -np.inf])
+    # reference value calculated using mpmath assuming `np.cos(-1)` is four
+    # floating point numbers too high. See gh-18382.
+    assert_array_less(logp, -37.18838327496655)
 
 
 def test_distr_params_lists():

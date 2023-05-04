@@ -1,38 +1,28 @@
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
+if is_mingw and ff.get_id() != 'gcc'
+  error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+endif
 
 cython_c_args = []
-if is_windows
+if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
-  if is_mingw
-    add_project_link_arguments(gcc_link_args, language: ['c', 'cpp'])
-    # Force gcc to float64 long doubles for compatibility with MSVC
-    # builds, for C only.
-    add_project_arguments('-mlong-double-64', language: 'c')
-    # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
-    add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
-    # Manual add of MS_WIN64 macro when not using MSVC.
-    # https://bugs.python.org/issue28267
-    bitness = run_command('_build_utils/gcc_build_bitness.py', check: true).stdout().strip()
-    if bitness == '64'
-      # The `=` is a little odd, but avoids redefinition warnings (see meson#11592)
-      add_project_arguments('-DMS_WIN64=', language: ['c', 'cpp', 'fortran'])
-    endif
-    # Silence warnings emitted by PyOS_snprintf for (%zd), see
-    # https://github.com/rgommers/scipy/issues/118.
-    # Use as c_args for extensions containing Cython code
-    cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
-  endif
-  if meson.get_compiler('fortran').get_id() == 'gcc'
-    add_project_link_arguments(gcc_link_args, language: ['fortran'])
-    # Flag needed to work around BLAS and LAPACK Gfortran dependence on
-    # undocumented C feature when passing single character string
-    # arguments.
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
-    # https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
-    add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
-  endif
+  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp', 'fortran'])
+  # Force gcc to float64 long doubles for compatibility with MSVC
+  # builds, for C only.
+  add_project_arguments('-mlong-double-64', language: 'c')
+  # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
+  add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
+  # Silence warnings emitted by PyOS_snprintf for (%zd), see
+  # https://github.com/rgommers/scipy/issues/118.
+  # Use as c_args for extensions containing Cython code
+  cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
+  # Flag needed to work around BLAS and LAPACK Gfortran dependence on
+  # undocumented C feature when passing single character string arguments. See:
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
+  #   https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
+  add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
 endif
 
 thread_dep = dependency('threads', required: false)
@@ -320,6 +310,17 @@ fortran_ignore_warnings = ff.get_supported_arguments(
  _fflag_Wno_unused_variable,
  _fflag_Wno_tabs,
 )
+
+# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+# code uses preprocessor statements, add this compile flag to it.
+_fflag_fpp = []
+if ff.get_id() == 'intel-cl'
+  if is_windows
+    _fflag_fpp = ff.get_supported_arguments('/fpp')
+  else
+    _fflag_fpp = ff.get_supported_arguments('-fpp')
+  endif
+endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
