@@ -12,7 +12,6 @@ s_src = [
   'PROPACK/single/slanbpro.F',
   'PROPACK/single/slansvd.F',
   'PROPACK/single/slansvd_irl.F',
-  'PROPACK/single/smgs.pentium.F',
   'PROPACK/single/sreorth.F',
   'PROPACK/single/sritzvec.F',
   'PROPACK/single/ssafescal.F'
@@ -26,7 +25,6 @@ d_src = [
   'PROPACK/double/dlanbpro.F',
   'PROPACK/double/dlansvd.F',
   'PROPACK/double/dlansvd_irl.F',
-  'PROPACK/double/dmgs.pentium.F',
   'PROPACK/double/dreorth.F',
   'PROPACK/double/dritzvec.F',
   'PROPACK/double/dsafescal.F',
@@ -40,7 +38,6 @@ c_src = [
   'PROPACK/complex8/clanbpro.F',
   'PROPACK/complex8/clansvd.F',
   'PROPACK/complex8/clansvd_irl.F',
-  'PROPACK/complex8/cmgs.pentium.F',
   'PROPACK/complex8/creorth.F',
   'PROPACK/complex8/critzvec.F',
   'PROPACK/complex8/csafescal.F',
@@ -61,17 +58,22 @@ z_src = [
   'PROPACK/complex16/zlanbpro.F',
   'PROPACK/complex16/zlansvd.F',
   'PROPACK/complex16/zlansvd_irl.F',
-  'PROPACK/complex16/zmgs.pentium.F',
   'PROPACK/complex16/zreorth.F',
   'PROPACK/complex16/zritzvec.F',
   'PROPACK/complex16/zsafescal.F'
 ]
 
+# Use risc msg implementation for 64-bit machines, pentium for 32-bit
 if meson.get_compiler('cpp').sizeof('void*') > 4
   s_src += ['PROPACK/single/smgs.risc.F']
   d_src += ['PROPACK/double/dmgs.risc.F']
   c_src += ['PROPACK/complex8/cmgs.risc.F']
   z_src += ['PROPACK/complex16/zmgs.risc.F']
+else
+  s_src += ['PROPACK/single/smgs.pentium.F']
+  d_src += ['PROPACK/double/dmgs.pentium.F']
+  c_src += ['PROPACK/complex8/cmgs.pentium.F']
+  z_src += ['PROPACK/complex16/zmgs.pentium.F']
 endif
 
 elements = [
@@ -83,7 +85,7 @@ elements = [
 
 cargs_propack = ['-D_OPENMP']  # FIXME: _OPENMP is needed now, but not good!
 if use_g77_abi
-  # This define needs to be removed from PROPACK code, in favor of using
+  # FIXME: define needs to be removed from PROPACK code, in favor of using
   # `wcdotc` unconditionally, like is done in ARPACK.
   cargs_propack += ['-DSCIPY_USE_G77_CDOTC_WRAP=1']
 endif
