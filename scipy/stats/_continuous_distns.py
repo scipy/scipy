@@ -546,7 +546,7 @@ anglit = anglit_gen(a=-np.pi/4, b=np.pi/4, name='anglit')
 
 
 def _arcsin_value(x):
-    return np.arcsin(2 * x - 1) / np.pi
+    return np.arcsin(2*x-1) / np.pi
 
 
 class arcsine_gen(rv_continuous):

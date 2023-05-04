@@ -454,6 +454,56 @@ class TestArcsine:
         p = stats.arcsine.pdf([0, 1])
         assert_equal(p, [np.inf, np.inf])
 
+    # Expected values for arcsine.cdf were computed with mpmath:
+    #
+    #    from mpmath import mp
+    #    def arcsine_cdf(x):
+    #        x = mp.mpf(x)
+    #        return 0.5 + mp.asin(2*x-1) / mp.pi
+    #
+    # E.g.
+    #
+    #    >>> float(arcsine_cdf(0.9))
+    #    0.7951672353008665
+    #
+    @pytest.mark.parametrize(
+        'x, expected', [
+            (0.9, 0.7951672353008665),
+            (0.59999, 0.5640877193891672),
+            (0.125, 0.23005345616261585),
+            (6e-17, 4.7431868988034864e-09),
+            (3e-15, 3.4855163144609236e-08),
+            (1e-10, 6.366197987162092e-06),
+        ]
+    )
+    def test_cdf(self, x, expected):
+        cdf_value = stats.arcsine.cdf(x)
+        assert_allclose(cdf_value, expected, rtol=1e-14)
+
+    # Expected values for arcsine.sf were computed with mpmath:
+    #
+    #    from mpmath import mp
+    #    def arcsine_sf(x):
+    #        x = mp.mpf(x)
+    #        return return 0.5 - mp.asin(2*x-1) / mp.pi
+    #
+    # E.g.
+    #
+    #    >>> float(arcsine_sf(0.9))
+    #    0.20483276469913342
+    #
+    @pytest.mark.parametrize(
+        'x, expected', [
+            (0.9, 0.20483276469913342),
+            (0.9999999999, 6.366197987162092e-06),
+            (0.59999, 0.43591228061083276),
+            (6e-17, 0.999999995256813),
+        ]
+    )
+    def test_sf(self, x, expected):
+        sf_value = stats.arcsine.sf(x)
+        assert_allclose(sf_value, expected, rtol=1e-14)
+
 
 class TestBernoulli:
     def setup_method(self):
