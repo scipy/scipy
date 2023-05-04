@@ -335,7 +335,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon', 'studentized_range']:
+    if dist in ['gausshyper', 'studentized_range']:
         pytest.skip("too slow")
 
     # If shape_only is True, it means the _rvs method of the

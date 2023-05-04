@@ -9909,30 +9909,29 @@ add_newdoc("nbdtr",
     >>> nbdtr(10, 5, 0.5)
     0.940765380859375
 
-    Compute the function for ``k=10`` and ``n=5`` at several points by
-    providing a NumPy array or list for `p`.
+    Compute the function for ``n=10`` and ``p=0.5`` at several points by
+    providing a NumPy array or list for `k`.
 
-    >>> p = np.array([0.1, 0.4, 0.8])
-    >>> nbdtr(10, 5, p)
-    array([0.01272048, 0.78272229, 0.99998754])
+    >>> nbdtr([5, 10, 15], 10, 0.5)
+    array([0.15087891, 0.58809853, 0.88523853])
 
-    Plot the function for three different parameter sets.
+    Plot the function for four different parameter sets.
 
     >>> import matplotlib.pyplot as plt
-    >>> k_parameters = [1, 5, 30]
-    >>> n_parameters = [5, 5, 5]
-    >>> linestyles = ['solid', 'dashed', 'dotted']
-    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    >>> k = np.linspace(0, 130, 130)
+    >>> n_parameters = [20, 20, 20, 80]
+    >>> p_parameters = [0.2, 0.5, 0.8, 0.5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(p_parameters, n_parameters,
     ...                            linestyles))
-    >>> x = np.linspace(0, 30, 1000)
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
-    ...     k, n, style = parameter_set
-    ...     nbdtr_vals = nbdtr(k, n, x)
-    ...     ax.plot(x, nbdtr_vals, label=rf"$k={k},\, n={n}$",
+    ...     p, n, style = parameter_set
+    ...     nbdtr_vals = nbdtr(k, n, p)
+    ...     ax.plot(k, nbdtr_vals, label=rf"$n={n},\, p={p}$",
     ...             ls=style)
     >>> ax.legend()
-    >>> ax.set_xlabel("$p$")
+    >>> ax.set_xlabel("$k$")
     >>> ax.set_title("Negative binomial cumulative distribution function")
     >>> plt.show()
 
@@ -10002,7 +10001,7 @@ add_newdoc("nbdtrc",
     See also
     --------
     nbdtr : Negative binomial cumulative distribution function
-    nbdtrik : Negative binomial quantile function
+    nbdtrik : Negative binomial percentile function
     scipy.stats.nbinom : Negative binomial distribution
 
     Notes
@@ -10036,31 +10035,30 @@ add_newdoc("nbdtrc",
     >>> nbdtrc(10, 5, 0.5)
     0.059234619140624986
 
-    Compute the function for ``k=10`` and ``n=5`` at several points by
-    providing a NumPy array or list for `p`.
+    Compute the function for ``n=10`` and ``p=0.5`` at several points by
+    providing a NumPy array or list for `k`.
 
-    >>> p = np.array([0.1, 0.4, 0.8])
-    >>> nbdtrc(3, 5, p)
-    array([0.99956835, 0.8263296 , 0.0562816 ])
+    >>> nbdtrc([5, 10, 15], 10, 0.5)
+    array([0.84912109, 0.41190147, 0.11476147])
 
-    Plot the function for three different parameter sets.
+    Plot the function for four different parameter sets.
 
     >>> import matplotlib.pyplot as plt
-    >>> k_parameters = [1, 5, 30]
-    >>> n_parameters = [5, 5, 5]
-    >>> linestyles = ['solid', 'dashed', 'dotted']
-    >>> parameters_list = list(zip(k_parameters, n_parameters,
+    >>> k = np.linspace(0, 130, 130)
+    >>> n_parameters = [20, 20, 20, 80]
+    >>> p_parameters = [0.2, 0.5, 0.8, 0.5]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(p_parameters, n_parameters,
     ...                            linestyles))
-    >>> x = np.linspace(0, 30, 1000)
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
-    ...     k, n, style = parameter_set
-    ...     nbdtrc_vals = nbdtrc(k, n, x)
-    ...     ax.plot(x, nbdtrc_vals, label=rf"$k={k},\, n={n}$",
+    ...     p, n, style = parameter_set
+    ...     nbdtrc_vals = nbdtrc(k, n, p)
+    ...     ax.plot(k, nbdtrc_vals, label=rf"$n={n},\, p={p}$",
     ...             ls=style)
     >>> ax.legend()
-    >>> ax.set_xlabel("$p$")
-    >>> ax.set_title("Negative binomial survival function")
+    >>> ax.set_xlabel("$k$")
+    >>> ax.set_title("Negative binomial distribution survival function")
     >>> plt.show()
 
     The negative binomial distribution is also available as
@@ -10142,41 +10140,43 @@ add_newdoc(
 
     Examples
     --------
-    `nbdtri` is the inverse of `nbdtr`: up to floating point errors
-    the following holds: ``nbdtri(k, n, nbdtr(k, n, p))=p``.
+    `nbdtri` is the inverse of `nbdtr` with respect to `p`.
+    Up to floating point errors the following holds:
+    ``nbdtri(k, n, nbdtr(k, n, p))=p``.
 
     >>> import numpy as np
     >>> from scipy.special import nbdtri, nbdtr
-    >>> k, n, p = 5, 10, 0.2
-    >>> cdf_val = nbdtr(k, n, p)
+    >>> k, n, y = 5, 10, 0.2
+    >>> cdf_val = nbdtr(k, n, y)
     >>> nbdtri(k, n, cdf_val)
     0.20000000000000004
 
     Compute the function for ``k=10`` and ``n=5`` at several points by
-    providing a NumPy array or list for `p`.
+    providing a NumPy array or list for `y`.
 
-    >>> p = np.array([0.1, 0.4, 0.8])
-    >>> nbdtri(3, 5, p)
+    >>> y = np.array([0.1, 0.4, 0.8])
+    >>> nbdtri(3, 5, y)
     array([0.34462319, 0.51653095, 0.69677416])
 
     Plot the function for three different parameter sets.
 
     >>> import matplotlib.pyplot as plt
-    >>> k_parameters = [1, 5, 30]
-    >>> n_parameters = [5, 5, 5]
-    >>> linestyles = ['solid', 'dashed', 'dotted']
-    >>> parameters_list = list(zip(k_parameters, n_parameters,
-    ...                            linestyles))
-    >>> x = np.linspace(0, 1, 500)
-    >>> fig, ax = plt.subplots()
+    >>> n_parameters = [5, 20, 30, 30]
+    >>> k_parameters = [20, 20, 60, 80]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(n_parameters, k_parameters, linestyles))
+    >>> cdf_vals = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
     >>> for parameter_set in parameters_list:
-    ...     k, n, style = parameter_set
-    ...     nbdtri_vals = nbdtri(k, n, x)
-    ...     ax.plot(x, nbdtri_vals, label=f"$k={k},\, n={n}$",
+    ...     n, k, style = parameter_set
+    ...     nbdtri_vals = nbdtri(k, n, cdf_vals)
+    ...     ax.plot(cdf_vals, nbdtri_vals, label=rf"$k={k},\ n={n}$",
     ...             ls=style)
     >>> ax.legend()
-    >>> ax.set_xlabel("$p$")
-    >>> ax.set_title("Negative binomial quantile function")
+    >>> ax.set_ylabel("$p$")
+    >>> ax.set_xlabel("$CDF$")
+    >>> title = "nbdtri: inverse of negative binomial CDF with respect to $p$"
+    >>> ax.set_title(title)
     >>> plt.show()
 
     `nbdtri` can evaluate different parameter sets by providing arrays with
@@ -10185,11 +10185,11 @@ add_newdoc(
     a 3x4 array.
 
     >>> k = np.array([[5], [10], [15]])
-    >>> p = np.array([0.3, 0.5, 0.7, 0.9])
-    >>> k.shape, p.shape
+    >>> y = np.array([0.3, 0.5, 0.7, 0.9])
+    >>> k.shape, y.shape
     ((3, 1), (4,))
 
-    >>> nbdtri(k, 5, p)
+    >>> nbdtri(k, 5, y)
     array([[0.37258157, 0.45169416, 0.53249956, 0.64578407],
            [0.24588501, 0.30451981, 0.36778453, 0.46397088],
            [0.18362101, 0.22966758, 0.28054743, 0.36066188]])
@@ -10199,7 +10199,7 @@ add_newdoc("nbdtrik",
     r"""
     nbdtrik(y, n, p, out=None)
 
-    Negative binomial quantile function.
+    Negative binomial percentile function.
 
     Returns the inverse with respect to the parameter `k` of
     `y = nbdtr(k, n, p)`, the negative binomial cumulative distribution
@@ -10224,6 +10224,7 @@ add_newdoc("nbdtrik",
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
+    nbdtrc : Survival function of the negative binomial.
     nbdtri : Inverse with respect to `p` of `nbdtr(k, n, p)`.
     nbdtrin : Inverse with respect to `n` of `nbdtr(k, n, p)`.
     scipy.stats.nbinom : Negative binomial distribution
@@ -10257,6 +10258,7 @@ add_newdoc("nbdtrik",
     Compute the negative binomial cumulative distribution function for an
     exemplary parameter set.
 
+    >>> import numpy as np
     >>> from scipy.special import nbdtr, nbdtrik
     >>> k, n, p = 5, 2, 0.5
     >>> cdf_value = nbdtr(k, n, p)
@@ -10267,6 +10269,35 @@ add_newdoc("nbdtrik",
 
     >>> nbdtrik(cdf_value, n, p)
     5.0
+
+    Plot the function for different parameter sets.
+
+    >>> import matplotlib.pyplot as plt
+    >>> p_parameters = [0.2, 0.5, 0.7, 0.5]
+    >>> n_parameters = [30, 30, 30, 80]
+    >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
+    >>> parameters_list = list(zip(p_parameters, n_parameters, linestyles))
+    >>> cdf_vals = np.linspace(0, 1, 1000)
+    >>> fig, ax = plt.subplots(figsize=(8, 8))
+    >>> for parameter_set in parameters_list:
+    ...     p, n, style = parameter_set
+    ...     nbdtrik_vals = nbdtrik(cdf_vals, n, p)
+    ...     ax.plot(cdf_vals, nbdtrik_vals, label=rf"$n={n},\ p={p}$",
+    ...             ls=style)
+    >>> ax.legend()
+    >>> ax.set_ylabel("$k$")
+    >>> ax.set_xlabel("$CDF$")
+    >>> ax.set_title("Negative binomial percentile function")
+    >>> plt.show()
+
+    The negative binomial distribution is also available as
+    `scipy.stats.nbinom`. The percentile function  method ``ppf``
+    returns the result of `nbdtrik` rounded up to integers:
+
+    >>> from scipy.stats import nbinom
+    >>> q, n, p = 0.6, 5, 0.5
+    >>> nbinom.ppf(q, n, p), nbdtrik(q, n, p)
+    (5.0, 4.800428460273882)
 
     """)
 

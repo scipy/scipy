@@ -1208,7 +1208,13 @@ class LinprogCommonTests:
         m = 50
         c = -np.ones(m)
         tmp = 2 * np.pi * np.arange(m) / (m + 1)
-        A_eq = np.vstack((np.cos(tmp) - 1, np.sin(tmp)))
+        # This test relies on `cos(0) -1 == sin(0)`, so ensure that's true
+        # (SIMD code or -ffast-math may cause spurious failures otherwise)
+        row0 = np.cos(tmp) - 1
+        row0[0] = 0.0
+        row1 = np.sin(tmp)
+        row1[0] = 0.0
+        A_eq = np.vstack((row0, row1))
         b_eq = [0, 0]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
