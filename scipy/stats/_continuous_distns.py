@@ -9973,8 +9973,9 @@ class vonmises_gen(rv_continuous):
     on the real line. This is a regular (i.e. non-circular) distribution.
 
     Note about distribution parameters: `vonmises` and `vonmises_line` take
-    ``kappa`` as a shape parameter and the ``scale`` parameter does not have
-    any effect.
+    ``kappa`` as a shape parameter (concentration) and ``loc`` as the location
+    (circular mean). A ``scale`` parameter is accepted but does not have any
+    effect.
 
     Examples
     --------
@@ -9984,12 +9985,10 @@ class vonmises_gen(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import vonmises
 
-    Define distribution parameters: the circular mean $\mu$ has to be passed
-    via the ``loc`` (location) parameter and the concentration parameter
-    $\kappa$ as ``kappa``.
+    Define distribution parameters.
 
-    >>> loc = 0.5 * np.pi
-    >>> kappa = 1
+    >>> loc = 0.5 * np.pi  # circular mean
+    >>> kappa = 1  # concentration
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
@@ -10010,7 +10009,7 @@ class vonmises_gen(rv_continuous):
     >>> number_of_samples = 1000
     >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
 
-    Plot the von Mises density on a cartesian and polar grid to emphasize
+    Plot the von Mises density on a Cartesian and polar grid to emphasize
     that is is a circular distribution.
 
     >>> fig = plt.figure(figsize=(8, 6))
@@ -10020,7 +10019,7 @@ class vonmises_gen(rv_continuous):
     >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
     >>> ticks = [0, 0.15, 0.3]
 
-    The left image contains the cartesian plot.
+    The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
