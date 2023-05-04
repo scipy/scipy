@@ -34,6 +34,7 @@ Optimization Tools
 
    basinhopping --  Basin-hopping stochastic optimizer
    differential_evolution -- Stochastic optimizer
+   shuffled_complex_evolution --  Shuffled Complex Evolution stochastic optimizer
    brute        --  Brute force searching optimizer
 
 

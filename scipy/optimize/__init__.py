@@ -109,6 +109,7 @@ Global optimization
    basinhopping - Basinhopping stochastic optimizer.
    brute - Brute force searching optimizer.
    differential_evolution - Stochastic optimizer using differential evolution.
+   shuffled_complex_evolution - Shuffled Complex Evolution stochastic optimizer.
 
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
@@ -422,6 +423,7 @@ from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
+from ._shuffled_complex_evolution import shuffled_complex_evolution
 from ._lsq import least_squares, lsq_linear
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,

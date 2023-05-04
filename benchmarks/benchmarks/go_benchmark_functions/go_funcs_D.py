@@ -44,8 +44,8 @@ class Damavandi(Benchmark):
         try:
             num = sin(pi * (x[0] - 2.0)) * sin(pi * (x[1] - 2.0))
             den = (pi ** 2) * (x[0] - 2.0) * (x[1] - 2.0)
-            factor1 = 1.0 - (abs(num / den)) ** 5.0
-            factor2 = 2 + (x[0] - 7.0) ** 2.0 + 2 * (x[1] - 7.0) ** 2.0
+            factor1 = 1.0 - (abs(num / den)) ** 5
+            factor2 = 2 + (x[0] - 7.0) ** 2 + 2 * (x[1] - 7.0) ** 2
             return factor1 * factor2
         except ZeroDivisionError:
             return np.nan
@@ -100,7 +100,7 @@ class Deb01(Benchmark):
 
     def fun(self, x, *args):
         self.nfev += 1
-        return -(1.0 / self.N) * sum(sin(5 * pi * x) ** 6.0)
+        return -(1.0 / self.N) * sum(sin(5 * pi * x) ** 6)
 
 
 class Deb03(Benchmark):
@@ -142,7 +142,7 @@ class Deb03(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return -(1.0 / self.N) * sum(sin(5 * pi * (x ** 0.75 - 0.05)) ** 6.0)
+        return -(1.0 / self.N) * sum(sin(5 * pi * (x ** 0.75 - 0.05)) ** 6)
 
 
 class Decanomial(Benchmark):
@@ -182,10 +182,10 @@ class Decanomial(Benchmark):
         self.nfev += 1
 
         val = x[1] ** 4 + 12 * x[1] ** 3 + 54 * x[1] ** 2 + 108 * x[1] + 81.0
-        val2 = x[0] ** 10. - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7
+        val2 = x[0] ** 10 - 20 * x[0] ** 9 + 180 * x[0] ** 8 - 960 * x[0] ** 7
         val2 += 3360 * x[0] ** 6 - 8064 * x[0] ** 5 + 13340 * x[0] ** 4
         val2 += - 15360 * x[0] ** 3 + 11520 * x[0] ** 2 - 5120 * x[0] + 2624
-        return 0.001 * (abs(val) + abs(val2)) ** 2.
+        return 0.001 * (abs(val) + abs(val2)) ** 2
 
 
 class Deceptive(Benchmark):
@@ -397,7 +397,7 @@ class DeVilliersGlasser01(Benchmark):
         t = 0.1 * arange(24)
         y = 60.137 * (1.371 ** t) * sin(3.112 * t + 1.761)
 
-        return sum((x[0] * (x[1] ** t) * sin(x[2] * t + x[3]) - y) ** 2.0)
+        return sum((x[0] * (x[1] ** t) * sin(x[2] * t + x[3]) - y) ** 2)
 
 
 class DeVilliersGlasser02(Benchmark):
@@ -444,7 +444,7 @@ class DeVilliersGlasser02(Benchmark):
              * cos(exp(0.507) * t))
 
         return sum((x[0] * (x[1] ** t) * tanh(x[2] * t + sin(x[3] * t))
-                   * cos(t * exp(x[4])) - y) ** 2.0)
+                   * cos(t * exp(x[4])) - y) ** 2)
 
 
 class DixonPrice(Benchmark):
@@ -488,8 +488,8 @@ class DixonPrice(Benchmark):
         self.nfev += 1
 
         i = arange(2, self.N + 1)
-        s = i * (2.0 * x[1:] ** 2.0 - x[:-1]) ** 2.0
-        return sum(s) + (x[0] - 1.0) ** 2.0
+        s = i * (2.0 * x[1:] ** 2 - x[:-1]) ** 2
+        return sum(s) + (x[0] - 1.0) ** 2
 
 
 class Dolan(Benchmark):

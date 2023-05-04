@@ -752,7 +752,8 @@ def brentq(f, a, b, args=(),
     constrained multivariate optimizers
       `fmin_l_bfgs_b`, `fmin_tnc`, `fmin_cobyla`
     global optimizers
-      `basinhopping`, `brute`, `differential_evolution`
+      `basinhopping`, `brute`, `differential_evolution`,
+      `shuffled_complex_evolution`
     local scalar minimizers
       `fminbound`, `brent`, `golden`, `bracket`
     N-D root-finding
@@ -870,7 +871,7 @@ def brenth(f, a, b, args=(),
     fmin, fmin_powell, fmin_cg, fmin_bfgs, fmin_ncg : multivariate local optimizers
     leastsq : nonlinear least squares minimizer
     fmin_l_bfgs_b, fmin_tnc, fmin_cobyla : constrained multivariate optimizers
-    basinhopping, differential_evolution, brute : global optimizers
+    basinhopping, differential_evolution, shuffled_complex_evolution, brute : global optimizers
     fminbound, brent, golden, bracket : local scalar minimizers
     fsolve : N-D root-finding
     brentq, brenth, ridder, bisect, newton : 1-D root-finding

@@ -3021,6 +3021,7 @@ class TestGlobalOptimization:
         # Note that `brute` solver does not return `OptimizeResult`
         results = [optimize.basinhopping(func, x0=1),
                    optimize.differential_evolution(func, [(-4, 4)]),
+                   optimize.shuffled_complex_evolution(func, [-4], [(-5, 5)]),
                    optimize.shgo(func, [(-4, 4)]),
                    optimize.dual_annealing(func, [(-4, 4)]),
                    optimize.direct(func, [(-4, 4)]),

@@ -249,6 +249,7 @@ py3.install_sources([
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
+  '_shuffled_complex_evolution.py',
   '_direct_py.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',

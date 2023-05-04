@@ -815,6 +815,7 @@ function, namely the (aptly named) ``eggholder`` function::
    ...     return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0]/2 + (x[1]  + 47))))
    ...             -x[0] * np.sin(np.sqrt(abs(x[0] - (x[1]  + 47)))))
 
+   >>> x0 = [1, 1]
    >>> bounds = [(-512, 512), (-512, 512)]
 
 This function looks like an egg carton::
@@ -877,6 +878,7 @@ optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
    >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
+   >>> results['SCE'] = optimize.shuffled_complex_evolution(eggholder, x0, bounds)
 
 :func:`shgo` has a second method, which returns all local minima rather than
 only what it thinks is the global minimum::
@@ -896,8 +898,9 @@ We'll now plot all found minima on a heatmap of the function::
    >>> def plot_point(res, marker='o', color=None):
    ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-   >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
-   >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
+   >>> plot_point(results['DE'], color='c')   # differential_evolution     - cyan
+   >>> plot_point(results['DA'], color='w')   # dual_annealing             - white
+   >>> plot_point(results['SCE'], color='m')  # shuffled_complex_evolution - magenta
 
    >>> # SHGO produces multiple minima, plot them all (with a smaller marker size)
    >>> plot_point(results['shgo'], color='r', marker='+')
@@ -913,7 +916,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
-   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
+   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle and the results of the Shuffled Complex Evolution (SCE) algorithm as a magenta circle, but they are not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)

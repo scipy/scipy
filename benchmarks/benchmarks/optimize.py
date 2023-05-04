@@ -16,7 +16,8 @@ with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing, shgo, direct)
+                                shuffled_complex_evolution, dual_annealing,
+                                shgo, direct)
     from scipy.optimize._minimize import MINIMIZE_METHODS
     from .cutest.calfun import calfun
     from .cutest.dfoxs import dfoxs
@@ -112,8 +113,8 @@ class _BenchOptimizers(Benchmark):
             newres.mean_nhev = np.mean([r.nhev for r in result_list])
             newres.mean_time = np.mean([r.time for r in result_list])
             funs = [r.fun for r in result_list]
-            newres.max_obj = np.max(funs)
-            newres.min_obj = np.min(funs)
+            newres.max_obj = np.max(funs).astype(float)
+            newres.min_obj = np.min(funs).astype(float)
             newres.mean_obj = np.mean(funs)
 
             newres.ntrials = len(result_list)
@@ -223,6 +224,22 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
+    def run_shuffled_complex_evolution(self):
+        """
+        Do an optimization run for shuffled_complex_evolution
+        """
+        self.function.nfev = 0
+        x0 = self.function.initial_vector()
+
+        t0 = time.time()
+
+        res = shuffled_complex_evolution(self.fun, x0, self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'SCE')
+
     def run_dualannealing(self):
         """
         Do an optimization run for dual_annealing
@@ -245,11 +262,12 @@ class _BenchOptimizers(Benchmark):
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO']
+            methods = ['DE', 'SCE', 'basinh.', 'DA', 'DIRECT', 'SHGO']
 
-        stochastic_methods = ['DE', 'basinh.', 'DA']
+        stochastic_methods = ['DE', 'SCE', 'basinh.', 'DA']
 
         method_fun = {'DE': self.run_differentialevolution,
+                      'SCE': self.run_shuffled_complex_evolution,
                       'basinh.': self.run_basinhopping,
                       'DA': self.run_dualannealing,
                       'DIRECT': self.run_direct,
@@ -497,7 +515,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
+        ['DE', 'SCE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
 
