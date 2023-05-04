@@ -792,9 +792,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Parameters
         ----------
         x : ndarray (m, n)
-            Data the distribution is fitted to. Must be two dimensional.
-            The second axis determines the dimensionality of the fitted
-            distribution `n`.
+            Data the distribution is fitted to. Must have two axes.
+            The first axis of length `m` represents the number of vectors
+            the distribution is fitted to. The second axis of length `n`
+            determines the dimensionality of the fitted distribution.
 
         Returns
         -------
