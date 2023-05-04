@@ -1,14 +1,8 @@
-.. _build-install-faq:
+.. _building-blas-and-lapack:
 
-=================
-Build/Install FAQ
-=================
-
-How do I checkout a pull request from GitHub locally?
-=====================================================
-
-Please use `the GitHub CLI <https://cli.github.com>`__ for this.
-
+===============
+BLAS and LAPACK
+===============
 
 How do I deal with Fortran ABI mismatch?
 ========================================
@@ -36,10 +30,4 @@ example)::
 
     $ meson setup builddir -Duse-g77-abi=true -Dblas=blas -Dlapack=lapack -Dpython.install_env=auto
     $ meson install -C builddir
-
-
-How do I use a custom BLAS distribution on Linux?
-=================================================
-
-See :ref:`blas-lapack-selection` for details on this topic.
 

@@ -1,14 +1,22 @@
-.. _building:
+.. _building_from_source_ref:
 
-Building from sources
-=====================
+Building from source
+====================
 
 .. note::
 
    If you are only trying to install SciPy, we recommend using binaries - see
    `Installation <https://scipy.org/install>`__ for details on that.
 
-Build instructions for different operating systems and an FAQ.
+Building SciPy from source requires setting up system-level dependencies
+(compilers, BLAS/LAPACK libraries, etc.) first, and then invoking a build. The
+build may be done in order to install SciPy for local usage, develop SciPy
+itself, or build redistributable binary packages. And it may be desired to
+customize aspects of how the build is done. This guide will cover all these
+aspects. In addition, it provides background information on how the SciPy build
+works, and links to up-to-date guides for generic Python build & packaging
+documentation that is relevant.
+
 
 .. _system-level:
 
@@ -113,7 +121,7 @@ dependencies to build it on your system.
     If you are using conda, these dependencies can be installed in the conda
     environment itself. See :ref:`conda-guide` for more details.
 
-  .. tab-item:: OSX
+  .. tab-item:: macOS
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -159,12 +167,7 @@ Detailed instructions
 .. toctree::
    :maxdepth: 1
 
-   osx
-   windows
-   meson
-   meson_advanced
-   building_faq
-
+   blas_lapack
 
 Reference for build options
 ===========================

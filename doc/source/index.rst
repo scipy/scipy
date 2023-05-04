@@ -23,24 +23,6 @@ science, and engineering.
 .. grid:: 2
 
     .. grid-item-card::
-        :img-top: _static/index_getting_started.png
-
-        Getting started
-        ^^^^^^^^^^^^^^^
-
-        New to *SciPy*? Check out the getting started guides. They contain an
-        introduction to *SciPy's* main concepts and links to additional tutorials.
-
-        +++
-
-        .. button-ref:: getting_started_ref
-            :expand:
-            :color: secondary
-            :click-parent:
-
-            To the getting started guides
-
-    .. grid-item-card::
         :img-top: _static/index_user_guide.png
 
         User guide
@@ -78,6 +60,26 @@ science, and engineering.
             To the reference guide
 
     .. grid-item-card::
+        :img-top: _static/index_getting_started.png
+
+        Building from source
+        ^^^^^^^^^^^^^^^^^^^^
+
+        Want to build from source rather than use a Python distribution or
+        pre-built SciPy binary? This guide will describe how to set up your
+        build environment, and how to build *SciPy* itself, including the many
+        options for customizing that build.
+
+        +++
+
+        .. button-ref:: building_from_source_ref
+            :expand:
+            :color: secondary
+            :click-parent:
+
+            To the build guide
+
+    .. grid-item-card::
         :img-top: _static/index_contribute.png
 
         Developer guide
@@ -100,8 +102,8 @@ science, and engineering.
    :maxdepth: 1
    :hidden:
 
-   Getting started <getting_started>
    User Guide <tutorial/index>
    API reference <reference/index>
+   Building from source <building/index>
    Development <dev/index>
    Release notes <release>
