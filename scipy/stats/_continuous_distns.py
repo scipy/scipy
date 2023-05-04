@@ -7172,20 +7172,34 @@ class t_gen(rv_continuous):
             df == np.inf, (x, df),
             f=lambda x, df: norm._pdf(x),
             f2=lambda x, df: (
-                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
-                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+                np.exp(self._logpdf(x, df))
             )
         )
 
     def _logpdf(self, x, df):
-        return _lazywhere(
-            df == np.inf, (x, df),
-            f=lambda x, df: norm._logpdf(x),
-            f2=lambda x, df: (
-                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
-                - (0.5*np.log(df*np.pi)
-                   + (df+1)/2*np.log(1+(x**2)/df))
-            )
+
+        def regular_formula(x, df):
+            return (sc.gammaln((df+1)/2) - sc.gammaln(df/2)
+                    - (0.5*np.log(df*np.pi))
+                    - (df+1)/2*np.log(1+(x**2)/df))
+
+        def asymptotic_formula(x, df):
+            return (- 0.5 * (1 + np.log(2 * np.pi)) +df/2*np.log1p(1/df)
+                    - df/45*(df+1)**-4. + (6*df + 6)**-1. - 1/45*(df+1)**-4.
+                    - 1/6 * df**-1. + 1/45*df**-3.
+                    - (df+1)/2 * np.log1p(x*x/df))
+
+        def norm_logpdf(x, df):
+            return norm._logpdf(x)
+
+        return _lazyselect(
+            ((df == np.inf),
+             (df >= 200) & (np.isfinite(df)),
+             (df < 200)),
+            (norm_logpdf,
+             asymptotic_formula,
+             regular_formula),
+            (x, df), np.nan
         )
 
     def _cdf(self, x, df):
