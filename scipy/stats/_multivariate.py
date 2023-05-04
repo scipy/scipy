@@ -808,7 +808,7 @@ class multivariate_normal_gen(multi_rv_generic):
         # input validation
         x = np.asarray(x)
         if x.ndim != 2:
-            raise ValueError("`x` must be two-dimensional.")
+            raise ValueError("`x` must be two-dimensional of shape (m, n).")
 
         n_vectors, dim = x.shape
 
