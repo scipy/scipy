@@ -7,7 +7,6 @@ s_src = [
   'PROPACK/single/printstat.F',
   'PROPACK/single/sblasext.F',
   'PROPACK/single/sbsvd.F',
-  'PROPACK/single/second.F',
   'PROPACK/single/sgemm_ovwr.F',
   'PROPACK/single/sgetu0.F',
   'PROPACK/single/slanbpro.F',
@@ -32,7 +31,6 @@ d_src = [
   'PROPACK/double/dritzvec.F',
   'PROPACK/double/dsafescal.F',
   'PROPACK/double/printstat.F',
-  'PROPACK/double/second.F'
 ]
 
 c_src = [
@@ -49,7 +47,6 @@ c_src = [
   'PROPACK/complex8/printstat.F',
   'PROPACK/complex8/sblasext.F',
   'PROPACK/complex8/sbsvd.F',
-  'PROPACK/complex8/second.F',
   'PROPACK/complex8/sgemm_ovwr.F'
 ]
 
@@ -58,7 +55,6 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
-  'PROPACK/complex16/second.F',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
