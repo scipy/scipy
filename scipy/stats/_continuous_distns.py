@@ -1657,18 +1657,7 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _entropy(self, a):
-        a = np.asarray([a])
-
-        def h1(a):
-            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
-            return h1
-
-        def h2(a):
-            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
-            return h2
-
-        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
-        return h
+        return stats.gamma._entropy(a) - np.log(0.5)
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
@@ -9131,8 +9120,7 @@ class truncexpon_gen(rv_continuous):
             return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
         else:
             # return generic for higher moments
-            # return rv_continuous._mom1_sc(self, n, b)
-            return self._mom1_sc(n, b)
+            return super()._munp(n, b)
 
     def _entropy(self, b):
         eB = np.exp(b)
@@ -9154,7 +9142,6 @@ def _log_diff(log_p, log_q):
 
 def _log_gauss_mass(a, b):
     """Log of Gaussian probability mass within an interval"""
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
     a, b = np.broadcast_arrays(a, b)
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -9241,7 +9228,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logcdf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        logcdf = np.asarray(_log_gauss_mass(a, x) - _log_gauss_mass(a, b))
         i = logcdf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
@@ -9252,7 +9239,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logsf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        logsf = np.asarray(_log_gauss_mass(x, b) - _log_gauss_mass(a, b))
         i = logsf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
@@ -9764,8 +9751,8 @@ class FitUniformFixedScaleDataError(FitDataError):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood estimation with "
             "the uniform distribution and fixed scale requires that "
-            "data.ptp() <= fscale, but data.ptp() = %r and fscale = %r." %
-            (ptp, fscale),
+            f"data.ptp() <= fscale, but data.ptp() = {ptp} and "
+            f"fscale = {fscale}."
         )
 
 
@@ -10084,7 +10071,7 @@ class vonmises_gen(rv_continuous):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                    bracket=(1e-8, 1e12))
+                                       bracket=(np.finfo(float).tiny, 1e16))
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,

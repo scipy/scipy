@@ -178,6 +178,7 @@ jobs:
 
   #################################################################################
   python_debug:
+    # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04  # provides python3.10-dbg
@@ -194,7 +195,7 @@ jobs:
       - name: Build SciPy
         run: |
           python3-dbg -m pip install build
-          python3-dbg -m build --wheel -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
           python3-dbg -m pip install dist/scipy*.whl
       - name: Testing SciPy
         run: |
@@ -288,9 +289,8 @@ jobs:
 
     - name: Install Python packages
       run: |
-        # TODO: unpin cython and move to -pre once issues with cython 3.0
-        #       have been ironed out.
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool "cython==0.29.33"
+        python -m pip install "git+https://github.com/cython/cython.git"
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini

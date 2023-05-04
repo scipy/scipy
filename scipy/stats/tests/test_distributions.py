@@ -200,7 +200,7 @@ class TestVonMises:
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("rvs_loc", [0, 2])
-    @pytest.mark.parametrize("rvs_shape", [1, 100])
+    @pytest.mark.parametrize("rvs_shape", [1, 100, 1e8])
     @pytest.mark.parametrize('fix_loc', [True, False])
     @pytest.mark.parametrize('fix_shape', [True, False])
     def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_shape,
@@ -222,17 +222,20 @@ class TestVonMises:
                                       stats.vonmises.nnlf, **kwds)
 
     @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
-    @pytest.mark.parametrize('kappa', [1, 10, 100, 1000])
-    def test_vonmises_fit_all(self, kappa, loc):
+    @pytest.mark.parametrize('kappa_tol', [(1e-1, 5e-2), (1e2, 1e-2),
+                                           (1e5, 1e-2)])
+    def test_vonmises_fit_all(self, kappa_tol, loc):
         rng = np.random.default_rng(6762668991392531563)
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
+        kappa, tol = kappa_tol
+        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000,
+                                                        random_state=rng)
         kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
         assert scale_fit == 1
         loc_vec = np.array([np.cos(loc), np.sin(loc)])
         loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
         angle = np.arccos(loc_vec.dot(loc_fit_vec))
-        assert_allclose(angle, 0, atol=1e-2, rtol=0)
-        assert_allclose(kappa, kappa_fit, rtol=1e-2)
+        assert_allclose(angle, 0, atol=tol, rtol=0)
+        assert_allclose(kappa, kappa_fit, rtol=tol)
 
     def test_vonmises_fit_shape(self):
         rng = np.random.default_rng(6762668991392531563)
@@ -8769,7 +8772,9 @@ def test_cosine_ppf_isf(p, expected):
 
 def test_cosine_logpdf_endpoints():
     logp = stats.cosine.logpdf([-np.pi, np.pi])
-    assert_equal(logp, [-np.inf, -np.inf])
+    # reference value calculated using mpmath assuming `np.cos(-1)` is four
+    # floating point numbers too high. See gh-18382.
+    assert_array_less(logp, -37.18838327496655)
 
 
 def test_distr_params_lists():

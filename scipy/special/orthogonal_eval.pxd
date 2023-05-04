@@ -1,4 +1,5 @@
 # -*- cython -*-
+# cython: cpow=True
 """
 Evaluate orthogonal polynomial values using recurrence relations.
 
