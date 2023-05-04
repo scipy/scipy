@@ -492,6 +492,45 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
+    def test_resampling_pvalue(self, method, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        size = 100 if method == 'permutation' else 1000
+        x = rng.normal(size=size)
+        y = rng.normal(size=size)
+        methods = {'permutation': stats.PermutationMethod(random_state=rng),
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
+        method = methods[method]
+        res = stats.pearsonr(x, y, alternative=alternative, method=method)
+        ref = stats.pearsonr(x, y, alternative=alternative)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    def test_bootstrap_ci(self, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        x = rng.normal(size=100)
+        y = rng.normal(size=100)
+        res = stats.pearsonr(x, y, alternative=alternative)
+
+        method = stats.BootstrapMethod(random_state=rng)
+        res_ci = res.confidence_interval(method=method)
+        ref_ci = res.confidence_interval()
+
+        assert_allclose(res_ci, ref_ci, atol=1e-2)
+
+    def test_invalid_method(self):
+        message = "`method` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+        res = stats.pearsonr([1, 2], [3, 4])
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(method="exact")
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
@@ -3688,12 +3727,16 @@ def test_gh_chisquare_12282():
 
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
-def test_chiquare_data_types(n, dtype):
-    # Regression test for gh-10159.
+def test_chiquare_data_types_attributes(n, dtype):
+    # Regression test for gh-10159 and gh-18368
     obs = np.array([n, 0], dtype=dtype)
     exp = np.array([n // 2, n // 2], dtype=dtype)
-    stat, p = stats.chisquare(obs, exp)
+    res = stats.chisquare(obs, exp)
+    stat, p = res
     assert_allclose(stat, n, rtol=1e-13)
+    # check that attributes are identical to unpacked outputs - see gh-18368
+    assert_equal(res.statistic, stat)
+    assert_equal(res.pvalue, p)
 
 
 def test_chisquare_masked_arrays():
