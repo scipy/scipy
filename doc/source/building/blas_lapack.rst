@@ -1,11 +1,17 @@
 .. _building-blas-and-lapack:
 
-===============
 BLAS and LAPACK
 ===============
 
+Selecting BLAS and LAPACK libraries
+-----------------------------------
+
+Using pkg-config to detect libraries in a nonstandard location
+--------------------------------------------------------------
+
+
 How do I deal with Fortran ABI mismatch?
-========================================
+----------------------------------------
 
 Some linear algebra libraries are built with g77 ABI and others with
 GFortran ABI, and these two ABIs are incompatible. Therefore, if you
@@ -30,4 +36,16 @@ example)::
 
     $ meson setup builddir -Duse-g77-abi=true -Dblas=blas -Dlapack=lapack -Dpython.install_env=auto
     $ meson install -C builddir
+
+Work-in-progress
+----------------
+
+These options are planned to be fully supported, but currently not usable out
+of the box:
+
+- ILP64 (64-bit integer size) builds: large parts of SciPy support using ILP64
+  BLAS/LAPACK. Note that support is still incomplete, so SciPy *also* requires
+  LP64 (32-bit integer size) BLAS/LAPACK.
+- Automatically selecting from multiple possible BLAS and LAPACK options, with
+  a user-provided order of precedence
 

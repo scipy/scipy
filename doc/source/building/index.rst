@@ -29,8 +29,10 @@ your system.
 
 .. note::
 
-    You can skip these steps if you are using ``conda``, as these dependencies
-    will be installed automatically.
+    If you are using Conda, you can skip the steps in this section - with the
+    exception of installing compilers for Windows or the Apple Developer Tools
+    for macOS. All other dependencies will be installed automatically by the
+    ``mamba env create -f environment.yml`` command.
 
 .. tab-set::
 
@@ -325,38 +327,26 @@ interface is self-documenting, so please see ``python dev.py --help`` and
 ``python dev.py <subcommand> --help`` for detailed guidance.
 
 
-Detailed instructions
----------------------
+Customizing builds
+------------------
 
 .. toctree::
    :maxdepth: 1
 
+   compilers_and_options
    blas_lapack
+   cross_compilation
+   redistributable_binaries
 
-Reference for build options
-===========================
 
-SciPy has several tunable build-time options, which can be set.
+Background information
+----------------------
 
-.. warning::
+.. toctree::
+   :maxdepth: 1
 
-    This content is for the old `numpy.distutils`-based build and doesn't apply
-    to the Meson build (i.e., when building with ``python dev.py``).
+   understanding_meson
+   distutils_equivalents
 
-- ``site.cfg``: build-time library configuration file, see
-  ``site.cfg.example`` for details.
-
-- Environment variables ``NPY_LAPACK_ORDER``, ``NPY_BLAS_ORDER``, ``OPENBLAS``,
-  ``ATLAS``, etc., also controlling library configuration.
-  See :ref:`NumPy documentation <numpy:accelerated-blas-lapack-libraries>`
-  for more details.
-
-- Environment variable ``NPY_USE_BLAS_ILP64=1``: build using 64-bit
-  integer size (ILP64) BLAS+LAPACK libraries.
-
-  Note that even when this is set, SciPy requires *also* 32-bit
-  integer size (LP64) BLAS+LAPACK libraries to be available and
-  configured. This is because only some components in SciPy make use
-  of the 64-bit capabilities.
 
 .. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
