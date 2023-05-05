@@ -72,7 +72,7 @@ science, and engineering.
 
         +++
 
-        .. button-ref:: building_from_source_ref
+        .. button-ref:: building-from-source
             :expand:
             :color: secondary
             :click-parent:

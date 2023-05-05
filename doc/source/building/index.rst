@@ -1,4 +1,4 @@
-.. _building_from_source_ref:
+.. _building-from-source:
 
 Building from source
 ====================
@@ -314,6 +314,8 @@ virtual environments:
        be installed as described under the *Windows* tab of the *System-level
        dependencies* section higher up.
 
+
+.. _the-dev-py-interface:
 
 To build SciPy in an activated development environment, run::
 
