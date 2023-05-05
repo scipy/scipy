@@ -137,10 +137,11 @@ class RBFInterpolator:
     Parameters
     ----------
     y : (npoints, ndims) array_like
-        Data point coordinates.
+        2-D array of data point coordinates.
     d : (npoints, ...) array_like
-        Data values at `y`. The length of `d` along the *first* axis must be
-        equal to the length of `y`.
+        N-D array of data values at `y`. The length of `d` along the first
+        axis must be equal to the length of `y`. Unlike some interpolators, the
+        interpolation axis cannot be changed.
     neighbors : int, optional
         If specified, the value of the interpolant at each evaluation point
         will be computed using only this many nearest data points. All the data

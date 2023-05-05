@@ -218,10 +218,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
-        Data point coordinates, or a precomputed Delaunay triangulation.
+        2-D array of data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
-        Data values at `points`.  The length of `values` along the
-        *first* axis must be equal to the length of `points`.
+        N-D array of data values at `points`.  The length of `values` along the
+        first axis must be equal to the length of `points`. Unlike some
+        interpolators, the interpolation axis cannot be changed.
     fill_value : float, optional
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
@@ -809,10 +810,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
-        Data point coordinates, or a precomputed Delaunay triangulation.
+        2-D array of data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
-        Data values at `points`. The length of `values` along the
-        *first* axis must be equal to the length of `points`.
+        N-D array of data values at `points`. The length of `values` along the
+        first axis must be equal to the length of `points`. Unlike some
+        interpolators, the interpolation axis cannot be changed.
     fill_value : float, optional
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
