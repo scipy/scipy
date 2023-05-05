@@ -10013,7 +10013,7 @@ class vonmises_gen(rv_continuous):
     Plot the von Mises density on a cartesian and polar grid to emphasize
     that is is a circular distribution.
 
-    >>> fig = plt.figure(figsize=(8, 6))
+    >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
@@ -10027,6 +10027,7 @@ class vonmises_gen(rv_continuous):
     >>> number_of_bins = int(np.sqrt(number_of_samples))
     >>> left.hist(samples, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
+    >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
 
     The right image contains the polar plot.
@@ -10035,8 +10036,8 @@ class vonmises_gen(rv_continuous):
     >>> right.set_yticks(ticks)
     >>> right.hist(samples, density=True, bins=number_of_bins,
     ...            label="Histogram")
-    >>> right.set_title("Polar plot", pad=65)
-    >>> right.legend(bbox_to_anchor=(0.3, 1.35))
+    >>> right.set_title("Polar plot")
+    >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
