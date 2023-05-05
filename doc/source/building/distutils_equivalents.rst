@@ -1,3 +1,5 @@
+.. _distutils-meson-equivalents:
+
 Meson and ``distutils`` ways of doing things
 --------------------------------------------
 

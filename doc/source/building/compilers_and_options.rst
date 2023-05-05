@@ -1,5 +1,5 @@
-Compiler selection and custom build flags
-=========================================
+Compiler selection and customizing a build
+==========================================
 
 Selecting a specific compiler
 -----------------------------
@@ -58,6 +58,23 @@ testing SciPy::
 
 This will work because after initial configuration, Meson will remember the
 config options.
+
+
+Controlling build parallelism
+-----------------------------
+
+By default, ``ninja`` will launch ``2*n_cpu + 2``, with ``n_cpu`` the number of
+physical CPU cores, parallel build jobs. This is fine in the vast majority of
+cases, and results in close to optimal build times. In some cases, on machines
+with a small amount of RAM relative to the number of CPU cores, this leads to a
+job running out of memory. In case that happens, lower the number of jobs ``N``
+such that you have at least 2 GB RAM per job. For example, to launch 6 jobs::
+
+    python -m pip install . -Ccompile-args="-j6"
+
+or::
+
+    python dev.py build -j6
 
 
 Use GCC and Clang builds in parallel
