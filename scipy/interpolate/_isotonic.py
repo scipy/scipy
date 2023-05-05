@@ -34,6 +34,11 @@ class IsotonicInterpolator():
     weights : (N,) array_like or None
         Case weights.
     increasing : bool
+    check_finite : bool, optional
+        Whether to check that the input arrays contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        Default is True.
 
     Attributes
     ----------
@@ -59,12 +64,15 @@ class IsotonicInterpolator():
             x: npt.ArrayLike,
             y: npt.ArrayLike,
             weights: npt.ArrayLike | None = None,
+            *,
             increasing: bool = True,
+            check_finite: bool = True,
     ):
-        # TODO: Should we check np.isfinite(x, y, w)?
         y = np.asarray(y)
         if y.ndim != 1:
             raise ValueError("The y array must have exactly one dimension.")
+        if check_finite and not np.isfinite(y).all():
+            raise ValueError("Array y must not contain infs or nans.")
 
         if x is not None:
             x = np.asarray(x)
@@ -72,6 +80,8 @@ class IsotonicInterpolator():
                 raise ValueError("The x array must have exactly one dimension.")
             if x.shape[0] != y.shape[0]:
                 raise ValueError("The x and y arrays must have same length.")
+            if check_finite and not np.isfinite(x).all():
+                raise ValueError("Array x must not contain infs or nans.")
             # Note that sorting is often the performance bottleneck of
             # __init__.
             order = np.lexsort((y, x))  # The last key is the primary key.
@@ -84,6 +94,8 @@ class IsotonicInterpolator():
                 raise ValueError("The weights array must have exactly one dimension.")
             if weights.shape[0] != y.shape[0]:
                 raise ValueError("The y and weights arrays must have same length.")
+            if check_finite and not np.isfinite(weights).all():
+                raise ValueError("Array weights must not contain infs or nans.")
             if x is not None:
                 weights = weights[order]
 
