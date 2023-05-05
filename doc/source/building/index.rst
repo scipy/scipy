@@ -125,15 +125,30 @@ dependencies to build it on your system.
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
-    enter the command
-
-    ::
+    enter the command::
 
         xcode-select --install
 
-    and follow the prompts. Apple Developer Tools includes
-    `git <https://git-scm.com/>`_, the software we need to download and manage the
-    SciPy source code. See also :ref:`build-osx`.
+    and follow the prompts. Apple Developer Tools includes Git, the Clang C/C++
+    compilers, and other development utilities that may be required.
+
+    Do *not* use the macOS system Python. Instead, install Python
+    with `the python.org installer <https://www.python.org/downloads/>`__ or
+    with a package manager like Homebrew, MacPorts or Fink.
+
+    The other system dependencies you need are a Fortran compiler, BLAS and
+    LAPACK libraries, and pkg-config. They're easiest to install with
+    `Homebrew <https://brew.sh/>`__::
+
+        brew install gfortran openblas pkg-config
+
+    .. note::
+
+        As of SciPy >=1.2.0, we do not support compiling against the system
+        Accelerate library for BLAS and LAPACK. It does not support a sufficiently
+        recent LAPACK interface. This is planned to change in 2023, because macOS
+        13.3 introduced a major upgrade to Accelerate which resolved all known
+        issues.
 
   .. tab-item:: Windows
 
@@ -176,19 +191,15 @@ dependencies to build it on your system.
         Hence, make sure that the following folder (or the folder you have installed
         MSYS to) is on the system path variable sufficiently close to the top.
 
-.. code:: shell
+    .. note::
 
-    C:\MSYS64\MINGW64\BIN
-
-For a sanity check, restart ``cmd`` or Powershell and type:
-
-.. code:: shell
-
-    gfortran
-
-If you see a missing command error with the above, :code:`gfortran` is not
-correctly installed or is still not on the path. 
-
+        Compilers should be on the system path (i.e., the ``PATH`` environment
+        variable) in order to be found, with the exception of MSVC which will
+        be found automatically if and only if there are no other compilers on
+        the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or Git
+        Bash) to invoke a build. To check that this is the case, try invoking a
+        Fortran compiler in the shell you use (e.g., ``gfortran --version`` or
+        ``ifort --version``).
 
 
 Building SciPy from source
