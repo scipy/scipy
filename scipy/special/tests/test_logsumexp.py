@@ -139,6 +139,11 @@ def test_logsumexp_b_shape():
 
     logsumexp(a, b=b)
 
+def test_logsumexp_precision():
+    a = [0, -40]
+    expected = 4.248354255291589e-18
+    assert_almost_equal(logsumexp(a), expected)
+
 
 def test_softmax_fixtures():
     assert_allclose(softmax([1000, 0, 0, 0]), np.array([1, 0, 0, 0]),

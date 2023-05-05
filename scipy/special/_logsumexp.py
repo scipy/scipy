@@ -104,19 +104,43 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     elif not np.isfinite(a_max):
         a_max = 0
 
+    tmp0 = (a == a_max) # compute largest separately
+
+
     if b is not None:
         b = np.asarray(b)
-        tmp = b * np.exp(a - a_max)
+        tmp = b * np.exp(a - a_max)  * (~tmp0)
+        tmp0 = b*(tmp0 + .0)
     else:
-        tmp = np.exp(a - a_max)
+        tmp = np.exp(a - a_max)  * (~tmp0)
+        tmp0 = tmp0 + .0
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
         s = np.sum(tmp, axis=axis, keepdims=keepdims)
+        s0 = np.sum(tmp0, axis=axis, keepdims=keepdims)
+        sf = s + s0
         if return_sign:
-            sgn = np.sign(s)
+            sgn = np.sign(sf)
             s *= sgn  # /= makes more sense but we need zero -> zero
-        out = np.log(s)
+            s0*=sgn
+            sf*=sgn
+
+        if(np.isscalar(s0)):
+            if(s0<=0):
+                out = np.log(sf)
+            else:
+                out = np.log(s0) + np.log1p(s/s0)
+        else:
+            out = np.log(sf)
+
+            precise = (s0>0)
+            if(np.any(precise)):
+                invalid = ~precise
+                s0[invalid] = 1
+                s[invalid] = 1
+                out[precise] = (np.log(s0) + np.log1p(s/s0))[precise]
+                # update with precise valules where appropriate
 
     if not keepdims:
         a_max = np.squeeze(a_max, axis=axis)
