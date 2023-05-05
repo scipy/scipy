@@ -104,16 +104,27 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     elif not np.isfinite(a_max):
         a_max = 0
 
-    tmp0 = (a == a_max) # compute largest separately
+     # we compute where a = a_max so as to compute the
+     # sumexp separately and decompose as follows, using
+     # m = sum(exp(a_i - a_max) where a_i=a_max)
+     # R = sum( exp(a_i - a_max) where a_i!=a_max ) 
+     # logsum   = log( sum(exp(a_i))) 
+     #          = a_max + log(sum( exp(a_i-a_max) ))
+     #          = a_max + log(m + R )
+     #          = a_max + log(m) + log(1 + (1/m) * R)
 
-
+    tmp0 = (a == a_max)
     if b is not None:
         b = np.asarray(b)
+
+        # sumexp for a != a_max
         tmp = b * np.exp(a - a_max)  * (~tmp0)
-        tmp0 = b*(tmp0 + .0)
+
+        # sumexp for where a = a_max
+        tmp0 = b*tmp0.astype(float)
     else:
         tmp = np.exp(a - a_max)  * (~tmp0)
-        tmp0 = tmp0 + .0
+        tmp0 = tmp0.astype(float)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
@@ -126,19 +137,25 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             s0*=sgn
             sf*=sgn
 
-        if(np.isscalar(s0)):
-            if(s0<=0):
-                out = np.log(sf)
-            else:
+        
+        precise = ((s0>0) & (s>0))
+
+        if s0.ndim == 0:
+            if precise:
                 out = np.log(s0) + np.log1p(s/s0)
+            else:
+                out = np.log(sf)
         else:
+
+            # make imprecise calculation
             out = np.log(sf)
 
-            precise = (s0>0)
-            if(np.any(precise)):
-                invalid = ~precise
-                s0[invalid] = 1
-                s[invalid] = 1
+            # compute precise calculation where possible
+            if np.any(precise):
+                
+                # replace invalid to avoid difficult calculations
+                s0[~precise] = 1
+                s[~precise] = 1
                 out[precise] = (np.log(s0) + np.log1p(s/s0))[precise]
                 # update with precise valules where appropriate
 

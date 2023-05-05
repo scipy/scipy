@@ -140,9 +140,20 @@ def test_logsumexp_b_shape():
     logsumexp(a, b=b)
 
 def test_logsumexp_precision():
-    a = [0, -40]
-    expected = 4.248354255291589e-18
-    assert_allclose(logsumexp(a), expected, rtol=1e-18)
+
+    # values can be reproduced with mpmath as follows:
+    # with mp.extradps(20): return mp.log(mp.fsum([mp.exp(ai) for ai in a]))
+
+
+    assert_allclose(logsumexp([0, -40]), 4.248354255291589e-18, atol=1e-20)
+
+    expected = np.array([[1.92874985e-22, 2.61027907e-23, 1.96407613e-22], 
+                     [1.42516408e-21,1.42516408e-21, 2.86251946e-20]])
+    
+    a = np.array([[[0,-100,-50],[-52,0,-80],[0,-54,-50]],
+              [[0,-48,-np.infty],[-np.infty,0,-48],[0,-45,-60]]])
+    
+    assert_allclose(logsumexp(a, axis = 2), expected, atol = 1e-25)
 
 
 def test_softmax_fixtures():
