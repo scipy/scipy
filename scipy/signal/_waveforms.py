@@ -261,7 +261,7 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
         return yI, yQ, yenv
 
 
-def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True,
+def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True, *,
           complex=False):
     """Frequency-swept cosine generator.
 
