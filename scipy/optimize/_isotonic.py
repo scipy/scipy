@@ -38,7 +38,8 @@ def isotonic_regression(
     -------
     x : (N,) array_like
         Isotonic regression solution, i.e. an increasing (or decreasing) array
-        of the same length than y.
+        of the same length than y, with elements in the range from min(y) to
+        max(y).
     wx : (B,) array_like
         Sum of case weights for all blocks / pools B.
     r : (B+1,) array_like
