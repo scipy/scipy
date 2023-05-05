@@ -4040,6 +4040,18 @@ class TestBeta:
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
 
+        # Confirm that boost's beta distribution returns 5 at x=0
+        # when a=1, b=5
+        a, b = 1, 5
+        assert_equal(stats.beta.pdf(0, a, b), 5)
+        assert_equal(stats.beta.pdf(1e-310, a, b), 5)
+
+        # Confirm that boost's beta distribution returns 5 at x=1
+        # when a=5, b=1
+        a, b = 5, 1
+        assert_equal(stats.beta.pdf(1, a, b), 5)
+        assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
+
     @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13

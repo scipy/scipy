@@ -678,7 +678,8 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return _boost._beta_pdf(x, a, b)
+        with np.errstate(over='ignore'):
+            return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -697,8 +698,6 @@ class beta_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         with np.errstate(over='ignore'):  # see gh-17432
-            message = "overflow encountered in _beta_ppf"
-            warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
