@@ -19,9 +19,9 @@ def isotonic_regression(
 ):
     r"""Nonparametric isotonic regression.
 
-    A monotonically increasing array `x` with the same length as `y` is
-    calculated by the pool adjacent violators algorithm (PAVA), see [1]_.
-    See the Notes section for more details.
+    A (not strictly) monotonically increasing array `x` with the same length
+    as `y` is calculated by the pool adjacent violators algorithm (PAVA), see
+    [1]_. See the Notes section for more details.
 
     Parameters
     ----------
