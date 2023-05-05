@@ -10240,25 +10240,25 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     if method == 'ordinal':
         result = inv + 1
+    else:
+        arr = arr[sorter]
+        obs = np.r_[True, arr[1:] != arr[:-1]]
+        dense = obs.cumsum()[inv]
 
-    arr = arr[sorter]
-    obs = np.r_[True, arr[1:] != arr[:-1]]
-    dense = obs.cumsum()[inv]
+        if method == 'dense':
+            result = dense
+        else:
+            # cumulative counts of each unique value
+            count = np.r_[np.nonzero(obs)[0], len(obs)]
 
-    if method == 'dense':
-        result = dense
+            if method == 'max':
+                result = count[dense]
 
-    # cumulative counts of each unique value
-    count = np.r_[np.nonzero(obs)[0], len(obs)]
+            if method == 'min':
+                result = count[dense - 1] + 1
 
-    if method == 'max':
-        result = count[dense]
-
-    if method == 'min':
-        result = count[dense - 1] + 1
-
-    if method == 'average':
-        result = .5 * (count[dense] + count[dense - 1] + 1)
+            if method == 'average':
+                result = .5 * (count[dense] + count[dense - 1] + 1)
 
     if nan_indexes is not None:
         result = result.astype('float64')
