@@ -290,9 +290,10 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True,
         It determines whether the vertex of the parabola that is the graph
         of the frequency is at t=0 or t=t1.
     complex : bool, optional
-        It is only available for linear and quadratic methods. This parameter
-        makes generated signal complex. When complex option used, it's
-        possible to use negative frequency as f_0. It's `False` by default.
+        Only available if `method` is ``'linear'`` or ``'quadratic'``.
+        This parameter makes generated signal complex. When `complex` is True,
+        it's possible to use negative frequency as `f0`.
+        Default is False.
 
     Returns
     -------
