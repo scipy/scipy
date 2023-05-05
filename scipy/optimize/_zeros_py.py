@@ -1394,7 +1394,7 @@ def toms748(f, a, b, args=(), k=1,
     return _results_select(full_output, (x, function_calls, iterations, flag))
 
 
-def _bracketer(f, a, b=None, *, min=None, max=None, factor=2, batch=100):
+def _bracket_root(f, a, b=None, *, min=None, max=None, factor=None, batch=100):
     """Bracket the root of a monotonic scalar function of one variable
 
     Parameters
@@ -1404,11 +1404,11 @@ def _bracketer(f, a, b=None, *, min=None, max=None, factor=2, batch=100):
     a, b : float
         Starting guess of bracket, which need not contain a root. If `b` is
         not provided, ``b = a + 1``.
-    min, max : float
+    min, max : float, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive.
-    factor : float
+    factor : float, default: golden ratio
         The factor used to grow the bracket. See notes for details.
-    batch : int
+    batch : int, default: 100
         The maximum number of arguments passed to the callable `f` at once.
 
     Returns
@@ -1454,6 +1454,9 @@ def _bracketer(f, a, b=None, *, min=None, max=None, factor=2, batch=100):
 
     if b is None:
         b = a + 1
+
+    if factor is None:
+        factor = 1.61803398875  # golden ratio as suggested in gh-18348
 
     a, b, factor = np.float64(a), np.float64(b), np.float64(factor)
     d = b - a
