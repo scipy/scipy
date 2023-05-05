@@ -7179,15 +7179,15 @@ class t_gen(rv_continuous):
     def _logpdf(self, x, df):
 
         def regular_formula(x, df):
-            return (sc.gammaln((df+1)/2) - sc.gammaln(df/2)
-                    - (0.5*np.log(df*np.pi))
-                    - (df+1)/2*np.log(1+(x**2)/df))
+            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
+                    - (0.5 * np.log(df*np.pi))
+                    - (df + 1)/2*np.log1p(x * x/df))
 
         def asymptotic_formula(x, df):
-            return (- 0.5 * (1 + np.log(2 * np.pi)) +df/2*np.log1p(1/df)
-                    - df/45*(df+1)**-4. + (6*df + 6)**-1. - 1/45*(df+1)**-4.
-                    - 1/6 * df**-1. + 1/45*df**-3.
-                    - (df+1)/2 * np.log1p(x*x/df))
+            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
+                    - df/45*(df + 1)**-4. + (6*df + 6)**-1.
+                    - 1/45*(df + 1)**-4. - 1/6 * df**-1. + 1/45*df**-3.
+                    - (df + 1)/2 * np.log1p(x*x/df))
 
         def norm_logpdf(x, df):
             return norm._logpdf(x)
