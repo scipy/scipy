@@ -35,7 +35,8 @@ class IsotonicInterpolator():
     increasing : bool
         If true, do isotonic regression, i.e. monotonic increasing. If false, do
         antitonic regresission, i.e. monotonic decreasing.
-    check_finite : bool, optional
+        Default is True.
+    check_finite : bool
         Whether to check that the input arrays contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.

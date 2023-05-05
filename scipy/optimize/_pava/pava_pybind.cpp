@@ -11,9 +11,11 @@ void pava(
     py::array_t<double, py::array::c_style | py::array::forcecast> wa,
     py::array_t<intptr_t, py::array::c_style | py::array::forcecast> ra
 ) {
-    // x is the response variable (often written as y), already ordered according
-    // to some covariate. x is modified inplace and, on return, will contain the
-    // solution.
+    // x is the response variable (often written as y). Its ordering is crucial.
+    // Usually, it is sorted according to some other data (feature or covariate), e.g.
+    //   indices = np.argsort(z)
+    //   x = x[indices]
+    // Note that x is modified inplace and, on return, will contain the solution.
     // w is an array of case weights, modified inplace.
     // r is an array of indices such that x[r[i]:r[i+1]] contains the i-th block,
     // modified inplace.

@@ -32,11 +32,12 @@ def isotonic_regression(
     increasing : bool
         If True, fit monotonic increasing, i.e. isotonic, regression.
         If False, fit a monotonic decreasing, i.e. antitonic, regression.
+        Default is True.
 
     Returns
     -------
     x : (N,) array_like
-        Isotonic regression solution, i.e. an increasing (or decresing) array
+        Isotonic regression solution, i.e. an increasing (or decreasing) array
         of the same length than y.
     wx : (B,) array_like
         Sum of case weights for all blocks / pools B.
