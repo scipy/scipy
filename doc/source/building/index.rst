@@ -243,6 +243,8 @@ work, then the recommended way to build and install is to use ``pip``:
       pip install . --no-build-isolation
 
 
+.. _the-dev-py-interface:
+
 Building from source for SciPy development
 ``````````````````````````````````````````
 
@@ -313,9 +315,6 @@ virtual environments:
        entry from ``environment.yml`` and try again. The Fortran compiler should
        be installed as described under the *Windows* tab of the *System-level
        dependencies* section higher up.
-
-
-.. _the-dev-py-interface:
 
 To build SciPy in an activated development environment, run::
 

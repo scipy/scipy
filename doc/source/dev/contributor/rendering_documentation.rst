@@ -61,20 +61,11 @@ with Sphinx`_ \ *.*
 
 To render the documentation on your own machine:
 
-0. Ensure that you have a working SciPy :ref:`dev-env` active.
-   You need to be able to ``import scipy`` regardless of Python's working
-   directory; see :ref:`quickstart <dev-env>` and our other guides.
-#. Install `Sphinx`_, `PyData Sphinx theme`_, `Sphinx-Design`_, `numpydoc`_
-   and `matplotlib`_. For example, if you're using the Anaconda distribution of
-   Python, enter in a terminal window::
-
-      conda install sphinx pydata-sphinx-theme sphinx-design matplotlib numpydoc --channel conda-forge
-      
-   The list of requirements is in ``scipy/doc_requirements.txt``.
-#. Enter ``python dev.py doc`` to build the documentation.
+0. Ensure that you have a working SciPy build (see :ref:`building-from-source`).
+#. Then run ``python dev.py doc`` to build the documentation.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.
-#. View the documentation in ``scipy/doc/build/html``. You can start
+#. View the documentation in ``doc/build/html/``. You can start
    with ``index.html`` and browse, or you can jump straight to the file you’re
    interested in.
 

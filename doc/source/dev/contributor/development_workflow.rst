@@ -9,7 +9,7 @@ reading to see an example of fixing a bug and submitting a pull request.*
 
 This guide assumes that you have created your own fork (copy) of the SciPy
 repository, cloned the repository on your own machine, and built SciPy from this
-source code. If you haven't, check the :ref:`dev-env` pages appropriate to your
+source code. If you haven't, check the :ref:`building-from-source` pages appropriate to your
 system. Before getting started here, there are two other things you need to do
 just once before you start modifying SciPy.
 
@@ -107,14 +107,12 @@ changes from the upstream main to help avoid
 when it's time to submit a pull request.
 
 It's also a good idea to build this branch and run tests before continuing.
-Assuming you've followed one of the :ref:`dev-env` pages to set up your
-development environment, you'll need to activate your development virtual
+Assuming you've followed one of the :ref:`building-from-source` pages to set up
+your development environment, you'll need to activate your development virtual
 environment, perform an in-place build, and run tests::
 
-   conda activate name-of-your-virtual-environment
+   conda activate scipy-dev
    python dev.py test -v
-
-Otherwise, see :ref:`building`, :ref:`meson` for more information.
 
 .. _editing-workflow:
 
