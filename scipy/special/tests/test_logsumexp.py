@@ -142,7 +142,7 @@ def test_logsumexp_b_shape():
 def test_logsumexp_precision():
     a = [0, -40]
     expected = 4.248354255291589e-18
-    assert_almost_equal(logsumexp(a), expected)
+    assert_allclose(logsumexp(a), expected, rtol=1e-18)
 
 
 def test_softmax_fixtures():
