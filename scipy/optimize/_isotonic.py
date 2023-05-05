@@ -77,6 +77,27 @@ def isotonic_regression(
            problem for identifiable functionals.
            Ann Inst Stat Math 74, 489-514 (2022).
            :doi:`10.1007/s10463-021-00808-0`
+
+    Examples
+    --------
+    This example demonstrates that ``isotonic_regression`` really solves a constrained
+    optimization problem.
+    >>> from scipy.optimize import isotonic_regression, minimize
+    >>> y = [1.5, 1.0, 4.0, 6.0, 5.7, 5.0, 7.8, 9.0, 7.5, 9.5, 9.0]
+    >>> def objective(yhat, y):
+    ...     return np.sum((yhat - y)**2)
+    >>> def constraint(yhat, y):
+    ...     # This is for a monotonically increasing regression.
+    ...     return np.diff(yhat)
+    >>> result = minimize(objective, x0=y, args=(y,), constraints=
+            [{'type': 'ineq', 'fun': lambda x: constraint(x, y)}])
+    >>> result.x
+    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25, 9.25,
+           9.25])
+    >>> yhat, _, _ = isotonic_regression(y)
+    >>> yhat
+    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25, 9.25,
+           9.25])
     """
     y = np.asarray(y)
     if weights is None:
