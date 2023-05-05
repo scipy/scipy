@@ -1088,21 +1088,31 @@ class TestMedFilt:
 
     @pytest.mark.parametrize('dtype', [np.ubyte, np.byte, np.ushort, np.short,
                                        np.uint, int, np.ulonglong, np.ulonglong,
-                                       np.float32, np.float64, np.longdouble])
+                                       np.float32, np.float64])
     def test_types(self, dtype):
         # volume input and output types match
         in_typed = np.array(self.IN, dtype=dtype)
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
+    def test_types_deprecated(self):
+        dtype = np.longdouble
+        in_typed = np.array(self.IN, dtype=dtype)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
+            assert_equal(signal.medfilt(in_typed).dtype, dtype)
+        with pytest.deprecated_call(match=msg):
+            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
+
+
     @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
 
-        with pytest.raises(ValueError, match="order_filterND"):
+        with pytest.raises(ValueError, match="not supported"):
             signal.medfilt2d(in_typed)
 
     def test_none(self):
@@ -1134,10 +1144,12 @@ class TestMedFilt:
         assert_equal(x, [a, a])
 
     def test_object(self,):
-        in_object = np.array(self.IN, dtype=object)
-        out_object = np.array(self.OUT, dtype=object)
-        assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                           out_object)
+        msg = "Using medfilt with arrays of dtype"
+        with pytest.deprecated_call(match=msg):
+            in_object = np.array(self.IN, dtype=object)
+            out_object = np.array(self.OUT, dtype=object)
+            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
+                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
@@ -3571,6 +3583,28 @@ class TestDetrend:
         copy_array = detrend(x, overwrite_data=False)
         inplace = detrend(x, overwrite_data=True)
         assert_array_almost_equal(copy_array, inplace)
+
+    @pytest.mark.parametrize('kind', ['linear', 'constant'])
+    @pytest.mark.parametrize('axis', [0, 1, 2])
+    def test_axis(self, axis, kind):
+        data = np.arange(5*6*7).reshape(5, 6, 7)
+        detrended = detrend(data, type=kind, axis=axis)
+        assert detrended.shape == data.shape
+
+    def test_bp(self):
+        data = [0, 1, 2] + [5, 0, -5, -10]
+        detrended = detrend(data, type='linear', bp=3)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # repeat with ndim > 1 and axis
+        data = np.asarray(data)[None, :, None]
+
+        detrended = detrend(data, type="linear", bp=3, axis=1)
+        assert_allclose(detrended, 0, atol=1e-14)
+
+        # breakpoint index > shape[axis]: raises
+        with assert_raises(ValueError):
+            detrend(data, type="linear", bp=3)
 
 
 class TestUniqueRoots:

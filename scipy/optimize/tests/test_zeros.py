@@ -1,6 +1,5 @@
 import pytest
 
-from math import sqrt, exp, sin, cos
 from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
@@ -9,7 +8,7 @@ from numpy.testing import (assert_warns, assert_,
                            assert_array_equal,
                            suppress_warnings)
 import numpy as np
-from numpy import finfo, power, nan, isclose
+from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
 
 from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,

@@ -52,7 +52,9 @@ from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
 from dataclasses import dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
-from ._resampling import _batch_generator
+from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
+                          monte_carlo_test, permutation_test, bootstrap,
+                          _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -942,7 +944,7 @@ def _moment_result_object(*args):
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -966,9 +968,14 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    center : float or None, optional
+       The point about which moments are taken. This can be the sample mean,
+       the origin, or any other be point. If `None` (default) compute the
+       center as the sample mean.
+
     Returns
     -------
-    n-th central moment : ndarray or float
+    n-th moment about the `center` : ndarray or float
        The appropriate moment along the given axis or over all values if axis
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
@@ -979,14 +986,15 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    The k-th central moment of a data sample is:
+    The k-th moment of a data sample is:
 
     .. math::
 
-        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - c)^k
 
-    Where n is the number of samples and x-bar is the mean. This function uses
-    exponentiation by squares [1]_ for efficiency.
+    Where `n` is the number of samples, and `c` is the center around which the
+    moment is calculated. This function uses exponentiation by squares [1]_ for
+    efficiency.
 
     Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
     one element (`moment.size == 1`) is treated the same as scalar `moment`
@@ -1007,19 +1015,20 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.moment(a, moment, axis)
-
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mean = a.mean(axis, keepdims=True)
-        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
+        mean = a.mean(axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in moment:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean))
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center))
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, mean=center)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
@@ -1031,12 +1040,13 @@ def _moment(a, moment, axis, *, mean=None):
     if a.size == 0:
         return np.mean(a, axis=axis)
 
-    if moment == 0 or moment == 1:
-        # By definition the zeroth moment about the mean is 1, and the first
+    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+    if moment == 0 or (moment == 1 and mean is None):
+        # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
         if len(shape) == 0:
             return dtype(1.0 if moment == 0 else 0.0)
@@ -1055,7 +1065,8 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        mean = (a.mean(axis, keepdims=True) if mean is None
+                else dtype(mean))
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
@@ -4412,6 +4423,22 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
+    """
+    Compute the confidence interval for Pearson's R using the bootstrap.
+    """
+    def statistic(x, y):
+        statistic, _ = pearsonr(x, y)
+        return statistic
+
+    res = bootstrap((x, y), statistic, confidence_level=confidence_level,
+                    paired=True, alternative=alternative, **method._asdict())
+    # for one-sided confidence intervals, bootstrap gives +/- inf on one side
+    res.confidence_interval = np.clip(res.confidence_interval, -1, 1)
+
+    return ConfidenceInterval(*res.confidence_interval)
+
+
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
@@ -4436,21 +4463,24 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
-    def __init__(self, statistic, pvalue, alternative, n):
+    def __init__(self, statistic, pvalue, alternative, n, x, y):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
+        self._x = x
+        self._y = y
 
         # add alias for consistency with other correlation functions
         self.correlation = statistic
 
-    def confidence_interval(self, confidence_level=0.95):
+    def confidence_interval(self, confidence_level=0.95, method=None):
         """
         The confidence interval for the correlation coefficient.
 
         Compute the confidence interval for the correlation coefficient
         ``statistic`` with the given confidence level.
 
+        If `method` is not provided,
         The confidence interval is computed using the Fisher transformation
         F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
         bivariate normal distribution, F(r) approximately follows a normal
@@ -4459,11 +4489,23 @@ class PearsonRResult(PearsonRResultBase):
         ``n <= 3``, this approximation does not yield a finite, real standard
         error, so we define the confidence interval to be -1 to 1.
 
+        If `method` is an instance of `BootstrapMethod`, the confidence
+        interval is computed using `scipy.stats.bootstrap` with the provided
+        configuration options and other appropriate settings. In some cases,
+        confidence limits may be NaN due to a degenerate resample, and this is
+        typical for very small samples (~6 observations).
+
         Parameters
         ----------
         confidence_level : float
             The confidence level for the calculation of the correlation
             coefficient confidence interval. Default is 0.95.
+
+        method : BootstrapMethod, optional
+            Defines the method used to compute the confidence interval. See
+            method description for details.
+
+            .. versionadded:: 1.11.0
 
         Returns
         -------
@@ -4476,11 +4518,19 @@ class PearsonRResult(PearsonRResultBase):
         .. [1] "Pearson correlation coefficient", Wikipedia,
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
-        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
-                                   self._alternative)
+        if isinstance(method, BootstrapMethod):
+            ci = _pearsonr_bootstrap_ci(confidence_level, method,
+                                        self._x, self._y, self._alternative)
+        elif method is None:
+            ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                     self._alternative)
+        else:
+            message = ('`method` must be an instance of `BootstrapMethod` '
+                       'or None.')
+            raise ValueError(message)
+        return ci
 
-
-def pearsonr(x, y, *, alternative='two-sided'):
+def pearsonr(x, y, *, alternative='two-sided', method=None):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
@@ -4515,6 +4565,15 @@ def pearsonr(x, y, *, alternative='two-sided'):
         * 'greater':  the correlation is positive (greater than zero)
 
         .. versionadded:: 1.9.0
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed as documented in the notes.
+
+        .. versionadded:: 1.11.0
 
     Returns
     -------
@@ -4528,11 +4587,18 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
         The object has the following method:
 
-        confidence_interval(confidence_level=0.95)
-            This method computes the confidence interval of the correlation
+        confidence_interval(confidence_level, method)
+            This computes the confidence interval of the correlation
             coefficient `statistic` for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
-            fields `low` and `high`.  See the Notes for more details.
+            fields `low` and `high`. If `method` is not provided, the
+            confidence interval is computed using the Fisher transformation
+            [1]_. If `method` is an instance of `BootstrapMethod`, the
+            confidence interval is computed using `scipy.stats.bootstrap` with
+            the provided configuration options and other appropriate settings.
+            In some cases, confidence limits may be NaN due to a degenerate
+            resample, and this is typical for very small samples (~6
+            observations).
 
     Warns
     -----
@@ -4573,7 +4639,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
-    the distribution that is used in `pearsonr` to compute the p-value.
+    the distribution that is used in `pearsonr` to compute the p-value when
+    the `method` parameter is left at its default value (None).
     The distribution is a beta distribution on the interval [-1, 1],
     with equal shape parameters a = b = n/2 - 1.  In terms of SciPy's
     implementation of the beta distribution, the distribution of r is::
@@ -4616,11 +4683,35 @@ def pearsonr(x, y, *, alternative='two-sided'):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    >>> x, y = [1, 2, 3, 4, 5, 6, 7], [10, 9, 2.5, 6, 4, 3, 2]
+    >>> res = stats.pearsonr(x, y)
     >>> res
-    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
-    >>> res.confidence_interval()
-    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
+
+    To perform an exact permutation version of the test:
+
+    >>> rng = np.random.default_rng(7796654889291491997)
+    >>> method = stats.PermutationMethod(n_resamples=np.inf, random_state=rng)
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.028174603174603175)
+
+    To perform the test under the null hypothesis that the data were drawn from
+    *uniform* distributions:
+
+    >>> method = stats.MonteCarloMethod(rvs=(rng.uniform, rng.uniform))
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.0188)
+
+    To produce an asymptotic 90% confidence interval:
+
+    >>> res.confidence_interval(confidence_level=0.9)
+    ConfidenceInterval(low=-0.9644331982722841, high=-0.3460237473272273)
+
+    And for a bootstrap confidence interval:
+
+    >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
+    >>> res.confidence_interval(confidence_level=0.9, method=method)
+    ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
@@ -4689,8 +4780,37 @@ def pearsonr(x, y, *, alternative='two-sided'):
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg))
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
+
+    if isinstance(method, PermutationMethod):
+        def statistic(y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        res = permutation_test((y,), statistic, permutation_type='pairings',
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative, x=x, y=y)
+    elif isinstance(method, MonteCarloMethod):
+        def statistic(x, y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        if method.rvs is None:
+            rng = np.random.default_rng()
+            method.rvs = rng.normal, rng.normal
+
+        res = monte_carlo_test((x, y,), statistic=statistic,
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative, x=x, y=y)
+    elif method is not None:
+        message = ('`method` must be an instance of `PermutationMethod`,'
+                   '`MonteCarloMethod`, or None.')
+        raise ValueError(message)
 
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have
@@ -4700,7 +4820,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     if n == 2:
         r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
         result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
 
     xmean = x.mean(dtype=dtype)
@@ -4747,7 +4867,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
                          '["two-sided", "less", "greater"]')
 
     return PearsonRResult(statistic=r, pvalue=prob, n=n,
-                          alternative=alternative)
+                          alternative=alternative, x=x, y=y)
 
 
 def fisher_exact(table, alternative='two-sided'):
@@ -7779,12 +7899,15 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Returns
     -------
-    statistic : float or ndarray
-        The Cressie-Read power divergence test statistic.  The value is
-        a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
-    pvalue : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `stat` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+
+        statistic : float or ndarray
+            The Cressie-Read power divergence test statistic.  The value is
+            a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `stat` are scalars.
 
     See Also
     --------
@@ -7985,12 +8108,15 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Returns
     -------
-    chisq : float or ndarray
-        The chi-squared test statistic.  The value is a float if `axis` is
-        None or `f_obs` and `f_exp` are 1-D.
-    p : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `chisq` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+        
+        chisq : float or ndarray
+            The chi-squared test statistic.  The value is a float if `axis` is
+            None or `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `chisq` are scalars.
 
     See Also
     --------
