@@ -153,13 +153,26 @@ lapack_name = get_option('lapack')
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
-  blas_name = ['openblas', 'OpenBLAS']
+  blas = dependency(['openblas', 'OpenBLAS'])
+else
+  blas = dependency(blas_name)
 endif
+if blas_name == 'blas'
+  # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
+  # ABI wrappers, so detect it and error out if we cannot find it.
+  # In the future, this should be done automatically for:
+  #   `dependency('blas', modules: cblas)`
+  # see https://github.com/mesonbuild/meson/pull/10921.
+  cblas = dependency('cblas')
+else
+  cblas = []
+endif
+
 if lapack_name == 'openblas'
-  lapack_name = ['openblas', 'OpenBLAS']
+  lapack = dependency(['openblas', 'OpenBLAS'])
+else
+  lapack = dependency(lapack_name)
 endif
-blas = dependency(blas_name)
-lapack = dependency(lapack_name)
 
 dependency_map = {
   'BLAS': blas,
@@ -175,12 +188,17 @@ uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
-  g77_abi_wrappers = files([
-    '_build_utils/src/wrap_g77_abi_f.f',
-    '_build_utils/src/wrap_g77_abi_c.c'
-    ])
+  g77_abi_wrappers = declare_dependency(
+    sources:
+      [
+        '_build_utils/src/wrap_g77_abi_f.f',
+        '_build_utils/src/wrap_g77_abi_c.c'
+      ],
+    include_directories: inc_np,
+    dependencies: [py3_dep, cblas],
+  )
 else
-  g77_abi_wrappers = files('_build_utils/src/wrap_dummy_g77_abi.f')
+  g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'

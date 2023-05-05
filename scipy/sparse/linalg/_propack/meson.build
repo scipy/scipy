@@ -94,7 +94,7 @@ foreach ele: elements
   # Note that in setup.py, adding `g77_abi_wrappers` is skipped for 32-bit
   # architectures (stated reason: "it blows up").
   propack_lib = static_library('lib_' + ele[0],
-    [ele[1], g77_abi_wrappers],
+    ele[1],
     c_args: cargs_propack,
     fortran_args: [
       fortran_ignore_warnings, 
@@ -102,6 +102,7 @@ foreach ele: elements
       _fflag_Wno_uninitialized,
       _fflag_fpp,
     ],
+    dependencies: g77_abi_wrappers,
   )
 
   propack_module = custom_target('propack_module' + ele[0],
