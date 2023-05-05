@@ -56,8 +56,9 @@ def isotonic_regression(
         \operatorname{argmin}_{x_i} \sum_i w_i (y_i - x_i)^2 \quad
         \text{subject to } x_i \leq x_j \text{ whenever } i \leq j \,.
 
-    For every input value :math:`y_i`, it generates an interpolated value
-    :math:`x_i` which are increasing. This is accomplished by the PAVA.
+    For every input value :math:`y_i`, it generates a value :math:`x_i` such
+    that :math:`x` is increasing (but not strictly), i.e.
+    :math:`x_i \leq x_{i+1}`. This is accomplished by the PAVA.
     The solution consists of pools or blocks, i.e. neighboring elements of
     :math:`x`, e.g. :math:`x_i` and :math:`x_{i+1}`, that all have the same
     value.
