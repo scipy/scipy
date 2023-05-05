@@ -47,8 +47,6 @@ class IsotonicInterpolator():
         or knot positions.
     y_ : array_like
         Estimated isotonic regression values for all blocks.
-    x_is_numeric : bool
-        True if ``x_`` is numeric.
 
     Methods
     -------
@@ -119,17 +117,5 @@ class IsotonicInterpolator():
                 # a single element block
                 j += 1
 
-        # TODO: Maybe this is overkill.
-        self.x_is_numeric = np.issubdtype(self.x_.dtype, np.number)
-
     def __call__(self, x: npt.ArrayLike):
-        if self.x_is_numeric:
-            return np.interp(x, self.x_, self.y_)
-        else:
-            # TODO: Maybe this is overkill.
-            # We do not interpolate linearly between blocks as for non numeric
-            # data we have no notion of distance.
-            x = np.asarray(x)
-            idx = np.searchsorted(self.x_, x, side="right") - 1
-            idx = np.clip(idx, 0, self.x_.shape[0] - 1)
-            return self.y_[idx]
+        return np.interp(x, self.x_, self.y_)
