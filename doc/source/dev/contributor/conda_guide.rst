@@ -74,10 +74,6 @@ the latest release of conda from either
     You could stop here, but you would only be able to use this development
     build when the Python working directory is the SciPy root directory.
 
-#. Enter ``conda develop .``, where ``.`` refers to the present directory.
-   This will allow us to ``import`` the development version of SciPy in Python
-   regardless of Python's working directory.
-
 #. In a new terminal window, or after navigating to a different folder, test
    your setup. If you activate your virtual environment (e.g.
    ``conda activate scipy-dev``) and run Python code that imports from SciPy,

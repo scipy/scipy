@@ -23,8 +23,9 @@ documentation that is relevant.
 System-level dependencies
 -------------------------
 
-SciPy uses compiled code for speed, which means you might need extra
-dependencies to build it on your system.
+SciPy uses compiled code for speed, which means you need compilers and some
+other system-level (i.e, non-Python / non-PyPI) dependencies to build it on
+your system.
 
 .. note::
 
@@ -47,20 +48,15 @@ dependencies to build it on your system.
       `ATLAS <http://math-atlas.sourceforge.net/>`__ and
       `MKL <https://software.intel.com/en-us/intel-mkl>`__.
 
+    * ``pkg-config`` for dependency detection.
+
     .. tab-set::
 
       .. tab-item:: Debian/Ubuntu Linux
 
-        .. note::
+        To install SciPy build requirements, you can do::
 
-            These instructions have been tested on Ubuntu Linux 16.04, 18.04, and
-            20.04.
-
-        Python should be available in your system via the ``python3`` command. To
-        install the remaining system-level dependencies, run::
-
-          sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config
-          sudo apt install -y python3-pip python3-dev
+          sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config python3-pip python3-dev
 
         Alternatively, you can do::
 
@@ -69,9 +65,6 @@ dependencies to build it on your system.
         This command installs whatever is needed to build SciPy, with the
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
-
-        See also :ref:`ubuntu-guide`.
-
 
       .. tab-item:: Fedora
 
@@ -106,20 +99,6 @@ dependencies to build it on your system.
         To install SciPy build requirements, you can do::
 
           sudo pacman -S gcc-fortran openblas pkgconf
-
-    All further work should proceed in a virtual environment. Popular options
-    include the standard library ``venv`` module or a separate ``virtualenv``
-    package.
-
-    * The `Cython <https://cython.org/>`__ and
-      `Pythran <https://pythran.readthedocs.io>`__ ahead-of-time compilers are also
-      necessary, as is ``pybind11``. It is recommended to install these packages
-      with ``pip``, because it is possible (even likely) that you need newer
-      versions of these packages than the ones that are available in your Linux
-      distribution.
-
-    If you are using conda, these dependencies can be installed in the conda
-    environment itself. See :ref:`conda-guide` for more details.
 
   .. tab-item:: macOS
 
@@ -176,53 +155,175 @@ dependencies to build it on your system.
 
       .. tab-item:: MSVC
 
-        TODO: MSVC-specific guidance
+        The MSVC installer does not put the compilers on the system path, and
+        the install location may change. To query the install location, MSVC
+        comes with a ``vswhere.exe`` command-line utility. And to make the
+        C/C++ compilers available inside the shell you are using, you need to
+        run a ``.bat`` file for the correct bitness and architecture (e.g., for
+        64-bit Intel CPUs, use ``vcvars64.bat``).
+
+        For detailed guidance, see `Use the Microsoft C++ toolset from the command line
+        <https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170>`__.
 
       .. tab-item:: Intel
 
-        TODO: Intel-specific guidance
+        Similar to MSVC, the Intel compilers are designed to be used with an
+        activation script (``Intel\oneAPI\setvars.bat``) that you run in the
+        shell you are using. This makes the compilers available on the path.
+        For detailed guidance, see
+        `Get Started with the Intel® oneAPI HPC Toolkit for Windows
+        <https://www.intel.com/content/www/us/en/docs/oneapi-hpc-toolkit/get-started-guide-windows/2023-1/overview.html>`__.
 
       .. tab-item:: MinGW-w64
 
-        TODO: MinGW-w64 specific guidance
+        There are several sources of binaries for MinGW-w64. We recommend the
+        RTools versions, which can be installed with::
 
-        It makes sense to use Windows ``cmd`` or Powershell for the the build as it is
-        a more native tool. This requires placing the MinGW compilers on the path.
-        Hence, make sure that the following folder (or the folder you have installed
-        MSYS to) is on the system path variable sufficiently close to the top.
+            choco install rtools
+
+        In case of issues, we recommend using the exact same version as used
+        in the `SciPy GitHub Actions CI jobs for Windows
+        <https://github.com/scipy/scipy/blob/main/.github/workflows/windows.yml>`__.
 
     .. note::
 
         Compilers should be on the system path (i.e., the ``PATH`` environment
-        variable) in order to be found, with the exception of MSVC which will
-        be found automatically if and only if there are no other compilers on
-        the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or Git
-        Bash) to invoke a build. To check that this is the case, try invoking a
-        Fortran compiler in the shell you use (e.g., ``gfortran --version`` or
-        ``ifort --version``).
+        variable should contain the directory in which the compiler executables
+        can be found) in order to be found, with the exception of MSVC which
+        will be found automatically if and only if there are no other compilers
+        on the ``PATH``. You can use any shell (e.g., Powershell, ``cmd`` or
+        Git Bash) to invoke a build. To check that this is the case, try
+        invoking a Fortran compiler in the shell you use (e.g., ``gfortran
+        --version`` or ``ifort --version``).
 
 
 Building SciPy from source
 --------------------------
 
 If you want to only install SciPy from source once and not do any development
-work, then the recommended way to build and install is to use ``pip``::
+work, then the recommended way to build and install is to use ``pip``:
 
-    # For the latest stable release:
-    pip install scipy --no-binary scipy
+.. tab-set::
 
-    # For the latest development version, directly from GitHub:
-    pip install https://github.com/scipy/scipy/archive/refs/heads/main.zip
+  .. tab-item:: Virtual env or system Python
 
-    # If you have a local clone of the SciPy git repository:
-    pip install .
+    ::
 
-If you want to build from source in order to work on SciPy itself, then use
-our ``dev.py`` developer interface with::
+      # To build the latest stable release:
+      pip install scipy --no-binary scipy
+
+      # To build a development version, you need a local clone of the SciPy git repository:
+      git clone https://github.com/scipy/scipy.git
+      git submodule update --init
+      pip install .
+
+  .. tab-item:: Conda env
+
+    If you are using a conda environment, ``pip`` is still the tool you use to
+    invoke a from-source build of SciPy. It is important to always use the
+    ``--no-build-isolation`` flag to the ``pip install`` command, to avoid
+    building against a ``numpy`` wheel from PyPI. In order for that to work you
+    must first install the remaining build dependencies into the conda
+    environment::
+
+      # Either install all SciPy dev dependencies into a fresh conda environment
+      mamba env create -f environment.yml
+
+      # Or, install only the required build dependencies
+      mamba install python numpy cython pythran pybind11 compilers openblas pkg-config
+
+      # To build the latest stable release:
+      pip install scipy --no-build-isolation --no-binary scipy
+
+      # To build a development version, you need a local clone of the SciPy git repository:
+      git clone https://github.com/scipy/scipy.git
+      git submodule update --init
+      pip install . --no-build-isolation
+
+
+Building from source for SciPy development
+``````````````````````````````````````````
+
+If you want to build from source in order to work on SciPy itself, first clone
+the SciPy repository::
+
+      git clone https://github.com/scipy/scipy.git
+      git submodule update --init
+
+Then you want to do the following:
+
+1. Create a dedicated development environment (virtual environment or conda
+   environment),
+2. Install all needed dependencies (*build*, and also *test*, *doc* and
+   *optional* dependencies), 
+3. Build SciPy with our ``dev.py`` developer interface.
+
+Step (3) is always the same, steps (1) and (2) are different between conda and
+virtual environments:
+
+.. tab-set::
+
+  .. tab-item:: Virtual env or system Python
+
+    .. note::
+
+       There are many tools to manage virtual environments, like ``venv``,
+       ``virtualenv``/``virtualenvwrapper, ``pyenv``/``pyenv-virtualenv``,
+       Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
+       is part of the Python stdlib. You can use any other tool; all we need is
+       an activated Python environment.
+
+    Create and activate a virtual environment in a new directory named ``venv``::
+
+       python -m venv venv
+       source venv/bin/activate
+
+    Then install the Python-level dependencies (see ``pyproject.toml``) from
+    PyPI with::
+
+       # Build dependencies
+       python -m pip install numpy cython pythran pybind11 meson ninja pydevtool rich-click
+
+       # Test and optional runtime dependencies
+       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
+
+       # Doc build dependencies
+       python -m pip sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+
+       # Dev dependencies (static typing and linting)
+       python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+
+  .. tab-item:: Conda env
+
+    If you don't have a conda installation yet, we recommend using
+    Mambaforge_; any conda flavor will work though.
+
+    To create a ``scipy-dev`` development environment with every required and
+    optional dependency installed, run::
+
+        mamba env create -f environment.yml
+        mamba activate scipy-dev
+
+    .. note::
+
+       On Windows it is possible that the environment creation will not work due
+       to an outdated Fortran compiler. If that happens, remove the ``compilers``
+       entry from ``environment.yml`` and try again. The Fortran compiler should
+       be installed as described under the *Windows* tab of the *System-level
+       dependencies* section higher up.
+
+
+To build SciPy in an activated development environment, run::
 
     python dev.py build
 
-For more details on developing with ``dev.py``, see :ref:`meson`.
+This will install SciPy inside the repository (by default in a
+``build-install`` directory). You can then run tests (``python dev.py test``),
+drop into IPython (``python dev.py ipython``), or take other development steps
+like build the html documentation or running benchmarks. The ``dev.py``
+interface is self-documenting, so please see ``python dev.py --help`` and
+``python dev.py <subcommand> --help`` for detailed guidance.
+
 
 Detailed instructions
 ---------------------
@@ -257,3 +358,5 @@ SciPy has several tunable build-time options, which can be set.
   integer size (LP64) BLAS+LAPACK libraries to be available and
   configured. This is because only some components in SciPy make use
   of the 64-bit capabilities.
+
+.. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
