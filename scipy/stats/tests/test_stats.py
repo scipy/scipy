@@ -2403,14 +2403,22 @@ class TestMode:
         assert_equal(res.count.ravel(), ref.count.ravel())
         assert res.count.shape == (1, 1)
 
-    def test_gh16952(self):
-        # Check that bug reported in gh-16952 is resolved
+    @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
+    def test_gh16955(self, nan_policy):
+        # Check that bug reported in gh-16955 is resolved
         shape = (4, 3)
         data = np.ones(shape)
         data[0, 0] = np.nan
-        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy="omit")
+        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy=nan_policy)
         assert_array_equal(res.mode, [1, 1, 1, 1])
         assert_array_equal(res.count, [2, 3, 3, 3])
+
+        # Test with input from gh-16595. Support for non-numeric input
+        # was deprecated, so check for the appropriate error.
+        my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
+        test = np.zeros(10, dtype=my_dtype)
+        with pytest.raises(TypeError, match="Argument `a` is not..."):
+            stats.mode(test, nan_policy=nan_policy)
 
     def test_gh9955(self):
         # The behavior of mode with empty slices (whether the input was empty
