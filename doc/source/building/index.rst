@@ -346,6 +346,7 @@ Background information
    :maxdepth: 1
 
    understanding_meson
+   introspecting_a_build
    distutils_equivalents
 
 

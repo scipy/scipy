@@ -93,8 +93,6 @@ Compiled code
     conda_guide
     ubuntu_guide
     development_workflow
-    building
-    meson
     pep8
     ../gitwash/gitwash
     ../../reference/index
