@@ -378,7 +378,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     x : ndarray, shape (npoints, )
         1-D array of monotonically increasing real values.
     y : ndarray, shape (..., npoints, ...)
-        N-D array of real values. The length of ``y`` along the *first* axis
+        N-D array of real values. The length of ``y`` along the interpolation axis
         must be equal to the length of ``x``. Use the ``axis`` parameter to
         select the interpolation axis.
     axis : int, optional
