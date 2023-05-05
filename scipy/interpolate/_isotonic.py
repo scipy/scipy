@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 __all__ = ["IsotonicInterpolator"]
 
 
-# TODO: Should this inherit from _Interpolator1D?
 class IsotonicInterpolator():
     """Nonparametric isotonic interpolation via PAVA.
 
@@ -21,7 +20,7 @@ class IsotonicInterpolator():
 
     This interpolator first sorts the values of ``y`` according to the order
     given by ``x``. It then fits the isotonic regression, see
-    ``scipy.optimize.isotonic_regression`` for details. Afterwards it
+    :func:`scipy.optimize.isotonic_regression` for details. Afterwards it
     constructs a linear interpolation of the solution of the isotonic
     regression.
 
@@ -34,6 +33,8 @@ class IsotonicInterpolator():
     weights : (N,) array_like or None
         Case weights.
     increasing : bool
+        If true, do isotonic regression, i.e. monotonic increasing. If false, do
+        antitonic regresission, i.e. monotonic decreasing.
     check_finite : bool, optional
         Whether to check that the input arrays contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
