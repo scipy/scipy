@@ -52,6 +52,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
+            <0 : parameter breakdown
 
     Examples
     --------
@@ -97,10 +98,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     matvec, rmatvec = A.matvec, A.rmatvec
     psolve, rpsolve = M.matvec, M.rmatvec
 
-    if A.dtype.char in 'fF':
-        rhotol = np.finfo(np.float32).eps ** 2
-    else:
-        rhotol = np.spacing(1.) ** 2
+    rhotol = np.finfo(x.dtype.char).eps**2
 
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
@@ -118,14 +116,11 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
         z = psolve(r)
         ztilde = rpsolve(rtilde)
-        rho_cur = dotprod(z, rtilde)
+        # order matters in this dot product
+        rho_cur = dotprod(rtilde, z)
 
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            # It brokedown but maybe converged?
-            if np.linalg.norm(r) < atol:
-                return postprocess(x), 0
-            else:
-                return postprocess, -10
+            return postprocess, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -134,10 +129,8 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
             ptilde *= beta.conj()
             ptilde += ztilde
         else:  # First spin
-            p = np.empty_like(r)
-            ptilde = np.empty_like(r)
-            p[:] = z[:]
-            ptilde[:] = ztilde[:]
+            p = z.copy()
+            ptilde = ztilde.copy()
 
         q = matvec(p)
         qtilde = rmatvec(ptilde)
@@ -255,10 +248,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     # These values make no sense but coming from original Fortran code
     # sqrt might have been meant instead.
-    if A.dtype.char in 'fF':
-        rhotol = np.finfo(np.float32).eps ** 2
-    else:
-        rhotol = np.spacing(1.) ** 2
+    rhotol = np.finfo(x.dtype.char).eps**2
     omegatol = rhotol
 
     # Is there any tolerance set? since b can be all 0.
@@ -277,7 +267,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
         rho = dotprod(rtilde, r)
         if np.abs(rho) < rhotol:  # rho breakdown
-            return postprocess, -10
+            return postprocess(x), -10
 
         if iteration > 0:
             if np.abs(omega) < omegatol:  # omega breakdown
@@ -540,10 +530,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     matvec = A.matvec
     psolve = M.matvec
 
-    if A.dtype.char in 'fF':
-        rhotol = np.finfo(np.float32).eps ** 2
-    else:
-        rhotol = np.spacing(1.) ** 2
+    rhotol = np.finfo(x.dtype.char).eps**2
 
     r = b - matvec(x) if x0 is not None else b.copy()
 
@@ -630,18 +617,6 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
-
-    Returns
-    -------
-    x : ndarray
-        The converged solution.
-    info : int
-        Provides convergence information:
-          * 0  : successful exit
-          * >0 : convergence to tolerance not achieved, number of iterations
-
-    Other parameters
-    ----------------
     x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
     atol, rtol : float
@@ -669,14 +644,14 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         User-supplied function to call after each iteration.  It is called
         as `callback(args)`, where `args` are selected by `callback_type`.
     callback_type : {'x', 'pr_norm', 'legacy'}, optional
-        Callback function argument requested:
+        This keyword has no effect if `callback` is not set. Callback function
+        argument requested:
           - ``x``: current iterate (ndarray), called on every restart
           - ``pr_norm``: relative (preconditioned) residual norm (float),
             called on every inner iteration
           - ``legacy`` (default): same as ``pr_norm``, but also changes the
             meaning of 'maxiter' to count inner iterations instead of restart
             cycles.
-            This keyword has no effect if `callback` is not set.
     restrt : int, optional, deprecated
 
         .. deprecated:: 0.11.0
@@ -687,6 +662,15 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         .. deprecated 1.11.0
            `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
            will be removed in SciPy 1.13.0
+
+    Returns
+    -------
+    x : ndarray
+        The converged solution.
+    info : int
+        Provides convergence information:
+          * 0  : successful exit
+          * >0 : convergence to tolerance not achieved, number of iterations
 
     See Also
     --------
@@ -1040,7 +1024,7 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     else:
         dotprod = np.dot
 
-    rhotol = np.finfo(A.dtype.char).eps
+    rhotol = np.finfo(x.dtype.char).eps
     betatol = rhotol
     gammatol = rhotol
     deltatol = rhotol
