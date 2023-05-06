@@ -58,7 +58,7 @@ class UNURANError(RuntimeError):
     pass
 
 
-ctypedef double (*URNG_FUNCT)(void *) nogil
+ctypedef double (*URNG_FUNCT)(void *) noexcept nogil
 
 cdef object get_numpy_rng(object seed = None):
     """
@@ -229,7 +229,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
                 def logpdf(self, x):
                     # some distributions require array inputs.
@@ -238,7 +238,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                         return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
                     return -np.inf
                 def cdf(self, x):
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -255,10 +255,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0

@@ -72,7 +72,7 @@ here (for now). Please see
 `Meson's documentation on cross compilation <https://mesonbuild.com/Cross-compilation.html>`__
 for context.
 
-One common hiccup is that ``numpy``, ``pybind11`` and ``pythran`` require
+One common hiccup is that ``numpy`` and ``pythran`` require
 running Python code in order to obtain their include directories. This tends to
 not work well, either accidentally picking up the packages from the build
 (native) Python rather than the host (cross) Python or requiring ``crossenv``
@@ -86,7 +86,6 @@ relevant directories in your *cross file*:
 
     [properties]
     numpy-include-dir = sitepkg + 'numpy/core/include'
-    pybind11-include-dir = sitepkg + 'pybind11/include'
     pythran-include-dir = sitepkg + 'pythran'
 
 

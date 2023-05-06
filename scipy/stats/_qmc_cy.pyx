@@ -2,6 +2,7 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 # cython: cdivision=True
+# cython: cpow=True
 
 # distutils: language = c++
 
@@ -290,7 +291,7 @@ cdef double c_update_discrepancy(double[::1] x_new_view,
 
 
 ctypedef double (*func_type)(double[:, ::1], Py_ssize_t,
-                             Py_ssize_t) nogil
+                             Py_ssize_t) noexcept nogil
 
 
 cdef double threaded_loops(func_type loop_func,

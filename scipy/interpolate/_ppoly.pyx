@@ -1,3 +1,4 @@
+# cython: cpow=True
 """
 Routines for evaluating and manipulating piecewise polynomials in
 local power basis.
