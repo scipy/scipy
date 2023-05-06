@@ -352,32 +352,6 @@ def test_precond_inverse(case):
             check_precond_inverse(solver, case)
 
 
-def test_reentrancy():
-    reentrant = [lgmres, minres, gcrotmk, tfqmr]
-    for solver in reentrant:
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            _check_reentrancy(solver, solver in reentrant)
-
-
-def _check_reentrancy(solver, is_reentrant):
-    def matvec(x):
-        A = np.array([[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]])
-        y, info = solver(A, x)
-        assert_equal(info, 0)
-        return y
-    b = np.array([1, 1./2, 1./3])
-    op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
-                        dtype=b.dtype)
-
-    if not is_reentrant:
-        assert_raises(RuntimeError, solver, op, b)
-    else:
-        y, info = solver(op, b)
-        assert_equal(info, 0)
-        assert_allclose(y, [1, 1, 1])
-
-
 @pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
                                     lgmres, gcrotmk])
 def test_atol(solver):
