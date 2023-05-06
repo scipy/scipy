@@ -619,6 +619,15 @@ def correlation(u, v, w=None, centered=True):
     -------
     correlation : double
         The correlation distance between 1-D array `u` and `v`.
+        
+    Examples
+    --------
+    >>> from scipy.spatial.distance import correlation
+    >>> correlation([1, 2, 3], [4, 5, 7])
+    0.08703882797784893
+    
+    >>> correlation([1, 2, 3], [4, 5, 6])
+    0.0
 
     """
     u = _validate_vector(u)
