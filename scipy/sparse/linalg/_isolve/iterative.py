@@ -1,17 +1,13 @@
-"""Iterative methods for solving linear systems"""
-
-__all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
-
 import warnings
 from textwrap import dedent
 import numpy as np
 
-from . import _iterative
-
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
-from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
+from scipy.linalg import get_blas_funcs, get_lapack_funcs
+
+__all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
 
@@ -73,47 +69,6 @@ def _stoptest(residual, atol):
         return resid, 1
     else:
         return resid, 0
-
-
-def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
-    """
-    Parse arguments for absolute tolerance in termination condition.
-
-    Parameters
-    ----------
-    tol, atol : object
-        The arguments passed into the solver routine by user.
-    bnrm2 : float
-        2-norm of the rhs vector.
-    get_residual : callable
-        Callable ``get_residual()`` that returns the initial value of
-        the residual.
-    routine_name : str
-        Name of the routine.
-    """
-
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.{name} called without specifying `atol`. "
-                      "The default value will be changed in a future release. "
-                      "For compatibility, specify a value for `atol` explicitly, e.g., "
-                      "``{name}(..., atol=0)``, or to retain the old behavior "
-                      "``{name}(..., atol='legacy')``".format(name=routine_name),
-                      category=DeprecationWarning, stacklevel=4)
-        atol = 'legacy'
-
-    tol = float(tol)
-
-    if atol == 'legacy':
-        # emulate old legacy behavior
-        resid = get_residual()
-        if resid <= tol:
-            return 'exit'
-        if bnrm2 == 0:
-            return tol
-        else:
-            return tol * float(bnrm2)
-    else:
-        return max(float(atol), tol * float(bnrm2))
 
 
 def set_docstring(header, Ainfo, footer='', atol_default='0'):
@@ -585,8 +540,9 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
 
 
 @non_reentrant()
-def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None, callback_type=None):
+def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
+          callback=None, restrt=None, atol=None, rtol=1e-5,
+          callback_type=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -608,29 +564,23 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         Provides convergence information:
           * 0  : successful exit
           * >0 : convergence to tolerance not achieved, number of iterations
-          * <0 : illegal input or breakdown
 
     Other parameters
     ----------------
     x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is ``'legacy'``, which emulates
-        a different legacy behavior.
-
-        .. warning::
-
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+    atol, rtol : float
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
+        The default is ``atol=0.`` and ``rtol=1e-5``.
     restart : int, optional
         Number of iterations between restarts. Larger values increase
         iteration cost, but may be necessary for convergence.
-        Default is 20.
+        If omitted, ``min(20, n)`` is used.
     maxiter : int, optional
         Maximum number of iterations (restart cycles).  Iteration will stop
         after maxiter steps even if the specified tolerance has not been
-        achieved.
+        achieved. See `callback_type`.
     M : {sparse matrix, ndarray, LinearOperator}
         Inverse of the preconditioner of A.  M should approximate the
         inverse of A and be easy to solve for (see Notes).  Effective
@@ -638,7 +588,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         which implies that fewer iterations are needed to reach a given
         error tolerance.  By default, no preconditioner is used.
         In this implementation, left preconditioning is used,
-        and the preconditioned residual is minimized.
+        and the preconditioned residual is minimized. However, the final
+        convergence is tested with respect to the ``b - A @ x`` residual.
     callback : function
         User-supplied function to call after each iteration.  It is called
         as `callback(args)`, where `args` are selected by `callback_type`.
@@ -650,11 +601,17 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
           - ``legacy`` (default): same as ``pr_norm``, but also changes the
             meaning of 'maxiter' to count inner iterations instead of restart
             cycles.
+            This keyword has no effect if `callback` is not set.
     restrt : int, optional, deprecated
 
         .. deprecated:: 0.11.0
-           `gmres` keyword argument `restrt` is deprecated infavour of
+           `gmres` keyword argument `restrt` is deprecated in favor of
            `restart` and will be removed in SciPy 1.12.0.
+    tol : float, optional, deprecated
+
+        .. deprecated 1.11.0
+           `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
+           will be removed in SciPy 1.13.0
 
     See Also
     --------
@@ -686,26 +643,47 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     True
     """
 
-    # Change 'restrt' keyword to 'restart'
-    if restrt is None:
-        restrt = restart
-    elif restart is not None:
-        raise ValueError("Cannot specify both restart and restrt keywords. "
-                         "Preferably use 'restart' only.")
-    else:
-        msg = ("'gmres' keyword argument 'restrt' is deprecated infavour of "
-               "'restart' and will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    # Handle the deprecation frenzy
+    if restrt and restart:
+        raise ValueError("Cannot specify both restart and restrt"
+                         " keywords. Also 'rstrt' is deprecated."
+                         " and will be removed in SciPy 1.12.0. Use "
+                         "'restart' instad.")
+    if restrt is not None:
+        msg = ("'gmres' keyword argument 'restrt' is deprecated "
+               "in favor of 'restart' and will be removed in SciPy"
+               " 1.12.0. Until then, if set, 'rstrt' will override 'restart'."
+               )
+        warnings.warn(msg, DeprecationWarning, stacklevel=3)
+        restart = restrt
+
+    if tol is not None:
+        msg = ("'gmres' keyword argument 'tol' is deprecated "
+               "in favor of 'rtol' and will be removed in SciPy "
+               " and will be removed in SciPy v.1.13.0.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if atol == 'legacy':
+        msg = ("Use of strings for 'atol' keyword is deprecated "
+               "and will be removed in SciPy 1.13. To keep legacy "
+               "behavior set 'atol=0., rtol=1e-5'. See "
+               " ``scipy.sparse.linalg.gmres`` documentation for "
+               "more details."
+               )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
     if callback is not None and callback_type is None:
         # Warn about 'callback_type' semantic changes.
         # Probably should be removed only in far future, Scipy 2.0 or so.
-        warnings.warn("scipy.sparse.linalg.gmres called without specifying `callback_type`. "
-                      "The default value will be changed in a future release. "
-                      "For compatibility, specify a value for `callback_type` explicitly, e.g., "
-                      "``{name}(..., callback_type='pr_norm')``, or to retain the old behavior "
-                      "``{name}(..., callback_type='legacy')``",
-                      category=DeprecationWarning, stacklevel=3)
+        msg = ("scipy.sparse.linalg.gmres called without specifying "
+               "`callback_type`. The default value will be changed in"
+               " a future release. For compatibility, specify a value "
+               "for `callback_type` explicitly, e.g., "
+               "``gmres(..., callback_type='pr_norm')``, or to retain the "
+               "old behavior ``gmres(..., callback_type='legacy')``"
+               )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
     if callback_type is None:
         callback_type = 'legacy'
@@ -714,118 +692,160 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
         raise ValueError(f"Unknown callback_type: {callback_type!r}")
 
     if callback is None:
-        callback_type = 'none'
+        callback_type = None
 
-    A, M, x, b,postprocess = make_system(A, M, x0, b)
+    A, M, x, b, postprocess = make_system(A, M, x0, b)
+
+    if np.iscomplexobj(x):
+        dotprod = np.vdot
+    else:
+        dotprod = np.dot
+
+    eps = np.finfo(x.dtype.char).eps
 
     n = len(b)
+
     if maxiter is None:
         maxiter = n*10
 
-    if restrt is None:
-        restrt = 20
-    restrt = min(restrt, n)
+    if restart is None:
+        restart = 20
+    restart = min(restart, n)
 
     matvec = A.matvec
     psolve = M.matvec
-    ltr = _type_conv[x.dtype.char]
-    revcom = getattr(_iterative, ltr + 'gmresrevcom')
 
     bnrm2 = np.linalg.norm(b)
-    Mb_nrm2 = np.linalg.norm(psolve(b))
-    def get_residual():
-        return np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, bnrm2, get_residual, 'gmres')
-    if atol == 'exit':
-        return postprocess(x), 0
-
     if bnrm2 == 0:
         return postprocess(b), 0
 
-    # Tolerance passed to GMRESREVCOM applies to the inner iteration
-    # and deals with the left-preconditioned residual.
+    atol = max(float(atol), float(rtol)*bnrm2)
+
+    lartg = get_lapack_funcs('lartg', dtype=x.dtype)
+    trsv = get_blas_funcs('trsv', dtype=x.dtype)
+
+    # ====================================================
+    # =========== Tolerance control from gh-8400 =========
+    # ====================================================
+    Mb_nrm2 = np.linalg.norm(psolve(b))
     ptol_max_factor = 1.0
     ptol = Mb_nrm2 * min(ptol_max_factor, atol / bnrm2)
-    resid = np.nan
     presid = np.nan
-    ndx1 = 1
-    ndx2 = -1
-    # Use _aligned_zeros to work around a f2py bug in Numpy 1.9.1
-    work = _aligned_zeros((6+restrt)*n,dtype=x.dtype)
-    work2 = _aligned_zeros((restrt+1)*(2*restrt+2),dtype=x.dtype)
-    ijob = 1
-    info = 0
-    ftflag = True
-    iter_ = maxiter
-    old_ijob = ijob
-    first_pass = True
-    resid_ready = False
-    iter_num = 1
-    while True:
-        olditer = iter_
-        x, iter_, presid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
-           revcom(b, x, restrt, work, work2, iter_, presid, info, ndx1, ndx2, ijob, ptol)
-        if callback_type == 'x' and iter_ != olditer:
-            callback(x)
-        slice1 = slice(ndx1-1, ndx1-1+n)
-        slice2 = slice(ndx2-1, ndx2-1+n)
-        if (ijob == -1):  # gmres success, update last residual
-            if callback_type in ('pr_norm', 'legacy'):
-                if resid_ready:
-                    callback(presid / bnrm2)
-            elif callback_type == 'x':
-                callback(x)
-            break
-        elif (ijob == 1):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(x)
-        elif (ijob == 2):
-            work[slice1] = psolve(work[slice2])
-            if not first_pass and old_ijob == 3:
-                resid_ready = True
+    # ====================================================
 
-            first_pass = False
-        elif (ijob == 3):
-            work[slice2] *= sclr2
-            work[slice2] += sclr1*matvec(work[slice1])
-            if resid_ready:
-                if callback_type in ('pr_norm', 'legacy'):
-                    callback(presid / bnrm2)
-                resid_ready = False
-                iter_num = iter_num+1
+    # allocate internal variables
+    v = np.empty([restart+1, n], dtype=x.dtype)
+    h = np.zeros([restart, restart+1], dtype=x.dtype)
+    givens = np.zeros([restart, 2], dtype=x.dtype)
+    r = b - matvec(x) if x0 is None else b.copy()
 
-        elif (ijob == 4):
-            if ftflag:
-                info = -1
-                ftflag = False
-            resid, info = _stoptest(work[slice1], atol)
+    # legacy iteration count
+    inner_iters = 0
 
-            # Inner loop tolerance control
-            if info or presid > ptol:
-                ptol_max_factor = min(1.0, 1.5 * ptol_max_factor)
-            else:
-                # Inner loop tolerance OK, but outer loop not.
+    for iteration in range(maxiter):
+        rnorm = np.linalg.norm(r)
+        if rnorm < atol:  # Are we done?
+            return postprocess(x), 0
+
+        # Tightening of the inner loop tol, see gh-8400 for the reasoning.
+
+        # The case "true residual passes tol-test but preconditioned
+        # residual does not" is not considered. Tolerance problem is too
+        # sophisticated for manipulating two crude knobs hence will at some
+        # point require a more structured handling.
+        if iteration > 0:
+            if presid <= ptol:
+                # Inner loop passed but we are still here
+                # hence tighten the inner tolerance
                 ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
+                ptol = presid * min(ptol_max_factor, atol / rnorm)
 
-            if resid != 0:
-                ptol = presid * min(ptol_max_factor, atol / resid)
+        v[0, :] = psolve(r)
+        v[0, :] *= (1 / rnorm)
+        # RHS of the Hessenberg problem
+        S = np.zeros(restart+1, dtype=x.dtype)
+        S[0] = rnorm
+
+        # Arnoldi process
+        breakdown = False
+        for col in range(restart):
+            av = matvec(v[col, :])
+            w = psolve(av)
+
+            # Modified Gram-Schmidt
+            h0 = np.linalg.norm(w)
+            for k in range(col+1):
+                tmp = dotprod(v[k, :], w)
+                h[col, k] = tmp
+                w -= tmp*v[k, :]
+
+            h1 = np.linalg.norm(w)
+            h[col, col + 1] = h1
+            v[col + 1, :] = w[:]
+
+            # Exact solution indicator
+            if h1 <= eps*h0:
+                h[col, col + 1] = 0
+                breakdown = True
             else:
-                ptol = presid * ptol_max_factor
+                v[col + 1, :] *= (1 / h1)
 
-        old_ijob = ijob
-        ijob = 2
+            # apply past Givens rotations to current h column
+            for k in range(col):
+                c, s = givens[k, 0], givens[k, 1]
+                n0, n1 = h[col, [k, k+1]]
+                h[col, [k, k + 1]] = [c*n0 + s*n1, -s.conj()*n0 + c*n1]
 
-        if callback_type == 'legacy':
-            # Legacy behavior
-            if iter_num > maxiter:
-                info = maxiter
+            # get and apply current rotation to h and S
+            c, s, mag = lartg(*h[col, [col, col+1]])
+            givens[col, :] = [c, s]
+            h[col, [col, col+1]] = mag, 0
+
+            # S[col+1] component is always 0
+            tmp = -np.conjugate(s)*S[col]
+            S[[col, col + 1]] = [c*S[col], tmp]
+            presid = np.abs(tmp)
+
+            # Legacy callback behavior per outer
+            if callback_type in ('pr_norm', 'legacy'):
+                callback(presid / bnrm2)
+
+            inner_iters += 1
+            if callback_type == 'legacy':
+                # Legacy behavior
+                if inner_iters >= maxiter:
+                    break
+
+            if presid <= ptol or breakdown:
                 break
 
-    if info >= 0 and not (resid <= atol):
-        # info isn't set appropriately otherwise
-        info = maxiter
+        # Outer loop continues
 
-    return postprocess(x), info
+        # Solve (col, col) upper triangular system
+        # allow trsv to pseudo-solve singular cases
+        if breakdown:
+            S[col] = 0
+
+        y = trsv(h[:col+1, :col+1].T, S[:col+1])
+        g = y @ v[:col+1, :]
+        x += g
+        r = b - matvec(x)
+
+        if callback is not None:
+            if callback_type in ('pr_norm', 'legacy'):
+                callback(presid / bnrm2)
+
+                # Exit if ran out of inner iterations
+                if callback_type == 'legacy':
+                    if inner_iters >= maxiter:
+                        # Return incomplete progress
+                        return postprocess(x), maxiter
+            else:
+                callback(x)
+
+    else:  # for loop exhausted
+        # Return incomplete progress
+        return postprocess(x), maxiter
 
 
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
