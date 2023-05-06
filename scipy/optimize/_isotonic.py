@@ -82,8 +82,8 @@ def isotonic_regression(
 
     Examples
     --------
-    This example demonstrates that ``isotonic_regression`` really solves a constrained
-    optimization problem.
+    This example demonstrates that ``isotonic_regression`` really solves a
+    constrained optimization problem.
     >>> from scipy.optimize import isotonic_regression, minimize
     >>> y = [1.5, 1.0, 4.0, 6.0, 5.7, 5.0, 7.8, 9.0, 7.5, 9.5, 9.0]
     >>> def objective(yhat, y):
@@ -94,12 +94,18 @@ def isotonic_regression(
     >>> result = minimize(objective, x0=y, args=(y,), constraints=
             [{'type': 'ineq', 'fun': lambda x: constraint(x, y)}])
     >>> result.x
-    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25, 9.25,
-           9.25])
+    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25,
+           9.25, 9.25])
     >>> yhat, _, _ = isotonic_regression(y)
     >>> yhat
-    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25, 9.25,
-           9.25])
+    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25,
+           9.25, 9.25])
+    The big advantage of ``isotonic_regression`` compared to calling
+    ``minimize`` is that it is more user friendly, i.e. one does not need to
+    define objective and constraint functions, and that it is orders of
+    magnitudes faster. On commodity hardware (in 2023), for normal distributed
+    input y of length 1000, the minimizer takes about 4 seconds, while
+    ``isotonic_regression`` takes about 200 microseconds.
     """
     y = np.asarray(y)
     if weights is None:
