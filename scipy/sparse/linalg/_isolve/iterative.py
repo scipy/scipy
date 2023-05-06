@@ -7,8 +7,8 @@ from scipy.linalg import get_blas_funcs, get_lapack_funcs
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
-         callback=None, atol=0.):
+def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+         atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
     Parameters
@@ -25,7 +25,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
-        The default is ``atol=0.`` and ``rtol=1e-5``.
+        The default is ``atol=0.`` and ``rtol=1e-5``. For the case `b` being
+        zero vector
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -67,6 +68,23 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+
+    if tol is not None:
+        msg = ("'scipy.sparse.linalg.bicg' keyword argument 'tol' is "
+               "deprecated in favor of 'rtol' and will be removed in SciPy "
+               " v.1.13.0. Until then, if set, will override 'rtol'.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.bicg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+
+    atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
+
     n = len(b)
     if (np.iscomplexobj(A) or np.iscomplexobj(b)):
         dotprod = np.vdot
@@ -84,25 +102,9 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     else:
         rhotol = np.spacing(1.) ** 2
 
-    # Deprecate the legacy usage
-    if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
-                      "string, possibly with value 'legacy'. This behavior "
-                      "is deprecated and atol parameter only excepts floats."
-                      " In SciPy 1.13, this will result with an error.",
-                      category=DeprecationWarning, stacklevel=3)
-        tol = float(tol)
-
-        if np.linalg.norm(b) == 0:
-            atol = tol
-        else:
-            atol = tol * float(np.linalg.norm(b))
-    else:
-        atol = max(float(atol), tol * float(np.linalg.norm(b)))
-
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
-        atol = 10*n*np.finfo(A.dtype).eps
+        atol = 1e-5
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, p, ptilde = None, None, None
@@ -158,8 +160,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         return postprocess(x), maxiter
 
 
-def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
-             atol=0.):
+def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+             atol=0., rtol=1e-5):
     """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
 
     Parameters
@@ -222,6 +224,22 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    if tol is not None:
+        msg = ("'scipy.sparse.linalg.bicgstab' keyword argument 'tol' is "
+               "deprecated in favor of 'rtol' and will be removed in SciPy "
+               " v.1.13.0. Until then, if set, will override 'rtol'.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.bicgstab called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+
+    atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
+
     n = len(b)
 
     if (np.iscomplexobj(A) or np.iscomplexobj(b)):
@@ -243,25 +261,9 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
         rhotol = np.spacing(1.) ** 2
     omegatol = rhotol
 
-    # Deprecate the legacy usage
-    if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
-                      "string, possibly with value 'legacy'. This behavior "
-                      "is deprecated and atol parameter only excepts floats."
-                      " In SciPy 1.13, this will result with an error.",
-                      category=DeprecationWarning, stacklevel=3)
-        tol = float(tol)
-
-        if np.linalg.norm(b) == 0:
-            atol = tol
-        else:
-            atol = tol * float(np.linalg.norm(b))
-    else:
-        atol = max(float(atol), tol * float(np.linalg.norm(b)))
-
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
-        atol = 10*n*np.finfo(A.dtype).eps
+        atol = 1e-5
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, omega, alpha, p, v = None, None, None, None, None
@@ -318,7 +320,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
+def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
+       rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
     Parameters
@@ -382,6 +385,21 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    if tol is not None:
+        msg = ("'scipy.sparse.linalg.cg' keyword argument 'tol' is "
+               "deprecated in favor of 'rtol' and will be removed in SciPy "
+               " v.1.13.0. Until then, if set, will override 'rtol'.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+
+    atol = max(float(atol), rtol * float(np.linalg.norm(b)))
     n = len(b)
 
     if maxiter is None:
@@ -391,25 +409,9 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
     psolve = M.matvec
     r = b - matvec(x) if x0 is not None else b.copy()
 
-    # Deprecate the legacy usage
-    if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
-                      "string, possibly with value 'legacy'. This behavior "
-                      "is deprecated and atol parameter only excepts floats."
-                      " In SciPy 1.13, this will result with an error.",
-                      category=DeprecationWarning, stacklevel=3)
-        tol = float(tol)
-
-        if np.linalg.norm(b) == 0:
-            atol = tol
-        else:
-            atol = tol * float(np.linalg.norm(b))
-    else:
-        atol = max(float(atol), tol * float(np.linalg.norm(b)))
-
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
-        atol = 10*n*np.finfo(A.dtype).eps
+        atol = 1e-5
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
@@ -446,7 +448,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
         return postprocess(x), maxiter
 
 
-def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
+def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+        atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
     Parameters
@@ -529,25 +532,9 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
 
     r = b - matvec(x) if x0 is not None else b.copy()
 
-    # Deprecate the legacy usage
-    if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
-                      "string, possibly with value 'legacy'. This behavior "
-                      "is deprecated and atol parameter only excepts floats."
-                      " In SciPy 1.13, this will result with an error.",
-                      category=DeprecationWarning, stacklevel=3)
-        tol = float(tol)
-
-        if np.linalg.norm(b) == 0:
-            atol = tol
-        else:
-            atol = tol * float(np.linalg.norm(b))
-    else:
-        atol = max(float(atol), tol * float(np.linalg.norm(b)))
-
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
-        atol = 10*n*np.finfo(A.dtype).eps
+        atol = 1e-5
 
     rtilde = r.copy()
     bnorm = np.linalg.norm(b)
@@ -614,8 +601,8 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=0.):
 
 
 def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
-          callback=None, restrt=None, atol=None, rtol=1e-5,
-          callback_type=None):
+          callback=None, restrt=None, atol=None, callback_type=None,
+          rtol=1e-5):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -733,7 +720,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     if tol is not None:
         msg = ("'gmres' keyword argument 'tol' is deprecated "
                "in favor of 'rtol' and will be removed in SciPy "
-               " and will be removed in SciPy v.1.13.0.")
+               " v.1.13.0. Until then, if set, will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
