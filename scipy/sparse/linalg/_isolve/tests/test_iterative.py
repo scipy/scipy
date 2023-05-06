@@ -9,7 +9,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_, assert_allclose, suppress_warnings)
 import pytest
-from pytest import raises as assert_raises
+
 
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
@@ -42,11 +42,12 @@ class Case:
             self.nonconvergence = nonconvergence
 
     def __repr__(self):
-        return "<%s>" % self.name
+        return f"<{self.name}>"
 
 
 class IterativeParams:
     def __init__(self):
+        rng = np.random.default_rng(1683388777429282)
         # list of tuples (solver, symmetric, positive_definite )
         solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
                    gcrotmk, tfqmr]
@@ -97,23 +98,20 @@ class IterativeParams:
                                skip=posdef_solvers))
 
         # Random real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        data = rng.random([4, 4])
         self.cases.append(Case("rand", data, skip=posdef_solvers+sym_solvers))
         self.cases.append(Case("rand", data.astype('f'),
                                skip=posdef_solvers+sym_solvers))
 
         # Random symmetric real-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4)
+        data = rng.random([4, 4])
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
         self.cases.append(Case("rand-sym", data.astype('f'),
                                skip=posdef_solvers))
 
         # Random pos-def symmetric real
-        np.random.seed(1234)
-        data = np.random.rand(9, 9)
+        data = rng.random([9, 9])
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
         # note: minres fails for single precision
@@ -121,16 +119,15 @@ class IterativeParams:
                                skip=[minres]))
 
         # Random complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
+        data = rng.random([4, 4]) + 1j*rng.random([4, 4])
+        print(data)
         self.cases.append(Case("rand-cmplx", data,
                                skip=posdef_solvers+sym_solvers+real_solvers))
         self.cases.append(Case("rand-cmplx", data.astype('F'),
                                skip=posdef_solvers+sym_solvers+real_solvers))
 
         # Random hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
+        data = rng.random([4, 4]) + 1j*rng.random([4, 4])
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers+real_solvers))
@@ -138,9 +135,8 @@ class IterativeParams:
                                skip=posdef_solvers+real_solvers))
 
         # Random pos-def hermitian complex-valued
-        np.random.seed(1234)
-        data = np.random.rand(9, 9) + 1j*np.random.rand(9, 9)
-        data = np.dot(data.conj(), data.T)
+        data = rng.random([9, 9]) + 1j*rng.random([9, 9])
+        data = data.conj().T @ data
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
         self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
                                skip=real_solvers))
@@ -194,20 +190,24 @@ def check_maxiter(solver, case):
     def callback(x):
         residuals.append(norm(b - case.A*x))
 
-    x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
+    if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        x, info = solver(A, b, x0=x0, rtol=tol, maxiter=1, callback=callback)
+    else:
+        x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
     assert_equal(len(residuals), 1)
     assert_equal(info, 1)
 
 
-def test_maxiter():
-    for case in params.cases:
-        for solver in params.solvers:
-            if solver in case.skip + case.nonconvergence:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_maxiter(solver, case)
+@pytest.mark.parametrize('case', params.cases)
+@pytest.mark.parametrize('solver', params.solvers)
+def test_maxiter(case, solver):
+    if solver in case.skip + case.nonconvergence:
+        pass
+    else:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -227,8 +227,10 @@ def check_convergence(solver, case):
 
     b = case.b
     x0 = 0*b
-
-    x, info = solver(A, b, x0=x0, tol=tol)
+    if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        x, info = solver(A, b, x0=x0, rtol=tol)
+    else:
+        x, info = solver(A, b, x0=x0, tol=tol)
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
     if solver not in case.nonconvergence:
@@ -239,14 +241,15 @@ def check_convergence(solver, case):
         assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
 
-def test_convergence():
-    for solver in params.solvers:
-        for case in params.cases:
-            if solver in case.skip:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_convergence(solver, case)
+@pytest.mark.parametrize('case', params.cases)
+@pytest.mark.parametrize('solver', params.solvers)
+def test_convergence(case, solver):
+    if solver in case.skip:
+        pass
+    else:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -271,7 +274,9 @@ def check_precond_dummy(solver, case):
     precond = LinearOperator(A.shape, identity, rmatvec=identity)
 
     if solver is qmr:
-        x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
+        x, info = solver(A, b, M1=precond, M2=precond, x0=x0, rtol=tol)
+    elif solver in [cg, cgs, bicg, bicgstab, gmres]:
+        x, info = solver(A, b, M=precond, x0=x0, rtol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
     assert_equal(info, 0)
@@ -281,19 +286,23 @@ def check_precond_dummy(solver, case):
     A.psolve = identity
     A.rpsolve = identity
 
-    x, info = solver(A, b, x0=x0, tol=tol)
+    if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        x, info = solver(A, b, x0=x0, rtol=tol)
+    else:
+        x, info = solver(A, b, x0=x0, tol=tol)
     assert_equal(info, 0)
     assert_normclose(A@x, b, tol=tol)
 
 
-def test_precond_dummy():
-    for case in params.cases:
-        for solver in params.solvers:
-            if solver in case.skip + case.nonconvergence:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_precond_dummy(solver, case)
+@pytest.mark.parametrize('case', params.cases)
+@pytest.mark.parametrize('solver', params.solvers)
+def test_precond_dummy(case, solver):
+    if solver in case.skip + case.nonconvergence:
+        pass
+    else:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -331,7 +340,10 @@ def check_precond_inverse(solver, case):
 
     # Solve with preconditioner
     matvec_count = [0]
-    x, info = solver(A, b, M=precond, x0=x0, tol=tol)
+    if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        x, info = solver(A, b, M=precond, x0=x0, rtol=tol)
+    else:
+        x, info = solver(A, b, M=precond, x0=x0, tol=tol)
 
     assert_equal(info, 0)
     assert_normclose(case.A.dot(x), b, tol)
@@ -341,12 +353,11 @@ def check_precond_inverse(solver, case):
 
 
 @pytest.mark.parametrize("case", [params.Poisson1D, params.Poisson2D])
-def test_precond_inverse(case):
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        if solver is qmr:
-            continue
+@pytest.mark.parametrize('solver', params.solvers)
+def test_precond_inverse(case, solver):
+    if (solver in case.skip) or (solver is qmr):
+        pass
+    else:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             check_precond_inverse(solver, case)
@@ -358,16 +369,16 @@ def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
 
-    np.random.seed(1234)
-    A = np.random.rand(10, 10)
+    rng = np.random.default_rng(1683392185821038)
+    A = rng.random([10, 10])
     A = A.dot(A.T) + 10 * np.eye(10)
-    b = 1e3 * np.random.rand(10)
+    b = 1e3 * rng.random(10)
     b_norm = np.linalg.norm(b)
 
     tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
 
     # Check effect of badly scaled preconditioners
-    M0 = np.random.randn(10, 10)
+    M0 = rng.random([10, 10])
     M0 = M0.dot(M0.T)
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 

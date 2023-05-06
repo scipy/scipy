@@ -512,6 +512,21 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    if tol is not None:
+        msg = ("'scipy.sparse.linalg.cg' keyword argument 'tol' is "
+               "deprecated in favor of 'rtol' and will be removed in SciPy "
+               " v.1.13.0. Until then, if set, will override 'rtol'.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+
+    atol = max(float(atol), rtol * float(np.linalg.norm(b)))
     n = len(b)
 
     if (np.iscomplexobj(A) or np.iscomplexobj(b)):
@@ -601,7 +616,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
 
 def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
-          callback=None, restrt=None, atol=None, callback_type=None,
+          callback=None, restrt=None, atol=0., callback_type=None,
           rtol=1e-5):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
@@ -702,7 +717,6 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
-
     # Handle the deprecation frenzy
     if restrt and restart:
         raise ValueError("Cannot specify both restart and restrt"
@@ -893,8 +907,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
 
         if callback is not None:
             if callback_type in ('pr_norm', 'legacy'):
-                callback(presid / bnrm2)
-
+                # Already called back during inner iteration
                 # Exit if ran out of inner iterations
                 if callback_type == 'legacy':
                     if inner_iters >= maxiter:
@@ -908,8 +921,8 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         return postprocess(x), maxiter
 
 
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
-        atol=0.):
+def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
+        atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
@@ -977,6 +990,21 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     """
     A_ = A
     A, M, x, b, postprocess = make_system(A, None, x0, b)
+    if tol is not None:
+        msg = ("'scipy.sparse.linalg.bicg' keyword argument 'tol' is "
+               "deprecated in favor of 'rtol' and will be removed in SciPy "
+               " v.1.13.0. Until then, if set, will override 'rtol'.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        rtol = float(tol)
+
+    if isinstance(atol, str):
+        warnings.warn("scipy.sparse.linalg.bicg called with `atol` set to "
+                      "string, possibly with value 'legacy'. This behavior "
+                      "is deprecated and atol parameter only excepts floats."
+                      " In SciPy 1.13, this will result with an error.",
+                      category=DeprecationWarning, stacklevel=3)
+
+    atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
 
     if M1 is None and M2 is None:
         if hasattr(A_, 'psolve'):
@@ -1018,22 +1046,6 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     deltatol = rhotol
     epsilontol = rhotol
     xitol = rhotol
-
-    # Deprecate the legacy usage
-    if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
-                      "string, possibly with value 'legacy'. This behavior "
-                      "is deprecated and atol parameter only excepts floats."
-                      " In SciPy 1.13, this will result with an error.",
-                      category=DeprecationWarning, stacklevel=3)
-        tol = float(tol)
-
-        if np.linalg.norm(b) == 0:
-            atol = tol
-        else:
-            atol = tol * float(np.linalg.norm(b))
-    else:
-        atol = max(float(atol), tol * float(np.linalg.norm(b)))
 
     r = b - A.matvec(x) if x0 is not None else b.copy()
     vtilde = r.copy()
