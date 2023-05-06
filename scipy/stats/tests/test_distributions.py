@@ -3274,6 +3274,16 @@ class TestT:
         assert_equal(res[df_infmask], res_ex_inf)
         assert_equal(res[~df_infmask], res_ex_noinf)
 
+    # reference values were computed via mpmath.
+    # from mpmath import mp
+    # mp.dps = 500
+    # def t_logpdf_mpmath(x, df):
+    #     x = mp.mpf(x)
+    #     df = mp.mpf(df)
+    #     return (mp.loggamma(0.5 * (df + mp.one)) - mp.loggamma(0.5 * df)
+    #             - 0.5 * mp.log(df * mp.pi) - 0.5 * (df + mp.one)
+    #             * mp.log1p(x * x/df))
+
     @pytest.mark.parametrize("x, df, logpdf_ref, pdf_ref",
                              [(1, 1e100,
                                -1.4189385332046727, 0.24197072451914334),
