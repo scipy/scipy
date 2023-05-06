@@ -7185,8 +7185,8 @@ class t_gen(rv_continuous):
 
         def asymptotic_formula(x, df):
             return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
-                    - df/45*(df + 1)**-4. + (6*df + 6)**-1.
-                    - 1/45*(df + 1)**-4. - 1/6 * df**-1. + 1/45*df**-3.
+                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
+                    - 1/6 * df**-1. + 1/45*df**-3.
                     - (df + 1)/2 * np.log1p(x*x/df))
 
         def norm_logpdf(x, df):
@@ -7194,12 +7194,12 @@ class t_gen(rv_continuous):
 
         return _lazyselect(
             ((df == np.inf),
-             (df >= 200) & (np.isfinite(df)),
+             (df >= 200) & np.isfinite(df),
              (df < 200)),
             (norm_logpdf,
              asymptotic_formula,
              regular_formula),
-            (x, df), np.nan
+            (x, df, )
         )
 
     def _cdf(self, x, df):
