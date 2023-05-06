@@ -120,7 +120,7 @@ def isotonic_regression(
         if np.any(weights <= 0):
             raise ValueError("Weights w must be strictly positive.")
 
-    order = np.s_[:] if increasing else np.s_[::-1]
+    order = slice(None) if increasing else slice(None, None, -1)
     x = np.array(y[order], order="C", dtype=np.float64, copy=True)
     wx = np.array(weights[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
