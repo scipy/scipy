@@ -21,7 +21,7 @@ the build system:
 Building with Meson happens in stages:
 
 - A configure stage (``meson setup``) to detect compilers, dependencies and
-  build options, and create the build directory and ``ninja.buildd`` file,
+  build options, and create the build directory and ``build.ninja`` file,
 - A compile stage (``meson compile`` or ``ninja``), where the extension modules
   that are part of a built SciPy package get compiled,
 - An install stage (``meson install``) to install the installable files from

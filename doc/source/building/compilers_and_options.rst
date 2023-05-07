@@ -24,11 +24,12 @@ passed to ``meson setup``. It provides many built-in options:
 - For enabling a debug build and the optimization level, see the next section
   on "build types",
 - Enabling ``-Werror`` in a portable manner is done via ``-Dwerror=true``,
-- Enabling warning levels is done via ``-Dwarning_level=<int>``,
-- There are many other builtin options, from activating Visual Studio (``-D--vsenv``)
-  and building with link time optimization (``-Db_lto``) to changing the default
-  C++ language level (``-Dcpp_std='c++17'``) or linker flags
-  (``-Dcpp_link_args='-Wl,-z,defs'``).
+- Enabling warning levels is done via ``-Dwarning_level=<val>``, with ``<val>``
+  one of ``{0, 1, 2, 3, everything}``,
+- There are many other builtin options, from activating Visual Studio
+  (``-Dvsenv=true``) and building with link time optimization (``-Db_lto``) to
+  changing the default C++ language level (``-Dcpp_std='c++17'``) or linker
+  flags (``-Dcpp_link_args='-Wl,-z,defs'``).
 
 For a comprehensive overview of options, see `Meson's builtin options docs page
 <https://mesonbuild.com/Builtin-options.html>`__.
