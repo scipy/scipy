@@ -24,8 +24,6 @@ cimport numpy
 from libc.float cimport DBL_EPSILON
 from libc.math cimport fabs, sqrt
 
-import numpy as np
-
 import scipy.spatial._qhull as qhull
 cimport scipy.spatial._qhull as qhull
 
@@ -269,7 +267,7 @@ cdef _check_init_shape(points, values, ndim=None):
 
 class LinearNDInterpolator(NDInterpolatorBase):
     """
-    LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
+    LinearNDInterpolator(points, values=None, fill_value=np.nan, rescale=False)
 
     Piecewise linear interpolant in N > 1 dimensions.
 
@@ -283,7 +281,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
         2-D array of data point coordinates, or a precomputed Delaunay triangulation.
-    values : ndarray of float or complex, shape (npoints, ...)
+    values : ndarray of float or complex, shape (npoints, ...), optional
         N-D array of data values at `points`.  The length of `values` along the
         first axis must be equal to the length of `points`. Unlike some
         interpolators, the interpolation axis cannot be changed.
@@ -295,6 +293,8 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
+    xi : tuple of ndarrays, optional
+        The coordinates of the points to be interpolated.
 
     Notes
     -----
@@ -353,9 +353,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values, fill_value=np.nan, rescale=False):
+    def __init__(self, points, values=None, fill_value=np.nan, rescale=False, xi=None):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
-                rescale=rescale)
+                rescale=rescale, xi=None)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -371,7 +371,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, nvalues
-        cdef qhull.DelaunayInfo_t info
         cdef int[:] isimplices
         cdef double[:,:] c
 
