@@ -94,14 +94,23 @@ class NDInterpolatorBase:
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
         
+        self._calculate_triangulation()
+        
         if need_values or values is not None:
             self._set_values(values)
         else:
             self.values = None
         
-        if xi is not None:
+        if xi is None:
+            self._xi = None
+            self._xi_simplices = None
+            self._xi_barycentric_coordinates = None
+        else:
             self._set_xi(*xi)
-            
+        
+    def _calculate_triangulation(self):
+        self.tri = qhull.Delaunay(self.points)
+
     def _set_values(self, values):
         values = np.asarray(values)
         _check_init_shape(self.points, values, ndim=self.ndim)
@@ -114,6 +123,7 @@ class NDInterpolatorBase:
         else:
             self.values = values.reshape(values.shape[0],
                                             np.prod(values.shape[1:]))
+        
 
         # Complex or real?
         self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
@@ -139,14 +149,43 @@ class NDInterpolatorBase:
         else:
             return (xi - self.offset) / self.scale
 
-    def _set_xi(self, *args):
+    def _set_and_reshape_xi(self, *args):
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         self._interpolation_points_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
         xi = np.ascontiguousarray(xi, dtype=np.double)
-
         self._xi = self._scale_x(xi)
+    
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def _find_simplicies(self, const double[:,::1] xi):
+        cdef int[:] isimplices
+        cdef double[:,:] c
+        cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
+        cdef int start
+
+        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
+
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(eps)
+
+        c = np.zeros((xi.shape[0], NPY_MAXDIMS))
+        isimplices = np.zeros(xi.shape[0], np.int32)
+        with nogil:
+            for i in range(xi.shape[0]):
+                # 1) Find the simplex
+
+                isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
+                                            &xi[i,0],
+                                            &start, eps, eps_broad)
+        self._xi_simplices = np.copy(isimplices)
+        self._xi_barycentric_coordinates = np.copy(c)
+
+    def _set_xi(self, *args):
+        self._set_and_reshape_xi(*args)
+        self._find_simplicies(self._xi)
 
     def __call__(self, *args, values=None):
         """
@@ -288,6 +327,13 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
+    If the same interpolation should be performed many times with
+    different values, it is possible to change only the values
+    and avoid duplicate calculations:
+
+    >>> interp = LinearNDInterpolator(list(zip(x, y)), xi=(X,Y))
+    >>> Z1 = interp(values=z)
+
     See also
     --------
     griddata :
@@ -310,8 +356,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def __init__(self, points, values, fill_value=np.nan, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
                 rescale=rescale)
-        if self.tri is None:
-            self.tri = qhull.Delaunay(self.points)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -325,33 +369,28 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
-        cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, start, nvalues
+        cdef int i, j, k, m, ndim, isimplex, nvalues
         cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
+        cdef int[:] isimplices
+        cdef double[:,:] c
+
+        isimplices = self._xi_simplices
+        c = self._xi_barycentric_coordinates
 
         ndim = xi.shape[1]
-        start = 0
         fill_value = self.fill_value
-
-        qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
         out = np.empty((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
-
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
             for i in range(xi.shape[0]):
 
                 # 1) Find the simplex
 
-                isimplex = qhull._find_simplex(&info, c,
-                                               &xi[0,0] + i*ndim,
-                                               &start, eps, eps_broad)
+                isimplex = isimplices[i]
 
                 # 2) Linear barycentric interpolation
 
@@ -367,7 +406,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 for j in range(ndim+1):
                     for k in range(nvalues):
                         m = simplices[isimplex,j]
-                        out[i,k] = out[i,k] + c[j] * values[m,k]
+                        out[i,k] = out[i,k] + c[i, j] * values[m,k]
 
         return out
 
@@ -964,8 +1003,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
             Data values.
         """
         NDInterpolatorBase._set_values(self, values)
-        if self.tri is None:
-            self.tri = qhull.Delaunay(self.points)
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                     tol=self.tol, maxiter=self.maxiter)
@@ -979,48 +1016,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         if xi is None:
             xi = self._xi
         return self._do_evaluate(xi, 1.0j)
-    
-    def _set_xi(self, *args):
-        """
-        Sets the points to be interpolated.
-        
-        Parameters
-        ----------
-        x1, x2, ... xn: array-like of float
-            Points where to interpolate data at.
-            x1, x2, ... xn can be array-like of float with broadcastable shape.
-            or x1 can be array-like of float with shape ``(..., ndim)``
-        """
-        NDInterpolatorBase._set_xi(self, *args)
-        self._find_simplicies(self._xi)
-        #self._points_simplices = None
-        #self._points_barycentric_coordinates = None
-
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def _find_simplicies(self, const double[:,::1] xi):
-        cdef int[:] isimplices
-        cdef double[:,:] c
-        cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
-        cdef int start
-
-        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
-
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(eps)
-
-        c = np.zeros((xi.shape[0], NPY_MAXDIMS))
-        isimplices = np.zeros(xi.shape[0], np.int32)
-        with nogil:
-            for i in range(xi.shape[0]):
-                # 1) Find the simplex
-
-                isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
-                                            &xi[i,0],
-                                            &start, eps, eps_broad)
-        self._points_simplices = np.copy(isimplices)
-        self._points_barycentric_coordinates = np.copy(c)
         
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -1036,7 +1031,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef double_or_complex fill_value
         cdef int i, j, k, ndim, isimplex, nvalues
         cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
         cdef int[:] isimplices
 
         ndim = xi.shape[1]
@@ -1049,8 +1043,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         nvalues = out.shape[1]
 
         
-        isimplices = self._points_simplices
-        c = self._points_barycentric_coordinates
+        isimplices = self._xi_simplices
+        c = self._xi_barycentric_coordinates
 
         with nogil:
             for i in range(xi.shape[0]):

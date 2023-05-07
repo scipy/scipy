@@ -98,6 +98,11 @@ class NearestNDInterpolator(NDInterpolatorBase):
         self.tree = cKDTree(self.points, **tree_options)
         self.values = np.asarray(y)
 
+    def _calculate_triangulation(self):
+        # This function overrides _calculate_triangulation in NDInterpolatorBase,
+        # since triangulation is not needed for NearestNDInterpolator.
+        pass
+
     def __call__(self, *args):
         """
         Evaluate interpolator at given points.
@@ -110,6 +115,8 @@ class NearestNDInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
+        # This function doesn't use NDInterpolatorBase._set_xi since it performs
+        # unrequired calculations.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
