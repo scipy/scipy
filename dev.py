@@ -1028,9 +1028,15 @@ TARGETS: Sphinx build targets [default: 'html']
         ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs"
     )
+    no_cache = Option(
+        ['--no-cache'], default=False, is_flag=True,
+        help="Forces a full rebuild of the docs. Note that this may be " + \
+             "needed in order to make docstring changes in C/Cython files " + \
+             "show up."
+    )
 
     @classmethod
-    def task_meta(cls, list_targets, parallel, args, **kwargs):
+    def task_meta(cls, list_targets, parallel, no_cache, args, **kwargs):
         if list_targets:  # list MAKE targets, remove default target
             task_dep = []
             targets = ''
@@ -1044,8 +1050,13 @@ TARGETS: Sphinx build targets [default: 'html']
         dirs = Dirs(build_args)
 
         make_params = [f'PYTHON="{sys.executable}"']
-        if parallel:
-            make_params.append(f'SPHINXOPTS="-j{parallel}"')
+        if parallel or no_cache:
+            sphinxopts = ""
+            if parallel:
+                sphinxopts += f"-j{parallel} "
+            if no_cache:
+                sphinxopts += "-E"
+            make_params.append(f'SPHINXOPTS="{sphinxopts}"')
 
         # Environment variables needed for notebooks
         # See gh-17322
