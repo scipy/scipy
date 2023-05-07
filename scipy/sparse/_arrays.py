@@ -1,98 +1,86 @@
-from ._bsr import bsr_matrix
-from ._coo import coo_matrix
-from ._csc import csc_matrix
-from ._csr import csr_matrix
-from ._dia import dia_matrix
-from ._dok import dok_matrix
-from ._lil import lil_matrix
+from ._sputils import isintlike, isscalarlike
 
 
-class _sparray:
-    """This class provides a base class for all sparse arrays.
+class spmatrix:
+    """This class provides a base class for all sparse matrix classes.
 
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
-    _is_array = True
+    _is_array = False
 
     @property
     def _bsr_container(self):
-        return bsr_array
+        from ._bsr import bsr_matrix
+        return bsr_matrix
 
     @property
     def _coo_container(self):
-        return coo_array
+        from ._coo import coo_matrix
+        return coo_matrix
 
     @property
     def _csc_container(self):
-        return csc_array
+        from ._csc import csc_matrix
+        return csc_matrix
 
     @property
     def _csr_container(self):
-        return csr_array
+        from ._csr import csr_matrix
+        return csr_matrix
 
     @property
     def _dia_container(self):
-        return dia_array
+        from ._dia import dia_matrix
+        return dia_matrix
 
     @property
     def _dok_container(self):
-        return dok_array
+        from ._dok import dok_matrix
+        return dok_matrix
 
     @property
     def _lil_container(self):
-        return lil_array
+        from ._lil import lil_matrix
+        return lil_matrix
 
-    # Restore elementwise multiplication
-    def __mul__(self, *args, **kwargs):
-        return self.multiply(*args, **kwargs)
+    # Restore matrix multiplication
+    def __mul__(self, other):
+        return self._mul_dispatch(other)
 
-    def __rmul__(self, *args, **kwargs):
-        return self.multiply(*args, **kwargs)
+    def __rmul__(self, other):
+        return self._rmul_dispatch(other)
 
-    # Restore elementwise power
-    def __pow__(self, *args, **kwargs):
-        return self.power(*args, **kwargs)
+    # Restore matrix power
+    def __pow__(self, other):
+        M, N = self.shape
+        if M != N:
+            raise TypeError('sparse matrix is not square')
+
+        if isintlike(other):
+            other = int(other)
+            if other < 0:
+                raise ValueError('exponent must be >= 0')
+
+            if other == 0:
+                from ._construct import eye
+                return eye(M, dtype=self.dtype)
+
+            if other == 1:
+                return self.copy()
+
+            tmp = self.__pow__(other // 2)
+            if other % 2:
+                return self @ tmp @ tmp
+            else:
+                return tmp @ tmp
+
+        if isscalarlike(other):
+            raise ValueError('exponent must be an integer')
+        return NotImplemented
 
 
-def _matrix_doc_to_array(docstr):
+def _array_doc_to_matrix(docstr):
     # For opimized builds with stripped docstrings
     if docstr is None:
         return None
-    return docstr.replace('matrix', 'array').replace('matrices', 'arrays')
-
-
-class bsr_array(_sparray, bsr_matrix):
-    pass
-
-
-class coo_array(_sparray, coo_matrix):
-    pass
-
-
-class csc_array(_sparray, csc_matrix):
-    pass
-
-
-class csr_array(_sparray, csr_matrix):
-    pass
-
-
-class dia_array(_sparray, dia_matrix):
-    pass
-
-
-class dok_array(_sparray, dok_matrix):
-    pass
-
-
-class lil_array(_sparray, lil_matrix):
-    pass
-
-
-bsr_array.__doc__ = _matrix_doc_to_array(bsr_matrix.__doc__)
-coo_array.__doc__ = _matrix_doc_to_array(coo_matrix.__doc__)
-csc_array.__doc__ = _matrix_doc_to_array(csc_matrix.__doc__)
-csr_array.__doc__ = _matrix_doc_to_array(csr_matrix.__doc__)
-dia_array.__doc__ = _matrix_doc_to_array(dia_matrix.__doc__)
-dok_array.__doc__ = _matrix_doc_to_array(dok_matrix.__doc__)
-lil_array.__doc__ = _matrix_doc_to_array(lil_matrix.__doc__)
+    return docstr.replace('array', 'matrix').replace('arrays', 'matrices')

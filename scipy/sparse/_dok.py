@@ -2,12 +2,13 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_matrix', 'isspmatrix_dok']
+__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
 import numpy as np
 
-from ._base import spmatrix, isspmatrix
+from ._arrays import spmatrix, _array_doc_to_matrix
+from ._base import _sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, get_index_dtype, check_shape)
@@ -20,7 +21,7 @@ except ImportError:
                 or hasattr(x, 'next'))
 
 
-class dok_matrix(spmatrix, IndexMixin, dict):
+class dok_array(_sparray, IndexMixin, dict):
     """
     Dictionary Of Keys based sparse matrix.
 
@@ -28,13 +29,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     matrices incrementally.
 
     This can be instantiated in several ways:
-        dok_matrix(D)
+        dok_array(D)
             with a dense matrix, D
 
-        dok_matrix(S)
+        dok_array(S)
             with a sparse matrix, S
 
-        dok_matrix((M,N), [dtype])
+        dok_array((M,N), [dtype])
             create the matrix with initial shape (M,N)
             dtype is optional, defaulting to dtype='d'
 
@@ -62,8 +63,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import dok_matrix
-    >>> S = dok_matrix((5, 5), dtype=np.float32)
+    >>> from scipy.sparse import dok_array
+    >>> S = dok_array((5, 5), dtype=np.float32)
     >>> for i in range(5):
     ...     for j in range(5):
     ...         S[i, j] = i + j    # Update element
@@ -73,7 +74,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
-        spmatrix.__init__(self)
+        _sparray.__init__(self)
 
         self.dtype = getdtype(dtype, default=float)
         if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
@@ -107,13 +108,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def update(self, val):
         # Prevent direct usage of update
-        raise NotImplementedError("Direct modification to dok_matrix element "
+        raise NotImplementedError("Direct modification to dok_array element "
                                   "is not allowed.")
 
     def _update(self, data):
         """An update method for dict data defined for direct access to
-        `dok_matrix` data. Main purpose is to be used for effcient conversion
-        from other spmatrix classes. Has no checking if `data` is valid."""
+        `dok_array` data. Main purpose is to be used for effcient conversion
+        from other _sparray classes. Has no checking if `data` is valid."""
         return dict.update(self, data)
 
     def set_shape(self, shape):
@@ -122,7 +123,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         dict.clear(self)
         dict.update(self, new_matrix)
 
-    shape = property(fget=spmatrix.get_shape, fset=set_shape)
+    shape = property(fget=_sparray.get_shape, fset=set_shape)
 
     def getnnz(self, axis=None):
         if axis is not None:
@@ -133,8 +134,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def count_nonzero(self):
         return sum(x != 0 for x in self.values())
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    getnnz.__doc__ = _sparray.getnnz.__doc__
+    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def __len__(self):
         return dict.__len__(self)
@@ -370,7 +371,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                           for (left, right), val in self.items()))
         return new
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _sparray.transpose.__doc__
 
     def conjtransp(self):
         """Return the conjugate transpose."""
@@ -385,7 +386,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         dict.update(new, self)
         return new
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _sparray.copy.__doc__
 
     def tocoo(self, copy=False):
         if self.nnz == 0:
@@ -401,19 +402,19 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         A.has_canonical_format = True
         return A
 
-    tocoo.__doc__ = spmatrix.tocoo.__doc__
+    tocoo.__doc__ = _sparray.tocoo.__doc__
 
     def todok(self, copy=False):
         if copy:
             return self.copy()
         return self
 
-    todok.__doc__ = spmatrix.todok.__doc__
+    todok.__doc__ = _sparray.todok.__doc__
 
     def tocsc(self, copy=False):
         return self.tocoo(copy=False).tocsc(copy=copy)
 
-    tocsc.__doc__ = spmatrix.tocsc.__doc__
+    tocsc.__doc__ = _sparray.tocsc.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -426,11 +427,11 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                     del self[i, j]
         self._shape = shape
 
-    resize.__doc__ = spmatrix.resize.__doc__
+    resize.__doc__ = _sparray.resize.__doc__
 
 
 def isspmatrix_dok(x):
-    """Is x of dok_matrix type?
+    """Is x of dok_array type?
 
     Parameters
     ----------
@@ -444,13 +445,18 @@ def isspmatrix_dok(x):
 
     Examples
     --------
-    >>> from scipy.sparse import dok_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(dok_matrix([[5]]))
+    >>> from scipy.sparse import dok_array, isspmatrix_dok
+    >>> isspmatrix_dok(dok_array([[5]]))
     True
 
-    >>> from scipy.sparse import dok_matrix, csr_matrix, isspmatrix_dok
+    >>> from scipy.sparse import dok_array, csr_matrix, isspmatrix_dok
     >>> isspmatrix_dok(csr_matrix([[5]]))
     False
     """
-    from ._arrays import dok_array
     return isinstance(x, dok_matrix) or isinstance(x, dok_array)
+
+
+class dok_matrix(spmatrix, dok_array):
+    pass
+
+dok_matrix.__doc__ = _array_doc_to_matrix(dok_array.__doc__)

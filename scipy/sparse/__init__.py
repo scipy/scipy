@@ -281,10 +281,6 @@ from ._construct import *
 from ._extract import *
 from ._matrix_io import *
 
-from ._arrays import (
-    csr_array, csc_array, lil_array, dok_array, coo_array, dia_array, bsr_array
-)
-
 # For backward compatibility with v0.19.
 from . import csgraph
 

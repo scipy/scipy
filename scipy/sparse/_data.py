@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
+from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -16,9 +16,9 @@ __all__ = []
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(spmatrix):
+class _data_matrix(_sparray):
     def __init__(self):
-        spmatrix.__init__(self)
+        _sparray.__init__(self)
 
     def _get_dtype(self):
         return self.data.dtype
@@ -46,8 +46,8 @@ class _data_matrix(spmatrix):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+            raise NotImplementedError('negating a boolean sparse array is not '
+                                      'supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -78,7 +78,7 @@ class _data_matrix(spmatrix):
         else:
             return self
 
-    astype.__doc__ = spmatrix.astype.__doc__
+    astype.__doc__ = _sparray.astype.__doc__
 
     def conj(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
@@ -88,17 +88,17 @@ class _data_matrix(spmatrix):
         else:
             return self
 
-    conj.__doc__ = spmatrix.conj.__doc__
+    conj.__doc__ = _sparray.conj.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _sparray.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
