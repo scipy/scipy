@@ -6,7 +6,7 @@ namespace py = pybind11;
 
 namespace {
 
-void pava(
+intptr_t pava(
     py::array_t<double, py::array::c_style | py::array::forcecast> xa,
     py::array_t<double, py::array::c_style | py::array::forcecast> wa,
     py::array_t<intptr_t, py::array::c_style | py::array::forcecast> ra
@@ -84,18 +84,32 @@ void pava(
         }
         f = t - 1;  // 40: set new "from" equal to old "to" minus one
     }
+    return b + 1;  // number of blocks
 }
 
 PYBIND11_MODULE(_pava_pybind, m) {
     if (_import_array() != 0) {
         throw py::error_already_set();
     }
-    m.def("pava",
-          &pava,
-          "Pool adjacent violators algorithm (PAVA) for isotonic regression"
-          ""
-          "The routine modifies x and w inplace.",
-          py::arg("x"), py::arg("w"), py::arg("indices"));
+    m.def(
+        "pava",
+        &pava,
+        "Pool adjacent violators algorithm (PAVA) for isotonic regression"
+        ""
+        "The routine modifies x, w and r inplace."
+        ""
+        "Parameters"
+        "----------"
+        "xa : contiguous ndarray of shape (n,) and dtype np.float64"
+        "wa : contiguous ndarray of shape (n,) and dtype np.float64"
+        "ra : contiguous ndarray of shape (n+1,) and dtype np.intp"
+        ""
+        "Returns"
+        "-------"
+        "b : np.intp"
+        "    number of blocks b.",
+        py::arg("x"), py::arg("w"), py::arg("indices")
+    );
 }
 
 }  // namespace (anonymous)

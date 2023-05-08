@@ -125,16 +125,14 @@ def isotonic_regression(
     wx = np.array(weights[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
-    pava(x, wx, r)  # modifies x, wx and r inplace
-    r = r[r >= 0]
-    # Due to the pava implementation, after the last block index, there might
-    # be smaller numbers appended to r, e.g. r = [0, 10, 8, 7] which should be
-    # r = [0, 10].
-    imax = np.argmax(r)
-    if imax < r.shape[0]:
-        r = r[:imax + 1]
-    n = r.shape[0] - 1
-    wx = wx[:n]
+    b = pava(x, wx, r)  # modifies x, wx and r inplace
+    # Now that we know the number of blocks b, we only keep the relevant part
+    # of r and wx.
+    # As information: Due to the pava implementation, after the last block
+    # index, there might be smaller numbers appended to r, e.g.
+    # r = [0, 10, 8, 7] which in the end should be r = [0, 10].
+    r = r[:b + 1]
+    wx = wx[:b]
     if not increasing:
         x = x[::-1]
         wx = wx[::-1]
