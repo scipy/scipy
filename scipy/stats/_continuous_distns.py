@@ -959,6 +959,9 @@ class betaprime_gen(rv_continuous):
         else:
             raise NotImplementedError
 
+    def _sf(self, x, a, b):
+        return stats.f._sf(x=x * b/a, dfn=2*a, dfd=2*b)
+
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
 

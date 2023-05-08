@@ -4213,6 +4213,29 @@ class TestBetaPrime:
         stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
         stats.betaprime(a=1, b=1).stats('mvsk')
 
+    # The expected values for test_sf() were computed with mpmath, e.g.
+    #
+    #   from mpmath import mp
+    #   a, b = mp.mpf(5), mp.mpf(3)
+    #   x = mp.mpf(1e10)
+    #   print(float(1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)))
+    #
+    # prints
+    #
+    #   3.4999999979e-29
+    #
+    @pytest.mark.parametrize(
+        'x, a, b, expected',
+        [
+            (1e10, 5, 3, 3.4999999979e-29),
+            (1e20, 4, 2, 9.999999999994357e-40),
+            (1e30, 2, 1, 1.9999999999999998e-30),
+        ]
+    )
+    def test_sf(self, x, a, b, expected):
+        sf_value = stats.betaprime.sf(x, a, b)
+        assert_allclose(sf_value, expected, rtol=1e-12)
+
 
 class TestGamma:
     def test_pdf(self):
