@@ -75,8 +75,8 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
-release = scipy.__version__
+version = re.sub(r'\.dev.*$', r'.dev', scipy.__version__)
+release = version
 
 if os.environ.get('CIRCLE_JOB', False) and \
         os.environ.get('CIRCLE_BRANCH', '') != 'main':
