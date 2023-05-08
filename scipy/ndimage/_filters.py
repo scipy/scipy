@@ -423,7 +423,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
 
 @_ni_docstrings.docfiller
 def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
-    """Calculate a Sobel filter.
+    """Calculate the axis-specific Sobel transform.
 
     Parameters
     ----------
