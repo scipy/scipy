@@ -61,7 +61,7 @@ class IsotonicInterpolator():
     """
     def __init__(
             self,
-            x: npt.ArrayLike,
+            x: npt.ArrayLike | None,
             y: npt.ArrayLike,
             weights: npt.ArrayLike | None = None,
             *,
