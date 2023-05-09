@@ -960,7 +960,11 @@ class betaprime_gen(rv_continuous):
             raise NotImplementedError
 
     def _sf(self, x, a, b):
-        return stats.f._sf(x=x * b/a, dfn=2*a, dfd=2*b)
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: stats.f._sf(x=x_ * b_/a_, dfn=2*a_, dfd=2*b_),
+            f2=lambda x_, a_, b_: 1.0 - self._cdf(x=x_, a=a_, b=b_)
+        )
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
