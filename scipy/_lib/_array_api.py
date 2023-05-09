@@ -9,6 +9,7 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 import os
 
 import numpy as np
+from numpy.core.numerictypes import typecodes
 # probably want to vendor it (submodule)
 import array_api_compat
 import array_api_compat.numpy
@@ -38,6 +39,17 @@ def compliance_scipy(*arrays):
             raise TypeError("'numpy.matrix' are not supported")
         elif not array_api_compat.is_array_api_obj(array):
             raise TypeError("Only support Array API compatible arrays")
+        elif array.dtype is np.dtype('O'):
+            raise ValueError('object arrays are not supported')
+
+
+def _check_finite(array):
+    """Check for NaNs or Infs."""
+    # same as np.asarray_chkfinite
+    if array.dtype.char in typecodes['AllFloat'] and not np.isfinite(array).all():
+        raise ValueError(
+            "array must not contain infs or NaNs"
+        )
 
 
 def array_namespace(*arrays):
@@ -75,7 +87,9 @@ def array_namespace(*arrays):
     return array_api_compat.array_namespace(*arrays)
 
 
-def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
+def asarray(
+    array, dtype=None, order=None, copy=None, *, xp=None, check_finite=True
+):
     """Drop-in replacement for `np.asarray`.
 
     Memory layout parameter `order` is not exposed in the Array API standard.
@@ -96,9 +110,14 @@ def asarray(array, dtype=None, order=None, copy=None, *, xp=None):
 
         # At this point array is a NumPy ndarray. We convert it to an array
         # container that is consistent with the input's namespace.
-        return xp.asarray(array)
+        array = xp.asarray(array)
     else:
-        return xp.asarray(array, dtype=dtype, copy=copy)
+        array = xp.asarray(array, dtype=dtype, copy=copy)
+
+    if check_finite:
+        _check_finite(array)
+
+    return array
 
 
 def asarray_namespace(*arrays):
