@@ -67,8 +67,8 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._util import _asarray_validated, check_random_state,\
-    rng_integers
+from scipy._lib._array_api import asarray, array_namespace
+from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
 from . import _vq
@@ -129,7 +129,7 @@ def whiten(obs, check_finite=True):
            [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
-    obs = _asarray_validated(obs, check_finite=check_finite)
+    obs = asarray(obs, check_finite=check_finite)
     std_dev = obs.std(axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
@@ -198,14 +198,15 @@ def vq(obs, code_book, check_finite=True):
     (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
-    obs = _asarray_validated(obs, check_finite=check_finite)
-    code_book = _asarray_validated(code_book, check_finite=check_finite)
-    ct = np.common_type(obs, code_book)
+    xp = array_namespace(obs, code_book)
+    obs = asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = asarray(code_book, xp=xp, check_finite=check_finite)
+    ct = xp.common_type(obs, code_book)
 
     c_obs = obs.astype(ct, copy=False)
     c_code_book = code_book.astype(ct, copy=False)
 
-    if np.issubdtype(ct, np.float64) or np.issubdtype(ct, np.float32):
+    if xp.issubdtype(ct, xp.float64) or xp.issubdtype(ct, xp.float32):
         return _vq.vq(c_obs, c_code_book)
     return py_vq(obs, code_book, check_finite=False)
 
@@ -247,23 +248,24 @@ def py_vq(obs, code_book, check_finite=True):
     It is about 20 times slower than the C version.
 
     """
-    obs = _asarray_validated(obs, check_finite=check_finite)
-    code_book = _asarray_validated(code_book, check_finite=check_finite)
+    xp = array_namespace(obs, code_book)
+    obs = asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = asarray(code_book, xp=xp, check_finite=check_finite)
 
     if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
 
     if obs.ndim == 1:
-        obs = obs[:, np.newaxis]
-        code_book = code_book[:, np.newaxis]
+        obs = obs[:, xp.newaxis]
+        code_book = code_book[:, xp.newaxis]
 
     dist = cdist(obs, code_book)
     code = dist.argmin(axis=1)
-    min_dist = dist[np.arange(len(code)), code]
+    min_dist = dist[xp.arange(len(code)), code]
     return code, min_dist
 
 
-def _kmeans(obs, guess, thresh=1e-5):
+def _kmeans(obs, guess, thresh=1e-5, xp=None):
     """ "raw" version of k-means.
 
     Returns
@@ -295,9 +297,9 @@ def _kmeans(obs, guess, thresh=1e-5):
            [ 0.73333333,  1.13333333]]), 0.40563916697728591)
 
     """
-
-    code_book = np.asarray(guess)
-    diff = np.inf
+    xp = np if xp is None else xp
+    code_book = guess
+    diff = xp.inf
     prev_avg_dists = deque([diff], maxlen=2)
     while diff > thresh:
         # compute membership and distances between obs and code_book
@@ -307,7 +309,7 @@ def _kmeans(obs, guess, thresh=1e-5):
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
         code_book = code_book[has_members]
-        diff = np.absolute(prev_avg_dists[0] - prev_avg_dists[1])
+        diff = xp.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
@@ -447,17 +449,18 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     >>> plt.show()
 
     """
-    obs = _asarray_validated(obs, check_finite=check_finite)
+    xp = array_namespace(obs, k_or_guess)
+    obs = asarray(obs, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if not np.isscalar(k_or_guess):
-        guess = _asarray_validated(k_or_guess, check_finite=check_finite)
+    if not xp.isscalar(k_or_guess):
+        guess = asarray(k_or_guess, xp=xp, check_finite=check_finite)
         if guess.size < 1:
             raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
-        return _kmeans(obs, guess, thresh=thresh)
+        return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
     k = int(k_or_guess)
@@ -469,11 +472,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     rng = check_random_state(seed)
 
     # initialize best distance value to a large value
-    best_dist = np.inf
+    best_dist = xp.inf
     for i in range(iter):
         # the initial code book is randomly selected from observations
         guess = _kpoints(obs, k, rng)
-        book, dist = _kmeans(obs, guess, thresh=thresh)
+        book, dist = _kmeans(obs, guess, thresh=thresh, xp=xp)
         if dist < best_dist:
             best_book = book
             best_dist = dist
@@ -504,7 +507,7 @@ def _kpoints(data, k, rng):
     return data[idx]
 
 
-def _krandinit(data, k, rng):
+def _krandinit(data, k, rng, xp):
     """Returns k samples of a random variable whose parameters depend on data.
 
     More precisely, it returns k observations sampled from a Gaussian random
@@ -530,28 +533,28 @@ def _krandinit(data, k, rng):
     mu = data.mean(axis=0)
 
     if data.ndim == 1:
-        cov = np.cov(data)
+        cov = xp.cov(data)
         x = rng.standard_normal(size=k)
-        x *= np.sqrt(cov)
+        x *= xp.sqrt(cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
-        _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
+        _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
         x = rng.standard_normal(size=(k, s.size))
-        sVh = s[:, None] * vh / np.sqrt(data.shape[0] - 1)
+        sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - 1)
         x = x.dot(sVh)
     else:
-        cov = np.atleast_2d(np.cov(data, rowvar=False))
+        cov = np.atleast_2d(xp.cov(data, rowvar=False))
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, mu.size))
-        x = x.dot(np.linalg.cholesky(cov).T)
+        x = x.dot(xp.linalg.cholesky(cov).T)
 
     x += mu
     return x
 
 
-def _kpp(data, k, rng):
+def _kpp(data, k, rng, xp):
     """ Picks k points in the data based on the kmeans++ method.
 
     Parameters
@@ -578,7 +581,7 @@ def _kpp(data, k, rng):
     """
 
     dims = data.shape[1] if len(data.shape) > 1 else 1
-    init = np.ndarray((k, dims))
+    init = xp.empty((k, dims))
 
     for i in range(k):
         if i == 0:
@@ -589,6 +592,7 @@ def _kpp(data, k, rng):
             probs = D2/D2.sum()
             cumprobs = probs.cumsum()
             r = rng.uniform()
+            cumprobs = np.asarray(cumprobs)
             init[i, :] = data[np.searchsorted(cumprobs, r)]
 
     return init
@@ -745,7 +749,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     except KeyError as e:
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
-    data = _asarray_validated(data, check_finite=check_finite)
+    xp = array_namespace(data, k)
+    data = asarray(data, xp=xp, check_finite=check_finite)
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
@@ -757,8 +762,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         raise ValueError("Empty input is not supported.")
 
     # If k is not a single value, it should be compatible with data's shape
-    if minit == 'matrix' or not np.isscalar(k):
-        code_book = np.array(k, copy=True)
+    if minit == 'matrix' or not xp.isscalar(k):
+        code_book = asarray(k, xp=xp, copy=True)
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = len(code_book)
@@ -779,7 +784,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             raise ValueError(f"Unknown init method {minit!r}") from e
         else:
             rng = check_random_state(seed)
-            code_book = init_meth(data, k, rng)
+            code_book = init_meth(data, k, rng, xp)
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
