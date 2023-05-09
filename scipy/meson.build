@@ -105,7 +105,10 @@ print(incdir)
       check: true
     ).stdout().strip()
   endif
-  pythran_dep = declare_dependency(include_directories: incdir_pythran)
+  pythran_dep = declare_dependency(
+    include_directories: incdir_pythran,
+    dependencies: xsimd_dep,
+  )
 else
   pythran_dep = []
 endif
