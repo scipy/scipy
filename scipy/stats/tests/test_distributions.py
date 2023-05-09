@@ -3185,7 +3185,7 @@ class TestF:
         assert_allclose(k, k2)
 
 
-class TestT:
+class TestStudentT:
     def test_rvgeneric_std(self):
         # Regression test for #1191
         assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
@@ -3274,15 +3274,9 @@ class TestT:
         assert_equal(res[df_infmask], res_ex_inf)
         assert_equal(res[~df_infmask], res_ex_noinf)
 
-    # reference values were computed via mpmath.
-    # from mpmath import mp
+    # reference values were computed via the reference distribution
     # mp.dps = 500
-    # def t_logpdf_mpmath(x, df):
-    #     x = mp.mpf(x)
-    #     df = mp.mpf(df)
-    #     return (mp.loggamma(0.5 * (df + mp.one)) - mp.loggamma(0.5 * df)
-    #             - 0.5 * mp.log(df * mp.pi) - 0.5 * (df + mp.one)
-    #             * mp.log1p(x * x/df))
+    # e. g. StudentT(df=1e100).logpdf(1), StudentT(df=1e100).pdf(1)
 
     @pytest.mark.parametrize("x, df, logpdf_ref, pdf_ref",
                              [(1, 1e100,
