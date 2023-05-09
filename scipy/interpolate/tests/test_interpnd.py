@@ -384,32 +384,3 @@ class TestCloughTocher2DInterpolator:
         w2 = ip(p2)
         assert_allclose(w1, v1)
         assert_allclose(w2, v2)
-    
-
-    def test_set_values(self):
-        # Test at single points
-        x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-
-        ip = interpnd.CloughTocher2DInterpolator(x)
-
-        y = np.arange(x.shape[0], dtype=np.double)
-        y = y - 3j*y
-        yi = ip(x, values=y)
-        assert_almost_equal(y, yi)
-
-        
-        y = np.arange(x.shape[0], dtype=np.double)
-        ip = interpnd.CloughTocher2DInterpolator(x, y)
-        y = y - 3j*y
-        yi = ip(x, values=y)
-        assert_almost_equal(y, yi)
-
-        y = np.arange(x.shape[0], dtype=np.double)
-        y1 = y - 3j*y
-        y2 = y - 5j*y
-        ip = interpnd.CloughTocher2DInterpolator(x, y1, xi=(x,))
-        yi = ip()
-        assert_almost_equal(y1, yi)
-        yi = ip(values=y2)
-        assert_almost_equal(y2, yi)

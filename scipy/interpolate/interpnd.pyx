@@ -19,10 +19,11 @@ Simple N-D interpolation
 #
 
 cimport cython
-cimport numpy
 
 from libc.float cimport DBL_EPSILON
 from libc.math cimport fabs, sqrt
+
+import numpy as np
 
 import scipy.spatial._qhull as qhull
 cimport scipy.spatial._qhull as qhull
@@ -54,8 +55,8 @@ class NDInterpolatorBase:
 
     """
 
-    def __init__(self, points, values=None, fill_value=np.nan, ndim=None,
-                 rescale=False, need_contiguous=True, need_values=True, xi=None):
+    def __init__(self, points, values, fill_value=np.nan, ndim=None,
+                 rescale=False, need_contiguous=True, need_values=True):
         """
         Check shape of points and values arrays, and reshape values to
         (npoints, nvalues).  Ensure the `points` and values arrays are
@@ -99,13 +100,10 @@ class NDInterpolatorBase:
         else:
             self.values = None
         
-        if xi is None:
-            self._xi = None
-            self._xi_simplices = None
-            self._xi_barycentric_coordinates = None
-        else:
-            self._set_xi(*xi)
-        
+        self._xi = None
+        self._xi_simplices = None
+        self._xi_barycentric_coordinates = None
+
     def _calculate_triangulation(self):
         self.tri = qhull.Delaunay(self.points)
 
@@ -185,7 +183,7 @@ class NDInterpolatorBase:
         self._set_and_reshape_xi(*args)
         self._find_simplicies(self._xi)
 
-    def __call__(self, *args, values=None):
+    def __call__(self, *args):
         """
         interpolator(xi)
 
@@ -201,12 +199,13 @@ class NDInterpolatorBase:
             ndarray of float or complex, shape (npoints, ...)
             Data values.
         """
-        if values is not None:
-            self._set_values(values)
         if len(args) > 0:
             self._set_xi(*args)
         elif self._xi is None:
             raise ValueError("Interpolation was called without required points")
+        if self.values is None:
+            raise ValueError("Values at interpolation points were not set")
+
 
         if self.is_complex:
             r = self._evaluate_complex(self._xi)
@@ -267,7 +266,7 @@ cdef _check_init_shape(points, values, ndim=None):
 
 class LinearNDInterpolator(NDInterpolatorBase):
     """
-    LinearNDInterpolator(points, values=None, fill_value=np.nan, rescale=False)
+    LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
     Piecewise linear interpolant in N > 1 dimensions.
 
@@ -293,8 +292,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
-    xi : tuple of ndarrays, optional
-        The coordinates of the points to be interpolated.
 
     Notes
     -----
@@ -327,13 +324,6 @@ class LinearNDInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
-    If the same interpolation should be performed many times with
-    different values, it is possible to change only the values
-    and avoid duplicate calculations:
-
-    >>> interp = LinearNDInterpolator(list(zip(x, y)), xi=(X,Y))
-    >>> Z1 = interp(values=z)
-
     See also
     --------
     griddata :
@@ -353,9 +343,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values=None, fill_value=np.nan, rescale=False, xi=None):
+    def __init__(self, points, values, fill_value=np.nan, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
-                rescale=rescale, xi=None)
+                rescale=rescale)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -938,13 +928,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     >>> plt.axis("equal")
     >>> plt.show()
 
-    If the same interpolation should be performed many times with
-    different values, it is possible to change only the values
-    and avoid duplicate calculations:
-
-    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)), xi=(X,Y))
-    >>> Z1 = interp(values=z)
-
     See also
     --------
     griddata :
@@ -981,14 +964,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     """
 
-    def __init__(self, points, values=None, fill_value=np.nan,
-                 tol=1e-6, maxiter=400, rescale=False, xi=None):
+    def __init__(self, points, values, fill_value=np.nan,
+                 tol=1e-6, maxiter=400, rescale=False):
         self.tol = tol
         self.maxiter = maxiter
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
                                     fill_value=fill_value, rescale=rescale,
-                                    need_values=False,
-                                    xi=xi)
+                                    need_values=False)
     
     def _set_values(self, values):
         """
@@ -996,8 +978,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        points : ndarray of floats, shape (npoints, ndims); or Delaunay
-            Data point coordinates, or a precomputed Delaunay triangulation.
         values : ndarray of float or complex, shape (npoints, ...)
             Data values.
         """

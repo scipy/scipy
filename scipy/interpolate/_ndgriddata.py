@@ -92,7 +92,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
     def __init__(self, x, y, rescale=False, tree_options=None):
         NDInterpolatorBase.__init__(self, x, y, rescale=rescale,
                                     need_contiguous=False,
-                                    need_values=False)
+                                    need_values=True)
         if tree_options is None:
             tree_options = dict()
         self.tree = cKDTree(self.points, **tree_options)
