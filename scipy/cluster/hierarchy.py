@@ -167,9 +167,9 @@ def _copy_array_if_base_present(a):
     if a.base is not None:
         return a.copy()
     elif np.issubsctype(a, np.float32):
-        return np.array(a, dtype=np.double)
+        return a.astype('float64')
     else:
-        return np.asarray(a)
+        return a
 
 
 def _copy_arrays_if_base_present(T):
@@ -1555,7 +1555,7 @@ def _convert_to_bool(X):
 
 def _convert_to_double(X):
     if X.dtype != np.double:
-        X = X.astype(np.double)
+        X = X.astype('float64')
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -1679,6 +1679,7 @@ def cophenet(Z, Y=None):
     # The dimensions are used instead.
     Z = _convert_to_double(Z)
 
+    Z = np.asarray(Z)
     _hierarchy.cophenetic_distances(Z, zz, int(n))
     zz = xp.asarray(zz)
     if Y is None:
@@ -1769,6 +1770,7 @@ def inconsistent(Z, d=2):
     n = Zs[0] + 1
     R = np.zeros((n - 1, 4), dtype=np.double)
 
+    Z = xp.asarray(Z)
     _hierarchy.inconsistent(Z, R, int(n), int(d))
     R = xp.asarray(R)
     return R
@@ -1865,6 +1867,7 @@ def from_mlab_linkage(Z):
 
     Zpart[:, 0:2] -= 1.0
     CS = np.zeros((Zs[0],), dtype=np.double)
+    Zpart = np.asarray(Zpart)
     _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
     res = np.hstack([Zpart, CS.reshape(Zs[0], 1)])
     return xp.asarray(res)
@@ -2574,6 +2577,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     # The dimensions are used instead.
     [Z] = _copy_arrays_if_base_present([Z])
 
+    Z = np.asarray(Z)
     if criterion == 'inconsistent':
         if R is None:
             R = inconsistent(Z, depth)
@@ -2583,6 +2587,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
             [R] = _copy_arrays_if_base_present([R])
+        R = np.asarray(R)
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
@@ -2754,6 +2759,7 @@ def leaves_list(Z):
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype='i')
     [Z] = _copy_arrays_if_base_present([Z])
+    Z = np.asarray(Z)
     _hierarchy.prelist(Z, ML, int(n))
     return xp.asarray(ML)
 
@@ -3853,6 +3859,7 @@ def maxdists(Z):
     n = Z.shape[0] + 1
     MD = np.zeros((n - 1,))
     [Z] = _copy_arrays_if_base_present([Z])
+    Z = np.asarray(Z)
     _hierarchy.get_max_dist_for_each_cluster(Z, MD, int(n))
     MD = xp.asarray(MD)
     return MD
@@ -3945,6 +3952,8 @@ def maxinconsts(Z, R):
                          "have a different number of rows.")
     MI = np.zeros((n - 1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, int(n), 3)
     MI = xp.asarray(MI)
     return MI
@@ -4044,6 +4053,8 @@ def maxRstat(Z, R, i):
     n = Z.shape[0] + 1
     MR = np.zeros((n - 1,))
     [Z, R] = _copy_arrays_if_base_present([Z, R])
+    Z = np.asarray(Z)
+    R = np.asarray(R)
     _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, int(n), i)
     MR = xp.asarray(MR)
     return MR
@@ -4166,6 +4177,8 @@ def leaders(Z, T):
     M = np.zeros((kk,), dtype='i')
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
+    Z = np.asarray(Z)
+    T = np.asarray(T)
     s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '
