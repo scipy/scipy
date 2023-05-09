@@ -48,11 +48,9 @@ def configuration(parent_package='', top_path=None):
         src_dir = pathlib.Path(__file__).parent / 'PROPACK' / directory
         src = list(src_dir.glob('*.F'))
         if _is_32bit():
-            # don't ask me why, 32-bit blows up without second.F
             src = [str(p) for p in src if 'risc' not in str(p)]
         else:
-            src = [str(p) for p in src
-                   if 'pentium' not in str(p) and 'second' not in str(p)]
+            src = [str(p) for p in src if 'pentium' not in str(p)]
 
         if not _is_32bit():
             # don't ask me why, 32-bit blows up with this wrapper
