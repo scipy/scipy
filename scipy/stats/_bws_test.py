@@ -32,9 +32,10 @@ def _bws_input_validation(x, y, alternative, method):
 
 def _bws_statistic(x, y, alternative):
     '''Compute the BWS test statistic for two independent samples'''
-    Ri, Hj = np.sort(x, axis=-1), np.sort(y, axis=-1)
-    n, m = Ri.shape[-1], Hj.shape[-1]
-    i, j = np.arange(1, n+1), np.arange(1, m+1)
+    xy = np.argsort(np.argsort(np.concatenate((x, y)), kind='stable'))
+    n, m = len(x), len(y)
+    Ri, Hj = xy[:n]+1, xy[n:]+1
+    i, j = np.arange(1,n+1), np.arange(1,m+1)
 
     Bx_num = (Ri - (m + n)/n * i)
     Bx_num *= Bx_num if alternative == 'two-sided' else np.abs(Bx_num)
@@ -51,7 +52,7 @@ def _bws_statistic(x, y, alternative):
     return B
 
 
-def bws_test(x, y, *, alternative="two-sided", method=None):
+def bws_test(x, y, *, alternative='two-sided', variant=2, n_resamples=9999, random_state=None):
     r'''Perform the Baumgartner-Weiss-Schindler test on two independent samples.
 
     The Baumgartner-Weiss-Schindler (BWS) test is a nonparametric test of 
