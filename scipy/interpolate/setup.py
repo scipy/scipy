@@ -7,6 +7,7 @@ def configuration(parent_package='',top_path=None):
     from scipy._build_utils import (get_f2py_int64_options,
                                     ilp64_pre_build_hook,
                                     uses_blas64, numpy_nodepr_api)
+
     if uses_blas64():
         # TODO: Note that fitpack does not use BLAS/LAPACK.
         # The reason why we use 64-bit ints only in this case

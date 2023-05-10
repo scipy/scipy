@@ -191,7 +191,6 @@ py3.install_sources([
     '_fitpack2.py',
     '_interpnd_info.py',
     '_interpolate.py',
-    '_isotonic.py',
     '_ndgriddata.py',
     '_pade.py',
     '_polyint.py',
