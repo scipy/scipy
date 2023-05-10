@@ -11,7 +11,6 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
 
@@ -72,14 +71,13 @@ LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
 class TestWhiten:
-    @array_api_compatible
-    def test_whiten(self, xp):
-        desired = xp.asarray([[5.08738849, 2.97091878],
+    def test_whiten(self):
+        desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-        for tp in xp.array, matrix:
+        for tp in np.array, matrix:
             obs = tp([[0.98744510, 0.82766775],
                       [0.62093317, 0.19406729],
                       [0.87545741, 0.00735733],
