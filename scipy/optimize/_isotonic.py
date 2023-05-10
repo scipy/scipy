@@ -16,7 +16,7 @@ def isotonic_regression(
     y: npt.ArrayLike,
     weights: npt.ArrayLike | None = None,
     increasing: bool = True,
-):
+) -> tuple[npt.NDArray[np.float46], npt.NDArray[np.float46], npt.NDArray[np.intp]]:
     r"""Nonparametric isotonic regression.
 
     A (not strictly) monotonically increasing array `x` with the same length
@@ -36,13 +36,13 @@ def isotonic_regression(
 
     Returns
     -------
-    x : (N,) array_like
+    x : (N,) ndarray
         Isotonic regression solution, i.e. an increasing (or decreasing) array
         of the same length than y, with elements in the range from min(y) to
         max(y).
-    wx : (B,) array_like
+    wx : (B,) ndarray
         Sum of case weights for all blocks / pools B.
-    r : (B+1,) array_like
+    r : (B+1,) ndarray
         Array of indices with the start position of each block / pool B.
         For the j-th block, all values of ``x[r[j]:r[j+1]]`` are the same.
 
