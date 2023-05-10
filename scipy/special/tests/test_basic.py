@@ -1364,7 +1364,7 @@ class TestBetaInc:
           8.566004561846704e-23),
          (14.0, 14.5, 1e-280, 2.9343915006642424e-21),
          (3.5, 15.0, 4e-95, 1.3290751429289227e-28),
-         (10.0, 1.25, 2e-234,3.982659092143654e-24),
+         (10.0, 1.25, 2e-234, 3.982659092143654e-24),
          (4.0, 99997.0, 5e-88, 3.309800566862242e-27)]
     )
     def test_betaincinv_tiny_y(self, a, b, y, ref):
@@ -1890,6 +1890,7 @@ class TestEllipLegendreCarlsonIdentities:
         """
         m = self.ms_up_to_1
         assert_allclose(ellipe(m), 2.*elliprg(0., 1.-m, 1.))
+
 
 class TestErf:
 
