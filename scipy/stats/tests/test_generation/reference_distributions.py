@@ -296,3 +296,12 @@ class NormInvGauss(ReferenceDistribution):
         q = mp.sqrt(1 + x**2)
         a = mp.pi**-1 * alpha * mp.exp(mp.sqrt(alpha**2 - beta**2))
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
+
+class StudentT(ReferenceDistribution):
+
+    def __init(self, *, df):
+        super().__init(df=df)
+
+    def _pdf(self, x, df):
+        return (mp.gamma((df + mp.one)/2)/(mp.sqrt(df * mp.pi) * mp.gamma(df/2))
+                * (mp.one + x*x/df)**(-(df + mp.one)/2))
