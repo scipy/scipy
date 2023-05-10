@@ -1358,14 +1358,24 @@ class TestBetaInc:
         x1 = special.betainccinv(a, b, p)
         assert_allclose(x1, x, rtol=8e-15)
 
-    def test_betaincinv_tiny_x(self):
-        # Regression test for an issue in the boost code;
+    @pytest.mark.parametrize(
+        'a, b, y, ref',
+        [(14.208308325339239, 14.208308325339239, 7.703145458496392e-307,
+          8.566004561846704e-23),
+         (14.0, 14.5, 1e-280, 2.9343915006642424e-21),
+         (3.5, 15.0, 4e-95, 1.3290751429289227e-28),
+         (10.0, 1.25, 2e-234,3.982659092143654e-24),
+         (4.0, 99997.0, 5e-88, 3.309800566862242e-27)]
+    )
+    def test_betaincinv_tiny_y(self, a, b, y, ref):
+        # Test with extremely small y values.  This test includes
+        # a regression test for an issue in the boost code;
         # see https://github.com/boostorg/math/issues/961
         #
-        # The expected value was computed with mpmath:
+        # The reference values were computed with mpmath. For example,
         #
         #   from mpmath import mp
-        #   mp.dps = 400
+        #   mp.dps = 1000
         #   a = 14.208308325339239
         #   p = 7.703145458496392e-307
         #   x = mp.findroot(lambda t: mp.betainc(a, a, 0, t,
@@ -1373,10 +1383,8 @@ class TestBetaInc:
         #                   x0=8.566e-23)
         #   print(float(x))
         #
-        a = 14.208308325339239
-        p = 7.703145458496392e-307
-        x = special.betaincinv(a, a, p)
-        assert assert_allclose(x, 8.566004561846704e-23, rtol=1e-14)
+        x = special.betaincinv(a, b, y)
+        assert_allclose(x, ref, rtol=1e-14)
 
     @pytest.mark.parametrize('func', [special.betainc, special.betaincinv,
                                       special.betaincc, special.betainccinv])

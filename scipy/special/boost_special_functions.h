@@ -5,6 +5,14 @@
 #include <stdexcept>
 #include "sf_error.h"
 
+
+// Override some default BOOST policies.
+// These are required to ensure that the Boost function ibeta_inv
+// handles extremely small p values with precision comparable to the
+// Cephes bdtri function.
+#define BOOST_MATH_MAX_ROOT_ITERATION_POLICY  400
+#define BOOST_MATH_PROMOTE_DOUBLE_POLICY      false
+
 #include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
