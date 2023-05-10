@@ -475,7 +475,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     best_dist = xp.inf
     for i in range(iter):
         # the initial code book is randomly selected from observations
-        guess = _kpoints(obs, k, rng)
+        guess = _kpoints(obs, k, rng, xp)
         book, dist = _kmeans(obs, guess, thresh=thresh, xp=xp)
         if dist < best_dist:
             best_book = book
@@ -483,7 +483,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     return best_book, best_dist
 
 
-def _kpoints(data, k, rng):
+def _kpoints(data, k, rng, xp):
     """Pick k points at random in data (one row = one observation).
 
     Parameters
