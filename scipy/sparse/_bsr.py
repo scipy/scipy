@@ -8,7 +8,7 @@ from warnings import warn
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import isspmatrix, _formats, _sparray

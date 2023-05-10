@@ -9,7 +9,7 @@ from bisect import bisect_left
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,

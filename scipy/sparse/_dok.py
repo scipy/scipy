@@ -7,7 +7,7 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,

@@ -6,7 +6,7 @@ __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)

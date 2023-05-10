@@ -8,7 +8,7 @@ from warnings import warn
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
 from ._data import _data_matrix, _minmax_mixin

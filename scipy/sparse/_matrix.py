@@ -83,4 +83,7 @@ def _array_doc_to_matrix(docstr):
     # For opimized builds with stripped docstrings
     if docstr is None:
         return None
-    return docstr.replace('array', 'matrix').replace('arrays', 'matrices')
+    return (
+        docstr.replace('sparse arrays', 'sparse matrices')
+              .replace('sparse array', 'sparse matrix')
+    )

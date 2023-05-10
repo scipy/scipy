@@ -6,7 +6,7 @@ __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray
 from ._sparsetools import csc_tocsr, expandptr
 from ._sputils import upcast, get_index_dtype

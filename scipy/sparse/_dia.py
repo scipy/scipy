@@ -6,7 +6,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from ._arrays import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import isspmatrix, _formats, _sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_index_dtype,
