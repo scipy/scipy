@@ -2549,6 +2549,42 @@ class TestMultivariateT:
         ref = 1 / (dim + 1)
         assert_allclose(res, ref, rtol=5e-5)
 
+    def test_entropy_inf_df(self):
+        cov = np.eye(3, 3)
+        df = np.inf
+        mvt_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
+        mvn_entropy = stats.multivariate_normal.entropy(None, cov)
+        assert mvt_entropy == mvn_entropy
+
+    @pytest.mark.parametrize("df", [1, 10, 100])
+    def test_entropy_1d(self, df):
+        mvt_entropy = stats.multivariate_t.entropy(shape=1., df=df)
+        t_entropy = stats.t.entropy(df=df)
+        assert_allclose(mvt_entropy, t_entropy, rtol=1e-13)
+
+    # entropy reference values were computed via numerical integration
+    #
+    # def integrand(x, y, mvt):
+    #     vec = np.array([x, y])
+    #     return mvt.logpdf(vec) * mvt.pdf(vec)
+
+    # def multivariate_t_entropy_quad_2d(df, cov):
+    #     dim = cov.shape[0]
+    #     loc = np.zeros((dim, ))
+    #     mvt = stats.multivariate_t(loc, cov, df)
+    #     limit = 100
+    #     return -integrate.dblquad(integrand, -limit, limit, -limit, limit,
+    #                               args=(mvt, ))[0]
+
+    @pytest.mark.parametrize("df, cov, ref, tol",
+                             [(10, np.eye(2, 2), 3.0378770664093313, 1e-14),
+                              (100, np.array([[0.5, 1], [1, 10]]),
+                               3.55102424550609, 1e-8)])
+    def test_entropy_vs_numerical_integration(self, df, cov, ref, tol):
+        loc = np.zeros((2, ))
+        mvt = stats.multivariate_t(loc, cov, df)
+        assert_allclose(mvt.entropy(), ref, rtol=tol)
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
