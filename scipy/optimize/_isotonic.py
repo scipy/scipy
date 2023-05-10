@@ -125,7 +125,7 @@ def isotonic_regression(
     wx = np.array(weights[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
-    b = pava(x, wx, r)  # modifies x, wx and r inplace
+    x, wx, r, b = pava(x, wx, r)  # modifies x, wx and r inplace
     # Now that we know the number of blocks b, we only keep the relevant part
     # of r and wx.
     # As information: Due to the pava implementation, after the last block

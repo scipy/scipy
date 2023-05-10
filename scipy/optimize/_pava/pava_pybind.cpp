@@ -1,3 +1,4 @@
+#include <tuple>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <numpy/arrayobject.h>
@@ -6,7 +7,7 @@ namespace py = pybind11;
 
 namespace {
 
-intptr_t pava(
+auto pava(
     py::array_t<double, py::array::c_style | py::array::forcecast> xa,
     py::array_t<double, py::array::c_style | py::array::forcecast> wa,
     py::array_t<intptr_t, py::array::c_style | py::array::forcecast> ra
@@ -20,11 +21,10 @@ intptr_t pava(
     // r is an array of indices such that x[r[i]:r[i+1]] contains the i-th block,
     // modified inplace.
 
-    py::buffer_info x_buffer_info = xa.request();
-    intptr_t n = x_buffer_info.shape[0];
-    double* x = static_cast<double*>(x_buffer_info.ptr);
-    double* w = static_cast<double*>(wa.request().ptr);
-    intptr_t* r = static_cast<intptr_t*>(ra.request().ptr);
+    auto x = xa.mutable_unchecked<1>();
+    intptr_t n = x.shape(0);
+    auto w = wa.mutable_unchecked<1>();
+    auto r = ra.mutable_unchecked<1>();
 
     // Algorithm 1 of
     // Busing, F. M. T. A. (2022).
@@ -84,7 +84,7 @@ intptr_t pava(
         }
         f = t - 1;  // 40: set new "from" equal to old "to" minus one
     }
-    return b + 1;  // number of blocks
+    return std::make_tuple(xa, wa, ra, b + 1);  // b + 1 is number of blocks
 }
 
 PYBIND11_MODULE(_pava_pybind, m) {
@@ -96,7 +96,7 @@ PYBIND11_MODULE(_pava_pybind, m) {
         &pava,
         "Pool adjacent violators algorithm (PAVA) for isotonic regression"
         ""
-        "The routine modifies x, w and r inplace."
+        "The routine might modify the input arguments x, w and r inplace."
         ""
         "Parameters"
         "----------"
@@ -106,8 +106,15 @@ PYBIND11_MODULE(_pava_pybind, m) {
         ""
         "Returns"
         "-------"
+        "x : ndarray"
+        "    The isotonic solution."
+        "w : ndarray"
+        "    The array of weights for each block."
+        "r : ndarray"
+        "    The array of indices for each block, such that xa[ra[i]:ra[i+1]]"
+        "    is the i-th block with all elements having the same value."
         "b : np.intp"
-        "    number of blocks b.",
+        "    Number of blocks.",
         py::arg("x"), py::arg("w"), py::arg("indices")
     );
 }
