@@ -3871,6 +3871,19 @@ class TestGenExpon:
         ppf = stats.genexpon.ppf(p, a, b, c)
         assert_allclose(ppf, x, rtol=1e-14)
 
+class TestTruncexpon:
+
+    # reference values were computed via the reference distribution
+    # mp.dps = 50
+    # TruncExpon(b=100).sf(99.999999)
+
+    @pytest.mark.parametrize("x, b, ref",
+                             [(19.999999, 20, 2.0611546593828472e-15),
+                              (99.999999, 100, 3.7200778266200137e-50)])
+    def test_sf_isf(self, x, b, ref):
+        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
+        assert_allclose(stats.truncexpon.isf(ref, b), x, rtol=1e-12)
+
 
 class TestExponpow:
     def test_tail(self):
