@@ -1523,7 +1523,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Z = asarray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = _convert_to_double(xp.asarray(y, order='c', xp=xp))
+    y = _convert_to_double(asarray(y, order='c', xp=xp))
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -4037,8 +4037,8 @@ def maxRstat(Z, R, i):
 
     """
     xp = array_namespace(Z, R)
-    Z = np.asarray(Z, order='c', xp=xp)
-    R = np.asarray(R, order='c', xp=xp)
+    Z = asarray(Z, order='c', xp=xp)
+    R = asarray(R, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not int:
