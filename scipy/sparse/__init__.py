@@ -279,6 +279,7 @@ from ._dia import *
 from ._bsr import *
 from ._construct import *
 from ._extract import *
+from ._matrix import spmatrix
 from ._matrix_io import *
 
 # For backward compatibility with v0.19.
