@@ -41,14 +41,9 @@ c_types = {'int': 'int',
            'zselect2': '_zselect2'}
 
 complex_types = {'c',
-                 'const c',
                  'z',
-                 'const z',
                  'npy_complex64',
-                 'const npy_complex64',
-                 'npy_complex128',
-                 'const npy_complex128'}
-
+                 'npy_complex128'}
 
 def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
@@ -66,8 +61,7 @@ cdef {ret_type} {name}({args}) noexcept nogil:
     return out
 """
 
-npy_types = {'c': 'npy_complex64', 'const c': 'const npy_complex64',
-             'z': 'npy_complex128', 'const z': 'const npy_complex128',
+npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
              'cselect1': '_cselect1', 'cselect2': '_cselect2',
              'dselect2': '_dselect2', 'dselect3': '_dselect3',
              'sselect2': '_sselect2', 'sselect3': '_sselect3',
@@ -80,10 +74,8 @@ def arg_casts(argname, argtype, index):
         # 1. Create a union with two members: one ptr to native complex number and a ptr to npy_complex64/128
         # 2. We assign the native argument to the corresponding union field
         # 3. Pass the npy_complex to the wrapped Fortran subroutine
-        is_const = argtype.startswith('const')
-        union_type = argtype if not is_const else '_'.join(argtype.split(' '))
         complex_union = textwrap.indent(
-            pyx_complex_union_template.format(name=argname, type=union_type, index=index),
+            pyx_complex_union_template.format(name=argname, type=argtype, index=index),
             INDENTATION,
         )
         return f'complex_{index}.numpy', complex_union
@@ -528,17 +520,9 @@ cdef union native_npy_complex64_ptr:
     c *native
     npy_complex64 *numpy
 
-cdef union native_const_npy_complex64_ptr:
-    const c *native
-    const npy_complex64 *numpy
-
 cdef union native_npy_complex128_ptr:
     z *native
     npy_complex128 *numpy
-
-cdef union native_const_npy_complex128_ptr:
-    const z *native
-    const npy_complex128 *numpy
 
 cdef union native_npy_complex64:
     c native
