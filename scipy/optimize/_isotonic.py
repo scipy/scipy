@@ -97,14 +97,16 @@ def isotonic_regression(
     ...     # This is for a monotonically increasing regression.
     ...     return np.diff(yhat)
     >>> result = minimize(objective, x0=y, args=(y,),
-            constraints=[{'type': 'ineq', 'fun': lambda x: constraint(x, y)}])
+    ...     constraints=[{'type': 'ineq', 'fun': lambda x: constraint(x, y)}])
     >>> result.x
-    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25,
-           9.25, 9.25])
+    array([1.25      , 1.25      , 4.        , 5.56666667, 5.56666667,
+           5.56666667, 7.8       , 8.25      , 8.25      , 9.25      ,
+           9.25      ])
     >>> yhat, _, _ = isotonic_regression(y)
     >>> yhat
-    array([1.25, 1.25, 4., 5.56666667, 5.56666667, 5.56666667, 7.8, 8.25, 8.25,
-           9.25, 9.25])
+    array([1.25      , 1.25      , 4.        , 5.56666667, 5.56666667,
+           5.56666667, 7.8       , 8.25      , 8.25      , 9.25      ,
+           9.25      ])
     The big advantage of ``isotonic_regression`` compared to calling
     ``minimize`` is that it is more user friendly, i.e. one does not need to
     define objective and constraint functions, and that it is orders of
