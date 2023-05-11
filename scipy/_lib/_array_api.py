@@ -43,10 +43,10 @@ def compliance_scipy(*arrays):
             raise ValueError('object arrays are not supported')
 
 
-def _check_finite(array):
+def _check_finite(array, xp):
     """Check for NaNs or Infs."""
     # same as np.asarray_chkfinite
-    if array.dtype.char in typecodes['AllFloat'] and not np.isfinite(array).all():
+    if array.dtype.char in typecodes['AllFloat'] and not xp.isfinite(array).all():
         raise ValueError(
             "array must not contain infs or NaNs"
         )
@@ -115,7 +115,7 @@ def as_xparray(
         array = xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
-        _check_finite(array)
+        _check_finite(array, xp)
 
     return array
 
