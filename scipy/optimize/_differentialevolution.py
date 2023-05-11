@@ -968,7 +968,7 @@ class DifferentialEvolutionSolver:
         if np.any(np.isinf(self.population_energies)):
             return np.inf
         return (np.std(self.population_energies) /
-                np.abs(np.mean(self.population_energies) + _MACHEPS))
+                (np.abs(np.mean(self.population_energies)) + _MACHEPS))
 
     def converged(self):
         """

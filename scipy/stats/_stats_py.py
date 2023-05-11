@@ -38,7 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
-from scipy._lib._util import (check_random_state, MapWrapper,
+from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan)
 
 import scipy.special as special
@@ -49,10 +49,12 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
-from ._resampling import _batch_generator
+from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
+                          monte_carlo_test, permutation_test, bootstrap,
+                          _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
@@ -115,80 +117,6 @@ def _chk2_asarray(a, b, axis):
         b = np.atleast_1d(b)
 
     return a, b, outaxis
-
-
-def _shape_with_dropped_axis(a, axis):
-    """
-    Given an array `a` and an integer `axis`, return the shape
-    of `a` with the `axis` dimension removed.
-
-    Examples
-    --------
-    >>> a = np.zeros((3, 5, 2))
-    >>> _shape_with_dropped_axis(a, 1)
-    (3, 2)
-
-    """
-    shp = list(a.shape)
-    try:
-        del shp[axis]
-    except IndexError:
-        raise np.AxisError(axis, a.ndim) from None
-    return tuple(shp)
-
-
-def _broadcast_shapes(shape1, shape2):
-    """
-    Given two shapes (i.e. tuples of integers), return the shape
-    that would result from broadcasting two arrays with the given
-    shapes.
-
-    Examples
-    --------
-    >>> _broadcast_shapes((2, 1), (4, 1, 3))
-    (4, 2, 3)
-    """
-    d = len(shape1) - len(shape2)
-    if d <= 0:
-        shp1 = (1,)*(-d) + shape1
-        shp2 = shape2
-    else:
-        shp1 = shape1
-        shp2 = (1,)*d + shape2
-    shape = []
-    for n1, n2 in zip(shp1, shp2):
-        if n1 == 1:
-            n = n2
-        elif n2 == 1 or n1 == n2:
-            n = n1
-        else:
-            raise ValueError(f'shapes {shape1} and {shape2} could not be '
-                             'broadcast together')
-        shape.append(n)
-    return tuple(shape)
-
-
-def _broadcast_shapes_with_dropped_axis(a, b, axis):
-    """
-    Given two arrays `a` and `b` and an integer `axis`, find the
-    shape of the broadcast result after dropping `axis` from the
-    shapes of `a` and `b`.
-
-    Examples
-    --------
-    >>> a = np.zeros((5, 2, 1))
-    >>> b = np.zeros((1, 9, 3))
-    >>> _broadcast_shapes_with_dropped_axis(a, b, 1)
-    (5, 3)
-    """
-    shp1 = _shape_with_dropped_axis(a, axis)
-    shp2 = _shape_with_dropped_axis(b, axis)
-    try:
-        shp = _broadcast_shapes(shp1, shp2)
-    except ValueError:
-        raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
-                         'broadcast together') from None
-    return shp
 
 
 SignificanceResult = _make_tuple_bunch('SignificanceResult',
@@ -520,7 +448,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     Parameters
     ----------
     a : array_like
-        n-dimensional array of which to find mode(s).
+        Numeric, n-dimensional array of which to find mode(s).
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
@@ -575,9 +503,16 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
 
     """  # noqa: E501
     # `axis`, `nan_policy`, and `keepdims` are handled by `_axis_nan_policy`
+    if not np.issubdtype(a.dtype, np.number):
+        message = ("Argument `a` is not recognized as numeric. "
+                   "Support for input that cannot be coerced to a numeric "
+                   "array was deprecated in SciPy 1.9.0 and removed in SciPy "
+                   "1.11.0. Please consider `pandas.DataFrame.mode`.")
+        raise TypeError(message)
 
     if a.size == 0:
-        return ModeResult(np.nan, np.int64(0))
+        NaN = _get_nan(a)
+        return ModeResult(*np.array([NaN, 0], dtype=NaN.dtype))
 
     vals, cnts = np.unique(a, return_counts=True)
     modes, counts = vals[cnts.argmax()], cnts.max()
@@ -1009,7 +944,7 @@ def _moment_result_object(*args):
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -1033,9 +968,14 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
+    center : float or None, optional
+       The point about which moments are taken. This can be the sample mean,
+       the origin, or any other be point. If `None` (default) compute the
+       center as the sample mean.
+
     Returns
     -------
-    n-th central moment : ndarray or float
+    n-th moment about the `center` : ndarray or float
        The appropriate moment along the given axis or over all values if axis
        is None. The denominator for the moment calculation is the number of
        observations, no degrees of freedom correction is done.
@@ -1046,14 +986,15 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    The k-th central moment of a data sample is:
+    The k-th moment of a data sample is:
 
     .. math::
 
-        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - \bar{x})^k
+        m_k = \frac{1}{n} \sum_{i = 1}^n (x_i - c)^k
 
-    Where n is the number of samples and x-bar is the mean. This function uses
-    exponentiation by squares [1]_ for efficiency.
+    Where `n` is the number of samples, and `c` is the center around which the
+    moment is calculated. This function uses exponentiation by squares [1]_ for
+    efficiency.
 
     Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
     one element (`moment.size == 1`) is treated the same as scalar `moment`
@@ -1074,19 +1015,20 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.moment(a, moment, axis)
-
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mean = a.mean(axis, keepdims=True)
-        mmnt = [_moment(a, i, axis, mean=mean) for i in moment]
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
+        mean = a.mean(axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in moment:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean))
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center))
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, mean=center)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
@@ -1098,12 +1040,13 @@ def _moment(a, moment, axis, *, mean=None):
     if a.size == 0:
         return np.mean(a, axis=axis)
 
-    if moment == 0 or moment == 1:
-        # By definition the zeroth moment about the mean is 1, and the first
+    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+
+    if moment == 0 or (moment == 1 and mean is None):
+        # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
 
         if len(shape) == 0:
             return dtype(1.0 if moment == 0 else 0.0)
@@ -1122,7 +1065,8 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = a.mean(axis, keepdims=True) if mean is None else mean
+        mean = (a.mean(axis, keepdims=True) if mean is None
+                else dtype(mean))
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
@@ -1260,10 +1204,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
             nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
             np.place(vals, can_correct, nval)
 
-    if vals.ndim == 0:
-        return vals.item()
-
-    return vals
+    return vals[()]
 
 
 @_axis_nan_policy_factory(
@@ -1374,10 +1315,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
             np.place(vals, can_correct, nval + 3.0)
 
-    if vals.ndim == 0:
-        vals = vals.item()  # array scalar
-
-    return vals - 3 if fisher else vals
+    return vals[()] - 3 if fisher else vals[()]
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -3480,7 +3418,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     # This check prevents percentile from raising an error later. Also, it is
     # consistent with `np.var` and `np.std`.
     if not x.size:
-        return np.nan
+        return _get_nan(x)
 
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
@@ -4301,10 +4239,13 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Returns
     -------
-    statistic : float
-        The computed A statistic of the test.
-    pvalue : float
-        The associated p-value from the chi-squared distribution.
+    res : AlexanderGovernResult
+        An object with attributes:
+
+        statistic : float
+            The computed A statistic of the test.
+        pvalue : float
+            The associated p-value from the chi-squared distribution.
 
     Warns
     -----
@@ -4437,8 +4378,10 @@ def _alexandergovern_input_validation(samples, nan_policy):
     return samples
 
 
-AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
-                                                                 "pvalue"))
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
@@ -4480,6 +4423,22 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
+    """
+    Compute the confidence interval for Pearson's R using the bootstrap.
+    """
+    def statistic(x, y):
+        statistic, _ = pearsonr(x, y)
+        return statistic
+
+    res = bootstrap((x, y), statistic, confidence_level=confidence_level,
+                    paired=True, alternative=alternative, **method._asdict())
+    # for one-sided confidence intervals, bootstrap gives +/- inf on one side
+    res.confidence_interval = np.clip(res.confidence_interval, -1, 1)
+
+    return ConfidenceInterval(*res.confidence_interval)
+
+
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
@@ -4504,21 +4463,24 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
-    def __init__(self, statistic, pvalue, alternative, n):
+    def __init__(self, statistic, pvalue, alternative, n, x, y):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
+        self._x = x
+        self._y = y
 
         # add alias for consistency with other correlation functions
         self.correlation = statistic
 
-    def confidence_interval(self, confidence_level=0.95):
+    def confidence_interval(self, confidence_level=0.95, method=None):
         """
         The confidence interval for the correlation coefficient.
 
         Compute the confidence interval for the correlation coefficient
         ``statistic`` with the given confidence level.
 
+        If `method` is not provided,
         The confidence interval is computed using the Fisher transformation
         F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
         bivariate normal distribution, F(r) approximately follows a normal
@@ -4527,11 +4489,23 @@ class PearsonRResult(PearsonRResultBase):
         ``n <= 3``, this approximation does not yield a finite, real standard
         error, so we define the confidence interval to be -1 to 1.
 
+        If `method` is an instance of `BootstrapMethod`, the confidence
+        interval is computed using `scipy.stats.bootstrap` with the provided
+        configuration options and other appropriate settings. In some cases,
+        confidence limits may be NaN due to a degenerate resample, and this is
+        typical for very small samples (~6 observations).
+
         Parameters
         ----------
         confidence_level : float
             The confidence level for the calculation of the correlation
             coefficient confidence interval. Default is 0.95.
+
+        method : BootstrapMethod, optional
+            Defines the method used to compute the confidence interval. See
+            method description for details.
+
+            .. versionadded:: 1.11.0
 
         Returns
         -------
@@ -4544,11 +4518,19 @@ class PearsonRResult(PearsonRResultBase):
         .. [1] "Pearson correlation coefficient", Wikipedia,
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
-        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
-                                   self._alternative)
+        if isinstance(method, BootstrapMethod):
+            ci = _pearsonr_bootstrap_ci(confidence_level, method,
+                                        self._x, self._y, self._alternative)
+        elif method is None:
+            ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                     self._alternative)
+        else:
+            message = ('`method` must be an instance of `BootstrapMethod` '
+                       'or None.')
+            raise ValueError(message)
+        return ci
 
-
-def pearsonr(x, y, *, alternative='two-sided'):
+def pearsonr(x, y, *, alternative='two-sided', method=None):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
@@ -4583,6 +4565,15 @@ def pearsonr(x, y, *, alternative='two-sided'):
         * 'greater':  the correlation is positive (greater than zero)
 
         .. versionadded:: 1.9.0
+    method : ResamplingMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`/`MonteCarloMethod`, the p-value is
+        computed using
+        `scipy.stats.permutation_test`/`scipy.stats.monte_carlo_test` with the
+        provided configuration options and other appropriate settings.
+        Otherwise, the p-value is computed as documented in the notes.
+
+        .. versionadded:: 1.11.0
 
     Returns
     -------
@@ -4596,11 +4587,18 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
         The object has the following method:
 
-        confidence_interval(confidence_level=0.95)
-            This method computes the confidence interval of the correlation
+        confidence_interval(confidence_level, method)
+            This computes the confidence interval of the correlation
             coefficient `statistic` for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
-            fields `low` and `high`.  See the Notes for more details.
+            fields `low` and `high`. If `method` is not provided, the
+            confidence interval is computed using the Fisher transformation
+            [1]_. If `method` is an instance of `BootstrapMethod`, the
+            confidence interval is computed using `scipy.stats.bootstrap` with
+            the provided configuration options and other appropriate settings.
+            In some cases, confidence limits may be NaN due to a degenerate
+            resample, and this is typical for very small samples (~6
+            observations).
 
     Warns
     -----
@@ -4641,7 +4639,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
-    the distribution that is used in `pearsonr` to compute the p-value.
+    the distribution that is used in `pearsonr` to compute the p-value when
+    the `method` parameter is left at its default value (None).
     The distribution is a beta distribution on the interval [-1, 1],
     with equal shape parameters a = b = n/2 - 1.  In terms of SciPy's
     implementation of the beta distribution, the distribution of r is::
@@ -4684,11 +4683,35 @@ def pearsonr(x, y, *, alternative='two-sided'):
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    >>> x, y = [1, 2, 3, 4, 5, 6, 7], [10, 9, 2.5, 6, 4, 3, 2]
+    >>> res = stats.pearsonr(x, y)
     >>> res
-    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
-    >>> res.confidence_interval()
-    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
+
+    To perform an exact permutation version of the test:
+
+    >>> rng = np.random.default_rng(7796654889291491997)
+    >>> method = stats.PermutationMethod(n_resamples=np.inf, random_state=rng)
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.028174603174603175)
+
+    To perform the test under the null hypothesis that the data were drawn from
+    *uniform* distributions:
+
+    >>> method = stats.MonteCarloMethod(rvs=(rng.uniform, rng.uniform))
+    >>> stats.pearsonr(x, y, method=method)
+    PearsonRResult(statistic=-0.828503883588428, pvalue=0.0188)
+
+    To produce an asymptotic 90% confidence interval:
+
+    >>> res.confidence_interval(confidence_level=0.9)
+    ConfidenceInterval(low=-0.9644331982722841, high=-0.3460237473272273)
+
+    And for a bootstrap confidence interval:
+
+    >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
+    >>> res.confidence_interval(confidence_level=0.9, method=method)
+    ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
@@ -4757,8 +4780,37 @@ def pearsonr(x, y, *, alternative='two-sided'):
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg))
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
+
+    if isinstance(method, PermutationMethod):
+        def statistic(y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        res = permutation_test((y,), statistic, permutation_type='pairings',
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative, x=x, y=y)
+    elif isinstance(method, MonteCarloMethod):
+        def statistic(x, y):
+            statistic, _ = pearsonr(x, y, alternative=alternative)
+            return statistic
+
+        if method.rvs is None:
+            rng = np.random.default_rng()
+            method.rvs = rng.normal, rng.normal
+
+        res = monte_carlo_test((x, y,), statistic=statistic,
+                               alternative=alternative, **method._asdict())
+
+        return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
+                              alternative=alternative, x=x, y=y)
+    elif method is not None:
+        message = ('`method` must be an instance of `PermutationMethod`,'
+                   '`MonteCarloMethod`, or None.')
+        raise ValueError(message)
 
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have
@@ -4768,7 +4820,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     if n == 2:
         r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
         result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
-                                alternative=alternative)
+                                alternative=alternative, x=x, y=y)
         return result
 
     xmean = x.mean(dtype=dtype)
@@ -4815,7 +4867,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
                          '["two-sided", "less", "greater"]')
 
     return PearsonRResult(statistic=r, pvalue=prob, n=n,
-                          alternative=alternative)
+                          alternative=alternative, x=x, y=y)
 
 
 def fisher_exact(table, alternative='two-sided'):
@@ -5820,9 +5872,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
-        return ((cnt * (cnt - 1) // 2).sum(),
-                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+        # Python ints to avoid overflow down the line
+        return (int((cnt * (cnt - 1) // 2).sum()),
+                int((cnt * (cnt - 1.) * (cnt - 2)).sum()),
+                int((cnt * (cnt - 1.) * (2*cnt + 5)).sum()))
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -5839,7 +5892,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.nonzero(obs)[0]).astype('int64', copy=False)
 
-    ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
+    ntie = int((cnt * (cnt - 1) // 2).sum())  # joint ties
     xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
     ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
@@ -6694,8 +6747,9 @@ class TtestResult(TtestResultBase):
 def pack_TtestResult(statistic, pvalue, df, alternative, standard_error,
                      estimate):
     # this could be any number of dimensions (including 0d), but there is
-    # at most one unique value
-    alternative = np.atleast_1d(alternative).ravel()
+    # at most one unique non-NaN value
+    alternative = np.atleast_1d(alternative)  # can't index 0D object
+    alternative = alternative[np.isfinite(alternative)]
     alternative = alternative[0] if alternative.size else np.nan
     return TtestResult(statistic, pvalue, df=df, alternative=alternative,
                        standard_error=standard_error, estimate=estimate)
@@ -7117,50 +7171,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     return Ttest_indResult(*res)
 
 
-def _ttest_nans(a, b, axis, namedtuple_type):
-    """
-    Generate an array of `nan`, with shape determined by `a`, `b` and `axis`.
-
-    This function is used by ttest_ind and ttest_rel to create the return
-    value when one of the inputs has size 0.
-
-    The shapes of the arrays are determined by dropping `axis` from the
-    shapes of `a` and `b` and broadcasting what is left.
-
-    The return value is a named tuple of the type given in `namedtuple_type`.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> a = np.zeros((9, 2))
-    >>> b = np.zeros((5, 1))
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=array([nan, nan]), pvalue=array([nan, nan]))
-
-    >>> a = np.zeros((3, 0, 9))
-    >>> b = np.zeros((1, 10))
-    >>> stat, p = _ttest_nans(a, b, -1, Ttest_indResult)
-    >>> stat
-    array([], shape=(3, 0), dtype=float64)
-    >>> p
-    array([], shape=(3, 0), dtype=float64)
-
-    >>> a = np.zeros(10)
-    >>> b = np.zeros(7)
-    >>> _ttest_nans(a, b, 0, Ttest_indResult)
-    Ttest_indResult(statistic=nan, pvalue=nan)
-
-    """
-    shp = _broadcast_shapes_with_dropped_axis(a, b, axis)
-    if len(shp) == 0:
-        t = np.nan
-        p = np.nan
-    else:
-        t = np.full(shp, fill_value=np.nan)
-        p = t.copy()
-    return namedtuple_type(t, p)
-
-
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
               permutations=None, random_state=None, alternative="two-sided",
               trim=0):
@@ -7249,10 +7261,30 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     Returns
     -------
-    statistic : float or array
-        The calculated t-statistic.
-    pvalue : float or array
-        The p-value.
+    result : `~scipy.stats._result_classes.TtestResult`
+        An object with the following attributes:
+
+        statistic : float or ndarray
+            The t-statistic.
+        pvalue : float or ndarray
+            The p-value associated with the given alternative.
+        df : float or ndarray
+            The number of degrees of freedom used in calculation of the
+            t-statistic. This is always NaN for a permutation t-test.
+
+            .. versionadded:: 1.11.0
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the difference in
+            population means for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields ``low`` and ``high``.
+            When a permutation t-test is performed, the confidence interval
+            is not computed, and fields ``low`` and ``high`` contain NaN.
+
+            .. versionadded:: 1.11.0
 
     Notes
     -----
@@ -7391,27 +7423,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    # check both a and b
-    cna, npa = _contains_nan(a, nan_policy)
-    cnb, npb = _contains_nan(b, nan_policy)
-    contains_nan = cna or cnb
-    if npa == 'omit' or npb == 'omit':
-        nan_policy = 'omit'
-
-    if contains_nan and nan_policy == 'omit':
-        if permutations or trim != 0:
-            raise ValueError("nan-containing/masked inputs with "
-                             "nan_policy='omit' are currently not "
-                             "supported by permutation tests or "
-                             "trimmed tests.")
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.ttest_ind(a, b, axis, equal_var, alternative)
+    NaN = _get_nan(a, b)
 
     if a.size == 0 or b.size == 0:
-        return _ttest_nans(a, b, axis, Ttest_indResult)
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     if permutations is not None and permutations != 0:
         if trim != 0:
@@ -7421,11 +7438,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                 int(permutations) != permutations):
             raise ValueError("Permutations must be a non-negative integer.")
 
-        res = _permutation_ttest(a, b, permutations=permutations,
-                                 axis=axis, equal_var=equal_var,
-                                 nan_policy=nan_policy,
-                                 random_state=random_state,
-                                 alternative=alternative)
+        t, prob = _permutation_ttest(a, b, permutations=permutations,
+                                     axis=axis, equal_var=equal_var,
+                                     nan_policy=nan_policy,
+                                     random_state=random_state,
+                                     alternative=alternative)
+        df, denom, estimate = NaN, NaN, NaN
 
     else:
         n1 = a.shape[axis]
@@ -7449,9 +7467,16 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
             df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
         else:
             df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        res = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-    return Ttest_indResult(*res)
+        # when nan_policy='omit', `df` can be different for different axis-slices
+        df = np.broadcast_to(df, t.shape)[()]
+        estimate = m1-m2
+
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return TtestResult(t, prob, df=df, alternative=alternative_num,
+                       standard_error=denom, estimate=estimate)
 
 
 def _ttest_trim_var_mean_len(a, trim, axis):
@@ -7762,8 +7787,9 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     if na == 0 or nb == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
-        return TtestResult(np.nan, np.nan, df=np.nan, alternative=np.nan,
-                           standard_error=np.nan, estimate=np.nan)
+        NaN = _get_nan(a, b)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     n = a.shape[axis]
     df = n - 1
@@ -7873,12 +7899,15 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Returns
     -------
-    statistic : float or ndarray
-        The Cressie-Read power divergence test statistic.  The value is
-        a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
-    pvalue : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `stat` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+
+        statistic : float or ndarray
+            The Cressie-Read power divergence test statistic.  The value is
+            a float if `axis` is None or if` `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `stat` are scalars.
 
     See Also
     --------
@@ -8003,7 +8032,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     if f_exp is not None:
         f_exp = np.asanyarray(f_exp)
-        bshape = _broadcast_shapes(f_obs_float.shape, f_exp.shape)
+        bshape = np.broadcast_shapes(f_obs_float.shape, f_exp.shape)
         f_obs_float = _m_broadcast_to(f_obs_float, bshape)
         f_exp = _m_broadcast_to(f_exp, bshape)
         rtol = 1e-8  # to pass existing tests
@@ -8079,12 +8108,15 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Returns
     -------
-    chisq : float or ndarray
-        The chi-squared test statistic.  The value is a float if `axis` is
-        None or `f_obs` and `f_exp` are 1-D.
-    p : float or ndarray
-        The p-value of the test.  The value is a float if `ddof` and the
-        return value `chisq` are scalars.
+    res: Power_divergenceResult
+        An object containing attributes:
+        
+        chisq : float or ndarray
+            The chi-squared test statistic.  The value is a float if `axis` is
+            None or `f_obs` and `f_exp` are 1-D.
+        pvalue : float or ndarray
+            The p-value of the test.  The value is a float if `ddof` and the
+            return value `chisq` are scalars.
 
     See Also
     --------
@@ -9254,7 +9286,8 @@ def kruskal(*samples, nan_policy='propagate'):
 
     for sample in samples:
         if sample.size == 0:
-            return KruskalResult(np.nan, np.nan)
+            NaN = _get_nan(*samples)
+            return KruskalResult(NaN, NaN)
         elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
@@ -10207,25 +10240,25 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     if method == 'ordinal':
         result = inv + 1
+    else:
+        arr = arr[sorter]
+        obs = np.r_[True, arr[1:] != arr[:-1]]
+        dense = obs.cumsum()[inv]
 
-    arr = arr[sorter]
-    obs = np.r_[True, arr[1:] != arr[:-1]]
-    dense = obs.cumsum()[inv]
+        if method == 'dense':
+            result = dense
+        else:
+            # cumulative counts of each unique value
+            count = np.r_[np.nonzero(obs)[0], len(obs)]
 
-    if method == 'dense':
-        result = dense
+            if method == 'max':
+                result = count[dense]
 
-    # cumulative counts of each unique value
-    count = np.r_[np.nonzero(obs)[0], len(obs)]
+            if method == 'min':
+                result = count[dense - 1] + 1
 
-    if method == 'max':
-        result = count[dense]
-
-    if method == 'min':
-        result = count[dense - 1] + 1
-
-    if method == 'average':
-        result = .5 * (count[dense] + count[dense - 1] + 1)
+            if method == 'average':
+                result = .5 * (count[dense] + count[dense - 1] + 1)
 
     if nan_indexes is not None:
         result = result.astype('float64')

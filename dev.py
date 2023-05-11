@@ -306,11 +306,18 @@ class Dirs:
         self.root = Path(__file__).parent.absolute()
         if not args:
             return
+
         self.build = Path(args.build_dir).resolve()
         if args.install_prefix:
             self.installed = Path(args.install_prefix).resolve()
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
+
+        if sys.platform == 'win32' and sys.version_info < (3, 10):
+            # Work around a pathlib bug; these must be absolute paths
+            self.build = Path(os.path.abspath(self.build))
+            self.installed = Path(os.path.abspath(self.installed))
+
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
         self.site = self.get_site_packages()
@@ -408,6 +415,10 @@ class Build(Task):
         ['--parallel', '-j'], default=None, metavar='N_JOBS',
         help=("Number of parallel jobs for building. "
               "This defaults to 2 * n_cpus + 2."))
+    setup_args = Option(
+        ['--setup-args', '-C'], default=[], multiple=True,
+        help=("Pass along one or more arguments to `meson setup` "
+              "Repeat the `-C` in case of multiple arguments."))
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
         help="Show build output rather than using a log file")
@@ -468,6 +479,9 @@ class Build(Task):
             cmd += ['-Db_coverage=true']
         if args.asan:
             cmd += ['-Db_sanitize=address,undefined']
+        if args.setup_args:
+            cmd += [str(arg) for arg in args.setup_args]
+
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
         cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
@@ -595,7 +609,8 @@ class Build(Task):
                   'command did not manage to find OpenBLAS '
                   'succesfully. Try running manually on the '
                   'command prompt for more information.')
-            return result.returncode
+            print("OpenBLAS copy failed!")
+            sys.exit(result.returncode)
 
         # Skip the drive letter of the path -> /c to get Windows drive
         # to be appended correctly to avoid "C:\c\..." from stdout.
@@ -623,9 +638,10 @@ class Build(Task):
         # so OpenBLAS gets found
         openblas_support = import_module_from_path(
             'openblas_support',
-            dirs.root / 'tools' / 'openblas_support.py')
+            dirs.root / 'tools' / 'openblas_support.py'
+        )
         openblas_support.make_init(scipy_path)
-        return 0
+        print('OpenBLAS copied')
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
@@ -642,11 +658,7 @@ class Build(Task):
             cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
             if args.win_cp_openblas and platform.system() == 'Windows':
-                if cls.copy_openblas(dirs) == 0:
-                    print('OpenBLAS copied')
-                else:
-                    print("OpenBLAS copy failed!")
-                    sys.exit(1)
+                cls.copy_openblas(dirs)
 
         # add site to sys.path
         if add_path:
@@ -1016,9 +1028,15 @@ TARGETS: Sphinx build targets [default: 'html']
         ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs"
     )
+    no_cache = Option(
+        ['--no-cache'], default=False, is_flag=True,
+        help="Forces a full rebuild of the docs. Note that this may be " + \
+             "needed in order to make docstring changes in C/Cython files " + \
+             "show up."
+    )
 
     @classmethod
-    def task_meta(cls, list_targets, parallel, args, **kwargs):
+    def task_meta(cls, list_targets, parallel, no_cache, args, **kwargs):
         if list_targets:  # list MAKE targets, remove default target
             task_dep = []
             targets = ''
@@ -1032,8 +1050,18 @@ TARGETS: Sphinx build targets [default: 'html']
         dirs = Dirs(build_args)
 
         make_params = [f'PYTHON="{sys.executable}"']
-        if parallel:
-            make_params.append(f'SPHINXOPTS="-j{parallel}"')
+        if parallel or no_cache:
+            sphinxopts = ""
+            if parallel:
+                sphinxopts += f"-j{parallel} "
+            if no_cache:
+                sphinxopts += "-E"
+            make_params.append(f'SPHINXOPTS="{sphinxopts}"')
+
+        # Environment variables needed for notebooks
+        # See gh-17322
+        make_params.append('SQLALCHEMY_SILENCE_UBER_WARNING=1')
+        make_params.append('JUPYTER_PLATFORM_DIRS=1')
 
         return {
             'actions': [

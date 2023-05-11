@@ -441,6 +441,9 @@ class geom_gen(rv_discrete):
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
 
+    def _entropy(self, p):
+        return -np.log(p) - np.log1p(-p) * (1.0-p) / p
+
 
 geom = geom_gen(a=1, name='geom', longname="A geometric")
 

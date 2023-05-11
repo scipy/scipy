@@ -293,8 +293,8 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
           :math:`U` statistic against the exact distribution of the :math:`U`
           statistic under the null hypothesis. No correction is made for ties.
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
-          is less than 8 and there are no ties; chooses ``'asymptotic'``
-          otherwise.
+          is less than or equal to 8 and there are no ties;
+          chooses ``'asymptotic'`` otherwise.
 
     Returns
     -------

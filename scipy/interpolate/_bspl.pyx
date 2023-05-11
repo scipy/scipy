@@ -34,7 +34,7 @@ cdef inline int find_interval(const double[::1] t,
                        int k,
                        double xval,
                        int prev_l,
-                       bint extrapolate) nogil:
+                       bint extrapolate) noexcept nogil:
     """
     Find an interval such that t[interval] <= xval < t[interval+1].
 
@@ -338,7 +338,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
 def _norm_eq_lsq(const double[::1] x,
                  const double[::1] t,
                  int k,
-                 double_or_complex[:, ::1] y,
+                 const double_or_complex[:, ::1] y,
                  const double[::1] w,
                  double[::1, :] ab,
                  double_or_complex[::1, :] rhs):

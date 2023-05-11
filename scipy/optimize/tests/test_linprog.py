@@ -1208,7 +1208,13 @@ class LinprogCommonTests:
         m = 50
         c = -np.ones(m)
         tmp = 2 * np.pi * np.arange(m) / (m + 1)
-        A_eq = np.vstack((np.cos(tmp) - 1, np.sin(tmp)))
+        # This test relies on `cos(0) -1 == sin(0)`, so ensure that's true
+        # (SIMD code or -ffast-math may cause spurious failures otherwise)
+        row0 = np.cos(tmp) - 1
+        row0[0] = 0.0
+        row1 = np.sin(tmp)
+        row1[0] = 0.0
+        A_eq = np.vstack((row0, row1))
         b_eq = [0, 0]
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
@@ -2364,6 +2370,21 @@ class TestLinprogHiGHSMIP():
         gap_diffs = np.diff(np.flip(sol_mip_gaps))
         assert np.all(gap_diffs >= 0)
         assert not np.all(gap_diffs == 0)
+
+    def test_semi_continuous(self):
+        # See issue #18106. This tests whether the solution is being
+        # checked correctly (status is 0) when integrality > 1:
+        # values are allowed to be 0 even if 0 is out of bounds.
+
+        c = np.array([1., 1., -1, -1])
+        bounds = np.array([[0.5, 1.5], [0.5, 1.5], [0.5, 1.5], [0.5, 1.5]])
+        integrality = np.array([2, 3, 2, 3])
+
+        res = linprog(c, bounds=bounds,
+                      integrality=integrality, method='highs')
+
+        np.testing.assert_allclose(res.x, [0, 0, 1.5, 1])
+        assert res.status == 0
 
 
 ###########################
