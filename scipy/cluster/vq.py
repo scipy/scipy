@@ -67,7 +67,7 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import asarray, array_namespace
+from scipy._lib._array_api import as_xparray, array_namespace
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
@@ -129,7 +129,7 @@ def whiten(obs, check_finite=True):
            [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
-    obs = asarray(obs, check_finite=check_finite)
+    obs = as_xparray(obs, check_finite=check_finite)
     std_dev = obs.std(axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
@@ -199,8 +199,8 @@ def vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = asarray(obs, xp=xp, check_finite=check_finite)
-    code_book = asarray(code_book, xp=xp, check_finite=check_finite)
+    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
+    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
     ct = xp.common_type(obs, code_book)
 
     c_obs = obs.astype(ct, copy=False)
@@ -249,8 +249,8 @@ def py_vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = asarray(obs, xp=xp, check_finite=check_finite)
-    code_book = asarray(code_book, xp=xp, check_finite=check_finite)
+    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
+    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
 
     if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
@@ -450,13 +450,13 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
 
     """
     xp = array_namespace(obs, k_or_guess)
-    obs = asarray(obs, xp=xp, check_finite=check_finite)
+    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
     if not xp.isscalar(k_or_guess):
-        guess = asarray(k_or_guess, xp=xp, check_finite=check_finite)
+        guess = as_xparray(k_or_guess, xp=xp, check_finite=check_finite)
         if guess.size < 1:
             raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
@@ -750,7 +750,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
     xp = array_namespace(data, k)
-    data = asarray(data, xp=xp, check_finite=check_finite)
+    data = as_xparray(data, xp=xp, check_finite=check_finite)
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
@@ -763,7 +763,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     # If k is not a single value, it should be compatible with data's shape
     if minit == 'matrix' or not xp.isscalar(k):
-        code_book = asarray(k, xp=xp, copy=True)
+        code_book = as_xparray(k, xp=xp, copy=True)
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = len(code_book)

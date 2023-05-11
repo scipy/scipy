@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, asarray
+from scipy._lib._array_api import array_namespace, as_xparray
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -1440,7 +1440,7 @@ def to_tree(Z, rd=False):
     9
 
     """
-    Z = asarray(Z, order='c')
+    Z = as_xparray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     # Number of original objects is equal to the number of rows plus 1.
@@ -1520,10 +1520,10 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     """
     xp = array_namespace(Z, y)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = _convert_to_double(asarray(y, order='c', xp=xp))
+    y = _convert_to_double(as_xparray(y, order='c', xp=xp))
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1669,7 +1669,7 @@ def cophenet(Z, Y=None):
 
     """
     xp = array_namespace(Z, Y)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
@@ -1685,7 +1685,7 @@ def cophenet(Z, Y=None):
     if Y is None:
         return zz
 
-    Y = asarray(Y, order='c', xp=xp)
+    Y = as_xparray(Y, order='c', xp=xp)
     distance.is_valid_y(Y, throw=True, name='Y')
 
     z = zz.mean()
@@ -1755,7 +1755,7 @@ def inconsistent(Z, d=2):
 
     """
     xp = array_namespace(Z)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
 
     Zs = Z.shape
     is_valid_linkage(Z, throw=True, name='Z')
@@ -1847,7 +1847,7 @@ def from_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = asarray(Z, dtype=xp.dtype('float64'), order='c', xp=xp)
+    Z = as_xparray(Z, dtype=xp.dtype('float64'), order='c', xp=xp)
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -1948,7 +1948,7 @@ def to_mlab_linkage(Z):
     the original linkage matrix has been dropped.
 
     """
-    Z = asarray(Z, order='c', dtype=np.double)
+    Z = as_xparray(Z, order='c', dtype=np.double)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
         return Z.copy()
@@ -2038,7 +2038,7 @@ def is_monotonic(Z):
     increasing order.
 
     """
-    Z = asarray(Z, order='c')
+    Z = as_xparray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
@@ -2133,7 +2133,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
 
     """
     xp = array_namespace(R)
-    R = asarray(R, order='c', xp=xp)
+    R = as_xparray(R, order='c', xp=xp)
     valid = True
     name_str = "%r " % name if name else ''
     try:
@@ -2250,7 +2250,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
 
     """
     xp = array_namespace(Z)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
     valid = True
     name_str = "%r " % name if name else ''
     try:
@@ -2353,7 +2353,7 @@ def num_obs_linkage(Z):
     12
 
     """
-    Z = asarray(Z, order='c')
+    Z = as_xparray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
     return (Z.shape[0] + 1)
 
@@ -2410,8 +2410,8 @@ def correspond(Z, Y):
     is_valid_linkage(Z, throw=True)
     distance.is_valid_y(Y, throw=True)
     xp = array_namespace(Z, Y)
-    Z = asarray(Z, order='c', xp=xp)
-    Y = asarray(Y, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
+    Y = as_xparray(Y, order='c', xp=xp)
     return distance.num_obs_y(Y) == num_obs_linkage(Z)
 
 
@@ -2567,7 +2567,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z, t)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -2582,7 +2582,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = asarray(R, order='c', xp=xp)
+            R = as_xparray(R, order='c', xp=xp)
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
@@ -2689,7 +2689,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X, t)
-    X = asarray(X, order='c', dtype=xp.dtype('float64'))
+    X = as_xparray(X, order='c', dtype=xp.dtype('float64'))
 
     if len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m '
@@ -2700,7 +2700,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     if R is None:
         R = inconsistent(Z, d=depth)
     else:
-        R = asarray(R, order='c', xp=xp)
+        R = as_xparray(R, order='c', xp=xp)
     T = fcluster(Z, criterion=criterion, depth=depth, R=R, t=t)
     return T
 
@@ -2754,7 +2754,7 @@ def leaves_list(Z):
 
     """
     xp = array_namespace(Z)
-    Z = asarray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype='i')
@@ -3291,7 +3291,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     #         or results in a crossing, an exception will be thrown. Passing
     #         None orders leaf nodes based on the order they appear in the
     #         pre-order traversal.
-    Z = asarray(Z, order='c')
+    Z = as_xparray(Z, order='c')
 
     if orientation not in ["top", "left", "bottom", "right"]:
         raise ValueError("orientation must be one of 'top', 'left', "
@@ -3750,8 +3750,8 @@ def is_isomorphic(T1, T2):
 
     """
     xp = array_namespace(T1, T2)
-    T1 = asarray(T1, order='c', xp=xp)
-    T2 = asarray(T2, order='c', xp=xp)
+    T1 = as_xparray(T1, order='c', xp=xp)
+    T2 = as_xparray(T2, order='c', xp=xp)
 
     T1S = T1.shape
     T2S = T2.shape
@@ -3853,7 +3853,7 @@ def maxdists(Z):
 
     """
     xp = array_namespace(Z)
-    Z = asarray(Z, order='c', dtype=xp.dtype('float64'), xp=xp)
+    Z = as_xparray(Z, order='c', dtype=xp.dtype('float64'), xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
@@ -3941,8 +3941,8 @@ def maxinconsts(Z, R):
 
     """
     xp = array_namespace(Z, R)
-    Z = asarray(Z, order='c', xp=xp)
-    R = asarray(R, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
+    R = as_xparray(R, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -4037,8 +4037,8 @@ def maxRstat(Z, R, i):
 
     """
     xp = array_namespace(Z, R)
-    Z = asarray(Z, order='c', xp=xp)
-    R = asarray(R, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
+    R = as_xparray(R, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
     if type(i) is not int:
@@ -4163,8 +4163,8 @@ def leaders(Z, T):
 
     """
     xp = array_namespace(Z, T)
-    Z = asarray(Z, order='c', xp=xp)
-    T = asarray(T, order='c', xp=xp)
+    Z = as_xparray(Z, order='c', xp=xp)
+    T = as_xparray(T, order='c', xp=xp)
     if T.dtype != 'i':
         raise TypeError('T must be a one-dimensional array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')

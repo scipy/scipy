@@ -4,7 +4,7 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, asarray, asarray_namespace,
+    _GLOBAL_CONFIG, array_namespace, as_xparray, asarray_namespace,
     to_numpy
 )
 
@@ -29,7 +29,7 @@ def test_array_namespace():
 
 @array_api_compatible
 def test_asarray(xp):
-    x, y = asarray([0, 1, 2], xp=xp), asarray(np.arange(3), xp=xp)
+    x, y = as_xparray([0, 1, 2], xp=xp), as_xparray(np.arange(3), xp=xp)
     ref = np.array([0, 1, 2])
     assert_equal(x, ref)
     assert_equal(y, ref)

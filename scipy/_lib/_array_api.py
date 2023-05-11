@@ -14,7 +14,7 @@ from numpy.core.numerictypes import typecodes
 import array_api_compat
 import array_api_compat.numpy
 
-__all__ = ['array_namespace', 'asarray', 'asarray_namespace']
+__all__ = ['array_namespace', 'as_xparray', 'asarray_namespace']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
@@ -87,7 +87,7 @@ def array_namespace(*arrays):
     return array_api_compat.array_namespace(*arrays)
 
 
-def asarray(
+def as_xparray(
     array, dtype=None, order=None, copy=None, *, xp=None, check_finite=True
 ):
     """Drop-in replacement for `np.asarray`.
