@@ -14,6 +14,7 @@ __all__ = ["isotonic_regression"]
 
 def isotonic_regression(
     y: npt.ArrayLike,
+    *,
     weights: npt.ArrayLike | None = None,
     increasing: bool = True,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.intp]]:
@@ -109,7 +110,7 @@ def isotonic_regression(
     """
     yarr = np.asarray(y)
     if weights is None:
-        weights = np.ones_like(yarr)
+        warr = np.ones_like(yarr)
     else:
         warr = np.asarray(weights)
 
