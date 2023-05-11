@@ -82,6 +82,8 @@ def array_namespace(*arrays):
         # here we could wrap the namespace if needed
         return np
 
+    arrays = [array for array in arrays if array is not None]
+
     compliance_scipy(*arrays)
 
     return array_api_compat.array_namespace(*arrays)
