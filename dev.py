@@ -109,8 +109,6 @@ import contextlib
 from sysconfig import get_path
 import math
 import traceback
-from multiprocessing import get_context as mp_get_context
-from multiprocessing.context import BaseContext
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
 
 # distutils is required to infer meson install path
