@@ -501,7 +501,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     contains_nan = [False]*len(samples)
 
                 # Addresses nan_policy == "propagate"
-                if any(contains_nan) and nan_policy == 'propagate':
+                if any(contains_nans) and (nan_policy == 'propagate'
+                                           and override['nan_propagation']):
                     res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
