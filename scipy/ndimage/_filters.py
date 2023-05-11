@@ -423,7 +423,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
 
 @_ni_docstrings.docfiller
 def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
-    """Calculate the axis-specific Sobel transform.
+    """Calculate a Sobel filter.
 
     Parameters
     ----------
@@ -433,19 +433,44 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the axis-specific Sobel gradient.
+    The horizontal edges can emphasised with the horizontal trasform (axis=0),
+    the vertical edges with the vertical transform (axis=1) and so on for higher dimensions.
+    These can be combined to give the magnitude.
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+
+    >>> ascent = datasets.ascent().astype('int32')
+    >>> sobel_h = ndimage.sobel(ascent, 0)  # horizontal gradient
+    >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
+    >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
+    >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
+
     >>> fig = plt.figure()
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = datasets.ascent()
-    >>> result = ndimage.sobel(ascent)
+    >>> ax1 = fig.add_subplot(141)
+    >>> ax2 = fig.add_subplot(142)
+    >>> ax3 = fig.add_subplot(143)
+    >>> ax4 = fig.add_subplot(144)
+
     >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> ax1.set_title("original")
+    >>> ax2.imshow(sobel_h)
+    >>> ax2.set_title("horizontal")
+    >>> ax3.imshow(sobel_v)
+    >>> ax3.set_title("vertical")
+    >>> ax4.imshow(magnitude)
+    >>> ax4.set_title("magnitude")
+    >>> for ax in [ax1, ax2, ax3, ax4]:
+    >>>     ax.set_axis_off()
     >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
