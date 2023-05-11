@@ -98,8 +98,8 @@ CONFIG = _cleanup(
             },
         },
         "Python Information": {
-            "path": r"@PYTHON_PATH@",
-            "version": "@PYTHON_VERSION@",
+            "path": r"@HOST_PYTHON_PATH@",
+            "version": "@HOST_PYTHON_VERSION@",
         },
     }
 )

@@ -87,6 +87,8 @@ relevant directories in your *cross file*:
     [properties]
     numpy-include-dir = sitepkg + 'numpy/core/include'
     pythran-include-dir = sitepkg + 'pythran'
+    host-python-path = '/abspath/to/host-pythons/bin/python'
+    host-python-version = '3.10'
 
 
 Use different build types with Meson
