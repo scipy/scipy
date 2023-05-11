@@ -1,0 +1,86 @@
+name: Linux Array API
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  INSTALLDIR: "build-install"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  pytorch_cpu:
+    name: Meson build
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: [3.11']
+        maintenance-branch:
+          - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
+        exclude:
+          - maintenance-branch: true
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'  # not using a path to also cache pytorch
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Install Python packages
+      run: |
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+        # Packages for Array API testing
+        python -m pip install array-api-compat
+        python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
+        NOW=$(date -u +"%F-%T")
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v3
+      id:    cache-ccache
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
+
+    - name: Setup build and install scipy
+      run: |
+        python dev.py build
+
+    - name: Test SciPy
+      run: |
+        export OMP_NUM_THREADS=2
+        export SCIPY_USE_PROPACK=1
+        export SCIPY_ARRAY_API=True
+        python dev.py --no-build test -s cluster -- --durations 10 --timeout=60
