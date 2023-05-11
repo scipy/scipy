@@ -125,7 +125,7 @@ def test_spline_properties():
     rv0 = spline(times).as_rotvec()
     rvm = spline(times - h).as_rotvec()
     rvp = spline(times + h).as_rotvec()
-    # rtol bumped from 1e-15 to 1.5e-15 in gh18414 for linux  bit
+    # rtol bumped from 1e-15 to 1.5e-15 in gh18414 for linux 32 bit
     assert_allclose(rv0, 0.5 * (rvp + rvm), rtol=1.5e-15)
 
     r0 = spline(times, 1)
