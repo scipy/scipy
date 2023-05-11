@@ -621,6 +621,14 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
 
+    .. legacy:: function
+
+        :class:`ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features also including a :meth:`~ShortTimeFFT.spectrogram` method.
+        A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of
+        the :ref:`user_guide`.
+
     Parameters
     ----------
     x : array_like
@@ -688,7 +696,8 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     welch: Power spectral density by Welch's method.
     csd: Cross spectral density by Welch's method.
     ShortTimeFFT: Newer STFT/ISTFT implementation providing more features,
-                  which also includes a spectrogram method.
+                  which also includes a :meth:`~ShortTimeFFT.spectrogram`
+                  method.
 
     Notes
     -----
@@ -700,10 +709,6 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     It is for this reason that the default window is a Tukey window with
     1/8th of a window's length overlap at each end.
 
-    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
-    features also including a spectrorgam method. A :ref:`comparison
-    <tutorial_stft_classic_stft>` between the implementations can be found in
-    the :ref:`tutorial_stft` section of the :ref:`user_guide`.
 
     .. versionadded:: 0.16.0
 
@@ -1049,6 +1054,13 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
 
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
+
     Parameters
     ----------
     x : array_like
@@ -1154,10 +1166,6 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
     be tested with `check_NOLA`.
 
-    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
-    features. A :ref:`comparison <tutorial_stft_classic_stft>` between the
-    implementations can be found in the :ref:`tutorial_stft` section of the
-    :ref:`user_guide`.
 
     .. versionadded:: 0.19.0
 
@@ -1233,6 +1241,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
     r"""Perform the inverse Short Time Fourier transform (iSTFT).
+
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
 
     Parameters
     ----------
@@ -1331,10 +1346,6 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
 
-    The class `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
-    features. A :ref:`comparison <tutorial_stft_classic_stft>` between the
-    implementations can be found in the :ref:`tutorial_stft` section of the
-    :ref:`user_guide`.
 
     .. versionadded:: 0.19.0
 

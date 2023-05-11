@@ -1422,13 +1422,13 @@ typically having more entries than :math:`\vb{x}`. It can be shown, that
 reason for being named the  "canonical dual window".
 
 
-.. _tutorial_stft_classic_stft:
+.. _tutorial_stft_legacy_stft:
 
-Comparison with Classic Implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Comparison with Legacy Implementation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
 |ShortTimeFFT| implementation. This section discusses the key differences
-between the old "classic" and the "new" |ShortTimeFFT| implementations. The
+between the old "legacy" and the "new" |ShortTimeFFT| implementations. The
 main motivation for a rewrite was the insight that integrating :ref:`dual
 windows <tutorial_stft_dual_win>` could not be done in a sane way without
 breaking compatability. This opened the opportunity for rethinking the code
@@ -1452,7 +1452,7 @@ with a negative slope:
     >>> nperseg, noverlap = 50, 40
     >>> win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard dev.
     ...
-    >>> # Classic STFT:
+    >>> # Legacy STFT:
     >>> f0_u, t0, Sz0_u = stft(z, fs, win, nperseg, noverlap,
     ...                        return_onesided=False, scaling='spectrum')
     >>> f0, Sz0 = fftshift(f0_u), fftshift(Sz0_u, axes=0)
@@ -1467,7 +1467,7 @@ with a negative slope:
     >>> fig1, axx = plt.subplots(2, 1, sharex='all', sharey='all',
     ...                          figsize=(6., 5.))  # enlarge figure a bit
     >>> t_lo, t_hi, f_lo, f_hi = SFT.extent(N, center_bins=True)
-    >>> t_str0 = r"Classic stft() produces $%d\times%d$ points" % Sz0.T.shape
+    >>> t_str0 = r"Legacy stft() produces $%d\times%d$ points" % Sz0.T.shape
     >>> t_str1 = r"ShortTimeFFT produces $%d\times%d$ points" % Sz1.T.shape
     >>> _ = axx[0].set(title=t_str0, xlim=(t_lo, t_hi), ylim=(f_lo, f_hi))
     >>> _ = axx[1].set(title=t_str1, xlabel="Time $t$ in seconds " +
@@ -1489,8 +1489,8 @@ with a negative slope:
     >>> plt.show()
 
 
-That the |ShortTimeFFT| produces 3 more time slices than the classic version is
-main notable difference. As laid out in the :ref:`tutorial_stft_sliding_win`
+That the |ShortTimeFFT| produces 3 more time slices than the legacy version is
+the main difference. As laid out in the :ref:`tutorial_stft_sliding_win`
 section, all slices which touch the signal are incorporated in the new version.
 This has the advantage that the STFT can be sliced and reassembled as shown in
 the |ShortTimeFFT| code example. Furthermore, using all touching slices makes
@@ -1521,22 +1521,22 @@ The ISTFT can be utilized to reconstruct the original signal:
     >>> np.allclose(z1_r, z)
     True
 
-Note that the classic implementation returns a signal, which is longer than the
+Note that the legacy implementation returns a signal, which is longer than the
 original. On the other hand, the new `istft` allows the length signal length or
 the slice to be specified. The deviation in length in the old implementation is
 caused by the fact the signal length is not a multiple of the slices.
 
-Further differences between the new and classic versions in this example are:
+Further differences between the new and legacy versions in this example are:
 
 * The parameter ``fft_typ='centered'`` ensures that the zero frequency is
-  vertically centered for two-sided FFTs in the plot. With the classic
+  vertically centered for two-sided FFTs in the plot. With the legacy
   implementation, `fftshift <scipy.fft.fftshift>` needs to be utilized.
   ``fftyp='twosided'`` produces the same behavior as the old version.
 * The parameter ``phase_shift=None`` ensures identical phases of the two
   versions. |ShortTimeFFT|'s default value of ``0`` produces an STFT slices
   with an additional linear phase term.
 
-.. The unit test ``test_short_time_fft.test_tutorial_stft_classic_stft``
+.. The unit test ``test_short_time_fft.test_tutorial_stft_legacy_stft``
    verifies that all calculated values in this subsection are correct.
 
 A spectrogram is defined as the absolute square of the STFT [4]_. The
@@ -1545,12 +1545,12 @@ A spectrogram is defined as the absolute square of the STFT [4]_. The
     >>> np.allclose(SFT.spectrogram(z), abs(Sz1)**2)
     True
 
-On the other hand, the classic |old_spectrogram| provides another STFT
+On the other hand, the legacy |old_spectrogram| provides another STFT
 implementation with the key difference being the different handling of the
 signal borders. The following example shows how to use the |ShortTimeFFT| to
-obtain an identical SFT as produced with the classic |old_spectrogram|:
+obtain an identical SFT as produced with the legacy |old_spectrogram|:
 
-    >>> # Classic spectrogram (detrending for complex signals not useful):
+    >>> # Legacy spectrogram (detrending for complex signals not useful):
     >>> f2_u, t2, Sz2_u = spectrogram(z, fs, win, nperseg, noverlap,
     ...                               detrend=None, return_onesided=False,
     ...                               scaling='spectrum', mode='complex')
@@ -1582,9 +1582,9 @@ Furthermore, only slices which do not stick out to the right are returned,
 making the last slice be centered at 4.875 s, being shorter as with the default
 `stft` parametrization.
 
-Using the ``mode`` parameter, the classic |old_spectrogram| can also return the
+Using the ``mode`` parameter, the legacy |old_spectrogram| can also return the
 'angle', 'phase', 'psd' or the 'magnitude'. The `scaling` behavior of the
-classic |old_spectrogram| is not straightforward, since it depends on the
+legacy |old_spectrogram| is not straightforward, since it depends on the
 parameters ``mode``, ``scaling`` and ``return_onesided``. There is no direct
 correspondence for all combinations in the |ShortTimeFFT|, since it provides
 only 'magnitude', 'psd' or no `scaling` of the window at all. The following
@@ -1594,7 +1594,7 @@ table shows those correspondences:
    :class: table-sm
 
    +-----------+----------+-----------------++------------+-----------+
-   |  Classic |old_spectrogram|             || |ShortTimeFFT|         |
+   |   Legacy |old_spectrogram|             || |ShortTimeFFT|         |
    +-----------+----------+-----------------++------------+-----------+
    | mode      | scaling  | return_onesided || `fft_typ`  | `scaling` |
    +===========+==========+=================++============+===========+

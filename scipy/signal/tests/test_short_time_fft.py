@@ -499,12 +499,12 @@ def test_tutorial_stft_sliding_win():
     assert k_ub == 45, f"First upper border slice {k_ub=} must be 45"
 
 
-def test_tutorial_stft_classic_stft():
-    """Verify STFT example in "Comparison with Classic Implementation" from the
+def test_tutorial_stft_legacy_stft():
+    """Verify STFT example in "Comparison with Legacy Implementation" from the
     "User Guide".
 
-    In :ref:`tutorial_stft_classic_stft` (file ``signal.rst``) of the
-    :ref:`user_guide` the classic and the new implementation are compared.
+    In :ref:`tutorial_stft_legacy_stft` (file ``signal.rst``) of the
+    :ref:`user_guide` the legacy and the new implementation are compared.
     """
     fs, N = 200, 1001  # # 200 Hz sampling rate for 5 s signal
     t_z = np.arange(N) / fs  # time indexes for signal
@@ -513,7 +513,7 @@ def test_tutorial_stft_classic_stft():
     nperseg, noverlap = 50, 40
     win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard deviation
 
-    # Classic STFT:
+    # Legacy STFT:
     f0_u, t0, Sz0_u = stft(z, fs, win, nperseg, noverlap,
                            return_onesided=False, scaling='spectrum')
     Sz0 = fftshift(Sz0_u, axes=0)
@@ -540,12 +540,12 @@ def test_tutorial_stft_classic_stft():
     np.allclose(SFT.spectrogram(z), abs(Sz1) ** 2)
 
 
-def test_tutorial_stft_classic_spectrogram():
-    """Verify spectrogram example in "Comparison with Classic Implementation"
+def test_tutorial_stft_legacy_spectrogram():
+    """Verify spectrogram example in "Comparison with Legacy Implementation"
     from the "User Guide".
 
-    In :ref:`tutorial_stft_classic_stft` (file ``signal.rst``) of the
-    :ref:`user_guide` the classic and the new implementation are compared.
+    In :ref:`tutorial_stft_legacy_stft` (file ``signal.rst``) of the
+    :ref:`user_guide` the legacy and the new implementation are compared.
     """
     fs, N = 200, 1001  # # 200 Hz sampling rate for almost 5 s signal
     t_z = np.arange(N) / fs  # time indexes for signal
@@ -554,7 +554,7 @@ def test_tutorial_stft_classic_spectrogram():
     nperseg, noverlap = 50, 40
     win = ('gaussian', 1e-2 * fs)  # Gaussian with 0.01 s standard dev.
 
-    # Classic spectrogram:
+    # Legacy spectrogram:
     f2_u, t2, Sz2_u = spectrogram(z, fs, win, nperseg, noverlap, detrend=None,
                                   return_onesided=False, scaling='spectrum',
                                   mode='complex')

@@ -801,7 +801,7 @@ class ShortTimeFFT:
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
             -> NDArray:
-        """Short-time Fourier transform with a trend subtracted being from each
+        """Short-time Fourier transform with a trend being subtracted from each
         segment beforehand.
 
         .. currentmodule:: scipy.signal.ShortTimeFFT
