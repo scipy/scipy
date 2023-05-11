@@ -25,7 +25,7 @@ class TestIsotonicRegression:
         # Test case of Busing 2020
         # https://doi.org/10.18637/jss.v102.c01
         y = np.array([8, 4, 8, 2, 2, 0, 8], dtype=np.float64)
-        x, w, r = isotonic_regression(y, w)
+        x, w, r = isotonic_regression(y, weights=w)
         assert_almost_equal(x, [4, 4, 4, 4, 4, 4, 8])
         assert_almost_equal(w, [6, 1])
         assert_almost_equal(r, [0, 6, 7])
@@ -43,7 +43,7 @@ class TestIsotonicRegression:
     def test_weights(self):
         w = np.array([1, 2, 5, 0.5, 0.5, 0.5, 1, 3])
         y = np.array([3, 2, 1, 10, 9, 8, 20, 10])
-        x, wx, r = isotonic_regression(y, w)
+        x, wx, r = isotonic_regression(y, weights=w)
         assert_almost_equal(x, [12/8, 12/8, 12/8, 9, 9, 9, 50/4, 50/4])
         assert_almost_equal(wx, [8, 1.5, 4])
         assert_almost_equal(r, [0, 3, 6, 8])
@@ -52,7 +52,7 @@ class TestIsotonicRegression:
         # times.
         w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 1, 3])
         y2 = np.array([3, 2, 1, 1, 1, 1, 1, 10, 9, 8, 20, 10])
-        x2, wx2, r2 = isotonic_regression(y2, w2)
+        x2, wx2, r2 = isotonic_regression(y2, weights=w2)
         assert_almost_equal(np.diff(x2[0:7]), 0)
         assert_almost_equal(x2[4:], x)
         assert_almost_equal(wx2, wx)

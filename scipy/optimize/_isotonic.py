@@ -69,6 +69,9 @@ def isotonic_regression(
     class of strictly consistent scoring functions for the mean, see [2]_
     and references therein.
 
+    The implemented version of PAVA according to [1]_ has a computational
+    complexity of O(N) with input size N.
+
     References
     ----------
     .. [1] Busing, F. M. T. A. (2022).
