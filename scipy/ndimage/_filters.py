@@ -445,20 +445,17 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-
     >>> ascent = datasets.ascent().astype('int32')
     >>> sobel_h = ndimage.sobel(ascent, 0)  # horizontal gradient
     >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
     >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
     >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
-
-    >>> fig = plt.figure()
+    >>> fig = plt.figure(figsize=(12, 3))
     >>> plt.gray()  # show the filtered result in grayscale
     >>> ax1 = fig.add_subplot(141)
     >>> ax2 = fig.add_subplot(142)
     >>> ax3 = fig.add_subplot(143)
     >>> ax4 = fig.add_subplot(144)
-
     >>> ax1.imshow(ascent)
     >>> ax1.set_title("original")
     >>> ax1.set_axis_off()
