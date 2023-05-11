@@ -107,22 +107,22 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    y = np.asarray(y)
+    yarr = np.asarray(y)
     if weights is None:
-        weights = np.ones_like(y)
+        weights = np.ones_like(yarr)
     else:
-        weights = np.asarray(weights)
+        warr = np.asarray(weights)
 
-        if not (y.ndim == weights.ndim and y.shape[0] == weights.shape[0]):
+        if not (yarr.ndim == warr.ndim and yarr.shape[0] == warr.shape[0]):
             raise ValueError(
                 "Input arrays y and w must have one dimension of equal length."
             )
-        if np.any(weights <= 0):
+        if np.any(warr <= 0):
             raise ValueError("Weights w must be strictly positive.")
 
     order = slice(None) if increasing else slice(None, None, -1)
-    x = np.array(y[order], order="C", dtype=np.float64, copy=True)
-    wx = np.array(weights[order], order="C", dtype=np.float64, copy=True)
+    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
+    wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
     x, wx, r, b = pava(x, wx, r)  # modifies x, wx and r inplace
