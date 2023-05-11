@@ -461,14 +461,16 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
 
     >>> ax1.imshow(ascent)
     >>> ax1.set_title("original")
+    >>> ax1.set_axis_off()
     >>> ax2.imshow(sobel_h)
     >>> ax2.set_title("horizontal")
+    >>> ax2.set_axis_off()
     >>> ax3.imshow(sobel_v)
     >>> ax3.set_title("vertical")
+    >>> ax3.set_axis_off()
     >>> ax4.imshow(magnitude)
     >>> ax4.set_title("magnitude")
-    >>> for ax in [ax1, ax2, ax3, ax4]:
-    >>>     ax.set_axis_off()
+    >>> ax4.set_axis_off()
     >>> plt.show()
 
     """
