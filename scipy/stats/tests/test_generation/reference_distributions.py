@@ -310,7 +310,7 @@ class StudentT(ReferenceDistribution):
 
 class TruncExpon(ReferenceDistribution):
 
-    def __init(self, *, b):
+    def __init__(self, *, b):
         super().__init__(b=b)
 
     def _pdf(self, x, b):
