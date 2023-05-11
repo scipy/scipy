@@ -100,9 +100,8 @@ Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 of our dependencies and building release quality wheels. Reliability of CI has
 not been good recently (H1 2023), due to the large amount of configurations to
 support and some CI jobs needing an overhaul. We aim to reduce build times by
-removing the remaining distutils-based jobs when we drop that build system,
-move more jobs from Azure Pipelines to GitHub Actions, and make the set of
-configurations in CI jobs more orthogonal.
+removing the remaining distutils-based jobs when we drop that build system
+and make the set of configurations in CI jobs more orthogonal.
 
 
 Size of binaries

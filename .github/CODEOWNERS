@@ -47,6 +47,5 @@ benchmarks/asv.conf.json  @larsoner
 # CI config
 .circleci/*  @larsoner
 .github/*  @larsoner @andyfaff
-azure-pipelines.yml  @larsoner
 .travis.yml  @larsoner
 
