@@ -4244,8 +4244,6 @@ class TestLevyStable:
         stats.levy_stable.pdf_default_method = "piecewise"
         stats.levy_stable.quad_eps = stats._levy_stable._QUAD_EPS
 
-        yield # this is where the testing happens
-
     @pytest.fixture
     def nolan_pdf_sample_data(self):
         """Sample data points for pdf computed with Nolan's stablec
@@ -4981,8 +4979,17 @@ class TestLevyStable:
         The points from the parametrize block are found randomly so that PDF is less than 0.
         """
         stats.levy_stable.quad_eps = 1.2e-11
+        delta = 0.0001
         assert_almost_equal(
             stats.levy_stable.pdf(0, alpha=alpha, beta=beta),
+            expected
+        )
+        assert_almost_equal(
+            stats.levy_stable.pdf(delta, alpha=alpha, beta=beta),
+            expected
+        )
+        assert_almost_equal(
+            stats.levy_stable.pdf(-delta, alpha=alpha, beta=beta),
             expected
         )
 
