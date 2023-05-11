@@ -14,7 +14,7 @@ from numpy.core.numerictypes import typecodes
 import array_api_compat
 import array_api_compat.numpy
 
-__all__ = ['array_namespace', 'as_xparray', 'asarray_namespace']
+__all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
@@ -120,7 +120,7 @@ def as_xparray(
     return array
 
 
-def asarray_namespace(*arrays):
+def as_xparray_namespace(*arrays):
     """Validate and convert arrays to a common namespace.
 
     Parameters
@@ -151,7 +151,7 @@ def asarray_namespace(*arrays):
     Examples
     --------
     >>> import numpy as np
-    >>> x, y, xp = asarray_namespace(np.array([0, 1, 2]), np.array([0, 1, 2]))
+    >>> x, y, xp = as_xparray_namespace(np.array([0, 1, 2]), np.array([0, 1, 2]))
     >>> xp.__name__
     'array_api_compat.numpy'
     >>> x, y
