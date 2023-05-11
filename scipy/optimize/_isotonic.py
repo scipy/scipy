@@ -16,7 +16,7 @@ def isotonic_regression(
     y: npt.ArrayLike,
     weights: npt.ArrayLike | None = None,
     increasing: bool = True,
-) -> tuple[npt.NDArray[np.float46], npt.NDArray[np.float46], npt.NDArray[np.intp]]:
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.intp]]:
     r"""Nonparametric isotonic regression.
 
     A (not strictly) monotonically increasing array `x` with the same length
