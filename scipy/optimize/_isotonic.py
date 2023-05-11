@@ -107,6 +107,7 @@ def isotonic_regression(
     array([1.25      , 1.25      , 4.        , 5.56666667, 5.56666667,
            5.56666667, 7.8       , 8.25      , 8.25      , 9.25      ,
            9.25      ])
+
     The big advantage of ``isotonic_regression`` compared to calling
     ``minimize`` is that it is more user friendly, i.e. one does not need to
     define objective and constraint functions, and that it is orders of
