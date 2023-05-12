@@ -451,20 +451,21 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     """
     xp = array_namespace(obs, k_or_guess)
     obs = as_xparray(obs, xp=xp, check_finite=check_finite)
+    guess = as_xparray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if not xp.isscalar(k_or_guess):
-        guess = as_xparray(k_or_guess, xp=xp, check_finite=check_finite)
+    if guess.size > 1:
         if guess.size < 1:
             raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
-        return _kmeans(obs, guess, thresh=thresh, xp=xp)
+        elif guess.size > 1:
+            return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
-    k = int(k_or_guess)
-    if k != k_or_guess:
+    k = int(guess)
+    if k != guess:
         raise ValueError("If k_or_guess is a scalar, it must be an integer.")
     if k < 1:
         raise ValueError("Asked for %d clusters." % k)
@@ -751,6 +752,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
 
     xp = array_namespace(data, k)
     data = as_xparray(data, xp=xp, check_finite=check_finite)
+    code_book = as_xparray(k, xp=xp, copy=True)
     if data.ndim == 1:
         d = 1
     elif data.ndim == 2:
@@ -758,24 +760,23 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         raise ValueError("Input of rank > 2 is not supported.")
 
-    if data.size < 1:
+    if data.size < 1 or code_book.size < 1:
         raise ValueError("Empty input is not supported.")
 
     # If k is not a single value, it should be compatible with data's shape
-    if minit == 'matrix' or not xp.isscalar(k):
-        code_book = as_xparray(k, xp=xp, copy=True)
+    if minit == 'matrix' or code_book.size > 1:
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = len(code_book)
         if data.ndim > 1 and code_book.shape[1] != d:
             raise ValueError("k array doesn't match data dimension")
     else:
-        nc = int(k)
+        nc = int(code_book)
 
         if nc < 1:
             raise ValueError("Cannot ask kmeans2 for %d clusters"
-                             " (k was %s)" % (nc, k))
-        elif nc != k:
+                             " (k was %s)" % (nc, code_book))
+        elif nc != code_book:
             warnings.warn("k was not an integer, was converted.")
 
         try:
@@ -784,7 +785,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             raise ValueError(f"Unknown init method {minit!r}") from e
         else:
             rng = check_random_state(seed)
-            code_book = init_meth(data, k, rng, xp)
+            code_book = init_meth(data, code_book, rng, xp)
 
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
