@@ -1975,13 +1975,15 @@ class TestBracket:
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
     def test_errors_and_status_false(self):
-        # Check that `bracket` raises the errors it is supposed
+        # Check that `bracket` raises the errors it is supposed to
         def f(x):  # gh-14858
             return x**2 if ((-1 < x) & (x < 1)) else 100.0
 
         message = "The algorithm terminated without finding a valid bracket."
         with pytest.raises(RuntimeError, match=message):
             optimize.bracket(f, -1, 1)
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -1, np.inf)
         with pytest.raises(RuntimeError, match=message):
             optimize.brent(f, brack=(-1, 1))
         with pytest.raises(RuntimeError, match=message):

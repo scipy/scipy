@@ -2897,6 +2897,12 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     maxiter : int, optional
         Maximum number of iterations to perform. Defaults to 1000.
 
+    Raises
+    ------
+    BracketError
+        If no valid bracket is found before the algorithm terminates.
+        See notes for conditions of a valid bracket.
+
     Returns
     -------
     xa, xb, xc : float
@@ -2913,8 +2919,6 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     :math:`f(x_b) ≤ f(x_a)` and :math:`f(x_b) ≤ f(x_c)`, where one of the
     inequalities must be satistfied strictly and all :math:`x_i` must be
     finite.
-    If no satisfactory bracket is found before the algorithm terminates,
-    the function will raise an error.
 
     Examples
     --------
@@ -3021,7 +3025,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     cond3 = np.isfinite(xa) and np.isfinite(xb) and np.isfinite(xc)
     msg = ("The algorithm terminated without finding a valid bracket. "
            "Consider trying different initial points.")
-    if not cond1 and cond2 and cond3:
+    if not (cond1 and cond2 and cond3):
         e = BracketError(msg)
         e.data = (xa, xb, xc, fa, fb, fc, funcalls)
         raise e
