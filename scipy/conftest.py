@@ -115,7 +115,7 @@ if SCIPY_ARRAY_API:
 
     array_api_backends = (np, numpy.array_api)
 
-    if isinstance(SCIPY_ARRAY_API, str):
+    if SCIPY_ARRAY_API.lower() != "true":
         SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
 
         if 'all' in SCIPY_ARRAY_API:
