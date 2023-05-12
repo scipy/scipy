@@ -2161,6 +2161,81 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         Returned only when `return_indices` is True, and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_edt : Fast distance transform for euclidean metric
+    distance_transform_bf : Distance transform for different metrics using
+                            a slower brute force algorithm
+
+    Notes
+    -----
+    The distance transform replaces every foreground pixel (pixel value
+    >0) by its distance to the closest background pixel (pixel value 0).
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_cdt
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the image.
+
+    >>> fig = plt.figure(figsize=(15, 5))
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(1, 3), axes_pad=(0.5, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')
+    >>> left, middle, right = grid
+    >>> colorbar_ticks = [0, 10, 20]
+
+    The left image contains the original binary image.
+
+    >>> binary_image = left.imshow(image, cmap='gray')
+    >>> cbar_binary_image = grid.cbar_axes[0].colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> left.set_title("Binary image: foreground in white")
+
+    The middle image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_taxicab = distance_transform_cdt(image, metric="taxicab")
+    >>> taxicab_transform = middle.imshow(distance_taxicab, cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[1].colorbar(taxicab_transform)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> middle.set_title("Taxicab metric")
+
+    The right image contains the distance transform using the ``chessboard``
+    metric.
+
+    >>> distance_chessboard = distance_transform_cdt(image,
+    ...                                              metric="chessboard")
+    >>> chessboard_transform = right.imshow(distance_chessboard, cmap='gray')
+    >>> cbar_chessboard = grid.cbar_axes[2].colorbar(chessboard_transform)
+    >>> cbar_chessboard.set_ticks(colorbar_ticks)
+    >>> right.set_title("Chessboard metric")
+    >>> plt.show()
+
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
