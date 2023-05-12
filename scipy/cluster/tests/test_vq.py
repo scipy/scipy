@@ -11,7 +11,7 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import skip_if_array_api
+from scipy.conftest import skip_if_array_api, array_api_compatible
 from scipy.sparse._sputils import matrix
 from scipy._lib._array_api import SCIPY_ARRAY_API
 
@@ -73,13 +73,14 @@ LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
 class TestWhiten:
-    def test_whiten(self):
-        desired = np.array([[5.08738849, 2.97091878],
+    @array_api_compatible
+    def test_whiten(self, xp):
+        desired = xp.asarray([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             obs = tp([[0.98744510, 0.82766775],
                       [0.62093317, 0.19406729],
@@ -88,11 +89,12 @@ class TestWhiten:
                       [0.45067590, 0.45464607]])
             assert_allclose(whiten(obs), desired, rtol=1e-5)
 
-    def test_whiten_zero_std(self):
+    @array_api_compatible
+    def test_whiten_zero_std(self, xp):
         desired = np.array([[0., 1.0, 2.86666544],
                             [0., 1.0, 1.32460034],
                             [0., 1.0, 3.74382172]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             obs = tp([[0., 1., 0.74109533],
                       [0., 1., 0.34243798],
@@ -103,10 +105,11 @@ class TestWhiten:
                 assert_equal(len(w), 1)
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 
-    def test_whiten_not_finite(self):
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+    @array_api_compatible
+    def test_whiten_not_finite(self, xp):
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
-            for bad_value in np.nan, np.inf, -np.inf:
+            for bad_value in xp.nan, xp.inf, -xp.inf:
                 obs = tp([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
                           [0.87545741, 0.00735733],
@@ -116,17 +119,18 @@ class TestWhiten:
 
 
 class TestVq:
-    def test_py_vq(self):
+    @array_api_compatible
+    def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
-    def test_vq(self):
+    @skip_if_array_api
+    def test_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
-        for tp in arrays:
+        for tp in [np.asarray, matrix]:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
@@ -194,10 +198,11 @@ class TestKMean:
 
         kmeans(data, np.asarray(2))
 
-    def test_kmeans_simple(self):
+    @array_api_compatible
+    def test_kmeans_simple(self, xp):
         np.random.seed(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
@@ -218,10 +223,11 @@ class TestKMean:
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
-    def test_kmeans2_simple(self):
+    @array_api_compatible
+    def test_kmeans2_simple(self, xp):
         np.random.seed(12345678)
-        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
+        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
         for tp in arrays:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
