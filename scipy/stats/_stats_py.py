@@ -38,7 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.spatial import distance_matrix
-from scipy.sparse import hstack, vstack, coo_array, block_diag, eye
+from scipy.sparse import coo_array, block_diag
 
 
 from scipy.ndimage import _measurements
