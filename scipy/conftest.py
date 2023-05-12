@@ -131,3 +131,8 @@ if SCIPY_ARRAY_API:
                 raise ValueError(msg)
 
 array_api_compatible = pytest.mark.parametrize("xp", array_api_backends)
+
+skip_if_array_api = pytest.mark.skipif(
+    SCIPY_ARRAY_API,
+    reason="do not run with Array API on",
+)
