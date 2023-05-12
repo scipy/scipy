@@ -1,11 +1,12 @@
 # Pytest customization
+import json
 import os
-import pytest
 import warnings
 
 import numpy as np
 import numpy.array_api
 import numpy.testing as npt
+import pytest
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
@@ -97,6 +98,34 @@ def check_fpu_mode(request):
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)
 
-array_api_compatible = pytest.mark.parametrize(
-    "xp", [np, *((numpy.array_api,) if SCIPY_ARRAY_API else ())]
-)
+
+# Array API backend handling
+array_api_backends = (np,)
+
+if SCIPY_ARRAY_API:
+    # only use PyTorch CPU on GitHub actions
+    array_api_available_backends = {
+        'numpy': np, 'numpy.array_api': numpy.array_api,
+    }
+
+    try:
+        import torch
+        array_api_available_backends.update({'pytorch': torch})
+    except ImportError:
+        pass
+
+    array_api_backends = (np, numpy.array_api)
+
+    if isinstance(SCIPY_ARRAY_API, str):
+        SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
+
+        try:
+            array_api_backends = [
+                array_api_available_backends[backend]
+                for backend in SCIPY_ARRAY_API
+            ]
+        except KeyError:
+            msg = f"'--array-api-backend' must be in {array_api_available_backends}"
+            raise ValueError(msg)
+
+array_api_compatible = pytest.mark.parametrize("xp", array_api_backends)

@@ -716,6 +716,11 @@ class Test(Task):
         ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for testing"
     )
+    array_api_backend = Option(
+        ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
+        multiple=True,
+        help="List of Array API backends ('numpy', 'pytorch', 'numpy.array_api')"
+    )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(
         ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
@@ -755,6 +760,9 @@ class Test(Task):
             tests = args.tests
         else:
             tests = None
+
+        if args.array_api_backend is not None:
+            os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
