@@ -764,7 +764,7 @@ class Test(Task):
         else:
             tests = None
 
-        if args.array_api_backend is not None:
+        if len(args.array_api_backend) != 0:
             os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
