@@ -1847,7 +1847,7 @@ def from_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, dtype=xp.dtype('float64'), order='c', xp=xp)
+    Z = as_xparray(Z, dtype=xp.float64, order='c', xp=xp)
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -2137,7 +2137,7 @@ def is_valid_im(R, warning=False, throw=False, name=None):
     valid = True
     name_str = "%r " % name if name else ''
     try:
-        if R.dtype != xp.dtype('float64'):
+        if R.dtype != xp.float64:
             raise TypeError('Inconsistency matrix %smust contain doubles '
                             '(double).' % name_str)
         if len(R.shape) != 2:
@@ -2254,7 +2254,7 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
     valid = True
     name_str = "%r " % name if name else ''
     try:
-        if Z.dtype != xp.dtype('float64'):
+        if Z.dtype != xp.float64:
             raise TypeError('Linkage matrix %smust contain doubles.' % name_str)
         if len(Z.shape) != 2:
             raise ValueError('Linkage matrix %smust have shape=2 (i.e. be '
@@ -2689,7 +2689,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X)
-    X = as_xparray(X, order='c', dtype=xp.dtype('float64'))
+    X = as_xparray(X, order='c', dtype=xp.float64)
 
     if len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m '
@@ -3853,7 +3853,7 @@ def maxdists(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', dtype=xp.dtype('float64'), xp=xp)
+    Z = as_xparray(Z, order='c', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
