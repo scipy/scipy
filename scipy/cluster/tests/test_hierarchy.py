@@ -47,6 +47,7 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
+from scipy.conftest import skip_if_array_api
 
 from . import hierarchy_test_data
 
@@ -180,6 +181,7 @@ class TestCopheneticDistance:
 
 
 class TestMLabLinkageConversion:
+    @skip_if_array_api
     def test_mlab_linkage_conversion_empty(self):
         # Tests from/to_mlab_linkage on empty linkage array.
         X = np.asarray([])
@@ -189,7 +191,7 @@ class TestMLabLinkageConversion:
     def test_mlab_linkage_conversion_single_row(self):
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = np.asarray([[0., 1., 3., 2.]])
-        Zm = [[1, 2, 3]]
+        Zm = np.asarray([[1, 2, 3]])
         assert_equal(from_mlab_linkage(Zm), Z)
         assert_equal(to_mlab_linkage(Z), Zm)
 
@@ -270,6 +272,7 @@ class TestLeaders:
 
 
 class TestIsIsomorphic:
+    @skip_if_array_api
     def test_is_isomorphic_1(self):
         # Tests is_isomorphic on test case #1 (one flat cluster, different labellings)
         a = [1, 1, 1]
@@ -279,35 +282,35 @@ class TestIsIsomorphic:
 
     def test_is_isomorphic_2(self):
         # Tests is_isomorphic on test case #2 (two flat clusters, different labelings)
-        a = [1, 7, 1]
-        b = [2, 3, 2]
+        a = np.asarray([1, 7, 1])
+        b = np.asarray([2, 3, 2])
         assert_(is_isomorphic(a, b))
         assert_(is_isomorphic(b, a))
 
     def test_is_isomorphic_3(self):
         # Tests is_isomorphic on test case #3 (no flat clusters)
-        a = []
-        b = []
+        a = np.asarray([])
+        b = np.asarray([])
         assert_(is_isomorphic(a, b))
 
     def test_is_isomorphic_4A(self):
         # Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)
-        a = [1, 2, 3]
-        b = [1, 3, 2]
+        a = np.asarray([1, 2, 3])
+        b = np.asarray([1, 3, 2])
         assert_(is_isomorphic(a, b))
         assert_(is_isomorphic(b, a))
 
     def test_is_isomorphic_4B(self):
         # Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)
-        a = [1, 2, 3, 3]
-        b = [1, 3, 2, 3]
+        a = np.asarray([1, 2, 3, 3])
+        b = np.asarray([1, 3, 2, 3])
         assert_(is_isomorphic(a, b) is False)
         assert_(is_isomorphic(b, a) is False)
 
     def test_is_isomorphic_4C(self):
         # Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)
-        a = [7, 2, 3]
-        b = [6, 3, 2]
+        a = np.asarray([7, 2, 3])
+        b = np.asarray([6, 3, 2])
         assert_(is_isomorphic(a, b))
         assert_(is_isomorphic(b, a))
 
@@ -326,7 +329,9 @@ class TestIsIsomorphic:
 
     def test_is_isomorphic_7(self):
         # Regression test for gh-6271
-        assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
+        a = np.asarray([1, 2, 3])
+        b = np.asarray([1, 1, 1])
+        assert_(not is_isomorphic(a, b))
 
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
@@ -1018,18 +1023,18 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
 
 
 def test_unsupported_uncondensed_distance_matrix_linkage_warning():
-    assert_warns(ClusterWarning, linkage, [[0, 1], [1, 0]])
+    assert_warns(ClusterWarning, linkage, np.asarray([[0, 1], [1, 0]]))
 
 
 def test_euclidean_linkage_value_error():
     for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
-        assert_raises(ValueError, linkage, [[1, 1], [1, 1]],
+        assert_raises(ValueError, linkage, np.asarray([[1, 1], [1, 1]]),
                       method=method, metric='cityblock')
 
 
 def test_2x2_linkage():
-    Z1 = linkage([1], method='single', metric='euclidean')
-    Z2 = linkage([[0, 1], [0, 0]], method='single', metric='euclidean')
+    Z1 = linkage(np.asarray([1]), method='single', metric='euclidean')
+    Z2 = linkage(np.asarray([[0, 1], [0, 0]]), method='single', metric='euclidean')
     assert_allclose(Z1, Z2)
 
 

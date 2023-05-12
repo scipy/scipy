@@ -2566,7 +2566,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     all data points to be merged together - so a single cluster is returned.
 
     """
-    xp = array_namespace(Z, t)
+    xp = array_namespace(Z)
     Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
@@ -2688,7 +2688,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     default settings) is four clusters with three data points each.
 
     """
-    xp = array_namespace(X, t)
+    xp = array_namespace(X)
     X = as_xparray(X, order='c', dtype=xp.dtype('float64'))
 
     if len(X.shape) != 2:
