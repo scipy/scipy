@@ -685,6 +685,7 @@ class Test(Task):
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
+    $ python dev.py test -b numpy -b pytorch -s cluster
     ```
     """  # noqa: E501
     ctx = CONTEXT
@@ -719,7 +720,9 @@ class Test(Task):
     array_api_backend = Option(
         ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
         multiple=True,
-        help="List of Array API backends ('numpy', 'pytorch', 'numpy.array_api')"
+        help=(
+            "Array API backend ('all', 'numpy', 'pytorch', 'numpy.array_api')."
+        )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(

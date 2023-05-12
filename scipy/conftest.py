@@ -103,7 +103,6 @@ def check_fpu_mode(request):
 array_api_backends = (np,)
 
 if SCIPY_ARRAY_API:
-    # only use PyTorch CPU on GitHub actions
     array_api_available_backends = {
         'numpy': np, 'numpy.array_api': numpy.array_api,
     }
@@ -119,13 +118,16 @@ if SCIPY_ARRAY_API:
     if isinstance(SCIPY_ARRAY_API, str):
         SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
 
-        try:
-            array_api_backends = [
-                array_api_available_backends[backend]
-                for backend in SCIPY_ARRAY_API
-            ]
-        except KeyError:
-            msg = f"'--array-api-backend' must be in {array_api_available_backends}"
-            raise ValueError(msg)
+        if 'all' in SCIPY_ARRAY_API:
+            array_api_backends = array_api_available_backends.values()
+        else:
+            try:
+                array_api_backends = [
+                    array_api_available_backends[backend]
+                    for backend in SCIPY_ARRAY_API
+                ]
+            except KeyError:
+                msg = f"'--array-api-backend' must be in {array_api_available_backends}"
+                raise ValueError(msg)
 
 array_api_compatible = pytest.mark.parametrize("xp", array_api_backends)
