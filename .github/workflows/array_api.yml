@@ -1,4 +1,4 @@
-name: Linux Array API
+name: Array API
 
 on:
   push:
@@ -22,12 +22,12 @@ concurrency:
 
 jobs:
   pytorch_cpu:
-    name: Meson build
+    name: Linux PyTorch CPU
     # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.11']
+        python-version: ['3.11']
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
