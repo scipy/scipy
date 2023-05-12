@@ -45,11 +45,12 @@ def compliance_scipy(*arrays):
 
 def _check_finite(array, xp):
     """Check for NaNs or Infs."""
-    # same as np.asarray_chkfinite
-    if array.dtype.char in typecodes['AllFloat'] and not xp.isfinite(array).all():
-        raise ValueError(
-            "array must not contain infs or NaNs"
-        )
+    msg = "array must not contain infs or NaNs"
+    try:
+        if not xp.isfinite(array).all():
+            raise ValueError(msg)
+    except TypeError:
+        raise ValueError(msg)
 
 
 def array_namespace(*arrays):
