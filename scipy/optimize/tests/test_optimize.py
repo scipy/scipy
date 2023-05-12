@@ -1971,6 +1971,7 @@ class TestOptimizeScalar:
         options['disp'] = False
         optimize.minimize_scalar(f, method=method, options=options, **kwargs)
 
+
 class TestBracket:
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')

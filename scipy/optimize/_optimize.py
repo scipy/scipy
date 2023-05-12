@@ -2897,12 +2897,6 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     maxiter : int, optional
         Maximum number of iterations to perform. Defaults to 1000.
 
-    Raises
-    ------
-    BracketError
-        If no valid bracket is found before the algorithm terminates.
-        See notes for conditions of a valid bracket.
-
     Returns
     -------
     xa, xb, xc : float
@@ -2911,6 +2905,12 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Objective function values at the bracket points.
     funcalls : int
         Number of function evaluations made.
+
+    Raises
+    ------
+    BracketError
+        If no valid bracket is found before the algorithm terminates.
+        See notes for conditions of a valid bracket.
 
     Notes
     -----
@@ -3064,7 +3064,7 @@ def _recover_from_bracket_error(solver, fun, bracket, args, **options):
         if np.any(np.isnan([xs, fs])):
             x, fun = np.nan, np.nan
         else:
-            imin = np.argmin(xs)
+            imin = np.argmin(fs)
             x, fun = xs[imin], fs[imin]
         return OptimizeResult(fun=fun, nfev=funcalls, x=x,
                               nit=0, success=False, message=msg)
