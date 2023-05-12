@@ -7,13 +7,11 @@ s_src = [
   'PROPACK/single/printstat.F',
   'PROPACK/single/sblasext.F',
   'PROPACK/single/sbsvd.F',
-  'PROPACK/single/second.F',
   'PROPACK/single/sgemm_ovwr.F',
   'PROPACK/single/sgetu0.F',
   'PROPACK/single/slanbpro.F',
   'PROPACK/single/slansvd.F',
   'PROPACK/single/slansvd_irl.F',
-  'PROPACK/single/smgs.pentium.F',
   'PROPACK/single/sreorth.F',
   'PROPACK/single/sritzvec.F',
   'PROPACK/single/ssafescal.F'
@@ -27,12 +25,10 @@ d_src = [
   'PROPACK/double/dlanbpro.F',
   'PROPACK/double/dlansvd.F',
   'PROPACK/double/dlansvd_irl.F',
-  'PROPACK/double/dmgs.pentium.F',
   'PROPACK/double/dreorth.F',
   'PROPACK/double/dritzvec.F',
   'PROPACK/double/dsafescal.F',
   'PROPACK/double/printstat.F',
-  'PROPACK/double/second.F'
 ]
 
 c_src = [
@@ -42,14 +38,12 @@ c_src = [
   'PROPACK/complex8/clanbpro.F',
   'PROPACK/complex8/clansvd.F',
   'PROPACK/complex8/clansvd_irl.F',
-  'PROPACK/complex8/cmgs.pentium.F',
   'PROPACK/complex8/creorth.F',
   'PROPACK/complex8/critzvec.F',
   'PROPACK/complex8/csafescal.F',
   'PROPACK/complex8/printstat.F',
   'PROPACK/complex8/sblasext.F',
   'PROPACK/complex8/sbsvd.F',
-  'PROPACK/complex8/second.F',
   'PROPACK/complex8/sgemm_ovwr.F'
 ]
 
@@ -58,24 +52,28 @@ z_src = [
   'PROPACK/complex16/dbsvd.F',
   'PROPACK/complex16/dgemm_ovwr.F',
   'PROPACK/complex16/printstat.F',
-  'PROPACK/complex16/second.F',
   'PROPACK/complex16/zblasext.F',
   'PROPACK/complex16/zgemm_ovwr.F',
   'PROPACK/complex16/zgetu0.F',
   'PROPACK/complex16/zlanbpro.F',
   'PROPACK/complex16/zlansvd.F',
   'PROPACK/complex16/zlansvd_irl.F',
-  'PROPACK/complex16/zmgs.pentium.F',
   'PROPACK/complex16/zreorth.F',
   'PROPACK/complex16/zritzvec.F',
   'PROPACK/complex16/zsafescal.F'
 ]
 
+# Use risc msg implementation for 64-bit machines, pentium for 32-bit
 if meson.get_compiler('cpp').sizeof('void*') > 4
   s_src += ['PROPACK/single/smgs.risc.F']
   d_src += ['PROPACK/double/dmgs.risc.F']
   c_src += ['PROPACK/complex8/cmgs.risc.F']
   z_src += ['PROPACK/complex16/zmgs.risc.F']
+else
+  s_src += ['PROPACK/single/smgs.pentium.F']
+  d_src += ['PROPACK/double/dmgs.pentium.F']
+  c_src += ['PROPACK/complex8/cmgs.pentium.F']
+  z_src += ['PROPACK/complex16/zmgs.pentium.F']
 endif
 
 elements = [
@@ -85,25 +83,26 @@ elements = [
   ['_zpropack', z_src, 'zpropack.pyf']
 ]
 
-cargs_propack = ['-D_OPENMP']  # FIXME: _OPENMP is needed now, but not good!
+fargs_propack = ['-U_OPENMP']
 if use_g77_abi
-  # This define needs to be removed from PROPACK code, in favor of using
+  # FIXME: define needs to be removed from PROPACK code, in favor of using
   # `wcdotc` unconditionally, like is done in ARPACK.
-  cargs_propack += ['-DSCIPY_USE_G77_CDOTC_WRAP=1']
+  fargs_propack += ['-DSCIPY_USE_G77_CDOTC_WRAP=1']
 endif
 foreach ele: elements
   # PROPACK integration is pretty much broken, see for example gh-15108.
   # Note that in setup.py, adding `g77_abi_wrappers` is skipped for 32-bit
   # architectures (stated reason: "it blows up").
   propack_lib = static_library('lib_' + ele[0],
-    [ele[1], g77_abi_wrappers],
-    c_args: cargs_propack,
+    ele[1],
     fortran_args: [
+      fargs_propack,
       fortran_ignore_warnings, 
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
       _fflag_fpp,
     ],
+    dependencies: g77_abi_wrappers,
   )
 
   propack_module = custom_target('propack_module' + ele[0],

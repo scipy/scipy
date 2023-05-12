@@ -3185,98 +3185,110 @@ class TestF:
         assert_allclose(k, k2)
 
 
-def test_rvgeneric_std():
-    # Regression test for #1191
-    assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
+class TestStudentT:
+    def test_rvgeneric_std(self):
+        # Regression test for #1191
+        assert_array_almost_equal(stats.t.std([5, 6]), [1.29099445, 1.22474487])
 
+    def test_moments_t(self):
+        # regression test for #8786
+        assert_equal(stats.t.stats(df=1, moments='mvsk'),
+                    (np.inf, np.nan, np.nan, np.nan))
+        assert_equal(stats.t.stats(df=1.01, moments='mvsk'),
+                    (0.0, np.inf, np.nan, np.nan))
+        assert_equal(stats.t.stats(df=2, moments='mvsk'),
+                    (0.0, np.inf, np.nan, np.nan))
+        assert_equal(stats.t.stats(df=2.01, moments='mvsk'),
+                    (0.0, 2.01/(2.01-2.0), np.nan, np.inf))
+        assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
+        assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
+        assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
+        assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
 
-def test_moments_t():
-    # regression test for #8786
-    assert_equal(stats.t.stats(df=1, moments='mvsk'),
-                 (np.inf, np.nan, np.nan, np.nan))
-    assert_equal(stats.t.stats(df=1.01, moments='mvsk'),
-                 (0.0, np.inf, np.nan, np.nan))
-    assert_equal(stats.t.stats(df=2, moments='mvsk'),
-                 (0.0, np.inf, np.nan, np.nan))
-    assert_equal(stats.t.stats(df=2.01, moments='mvsk'),
-                 (0.0, 2.01/(2.01-2.0), np.nan, np.inf))
-    assert_equal(stats.t.stats(df=3, moments='sk'), (np.nan, np.inf))
-    assert_equal(stats.t.stats(df=3.01, moments='sk'), (0.0, np.inf))
-    assert_equal(stats.t.stats(df=4, moments='sk'), (0.0, np.inf))
-    assert_equal(stats.t.stats(df=4.01, moments='sk'), (0.0, 6.0/(4.01 - 4.0)))
+    def test_t_entropy(self):
+        df = [1, 2, 25, 100]
+        # Expected values were computed with mpmath.
+        expected = [2.5310242469692907, 1.9602792291600821,
+                    1.459327578078393, 1.4289633653182439]
+        assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
 
+    @pytest.mark.parametrize("v, ref",
+                            [(100, 1.4289633653182439),
+                            (1e+100, 1.4189385332046727)])
+    def test_t_extreme_entropy(self, v, ref):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def t_entropy(v):
+        #   v = mp.mpf(v)
+        #   C = (v + mp.one) / 2
+        #   A = C * (mp.digamma(C) - mp.digamma(v / 2))
+        #   B = 0.5 * mp.log(v) + mp.log(mp.beta(v / 2, mp.one / 2))
+        #   h = A + B
+        #   return float(h)
+        assert_allclose(stats.t.entropy(v), ref, rtol=1e-14)
 
-def test_t_entropy():
-    df = [1, 2, 25, 100]
-    # Expected values were computed with mpmath.
-    expected = [2.5310242469692907, 1.9602792291600821,
-                1.459327578078393, 1.4289633653182439]
-    assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
+    @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
+                                        "ppf", "sf", "isf"])
+    @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
+                                            [[0, 1, 0], [1, 1, 1]],
+                                            [[1, 0], [0, 1]],
+                                            [[0], [1]]])
+    def test_t_inf_df(self, methname, df_infmask):
+        np.random.seed(0)
+        df_infmask = np.asarray(df_infmask, dtype=bool)
+        df = np.random.uniform(0, 10, size=df_infmask.shape)
+        x = np.random.randn(*df_infmask.shape)
+        df[df_infmask] = np.inf
+        t_dist = stats.t(df=df, loc=3, scale=1)
+        t_dist_ref = stats.t(df=df[~df_infmask], loc=3, scale=1)
+        norm_dist = stats.norm(loc=3, scale=1)
+        t_meth = getattr(t_dist, methname)
+        t_meth_ref = getattr(t_dist_ref, methname)
+        norm_meth = getattr(norm_dist, methname)
+        res = t_meth(x)
+        assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
+        assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
 
+    @pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
+                                            [[0, 1, 0], [1, 1, 1]],
+                                            [[1, 0], [0, 1]],
+                                            [[0], [1]]])
+    def test_t_inf_df_stats_entropy(self, df_infmask):
+        np.random.seed(0)
+        df_infmask = np.asarray(df_infmask, dtype=bool)
+        df = np.random.uniform(0, 10, size=df_infmask.shape)
+        df[df_infmask] = np.inf
+        res = stats.t.stats(df=df, loc=3, scale=1, moments='mvsk')
+        res_ex_inf = stats.norm.stats(loc=3, scale=1, moments='mvsk')
+        res_ex_noinf = stats.t.stats(df=df[~df_infmask], loc=3, scale=1,
+                                    moments='mvsk')
+        for i in range(4):
+            assert_equal(res[i][df_infmask], res_ex_inf[i])
+            assert_equal(res[i][~df_infmask], res_ex_noinf[i])
 
-@pytest.mark.parametrize("v, ref",
-                         [(100, 1.4289633653182439),
-                          (1e+100, 1.4189385332046727)])
-def test_t_extreme_entropy(v, ref):
-    # Reference values were calculated with mpmath:
-    # from mpmath import mp
+        res = stats.t.entropy(df=df, loc=3, scale=1)
+        res_ex_inf = stats.norm.entropy(loc=3, scale=1)
+        res_ex_noinf = stats.t.entropy(df=df[~df_infmask], loc=3, scale=1)
+        assert_equal(res[df_infmask], res_ex_inf)
+        assert_equal(res[~df_infmask], res_ex_noinf)
+
+    # reference values were computed via the reference distribution
     # mp.dps = 500
-    #
-    # def t_entropy(v):
-    #   v = mp.mpf(v)
-    #   C = (v + mp.one) / 2
-    #   A = C * (mp.digamma(C) - mp.digamma(v / 2))
-    #   B = 0.5 * mp.log(v) + mp.log(mp.beta(v / 2, mp.one / 2))
-    #   h = A + B
-    #   return float(h)
-    assert_allclose(stats.t.entropy(v), ref, rtol=1e-14)
+    # e. g. StudentT(df=1e100).logpdf(1), StudentT(df=1e100).pdf(1)
 
-
-@pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
-                                      "ppf", "sf", "isf"])
-@pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
-                                        [[0, 1, 0], [1, 1, 1]],
-                                        [[1, 0], [0, 1]],
-                                        [[0], [1]]])
-def test_t_inf_df(methname, df_infmask):
-    np.random.seed(0)
-    df_infmask = np.asarray(df_infmask, dtype=bool)
-    df = np.random.uniform(0, 10, size=df_infmask.shape)
-    x = np.random.randn(*df_infmask.shape)
-    df[df_infmask] = np.inf
-    t_dist = stats.t(df=df, loc=3, scale=1)
-    t_dist_ref = stats.t(df=df[~df_infmask], loc=3, scale=1)
-    norm_dist = stats.norm(loc=3, scale=1)
-    t_meth = getattr(t_dist, methname)
-    t_meth_ref = getattr(t_dist_ref, methname)
-    norm_meth = getattr(norm_dist, methname)
-    res = t_meth(x)
-    assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
-    assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
-
-
-@pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
-                                        [[0, 1, 0], [1, 1, 1]],
-                                        [[1, 0], [0, 1]],
-                                        [[0], [1]]])
-def test_t_inf_df_stats_entropy(df_infmask):
-    np.random.seed(0)
-    df_infmask = np.asarray(df_infmask, dtype=bool)
-    df = np.random.uniform(0, 10, size=df_infmask.shape)
-    df[df_infmask] = np.inf
-    res = stats.t.stats(df=df, loc=3, scale=1, moments='mvsk')
-    res_ex_inf = stats.norm.stats(loc=3, scale=1, moments='mvsk')
-    res_ex_noinf = stats.t.stats(df=df[~df_infmask], loc=3, scale=1,
-                                 moments='mvsk')
-    for i in range(4):
-        assert_equal(res[i][df_infmask], res_ex_inf[i])
-        assert_equal(res[i][~df_infmask], res_ex_noinf[i])
-
-    res = stats.t.entropy(df=df, loc=3, scale=1)
-    res_ex_inf = stats.norm.entropy(loc=3, scale=1)
-    res_ex_noinf = stats.t.entropy(df=df[~df_infmask], loc=3, scale=1)
-    assert_equal(res[df_infmask], res_ex_inf)
-    assert_equal(res[~df_infmask], res_ex_noinf)
+    @pytest.mark.parametrize("x, df, logpdf_ref, pdf_ref",
+                             [(1, 1e100,
+                               -1.4189385332046727, 0.24197072451914334),
+                              (1e3, 1e50, -500000.9189385332, 0.),
+                              (10, 1e20,
+                               -50.918938533204674, 7.69459862670642e-23),
+                              (1, 1,
+                               -1.8378770664093456, 0.15915494309189535)])
+    def test_logpdf_pdf(self, x, df, logpdf_ref, pdf_ref):
+        assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-15)
+        assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
 
 
 class TestRvDiscrete:
@@ -4039,6 +4051,18 @@ class TestBeta:
         # when a<1
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
+
+        # Confirm that boost's beta distribution returns 5 at x=0
+        # when a=1, b=5
+        a, b = 1, 5
+        assert_equal(stats.beta.pdf(0, a, b), 5)
+        assert_equal(stats.beta.pdf(1e-310, a, b), 5)
+
+        # Confirm that boost's beta distribution returns 5 at x=1
+        # when a=5, b=1
+        a, b = 5, 1
+        assert_equal(stats.beta.pdf(1, a, b), 5)
+        assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
     @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):

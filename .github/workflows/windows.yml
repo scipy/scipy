@@ -57,7 +57,7 @@ jobs:
       - name: Build
         run: |
           echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
-          python dev.py build -j 2 --win-cp-openblas
+          python dev.py build --win-cp-openblas
           # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
           # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
           # when things are split over drives.
@@ -105,7 +105,7 @@ jobs:
 
       - name: Build
         run: |
-          python dev.py build -j 2 --win-cp-openblas
+          python dev.py build --win-cp-openblas
           # Copy OpenBLAS DLL, write distributor-init (see first job in this file for why)
           cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
           python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
