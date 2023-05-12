@@ -11,7 +11,9 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
+from scipy.conftest import skip_if_array_api
 from scipy.sparse._sputils import matrix
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 
 TESTDATA_2D = np.array([
@@ -77,7 +79,8 @@ class TestWhiten:
                             [4.51041982, 0.02640918],
                             [4.38567074, 0.95120889],
                             [2.32191480, 1.63195503]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             obs = tp([[0.98744510, 0.82766775],
                       [0.62093317, 0.19406729],
                       [0.87545741, 0.00735733],
@@ -89,7 +92,8 @@ class TestWhiten:
         desired = np.array([[0., 1.0, 2.86666544],
                             [0., 1.0, 1.32460034],
                             [0., 1.0, 3.74382172]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             obs = tp([[0., 1., 0.74109533],
                       [0., 1., 0.34243798],
                       [0., 1., 0.96785929]])
@@ -100,7 +104,8 @@ class TestWhiten:
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self):
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             for bad_value in np.nan, np.inf, -np.inf:
                 obs = tp([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
@@ -113,13 +118,15 @@ class TestWhiten:
 class TestVq:
     def test_py_vq(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
@@ -185,12 +192,13 @@ class TestKMean:
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
-        kmeans(data, 2)
+        kmeans(data, np.asarray(2))
 
     def test_kmeans_simple(self):
         np.random.seed(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
@@ -213,7 +221,8 @@ class TestKMean:
     def test_kmeans2_simple(self):
         np.random.seed(12345678)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        for tp in np.array, matrix:
+        arrays = [np.array] if SCIPY_ARRAY_API else [np.array, matrix]
+        for tp in arrays:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
 
@@ -232,30 +241,31 @@ class TestKMean:
     def test_kmeans2_rank1_2(self):
         data = TESTDATA_2D
         data1 = data[:, 0]
-        kmeans2(data1, 2, iter=1)
+        kmeans2(data1, np.asarray(2), iter=1)
 
     def test_kmeans2_high_dim(self):
         # test kmeans2 when the number of dimensions exceeds the number
         # of input points
         data = TESTDATA_2D
         data = data.reshape((20, 20))[:10]
-        kmeans2(data, 2)
+        kmeans2(data, np.asarray(2))
 
     def test_kmeans2_init(self):
         np.random.seed(12345)
         data = TESTDATA_2D
+        k = np.asarray(3)
 
-        kmeans2(data, 3, minit='points')
-        kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
+        kmeans2(data, k, minit='points')
+        kmeans2(data[:, :1], k, minit='points')  # special case (1-D)
 
-        kmeans2(data, 3, minit='++')
-        kmeans2(data[:, :1], 3, minit='++')  # special case (1-D)
+        kmeans2(data, k, minit='++')
+        kmeans2(data[:, :1], k, minit='++')  # special case (1-D)
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
             sup.filter(message="One of the clusters is empty. Re-run.")
-            kmeans2(data, 3, minit='random')
-            kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+            kmeans2(data, k, minit='random')
+            kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
 
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
@@ -277,8 +287,9 @@ class TestKMean:
 
     def test_kmeans2_empty(self):
         # Regression test for gh-1032.
-        assert_raises(ValueError, kmeans2, [], 2)
+        assert_raises(ValueError, kmeans2, np.asarray([]), np.asarray(2))
 
+    @skip_if_array_api
     def test_kmeans_0k(self):
         # Regression test for gh-1073: fail when k arg is 0.
         assert_raises(ValueError, kmeans, X, 0)
@@ -288,7 +299,7 @@ class TestKMean:
     def test_kmeans_large_thres(self):
         # Regression test for gh-1774
         x = np.array([1, 2, 3, 4, 10], dtype=float)
-        res = kmeans(x, 1, thresh=1e16)
+        res = kmeans(x, np.asarray(1), thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
@@ -297,7 +308,7 @@ class TestKMean:
         prev_res = np.array([[-1.95266667, 0.898],
                              [-3.153375, 3.3945]])
         np.random.seed(42)
-        res, _ = kmeans2(TESTDATA_2D, 2, minit='++')
+        res, _ = kmeans2(TESTDATA_2D, np.asarray(2), minit='++')
         assert_allclose(res, prev_res)
 
     def test_kmeans2_kpp_high_dim(self):
@@ -311,7 +322,7 @@ class TestKMean:
             np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
             np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
         ])
-        res, _ = kmeans2(data, 2, minit='++')
+        res, _ = kmeans2(data, np.asarray(2), minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
 
     def test_kmeans_diff_convergence(self):
@@ -321,13 +332,12 @@ class TestKMean:
         assert_allclose(res[0], np.array([-0.4,  8.]))
         assert_allclose(res[1], 1.0666666666666667)
 
+    @skip_if_array_api
     def test_kmeans_and_kmeans2_random_seed(self):
 
-        seed_list = [1234, np.random.RandomState(1234)]
-
-        # check that np.random.Generator can be used (numpy >= 1.17)
-        if hasattr(np.random, 'default_rng'):
-            seed_list.append(np.random.default_rng(1234))
+        seed_list = [
+            1234, np.random.RandomState(1234), np.random.default_rng(1234)
+        ]
 
         for seed in seed_list:
             # test for kmeans
