@@ -134,24 +134,28 @@ your system.
   .. tab-item:: Windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
-    This is tricker on Windows than on other platforms, because MSVC does not
+    This is trickier on Windows than on other platforms, because MSVC does not
     support Fortran, and gfortran and MSVC can't be used together. You will
     need one of these sets of compilers:
 
-    1. MSVC + Intel Fortran (``ifort``)
-    2. Intel compilers (``icc``, ``ifort``)
-    3. Mingw-w64 compilers (``gcc``, ``g++``, ``gfortran``)
+    1. Mingw-w64 compilers (``gcc``, ``g++``, ``gfortran``) - *recommended,
+       because it's easiest to install and is what we use for SciPy's own CI
+       and binaries*
+    2. MSVC + Intel Fortran (``ifort``)
+    3. Intel compilers (``icc``, ``ifort``)
 
-    Compared to macOS and Linux, building SciPy on Windows is more difficult,
-    largely due to the difficulty of setting up these compilers. It is not
-    possible to just call a one-liner on the command prompt as you would on
-    other platforms.
+    Compared to macOS and Linux, building SciPy on Windows is a little more
+    difficult, due to the need to set up these compilers. It is not possible to
+    just call a one-liner on the command prompt as you would on other
+    platforms.
 
     First, install Microsoft Visual Studio - the 2019 Community Edition or any
     newer version will work (see the
-    `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__). 
+    `Visual Studio download site <https://visualstudio.microsoft.com/downloads/>`__).
     This is needed even if you use the MinGW-w64 or Intel compilers, in order
-    to ensure you have the Windows Universal C Runtime.
+    to ensure you have the Windows Universal C Runtime (the other components of
+    Visual Studio are not needed when using Mingw-w64, and can be deselected if
+    desired, to save disk space).
 
     .. tab-set::
 
@@ -179,9 +183,11 @@ your system.
       .. tab-item:: MinGW-w64
 
         There are several sources of binaries for MinGW-w64. We recommend the
-        RTools versions, which can be installed with::
+        RTools versions, which can be installed with Chocolatey (see
+        Chocolatey install instructions `here <https://chocolatey.org/install>`_)::
 
-            choco install rtools
+            choco install rtools -y --no-progress --force --version=4.0.0.20220206
+            choco install pkgconfiglite
 
         In case of issues, we recommend using the exact same version as used
         in the `SciPy GitHub Actions CI jobs for Windows
@@ -277,7 +283,10 @@ virtual environments:
        is part of the Python stdlib. You can use any other tool; all we need is
        an activated Python environment.
 
-    Create and activate a virtual environment in a new directory named ``venv``::
+    Create and activate a virtual environment in a new directory named ``venv`` (
+    note that the exact activation command may be different based on your OS and shell
+    - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
+    in the ``venv`` docs)::
 
        python -m venv venv
        source venv/bin/activate

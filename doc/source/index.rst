@@ -102,6 +102,7 @@ science, and engineering.
    :maxdepth: 1
    :hidden:
 
+   Installing <https://scipy.org/install/>
    User Guide <tutorial/index>
    API reference <reference/index>
    Building from source <building/index>

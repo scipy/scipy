@@ -9,14 +9,15 @@ steps to start contributing:
 
 1. **Set up a development environment**
 
-   Using ``conda``, or some flavor of the many virtual environment management
+   Using ``mamba``, or some flavor of the many virtual environment management
    tools, you can make sure the development version of SciPy does not interfere
    with any other local installations of SciPy on your machine.
 
 2. **Build SciPy**
 
    SciPy uses compiled code for speed, which means you might need extra
-   dependencies to complete this step depending on your system.
+   dependencies to complete this step depending on your system - see
+   :ref:`building-from-source`.
 
 3. **Perform development tasks**
 
@@ -28,12 +29,12 @@ Basic workflow
 
 .. note::
 
-    We **strongly** recommend using a virtual environment setup, such as
-    ``venv`` or ``conda``.
+    We **strongly** recommend using a user-activated environment setup, such as
+    a conda or virtual environment.
 
 Since SciPy contains parts written in C, C++, and Fortran that need to be
 compiled before use, make sure you have the necessary compilers and Python
-development headers installed. If you are using ``conda``, these will be
+development headers installed. If you are using ``mamba``, these will be
 installed automatically. If you are using ``pip``, check which
 :ref:`system-level dependencies <system-level>` you might need.
 
@@ -49,9 +50,9 @@ Next, set up your development environment.
 
 .. tab-set::
 
-    .. tab-item:: conda
+    .. tab-item:: Conda env
 
-        With ``conda`` installed (through
+        With ``mamba`` installed (through
         `Miniforge or Mambaforge <https://github.com/conda-forge/miniforge>`_,
         `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ or
         `Anaconda <https://www.anaconda.com/products/individual>`_), execute the
@@ -59,14 +60,14 @@ Next, set up your development environment.
         `SciPy <https://github.com/scipy/scipy>`_ clone::
 
             # Create an environment with all development dependencies
-            conda env create -f environment.yml  # works with `mamba` too
+            mamba env create -f environment.yml  # works with `conda` too
             # Activate the environment
-            conda activate scipy-dev
+            mamba activate scipy-dev
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-    .. tab-item:: pip+venv
+    .. tab-item:: Virtual env
 
         **With** :ref:`system-level dependencies <system-level>` **installed**, execute
         the following commands at the terminal from the base directory of your
@@ -84,24 +85,20 @@ Next, set up your development environment.
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-Finally, build SciPy for development. On Linux and OSX, you should use::
+Finally, build SciPy for development with::
 
     python dev.py build
 
-If you run into a build issue, or need more detailed build documentation
-including building on Windows, see :ref:`building`.
-
-Otherwise, if the build has finished successfully, you should now be able
-to run the SciPy tests. You can run the full test suite running::
+You should now be able to run the SciPy tests. You can run the full test suite
+now with::
 
     python dev.py test
 
-Notice that this will take some time, so you might want to test only the
-part of SciPy you will be working on. For details on how to do that and
-a more complete setup walkthrough, see :ref:`development-workflow`.
+Notice that this will take a few minutes (and some really slow tests are
+disabled by default), so you might want to test only the part of SciPy you will
+be working on. For details on how to do that, see the more complete setup
+walkthrough in :ref:`development-workflow`, or ``python dev.py test --help``.
 
-Some of the tests in SciPy are very slow and need to be separately
-enabled. See :ref:`the-dev-py-interface` for details.
 
 Other workflows
 ===============
