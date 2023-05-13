@@ -2889,20 +2889,19 @@ def _minimize_scalar_golden(func, brack=None, args=(),
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     """
-    Bracket the minimum of the function.
+    Bracket the minimum of a function.
 
     Given a function and distinct initial points, search in the
     downhill direction (as defined by the initial points) and return
-    new points xa, xb, xc that bracket the minimum of the function
-    f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
-    solution will satisfy xa<=x<=xb.
+    three points that bracket the minimum of the function.
 
     Parameters
     ----------
     func : callable f(x,*args)
         Objective function to minimize.
     xa, xb : float, optional
-        Bracketing interval. Defaults `xa` to 0.0, and `xb` to 1.0.
+        Initial points. Defaults `xa` to 0.0, and `xb` to 1.0.
+        A local minimum need not be contained within this interval.
     args : tuple, optional
         Additional arguments (if present), passed to `func`.
     grow_limit : float, optional
@@ -2913,11 +2912,25 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     Returns
     -------
     xa, xb, xc : float
-        Bracket.
+        Final points of the bracket.
     fa, fb, fc : float
-        Objective function values in bracket.
+        Objective function values at the bracket points.
     funcalls : int
         Number of function evaluations made.
+
+    Raises
+    ------
+    BracketError
+        If no valid bracket is found before the algorithm terminates.
+        See notes for conditions of a valid bracket.
+
+    Notes
+    -----
+    The algorithm attempts to find three strictly ordered points (i.e.
+    :math:`x_a < x_b < x_c` or :math:`x_c < x_b < x_a`) satisfying
+    :math:`f(x_b) ≤ f(x_a)` and :math:`f(x_b) ≤ f(x_c)`, where one of the
+    inequalities must be satistfied strictly and all :math:`x_i` must be
+    finite.
 
     Examples
     --------
@@ -2930,7 +2943,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     ...     return 10*x**2 + 3*x + 5
     >>> x = np.linspace(-2, 2)
     >>> y = f(x)
-    >>> init_xa, init_xb = 0, 1
+    >>> init_xa, init_xb = 0.1, 1
     >>> xa, xb, xc, fa, fb, fc, funcalls = bracket(f, xa=init_xa, xb=init_xb)
     >>> plt.axvline(x=init_xa, color="k", linestyle="--")
     >>> plt.axvline(x=init_xb, color="k", linestyle="--")
@@ -2940,9 +2953,18 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     >>> plt.plot(xc, fc, "bx")
     >>> plt.show()
 
+    Note that both initial points were to the right of the minimum, and the
+    third point was found in the "downhill" direction: the direction
+    in which the function appeared to be decreasing (to the left).
+    The final points are strictly ordered, and the function value
+    at the middle point is less than the function values at the endpoints;
+    it follows that a minimum must lie within the bracket.
+
     """
     _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
+    # convert to numpy floats if not already
+    xa, xb = np.asarray([xa, xb])
     fa = func(*(xa,) + args)
     fb = func(*(xb,) + args)
     if (fa < fb):                      # Switch so fa > fb
@@ -2962,8 +2984,11 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
             denom = 2.0 * val
         w = xb - ((xb - xc) * tmp2 - (xb - xa) * tmp1) / denom
         wlim = xb + grow_limit * (xc - xb)
+        msg = ("No valid bracket was found before the iteration limit was "
+               "reached. Consider trying different initial points or "
+               "increasing `maxiter`.")
         if iter > maxiter:
-            raise RuntimeError("Too many iterations.")
+            raise RuntimeError(msg)
         iter += 1
         if (w - xc) * (xb - w) > 0.0:
             fw = func(*((w,) + args))
@@ -2973,11 +2998,11 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 xb = w
                 fa = fb
                 fb = fw
-                return xa, xb, xc, fa, fb, fc, funcalls
+                break
             elif (fw > fb):
                 xc = w
                 fc = fw
-                return xa, xb, xc, fa, fb, fc, funcalls
+                break
             w = xc + _gold * (xc - xb)
             fw = func(*((w,) + args))
             funcalls += 1
@@ -3006,7 +3031,57 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         fa = fb
         fb = fc
         fc = fw
+
+    # three conditions for a valid bracket
+    cond1 = (fb < fc and fb <= fa) or (fb < fa and fb <= fc)
+    cond2 = (xa < xb < xc or xc < xb < xa)
+    cond3 = np.isfinite(xa) and np.isfinite(xb) and np.isfinite(xc)
+    msg = ("The algorithm terminated without finding a valid bracket. "
+           "Consider trying different initial points.")
+    if not (cond1 and cond2 and cond3):
+        e = BracketError(msg)
+        e.data = (xa, xb, xc, fa, fb, fc, funcalls)
+        raise e
+
     return xa, xb, xc, fa, fb, fc, funcalls
+
+
+class BracketError(RuntimeError):
+    pass
+
+
+def _recover_from_bracket_error(solver, fun, bracket, args, **options):
+    # `bracket` was originally written without checking whether the resulting
+    # bracket is valid. `brent` and `golden` built on top of it without
+    # checking the returned bracket for validity, and their output can be
+    # incorrect without warning/error if the original bracket is invalid.
+    # gh-14858 noticed the problem, and the following is the desired
+    # behavior:
+    # - `scipy.optimize.bracket`, `scipy.optimize.brent`, and
+    #   `scipy.optimize.golden` should raise an error if the bracket is
+    #   invalid, as opposed to silently returning garbage
+    # - `scipy.optimize.minimize_scalar` should return with `success=False`
+    #   and other information
+    # The changes that would be required to achieve this the traditional
+    # way (`return`ing all the required information from bracket all the way
+    # up to `minimizer_scalar`) are extensive and invasive. (See a6aa40d.)
+    # We can achieve the same thing by raising the error in `bracket`, but
+    # storing the information needed by `minimize_scalar` in the error object,
+    # and intercepting it here.
+    try:
+        res = solver(fun, bracket, args, **options)
+    except BracketError as e:
+        msg = str(e)
+        xa, xb, xc, fa, fb, fc, funcalls = e.data
+        xs, fs = [xa, xb, xc], [fa, fb, fc]
+        if np.any(np.isnan([xs, fs])):
+            x, fun = np.nan, np.nan
+        else:
+            imin = np.argmin(fs)
+            x, fun = xs[imin], fs[imin]
+        return OptimizeResult(fun=fun, nfev=funcalls, x=x,
+                              nit=0, success=False, message=msg)
+    return res
 
 
 def _line_for_search(x0, alpha, lower_bound, upper_bound):
@@ -3101,7 +3176,9 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
         return ((fval, p, xi) if fval is not None else (func(p), p, xi))
     elif lower_bound is None and upper_bound is None:
         # non-bounded minimization
-        alpha_min, fret, _, _ = brent(myfunc, full_output=1, tol=tol)
+        res = _recover_from_bracket_error(_minimize_scalar_brent,
+                                          myfunc, None, tuple(), xtol=tol)
+        alpha_min, fret = res.x, res.fun
         xi = alpha_min * xi
         return squeeze(fret), p + xi, xi
     else:
