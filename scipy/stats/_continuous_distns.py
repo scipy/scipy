@@ -678,7 +678,8 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return _boost._beta_pdf(x, a, b)
+        with np.errstate(over='ignore'):
+            return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -697,8 +698,6 @@ class beta_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         with np.errstate(over='ignore'):  # see gh-17432
-            message = "overflow encountered in _beta_ppf"
-            warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
@@ -7172,20 +7171,34 @@ class t_gen(rv_continuous):
             df == np.inf, (x, df),
             f=lambda x, df: norm._pdf(x),
             f2=lambda x, df: (
-                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
-                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+                np.exp(self._logpdf(x, df))
             )
         )
 
     def _logpdf(self, x, df):
-        return _lazywhere(
-            df == np.inf, (x, df),
-            f=lambda x, df: norm._logpdf(x),
-            f2=lambda x, df: (
-                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
-                - (0.5*np.log(df*np.pi)
-                   + (df+1)/2*np.log(1+(x**2)/df))
-            )
+
+        def regular_formula(x, df):
+            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
+                    - (0.5 * np.log(df*np.pi))
+                    - (df + 1)/2*np.log1p(x * x/df))
+
+        def asymptotic_formula(x, df):
+            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
+                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
+                    - 1/6 * df**-1. + 1/45*df**-3.
+                    - (df + 1)/2 * np.log1p(x*x/df))
+
+        def norm_logpdf(x, df):
+            return norm._logpdf(x)
+
+        return _lazyselect(
+            ((df == np.inf),
+             (df >= 200) & np.isfinite(df),
+             (df < 200)),
+            (norm_logpdf,
+             asymptotic_formula,
+             regular_formula),
+            (x, df, )
         )
 
     def _cdf(self, x, df):
@@ -9972,11 +9985,71 @@ class vonmises_gen(rv_continuous):
     `vonmises_line` is the same distribution, defined on :math:`[-\pi, \pi]`
     on the real line. This is a regular (i.e. non-circular) distribution.
 
-    `vonmises` and `vonmises_line` take ``kappa`` as a shape parameter.
+    Note about distribution parameters: `vonmises` and `vonmises_line` take
+    ``kappa`` as a shape parameter (concentration) and ``loc`` as the location
+    (circular mean). A ``scale`` parameter is accepted but does not have any
+    effect.
 
-    %(after_notes)s
+    Examples
+    --------
+    Import the necessary modules.
 
-    %(example)s
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import vonmises
+
+    Define distribution parameters.
+
+    >>> loc = 0.5 * np.pi  # circular mean
+    >>> kappa = 1  # concentration
+
+    Compute the probability density at ``x=0`` via the ``pdf`` method.
+
+    >>> vonmises.pdf(loc, kappa, 0)
+    0.12570826359722018
+
+    Verify that the percentile function ``ppf`` inverts the cumulative
+    distribution function ``cdf`` up to floating point accuracy.
+
+    >>> x = 1
+    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
+    >>> x, cdf_value, ppf_value
+    (1, 0.31489339900904967, 1.0000000000000004)
+
+    Draw 1000 random variates by calling the ``rvs`` method.
+
+    >>> number_of_samples = 1000
+    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+
+    Plot the von Mises density on a Cartesian and polar grid to emphasize
+    that is is a circular distribution.
+
+    >>> fig = plt.figure(figsize=(12, 6))
+    >>> left = plt.subplot(121)
+    >>> right = plt.subplot(122, projection='polar')
+    >>> x = np.linspace(-np.pi, np.pi, 500)
+    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> ticks = [0, 0.15, 0.3]
+
+    The left image contains the Cartesian plot.
+
+    >>> left.plot(x, vonmises_pdf)
+    >>> left.set_yticks(ticks)
+    >>> number_of_bins = int(np.sqrt(number_of_samples))
+    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> left.set_title("Cartesian plot")
+    >>> left.set_xlim(-np.pi, np.pi)
+    >>> left.grid(True)
+
+    The right image contains the polar plot.
+
+    >>> right.plot(x, vonmises_pdf, label="PDF")
+    >>> right.set_yticks(ticks)
+    >>> right.hist(samples, density=True, bins=number_of_bins,
+    ...            label="Histogram")
+    >>> right.set_title("Polar plot")
+    >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
