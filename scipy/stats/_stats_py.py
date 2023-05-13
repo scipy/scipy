@@ -36,10 +36,9 @@ from numpy import array, asarray, ma
 from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
+from scipy import sparse
 from scipy.spatial.distance import cdist
 from scipy.spatial import distance_matrix
-from scipy.sparse import hstack, vstack, coo_array, block_diag, eye
-
 
 from scipy.ndimage import _measurements
 from scipy.optimize import milp, LinearConstraint
