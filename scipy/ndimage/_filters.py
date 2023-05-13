@@ -458,8 +458,8 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> axs[1, 1].imshow(magnitude)
     >>> titles = ["original", "horizontal", "vertical", "magnitude"]
     >>> for i, ax in enumerate(axs.ravel()):
-    >>>     ax.set_title(titles[i])
-    >>>     ax.axis("off")
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
     >>> plt.show()
 
     """
