@@ -16,7 +16,8 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, \
+                                        minres, lgmres, gcrotmk, tfqmr, symmlq
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -46,8 +47,9 @@ class Case:
 class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
-        sym_solvers = [minres, cg]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
+                   gcrotmk, tfqmr, symmlq]
+        sym_solvers = [minres, cg, symmlq]
         posdef_solvers = [cg]
         real_solvers = [minres]
 
@@ -348,7 +350,7 @@ def test_precond_inverse(case):
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk, tfqmr]
+    reentrant = [lgmres, minres, gcrotmk, tfqmr, symmlq]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -414,7 +416,8 @@ def test_atol(solver):
         assert_(err <= 1.00025 * max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, symmlq])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -491,7 +494,8 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, symmlq])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -516,7 +520,7 @@ def test_x0_working(solver):
 
 
 @pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk])
+                                    minres, lgmres, gcrotmk, symmlq])
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:
@@ -534,8 +538,9 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
-@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
-def test_show(solver, solverstring, capsys):
+@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR'),
+                         (symmlq, 'SYMMLQ')])
+def test_verbose(solver, solverstring, capsys):
     def cb(x):
         count[0] += 1
 
@@ -544,7 +549,7 @@ def test_show(solver, solverstring, capsys):
         A = case.A
         b = case.b
         count = [0]
-        x, info = solver(A, b, callback=cb, show=True)
+        x, info = solver(A, b, callback=cb, verbose=True)
         out, err = capsys.readouterr()
         if i == 20:  # Asymmetric and Positive Definite
             assert_equal(out, f"{solverstring}: Linear solve not converged "
