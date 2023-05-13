@@ -69,6 +69,10 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
 
     if tol is not None:
         msg = ("'scipy.sparse.linalg.bicg' keyword argument 'tol' is "
@@ -217,6 +221,11 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
     if tol is not None:
         msg = ("'scipy.sparse.linalg.bicgstab' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
@@ -375,6 +384,11 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
     if tol is not None:
         msg = ("'scipy.sparse.linalg.cg' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
@@ -502,15 +516,20 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     """
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
     if tol is not None:
-        msg = ("'scipy.sparse.linalg.cg' keyword argument 'tol' is "
+        msg = ("'scipy.sparse.linalg.cgs' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
                " v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
     if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.cg called with `atol` set to "
+        warnings.warn("scipy.sparse.linalg.cgs called with `atol` set to "
                       "string, possibly with value 'legacy'. This behavior "
                       "is deprecated and atol parameter only excepts floats."
                       " In SciPy 1.13, this will result with an error.",
@@ -590,8 +609,15 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         q -= alpha*vhat
         uhat = psolve(u + q)
         x += alpha*uhat
-        qhat = matvec(uhat)
-        r -= alpha*qhat
+
+        # Due to numerical error build-up the actual residual is computed
+        # instead of the following two lines that were in the original
+        # FORTRAN templates, still using a single matvec.
+
+        # qhat = matvec(uhat)
+        # r -= alpha*qhat
+        r = b - matvec(x)
+
         rho_prev = rho_cur
 
         if callback:
@@ -701,6 +727,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     >>> np.allclose(A.dot(x), b)
     True
     """
+
     # Handle the deprecation frenzy
     if restrt and restart:
         raise ValueError("Cannot specify both restart and restrt"
@@ -721,15 +748,6 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
                " v.1.13.0. Until then, if set, will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
-
-    if atol == 'legacy':
-        msg = ("Use of strings for 'atol' keyword is deprecated "
-               "and will be removed in SciPy 1.13. To keep legacy "
-               "behavior set 'atol=0., rtol=1e-5'. See "
-               " ``scipy.sparse.linalg.gmres`` documentation for "
-               "more details."
-               )
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
 
     if callback is not None and callback_type is None:
         # Warn about 'callback_type' semantic changes.
@@ -753,15 +771,20 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         callback_type = None
 
     A, M, x, b, postprocess = make_system(A, M, x0, b)
+    matvec = A.matvec
+    psolve = M.matvec
+    n = len(b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
+    eps = np.finfo(x.dtype.char).eps
 
     if np.iscomplexobj(x):
         dotprod = np.vdot
     else:
         dotprod = np.dot
-
-    eps = np.finfo(x.dtype.char).eps
-
-    n = len(b)
 
     if maxiter is None:
         maxiter = n*10
@@ -770,61 +793,64 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         restart = 20
     restart = min(restart, n)
 
-    matvec = A.matvec
-    psolve = M.matvec
+    if atol == 'legacy':
+        msg = ("Use of strings for 'atol' keyword is deprecated "
+               "and will be removed in SciPy 1.13. To keep legacy "
+               "behavior set 'atol=0., rtol=1e-5'. See "
+               " ``scipy.sparse.linalg.gmres`` documentation for "
+               "more details."
+               )
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
+        # emulate old legacy behavior
+        if np.linalg.norm(b - matvec(x)) <= tol:
+            postprocess(x), 0
+        else:
+            atol = rtol * float(bnrm2)
+    elif isinstance(atol, str) and atol != 'legacy':
+        msg = (f"Unknown value option {atol} for 'atol' keyword. "
+               "Also, nonnumeric values for 'atol' are deprecated "
+               "and will be removed in SciPy 1.13. To keep legacy "
+               "behavior set 'atol=0., rtol=1e-5'. See "
+               " ``scipy.sparse.linalg.gmres`` documentation for "
+               "more details.")
+        raise ValueError(msg)
+    else:
+        atol = max(float(atol), rtol * float(bnrm2))
 
-    bnrm2 = np.linalg.norm(b)
-    if bnrm2 == 0:
-        return postprocess(b), 0
-
-    atol = max(float(atol), float(rtol)*bnrm2)
-
-    lartg = get_lapack_funcs('lartg', dtype=x.dtype)
-    trsv = get_blas_funcs('trsv', dtype=x.dtype)
+    Mb_nrm2 = np.linalg.norm(psolve(b))
 
     # ====================================================
     # =========== Tolerance control from gh-8400 =========
     # ====================================================
-    Mb_nrm2 = np.linalg.norm(psolve(b))
-    ptol_max_factor = 1.0
-    ptol = Mb_nrm2 * min(ptol_max_factor, atol / bnrm2)
-    presid = np.nan
+    # Tolerance passed to GMRESREVCOM applies to the inner
+    # iteration and deals with the left-preconditioned
+    # residual.
+    ptol = Mb_nrm2 * atol
+    ptol_max_factor = 1.
+    presid = 0.
     # ====================================================
+    lartg = get_lapack_funcs('lartg', dtype=x.dtype)
+    trsv = get_blas_funcs('trsv', dtype=x.dtype)
 
     # allocate internal variables
     v = np.empty([restart+1, n], dtype=x.dtype)
     h = np.zeros([restart, restart+1], dtype=x.dtype)
     givens = np.zeros([restart, 2], dtype=x.dtype)
-    r = b - matvec(x) if x0 is None else b.copy()
 
     # legacy iteration count
-    inner_iters = 0
+    inner_iter = 0
 
     for iteration in range(maxiter):
-        rnorm = np.linalg.norm(r)
-        if rnorm < atol:  # Are we done?
-            return postprocess(x), 0
-
-        # Tightening of the inner loop tol, see gh-8400 for the reasoning.
-
-        # The case "true residual passes tol-test but preconditioned
-        # residual does not" is not considered. Tolerance problem is too
-        # sophisticated for manipulating two crude knobs hence will at some
-        # point require a more structured handling.
-        if iteration > 0:
-            if presid <= ptol:
-                # Inner loop passed but we are still here
-                # hence tighten the inner tolerance
-                ptol_max_factor = max(1e-16, 0.25 * ptol_max_factor)
-                ptol = presid * min(ptol_max_factor, atol / rnorm)
+        if iteration == 0:
+            r = b - matvec(x) if x0 is None else b.copy()
 
         v[0, :] = psolve(r)
-        v[0, :] *= (1 / rnorm)
+        tmp = np.linalg.norm(v[0, :])
+        v[0, :] *= (1 / tmp)
         # RHS of the Hessenberg problem
         S = np.zeros(restart+1, dtype=x.dtype)
-        S[0] = rnorm
+        S[0] = tmp
 
-        # Arnoldi process
         breakdown = False
         for col in range(restart):
             av = matvec(v[col, :])
@@ -863,46 +889,47 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
             tmp = -np.conjugate(s)*S[col]
             S[[col, col + 1]] = [c*S[col], tmp]
             presid = np.abs(tmp)
+            inner_iter += 1
 
-            # Legacy callback behavior per outer
-            if callback_type in ('pr_norm', 'legacy'):
+            if callback_type in ('legacy', 'pr_norm'):
                 callback(presid / bnrm2)
-
-            inner_iters += 1
-            if callback_type == 'legacy':
-                # Legacy behavior
-                if inner_iters >= maxiter:
-                    break
-
+            # Legacy behavior
+            if callback_type == 'legacy' and inner_iter == maxiter:
+                break
             if presid <= ptol or breakdown:
                 break
 
-        # Outer loop continues
-
         # Solve (col, col) upper triangular system
         # allow trsv to pseudo-solve singular cases
-        if breakdown:
+        if h[col, col] == 0:
             S[col] = 0
 
         y = trsv(h[:col+1, :col+1].T, S[:col+1])
-        g = y @ v[:col+1, :]
-        x += g
+        x += y @ v[:col+1, :]
+
+        # Legacy exit
+        if callback_type == 'legacy' and inner_iter > maxiter:
+            return postprocess(x), maxiter
+
         r = b - matvec(x)
+        rnorm = np.linalg.norm(r)
 
-        if callback is not None:
-            if callback_type in ('pr_norm', 'legacy'):
-                # Already called back during inner iteration
-                # Exit if ran out of inner iterations
-                if callback_type == 'legacy':
-                    if inner_iters >= maxiter:
-                        # Return incomplete progress
-                        return postprocess(x), maxiter
-            else:
-                callback(x)
+        if rnorm <= atol:
+            break
+        elif breakdown:
+            # Reached breakdown (= exact solution), but the external
+            # tolerance check failed. Bail out with failure.
+            break
+        elif presid <= ptol:
+            # Inner loop passed but outer didn't
+            ptol_max_factor = max(eps, 0.25 * ptol_max_factor)
+        else:
+            ptol_max_factor = min(1.0, 1.5 * ptol_max_factor)
 
-    else:  # for loop exhausted
-        # Return incomplete progress
-        return postprocess(x), maxiter
+        ptol = presid * min(ptol_max_factor, atol / rnorm)
+
+    info = 0 if (rnorm <= atol) else maxiter
+    return postprocess(x), info
 
 
 def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
@@ -974,15 +1001,20 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     """
     A_ = A
     A, M, x, b, postprocess = make_system(A, None, x0, b)
+    bnrm2 = np.linalg.norm(b)
+
+    if bnrm2 == 0:
+        return postprocess(b), 0
+
     if tol is not None:
-        msg = ("'scipy.sparse.linalg.bicg' keyword argument 'tol' is "
+        msg = ("'scipy.sparse.linalg.qmr' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
                " v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
     if isinstance(atol, str):
-        warnings.warn("scipy.sparse.linalg.bicg called with `atol` set to "
+        warnings.warn("scipy.sparse.linalg.qmr called with `atol` set to "
                       "string, possibly with value 'legacy'. This behavior "
                       "is deprecated and atol parameter only excepts floats."
                       " In SciPy 1.13, this will result with an error.",

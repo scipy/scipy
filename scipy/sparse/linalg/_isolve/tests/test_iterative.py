@@ -120,9 +120,9 @@ class IterativeParams:
 
         # Random complex-valued
         data = rng.random([4, 4]) + 1j*rng.random([4, 4])
-        self.cases.append(Case("rand-cmplx", data,
+        self.cases.append(Case("rand-cmplx-double", data,
                                skip=posdef_solvers+sym_solvers+real_solvers))
-        self.cases.append(Case("rand-cmplx", data.astype('F'),
+        self.cases.append(Case("rand-cmplx-single", data.astype('F'),
                                skip=posdef_solvers+sym_solvers+real_solvers))
 
         # Random hermitian complex-valued
@@ -369,17 +369,18 @@ def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
 
+    # Seed dependent tests! Historically testing very tight tolerances
     rng = np.random.default_rng(1683392185821038)
     A = rng.random([10, 10])
     A = A.dot(A.T) + 10 * np.eye(10)
     b = 1e3 * rng.random(10)
     b_norm = np.linalg.norm(b)
 
-    tols = np.r_[0, np.logspace(np.log10(1e-10), np.log10(1e2), 7), np.inf]
+    tols = np.r_[0, np.logspace(-9., 2., 7), np.inf]
 
     # Check effect of badly scaled preconditioners
     M0 = rng.random([10, 10])
-    M0 = M0.dot(M0.T)
+    M0 = M0 @ M0.T
     Ms = [None, 1e-6 * M0, 1e6 * M0]
 
     for M, tol, atol in itertools.product(Ms, tols, tols):
@@ -392,24 +393,24 @@ def test_atol(solver):
                 M2 = aslinearoperator(np.eye(10))
             else:
                 M2 = None
-            x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
+            x, info = solver(A, b, M1=M, M2=M2, rtol=tol, atol=atol)
+        elif solver in [cg, cgs, bicg, bicgstab, gmres]:
+            x, info = solver(A, b, M=M, rtol=tol, atol=atol)
         else:
             x, info = solver(A, b, M=M, tol=tol, atol=atol)
-        assert_equal(info, 0)
 
-        residual = A.dot(x) - b
+        assert info == 0
+        residual = A @ x - b
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
-        # Added 1.00025 fudge factor because of `err` exceeding `atol` just
-        # very slightly on s390x (see gh-17839)
-        assert err <= 1.00025 * max(atol, atol2)
+        assert err <= (1.00025 * max(atol, atol2))
 
 
 @pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
                                     minres, lgmres, gcrotmk, tfqmr])
 def test_zero_rhs(solver):
-    np.random.seed(1234)
-    A = np.random.rand(10, 10)
+    rng = np.random.default_rng(168384529058908)
+    A = rng.random([10, 10])
     A = A.dot(A.T) + 10 * np.eye(10)
 
     b = np.zeros(10)
@@ -419,24 +420,28 @@ def test_zero_rhs(solver):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
 
-            x, info = solver(A, b, tol=tol)
+            if solver in [cg, cgs, bicg, bicgstab, gmres]:
+                tol_kwarg = {'rtol': tol}
+            else:
+                tol_kwarg = {'tol': tol}
+            x, info = solver(A, b, **tol_kwarg)
             assert_equal(info, 0)
-            assert_allclose(x, 0, atol=1e-15)
+            assert_allclose(x, 0., atol=1e-15)
 
-            x, info = solver(A, b, tol=tol, x0=ones(10))
+            x, info = solver(A, b, x0=ones(10), **tol_kwarg)
             assert_equal(info, 0)
-            assert_allclose(x, 0, atol=tol)
+            assert_allclose(x, 0., atol=tol)
 
             if solver is not minres:
-                x, info = solver(A, b, tol=tol, atol=0, x0=ones(10))
+                x, info = solver(A, b, atol=0, x0=ones(10), **tol_kwarg)
                 if info == 0:
                     assert_allclose(x, 0, atol=5e-15, rtol=0)
 
-                x, info = solver(A, b, tol=tol, atol=tol)
+                x, info = solver(A, b, atol=tol, **tol_kwarg)
                 assert_equal(info, 0)
                 assert_allclose(x, 0, atol=1e-300)
 
-                x, info = solver(A, b, tol=tol, atol=0)
+                x, info = solver(A, b, atol=0, **tol_kwarg)
                 assert_equal(info, 0)
                 assert_allclose(x, 0, atol=1e-300)
 
@@ -469,9 +474,12 @@ def test_maxiter_worsening(solver):
     v = np.ones(4)
     best_error = np.inf
     tol = 7 if platform.machine() == 'aarch64' else 5
-
+    if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        tol_kwarg = {'rtol': 1e-8, 'atol': 0}
+    else:
+        tol_kwarg = {'tol': 1e-8, 'atol': 0}
     for maxiter in range(1, 20):
-        x, info = solver(A, v, maxiter=maxiter, tol=1e-8, atol=0)
+        x, info = solver(A, v, maxiter=maxiter, **tol_kwarg)
 
         if info == 0:
             assert np.linalg.norm(A.dot(x) - v) <= 1e-8*np.linalg.norm(v)
@@ -487,15 +495,17 @@ def test_maxiter_worsening(solver):
                                     minres, lgmres, gcrotmk, tfqmr])
 def test_x0_working(solver):
     # Easy problem
-    np.random.seed(1)
+    rng = np.random.default_rng(168384529058908)
     n = 10
-    A = np.random.rand(n, n)
+    A = rng.random([n, n])
     A = A.dot(A.T)
-    b = np.random.rand(n)
-    x0 = np.random.rand(n)
+    b = rng.random(n)
+    x0 = rng.random(n)
 
     if solver is minres:
         kw = dict(tol=1e-6)
+    elif solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+        kw = dict(atol=0, rtol=1e-6)
     else:
         kw = dict(atol=0, tol=1e-6)
 
@@ -520,7 +530,10 @@ def test_x0_equals_Mb(solver):
             b = case.b
             x0 = 'Mb'
             tol = 1e-8
-            x, info = solver(A, b, x0=x0, tol=tol)
+            if solver in [cg, cgs, bicg, bicgstab, gmres, qmr]:
+                x, info = solver(A, b, x0=x0, rtol=tol)
+            else:
+                x, info = solver(A, b, x0=x0, tol=tol)
 
             assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
             assert_equal(info, 0)
@@ -589,7 +602,7 @@ class TestQMR:
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+            x, info = qmr(A, b, rtol=1e-8, maxiter=15, M1=M1, M2=M2)
 
         assert_equal(info, 0)
         assert_normclose(A@x, b, tol=1e-8)
