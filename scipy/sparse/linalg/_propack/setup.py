@@ -1,4 +1,5 @@
 import pathlib
+from distutils.sysconfig import get_python_inc
 
 import numpy as np
 
@@ -63,7 +64,12 @@ def configuration(parent_package='', top_path=None):
         config.add_library(propack_lib,
                            sources=src,
                            macros=cmacros,
-                           include_dirs=src_dir,
+                           include_dirs=[
+                               src_dir,
+                               # because npy_common.h is used in g77 abi wrappers
+                               get_python_inc(),
+                               np.get_include(),
+                           ],
                            depends=['setup.py'])
         ext = config.add_extension(f'_{prefix}propack',
                                    sources=f'{prefix}propack.pyf',

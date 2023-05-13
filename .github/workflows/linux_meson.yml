@@ -93,7 +93,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build -j 2 --werror
+        python dev.py build --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -119,7 +119,7 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
+        python dev.py --no-build test -j2 -- --durations 10 --timeout=60
 
   #################################################################################
   test_venv_install:
@@ -317,7 +317,7 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build -j2 --gcov
+        python dev.py build --gcov
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -329,3 +329,33 @@ jobs:
 
         export OPENBLAS_NUM_THREADS=1
         python dev.py test -j2 --mode full -- --cov --cov-report term-missing 
+
+  #################################################################################
+  linux_32bit:
+    name: Linux - 32 bit
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-latest
+    # I tried running directly in a container:, using the image: and options:
+    # entries. Unfortunately at this time options: does not seem to listen to
+    # --platform linux/i386.
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: build + test
+      run: |
+        set -euo pipefail
+        docker pull quay.io/pypa/manylinux2014_i686
+        docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
+        uname -a && \
+        basedir=\$(python3.9 tools/openblas_support.py) && \
+        cp -r \$basedir/lib/* /usr/local/lib && \
+        cp \$basedir/include/* /usr/local/include && \
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig && \
+        python3.9 -m venv test && \
+        source test/bin/activate && \
+        python -m pip install doit click rich_click pydevtool meson ninja && \
+        python -m pip install numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch meson && \
+        python dev.py build && \
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
