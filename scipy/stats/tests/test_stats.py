@@ -7294,9 +7294,9 @@ class TestWassersteinDistance:
             [0, 1, 2], [1, 2, 3]),
             1)
     
-    def test_pulished_values(self):
-        # Compare against pulished values and manually computed results.
-        # The values and computed result are posted at James D. McCaffrey's bolg,
+    def test_published_values(self):
+        # Compare against published values and manually computed results.
+        # The values and computed result are posted at James D. McCaffrey's blog,
         # https://jamesmccaffrey.wordpress.com/2018/03/05/earth-mover-distance
         # -wasserstein-metric-example-calculation/
         u = [(1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1),
@@ -7306,8 +7306,8 @@ class TestWassersteinDistance:
         
         res = stats.wasserstein_distance(u, v)
         # In original post, the author kept two decimal places for ease of calculation.
-        # This test uses the more precise value of distance to get the precise results,
-        # for comparison please look at the table and figure in the priginal blog.
+        # This test uses the more precise value of distance to get the precise results.
+        # For comparison, please see the table and figure in the original blog post.
         flow = np.array([2., 3., 5., 1., 1., 1.])
         dist = np.array([1.00, 5**0.5, 4.00, 2**0.5, 1.00, 1.00])
         ref = np.sum(flow * dist)/np.sum(flow)
@@ -7491,9 +7491,17 @@ class TestWassersteinDistance:
 
     def test_error_code(self):
         rng = np.random.default_rng(52473644737485644836320101)
-        with pytest.raises(ValueError, match='Invalid input values. Please'):
-            u_values = rng.random(size=(4, 10))
-            v_values = rng.random(size=(6, 2))
+        with pytest.raises(ValueError, match='Invalid input values. The inputs'):
+            u_values = rng.random(size=(4, 10, 15))
+            v_values = rng.random(size=(6, 2, 7))
+            _ = stats.wasserstein_distance(u_values, v_values)
+        with pytest.raises(ValueError, match='Invalid input values. Dimensions'):
+            u_values = rng.random(size=(15,))
+            v_values = rng.random(size=(3, 15))
+            _ = stats.wasserstein_distance(u_values, v_values)
+        with pytest.raises(ValueError, match='Invalid input values. If two-dimensional'):
+            u_values = rng.random(size=(2, 10))
+            v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance(u_values, v_values)
 
 

@@ -38,8 +38,7 @@ from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.spatial import distance_matrix
-from scipy.sparse import hstack, vstack, coo_array, block_diag, eye
-
+from scipy import sparse
 
 from scipy.ndimage import _measurements
 from scipy.optimize import milp, LinearConstraint
@@ -9626,41 +9625,35 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the general Wasserstein-1 function between two n dimensional
-    ditributions (expressed as probability mass functions).
+    Compute the Wasserstein-1 distance between two discrete distributions.
 
     The Wasserstein distance, also called the Earth mover's distance or the
-    optimal transport distance, is defined as a similarity metric between
-    two probability distribution. In the discrete case, the Wasserstein
-    distance can be understood as the cost of an optimal transport plan
-    between two samples. The cost is calculated as the product of the amount
-    of probability mass being moved and the distance it is being moved. A
-    brief and intuitive introduction can be found at [2]_.
+    optimal transport distance, is a similarity metric between two probability
+    distributions. In the discrete case, the Wasserstein distance can be
+    understood as the cost of an optimal transport plan to convert one
+    distribution into the other. The cost is calculated as the product of the
+    amount of probability mass being moved and the distance it is being moved.
+    A brief and intuitive introduction can be found at [2]_.
 
     .. versionadded:: 1.0.0
 
     Parameters
     ----------
     u_values, v_values : array_like
-        could be:
+    u_values : 1d or 2d array_like
+        A sample from a probability distribution or the support (set of all
+        possible values) of a probability distribution. Each element along
+        axis 0 is an observation or possible value. If two-dimensional, axis
+        1 represents the dimensionality of the distribution; i.e., each row is
+        a vector observation or possible value.
 
-        - Values observed in the (empirical) distribution.
+    v_values : 1d or 2d array_like
+        A sample from or the support of a second distribution.
 
-        - Value of each class in the (distribution) histogram.
-
-        It is expected that each input represents a collection of vectors.
-        If the input is a one-dimensional array-like object,
-        each value should represent a class in probability mass. On the other
-        hand, if the input is a two-dimensional array-like object, each row
-        within it should correspond to a vector.
-
-    u_weights, v_weights : array_like, optional
-        Weight for each value. If unspecified, each value is assigned the same
-        weight.
-        `u_weights` (resp. `v_weights`) must have the same length as
-        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
-        must still be positive and finite so that the weights can be normalized
-        to sum to 1.
+    u_weights, v_weights : 1d array_like, optional
+        Weights or counts corresponding with the sample or probability masses
+        corresponding with the support values. Sum of elements must be positive
+        and finite. If unspecified, each value is assigned the same weight.
 
     Returns
     -------
@@ -9669,7 +9662,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two samples (expressed as probability mass functions), :math:`u`
+    Given two samples probability mass functions, :math:`u`
     and :math:`v`, the first Wasserstein distance between the distributions
     is:
 
@@ -9710,7 +9703,9 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
                 u\\
                 v\\
             \end{bmatrix}
-    The :math:`\text{vec}()` function denotes the Vectorization fucntion.
+    The :math:`\text{vec}()` function denotes the Vectorization function 
+    that transforms a matrix into a column vector by vertically stacking
+    the columns of the matrix.
     The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u` to :math:`v`. Summing over
@@ -9772,8 +9767,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal
            transport." Center for Research in Economics and Statistics
            Working Papers 2017-86 (2017).
-    .. [5] Vincent Herrmann's blog
-           https://vincentherrmann.github.io/blog/wasserstein/
+    .. [5] Hermann, Vincent. "Wasserstein GAN and the Kantorovich-Rubinstein
+           Duality". https://vincentherrmann.github.io/blog/wasserstein/.
 
     Examples
     --------
@@ -9785,6 +9780,10 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
+
+    Compute the Wasserstein distance between two two-dimensional distributions
+    with three and two weighted observations, respectively.
+
     >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
     3.0
     >>> wasserstein_distance([[0, 2.75], [2, 209.3], [0, 0]],
@@ -9793,24 +9792,27 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     174.15840245217169
     """
     m, n = len(u_values), len(v_values)
-    u_values = asarray(u_values).reshape(m, -1)
-    v_values = asarray(v_values).reshape(n, -1)
+    u_values = asarray(u_values)
+    v_values = asarray(v_values)
 
+    if u_values.ndim > 2 or u_values.ndim > 2:
+        raise ValueError('Invalid input values. The inputs must have either '
+                         'one or two dimensions.')
+    # if dimensions are not equal throw error
+    if u_values.ndim != u_values.ndim:
+        raise ValueError('Invalid input values. Dimensions of inputs must be '
+                         'equal.')
     # if data is 1D then call the cdf_distance function
-    if u_values.shape[1] == 1 and v_values.shape[1] == 1:
-        return _cdf_distance(1,
-                             u_values.ravel(), v_values.ravel(),
-                             u_weights, v_weights)
+    if u_values.ndim == 1 and v_values.ndim == 1:
+        return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
-
-    # if dimensions are not equal throw error
+    # if number of columns is not equal throw error
     if u_values.shape[1] != v_values.shape[1]:
-        raise ValueError('Invalid input values. Please provide two numpy'
-                         'arrays with either both one-dimensional or both'
-                         'two-dimensional arrays with the same number of'
-                         'columns.')
+        raise ValueError('Invalid input values. If two-dimensional, '
+                         '`u_values` and `v_values` must have the same '
+                         'number of columns.')
 
     # if data contains np.inf then return inf or nan
     if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
@@ -9819,11 +9821,11 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
         return np.nan
 
     # create constraints
-    A_upper_part = block_diag((np.ones((1, n)), ) * m)
-    A_lower_part = hstack((eye(n), ) * m)
+    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
+    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
     # sparse constraint matrix of size (m + n)*(m * n)
-    A = vstack((A_upper_part, A_lower_part))
-    A = coo_array(A)
+    A = sparse.vstack((A_upper_part, A_lower_part))
+    A = sparse.coo_array(A)
 
     # get cost matrix
     D = distance_matrix(u_values, v_values, p=2)
