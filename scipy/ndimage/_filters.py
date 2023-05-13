@@ -450,24 +450,16 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
     >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
     >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
-    >>> fig = plt.figure(figsize=(12, 3))
+    >>> fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(141)
-    >>> ax2 = fig.add_subplot(142)
-    >>> ax3 = fig.add_subplot(143)
-    >>> ax4 = fig.add_subplot(144)
-    >>> ax1.imshow(ascent)
-    >>> ax1.set_title("original")
-    >>> ax1.set_axis_off()
-    >>> ax2.imshow(sobel_h)
-    >>> ax2.set_title("horizontal")
-    >>> ax2.set_axis_off()
-    >>> ax3.imshow(sobel_v)
-    >>> ax3.set_title("vertical")
-    >>> ax3.set_axis_off()
-    >>> ax4.imshow(magnitude)
-    >>> ax4.set_title("magnitude")
-    >>> ax4.set_axis_off()
+    >>> axs[0, 0].imshow(ascent)
+    >>> axs[0, 1].imshow(sobel_h)
+    >>> axs[1, 0].imshow(sobel_v)
+    >>> axs[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axs.ravel()):
+    >>>     ax.set_title(titles[i])
+    >>>     ax.axis("off")
     >>> plt.show()
 
     """
