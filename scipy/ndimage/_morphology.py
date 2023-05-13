@@ -2117,7 +2117,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Parameters
     ----------
     input : array_like
-        Input
+        Input. Values of `0` are treated as background.
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
@@ -2170,7 +2170,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Notes
     -----
     The distance transform replaces every foreground pixel (pixel value
-    >0) by its distance to the closest background pixel (pixel value 0).
+    > 0) by its distance to the closest background pixel (pixel value 0).
 
     Examples
     --------
@@ -2197,43 +2197,43 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     >>> image = add_circle(70, 45, 20, image)
     >>> image = add_circle(45, 80, 10, image)
 
-    Next, we set up the image.
+    Next, we set up the figure.
 
-    >>> fig = plt.figure(figsize=(15, 5))
-    >>> grid = ImageGrid(fig, 111, nrows_ncols=(1, 3), axes_pad=(0.5, 0.3),
+    >>> fig = plt.figure(figsize=(5, 15))
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(3, 1), axes_pad=(0.5, 0.3),
     ...                  label_mode="1", share_all=True,
     ...                  cbar_location="right", cbar_mode="each",
     ...                  cbar_size="7%", cbar_pad="2%")
     >>> for ax in grid:
     ...     ax.axis('off')
-    >>> left, middle, right = grid
+    >>> top, middle, bottom = grid
     >>> colorbar_ticks = [0, 10, 20]
 
-    The left image contains the original binary image.
+    The top image contains the original binary image.
 
-    >>> binary_image = left.imshow(image, cmap='gray')
-    >>> cbar_binary_image = grid.cbar_axes[0].colorbar(binary_image)
+    >>> binary_image = top.imshow(image, cmap='gray')
+    >>> cbar_binary_image = top.cax.colorbar(binary_image)
     >>> cbar_binary_image.set_ticks([0, 1])
-    >>> left.set_title("Binary image: foreground in white")
+    >>> top.set_title("Binary image: foreground in white")
 
     The middle image contains the distance transform using the ``taxicab``
     metric.
 
     >>> distance_taxicab = distance_transform_cdt(image, metric="taxicab")
     >>> taxicab_transform = middle.imshow(distance_taxicab, cmap='gray')
-    >>> cbar_taxicab = grid.cbar_axes[1].colorbar(taxicab_transform)
+    >>> cbar_taxicab = middle.cax.colorbar(taxicab_transform)
     >>> cbar_taxicab.set_ticks(colorbar_ticks)
     >>> middle.set_title("Taxicab metric")
 
-    The right image contains the distance transform using the ``chessboard``
+    The bottom image contains the distance transform using the ``chessboard``
     metric.
 
     >>> distance_chessboard = distance_transform_cdt(image,
     ...                                              metric="chessboard")
-    >>> chessboard_transform = right.imshow(distance_chessboard, cmap='gray')
-    >>> cbar_chessboard = grid.cbar_axes[2].colorbar(chessboard_transform)
+    >>> chessboard_transform = bottom.imshow(distance_chessboard, cmap='gray')
+    >>> cbar_chessboard = bottom.cax.colorbar(chessboard_transform)
     >>> cbar_chessboard.set_ticks(colorbar_ticks)
-    >>> right.set_title("Chessboard metric")
+    >>> bottom.set_title("Chessboard metric")
     >>> plt.show()
 
     """
