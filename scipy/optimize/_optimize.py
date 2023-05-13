@@ -2951,6 +2951,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     """
     _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
+    # convert to numpy floats if not already
     xa, xb = np.asarray([xa, xb])
     fa = func(*(xa,) + args)
     fb = func(*(xb,) + args)
