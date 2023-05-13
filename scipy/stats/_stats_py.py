@@ -9906,11 +9906,11 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     u_values = asarray(u_values)
     v_values = asarray(v_values)
 
-    if u_values.ndim > 2 or u_values.ndim > 2:
+    if u_values.ndim > 2 or v_values.ndim > 2:
         raise ValueError('Invalid input values. The inputs must have either '
                          'one or two dimensions.')
     # if dimensions are not equal throw error
-    if u_values.ndim != u_values.ndim:
+    if u_values.ndim != v_values.ndim:
         raise ValueError('Invalid input values. Dimensions of inputs must be '
                          'equal.')
     # if data is 1D then call the cdf_distance function

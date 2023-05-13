@@ -7458,7 +7458,7 @@ class TestWassersteinDistance:
         add_row, nrows = rng.integers(0, nu, size=2) 
         add_value = rng.random(size=(nrows, ndim))
         u_values = np.insert(u_values, add_row, add_value, axis=0)
-        u_weights = np.insert(u_weights, nrows, np.zeros, axis=0)
+        u_weights = np.insert(u_weights, add_row, np.zeros(nrows), axis=0)
         res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
         assert_almost_equal(res, ref)
 
