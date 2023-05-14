@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
-from scipy.linalg import get_blas_funcs, get_lapack_funcs
+from scipy.linalg import get_lapack_funcs
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
@@ -24,9 +24,8 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Starting guess for the solution.
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
-        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
-        The default is ``atol=0.`` and ``rtol=1e-5``. For the case `b` being
-        zero vector
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``atol=0.`` and ``rtol=1e-5``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -171,7 +170,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Starting guess for the solution.
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
-        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
@@ -198,6 +197,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
+            <0 : parameter breakdown
 
     Examples
     --------
@@ -331,7 +331,7 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
         Starting guess for the solution.
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
-        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
@@ -461,7 +461,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Starting guess for the solution.
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
-        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
@@ -488,7 +488,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
-
+            <0 : parameter breakdown
     Examples
     --------
     >>> import numpy as np
@@ -555,12 +555,13 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     rho_prev, p, u, q = None, None, None, None
 
     for iteration in range(maxiter):
-        if np.linalg.norm(r) < atol:  # Are we done?
+        rnorm = np.linalg.norm(r)
+        if rnorm < atol:  # Are we done?
             return postprocess(x), 0
 
         rho_cur = dotprod(rtilde, r)
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            # It brokedown but maybe converged?
+            # It broke down but maybe converged?
             if np.linalg.norm(r) < atol:
                 return postprocess(x), 0
             else:
@@ -634,7 +635,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
         Starting guess for the solution (a vector of zeros by default).
     atol, rtol : float
         Parameters for the convergence test. For convergence,
-        ``norm(b - A @ x) <= max(tol*norm(b), atol)`` should be satisfied.
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
         The default is ``atol=0.`` and ``rtol=1e-5``.
     restart : int, optional
         Number of iterations between restarts. Larger values increase
@@ -814,7 +815,6 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     presid = 0.
     # ====================================================
     lartg = get_lapack_funcs('lartg', dtype=x.dtype)
-    trsv = get_blas_funcs('trsv', dtype=x.dtype)
 
     # allocate internal variables
     v = np.empty([restart+1, n], dtype=x.dtype)
@@ -943,30 +943,12 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
         ``scipy.sparse.linalg.LinearOperator``.
     b : ndarray
         Right hand side of the linear system. Has shape (N,) or (N,1).
-
-    Returns
-    -------
-    x : ndarray
-        The converged solution.
-    info : integer
-        Provides convergence information:
-            0  : successful exit
-            >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
-
-    Other Parameters
-    ----------------
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence,
-        ``norm(residual) <= max(tol*norm(b), atol)``. The default for ``atol``
-        is ``'legacy'``, which emulates a different legacy behavior.
-
-        .. warning::
-
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+    atol, rtol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``atol=0.`` and ``rtol=1e-5``.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -979,6 +961,21 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     callback : function
         User-supplied function to call after each iteration.  It is called
         as callback(xk), where xk is the current solution vector.
+    tol : float, optional, deprecated
+
+        .. deprecated 1.11.0
+           `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
+           will be removed in SciPy 1.13.0.
+
+    Returns
+    -------
+    x : ndarray
+        The converged solution.
+    info : integer
+        Provides convergence information:
+            0  : successful exit
+            >0 : convergence to tolerance not achieved, number of iterations
+            <0 : illegal input or breakdown
 
     See Also
     --------
