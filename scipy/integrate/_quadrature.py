@@ -831,8 +831,9 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     or less.
 
     The composite Simpson's 1/3 method is outlined in [1]. A quadratic relationship
-    is assumed between any 3 adjacent points (2 subintervals, :math:`h_{1} and h_{2}`).
-    The integral is estimated over each subinterval and cumulatively summed.
+    is assumed between any 3 adjacent points (2 subintervals, :math:`h_{1}` and
+    :math:`h_{2}`). The integral is estimated over each subinterval and cumulatively
+    summed.
 
     References
     ----------
