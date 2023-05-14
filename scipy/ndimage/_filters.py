@@ -433,19 +433,35 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the axis-specific Sobel gradient.
+    The horizontal edges can emphasised with the horizontal trasform (axis=0),
+    the vertical edges with the vertical transform (axis=1) and so on for higher
+    dimensions. These can be combined to give the magnitude.
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
+    >>> import numpy as np
+    >>> ascent = datasets.ascent().astype('int32')
+    >>> sobel_h = ndimage.sobel(ascent, 0)  # horizontal gradient
+    >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
+    >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
+    >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
+    >>> fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = datasets.ascent()
-    >>> result = ndimage.sobel(ascent)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> axs[0, 0].imshow(ascent)
+    >>> axs[0, 1].imshow(sobel_h)
+    >>> axs[1, 0].imshow(sobel_v)
+    >>> axs[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axs.ravel()):
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
     >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
