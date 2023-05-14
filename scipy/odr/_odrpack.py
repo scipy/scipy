@@ -555,7 +555,7 @@ class Output:
         Covariance matrix of the estimated parameters, of shape (p,p).
         Note that this `cov_beta` is not scaled by the residual variance 
         `res_var`, whereas `sd_beta` is. This means 
-        `np.sqrt(np.diag(output.cov_beta * output.res_var))` is the same 
+        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same 
         result as `output.sd_beta`.
     delta : ndarray, optional
         Array of estimated errors in input variables, of same shape as `x`.
