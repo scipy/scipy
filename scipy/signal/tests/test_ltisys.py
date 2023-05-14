@@ -411,7 +411,7 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class _TestLsimFunctions:
+class _TestLsimFuncs:
     digits_accuracy = 7
 
     @abstractmethod
@@ -524,7 +524,7 @@ class _TestLsimFunctions:
         assert_almost_equal(x[:,1], expected_x1)
 
 
-class TestLsim(_TestLsimFunctions):
+class TestLsim(_TestLsimFuncs):
 
     def func(self, *args, **kwargs):
         return lsim(*args, **kwargs)
@@ -547,7 +547,7 @@ class TestLsim(_TestLsimFunctions):
             tout, y, x = self.func(system, u, t, X0=[1.0])
 
 
-class Test_lsim2(_TestLsimFunctions):
+class TestLsim2(_TestLsimFuncs):
     digits_accuracy = 6
 
     def func(self, *args, **kwargs):
