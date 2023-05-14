@@ -437,8 +437,8 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     -----
     This function computes the axis-specific Sobel gradient.
     The horizontal edges can emphasised with the horizontal trasform (axis=0),
-    the vertical edges with the vertical transform (axis=1) and so on for higher dimensions.
-    These can be combined to give the magnitude.
+    the vertical edges with the vertical transform (axis=1) and so on for higher
+    dimensions. These can be combined to give the magnitude.
 
     Examples
     --------
