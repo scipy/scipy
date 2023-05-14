@@ -259,7 +259,7 @@ def test_fiedler_large_12():
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_failure_to_run_iterations():
-    """Check that the code exists gracefully without breaking. Issue #10974.
+    """Check that the code exits gracefully without breaking. Issue #10974.
     The code may or not issue a warning, filtered out. Issue #15935, #17954.
     """
     rnd = np.random.RandomState(0)

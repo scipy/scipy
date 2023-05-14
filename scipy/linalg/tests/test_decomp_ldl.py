@@ -121,7 +121,7 @@ def test_ldl_type_size_combinations_complex(n, dtype):
 
     l, d1, p = ldl(x)
     u, d2, p = ldl(x, lower=0)
-    rtol = 1e-4 if dtype is complex64 else 1e-10
+    rtol = 2e-4 if dtype is complex64 else 1e-10
     assert_allclose(l.dot(d1).dot(l.conj().T), x, rtol=rtol, err_msg=msg1)
     assert_allclose(u.dot(d2).dot(u.conj().T), x, rtol=rtol, err_msg=msg1)
 

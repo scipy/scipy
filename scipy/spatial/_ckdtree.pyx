@@ -1082,7 +1082,7 @@ cdef class cKDTree:
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0)
+        query_pairs(self, r, p=2., eps=0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 
