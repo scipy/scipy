@@ -1664,6 +1664,46 @@ def generic_filter(input, function, size=None, footprint=None,
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
+    Examples
+    --------
+    Import the necessary modules and load the example image used for
+    filtering.
+
+    >>> import numpy as np
+    >>> from scipy import datasets
+    >>> from scipy.ndimage import generic_filter
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = datasets.ascent()
+
+    Compute a maximum filter with kernel size 10 by passing a simple numpy
+    aggregation function as argument to ``function``.
+
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+
+    While a maximmum filter could also directly be obtained using
+    `maximum_filter`, `generic_filter` allows a Python function or
+    `scipy.LowLevelCallable` to be used as a filter. Here, we compute the
+    range between maximum and minimum value as an example for a kernel size
+    of 5.
+
+    >>> def custom_filter(image):
+    ...     return np.amax(image) - np.amin(image)
+    >>> custom_filter_result = generic_filter(ascent, custom_filter, [5, 5])
+
+    Plot the original and filtered images.
+
+    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, middle, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(ascent)
+    >>> top.set_title("Original")
+    >>> middle.imshow(maximum_filter_result)
+    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> bottom.imshow(custom_filter_result)
+    >>> bottom.set_title("Custom filter, Kernel: 5x5")
+
     """
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=2)
