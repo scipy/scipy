@@ -1681,7 +1681,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
 
     While a maximmum filter could also directly be obtained using
-    `maximum_filter`, `generic_filter` allows a Python function or
+    `maximum_filter`, `generic_filter` allows generic Python function or
     `scipy.LowLevelCallable` to be used as a filter. Here, we compute the
     range between maximum and minimum value as an example for a kernel size
     of 5.
@@ -1698,7 +1698,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> for ax in axes:
     ...     ax.set_axis_off()  # remove coordinate system
     >>> top.imshow(ascent)
-    >>> top.set_title("Original")
+    >>> top.set_title("Original image")
     >>> middle.imshow(maximum_filter_result)
     >>> middle.set_title("Maximum filter, Kernel: 10x10")
     >>> bottom.imshow(custom_filter_result)
