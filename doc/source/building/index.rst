@@ -159,6 +159,18 @@ your system.
 
     .. tab-set::
 
+      .. tab-item:: MinGW-w64
+
+        There are several sources of binaries for MinGW-w64. We recommend the
+        RTools versions, which can be installed with Chocolatey (see
+        Chocolatey install instructions `here <https://chocolatey.org/install>`_)::
+
+            choco install rtools -y --no-progress --force --version=4.0.0.20220206
+
+        In case of issues, we recommend using the exact same version as used
+        in the `SciPy GitHub Actions CI jobs for Windows
+        <https://github.com/scipy/scipy/blob/main/.github/workflows/windows.yml>`__.
+
       .. tab-item:: MSVC
 
         The MSVC installer does not put the compilers on the system path, and
@@ -180,19 +192,6 @@ your system.
         `Get Started with the Intel® oneAPI HPC Toolkit for Windows
         <https://www.intel.com/content/www/us/en/docs/oneapi-hpc-toolkit/get-started-guide-windows/2023-1/overview.html>`__.
 
-      .. tab-item:: MinGW-w64
-
-        There are several sources of binaries for MinGW-w64. We recommend the
-        RTools versions, which can be installed with Chocolatey (see
-        Chocolatey install instructions `here <https://chocolatey.org/install>`_)::
-
-            choco install rtools -y --no-progress --force --version=4.0.0.20220206
-            choco install pkgconfiglite
-
-        In case of issues, we recommend using the exact same version as used
-        in the `SciPy GitHub Actions CI jobs for Windows
-        <https://github.com/scipy/scipy/blob/main/.github/workflows/windows.yml>`__.
-
     .. note::
 
         Compilers should be on the system path (i.e., the ``PATH`` environment
@@ -212,18 +211,6 @@ If you want to only install SciPy from source once and not do any development
 work, then the recommended way to build and install is to use ``pip``:
 
 .. tab-set::
-
-  .. tab-item:: Virtual env or system Python
-
-    ::
-
-      # To build the latest stable release:
-      pip install scipy --no-binary scipy
-
-      # To build a development version, you need a local clone of the SciPy git repository:
-      git clone https://github.com/scipy/scipy.git
-      git submodule update --init
-      pip install .
 
   .. tab-item:: Conda env
 
@@ -247,6 +234,19 @@ work, then the recommended way to build and install is to use ``pip``:
       git clone https://github.com/scipy/scipy.git
       git submodule update --init
       pip install . --no-build-isolation
+
+  .. tab-item:: Virtual env or system Python
+
+    ::
+
+      # To build the latest stable release:
+      pip install scipy --no-binary scipy
+
+      # To build a development version, you need a local clone of the SciPy git repository:
+      git clone https://github.com/scipy/scipy.git
+      git submodule update --init
+      pip install .
+
 
 
 .. _the-dev-py-interface:
