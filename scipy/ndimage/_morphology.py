@@ -2121,9 +2121,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
-        generate_binary_structure with a squared distance equal to 1. If
+        `generate_binary_structure` with a squared distance equal to 1. If
         the `metric` is equal to 'chessboard', a `metric` is generated
-        using generate_binary_structure with a squared distance equal to
+        using `generate_binary_structure` with a squared distance equal to
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
@@ -2166,11 +2166,6 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     distance_transform_edt : Fast distance transform for euclidean metric
     distance_transform_bf : Distance transform for different metrics using
                             a slower brute force algorithm
-
-    Notes
-    -----
-    The distance transform replaces every foreground pixel (pixel value
-    > 0) by its distance to the closest background pixel (pixel value 0).
 
     Examples
     --------
