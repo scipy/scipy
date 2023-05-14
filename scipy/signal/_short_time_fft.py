@@ -1,4 +1,4 @@
-"""Short-time Fourier Transform Module.
+"""Implementation of an FFT-based Short-time Fourier Transform.
 
 Implementation Notes (as of 2023-04)
 ------------------------------------
@@ -29,7 +29,7 @@ from numpy.typing import NDArray
 
 import scipy.fft as fft_lib
 from scipy.signal import detrend
-from .windows import get_window
+from scipy.signal.windows import get_window
 
 __all__ = ['ShortTimeFFT']
 
@@ -37,8 +37,8 @@ __all__ = ['ShortTimeFFT']
 #: Allowed values for parameter `padding` of method `ShortTimeFFT.stft()`:
 PAD_TYPE = Literal['zeros', 'edge', 'even', 'odd']
 
-#: Allowed values for property `ShortTimeFFT.fft_typ`:
-FFT_TYP_TYPE = Literal['twosided', 'centered', 'onesided', 'onesided2X']
+#: Allowed values for property `ShortTimeFFT.fft_mode`:
+FFT_MODE_TYPE = Literal['twosided', 'centered', 'onesided', 'onesided2X']
 
 
 def _calc_dual_canonical_window(win: NDArray, hop: int) -> NDArray:
@@ -121,9 +121,9 @@ class ShortTimeFFT:
     fs : float
         Sampling frequency of input signal and window. Its relation to the
         sampling interval `T` is ``T = 1 / fs``.
-    fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
-        Type of FFT to be used (default 'onesided').
-        See property `fft_typ` for details.
+    fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
+        Mode of FFT to be used (default 'onesided').
+        See property `fft_mode` for details.
     mfft: int | None
         Length of the FFT used, if a zero padded FFT is desired.
         If ``None`` (default), the length of the window `win` is used.
@@ -237,7 +237,7 @@ class ShortTimeFFT:
 
     # mutable attributes:
     _fs: float  # sampling frequency of input signal and window
-    _fft_typ: FFT_TYP_TYPE = 'onesided'  # Type of FFT to use
+    _fft_mode: FFT_MODE_TYPE = 'onesided'  # Mode of FFT to use
     _mfft: int  # length of FFT used - defaults to len(win)
     _scaling: Optional[Literal['magnitude', 'psd']] = None  # Scaling of _win
     _phase_shift: Optional[int]  # amount to shift phase of FFT in samples
@@ -247,8 +247,8 @@ class ShortTimeFFT:
     _fac_psd: Optional[float] = None
     _lower_border_end: Optional[tuple[int, int]] = None
 
-    def __init__(self, win: NDArray, hop: int, fs: float,
-                 fft_typ: FFT_TYP_TYPE = 'onesided',
+    def __init__(self, win: NDArray, hop: int, fs: float, *,
+                 fft_mode: FFT_MODE_TYPE = 'onesided',
                  mfft: Optional[int] = None,
                  dual_win: Optional[NDArray] = None,
                  scale_to: Optional[Literal['magnitude', 'psd']] = None,
@@ -270,14 +270,14 @@ class ShortTimeFFT:
                 raise ValueError("Parameter dual_win must be a finite array!")
         self._dual_win = dual_win  # needs to be set before scaling
 
-        if scale_to is not None:  # needs to be set before fft_typ
+        if scale_to is not None:  # needs to be set before fft_mode
             self.scale_to(scale_to)
 
-        self.fft_typ, self.phase_shift = fft_typ, phase_shift
+        self.fft_mode, self.phase_shift = fft_mode, phase_shift
 
     @classmethod
-    def from_dual(cls, dual_win: NDArray, hop: int, fs: float,
-                  fft_typ: FFT_TYP_TYPE = 'onesided',
+    def from_dual(cls, dual_win: NDArray, hop: int, fs: float, *,
+                  fft_mode: FFT_MODE_TYPE = 'onesided',
                   mfft: Optional[int] = None,
                   scale_to: Optional[Literal['magnitude', 'psd']] = None,
                   phase_shift: Optional[int] = 0):
@@ -353,14 +353,15 @@ class ShortTimeFFT:
         ShortTimeFFT: Create instance using standard initalizer.
         """
         win = _calc_dual_canonical_window(dual_win, hop)
-        return cls(win, hop, fs, fft_typ, mfft, dual_win, scale_to,
-                   phase_shift)
+        return cls(win=win, hop=hop, fs=fs, fft_mode=fft_mode, mfft=mfft,
+                   dual_win=dual_win, scale_to=scale_to,
+                   phase_shift=phase_shift)
 
     @classmethod
     def from_window(cls, win_param: Union[str, tuple, float],
-                    fs: float, nperseg: int, noverlap: int,
+                    fs: float, nperseg: int, noverlap: int, *,
                     symmetric_win: bool = False,
-                    fft_typ: FFT_TYP_TYPE = 'onesided',
+                    fft_mode: FFT_MODE_TYPE = 'onesided',
                     mfft: Optional[int] = None,
                     scale_to: Optional[Literal['magnitude', 'psd']] = None,
                     phase_shift: Optional[int] = 0):
@@ -391,9 +392,9 @@ class ShortTimeFFT:
             window is generated (default). Though symmetric windows seem for
             most applications to be more sensible, the default of a periodic
             windows was chosen to correspond to the default of `get_window`.
-        fft_typ : 'twosided', 'centered', 'onesided', 'onesided2X'
-            Type of FFT to be used (default 'onesided').
-            See property `fft_typ` for details.
+        fft_mode : 'twosided', 'centered', 'onesided', 'onesided2X'
+            Mode of FFT to be used (default 'onesided').
+            See property `fft_mode` for details.
         mfft: int | None
             Length of the FFT used, if a zero padded FFT is desired.
             If ``None`` (default), the length of the window `win` is used.
@@ -428,7 +429,7 @@ class ShortTimeFFT:
         ShortTimeFFT: Create instance using standard initalizer.
         """
         win = get_window(win_param, nperseg, fftbins=not symmetric_win)
-        return cls(win, hop=nperseg-noverlap, fs=fs, fft_typ=fft_typ,
+        return cls(win, hop=nperseg-noverlap, fs=fs, fft_mode=fft_mode,
                    mfft=mfft, scale_to=scale_to, phase_shift=phase_shift)
 
     @property
@@ -521,8 +522,8 @@ class ShortTimeFFT:
         self._fs = v
 
     @property
-    def fft_typ(self) -> FFT_TYP_TYPE:
-        """Type of utilized FFT ('twosided', 'centered', 'onesided' or
+    def fft_mode(self) -> FFT_MODE_TYPE:
+        """Mode of utilized FFT ('twosided', 'centered', 'onesided' or
         'onesided2X').
 
         It can have the following values:
@@ -540,7 +541,7 @@ class ShortTimeFFT:
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
-            set to 'psd'. If `scaling` is ``None``, setting `fft_typ` to
+            set to 'psd'. If `scaling` is ``None``, setting `fft_mode` to
             `onesided2X` is not allowed.
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
@@ -557,22 +558,22 @@ class ShortTimeFFT:
         scaling: Normalization applied to the window function
         ShortTimeFFT: Class this property belongs to.
         """
-        return self._fft_typ
+        return self._fft_mode
 
-    @fft_typ.setter
-    def fft_typ(self, t_: FFT_TYP_TYPE):
-        """Set type of FFT.
+    @fft_mode.setter
+    def fft_mode(self, t_: FFT_MODE_TYPE):
+        """Set mode of FFT.
 
         Allowed values are 'twosided', 'centered', 'onesided', 'onesided2X'.
-        See the property `fft_typ` for more details.
+        See the property `fft_mode` for more details.
         """
-        if t_ not in (fft_typ_types := get_args(FFT_TYP_TYPE)):
-            raise ValueError(f"fft_typ='{t_}' not in {fft_typ_types}!")
+        if t_ not in (fft_mode_types := get_args(FFT_MODE_TYPE)):
+            raise ValueError(f"fft_mode='{t_}' not in {fft_mode_types}!")
 
         if t_ == 'onesided2X' and self.scaling is None:
-            raise ValueError(f"For scaling is None, fft_typ='{t_}' is invalid!"
+            raise ValueError(f"For scaling is None, fft_mode='{t_}' is invalid!"
                              "Do scale_to('psd') or scale_to('magnitude')!")
-        self._fft_typ = t_
+        self._fft_mode = t_
 
     @property
     def mfft(self) -> int:
@@ -616,7 +617,7 @@ class ShortTimeFFT:
         --------
         fac_magnitude: Scaling factor for to a magnitude spectrum.
         fac_psd: Scaling factor for to  a power spectral density spectrum.
-        fft_typ: Type of utilized FFT
+        fft_mode: Mode of utilized FFT
         scale_to: Scale window to obtain 'magnitude' or 'psd' scaling.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -644,7 +645,7 @@ class ShortTimeFFT:
         --------
         fac_magnitude: Scaling factor for to  a magnitude spectrum.
         fac_psd: Scaling factor for to  a power spectral density spectrum.
-        fft_typ: Type of utilized FFT
+        fft_mode: Mode of utilized FFT
         scaling: Normalization applied to the window function.
         ShortTimeFFT: Class this method belongs to.
         """
@@ -735,7 +736,7 @@ class ShortTimeFFT:
             yield x1[..., k_:k_ + self.m_num]
 
     def stft(self, x: NDArray, p0: Optional[int] = None,
-             p1: Optional[int] = None, k_offset: int = 0,
+             p1: Optional[int] = None, *, k_offset: int = 0,
              padding: PAD_TYPE = 'zeros', axis: int = -1) \
             -> NDArray:
         """Perform the short-time Fourier transform.
@@ -792,12 +793,13 @@ class ShortTimeFFT:
         t: Times of STFT for an input signal with `n` samples.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
-        return self.stft_detrend(x, None, p0, p1, k_offset, padding, axis)
+        return self.stft_detrend(x, None, p0, p1, k_offset=k_offset,
+                                 padding=padding, axis=axis)
 
     def stft_detrend(self, x: NDArray,
                      detr: Union[Callable[[NDArray], NDArray],
                                  Literal['linear', 'constant'], None],
-                     p0: Optional[int] = None, p1: Optional[int] = None,
+                     p0: Optional[int] = None, p1: Optional[int] = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
             -> NDArray:
@@ -849,7 +851,7 @@ class ShortTimeFFT:
 
     def spectrogram(self, x: NDArray, y: Optional[NDArray] = None,
                     detr: Union[Callable[[NDArray], NDArray],
-                                Literal['linear', 'constant'], None] = None,
+                                Literal['linear', 'constant'], None] = None, *,
                     p0: Optional[int] = None, p1: Optional[int] = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \
@@ -935,11 +937,13 @@ class ShortTimeFFT:
         stft_detrend: STFT with a trend subtracted from each segment.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
-        Sx = self.stft_detrend(x, detr, p0, p1, k_offset, padding, axis)
+        Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
+                               padding=padding, axis=axis)
         if y is None or y is x:  # do spectrogram:
             return Sx.real**2 + Sx.imag**2
         # Cross-spectrogram:
-        Sy = self.stft_detrend(y, detr, p0, p1, k_offset, padding, axis)
+        Sy = self.stft_detrend(y, detr, p0, p1, k_offset=k_offset,
+                               padding=padding, axis=axis)
         return Sx * Sy.conj()
 
     @property
@@ -986,8 +990,8 @@ class ShortTimeFFT:
         except ValueError:
             return False
 
-    def istft(self, S: NDArray, k0: int = 0,
-              k1: Optional[int] = None, f_axis: int = -2, t_axis: int = -1) \
+    def istft(self, S: NDArray, k0: int = 0, k1: Optional[int] = None, *,
+              f_axis: int = -2, t_axis: int = -1) \
             -> NDArray:
         """Inverse short-time Fourier transform.
 
@@ -1514,15 +1518,15 @@ class ShortTimeFFT:
     def onesided_fft(self) -> bool:
         """Return True if a one-sided FFT is used.
 
-        Returns ``True`` if `fft_typ` is either 'onesided' or 'onesided2X'.
+        Returns ``True`` if `fft_mode` is either 'onesided' or 'onesided2X'.
 
         See Also
         --------
-        fft_typ: Utilized FFT ('twosided', 'centered', 'onesided' or
+        fft_mode: Utilized FFT ('twosided', 'centered', 'onesided' or
                  'onesided2X')
         ShortTimeFFT: Class this property belongs to.
         """
-        return self.fft_typ in {'onesided', 'onesided2X'}
+        return self.fft_mode in {'onesided', 'onesided2X'}
 
     @property
     def f(self) -> NDArray:
@@ -1537,17 +1541,17 @@ class ShortTimeFFT:
         mfft: Length of the input for FFT used.
         ShortTimeFFT: Class this property belongs to.
         """
-        if self.fft_typ in {'onesided', 'onesided2X'}:
+        if self.fft_mode in {'onesided', 'onesided2X'}:
             return fft_lib.rfftfreq(self.mfft, self.T)
-        elif self.fft_typ == 'twosided':
+        elif self.fft_mode == 'twosided':
             return fft_lib.fftfreq(self.mfft, self.T)
-        elif self.fft_typ == 'centered':
+        elif self.fft_mode == 'centered':
             return fft_lib.fftshift(fft_lib.fftfreq(self.mfft, self.T))
         # This should never happen but makes the Linters happy:
-        raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
+        raise RuntimeError(f"{self.fft_mode=} not in {get_args(FFT_MODE_TYPE)}!")
 
     def _fft_func(self, x: NDArray) -> NDArray:
-        """FFT based on the `fft_typ`, `mfft`, `scaling` and `phase_shift`
+        """FFT based on the `fft_mode`, `mfft`, `scaling` and `phase_shift`
         attributes.
 
         For multidimensional arrays the transformation is carried out on the
@@ -1561,13 +1565,13 @@ class ShortTimeFFT:
             p_s = (self.phase_shift + self.m_num_mid) % self.m_num
             x = np.roll(x, -p_s, axis=-1)
 
-        if self.fft_typ == 'twosided':
+        if self.fft_mode == 'twosided':
             return fft_lib.fft(x, n=self.mfft, axis=-1)
-        if self.fft_typ == 'centered':
+        if self.fft_mode == 'centered':
             return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
-        if self.fft_typ == 'onesided':
+        if self.fft_mode == 'onesided':
             return fft_lib.rfft(x, n=self.mfft, axis=-1)
-        if self.fft_typ == 'onesided2X':
+        if self.fft_mode == 'onesided2X':
             X = fft_lib.rfft(x, n=self.mfft, axis=-1)
             # Either squared magnitude (psd) or magnitude is doubled:
             fac = np.sqrt(2) if self.scaling == 'psd' else 2
@@ -1575,7 +1579,7 @@ class ShortTimeFFT:
             X[..., 1: -1 if self.mfft % 2 == 0 else None] *= fac
             return X
         # This should never happen but makes the Linter happy:
-        raise RuntimeError(f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!")
+        raise RuntimeError(f"{self.fft_mode=} not in {get_args(FFT_MODE_TYPE)}!")
 
     def _ifft_func(self, X: NDArray) -> NDArray:
         """Inverse to `_fft_func`.
@@ -1585,13 +1589,13 @@ class ShortTimeFFT:
         For multidimensional arrays the transformation is carried out on the
         last axis.
         """
-        if self.fft_typ == 'twosided':
+        if self.fft_mode == 'twosided':
             x = fft_lib.ifft(X, n=self.mfft, axis=-1)
-        elif self.fft_typ == 'centered':
+        elif self.fft_mode == 'centered':
             x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
-        elif self.fft_typ == 'onesided':
+        elif self.fft_mode == 'onesided':
             x = fft_lib.irfft(X, n=self.mfft, axis=-1)
-        elif self.fft_typ == 'onesided2X':
+        elif self.fft_mode == 'onesided2X':
             Xc = X.copy()  # we do not want to modify function parameters
             fac = np.sqrt(2) if self.scaling == 'psd' else 2
             # For even length X the last value is not paired with a negative
@@ -1600,7 +1604,7 @@ class ShortTimeFFT:
             Xc[..., 1:q1] /= fac
             x = fft_lib.irfft(Xc, n=self.mfft, axis=-1)
         else:  # This should never happen but makes the Linter happy:
-            error_str = f"{self.fft_typ=} not in {get_args(FFT_TYP_TYPE)}!"
+            error_str = f"{self.fft_mode=} not in {get_args(FFT_MODE_TYPE)}!"
             raise RuntimeError(error_str)
 
         if self.phase_shift is None:
@@ -1642,11 +1646,11 @@ class ShortTimeFFT:
 
         if self.onesided_fft:
             q0, q1 = 0, self.f_pts
-        elif self.fft_typ == 'centered':
+        elif self.fft_mode == 'centered':
             q0 = -self.mfft // 2
             q1 = self.mfft // 2 - 1 if self.mfft % 2 == 0 else self.mfft // 2
         else:
-            raise ValueError(f"Attribute fft_typ={self.fft_typ} must be in " +
+            raise ValueError(f"Attribute fft_mode={self.fft_mode} must be in " +
                              "['centered', 'onesided', 'onesided2X']")
 
         p0, p1 = self.p_min, self.p_max(n)  # shorthand

@@ -1139,7 +1139,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
    specified, which corresponds to shifting the input by :math:`\phi_m`
    samples. The default is :math:`\phi_m = \lfloor M/2\rfloor` (corresponds per
    definition to ``phase_shift = 0``), which suppresses linear phase components
-   for un-shifted signals.
+   for unshifted signals.
    Furthermore, the FFT may be oversampled by padding :math:`w[m]` with zeros.
    This can be achieved by specifying `mfft` to be larger that than the window
    length `m_num`---this sets :math:`M` to `mfft` (implying that also
@@ -1246,9 +1246,9 @@ literature [4]_ [5]_.
 Since the support of the window :math:`w[m]` is limited to a finite interval,
 the |ShortTimeFFT| falls into the class of the so-called "painless
 non-orthogonal expansions" [4]_. In this case the dual windows always have the
-same support and can be calculated by means of a diagonal matrix. A rough
-derivation only requiring some understanding of manipulating matrices will be
-sketched out in the following:
+same support and can be calculated by means of inverting a diagonal matrix. A
+rough derivation only requiring some understanding of manipulating matrices
+will be sketched out in the following:
 
 Since the STFT given in Eq. :math:numref:`eq_dSTFT` is a linear mapping in
 :math:`x[k]`, it can be expressed in vector-matrix notation. This allows us to
@@ -1428,7 +1428,7 @@ Comparison with Legacy Implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
 |ShortTimeFFT| implementation. This section discusses the key differences
-between the old "legacy" and the "new" |ShortTimeFFT| implementations. The
+between the older "legacy" and the newer |ShortTimeFFT| implementations. The
 main motivation for a rewrite was the insight that integrating :ref:`dual
 windows <tutorial_stft_dual_win>` could not be done in a sane way without
 breaking compatability. This opened the opportunity for rethinking the code
@@ -1459,7 +1459,7 @@ with a negative slope:
     ...
     >>> # New STFT:
     >>> SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
-    ...                                fft_typ='centered',
+    ...                                fft_mode='centered',
     ...                                scale_to='magnitude', phase_shift=None)
     >>> Sz1 = SFT.stft(z)
     ...
@@ -1483,7 +1483,7 @@ with a negative slope:
     >>> kw = dict(origin='lower', aspect='auto', cmap='viridis')
     >>> im1a = axx[0].imshow(abs(Sz0), extent=extent0, **kw)
     >>> im1b = axx[1].imshow(abs(Sz1), extent=extent1, **kw)
-    >>> fig1.colorbar(im1b, ax=axx,label="Magnitude $|S_z(t, f)|$")
+    >>> fig1.colorbar(im1b, ax=axx, label="Magnitude $|S_z(t, f)|$")
     >>> _ = fig1.supylabel(rf"Frequency $f$ in Hertz ($\Delta f = %g\,$Hz)" %
     ...                    SFT.delta_f)
     >>> plt.show()
@@ -1528,7 +1528,7 @@ caused by the fact the signal length is not a multiple of the slices.
 
 Further differences between the new and legacy versions in this example are:
 
-* The parameter ``fft_typ='centered'`` ensures that the zero frequency is
+* The parameter ``fft_mode='centered'`` ensures that the zero frequency is
   vertically centered for two-sided FFTs in the plot. With the legacy
   implementation, `fftshift <scipy.fft.fftshift>` needs to be utilized.
   ``fftyp='twosided'`` produces the same behavior as the old version.
@@ -1558,7 +1558,7 @@ obtain an identical SFT as produced with the legacy |old_spectrogram|:
     ...
     >>> # New STFT:
     ... SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
-    ...                                fft_typ='centered',
+    ...                                fft_mode='centered',
     ...                                scale_to='magnitude', phase_shift=None)
     >>> Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
     >>> t3 = SFT.t(N, p0=0, p1=(N-noverlap)//SFT.hop, k_offset=nperseg//2)
@@ -1596,7 +1596,7 @@ table shows those correspondences:
    +-----------+----------+-----------------++------------+-----------+
    |   Legacy |old_spectrogram|             || |ShortTimeFFT|         |
    +-----------+----------+-----------------++------------+-----------+
-   | mode      | scaling  | return_onesided || `fft_typ`  | `scaling` |
+   | mode      | scaling  | return_onesided || `fft_mode` | `scaling` |
    +===========+==========+=================++============+===========+
    | psd       | density  |       True      || onesided2X | psd       |
    +-----------+----------+-----------------++------------+-----------+
@@ -1625,9 +1625,15 @@ table shows those correspondences:
    | ---       | ---      |       ---       || ``*``      | ``None``  |
    +-----------+----------+-----------------++------------+-----------+
 
-More information on that topic can be found in the Github issue
-`14903 <https://github.com/scipy/scipy/issues/14903>`__, notably in this
-`comment <https://github.com/scipy/scipy/issues/14903#issuecomment-1100249704>`__.
+When using ``onesided`` output on complex-valued input signals, the old
+|old_spectrogram| switches to ``two-sided`` mode. The |ShortTimeFFT| raises
+a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
+real-valued inputs.
+This `comment
+<https://github.com/scipy/scipy/issues/14903#issuecomment-1100249704>`__ of
+Github issue `14903 <https://github.com/scipy/scipy/issues/14903>`__ discusses
+variations of the old |old_spectrogram| parameters for a single cosine input.
+
 
 
 

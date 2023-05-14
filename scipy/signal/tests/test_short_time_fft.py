@@ -11,17 +11,6 @@ categories:
 
 Notes
 -----
-* The coverage of `_short_time_fft` is only 99% because the exception block for
-  testing if `NDArray` exists in Numpy, i.e. the following block
-
-        try:  # Workaround needed for Numpy versions < 1.21
-            from numpy.typing import NDArray
-        except ModuleNotFoundError:
-            NDArray: Type = np.ndarray  # type: ignore
-
-  is not tested. The reason being that the author does not know hot to do it in
-  a reasonable manner within pytest. This problem will go away when Numpy
-  >= 1.21 becomes mandatory for SciPy.
 * Mypy 0.990 does interpret the line::
 
         from scipy.stats import norm as normal_distribution
@@ -39,7 +28,7 @@ from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore
 from scipy.signal import get_window, welch, stft, istft, spectrogram
 
-from scipy.signal._short_time_fft import FFT_TYP_TYPE, \
+from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
     _calc_dual_canonical_window, ShortTimeFFT, PAD_TYPE
 from scipy.signal.windows import gaussian
 
@@ -110,11 +99,11 @@ def test_exceptions_properties_methods():
         SFT.T = -1
     with chk_VE("Sampling frequency fs=-1 must be positive!"):
         SFT.fs = -1
-    with chk_VE("fft_typ='invalid_typ' not in " +
+    with chk_VE("fft_mode='invalid_typ' not in " +
                 r"\('twosided', 'centered', 'onesided', 'onesided2X'\)!"):
-        SFT.fft_typ = 'invalid_typ'
-    with chk_VE("For scaling is None, fft_typ='onesided2X' is invalid.*"):
-        SFT.fft_typ = 'onesided2X'
+        SFT.fft_mode = 'invalid_typ'
+    with chk_VE("For scaling is None, fft_mode='onesided2X' is invalid.*"):
+        SFT.fft_mode = 'onesided2X'
     with chk_VE("Attribute mfft=7 needs to be at least the window length.*"):
         SFT.mfft = 7
     with chk_VE("scaling='invalid' not in.*"):
@@ -151,15 +140,15 @@ def test_exceptions_properties_methods():
     with chk_VE(r"Parameter axes_seq='invalid' not in \['tf', 'ft'\]!"):
         # noinspection PyTypeChecker
         SFT.extent(n=100, axes_seq='invalid')
-    with chk_VE("Attribute fft_typ=twosided must be in.*"):
-        SFT.fft_typ = 'twosided'
+    with chk_VE("Attribute fft_mode=twosided must be in.*"):
+        SFT.fft_mode = 'twosided'
         SFT.extent(n=100)
 
 
-def test_invalid_fft_typ_RuntimeError():
-    """Ensure exception gets raised when property `fft_typ` is invalid. """
+def test_invalid_fft_mode_RuntimeError():
+    """Ensure exception gets raised when property `fft_mode` is invalid. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
-    SFT._fft_typ = 'invalid_typ'
+    SFT._fft_mode = 'invalid_typ'
 
     with pytest.raises(RuntimeError):
         _ = SFT.f
@@ -181,21 +170,21 @@ def test_from_window(win_params, Nx: int):
     """
     w_sym, fs = get_window(win_params, Nx, fftbins=False), 16.
     w_per = get_window(win_params, Nx, fftbins=True)
-    SFT0 = ShortTimeFFT(w_sym, hop=3, fs=fs, fft_typ='twosided',
+    SFT0 = ShortTimeFFT(w_sym, hop=3, fs=fs, fft_mode='twosided',
                         scale_to='psd', phase_shift=1)
     nperseg = len(w_sym)
     noverlap = nperseg - SFT0.hop
-    SFT1 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap, True,
-                                    fft_typ='twosided', scale_to='psd',
-                                    phase_shift=1)
+    SFT1 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap,
+                                    symmetric_win=True, fft_mode='twosided',
+                                    scale_to='psd', phase_shift=1)
     # periodic window:
-    SFT2 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap, False,
-                                    fft_typ='twosided', scale_to='psd',
-                                    phase_shift=1)
+    SFT2 = ShortTimeFFT.from_window(win_params, fs, nperseg, noverlap,
+                                    symmetric_win=False, fft_mode='twosided',
+                                    scale_to='psd', phase_shift=1)
     # Be informative when comparing instances:
     assert_equal(SFT1.win, SFT0.win)
     assert_allclose(SFT2.win, w_per / np.sqrt(sum(w_per**2) * fs))
-    for n_ in ('hop', 'T', 'fft_typ', 'mfft', 'scaling', 'phase_shift'):
+    for n_ in ('hop', 'T', 'fft_mode', 'mfft', 'scaling', 'phase_shift'):
         v0, v1, v2 = (getattr(SFT_, n_) for SFT_ in (SFT0, SFT1, SFT2))
         assert v1 == v0, f"SFT1.{n_}={v1} does not equal SFT0.{n_}={v0}"
         assert v2 == v0, f"SFT2.{n_}={v2} does not equal SFT0.{n_}={v0}"
@@ -208,8 +197,11 @@ def test_dual_win_roundtrip():
     are not unique. It always works for invertible STFTs if the windows do not
     overlap.
     """
-    SFT0 = ShortTimeFFT(np.ones(4), hop=4, fs=1)
-    SFT1 = ShortTimeFFT.from_dual(SFT0.dual_win, hop=4, fs=1)
+    # Non-standard values for keyword arguments (except for `scale_to`):
+    kw = dict(hop=4, fs=1, fft_mode='twosided', mfft=8, scale_to=None,
+              phase_shift=2)
+    SFT0 = ShortTimeFFT(np.ones(4), **kw)
+    SFT1 = ShortTimeFFT.from_dual(SFT0.dual_win, **kw)
     assert_allclose(SFT1.dual_win, SFT0.win)
 
 
@@ -343,27 +335,27 @@ def test_t():
     assert SFT.T == 8
 
 
-@pytest.mark.parametrize('fft_typ, f',
+@pytest.mark.parametrize('fft_mode, f',
                          [('onesided', [0., 1., 2.]),
                           ('onesided2X', [0., 1., 2.]),
                           ('twosided', [0., 1., 2., -2., -1.]),
                           ('centered', [-2., -1., 0., 1., 2.])])
-def test_f(fft_typ: FFT_TYP_TYPE, f):
+def test_f(fft_mode: FFT_MODE_TYPE, f):
     """Verify the frequency values property `f`."""
-    SFT = ShortTimeFFT(np.ones(5), hop=4, fs=5, fft_typ=fft_typ,
+    SFT = ShortTimeFFT(np.ones(5), hop=4, fs=5, fft_mode=fft_mode,
                        scale_to='psd')
     assert_equal(SFT.f, f)
 
 
 def test_extent():
     """Ensure that the `extent()` method is correct. """
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_typ='onesided')
+    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='onesided')
     assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, 0.0, 17.0)
     assert SFT.extent(100, 'ft', False) == (0.0, 17.0, -0.375, 3.625)
     assert SFT.extent(100, 'tf', True) == (-0.4375, 3.5625, -0.5, 16.5)
     assert SFT.extent(100, 'ft', True) == (-0.5, 16.5, -0.4375, 3.5625)
 
-    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_typ='centered')
+    SFT = ShortTimeFFT(np.ones(32), hop=4, fs=32, fft_mode='centered')
     assert SFT.extent(100, 'tf', False) == (-0.375, 3.625, -16.0, 15.0)
 
 
@@ -385,14 +377,14 @@ def test_fft_func_roundtrip(n: int):
     w, h_n = np.ones(n), 4
 
     pp = dict(
-        fft_type=get_args(FFT_TYP_TYPE),
+        fft_mode=get_args(FFT_MODE_TYPE),
         mfft=[None, n, n+1, n+2],
         scaling=[None, 'magnitude', 'psd'],
         phase_shift=[None, -n+1, 0, n // 2, n-1])
     for f_typ, mfft, scaling, phase_shift in product(*pp.values()):
         if f_typ == 'onesided2X' and scaling is None:
             continue  # this combination is forbidden
-        SFT = ShortTimeFFT(w, h_n, fs=n, fft_typ=f_typ, mfft=mfft,
+        SFT = ShortTimeFFT(w, h_n, fs=n, fft_mode=f_typ, mfft=mfft,
                            scale_to=scaling, phase_shift=phase_shift)
         X0 = SFT._fft_func(x0)
         x1 = SFT._ifft_func(X0)
@@ -400,7 +392,7 @@ def test_fft_func_roundtrip(n: int):
                         f"{f_typ=}, {mfft=}, {scaling=}, {phase_shift=}")
 
     SFT = ShortTimeFFT(w, h_n, fs=1)
-    SFT._fft_typ = 'invalid_fft'  # type: ignore
+    SFT._fft_mode = 'invalid_fft'  # type: ignore
     with pytest.raises(RuntimeError):
         SFT._fft_func(x0)
     with pytest.raises(RuntimeError):
@@ -520,7 +512,7 @@ def test_tutorial_stft_legacy_stft():
 
     # New STFT:
     SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
-                                   fft_typ='centered',
+                                   fft_mode='centered',
                                    scale_to='magnitude', phase_shift=None)
     Sz1 = SFT.stft(z)
 
@@ -563,7 +555,7 @@ def test_tutorial_stft_legacy_spectrogram():
 
     # New STFT:
     SFT = ShortTimeFFT.from_window(win, fs, nperseg, noverlap,
-                                   fft_typ='centered', scale_to='magnitude',
+                                   fft_mode='centered', scale_to='magnitude',
                                    phase_shift=None)
     Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
     t3 = SFT.t(N, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
@@ -625,7 +617,7 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     np.random.seed(2394655)
 
     w = get_window(window, nperseg)
-    SFT = ShortTimeFFT(w, nperseg-noverlap, fs=1, fft_typ='twosided',
+    SFT = ShortTimeFFT(w, nperseg - noverlap, fs=1, fft_mode='twosided',
                        phase_shift=None)
 
     z = 10 * np.random.randn(n) + 10j * np.random.randn(n)
@@ -658,7 +650,7 @@ def test_average_all_segments():
     nperseg, noverlap = 16, 2
     fw, Pw = welch(x, fs, window, nperseg, noverlap)
     SFT = ShortTimeFFT.from_window(window, fs, nperseg, noverlap,
-                                   fft_typ='onesided2X', scale_to='psd',
+                                   fft_mode='onesided2X', scale_to='psd',
                                    phase_shift=None)
     # `welch` positions the window differently than the STFT:
     P = SFT.spectrogram(x, detr='constant', p0=0,
@@ -695,7 +687,7 @@ def test_stft_padding_roundtrip(window, N: int, nperseg: int, noverlap: int,
     z = x * np.exp(1j * np.pi / 4)  # complex signal
 
     SFT = ShortTimeFFT.from_window(window, 1, nperseg, noverlap,
-                                   fft_typ='twosided', mfft=mfft)
+                                   fft_mode='twosided', mfft=mfft)
     Sx = SFT.stft(x, padding=padding)
     x1 = SFT.istft(Sx, k1=N)
     assert_allclose(x1, x,
@@ -727,7 +719,7 @@ def test_energy_conservation(N_x: int, w_size: int, t_step: int, f_c: float):
         https://github.com/mne-tools/mne-python/blob/main/mne/time_frequency/tests/test_stft.py
     """
     window = np.sin(np.arange(.5, w_size + .5) / w_size * np.pi)
-    SFT = ShortTimeFFT(window, t_step, fs=1000, fft_typ='onesided2X',
+    SFT = ShortTimeFFT(window, t_step, fs=1000, fft_mode='onesided2X',
                        scale_to='psd')
     atol = 2*np.finfo(window.dtype).resolution
     N_x = max(N_x, w_size)  # minimal sing

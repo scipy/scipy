@@ -27,7 +27,7 @@ from numpy.typing import NDArray
 from scipy.signal import ShortTimeFFT
 from scipy.signal import csd, get_window, stft, istft
 from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
-from scipy.signal._short_time_fft import FFT_TYP_TYPE
+from scipy.signal._short_time_fft import FFT_MODE_TYPE
 from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
     _median_bias
 
@@ -117,10 +117,10 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     if np.iscomplexobj(x) and return_onesided:
         return_onesided = False
     # using cast() to make mypy happy:
-    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
 
-    ST = ShortTimeFFT(win, nstep, fs, fft_typ, nfft, scale_to=scale_to,
-                      phase_shift=None)
+    ST = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
+                      scale_to=scale_to, phase_shift=None)
 
     k_off = nperseg // 2
     p0 = 0  # ST.lower_border_end[1] + 1
@@ -132,7 +132,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
         p1 -= nperseg // 2 - 1  # the reasoning behind this is not clear to me
 
     detr = None if detrend is False else detrend
-    Sxx = ST.stft_detrend(x, detr, p0, p1, k_off, axis=axis)
+    Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
     t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
     if x.dtype in (np.float32, np.complex64):
         Sxx = Sxx.astype(np.complex64)
@@ -213,12 +213,12 @@ def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
     # *** End block of: Taken from _spectral_py.istft() ***
 
     # Using cast() to make mypy happy:
-    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if input_onesided else 'twosided')
+    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if input_onesided else 'twosided')
     scale_to = cast(Literal['magnitude', 'psd'],
                     {'spectrum': 'magnitude', 'psd': 'psd'}[scaling])
 
-    ST = ShortTimeFFT(win, nstep, fs, fft_typ, nfft, scale_to=scale_to,
-                      phase_shift=None)
+    ST = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
+                      scale_to=scale_to, phase_shift=None)
 
     if boundary:
         j = nperseg if nperseg % 2 == 0 else nperseg - 1
@@ -362,10 +362,10 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         return_onesided = False
 
     # using cast() to make mypy happy:
-    fft_typ = cast(FFT_TYP_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
     scale = {'spectrum': 'magnitude', 'density': 'psd'}[scaling]
-    SFT = ShortTimeFFT(win, nstep, fs, fft_typ, nfft, scale_to=scale,
-                       phase_shift=None)
+    SFT = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
+                       scale_to=scale, phase_shift=None)
 
     # _spectral_helper() calculates X.conj()*Y instead of X*Y.conj():
     Pxy = SFT.spectrogram(y, x, detr=None if detrend is False else detrend,
