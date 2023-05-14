@@ -9125,6 +9125,12 @@ class truncexpon_gen(rv_continuous):
     def _ppf(self, q, b):
         return -sc.log1p(q*sc.expm1(-b))
 
+    def _sf(self, x, b):
+        return (np.exp(-b) - np.exp(-x))/sc.expm1(-b)
+
+    def _isf(self, q, b):
+        return -np.log(np.exp(-b) - q * sc.expm1(-b))
+
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
         # return sc.gamman+1)-sc.gammainc1+n, b)
