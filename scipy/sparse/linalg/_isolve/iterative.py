@@ -100,10 +100,6 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     rhotol = np.finfo(x.dtype.char).eps**2
 
-    # Is there any tolerance set? since b can be all 0.
-    if atol == 0.:
-        atol = 1e-5
-
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, p, ptilde = None, None, None
 
@@ -253,10 +249,6 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     # sqrt might have been meant instead.
     rhotol = np.finfo(x.dtype.char).eps**2
     omegatol = rhotol
-
-    # Is there any tolerance set? since b can be all 0.
-    if atol == 0.:
-        atol = 1e-5
 
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, omega, alpha, p, v = None, None, None, None, None
@@ -409,10 +401,6 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
     psolve = M.matvec
     r = b - matvec(x) if x.any() else b.copy()
 
-    # Is there any tolerance set? since b can be all 0.
-    if atol == 0.:
-        atol = 1e-5
-
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
 
@@ -541,10 +529,6 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     rhotol = np.finfo(x.dtype.char).eps**2
 
     r = b - matvec(x) if x.any() else b.copy()
-
-    # Is there any tolerance set? since b can be all 0.
-    if atol == 0.:
-        atol = 1e-5
 
     rtilde = r.copy()
     bnorm = np.linalg.norm(b)
