@@ -9814,7 +9814,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
                 u\\
                 v\\
             \end{bmatrix}
-    The :math:`\text{vec}()` function denotes the Vectorization function 
+
+    The :math:`\text{vec}()` function denotes the Vectorization function
     that transforms a matrix into a column vector by vertically stacking
     the columns of the matrix.
     The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
