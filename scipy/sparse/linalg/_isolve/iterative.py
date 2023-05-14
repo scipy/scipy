@@ -77,7 +77,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     if tol is not None:
         msg = ("'scipy.sparse.linalg.bicg' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -91,10 +91,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
 
     n = len(b)
-    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
 
     if maxiter is None:
         maxiter = n*10
@@ -111,7 +108,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, p, ptilde = None, None, None
 
-    r = b - matvec(x) if x0 is not None else b.copy()
+    r = b - matvec(x) if x.any() else b.copy()
     rtilde = r.copy()
 
     for iteration in range(maxiter):
@@ -229,7 +226,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     if tol is not None:
         msg = ("'scipy.sparse.linalg.bicgstab' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -244,10 +241,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     n = len(b)
 
-    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
 
     if maxiter is None:
         maxiter = n*10
@@ -267,7 +261,7 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     # Dummy values to initialize vars, silence linter warnings
     rho_prev, omega, alpha, p, v = None, None, None, None, None
 
-    r = b - matvec(x) if x0 is not None else b.copy()
+    r = b - matvec(x) if x.any() else b.copy()
     rtilde = r.copy()
 
     for iteration in range(maxiter):
@@ -392,7 +386,7 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
     if tol is not None:
         msg = ("'scipy.sparse.linalg.cg' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -409,9 +403,11 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
     if maxiter is None:
         maxiter = n*10
 
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
+
     matvec = A.matvec
     psolve = M.matvec
-    r = b - matvec(x) if x0 is not None else b.copy()
+    r = b - matvec(x) if x.any() else b.copy()
 
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
@@ -419,10 +415,6 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
 
     # Dummy value to initialize var, silences warnings
     rho_prev, p = None, None
-    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
 
     for iteration in range(maxiter):
         if np.linalg.norm(r) < atol:  # Are we done?
@@ -524,7 +516,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     if tol is not None:
         msg = ("'scipy.sparse.linalg.cgs' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -538,10 +530,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
     atol = max(float(atol), rtol * float(np.linalg.norm(b)))
     n = len(b)
 
-    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
 
     if maxiter is None:
         maxiter = n*10
@@ -551,7 +540,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
     rhotol = np.finfo(x.dtype.char).eps**2
 
-    r = b - matvec(x) if x0 is not None else b.copy()
+    r = b - matvec(x) if x.any() else b.copy()
 
     # Is there any tolerance set? since b can be all 0.
     if atol == 0.:
@@ -591,11 +580,9 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
             p += u
 
         else:  # First spin
-            p = np.empty_like(r)
-            u = np.empty_like(r)
+            p = r.copy()
+            u = r.copy()
             q = np.empty_like(r)
-            p[:] = r[:]
-            u[:] = r[:]
 
         phat = psolve(p)
         vhat = matvec(phat)
@@ -745,7 +732,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     if tol is not None:
         msg = ("'gmres' keyword argument 'tol' is deprecated "
                "in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override `rtol`.")
+               "v.1.13.0. Until then, if set, will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -781,10 +768,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
 
     eps = np.finfo(x.dtype.char).eps
 
-    if np.iscomplexobj(x):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
 
     if maxiter is None:
         maxiter = n*10
@@ -842,7 +826,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
 
     for iteration in range(maxiter):
         if iteration == 0:
-            r = b - matvec(x) if x0 is None else b.copy()
+            r = b - matvec(x) if x.any() else b.copy()
 
         v[0, :] = psolve(r)
         tmp = np.linalg.norm(v[0, :])
@@ -881,7 +865,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
                 h[col, [k, k + 1]] = [c*n0 + s*n1, -s.conj()*n0 + c*n1]
 
             # get and apply current rotation to h and S
-            c, s, mag = lartg(*h[col, [col, col+1]])
+            c, s, mag = lartg(h[col, col], h[col, col+1])
             givens[col, :] = [c, s]
             h[col, [col, col+1]] = mag, 0
 
@@ -899,20 +883,34 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
             if presid <= ptol or breakdown:
                 break
 
-        # Solve (col, col) upper triangular system
-        # allow trsv to pseudo-solve singular cases
+        # Solve h(col, col) upper triangular system and allow pseudo-solve
+        # singular cases as in (but without the f2py copies)
+        # y = trsv(h[:col+1, :col+1].T, S[:col+1])
+
         if h[col, col] == 0:
             S[col] = 0
 
-        y = trsv(h[:col+1, :col+1].T, S[:col+1])
+        y = np.zeros([col+1], dtype=x.dtype)
+        y[:] = S[:col+1]
+        for k in range(col, 0, -1):
+            if y[k] != 0:
+                y[k] /= h[k, k]
+                tmp = y[k]
+                y[:k] -= tmp*h[k, :k]
+        if y[0] != 0:
+            y[0] /= h[0, 0]
+
         x += y @ v[:col+1, :]
 
         # Legacy exit
-        if callback_type == 'legacy' and inner_iter > maxiter:
+        if callback_type == 'legacy' and inner_iter == maxiter:
             return postprocess(x), maxiter
 
         r = b - matvec(x)
         rnorm = np.linalg.norm(r)
+
+        if callback_type == 'x':
+            callback(x)
 
         if rnorm <= atol:
             break
@@ -1009,7 +1007,7 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     if tol is not None:
         msg = ("'scipy.sparse.linalg.qmr' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               " v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.13.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=3)
         rtol = float(tol)
 
@@ -1051,10 +1049,7 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     if maxiter is None:
         maxiter = n*10
 
-    if (np.iscomplexobj(A) or np.iscomplexobj(b)):
-        dotprod = np.vdot
-    else:
-        dotprod = np.dot
+    dotprod = np.vdot if np.iscomplexobj(x) else np.dot
 
     rhotol = np.finfo(x.dtype.char).eps
     betatol = rhotol
@@ -1063,7 +1058,8 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
     epsilontol = rhotol
     xitol = rhotol
 
-    r = b - A.matvec(x) if x0 is not None else b.copy()
+    r = b - A.matvec(x) if x.any() else b.copy()
+
     vtilde = r.copy()
     y = M1.matvec(vtilde)
     rho = np.linalg.norm(y)
