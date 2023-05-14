@@ -2117,7 +2117,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Parameters
     ----------
     input : array_like
-        Input. Values of `0` are treated as background.
+        Input. Values of 0 are treated as background.
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
@@ -2229,6 +2229,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     >>> cbar_chessboard = bottom.cax.colorbar(chessboard_transform)
     >>> cbar_chessboard.set_ticks(colorbar_ticks)
     >>> bottom.set_title("Chessboard metric")
+    >>> plt.tight_layout()
     >>> plt.show()
 
     """
