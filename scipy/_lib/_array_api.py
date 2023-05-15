@@ -10,9 +10,9 @@ import math
 import os
 
 import numpy as np
-from numpy.core.numerictypes import typecodes
 # probably want to vendor it (submodule)
 import array_api_compat
+from array_api_compat import size
 import array_api_compat.numpy
 
 __all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
@@ -186,21 +186,3 @@ def to_numpy(array, xp):
         return array.get()
 
     return np.asarray(array)
-
-
-def size(x):
-    """Return the total number of elements of `x`.
-
-    From Scikit-Learn.
-
-    Parameters
-    ----------
-    x : array
-        Array instance from NumPy or an Array API compatible library.
-
-    Returns
-    -------
-    out : int
-        Total number of elements.
-    """
-    return math.prod(x.shape)
