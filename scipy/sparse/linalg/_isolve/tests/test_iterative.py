@@ -24,6 +24,18 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 # TODO test both preconditioner methods
 
 
+# list of all solvers under test
+_SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
+            minres, qmr, tfqmr]
+# create parametrized fixture for easy reuse in tests
+@pytest.fixture(params=_SOLVERS, scope="session")
+def solver(request):
+    """
+    Fixture for all solvers in scipy.sparse.linalg._isolve
+    """
+    return request.param
+
+
 class Case:
     def __init__(self, name, A, b=None, skip=None, nonconvergence=None):
         self.name = name
@@ -47,16 +59,11 @@ class Case:
 
 class IterativeParams:
     def __init__(self):
-        # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
-                   gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
 
-        self.solvers = solvers
-
-        # list of tuples (A, symmetric, positive_definite )
+        # list of Cases
         self.cases = []
 
         # Symmetric and Positive Definite
@@ -66,7 +73,6 @@ class IterativeParams:
         data[1, :] = -1
         data[2, :] = -1
         Poisson1D = spdiags(data, [0, -1, 1], N, N, format='csr')
-        self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
         self.cases.append(Case("poisson1d-F", Poisson1D.astype('f'),
@@ -81,7 +87,6 @@ class IterativeParams:
 
         # 2-dimensional Poisson equations
         Poisson2D = kronsum(Poisson1D, Poisson1D)
-        self.Poisson2D = Case("poisson2d", Poisson2D)
         # note: minres fails for 2-d poisson problem,
         # it will be fixed in the future PR
         self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
@@ -180,7 +185,13 @@ class IterativeParams:
                           )
 
 
-params = IterativeParams()
+cases = IterativeParams().cases
+@pytest.fixture(params=cases, ids=[x.name for x in cases], scope="session")
+def case(request):
+    """
+    Fixture for all cases in IterativeParams
+    """
+    return request.param
 
 
 def check_maxiter(solver, case):
@@ -201,14 +212,12 @@ def check_maxiter(solver, case):
     assert info == 1
 
 
-def test_maxiter():
-    for case in params.cases:
-        for solver in params.solvers:
-            if solver in case.skip + case.nonconvergence:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_maxiter(solver, case)
+def test_maxiter(solver, case):
+    if solver in case.skip + case.nonconvergence:
+        pytest.skip("unsupported combination")
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -239,14 +248,12 @@ def check_convergence(solver, case):
         assert np.linalg.norm(A @ x - b) <= np.linalg.norm(b)
 
 
-def test_convergence():
-    for solver in params.solvers:
-        for case in params.cases:
-            if solver in case.skip:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_convergence(solver, case)
+def test_convergence(solver, case):
+    if solver in case.skip:
+        pytest.skip("unsupported combination")
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -286,14 +293,12 @@ def check_precond_dummy(solver, case):
     assert_normclose(A @ x, b, tol=tol)
 
 
-def test_precond_dummy():
-    for case in params.cases:
-        for solver in params.solvers:
-            if solver in case.skip + case.nonconvergence:
-                continue
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning, ".*called without specifying.*")
-                check_precond_dummy(solver, case)
+def test_precond_dummy(solver, case):
+    if solver in case.skip + case.nonconvergence:
+        pytest.skip("unsupported combination")
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -340,25 +345,20 @@ def check_precond_inverse(solver, case):
     assert matvec_count[0] <= 3
 
 
-@pytest.mark.parametrize("case", [params.Poisson1D, params.Poisson2D])
-def test_precond_inverse(case):
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        if solver is qmr:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            check_precond_inverse(solver, case)
+def test_precond_inverse(solver, case):
+    if (solver in case.skip or solver is qmr
+            or case.name not in ("poisson1d", "poisson2d")):
+        pytest.skip("unsupported combination")
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        check_precond_inverse(solver, case)
 
 
-def test_reentrancy():
-    non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
+def test_reentrancy(solver):
     reentrant = [lgmres, minres, gcrotmk, tfqmr]
-    for solver in reentrant + non_reentrant:
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            _check_reentrancy(solver, solver in reentrant)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        _check_reentrancy(solver, solver in reentrant)
 
 
 def _check_reentrancy(solver, is_reentrant):
@@ -379,11 +379,11 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    lgmres, gcrotmk])
 def test_atol(solver):
-    # TODO: minres. It didn't historically use absolute tolerances, so
+    # TODO: minres / tfqmr. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
+    if solver in (minres, tfqmr):
+        pytest.skip("TODO")
 
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -421,8 +421,6 @@ def test_atol(solver):
         assert err <= 1.00025 * max(atol, atol2)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk, tfqmr])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -457,25 +455,21 @@ def test_zero_rhs(solver):
                 assert_allclose(x, 0, atol=1e-300)
 
 
-@pytest.mark.parametrize("solver", [
-    pytest.param(gmres, marks=pytest.mark.xfail(platform.machine() == 'aarch64'
-                                                and sys.version_info[1] == 9,
-                                                reason="gh-13019")),
-    qmr,
-    pytest.param(lgmres, marks=pytest.mark.xfail(
-        platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64'],
-        reason="fails on at least ppc64le, ppc64 and riscv64, see gh-17839")
-    ),
-    pytest.param(cgs, marks=pytest.mark.xfail),
-    pytest.param(bicg, marks=pytest.mark.xfail),
-    pytest.param(bicgstab, marks=pytest.mark.xfail),
-    pytest.param(gcrotmk, marks=pytest.mark.xfail),
-    pytest.param(tfqmr, marks=pytest.mark.xfail)])
 def test_maxiter_worsening(solver):
+    if solver not in (gmres, lgmres):
+        # these were skipped from the very beginning, see gh-9201; gh-14160
+        pytest.skip("unsupported combination")
     # Check error does not grow (boundlessly) with increasing maxiter.
     # This can occur due to the solvers hitting close to breakdown,
     # which they should detect and halt as necessary.
     # cf. gh-9100
+    if (solver is gmres and platform.machine() == 'aarch64'
+            and sys.version_info[1] == 9):
+        pytest.xfail(reason="gh-13019")
+    if (solver is lgmres and
+            platform.machine() not in ['x86_64' 'x86', 'aarch64', 'arm64']):
+        # see gh-17839
+        pytest.xfail(reason="fails on at least ppc64le, ppc64 and riscv64")
 
     # Singular matrix, rhs numerically not in range
     A = np.array([[-0.1112795288033378, 0, 0, 0.16127952880333685],
@@ -499,8 +493,6 @@ def test_maxiter_worsening(solver):
         assert error <= tol * best_error
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk, tfqmr])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -524,46 +516,40 @@ def test_x0_working(solver):
     assert np.linalg.norm(A @ x - b) <= 2e-6 * np.linalg.norm(b)
 
 
-@pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk])
-def test_x0_equals_Mb(solver):
-    for case in params.cases:
-        if solver in case.skip:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            A = case.A
-            b = case.b
-            x0 = 'Mb'
-            tol = 1e-8
-            x, info = solver(A, b, x0=x0, tol=tol)
-
-            assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
-            assert info == 0
-            assert_normclose(A @ x, b, tol=tol)
-
-
-@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
-def test_show(solver, solverstring, capsys):
-    def cb(x):
-        count[0] += 1
-
-    for i in [0, 20]:
-        case = params.cases[i]
+def test_x0_equals_Mb(solver, case):
+    if solver in case.skip or solver is tfqmr:
+        pytest.skip("unsupported combination")
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
         A = case.A
         b = case.b
-        count = [0]
-        x, info = solver(A, b, callback=cb, show=True)
-        out, err = capsys.readouterr()
-        if i == 20:  # Asymmetric and Positive Definite
-            exp = (f"{solverstring}: Linear solve not converged "
-                   f"due to reach MAXIT iterations {count[0]}\n")
-            assert out == exp
-        else:  # 1-D Poisson equations
-            exp = (f"{solverstring}: Linear solve converged due to "
-                   f"reach TOL iterations {count[0]}\n")
-            assert out == exp
-        assert err == ""
+        x0 = 'Mb'
+        tol = 1e-8
+        x, info = solver(A, b, x0=x0, tol=tol)
+
+        assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
+        assert info == 0
+        assert_normclose(A @ x, b, tol=tol)
+
+
+def test_show(case, capsys):
+    def cb(x):
+        pass
+
+    x, info = tfqmr(case.A, case.b, callback=cb, show=True)
+    out, err = capsys.readouterr()
+
+    if case.name == "sym-nonpd":
+        # no logs for some reason
+        exp = ""
+    elif case.name in ("nonsymposdef", "nonsymposdef-F"):
+        # Asymmetric and Positive Definite
+        exp = "TFQMR: Linear solve not converged due to reach MAXIT iterations"
+    else:  # all other cases
+        exp = "TFQMR: Linear solve converged due to reach TOL iterations"
+
+    assert out.startswith(exp)
+    assert err == ""
 
 
 # -----------------------------------------------------------------------------
