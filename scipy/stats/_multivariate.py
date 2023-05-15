@@ -4581,9 +4581,9 @@ class multivariate_t_gen(multi_rv_generic):
             #  + ((m+d)/2) * (digamma((m+d)/2) - digamma(d/2))"
             return (
                 1.41894 * dim + dim / df
-                - dim * (dim - 2) * df**-2 / 4
-                + dim**2 * (dim - 2) * df**-3 / 6
-                + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4 / 24
+                - dim * (dim - 2) * df**-2.0 / 4
+                + dim**2 * (dim - 2) * df**-3.0 / 6
+                + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
                 + shape_term
             )
 
