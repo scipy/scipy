@@ -1675,7 +1675,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> import matplotlib.pyplot as plt
     >>> ascent = datasets.ascent()
 
-    Compute a maximum filter with kernel size 10 by passing a simple numpy
+    Compute a maximum filter with kernel size 10 by passing a simple NumPy
     aggregation function as argument to `function`.
 
     >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
