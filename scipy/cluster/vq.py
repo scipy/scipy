@@ -210,7 +210,7 @@ def vq(obs, code_book, check_finite=True):
         c_obs = np.asarray(c_obs)
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)
-        return xp.asarray(result)
+        return xp.asarray(result[0]), xp.asarray(result[1])
     return py_vq(obs, code_book, check_finite=False)
 
 
@@ -309,8 +309,14 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         obs_code, distort = vq(obs, code_book, check_finite=False)
         prev_avg_dists.append(distort.mean(axis=-1))
         # recalc code_book as centroids of associated obs
+        obs = np.asarray(obs)
+        obs_code = np.asarray(obs_code)
         code_book, has_members = _vq.update_cluster_means(obs, obs_code,
                                                           code_book.shape[0])
+        obs = xp.asarray(obs)
+        obs_code = xp.asarray(obs_code)
+        code_book = xp.asarray(code_book)
+        has_members = xp.asarray(has_members)
         code_book = code_book[has_members]
         diff = xp.absolute(prev_avg_dists[0] - prev_avg_dists[1])
 
