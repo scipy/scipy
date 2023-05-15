@@ -6,8 +6,8 @@ import platform
 import sys
 import numpy as np
 
-from numpy.testing import (assert_equal, assert_array_equal,
-                           assert_allclose, suppress_warnings)
+from numpy.testing import (assert_array_equal, assert_allclose,
+                           suppress_warnings)
 import pytest
 
 
@@ -197,8 +197,8 @@ def check_maxiter(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
-    assert_equal(len(residuals), 1)
-    assert_equal(info, 1)
+    assert len(residuals) == 1
+    assert info == 1
 
 
 def test_maxiter():
@@ -232,7 +232,7 @@ def check_convergence(solver, case):
 
     assert_array_equal(x0, 0 * b)  # ensure that x0 is not overwritten
     if solver not in case.nonconvergence:
-        assert_equal(info, 0)
+        assert info == 0
         assert_normclose(A @ x, b, tol=tol)
     else:
         assert info != 0
@@ -274,7 +274,7 @@ def check_precond_dummy(solver, case):
         x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
-    assert_equal(info, 0)
+    assert info == 0
     assert_normclose(A @ x, b, tol)
 
     A = aslinearoperator(A)
@@ -282,7 +282,7 @@ def check_precond_dummy(solver, case):
     A.rpsolve = identity
 
     x, info = solver(A, b, x0=x0, tol=tol)
-    assert_equal(info, 0)
+    assert info == 0
     assert_normclose(A @ x, b, tol=tol)
 
 
@@ -333,7 +333,7 @@ def check_precond_inverse(solver, case):
     matvec_count = [0]
     x, info = solver(A, b, M=precond, x0=x0, tol=tol)
 
-    assert_equal(info, 0)
+    assert info == 0
     assert_normclose(case.A @ x, b, tol)
 
     # Solution should be nearly instant
@@ -365,7 +365,7 @@ def _check_reentrancy(solver, is_reentrant):
     def matvec(x):
         A = np.array([[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]])
         y, info = solver(A, x)
-        assert_equal(info, 0)
+        assert info == 0
         return y
     b = np.array([1, 1. / 2, 1. / 3])
     op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
@@ -375,7 +375,7 @@ def _check_reentrancy(solver, is_reentrant):
         pytest.raises(RuntimeError, solver, op, b)
     else:
         y, info = solver(op, b)
-        assert_equal(info, 0)
+        assert info == 0
         assert_allclose(y, [1, 1, 1])
 
 
@@ -411,8 +411,8 @@ def test_atol(solver):
             x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
         else:
             x, info = solver(A, b, M=M, tol=tol, atol=atol)
-        assert_equal(info, 0)
 
+        assert info == 0
         residual = A @ x - b
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
@@ -436,11 +436,11 @@ def test_zero_rhs(solver):
             sup.filter(DeprecationWarning, ".*called without specifying.*")
 
             x, info = solver(A, b, tol=tol)
-            assert_equal(info, 0)
+            assert info == 0
             assert_allclose(x, 0., atol=1e-15)
 
             x, info = solver(A, b, tol=tol, x0=ones(10))
-            assert_equal(info, 0)
+            assert info == 0
             assert_allclose(x, 0., atol=tol)
 
             if solver is not minres:
@@ -449,11 +449,11 @@ def test_zero_rhs(solver):
                     assert_allclose(x, 0)
 
                 x, info = solver(A, b, tol=tol, atol=tol)
-                assert_equal(info, 0)
+                assert info == 0
                 assert_allclose(x, 0, atol=1e-300)
 
                 x, info = solver(A, b, tol=tol, atol=0)
-                assert_equal(info, 0)
+                assert info == 0
                 assert_allclose(x, 0, atol=1e-300)
 
 
@@ -516,11 +516,11 @@ def test_x0_working(solver):
         kw = dict(atol=0, tol=1e-6)
 
     x, info = solver(A, b, **kw)
-    assert_equal(info, 0)
+    assert info == 0
     assert np.linalg.norm(A @ x - b) <= 1e-6 * np.linalg.norm(b)
 
     x, info = solver(A, b, x0=x0, **kw)
-    assert_equal(info, 0)
+    assert info == 0
     assert np.linalg.norm(A @ x - b) <= 2e-6 * np.linalg.norm(b)
 
 
@@ -539,7 +539,7 @@ def test_x0_equals_Mb(solver):
             x, info = solver(A, b, x0=x0, tol=tol)
 
             assert_array_equal(x0, 'Mb')  # ensure that x0 is not overwritten
-            assert_equal(info, 0)
+            assert info == 0
             assert_normclose(A @ x, b, tol=tol)
 
 
@@ -556,12 +556,14 @@ def test_show(solver, solverstring, capsys):
         x, info = solver(A, b, callback=cb, show=True)
         out, err = capsys.readouterr()
         if i == 20:  # Asymmetric and Positive Definite
-            assert_equal(out, f"{solverstring}: Linear solve not converged "
-                              f"due to reach MAXIT iterations {count[0]}\n")
+            exp = (f"{solverstring}: Linear solve not converged "
+                   f"due to reach MAXIT iterations {count[0]}\n")
+            assert out == exp
         else:  # 1-D Poisson equations
-            assert_equal(out, f"{solverstring}: Linear solve converged due to "
-                              f"reach TOL iterations {count[0]}\n")
-        assert_equal(err, '')
+            exp = (f"{solverstring}: Linear solve converged due to "
+                   f"reach TOL iterations {count[0]}\n")
+            assert out == exp
+        assert err == ""
 
 
 # -----------------------------------------------------------------------------
@@ -607,7 +609,7 @@ class TestQMR:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-        assert_equal(info, 0)
+        assert info == 0
         assert_normclose(A @ x, b, tol=1e-8)
 
 
