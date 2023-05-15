@@ -9,7 +9,7 @@ channels:
 dependencies:
   - python
   - setuptools<60.0
-  - cython
+  - cython>=0.29.33
   - compilers
   - meson>=0.64.0
   - meson-python
