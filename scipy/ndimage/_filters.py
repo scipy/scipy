@@ -1676,7 +1676,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> ascent = datasets.ascent()
 
     Compute a maximum filter with kernel size 10 by passing a simple numpy
-    aggregation function as argument to ``function``.
+    aggregation function as argument to `function`.
 
     >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
 
@@ -1703,6 +1703,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> middle.set_title("Maximum filter, Kernel: 10x10")
     >>> bottom.imshow(custom_filter_result)
     >>> bottom.set_title("Custom filter, Kernel: 5x5")
+    >>> fig.tight_layout()
 
     """
     if (size is not None) and (footprint is not None):
