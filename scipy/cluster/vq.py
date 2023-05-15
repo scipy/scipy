@@ -67,7 +67,7 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import as_xparray, array_namespace
+from scipy._lib._array_api import as_xparray, array_namespace, size
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
@@ -456,11 +456,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if guess.size > 1:
-        if guess.size < 1:
+    if size(guess) > 1:
+        if size(guess) < 1:
             raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
-        elif guess.size > 1:
+        elif size(guess) > 1:
             return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
@@ -540,7 +540,7 @@ def _krandinit(data, k, rng, xp):
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
-        x = rng.standard_normal(size=(k, s.size))
+        x = rng.standard_normal(size=(k, size(s)))
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - 1)
         x = x.dot(sVh)
     else:
@@ -548,7 +548,7 @@ def _krandinit(data, k, rng, xp):
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
-        x = rng.standard_normal(size=(k, mu.size))
+        x = rng.standard_normal(size=(k, size(mu)))
         x = x.dot(xp.linalg.cholesky(cov).T)
 
     x += mu
@@ -760,11 +760,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     else:
         raise ValueError("Input of rank > 2 is not supported.")
 
-    if data.size < 1 or code_book.size < 1:
+    if size(data) < 1 or size(code_book) < 1:
         raise ValueError("Empty input is not supported.")
 
     # If k is not a single value, it should be compatible with data's shape
-    if minit == 'matrix' or code_book.size > 1:
+    if minit == 'matrix' or size(code_book) > 1:
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
         nc = len(code_book)
