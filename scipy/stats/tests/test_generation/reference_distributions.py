@@ -89,19 +89,31 @@ class ReferenceDistribution:
         raise NotImplementedError("_pdf must be overridden.")
 
     def _cdf(self, x, **kwargs):
+        if ((self._cdf.__func__ is ReferenceDistribution._cdf)
+                and (self._sf.__func__ is not ReferenceDistribution._sf)):
+            return mp.one - self._sf(x, **kwargs)
         a, _ = self._support(**kwargs)
         return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
 
     def _sf(self, x, **kwargs):
+        if ((self._sf.__func__ is ReferenceDistribution._sf)
+                and (self._cdf.__func__ is not ReferenceDistribution._cdf)):
+            return mp.one - self._cdf(x, **kwargs)
         _, b = self._support(**kwargs)
         return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
 
     def _ppf(self, p, guess=0, **kwargs):
+        if ((self._ppf.__func__ is ReferenceDistribution._ppf)
+                and (self._isf.__func__ is not ReferenceDistribution._isf)):
+            return self._isf(mp.one - p, guess, **kwargs)
         def f(x):
             return self._cdf(x, **kwargs) - p
         return mp.findroot(f, guess)
 
     def _isf(self, p, guess=0, **kwargs):
+        if ((self._isf.__func__ is ReferenceDistribution._isf)
+                and (self._ppf.__func__ is not ReferenceDistribution._ppf)):
+            return self._ppf(mp.one - p, guess, **kwargs)
         def f(x):
             return self._sf(x, **kwargs) - p
         return mp.findroot(f, guess)
@@ -263,6 +275,11 @@ class SkewNormal(ReferenceDistribution):
         # separately for a specific distribution.
         super().__init__(a=a)
 
+    def _support(self, a):
+        # Override _support if the support of the distribution is a subset of
+        # the real line
+        return -mp.inf, mp.inf
+
     def _pdf(self, x, a):
         # Write PDFs following a scholarly reference as closely as possible.
         # Trust mpmath for the accuracy, and don't worry about speed. What's
@@ -312,6 +329,9 @@ class TruncExpon(ReferenceDistribution):
 
     def __init__(self, *, b):
         super().__init__(b=b)
+
+    def _support(self, b):
+        return 0, b
 
     def _pdf(self, x, b):
         return -mp.exp(-x)/mp.expm1(-b)
