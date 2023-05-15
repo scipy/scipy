@@ -9750,7 +9750,6 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Parameters
     ----------
-    u_values, v_values : array_like
     u_values : 1d or 2d array_like
         A sample from a probability distribution or the support (set of all
         possible values) of a probability distribution. Each element along
@@ -9773,7 +9772,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two samples probability mass functions, :math:`u`
+    Given two probability mass functions, :math:`u`
     and :math:`v`, the first Wasserstein distance between the distributions
     is:
 
