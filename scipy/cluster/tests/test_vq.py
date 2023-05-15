@@ -128,7 +128,7 @@ class TestVq:
             assert_array_equal(label1, LABEL1)
 
     @skip_if_array_api
-    def test_vq(self, xp):
+    def test_vq(self):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         for tp in [np.asarray, matrix]:
             label1, dist = _vq.vq(tp(X), tp(initc))
@@ -302,11 +302,12 @@ class TestKMean:
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))
 
-    def test_kmeans_large_thres(self):
+    @array_api_compatible
+    def test_kmeans_large_thres(self, xp):
         # Regression test for gh-1774
-        x = np.array([1, 2, 3, 4, 10], dtype=float)
-        res = kmeans(x, np.asarray(1), thresh=1e16)
-        assert_allclose(res[0], np.array([4.]))
+        x = xp.asarray([1, 2, 3, 4, 10], dtype=float)
+        res = kmeans(x, xp.asarray(1), thresh=1e16)
+        assert_allclose(res[0], xp.asarray([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
     def test_kmeans2_kpp_low_dim(self):
@@ -317,7 +318,8 @@ class TestKMean:
         res, _ = kmeans2(TESTDATA_2D, np.asarray(2), minit='++')
         assert_allclose(res, prev_res)
 
-    def test_kmeans2_kpp_high_dim(self):
+    @array_api_compatible
+    def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
         n_dim = 100
         size = 10
@@ -328,14 +330,17 @@ class TestKMean:
             np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
             np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
         ])
-        res, _ = kmeans2(data, np.asarray(2), minit='++')
+
+        data = xp.asarray(data)
+        res, _ = kmeans2(data, xp.asarray(2), minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
 
-    def test_kmeans_diff_convergence(self):
+    @array_api_compatible
+    def test_kmeans_diff_convergence(self, xp):
         # Regression test for gh-8727
-        obs = np.array([-3, -1, 0, 1, 1, 8], float)
-        res = kmeans(obs, np.array([-3., 0.99]))
-        assert_allclose(res[0], np.array([-0.4,  8.]))
+        obs = xp.asarray([-3, -1, 0, 1, 1, 8], dtype=xp.float64)
+        res = kmeans(obs, xp.asarray([-3., 0.99]))
+        assert_allclose(res[0], xp.asarray([-0.4,  8.]))
         assert_allclose(res[1], 1.0666666666666667)
 
     @skip_if_array_api
