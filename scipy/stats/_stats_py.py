@@ -9892,6 +9892,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
+
     Compute the Wasserstein distance between two two-dimensional distributions
     with three and two weighted observations, respectively.
 
