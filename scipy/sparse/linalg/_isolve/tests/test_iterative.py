@@ -69,14 +69,14 @@ class IterativeParams:
         self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson1d", Poisson1D.astype('f'),
+        self.cases.append(Case("poisson1d-F", Poisson1D.astype('f'),
                                skip=[minres]))
 
         # Symmetric and Negative Definite
         self.cases.append(Case("neg-poisson1d", -Poisson1D,
                                skip=posdef_solvers))
         # note: minres fails for single precision
-        self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
+        self.cases.append(Case("neg-poisson1d-F", (-Poisson1D).astype('f'),
                                skip=posdef_solvers + [minres]))
 
         # 2-dimensional Poisson equations
@@ -86,14 +86,14 @@ class IterativeParams:
         # it will be fixed in the future PR
         self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson2d", Poisson2D.astype('f'),
+        self.cases.append(Case("poisson2d-F", Poisson2D.astype('f'),
                                skip=[minres]))
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]], dtype='d')
         RandDiag = spdiags(data, [0], 10, 10, format='csr')
         self.cases.append(Case("rand-diag", RandDiag, skip=posdef_solvers))
-        self.cases.append(Case("rand-diag", RandDiag.astype('f'),
+        self.cases.append(Case("rand-diag-F", RandDiag.astype('f'),
                                skip=posdef_solvers))
 
         # Random real-valued
@@ -101,7 +101,7 @@ class IterativeParams:
         data = np.random.rand(4, 4)
         self.cases.append(Case("rand", data,
                                skip=posdef_solvers + sym_solvers))
-        self.cases.append(Case("rand", data.astype('f'),
+        self.cases.append(Case("rand-F", data.astype('f'),
                                skip=posdef_solvers + sym_solvers))
 
         # Random symmetric real-valued
@@ -109,7 +109,7 @@ class IterativeParams:
         data = np.random.rand(4, 4)
         data = data + data.T
         self.cases.append(Case("rand-sym", data, skip=posdef_solvers))
-        self.cases.append(Case("rand-sym", data.astype('f'),
+        self.cases.append(Case("rand-sym-F", data.astype('f'),
                                skip=posdef_solvers))
 
         # Random pos-def symmetric real
@@ -118,7 +118,7 @@ class IterativeParams:
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
         # note: minres fails for single precision
-        self.cases.append(Case("rand-sym-pd", data.astype('f'),
+        self.cases.append(Case("rand-sym-pd-F", data.astype('f'),
                                skip=[minres]))
 
         # Random complex-valued
@@ -126,7 +126,7 @@ class IterativeParams:
         data = np.random.rand(4, 4) + 1j * np.random.rand(4, 4)
         skip_cmplx = posdef_solvers + sym_solvers + real_solvers
         self.cases.append(Case("rand-cmplx", data, skip=skip_cmplx))
-        self.cases.append(Case("rand-cmplx", data.astype('F'),
+        self.cases.append(Case("rand-cmplx-F", data.astype('F'),
                                skip=skip_cmplx))
 
         # Random hermitian complex-valued
@@ -135,7 +135,7 @@ class IterativeParams:
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
                                skip=posdef_solvers + real_solvers))
-        self.cases.append(Case("rand-cmplx-herm", data.astype('F'),
+        self.cases.append(Case("rand-cmplx-herm-F", data.astype('F'),
                                skip=posdef_solvers + real_solvers))
 
         # Random pos-def hermitian complex-valued
@@ -143,7 +143,7 @@ class IterativeParams:
         data = np.random.rand(9, 9) + 1j * np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
-        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
+        self.cases.append(Case("rand-cmplx-sym-pd-F", data.astype('F'),
                                skip=real_solvers))
 
         # Non-symmetric and Positive Definite
@@ -156,7 +156,7 @@ class IterativeParams:
         A = spdiags(data, [0, -1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
                                skip=sym_solvers + [cgs, qmr, bicg, tfqmr]))
-        self.cases.append(Case("nonsymposdef", A.astype('F'),
+        self.cases.append(Case("nonsymposdef-F", A.astype('F'),
                                skip=sym_solvers + [cgs, qmr, bicg, tfqmr]))
 
         # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr/tfqmr breakdown
