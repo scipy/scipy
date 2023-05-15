@@ -1022,7 +1022,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         raise ValueError(f"Invalid method: {method}")
 
     xp = array_namespace(y)
-    y = _convert_to_double(xp.asarray(y, order='c'))
+    y = _convert_to_double(as_xparray(y, order='c', xp=xp), xp=xp)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1523,7 +1523,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = _convert_to_double(as_xparray(y, order='c', xp=xp))
+    y = _convert_to_double(as_xparray(y, order='c', xp=xp), xp=xp)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1545,17 +1545,17 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
 
-def _convert_to_bool(X):
-    if X.dtype != bool:
-        X = X.astype(bool)
+def _convert_to_bool(X, xp):
+    if X.dtype != xp.bool:
+        X = xp.astype(X, bool)
     if not X.flags.contiguous:
         X = X.copy()
     return X
 
 
-def _convert_to_double(X):
-    if X.dtype != np.double:
-        X = X.astype('float64')
+def _convert_to_double(X, xp):
+    if X.dtype != xp.float64:
+        X = xp.astype(X, xp.float64)
     if not X.flags.contiguous:
         X = X.copy()
     return X
@@ -1677,7 +1677,7 @@ def cophenet(Z, Y=None):
     zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
     # Since the C code does not support striding using strides.
     # The dimensions are used instead.
-    Z = _convert_to_double(Z)
+    Z = _convert_to_double(Z, xp=xp)
 
     Z = np.asarray(Z)
     _hierarchy.cophenetic_distances(Z, zz, int(n))

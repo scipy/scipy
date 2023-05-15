@@ -47,7 +47,7 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import skip_if_array_api
+from scipy.conftest import skip_if_array_api, array_api_compatible
 
 from . import hierarchy_test_data
 
@@ -66,11 +66,12 @@ except Exception:
 
 
 class TestLinkage:
-    def test_linkage_non_finite_elements_in_distance_matrix(self):
+    @array_api_compatible
+    def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
         # Exception expected.
-        y = np.zeros((6,))
-        y[0] = np.nan
+        y = xp.zeros((6,))
+        y[0] = xp.nan
         assert_raises(ValueError, linkage, y)
 
     def test_linkage_empty_distance_matrix(self):
@@ -78,13 +79,14 @@ class TestLinkage:
         y = np.zeros((0,))
         assert_raises(ValueError, linkage, y)
 
-    def test_linkage_tdist(self):
+    @array_api_compatible
+    def test_linkage_tdist(self, xp):
         for method in ['single', 'complete', 'average', 'weighted']:
-            self.check_linkage_tdist(method)
+            self.check_linkage_tdist(method, xp)
 
-    def check_linkage_tdist(self, method):
+    def check_linkage_tdist(self, method, xp):
         # Tests linkage(Y, method) on the tdist data set.
-        Z = linkage(hierarchy_test_data.ytdist, method)
+        Z = linkage(xp.asarray(hierarchy_test_data.ytdist), method)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
         assert_allclose(Z, expectedZ, atol=1e-10)
 
