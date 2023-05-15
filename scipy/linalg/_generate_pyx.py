@@ -139,7 +139,7 @@ def pyx_decl_func(name, ret_type, args, header_name):
 
 pyx_sub_template = """cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-cdef void {name}({args}) nogil:{complex_union}
+cdef void {name}({args}) noexcept nogil:{complex_union}
     _fortran_{name}({argnames})
 """
 
@@ -299,7 +299,7 @@ cpdef double _test_ddot(double[:] dx, double[:] dy) noexcept nogil:
     return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
 cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
-                double[:,:] c) nogil except -1:
+                double[:,:] c) except -1 nogil:
     cdef:
         char *transa
         char *transb
