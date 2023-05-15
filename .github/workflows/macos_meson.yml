@@ -88,7 +88,7 @@ jobs:
       uses: actions/cache@v3
       env:
         # Increase this value to reset cache if environment.yml has not changed
-        CACHE_NUMBER: 1
+        CACHE_NUMBER: 2
       with:
         path: ${{ env.CONDA }}/envs/scipy-dev
         key:
