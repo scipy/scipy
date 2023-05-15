@@ -2592,6 +2592,36 @@ class TestMultivariateT:
         mvt = stats.multivariate_t(loc, cov, df)
         assert_allclose(mvt.entropy(), ref, rtol=tol)
 
+    @pytest.mark.parametrize(
+        "df, ref, tol",
+        [
+            (100, 1.4289633653182439, 1e-13),
+            (1000, 1.4199387830378813, 1e-12),
+            (1e20, 1.4189385332046727, 1e-5),
+            (1e100, 1.4189385332046727, 1e-5),
+        ]
+    )
+    def test_t_extreme_entropy(self, df, ref, tol):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def mul_t_mpmath_entropy(dim, df=1, shape=1):
+        #     dim = mp.mpf(dim)
+        #     df = mp.mpf(df)
+        #     shape = mp.mpf(shape)
+        #     halfsum = 0.5 * (dim + df)
+        #     half_df = 0.5 * df
+        #
+        #     return float(
+        #         -mp.loggamma(halfsum) + mp.loggamma(half_df)
+        #         + 0.5 * dim * mp.log(df * mp.pi)
+        #         + halfsum * (mp.digamma(halfsum) - mp.digamma(half_df))
+        #         + 0.0
+        #     )
+        mvt = stats.multivariate_t(shape=1.0, df=df)
+        assert_allclose(mvt.entropy(), ref, rtol=tol)
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(

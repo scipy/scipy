@@ -9,7 +9,7 @@ import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
@@ -4563,12 +4563,31 @@ class multivariate_t_gen(multi_rv_generic):
             return multivariate_normal(None, cov=shape).entropy()
 
         shape_info = _PSD(shape)
-        halfsum = 0.5 * (dim + df)
-        half_df = 0.5 * df
-        return (-gammaln(halfsum) + gammaln(half_df)
+        shape_term = 0.5 * shape_info.log_pdet
+
+        def regular(dim, df):
+            halfsum = 0.5 * (dim + df)
+            half_df = 0.5 * df
+            return (
+                -gammaln(halfsum) + gammaln(half_df)
                 + 0.5 * dim * np.log(df * np.pi) + halfsum
                 * (psi(halfsum) - psi(half_df))
-                + 0.5 * shape_info.log_pdet)
+                + shape_term
+            )
+
+        def asymptotic(dim, df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion -gammaln((m+d)/2) + gammaln(d/2) + 0.5 * m * log(d * pi)
+            #  + ((m+d)/2) * (digamma((m+d)/2) - digamma(d/2))"
+            return (
+                1.41894 * dim + dim / df
+                - dim * (dim - 2) * df**-2 / 4
+                + dim**2 * (dim - 2) * df**-3 / 6
+                + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4 / 24
+                + shape_term
+            )
+
+        return _lazywhere(df >= 5e10, (dim, df), f=asymptotic, f2=regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
