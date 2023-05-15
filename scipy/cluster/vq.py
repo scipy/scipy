@@ -67,7 +67,7 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import as_xparray, array_namespace, size
+from scipy._lib._array_api import as_xparray, array_namespace, size, isdtype
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
@@ -201,13 +201,16 @@ def vq(obs, code_book, check_finite=True):
     xp = array_namespace(obs, code_book)
     obs = as_xparray(obs, xp=xp, check_finite=check_finite)
     code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
-    ct = xp.common_type(obs, code_book)
+    ct = xp.result_type(obs, code_book)
 
-    c_obs = obs.astype(ct, copy=False)
-    c_code_book = code_book.astype(ct, copy=False)
+    c_obs = xp.astype(obs, ct, copy=False)
+    c_code_book = xp.astype(code_book, ct, copy=False)
 
-    if xp.issubdtype(ct, xp.float64) or xp.issubdtype(ct, xp.float32):
-        return _vq.vq(c_obs, c_code_book)
+    if isdtype(ct, kind='real floating', xp=xp):
+        c_obs = np.asarray(c_obs)
+        c_code_book = np.asarray(c_code_book)
+        result = _vq.vq(c_obs, c_code_book)
+        return xp.asarray(result)
     return py_vq(obs, code_book, check_finite=False)
 
 
@@ -791,6 +794,8 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
+        data = np.asarray(data)
+        label = np.asarray(label)
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
             miss_meth()
@@ -798,4 +803,4 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             new_code_book[~has_members] = code_book[~has_members]
         code_book = new_code_book
 
-    return code_book, label
+    return xp.asarray(code_book), xp.asarray(label)
