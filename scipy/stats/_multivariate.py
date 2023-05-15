@@ -13,6 +13,7 @@ from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+from ._continuous_distns import norm
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
@@ -4577,17 +4578,17 @@ class multivariate_t_gen(multi_rv_generic):
 
         def asymptotic(dim, df):
             # Formula from Wolfram Alpha:
-            # "asymptotic expansion -gammaln((m+d)/2) + gammaln(d/2) + 0.5 * m * log(d * pi)
+            # "asymptotic expansion -gammaln((m+d)/2) + gammaln(d/2) + (m*log(d*pi))/2
             #  + ((m+d)/2) * (digamma((m+d)/2) - digamma(d/2))"
             return (
-                1.41894 * dim + dim / df
+                dim * norm._entropy() + dim / df
                 - dim * (dim - 2) * df**-2.0 / 4
                 + dim**2 * (dim - 2) * df**-3.0 / 6
                 + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
                 + shape_term
             )
 
-        return _lazywhere(df >= 5e10, (dim, df), f=asymptotic, f2=regular)
+        return _lazywhere(df >= 400, (dim, df), f=asymptotic, f2=regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate
