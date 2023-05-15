@@ -3274,19 +3274,16 @@ class TestStudentT:
         assert_equal(res[df_infmask], res_ex_inf)
         assert_equal(res[~df_infmask], res_ex_noinf)
 
-    # reference values were computed via the reference distribution
-    # mp.dps = 500
-    # e. g. StudentT(df=1e100).logpdf(1), StudentT(df=1e100).pdf(1)
 
-    @pytest.mark.parametrize("x, df, logpdf_ref, pdf_ref",
-                             [(1, 1e100,
-                               -1.4189385332046727, 0.24197072451914334),
-                              (1e3, 1e50, -500000.9189385332, 0.),
-                              (10, 1e20,
-                               -50.918938533204674, 7.69459862670642e-23),
-                              (1, 1,
-                               -1.8378770664093456, 0.15915494309189535)])
-    def test_logpdf_pdf(self, x, df, logpdf_ref, pdf_ref):
+    def test_logpdf_pdf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 500; StudentT(df=df).logpdf(x), StudentT(df=df).pdf(x)
+        x = [1, 1e3, 10, 1]
+        df = [1e100, 1e50, 1e20, 1]
+        logpdf_ref = [-1.4189385332046727, -500000.9189385332,
+                      -50.918938533204674, -1.8378770664093456]
+        pdf_ref = [0.24197072451914334, 0,
+                   7.69459862670642e-23, 0.15915494309189535]
         assert_allclose(stats.t.logpdf(x, df), logpdf_ref, rtol=1e-15)
         assert_allclose(stats.t.pdf(x, df), pdf_ref, rtol=1e-14)
 
@@ -3873,14 +3870,12 @@ class TestGenExpon:
 
 class TestTruncexpon:
 
-    # reference values were computed via the reference distribution
-    # mp.dps = 50
-    # TruncExpon(b=100).sf(99.999999)
-
-    @pytest.mark.parametrize("x, b, ref",
-                             [(19.999999, 20, 2.0611546593828472e-15),
-                              (99.999999, 100, 3.7200778266671455e-50)])
-    def test_sf_isf(self, x, b, ref):
+    def test_sf_isf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 50; TruncExpon(b=b).sf(x)
+        b = [20, 100]
+        x = [19.999999, 99.999999]
+        ref = [2.0611546593828472e-15, 3.7200778266671455e-50]
         assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
         assert_allclose(stats.truncexpon.isf(ref, b), x, rtol=1e-12)
 
