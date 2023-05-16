@@ -230,8 +230,9 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_to
     c2 = _nolan.c2
     g = _nolan.g
 
-    # round x0 again, because zeta has changed.
-    # see https://github.com/scipy/scipy/pull/18133
+    # round x0 to zeta again if needed. zeta was recomputed and may have
+    # changed due to floating point differences.
+    # See https://github.com/scipy/scipy/pull/18133
     x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
     if x0 == zeta:
@@ -350,7 +351,9 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_to
     # c2 = _nolan.c2
     c3 = _nolan.c3
     g = _nolan.g
-
+    # round x0 to zeta again if needed. zeta was recomputed and may have
+    # changed due to floating point differences.
+    # See https://github.com/scipy/scipy/pull/18133
     x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
     if (alpha == 1 and beta < 0) or x0 < zeta:
