@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, suppress_warnings)
 from pytest import raises as assert_raises
-from pytest import warns
+import pytest
 
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -542,8 +542,7 @@ class TestLsim(_TestLsimFuncs):
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0, 0.0])
-        with assert_raises(ValueError,
-                           match="Time steps are not equally spaced."):
+        with pytest.warns(DeprecationWarning, match="Non-uniform timesteps.*"):
             tout, y, x = self.func(system, u, t, X0=[1.0])
 
 
@@ -551,8 +550,7 @@ class TestLsim2(_TestLsimFuncs):
     digits_accuracy = 6
 
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="lsim2 is deprecated"):
-            t, y, x = lsim2(*args, **kwargs)
+        t, y, x = lsim2(*args, **kwargs)
         return t, np.squeeze(y), np.squeeze(x)
 
     def test_integrator_nonequal_timestamp(self):
@@ -660,8 +658,7 @@ class _TestImpulseFuncs:
 class TestImpulse2(_TestImpulseFuncs):
 
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="impulse2 is deprecated"):
-            return impulse2(*args, **kwargs)
+        return impulse2(*args, **kwargs)
 
 
 class TestImpulse(_TestImpulseFuncs):
@@ -739,8 +736,7 @@ class _TestStepFuncs:
 
 class TestStep2(_TestStepFuncs):
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning, match="step2 is deprecated"):
-            return step2(*args, **kwargs)
+        return step2(*args, **kwargs)
 
     def test_integrator(self):
         # This test is almost the same as the one it overwrites in the base

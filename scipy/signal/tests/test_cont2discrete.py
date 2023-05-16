@@ -5,8 +5,8 @@ from numpy.testing import \
 
 import pytest
 from scipy.signal import cont2discrete as c2d
-from scipy.signal import dlsim, ss2tf, ss2zpk, lsim, lti
-from scipy.signal import tf2ss, impulse, dimpulse, step, dstep
+from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
+from scipy.signal import tf2ss, impulse2, dimpulse, step2, dstep
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
@@ -294,8 +294,9 @@ class TestC2D:
         dt = t[1] - t[0]
         u1 = u(t)
 
-        # Use lsim to compute the solution to the continuous system.
-        t, yout, xout = lsim((a, b, c, d), T=t, U=u1, X0=x0)
+        # Use lsim2 to compute the solution to the continuous system.
+        t, yout, xout = lsim2((a, b, c, d), T=t, U=u1, X0=x0,
+                              rtol=1e-9, atol=1e-11)
 
         # Convert the continuous system to a discrete approximation.
         dsys = c2d((a, b, c, d), dt, method='bilinear')
@@ -389,12 +390,15 @@ class TestC2dInvariants:
         (tf2ss(0.1, [1, 1, 2, 1]), 0.5, 10),
     ]
 
+    # Some options for lsim2 and derived routines
+    tolerances = {'rtol': 1e-9, 'atol': 1e-11}
+
     # Check that systems discretized with the impulse-invariant
     # method really hold the invariant
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
     def test_impulse_invariant(self, sys, sample_time, samples_number):
         time = np.arange(samples_number) * sample_time
-        _, yout_cont = impulse(sys, T=time)
+        _, yout_cont = impulse2(sys, T=time, **self.tolerances)
         _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'),
                                 n=len(time))
         assert_allclose(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
@@ -403,7 +407,7 @@ class TestC2dInvariants:
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
     def test_step_invariant(self, sys, sample_time, samples_number):
         time = np.arange(samples_number) * sample_time
-        _, yout_cont = step(sys, T=time)
+        _, yout_cont = step2(sys, T=time, **self.tolerances)
         _, yout_disc = dstep(c2d(sys, sample_time, method='zoh'), n=len(time))
         assert_allclose(yout_cont.ravel(), yout_disc[0].ravel())
 
@@ -411,6 +415,6 @@ class TestC2dInvariants:
     @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
     def test_linear_invariant(self, sys, sample_time, samples_number):
         time = np.arange(samples_number) * sample_time
-        _, yout_cont, _ = lsim(sys, T=time, U=time)
+        _, yout_cont, _ = lsim2(sys, T=time, U=time, **self.tolerances)
         _, yout_disc, _ = dlsim(c2d(sys, sample_time, method='foh'), u=time)
         assert_allclose(yout_cont.ravel(), yout_disc.ravel())
