@@ -9895,7 +9895,6 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     Compute the Wasserstein distance between two three-dimensional samples,
     each with two observations.
 
-
     >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
     3.0
 
