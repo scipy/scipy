@@ -10044,7 +10044,7 @@ add_newdoc("nbdtrc",
     Plot the function for four different parameter sets.
 
     >>> import matplotlib.pyplot as plt
-    >>> k = np.linspace(0, 130, 130)
+    >>> k = np.arange(130)
     >>> n_parameters = [20, 20, 20, 80]
     >>> p_parameters = [0.2, 0.5, 0.8, 0.5]
     >>> linestyles = ['solid', 'dashed', 'dotted', 'dashdot']
