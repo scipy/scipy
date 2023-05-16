@@ -314,6 +314,13 @@ class TestKMean:
         res, _ = kmeans2(data, 2, minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
 
+    def test_kmeans_diff_convergence(self):
+        # Regression test for gh-8727
+        obs = np.array([-3, -1, 0, 1, 1, 8], float)
+        res = kmeans(obs, np.array([-3., 0.99]))
+        assert_allclose(res[0], np.array([-0.4,  8.]))
+        assert_allclose(res[1], 1.0666666666666667)
+
     def test_kmeans_and_kmeans2_random_seed(self):
 
         seed_list = [1234, np.random.RandomState(1234)]

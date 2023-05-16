@@ -1,4 +1,5 @@
 import operator
+from math import prod
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -8,7 +9,6 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from scipy.optimize import minimize_scalar
 from . import _bspl
 from . import _fitpack_impl
-from scipy._lib._util import prod
 from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
@@ -1877,9 +1877,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
     Parameters
     ----------
     x : array_like, shape (n,)
-        Abscissas.
+        Abscissas. `n` must be larger than 5.
     y : array_like, shape (n,)
-        Ordinates.
+        Ordinates. `n` must be larger than 5.
     w : array_like, shape (n,), optional
         Vector of weights. Default is ``np.ones_like(x)``.
     lam : float, (:math:`\lambda \geq 0`), optional
@@ -1979,6 +1979,9 @@ def make_smoothing_spline(x, y, w=None, lam=None):
 
     t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
     n = x.shape[0]
+
+    if n <= 4:
+        raise ValueError('``x`` and ``y`` length must be larger than 5')
 
     # It is known that the solution to the stated minimization problem exists
     # and is a natural cubic spline with vector of knots equal to the unique

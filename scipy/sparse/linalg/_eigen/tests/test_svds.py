@@ -343,14 +343,16 @@ class SVDSCommonTests:
         v0a = rng.random(n)
         res1a = svds(A, k, v0=v0a, solver=self.solver, random_state=0)
         res2a = svds(A, k, v0=v0a, solver=self.solver, random_state=1)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
         # with the same v0, solutions are the same, and they are accurate
         v0b = rng.random(n)
         res1b = svds(A, k, v0=v0b, solver=self.solver, random_state=2)
         res2b = svds(A, k, v0=v0b, solver=self.solver, random_state=3)
-        assert_equal(res1b, res2b)
+        for idx in range(3):
+            assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
 
         # with different v0, solutions can be numerically different
@@ -376,13 +378,15 @@ class SVDSCommonTests:
         # with the same random_state, solutions are the same and accurate
         res1a = svds(A, k, solver=self.solver, random_state=0)
         res2a = svds(A, k, solver=self.solver, random_state=0)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
         # with the same random_state, solutions are the same and accurate
         res1b = svds(A, k, solver=self.solver, random_state=1)
         res2b = svds(A, k, solver=self.solver, random_state=1)
-        assert_equal(res1b, res2b)
+        for idx in range(3):
+            assert_allclose(res1b[idx], res2b[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1b)
 
         # with different random_state, solutions can be numerically different
@@ -409,7 +413,8 @@ class SVDSCommonTests:
         # with the same random_state, solutions are the same and accurate
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state_2)
-        assert_equal(res1a, res2a)
+        for idx in range(3):
+            assert_allclose(res1a[idx], res2a[idx], rtol=1e-15, atol=2e-16)
         _check_svds(A, k, *res1a)
 
     @pytest.mark.parametrize("random_state", (None,

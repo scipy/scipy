@@ -138,6 +138,8 @@ class LinearOperator:
     """
 
     ndim = 2
+    # Necessary for right matmul with numpy arrays.
+    __array_ufunc__ = None
 
     def __new__(cls, *args, **kwargs):
         if cls is LinearOperator:
@@ -323,8 +325,8 @@ class LinearOperator:
         _matmat method to ensure that y has the correct type.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
@@ -334,7 +336,15 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._matmat(X)
+        try:
+            Y = self._matmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator first."
+                ) from e
+            raise
 
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
@@ -363,8 +373,8 @@ class LinearOperator:
         This rmatmat wraps the user-specified rmatmat routine.
 
         """
-
-        X = np.asanyarray(X)
+        if not (isspmatrix(X) or is_pydata_spmatrix(X)):
+            X = np.asanyarray(X)
 
         if X.ndim != 2:
             raise ValueError('expected 2-d ndarray or matrix, not %d-d'
@@ -374,7 +384,16 @@ class LinearOperator:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
-        Y = self._rmatmat(X)
+        try:
+            Y = self._rmatmat(X)
+        except Exception as e:
+            if isspmatrix(X) or is_pydata_spmatrix(X):
+                raise TypeError(
+                    "Unable to multiply a LinearOperator with a sparse matrix."
+                    " Wrap the matrix in aslinearoperator() first."
+                ) from e
+            raise
+
         if isinstance(Y, np.matrix):
             Y = asmatrix(Y)
         return Y
@@ -412,7 +431,9 @@ class LinearOperator:
         elif np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            x = np.asarray(x)
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
 
             if x.ndim == 1 or x.ndim == 2 and x.shape[1] == 1:
                 return self.matvec(x)
@@ -438,7 +459,44 @@ class LinearOperator:
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
         else:
-            return NotImplemented
+            return self._rdot(x)
+
+    def _rdot(self, x):
+        """Matrix-matrix or matrix-vector multiplication from the right.
+
+        Parameters
+        ----------
+        x : array_like
+            1-d or 2-d array, representing a vector or matrix.
+
+        Returns
+        -------
+        xA : array
+            1-d or 2-d array (depending on the shape of x) that represents
+            the result of applying this linear operator on x from the right.
+
+        Notes
+        -----
+        This is copied from dot to implement right multiplication.
+        """
+        if isinstance(x, LinearOperator):
+            return _ProductLinearOperator(x, self)
+        elif np.isscalar(x):
+            return _ScaledLinearOperator(self, x)
+        else:
+            if not isspmatrix(x) and not is_pydata_spmatrix(x):
+                # Sparse matrices shouldn't be converted to numpy arrays.
+                x = np.asarray(x)
+
+            # We use transpose instead of rmatvec/rmatmat to avoid
+            # unnecessary complex conjugation if possible.
+            if x.ndim == 1 or x.ndim == 2 and x.shape[0] == 1:
+                return self.T.matvec(x.T).T
+            elif x.ndim == 2:
+                return self.T.matmat(x.T).T
+            else:
+                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
+                                 % x)
 
     def __pow__(self, p):
         if np.isscalar(p):
