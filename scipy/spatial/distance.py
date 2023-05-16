@@ -112,7 +112,7 @@ import warnings
 import numpy as np
 import dataclasses
 
-from typing import Optional, Callable
+from typing import Optional, Callable, Set, List
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
@@ -1768,7 +1768,7 @@ class MetricInfo:
     # Name of python distance function
     canonical_name: str
     # All aliases, including canonical_name
-    aka: set[str]
+    aka: Set[str]
     # unvectorized distance function
     dist_func: Callable
     # Optimized cdist function
@@ -1781,7 +1781,7 @@ class MetricInfo:
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
-    types: list[str] = dataclasses.field(default_factory=lambda: ['double'])
+    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
     # true if out array must be C-contiguous
     requires_contiguous_out: bool = True
 
