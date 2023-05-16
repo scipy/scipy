@@ -1315,9 +1315,11 @@ class TestBetaInc:
     #
     #    p = 0.25
     #    a, b = 0.0342, 171
-    #    x = mp.findroot(lambda t:
-    #                        mp.betainc(a, b, 0, t, regularized=True) - p,
-    #                    (8e-21, 9e-21), solver='anderson')
+    #    x = mp.findroot(
+    #        lambda t: mp.betainc(a, b, 0, t, regularized=True) - p,
+    #        (8e-21, 9e-21),
+    #        solver='anderson',
+    #    )
     #
     @pytest.mark.parametrize(
         'a, b, x, p',
