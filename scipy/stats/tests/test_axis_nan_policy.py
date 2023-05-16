@@ -205,6 +205,8 @@ def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
                           unpacker, nan_policy, axis, data_generator)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator):
     # Tests the 1D and vectorized behavior of hypothesis tests against a
@@ -325,6 +327,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             assert_equal(res[1].dtype, pvalues.dtype)
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
