@@ -9821,9 +9821,9 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u` to :math:`v`. Summing over
     the rows of :math:`\Gamma` should give the source distribution :math:`u` :
-    :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i` s and summing
+    :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i` and summing
     over the columns of :math:`\Gamma` should give the target distribution
-    :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all :math:`j` s.
+    :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all :math:`j`.
     The distance matrix :math:`D` is a matrix :math:`[d_{ij}]`, in which
     :math:`d_{ij} = d(x_i, y_j)`.
 
@@ -9892,11 +9892,16 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
 
-    Compute the Wasserstein distance between two two-dimensional distributions
-    with three and two weighted observations, respectively.
+    Compute the Wasserstein distance between two three-dimensional samples,
+    each with two observations.
+
 
     >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
     3.0
+
+    Compute the Wasserstein distance between two two-dimensional distributions
+    with three and two weighted observations, respectively.
+
     >>> wasserstein_distance([[0, 2.75], [2, 209.3], [0, 0]],
     ...                      [[0.2, 0.322], [4.5, 25.1808]],
     ...                      [0.4, 5.2, 0.114], [0.8, 1.5])
