@@ -22,7 +22,6 @@ from typing import cast, Literal
 
 import numpy as np
 from numpy.testing import assert_allclose
-from numpy.typing import NDArray
 
 from scipy.signal import ShortTimeFFT
 from scipy.signal import csd, get_window, stft, istft
@@ -148,7 +147,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 def _istft_wrapper(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None,
                    nfft=None, input_onesided=True, boundary=True, time_axis=-1,
                    freq_axis=-2, scaling='spectrum') -> \
-        tuple[NDArray, NDArray, tuple[int, int]]:
+        tuple[np.ndarray, np.ndarray, tuple[int, int]]:
     """Wrapper for the SciPy `istft()` function based on `ShortTimeFFT` for
         unit testing.
 
@@ -362,7 +361,8 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         return_onesided = False
 
     # using cast() to make mypy happy:
-    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
+    fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided
+                    else 'twosided')
     scale = {'spectrum': 'magnitude', 'density': 'psd'}[scaling]
     SFT = ShortTimeFFT(win, nstep, fs, fft_mode=fft_mode, mfft=nfft,
                        scale_to=scale, phase_shift=None)
