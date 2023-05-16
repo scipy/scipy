@@ -9,8 +9,7 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
-from scipy import optimize
-from scipy import special
+from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
@@ -24,8 +23,6 @@ from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 from .._lib.deprecation import _deprecated
-from scipy import stats, interpolate
-from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
@@ -2285,7 +2282,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2303,20 +2300,12 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
-    n_resamples : int, default: 0
-        If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values. Typically 9999 is
-        sufficient for at least two digits of accuracy.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is interpolated
+        from tabulated values.
 
     Returns
     -------
@@ -2329,13 +2318,13 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. If `n_resamples` is not
+            The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
     ValueError
-        If less than 2 samples are provided, a sample is empty, or no
+        If fewer than 2 samples are provided, a sample is empty, or no
         distinct observations are in the samples.
 
     See Also
@@ -2405,7 +2394,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
-    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
+    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> res = stats.anderson_ksamp(samples, method=method)
     >>> res.pvalue
     0.5254
 
@@ -2436,10 +2426,9 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     def statistic(*samples):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    if n_resamples:
-        res = permutation_test(samples, statistic, n_resamples=n_resamples,
-                               random_state=random_state,
-                               alternative='greater')
+    if method is not None:
+        res = stats.permutation_test(samples, statistic, **method._asdict(),
+                                     alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2462,22 +2451,25 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min() and not n_resamples:
+
+    if A2 < critical.min() and method is None:
         p = sig.max()
-        message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif A2 > critical.max() and not n_resamples:
+        msg = (f"p-value capped: true value larger than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif A2 > critical.max() and method is None:
         p = sig.min()
-        message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif not n_resamples:
+        msg = (f"p-value floored: true value smaller than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif method is None:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
-    p = res.pvalue if n_resamples else p
+    p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)

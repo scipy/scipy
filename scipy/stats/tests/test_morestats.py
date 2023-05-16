@@ -453,8 +453,8 @@ class TestAndersonKSamp:
         assert_allclose(p, 0.0041, atol=0.00025)
 
         rng = np.random.default_rng(6989860141921615054)
-        res = stats.anderson_ksamp(samples, midrank=False,
-                                   n_resamples=9999, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+        res = stats.anderson_ksamp(samples, midrank=False, method=method)
         assert_array_equal(res.statistic, Tk)
         assert_array_equal(res.critical_values, tm)
         assert_allclose(res.pvalue, p, atol=6e-4)
