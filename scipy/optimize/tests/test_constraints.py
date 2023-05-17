@@ -217,6 +217,21 @@ class TestBounds:
         x0 = [-1, 2]
         np.testing.assert_allclose(bounds.residual(x0), ([1, 4], [5, 2]))
 
+    def test_inside(self):
+        bounds = Bounds([-2, -2], [4, 4])
+        assert [-1, 2] in bounds
+        assert [-2.4, 2] not in bounds
+        assert [-1, 4.000001] not in bounds
+        assert [-1, 3.99999] not in bounds
+        bounds = Bounds([-np.inf, 2, -np.inf], [2, np.inf, np.inf])
+        assert [0, 3, 0] in bounds
+        assert [0, 1, 0] not in bounds
+        assert [3, 3, 0] not in bounds
+        bounds = Bounds(-2, 4)
+        assert [2] in bounds
+        assert [2, 3, 1] in bounds
+        assert [2, 9, 1] not in bounds
+
 
 class TestLinearConstraint:
     def test_defaults(self):
