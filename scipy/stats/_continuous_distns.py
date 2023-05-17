@@ -9208,9 +9208,10 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     This distribution is the normal distribution centered on ``loc`` (default
-    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
-    ``b`` standard deviations to the left, right (respectively) from ``loc``.
-    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
+    0), with standard deviation ``scale`` (default 1). ``a`` and
+    ``b`` denote the number of standard deviations to the left and right 
+    (respectively) of ``loc`` at which the normal distribution will be truncated.
+    If ``myclip_a`` and ``myclip_b`` are raw truncation values in the sample space (as
     opposed to the number of standard deviations) then they can be converted
     to the required form according to::
 
