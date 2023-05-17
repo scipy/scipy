@@ -179,6 +179,8 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
     return unpacker(hypotest(*data1d, *args, _no_deco=_no_deco, **kwds))
 
 
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.filterwarnings('ignore::UserWarning')
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -192,6 +194,8 @@ def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
 
 
 @pytest.mark.slow
+@pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.filterwarnings('ignore::UserWarning')
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -205,8 +209,6 @@ def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
                           unpacker, nan_policy, axis, data_generator)
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.filterwarnings('ignore::UserWarning')
 def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator):
     # Tests the 1D and vectorized behavior of hypothesis tests against a
