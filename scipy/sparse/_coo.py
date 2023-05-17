@@ -2,15 +2,15 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['coo_matrix', 'isspmatrix_coo']
+__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
 
 from warnings import warn
 
 import numpy as np
 
-
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from ._base import isspmatrix, SparseEfficiencyWarning, spmatrix
+from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, get_index_dtype, downcast_intp_index,
@@ -19,24 +19,24 @@ from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
 import operator
 
 
-class coo_matrix(_data_matrix, _minmax_mixin):
+class coo_array(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.
 
     Also known as the 'ijv' or 'triplet' format.
 
     This can be instantiated in several ways:
-        coo_matrix(D)
+        coo_array(D)
             with a dense matrix D
 
-        coo_matrix(S)
+        coo_array(S)
             with another sparse matrix S (equivalent to S.tocoo())
 
-        coo_matrix((M, N), [dtype])
+        coo_array((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        coo_matrix((data, (i, j)), [shape=(M, N)])
+        coo_array((data, (i, j)), [shape=(M, N)])
             to construct from three arrays:
                 1. data[:]   the entries of the matrix, in any order
                 2. i[:]      the row indices of the matrix entries
@@ -90,8 +90,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     --------
 
     >>> # Constructing an empty matrix
-    >>> from scipy.sparse import coo_matrix
-    >>> coo_matrix((3, 4), dtype=np.int8).toarray()
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_array
+    >>> coo_array((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
@@ -100,7 +101,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     >>> row  = np.array([0, 3, 1, 0])
     >>> col  = np.array([0, 3, 1, 2])
     >>> data = np.array([4, 5, 7, 9])
-    >>> coo_matrix((data, (row, col)), shape=(4, 4)).toarray()
+    >>> coo_array((data, (row, col)), shape=(4, 4)).toarray()
     array([[4, 0, 9, 0],
            [0, 7, 0, 0],
            [0, 0, 0, 0],
@@ -110,7 +111,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
     >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
     >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
-    >>> coo = coo_matrix((data, (row, col)), shape=(4, 4))
+    >>> coo = coo_array((data, (row, col)), shape=(4, 4))
     >>> # Duplicate indices are maintained until implicitly or explicitly summed
     >>> np.max(coo.data)
     1
@@ -209,7 +210,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         nrows, ncols = self.shape
 
         if order == 'C':
-            # Upcast to avoid overflows: the coo_matrix constructor
+            # Upcast to avoid overflows: the coo_array constructor
             # below will downcast the results to a smaller dtype, if
             # possible.
             dtype = get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
@@ -234,7 +235,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return self.__class__((new_data, (new_row, new_col)),
                               shape=shape, copy=False)
 
-    reshape.__doc__ = spmatrix.reshape.__doc__
+    reshape.__doc__ = _sparray.reshape.__doc__
 
     def getnnz(self, axis=None):
         if axis is None:
@@ -260,7 +261,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             raise ValueError('axis out of bounds')
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    getnnz.__doc__ = _sparray.getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
@@ -290,15 +291,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
+            raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+                              "dimensions is the only logical permutation.")
 
         M, N = self.shape
         return self.__class__((self.data, (self.col, self.row)),
                               shape=(N, M), copy=copy)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _sparray.transpose.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -314,10 +315,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self._shape = shape
 
-    resize.__doc__ = spmatrix.resize.__doc__
+    resize.__doc__ = _sparray.resize.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
+        """See the docstring for `_sparray.toarray`."""
         B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
         if not fortran and not B.flags.c_contiguous:
@@ -335,11 +336,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         Examples
         --------
         >>> from numpy import array
-        >>> from scipy.sparse import coo_matrix
+        >>> from scipy.sparse import coo_array
         >>> row  = array([0, 0, 1, 3, 1, 0, 0])
         >>> col  = array([0, 2, 1, 3, 1, 0, 0])
         >>> data = array([1, 1, 1, 1, 1, 1, 1])
-        >>> A = coo_matrix((data, (row, col)), shape=(4, 4)).tocsc()
+        >>> A = coo_array((data, (row, col)), shape=(4, 4)).tocsc()
         >>> A.toarray()
         array([[3, 0, 1, 0],
                [0, 2, 0, 0],
@@ -376,11 +377,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         Examples
         --------
         >>> from numpy import array
-        >>> from scipy.sparse import coo_matrix
+        >>> from scipy.sparse import coo_array
         >>> row  = array([0, 0, 1, 3, 1, 0, 0])
         >>> col  = array([0, 2, 1, 3, 1, 0, 0])
         >>> data = array([1, 1, 1, 1, 1, 1, 1])
-        >>> A = coo_matrix((data, (row, col)), shape=(4, 4)).tocsr()
+        >>> A = coo_array((data, (row, col)), shape=(4, 4)).tocsr()
         >>> A.toarray()
         array([[3, 0, 1, 0],
                [0, 2, 0, 0],
@@ -415,7 +416,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             return self
 
-    tocoo.__doc__ = spmatrix.tocoo.__doc__
+    tocoo.__doc__ = _sparray.tocoo.__doc__
 
     def todia(self, copy=False):
         self.sum_duplicates()
@@ -436,7 +437,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return self._dia_container((data, diags), shape=self.shape)
 
-    todia.__doc__ = spmatrix.todia.__doc__
+    todia.__doc__ = _sparray.todia.__doc__
 
     def todok(self, copy=False):
         self.sum_duplicates()
@@ -445,7 +446,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return dok
 
-    todok.__doc__ = spmatrix.todok.__doc__
+    todok.__doc__ = _sparray.todok.__doc__
 
     def diagonal(self, k=0):
         rows, cols = self.shape
@@ -587,7 +588,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
 
 def isspmatrix_coo(x):
-    """Is x of coo_matrix type?
+    """Is x of coo_array type?
 
     Parameters
     ----------
@@ -601,13 +602,18 @@ def isspmatrix_coo(x):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, isspmatrix_coo
-    >>> isspmatrix_coo(coo_matrix([[5]]))
+    >>> from scipy.sparse import coo_array, isspmatrix_coo
+    >>> isspmatrix_coo(coo_array([[5]]))
     True
 
-    >>> from scipy.sparse import coo_matrix, csr_matrix, isspmatrix_coo
+    >>> from scipy.sparse import coo_array, csr_matrix, isspmatrix_coo
     >>> isspmatrix_coo(csr_matrix([[5]]))
     False
     """
-    from ._arrays import coo_array
     return isinstance(x, coo_matrix) or isinstance(x, coo_array)
+
+
+class coo_matrix(spmatrix, coo_array):
+    pass
+
+coo_matrix.__doc__ = _array_doc_to_matrix(coo_array.__doc__)

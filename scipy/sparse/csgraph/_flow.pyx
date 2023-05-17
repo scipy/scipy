@@ -1,11 +1,9 @@
 # cython: wraparound=False, boundscheck=False
 
 import numpy as np
-import warnings
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
 
-cimport cython
 cimport numpy as np
 
 include 'parameters.pxi'
@@ -30,15 +28,6 @@ class MaximumFlowResult:
 
     def __repr__(self):
         return 'MaximumFlowResult with value of %d' % self.flow_value
-
-    @property
-    def residual(self):
-        warnings.warn(
-            "The attribute `residual` has been renamed to `flow`"
-            " and will be removed in SciPy 1.11.",
-            DeprecationWarning, stacklevel=2
-        )
-        return self.flow
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -139,6 +128,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     Here, the maximum flow is simply the capacity of the edge:
 
+    >>> import numpy as np
     >>> from scipy.sparse import csr_matrix
     >>> from scipy.sparse.csgraph import maximum_flow
     >>> graph = csr_matrix([[0, 5], [0, 0]])
@@ -386,7 +376,7 @@ cdef ITYPE_t[:] _edmonds_karp(
         ITYPE_t[:] capacities,
         ITYPE_t[:] rev_edge_ptr,
         ITYPE_t source,
-        ITYPE_t sink):
+        ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Edmonds--Karp algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite
@@ -433,7 +423,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     cdef ITYPE_t[:] pred_edge = np.empty(n_verts, dtype=ITYPE)
 
     cdef bint path_found
-    cdef ITYPE_t cur, df, t, e, edge, k
+    cdef ITYPE_t cur, df, t, e, k
 
     # While augmenting paths from source to sink exist
     while True:
@@ -492,7 +482,7 @@ cdef bint _build_level_graph(
         const ITYPE_t[:] heads,  # IN
         ITYPE_t[:] levels,  # IN/OUT
         ITYPE_t[:] q,  # IN/OUT
-        ) nogil:
+        ) noexcept nogil:
     """Builds layered graph from input graph using breadth first search.
 
     Parameters
@@ -522,8 +512,6 @@ cdef bint _build_level_graph(
         otherwise ``False``.
 
     """
-    cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
-
     cdef ITYPE_t cur, start, end, dst_vertex, e
 
     q[0] = source
@@ -555,7 +543,7 @@ cdef bint _augment_paths(
         ITYPE_t[:] progress,  # IN
         ITYPE_t[:] flows,  # OUT
         ITYPE_t[:, :] stack
-        ) nogil:
+        ) noexcept nogil:
     """Finds augmenting paths in layered graph using depth first search.
 
     Parameters
@@ -629,7 +617,7 @@ cdef ITYPE_t[:] _dinic(
         ITYPE_t[:] capacities,
         ITYPE_t[:] rev_edge_ptr,
         ITYPE_t source,
-        ITYPE_t sink):
+        ITYPE_t sink) noexcept:
     """Solves the maximum flow problem using the Dinic's algorithm.
 
     This assumes that for every edge in the graph, the edge in the opposite
@@ -666,7 +654,6 @@ cdef ITYPE_t[:] _dinic(
     cdef ITYPE_t[:] q = np.empty(n_verts, dtype=ITYPE)
     cdef ITYPE_t[:, :] stack = np.empty((n_verts, 2), dtype=ITYPE)
     cdef ITYPE_t[:] flows = np.zeros(n_edges, dtype=ITYPE)
-    cdef ITYPE_t flow
     while True:
         for i in range(n_verts):
             levels[i] = -1

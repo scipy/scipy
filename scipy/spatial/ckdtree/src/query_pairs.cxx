@@ -98,6 +98,7 @@ traverse_checking(const ckdtree *self,
             const double p = tracker->p;
             const double tub = tracker->upper_bound;
             const double *data = self->raw_data;
+            const double epsfac = tracker->epsfac;
             const ckdtree_intp_t *indices = self->raw_indices;
             const ckdtree_intp_t m = self->m;
             const ckdtree_intp_t start1 = lnode1->start_idx;
@@ -136,7 +137,7 @@ traverse_checking(const ckdtree *self,
                             data + indices[j] * m,
                             p, m, tub);
 
-                    if (d <= tub)
+                    if (d <= tub/epsfac)
                         add_ordered_pair(results, indices[i], indices[j]);
                 }
             }
@@ -217,13 +218,13 @@ query_pairs(const ckdtree *self,
     if(CKDTREE_LIKELY(self->raw_boxsize_data == NULL)) {
         HANDLE(CKDTREE_LIKELY(p == 2), MinkowskiDistP2)
         HANDLE(p == 1, MinkowskiDistP1)
-        HANDLE(ckdtree_isinf(p), MinkowskiDistPinf)
+        HANDLE(std::isinf(p), MinkowskiDistPinf)
         HANDLE(1, MinkowskiDistPp)
         {}
     } else {
         HANDLE(CKDTREE_LIKELY(p == 2), BoxMinkowskiDistP2)
         HANDLE(p == 1, BoxMinkowskiDistP1)
-        HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
+        HANDLE(std::isinf(p), BoxMinkowskiDistPinf)
         HANDLE(1, BoxMinkowskiDistPp)
         {}
     }

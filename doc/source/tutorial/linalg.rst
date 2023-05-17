@@ -25,9 +25,9 @@ scipy.linalg vs numpy.linalg
 plus some other more advanced ones not contained in ``numpy.linalg``.
 
 Another advantage of using ``scipy.linalg`` over ``numpy.linalg`` is that
-it is always compiled with BLAS/LAPACK support, while for numpy this is
-optional. Therefore, the scipy version might be faster depending on how
-numpy was installed.
+it is always compiled with BLAS/LAPACK support, while for NumPy this is
+optional. Therefore, the SciPy version might be faster depending on how
+NumPy was installed.
 
 Therefore, unless you don't want to add ``scipy`` as a dependency to
 your ``numpy`` program, use ``scipy.linalg`` instead of ``numpy.linalg``.
@@ -370,6 +370,7 @@ coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
 linear least squares.
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import linalg
@@ -400,7 +401,7 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an 
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an
 :math:`M\times N` matrix, then if :math:`M>N`, the generalized
 inverse is
 
@@ -804,8 +805,11 @@ square matrix :math:`\mathbf{A}` as
 
     f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.
 
-While this serves as a useful representation of a matrix function, it
-is rarely the best way to calculate a matrix function.
+.. note::
+
+    While this serves as a useful representation of a matrix function, it is
+    rarely the best way to calculate a matrix function. In particular, if the
+    matrix is not diagonalizable, results may be innacurate.
 
 
 Exponential and logarithm functions

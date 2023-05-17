@@ -2,12 +2,14 @@ from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
                               less_equal, greater_equal)
+import numpy as np
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
 
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.interpolate import BSpline
 
 __all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
@@ -36,6 +38,7 @@ def spline_filter(Iin, lmbda=5.0):
     We can filter an multi dimentional signal (ex: 2D image) using cubic
     B-spline filter:
 
+    >>> import numpy as np
     >>> from scipy.signal import spline_filter
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
@@ -139,6 +142,19 @@ def _bspline_piecefunctions(order):
     return funclist, condfuncs
 
 
+msg_bspline = """`scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
+removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> knots = np.arange(-(n+1)/2, (n+3)/2)
+>>> out = BSpline.basis_element(knots)(x)
+>>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
+"""
+
+
+@np.deprecate(message=msg_bspline)
 def bspline(x, n):
     """B-spline basis function of order n.
 
@@ -167,6 +183,7 @@ def bspline(x, n):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -182,12 +199,11 @@ def bspline(x, n):
     True
 
     """
-    ax = -abs(asarray(x))
+    ax = -abs(asarray(x, dtype=float))
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
     condlist = [func(ax) for func in condfuncs]
     return piecewise(ax, condlist, funclist)
-
 
 def gauss_spline(x, n):
     r"""Gaussian approximation to B-spline basis function of order n.
@@ -227,6 +243,7 @@ def gauss_spline(x, n):
     We can calculate B-Spline basis functions approximated by a gaussian
     distribution:
 
+    >>> import numpy as np
     >>> from scipy.signal import gauss_spline, bspline
     >>> knots = np.array([-1.0, 0.0, -1.0])
     >>> gauss_spline(knots, 3)
@@ -241,6 +258,18 @@ def gauss_spline(x, n):
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
+msg_cubic = """`scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
+removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
+>>> out[(x < -2 | (x > 2)] = 0.0
+"""
+
+
+@np.deprecate(message=msg_cubic)
 def cubic(x):
     """A cubic B-spline.
 
@@ -265,6 +294,7 @@ def cubic(x):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -280,7 +310,7 @@ def cubic(x):
     True
 
     """
-    ax = abs(asarray(x))
+    ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 1)
     if cond1.any():
@@ -293,6 +323,26 @@ def cubic(x):
     return res
 
 
+def _cubic(x):
+    x = asarray(x, dtype=float)
+    b = BSpline.basis_element([-2, -1, 0, 1, 2], extrapolate=False)
+    out = b(x)
+    out[(x < -2) | (x > 2)] = 0
+    return out
+
+
+msg_quadratic = """`scipy.signal.quadratic` is deprecated in SciPy 1.11 and
+will be removed in SciPy 1.13.
+
+The exact equivalent (for a float array `x`) is
+
+>>> from scipy.interpolate import BSpline
+>>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
+>>> out[(x < -1.5 | (x > 1.5)] = 0.0
+"""
+
+
+@np.deprecate(message=msg_quadratic)
 def quadratic(x):
     """A quadratic B-spline.
 
@@ -317,6 +367,7 @@ def quadratic(x):
     --------
     We can calculate B-Spline basis function of several orders:
 
+    >>> import numpy as np
     >>> from scipy.signal import bspline, cubic, quadratic
     >>> bspline(0.0, 1)
     1
@@ -332,7 +383,7 @@ def quadratic(x):
     True
 
     """
-    ax = abs(asarray(x))
+    ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 0.5)
     if cond1.any():
@@ -343,6 +394,14 @@ def quadratic(x):
         ax2 = ax[cond2]
         res[cond2] = (ax2 - 1.5) ** 2 / 2.0
     return res
+
+
+def _quadratic(x):
+    x = abs(asarray(x, dtype=float))
+    b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
+    out = b(x)
+    out[(x < -1.5) | (x > 1.5)] = 0
+    return out
 
 
 def _coeff_smooth(lam):
@@ -457,6 +516,7 @@ def cspline1d(signal, lamb=0.0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a cubic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
     >>> rng = np.random.default_rng()
@@ -507,6 +567,7 @@ def qspline1d(signal, lamb=0.0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a quadratic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
     >>> rng = np.random.default_rng()
@@ -562,6 +623,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a cubic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import cspline1d, cspline1d_eval
     >>> rng = np.random.default_rng()
@@ -594,7 +656,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(4):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * cubic(newx - thisj)
+        result += cj[indj] * _cubic(newx - thisj)
     res[cond3] = result
     return res
 
@@ -637,6 +699,7 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     We can filter a signal to reduce and smooth out high-frequency noise with
     a quadratic spline:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.signal import qspline1d, qspline1d_eval
     >>> rng = np.random.default_rng()
@@ -669,6 +732,6 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(3):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * quadratic(newx - thisj)
+        result += cj[indj] * _quadratic(newx - thisj)
     res[cond3] = result
     return res

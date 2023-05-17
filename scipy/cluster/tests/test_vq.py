@@ -1,4 +1,3 @@
-
 import warnings
 import sys
 
@@ -113,13 +112,13 @@ class TestWhiten:
 
 class TestVq:
     def test_py_vq(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         for tp in np.array, matrix:
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
     def test_vq(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         for tp in np.array, matrix:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
@@ -190,7 +189,7 @@ class TestKMean:
 
     def test_kmeans_simple(self):
         np.random.seed(54321)
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         for tp in np.array, matrix:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
@@ -213,7 +212,7 @@ class TestKMean:
 
     def test_kmeans2_simple(self):
         np.random.seed(12345678)
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         for tp in np.array, matrix:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
             code2 = kmeans2(tp(X), tp(initc), iter=2)[0]
@@ -314,6 +313,13 @@ class TestKMean:
         ])
         res, _ = kmeans2(data, 2, minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
+
+    def test_kmeans_diff_convergence(self):
+        # Regression test for gh-8727
+        obs = np.array([-3, -1, 0, 1, 1, 8], float)
+        res = kmeans(obs, np.array([-3., 0.99]))
+        assert_allclose(res[0], np.array([-0.4,  8.]))
+        assert_allclose(res[1], 1.0666666666666667)
 
     def test_kmeans_and_kmeans2_random_seed(self):
 

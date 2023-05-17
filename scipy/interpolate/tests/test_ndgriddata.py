@@ -1,9 +1,17 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal, assert_allclose
+import pytest
 from pytest import raises as assert_raises
 
-from scipy.interpolate import griddata, NearestNDInterpolator
+from scipy.interpolate import (griddata, NearestNDInterpolator,
+                               LinearNDInterpolator,
+                               CloughTocher2DInterpolator)
 
+
+parametrize_interpolators = pytest.mark.parametrize(
+    "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
+                     CloughTocher2DInterpolator]
+)
 
 class TestGriddata:
     def test_fill_value(self):
@@ -162,28 +170,77 @@ class TestGriddata:
                           method=method)
 
 
-def test_nearest_options():
-    # smoke test that NearestNDInterpolator accept cKDTree options
-    npts, nd = 4, 3
-    x = np.arange(npts*nd).reshape((npts, nd))
-    y = np.arange(npts)
-    nndi = NearestNDInterpolator(x, y)
+class TestNearestNDInterpolator:
+    def test_nearest_options(self):
+        # smoke test that NearestNDInterpolator accept cKDTree options
+        npts, nd = 4, 3
+        x = np.arange(npts*nd).reshape((npts, nd))
+        y = np.arange(npts)
+        nndi = NearestNDInterpolator(x, y)
 
-    opts = {'balanced_tree': False, 'compact_nodes': False}
-    nndi_o = NearestNDInterpolator(x, y, tree_options=opts)
-    assert_allclose(nndi(x), nndi_o(x), atol=1e-14)
+        opts = {'balanced_tree': False, 'compact_nodes': False}
+        nndi_o = NearestNDInterpolator(x, y, tree_options=opts)
+        assert_allclose(nndi(x), nndi_o(x), atol=1e-14)
+
+    def test_nearest_list_argument(self):
+        nd = np.array([[0, 0, 0, 0, 1, 0, 1],
+                       [0, 0, 0, 0, 0, 1, 1],
+                       [0, 0, 0, 0, 1, 1, 2]])
+        d = nd[:, 3:]
+
+        # z is np.array
+        NI = NearestNDInterpolator((d[0], d[1]), d[2])
+        assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
+
+        # z is list
+        NI = NearestNDInterpolator((d[0], d[1]), list(d[2]))
+        assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
 
 
-def test_nearest_list_argument():
-    nd = np.array([[0, 0, 0, 0, 1, 0, 1],
-                   [0, 0, 0, 0, 0, 1, 1],
-                   [0, 0, 0, 0, 1, 1, 2]])
-    d = nd[:, 3:]
+class TestNDInterpolators:
+    @parametrize_interpolators
+    def test_broadcastable_input(self, interpolator):
+        # input data
+        np.random.seed(0)
+        x = np.random.random(10)
+        y = np.random.random(10)
+        z = np.hypot(x, y)
 
-    # z is np.array
-    NI = NearestNDInterpolator((d[0], d[1]), d[2])
-    assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
+        # x-y grid for interpolation
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        X, Y = np.meshgrid(X, Y)
+        XY = np.vstack((X.ravel(), Y.ravel())).T
+        interp = interpolator(list(zip(x, y)), z)
+        # single array input
+        interp_points0 = interp(XY)
+        # tuple input
+        interp_points1 = interp((X, Y))
+        interp_points2 = interp((X, 0.0))
+        # broadcastable input
+        interp_points3 = interp(X, Y)
+        interp_points4 = interp(X, 0.0)
 
-    # z is list
-    NI = NearestNDInterpolator((d[0], d[1]), list(d[2]))
-    assert_array_equal(NI([0.1, 0.9], [0.1, 0.9]), [0, 2])
+        assert_equal(interp_points0.size ==
+                     interp_points1.size ==
+                     interp_points2.size ==
+                     interp_points3.size ==
+                     interp_points4.size, True)
+
+    @parametrize_interpolators
+    def test_read_only(self, interpolator):
+        # input data
+        np.random.seed(0)
+        xy = np.random.random((10, 2))
+        x, y = xy[:, 0], xy[:, 1]
+        z = np.hypot(x, y)
+
+        # interpolation points
+        XY = np.random.random((50, 2))
+
+        xy.setflags(write=False)
+        z.setflags(write=False)
+        XY.setflags(write=False)
+
+        interp = interpolator(xy, z)
+        interp(XY)

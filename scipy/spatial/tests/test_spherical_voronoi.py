@@ -3,11 +3,9 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal,
-                           suppress_warnings)
+                           assert_array_almost_equal)
 import pytest
 from pytest import raises as assert_raises
-from pytest import warns as assert_warns
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.optimize import linear_sum_assignment
 from scipy.constants import golden as phi

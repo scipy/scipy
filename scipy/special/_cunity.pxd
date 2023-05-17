@@ -1,11 +1,11 @@
 cimport numpy as np
-from libc.math cimport fabs, sin, cos, exp
+from libc.math cimport fabs, sin, cos, exp, atan2
+
 from ._complexstuff cimport (
     zisfinite, zabs, zpack, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
 cdef extern from "_complexstuff.h":
-    double npy_atan2(double y, double x) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble x) nogil
     np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
 
@@ -36,7 +36,7 @@ from ._cephes cimport log1p, expm1, cosm1
 # This expression suffers from cancellation when x < 0 and
 # y = +/-sqrt(2*fabs(x)). To get around this cancellation problem, we use
 # double-double precision when necessary.
-cdef inline double complex clog1p(double complex z) nogil:
+cdef inline double complex clog1p(double complex z) noexcept nogil:
     cdef double zr, zi, x, y, az, azi
     cdef np.npy_cdouble ret
 
@@ -58,14 +58,14 @@ cdef inline double complex clog1p(double complex z) nogil:
             return clog1p_ddouble(zr, zi)
         else:
             x = 0.5 * log1p(az*(az + 2*zr/az))
-            y = npy_atan2(zi, zr + 1.0)
+            y = atan2(zi, zr + 1.0)
             return zpack(x, y)
 
     z = z + 1.0
     ret = npy_clog(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(ret)
 
-cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
+cdef inline double complex clog1p_ddouble(double zr, double zi) noexcept nogil:
     cdef double x, y
     cdef double2 r, i, two, rsqr, isqr, rtwo, absm1
 
@@ -80,7 +80,7 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     absm1 = dd_add(absm1, rtwo)
 
     x = 0.5 * log1p(dd_to_double(absm1))
-    y = npy_atan2(zi, zr+1.0)
+    y = atan2(zi, zr+1.0)
     return zpack(x, y)
 
 # cexpm1(z) = cexp(z) - 1
@@ -90,7 +90,7 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
 # z.real = -log(cos(z.imag)).  There isn't a way around this problem  that
 # doesn't involve computing exp(z.real) and/or cos(z.imag) to higher
 # precision.
-cdef inline double complex cexpm1(double complex z) nogil:
+cdef inline double complex cexpm1(double complex z) noexcept nogil:
     cdef double zr, zi, ezr, x, y
     cdef np.npy_cdouble ret
 

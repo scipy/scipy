@@ -8,17 +8,17 @@
 
 import numpy as np
 
-from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
-from ._sputils import isscalarlike, validateaxis, matrix
+from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
+from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
 
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(spmatrix):
+class _data_matrix(_sparray):
     def __init__(self):
-        spmatrix.__init__(self)
+        _sparray.__init__(self)
 
     def _get_dtype(self):
         return self.data.dtype
@@ -46,8 +46,8 @@ class _data_matrix(spmatrix):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+            raise NotImplementedError('negating a boolean sparse array is not '
+                                      'supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -68,15 +68,17 @@ class _data_matrix(spmatrix):
     def astype(self, dtype, casting='unsafe', copy=True):
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
-            return self._with_data(
-                self._deduped_data().astype(dtype, casting=casting, copy=copy),
-                copy=copy)
+            matrix = self._with_data(
+                self.data.astype(dtype, casting=casting, copy=True),
+                copy=True
+            )
+            return matrix._with_data(matrix._deduped_data(), copy=False)
         elif copy:
             return self.copy()
         else:
             return self
 
-    astype.__doc__ = spmatrix.astype.__doc__
+    astype.__doc__ = _sparray.astype.__doc__
 
     def conj(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
@@ -86,17 +88,17 @@ class _data_matrix(spmatrix):
         else:
             return self
 
-    conj.__doc__ = spmatrix.conj.__doc__
+    conj.__doc__ = _sparray.conj.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _sparray.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -133,8 +135,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise %s.\n\n"
-                          "See `numpy.%s` for more information." % (name, name))
+        method.__doc__ = ("Element-wise {}.\n\n"
+                          "See `numpy.{}` for more information.".format(name, name))
         method.__name__ = name
 
         return method
@@ -190,8 +192,8 @@ class _minmax_mixin:
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'out' parameter."))
+            raise ValueError("Sparse matrices do not support "
+                              "an 'out' parameter.")
 
         validateaxis(axis)
 
@@ -250,7 +252,7 @@ class _minmax_mixin:
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
-        return matrix(ret)
+        return self._ascontainer(ret)
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:

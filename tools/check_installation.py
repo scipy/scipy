@@ -74,7 +74,8 @@ def get_test_files(dir):
     for path in glob.glob(f'{dir}/**/test_*.py', recursive=True):
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
-        test_files[suffix_path] = path
+        if "highspy" not in suffix_path:
+            test_files[suffix_path] = path
 
     return test_files
 

@@ -58,6 +58,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import logsumexp
     >>> a = np.arange(10)
     >>> logsumexp(a)
@@ -173,6 +174,7 @@ def softmax(x, axis=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import softmax
     >>> np.set_printoptions(precision=5)
 
@@ -256,6 +258,7 @@ def log_softmax(x, axis=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_softmax
     >>> from scipy.special import softmax
     >>> np.set_printoptions(precision=5)

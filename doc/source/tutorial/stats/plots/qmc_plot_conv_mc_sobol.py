@@ -74,7 +74,7 @@ ax.scatter(ns_gen, sample_mc_rmse, label="MC")
 
 # Sobol'
 ratio = sample_sobol_rmse[0] / ns_gen[0] ** (-2/2)
-ax.plot(ns_gen, ns_gen ** (-2/2) * ratio, ls='-', c='k')
+ax.plot(ns_gen, ns_gen ** (-2/2) * ratio, ls='-.', c='k')
 
 ax.scatter(ns_gen, sample_sobol_rmse, label="Sobol' unscrambled")
 

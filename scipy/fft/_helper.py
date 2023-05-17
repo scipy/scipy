@@ -40,6 +40,7 @@ def next_fast_len(target, real=False):
     On a particular machine, an FFT of prime length takes 11.4 ms:
 
     >>> from scipy import fft
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> min_len = 93059  # prime length is worst case for speed
     >>> a = rng.standard_normal(min_len)
@@ -63,7 +64,7 @@ def next_fast_len(target, real=False):
 
 # Directly wrap the c-function good_size but take the docstring etc., from the
 # next_fast_len function above
-next_fast_len = update_wrapper(lru_cache()(_helper.good_size), next_fast_len)
+next_fast_len = update_wrapper(lru_cache(_helper.good_size), next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 
 

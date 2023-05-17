@@ -61,12 +61,10 @@ Making this easier is a priority.
 
 Moving to the Meson build system
 ````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021.
-This significantly improves build performance, and will fix multiple issues
-(e.g., our issues with Windows compilers, cross-compilation support). The aim
-is to make it the default build system for SciPy 1.9.0, and then remove support
-for ``numpy.distutils``/``setuptools`` in SciPy 1.10.0. For more details, see
-`gh-13615 <https://github.com/scipy/scipy/issues/13615>`_.
+Support for the Meson build system was merged into SciPy main in Dec 2021,
+and SciPy 1.9.3 was the first release where all wheels were also built with
+Meson. What is left to do is removing support for
+``numpy.distutils``/``setuptools``, this will happen soon.
 
 
 Use of Cython
@@ -86,16 +84,23 @@ help here, because it removes the monkey patching that is now done to enable
 Pythran).
 
 
+Use of venerable Fortran libraries
+``````````````````````````````````
+SciPy owes a lot of its success to relying on wrapping well established
+Fortran libraries (QUADPACK, FITPACK, ODRPACK, ODEPACK etc). Some of these
+libraries are aging well, others less so. We should audit our use of these
+libraries with respect to the maintenance effort, the functionality, and the
+existence of (possibly partial) alternatives, *including those inside SciPy*.
+
+
 Continuous integration
 ``````````````````````
-Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
+Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
 of our dependencies and building release quality wheels. Reliability of CI has
-not been good recently (H2 2021), due to the large amount of configurations to
-support and some CI jobs needing an overhaul. We aim to reduce build times,
-improve caching, move more jobs to GitHub Actions, drop TravisCI and Appveyor
-in the `scipy-wheels repo <https://github.com/MacPython/scipy-wheels>`_,
-move from ``multibuild`` to ``cibuildwheel`` for building wheels for releases,
+not been good recently (H1 2023), due to the large amount of configurations to
+support and some CI jobs needing an overhaul. We aim to reduce build times by
+removing the remaining distutils-based jobs when we drop that build system
 and make the set of configurations in CI jobs more orthogonal.
 
 
@@ -106,7 +111,7 @@ SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.7.3 is
 example for use in AWS Lambda, which has a 250 MB size limit. We aim to keep
 binary size as low as possible; when adding new compiled extensions, this needs
 checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
-(see `this issue <https://github.com/matthew-brett/multibuild/issues/162>`__).
+(see `this issue <https://github.com/multi-build/multibuild/issues/162>`__).
 An effort should be made to slim down where possible, and not add new large
 files. In the future, things that are being considered (very tentatively) and
 may help are separating out the bundled` ``libopenblas`` and removing support
@@ -148,12 +153,31 @@ complex-valued functions and integrating multiple intervals (see `gh-3325
 interpolate
 ```````````
 
-Ideas for new features:
+*Spline fitting*: we need spline fitting routines with better user control. This
+includes 
 
-- Spline fitting routines with better user control.
-- Transparent tensor-product splines.
-- NURBS support.
-- Mesh refinement and coarsening of B-splines and corresponding tensor products.
+    - user-selectable alternatives for the smoothing criteria (manual,
+      cross-validation etc); gh-16653 makes a start in this direction;
+
+    - several strategies for knot placement, both manual and automatic (using
+      algorithms by Dierckx, de Boor, possibly other). 
+
+Once we have a reasonably feature complete set, we can start taking a long look
+at the future of the venerable FITPACK Fortran library, which currently is the
+only way of constructing smoothing splines in SciPy.
+
+*Tensor-product splines*: `RegularGridInterpolator` provides a minimal
+implementation. We want to evolve it both for new features (e.g. derivatives),
+performance and API (possibly provide a transparent N-dimensional tensor-product
+B-spline object).
+
+*Scalability and performance*: For the FITPACK-based functionality, the data
+size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
+For N-D scattered interpolators (which are QHull based) and N-D regular grid
+interpolators we need to check performance on large data sets and improve
+where lacking (gh-16483 makes progress in this direction).
+
+*Ideas for new features*: NURBS support could be added.
 
 
 io

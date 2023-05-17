@@ -1,12 +1,8 @@
-import sys
 from typing import (
     Any,
-    Dict,
     Generic,
-    List,
     Optional,
     overload,
-    Set,
     Tuple,
     TypeVar,
     Union,
@@ -16,10 +12,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.sparse import coo_matrix, dok_matrix
 
-if sys.version_info >= (3, 8):
-    from typing import Literal
-else:
-    from typing_extensions import Literal
+from typing import Literal
 
 # TODO: Replace `ndarray` with a 1D float64 array when possible
 _BoxType = TypeVar("_BoxType", None, npt.NDArray[np.float64])
@@ -60,9 +53,9 @@ class cKDTreeNode:
     @property
     def split(self) -> float: ...
     @property
-    def lesser(self) -> Optional[cKDTreeNode]: ...
+    def lesser(self) -> cKDTreeNode | None: ...
     @property
-    def greater(self) -> Optional[cKDTreeNode]: ...
+    def greater(self) -> cKDTreeNode | None: ...
 
 class cKDTree(Generic[_BoxType]):
     @property
@@ -121,8 +114,8 @@ class cKDTree(Generic[_BoxType]):
         eps: float = ...,
         p: float = ...,
         distance_upper_bound: float = ...,
-        workers: Optional[int] = ...,
-    ) -> Tuple[Any, Any]: ...
+        workers: int | None = ...,
+    ) -> tuple[Any, Any]: ...
 
     # TODO: returns a list scalars if `x.ndim <= 1`,
     # returns an object array of lists otherwise
@@ -132,8 +125,8 @@ class cKDTree(Generic[_BoxType]):
         r: npt.ArrayLike,
         p: float,
         eps: float = ...,
-        workers: Optional[int] = ...,
-        return_sorted: Optional[bool] = ...,
+        workers: int | None = ...,
+        return_sorted: bool | None = ...,
         return_length: bool = ...
     ) -> Any: ...
 
@@ -143,7 +136,7 @@ class cKDTree(Generic[_BoxType]):
         r: float,
         p: float,
         eps: float = ...,
-    ) -> List[List[int]]: ...
+    ) -> list[list[int]]: ...
 
     @overload
     def query_pairs(  # type: ignore[misc]
@@ -152,7 +145,7 @@ class cKDTree(Generic[_BoxType]):
         p: float = ...,
         eps: float = ...,
         output_type: Literal["set"] = ...,
-    ) -> Set[Tuple[int, int]]: ...
+    ) -> set[tuple[int, int]]: ...
     @overload
     def query_pairs(
         self,
@@ -168,7 +161,7 @@ class cKDTree(Generic[_BoxType]):
         other: cKDTree,
         r: _ArrayLike0D,
         p: float = ...,
-        weights: None | Tuple[None, None] = ...,
+        weights: None | tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> int: ...
     @overload
@@ -186,7 +179,7 @@ class cKDTree(Generic[_BoxType]):
         other: cKDTree,
         r: npt.ArrayLike,
         p: float = ...,
-        weights: None | Tuple[None, None] = ...,
+        weights: None | tuple[None, None] = ...,
         cumulative: bool = ...,
     ) -> npt.NDArray[np.intp]: ...
     @overload
@@ -222,7 +215,7 @@ class cKDTree(Generic[_BoxType]):
         max_distance: float,
         p: float = ...,
         output_type: Literal["dict"] = ...,
-    ) -> Dict[Tuple[int, int], float]: ...
+    ) -> dict[tuple[int, int], float]: ...
     @overload
     def sparse_distance_matrix(
         self,

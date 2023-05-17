@@ -84,6 +84,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((9, 6))
@@ -230,6 +231,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import qr_multiply, qr
     >>> A = np.array([[1, 3, 3], [2, 3, 2], [2, 3, 3], [1, 3, 2]])
     >>> qc, r1, piv1 = qr_multiply(A, 2*np.eye(4), pivoting=1)
@@ -369,6 +371,7 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> rng = np.random.default_rng()
     >>> a = rng.standard_normal((6, 9))

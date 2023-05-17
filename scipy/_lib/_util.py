@@ -1,3 +1,4 @@
+import re
 from contextlib import contextmanager
 import functools
 import operator
@@ -40,6 +41,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -86,6 +88,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
 
     Examples
     --------
+    >>> import numpy as np
     >>> x = np.arange(6)
     >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
     array([  0,   1,   4,   0,  64, 125])
@@ -148,19 +151,6 @@ def _prune_array(array):
     return array
 
 
-def prod(iterable):
-    """
-    Product of a sequence of numbers.
-
-    Faster than np.prod for short lists like array shapes, and does
-    not overflow if using Python integers.
-    """
-    product = 1
-    for x in iterable:
-        product *= x
-    return product
-
-
 def float_factorial(n: int) -> float:
     """Compute the factorial and return as a float
 
@@ -176,9 +166,7 @@ def check_random_state(seed):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -521,6 +509,29 @@ def _fixed_default_rng(seed=1638083107694713882823079058616272161):
         np.random.default_rng = orig_fun
 
 
+def _rng_html_rewrite(func):
+    """Rewrite the HTML rendering of ``np.random.default_rng``.
+
+    This is intended to decorate
+    ``numpydoc.docscrape_sphinx.SphinxDocString._str_examples``.
+
+    Examples are only run by Sphinx when there are plot involved. Even so,
+    it does not change the result values getting printed.
+    """
+    # hexadecimal or number seed, case-insensitive
+    pattern = re.compile(r'np.random.default_rng\((0x[0-9A-F]+|\d+)\)', re.I)
+
+    def _wrapped(*args, **kwargs):
+        res = func(*args, **kwargs)
+        lines = [
+            re.sub(pattern, 'np.random.default_rng()', line)
+            for line in res
+        ]
+        return lines
+
+    return _wrapped
+
+
 def _argmin(a, keepdims=False, axis=None):
     """
     argmin with a `keepdims` parameter.
@@ -545,6 +556,7 @@ def _first_nonnan(a, axis):
 
     Examples
     --------
+    >>> import numpy as np
     >>> nan = np.nan
     >>> a = np.array([[ 3.,  3., nan,  3.],
                       [ 1., nan,  2.,  4.],
@@ -585,13 +597,13 @@ def _nan_allsame(a, axis, keepdims=False):
 
     Examples
     --------
-    >>> a
-    array([[ 3.,  3., nan,  3.],
-           [ 1., nan,  2.,  4.],
-           [nan, nan,  9., -1.],
-           [nan,  5.,  4.,  3.],
-           [ 2.,  2.,  2.,  2.],
-           [nan, nan, nan, nan]])
+    >>> import numpy as np
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
     >>> _nan_allsame(a, axis=1, keepdims=True)
     array([[ True],
            [False],
@@ -612,6 +624,40 @@ def _nan_allsame(a, axis, keepdims=False):
             return np.full(shp, fill_value=True, dtype=bool)
     a0 = _first_nonnan(a, axis=axis)
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
+
+
+def _contains_nan(a, nan_policy='propagate', use_summation=True,
+                  policies=None):
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
+    if policies is None:
+        policies = ['propagate', 'raise', 'omit']
+    if nan_policy not in policies:
+        raise ValueError("nan_policy must be one of {%s}" %
+                         ', '.join("'%s'" % s for s in policies))
+
+    if np.issubdtype(a.dtype, np.inexact):
+        # The summation method avoids creating a (potentially huge) array.
+        if use_summation:
+            with np.errstate(invalid='ignore', over='ignore'):
+                contains_nan = np.isnan(np.sum(a))
+        else:
+            contains_nan = np.isnan(a).any()
+    elif np.issubdtype(a.dtype, object):
+        contains_nan = False
+        for el in a.ravel():
+            # isnan doesn't work on non-numeric elements
+            if np.issubdtype(type(el), np.number) and np.isnan(el):
+                contains_nan = True
+                break
+    else:
+        # Only `object` and `inexact` arrays can have NaNs
+        contains_nan = False
+
+    if contains_nan and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    return contains_nan, nan_policy
 
 
 def _rename_parameter(old_name, new_name, dep_version=None):
@@ -667,3 +713,19 @@ def _rename_parameter(old_name, new_name, dep_version=None):
             return fun(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def _rng_spawn(rng, n_children):
+    # spawns independent RNGs from a parent RNG
+    bg = rng._bit_generator
+    ss = bg._seed_seq
+    child_rngs = [np.random.Generator(type(bg)(child_ss))
+                  for child_ss in ss.spawn(n_children)]
+    return child_rngs
+
+
+def _get_nan(*data):
+    # Get NaN of appropriate dtype for data
+    data = [np.asarray(item) for item in data]
+    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    return np.array(np.nan, dtype=dtype)[()]

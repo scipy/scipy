@@ -73,6 +73,7 @@ class FortranFile:
     To create an unformatted sequential Fortran file:
 
     >>> from scipy.io import FortranFile
+    >>> import numpy as np
     >>> f = FortranFile('test.unf', 'w')
     >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
     >>> f.write_record(np.linspace(0,1,20).reshape((5,4)).T)
@@ -242,7 +243,7 @@ class FortranFile:
         """
         dtype = kwargs.pop('dtype', None)
         if kwargs:
-            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
+            raise ValueError(f"Unknown keyword arguments {tuple(kwargs.keys())}")
 
         if dtype is not None:
             dtypes = dtypes + (dtype,)
@@ -256,15 +257,15 @@ class FortranFile:
 
         num_blocks, remainder = divmod(first_size, block_size)
         if remainder != 0:
-            raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtypes given ({1}).'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) is not a multiple of the '
+                             'dtypes given ({}).'.format(first_size, block_size))
 
         if len(dtypes) != 1 and first_size != block_size:
             # Fortran does not write mixed type array items in interleaved order,
             # and it's not possible to guess the sizes of the arrays that were written.
             # The user must specify the exact sizes of each of the arrays.
-            raise ValueError('Size obtained ({0}) does not match with the expected '
-                             'size ({1}) of multi-item record'.format(first_size, block_size))
+            raise ValueError('Size obtained ({}) does not match with the expected '
+                             'size ({}) of multi-item record'.format(first_size, block_size))
 
         data = []
         for dtype in dtypes:

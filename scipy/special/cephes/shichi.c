@@ -35,7 +35,7 @@
  * The integrals are evaluated by power series for x < 8
  * and by Chebyshev expansions for x between 8 and 88.
  * For large x, both functions approach exp(x)/2x.
- * Arguments greater than 88 in magnitude return NPY_INFINITY.
+ * Arguments greater than 88 in magnitude return INFINITY.
  *
  *
  * ACCURACY:
@@ -188,7 +188,7 @@ double *si, *ci;
 
     if (x == 0.0) {
 	*si = 0.0;
-	*ci = -NPY_INFINITY;
+	*ci = -INFINITY;
 	return (0);
     }
 
@@ -240,8 +240,8 @@ chb:
 
 asymp:
     if (x > 1000) {
-        *si = NPY_INFINITY;
-        *ci = NPY_INFINITY;
+        *si = INFINITY;
+        *ci = INFINITY;
     }
     else {
         /* Asymptotic expansions
@@ -264,7 +264,7 @@ done:
 
     *si = s;
 
-    *ci = NPY_EULER + log(x) + c;
+    *ci = SCIPY_EULER + log(x) + c;
     return (0);
 }
 
@@ -300,7 +300,7 @@ static double hyp3f0(double a1, double a2, double a3, double z)
     err = fabs(term);
 
     if (err > 1e-13 * fabs(sum)) {
-        return NPY_NAN;
+        return NAN;
     }
 
     return sum;

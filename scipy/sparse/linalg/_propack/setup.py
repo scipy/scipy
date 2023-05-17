@@ -1,5 +1,5 @@
-from os.path import join
 import pathlib
+from distutils.sysconfig import get_python_inc
 
 import numpy as np
 
@@ -49,11 +49,9 @@ def configuration(parent_package='', top_path=None):
         src_dir = pathlib.Path(__file__).parent / 'PROPACK' / directory
         src = list(src_dir.glob('*.F'))
         if _is_32bit():
-            # don't ask me why, 32-bit blows up without second.F
             src = [str(p) for p in src if 'risc' not in str(p)]
         else:
-            src = [str(p) for p in src
-                   if 'pentium' not in str(p) and 'second' not in str(p)]
+            src = [str(p) for p in src if 'pentium' not in str(p)]
 
         if not _is_32bit():
             # don't ask me why, 32-bit blows up with this wrapper
@@ -66,7 +64,12 @@ def configuration(parent_package='', top_path=None):
         config.add_library(propack_lib,
                            sources=src,
                            macros=cmacros,
-                           include_dirs=src_dir,
+                           include_dirs=[
+                               src_dir,
+                               # because npy_common.h is used in g77 abi wrappers
+                               get_python_inc(),
+                               np.get_include(),
+                           ],
                            depends=['setup.py'])
         ext = config.add_extension(f'_{prefix}propack',
                                    sources=f'{prefix}propack.pyf',

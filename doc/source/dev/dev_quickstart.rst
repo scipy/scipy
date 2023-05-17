@@ -47,9 +47,9 @@ account and then create your local repository via::
 
 Next, set up your development environment.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: conda
+    .. tab-item:: conda
 
         With ``conda`` installed (through
         `Miniforge or Mambaforge <https://github.com/conda-forge/miniforge>`_,
@@ -66,7 +66,7 @@ Next, set up your development environment.
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-    .. tab:: pip+venv
+    .. tab-item:: pip+venv
 
         **With** :ref:`system-level dependencies <system-level>` **installed**, execute
         the following commands at the terminal from the base directory of your
@@ -75,30 +75,61 @@ Next, set up your development environment.
         .. code:: bash
 
             # Create the virtual environment
-            python -m venv scipy-dev
+            python -m venv $HOME/.venvs/scipy-dev
             # Activate the environment
             source $HOME/.venvs/scipy-dev/bin/activate
             # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja pydevtool rich-click
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-Finally, build SciPy for development and run the test suite to make sure your
-installation is successful. On Linux and OSX, you should use::
+Finally, build SciPy for development. On Linux and OSX, you should use::
 
-    python dev.py
-
-This builds SciPy first, so the first time it may take some time.
+    python dev.py build
 
 If you run into a build issue, or need more detailed build documentation
 including building on Windows, see :ref:`building`.
 
+Otherwise, if the build has finished successfully, you should now be able
+to run the SciPy tests. You can run the full test suite running::
+
+    python dev.py test
+
+Notice that this will take some time, so you might want to test only the
+part of SciPy you will be working on. For details on how to do that and
+a more complete setup walkthrough, see :ref:`development-workflow`.
+
 Some of the tests in SciPy are very slow and need to be separately
-enabled. See :ref:`runtests` for details.
+enabled. See :ref:`the-dev-py-interface` for details.
 
 Other workflows
 ===============
 
 This is only one possible way to set up your development environment out of
 many. For more detailed instructions, see the :ref:`contributor-toc`.
+
+.. note::
+
+    If you are having trouble building SciPy from source or setting up your
+    local development environment, you can try to build SciPy with GitHub
+    Codespaces. It allows you to create the correct development environment
+    right in your browser, reducing the need to install local development
+    environments and deal with incompatible dependencies.
+
+    If you have good internet connectivity and want a temporary set-up, it is
+    often faster to work on SciPy in a Codespaces environment. For
+    documentation on how to get started with Codespaces, see
+    `the Codespaces docs <https://docs.github.com/en/codespaces>`__.
+    When creating a codespace for the ``scipy/scipy`` repository, the default
+    2-core machine type works; 4-core will build and work a bit faster (but of
+    course at a cost of halving your number of free usage hours). Once your
+    codespace has started, you can run ``mamba activate scipy-dev`` and your
+    development environment is completely set up - you can then follow the
+    relevant parts of the SciPy documentation to build, test, develop, write
+    docs, and contribute to SciPy.
+
+    Another alternative is to use `Gitpod <https://www.gitpod.io>`__.
+    We do not maintain this solution anymore but some information can be found
+    in previous versions of our
+    `docs <https://docs.scipy.org/doc/scipy-1.10.1/dev/contributor/quickstart_gitpod.html>`__.

@@ -1,10 +1,3 @@
-fortran_ignore_warnings = [
-  '-Wno-tabs', '-Wno-conversion',
-  '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',
-  '-Wno-maybe-uninitialized', '-Wno-unused-label',
-  '-Wno-unused-variable'
-]
-
 mach_src = [
   'mach/d1mach.f',
   'mach/xerror.f'
@@ -92,19 +85,16 @@ quadpack_lib = static_library('quadpack_lib',
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
-  c_args: '-Wno-unused-variable',
   fortran_args: fortran_ignore_warnings
 )
 
 vode_lib = static_library('vode_lib',
   vode_src,
-  c_args: '-Wno-unused-variable',
   fortran_args: fortran_ignore_warnings
 )
 
 dop_lib = static_library('dop_lib',
   dop_src,
-  c_args: '-Wno-unused-variable',
   fortran_args: fortran_ignore_warnings
 )
 
@@ -112,9 +102,10 @@ py3.extension_module('_quadpack',
   ['__quadpack.h', '_quadpackmodule.c'],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, '../_lib/src'],
+  include_directories: ['../_lib/src'],
   link_with: [quadpack_lib, mach_lib],
-  dependencies: [py3_dep, lapack],
+  link_args: version_link_args,
+  dependencies: [lapack, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -125,8 +116,8 @@ py3.extension_module('_odepack',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_with: [lsoda_lib, mach_lib],
-  dependencies: [py3_dep, lapack],
-  include_directories: [inc_np],
+  link_args: version_link_args,
+  dependencies: [lapack, np_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -139,11 +130,11 @@ vode_module = custom_target('vode_module',
 )
 
 py3.extension_module('_vode',
-  [vode_module, fortranobject_c],
+  vode_module,
   link_with: [vode_lib],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
-  include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  link_args: version_link_args,
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -156,11 +147,11 @@ lsoda_module = custom_target('lsoda_module',
 )
 
 py3.extension_module('_lsoda',
-  [lsoda_module, fortranobject_c],
+  lsoda_module,
   link_with: [lsoda_lib, mach_lib],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
-  dependencies: [py3_dep, lapack],
-  include_directories: [inc_np, inc_f2py],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  dependencies: [lapack, fortranobject_dep],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -173,11 +164,11 @@ _dop_module = custom_target('_dop_module',
 )
 
 py3.extension_module('_dop',
-  [_dop_module, fortranobject_c],
+  _dop_module,
   link_with: [dop_lib],
-  c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
-  dependencies: [py3_dep],
-  include_directories: [inc_np, inc_f2py],
+  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  dependencies: [fortranobject_dep],
+  link_args: version_link_args,
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -185,13 +176,11 @@ py3.extension_module('_dop',
 
 py3.extension_module('_test_multivariate',
   [quadpack_test_src],
-  dependencies: [py3_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/integrate'
 )
 
-# FIXME: something is wrong with the signature file, subroutines are not used
-# _test_odeint_banded
 _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
   output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
   input: 'tests/banded5x5.pyf',
@@ -199,12 +188,12 @@ _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
 )
 
 py3.extension_module('_test_odeint_banded',
-  ['tests/banded5x5.f', fortranobject_c, _test_odeint_banded_module],
+  ['tests/banded5x5.f', _test_odeint_banded_module],
   c_args: numpy_nodepr_api,
   link_with: [lsoda_lib, mach_lib],
-  fortran_args: '-Wno-unused-dummy-argument',
-  include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  fortran_args: _fflag_Wno_unused_dummy_argument,
+  link_args: version_link_args,
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -225,9 +214,7 @@ py3.install_sources([
     'lsoda.py',
     'odepack.py',
     'quadpack.py',
-    'setup.py',
     'vode.py',
   ],
-  pure: false,
   subdir: 'scipy/integrate'
 )

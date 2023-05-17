@@ -1,6 +1,7 @@
 """Test functions for the sparse.linalg.norm module
 """
 
+import pytest
 import numpy as np
 from numpy.linalg import norm as npnorm
 from numpy.testing import assert_allclose, assert_equal
@@ -39,9 +40,12 @@ class TestNorm:
         assert_allclose(spnorm(self.b, -np.inf), 2)
         assert_allclose(spnorm(self.b, 1), 7)
         assert_allclose(spnorm(self.b, -1), 6)
+        # Only floating or complex floating dtype supported by svds.
+        with pytest.warns(UserWarning, match="The problem size"):
+            assert_allclose(spnorm(self.b.astype(np.float64), 2),
+                            7.348469228349534)
 
         # _multi_svd_norm is not implemented for sparse matrix
-        assert_raises(NotImplementedError, spnorm, self.b, 2)
         assert_raises(NotImplementedError, spnorm, self.b, -2)
 
     def test_matrix_norm_axis(self):

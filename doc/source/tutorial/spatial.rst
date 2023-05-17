@@ -23,8 +23,10 @@ avoid triangles with small angles.
 Delaunay triangulation can be computed using `scipy.spatial` as follows:
 
 .. plot::
+   :alt: "This code generates an X-Y plot with four green points annotated 0 through 3 roughly in the shape of a box. The box is outlined with a diagonal line between points 0 and 3 forming two adjacent triangles. The top triangle is annotated as #1 and the bottom triangle is annotated as #0."
 
    >>> from scipy.spatial import Delaunay
+   >>> import numpy as np
    >>> points = np.array([[0, 0], [0, 1.1], [1, 0], [1, 1]])
    >>> tri = Delaunay(points)
 
@@ -133,6 +135,7 @@ These can be computed via the Qhull wrappers in `scipy.spatial` as
 follows:
 
 .. plot::
+   :alt: "This code generates an X-Y plot with a few dozen random blue markers randomly distributed throughout. A single black line forms a convex hull around the boundary of the markers."
 
    >>> from scipy.spatial import ConvexHull
    >>> rng = np.random.default_rng()
@@ -166,6 +169,7 @@ First, one can use the `KDTree` to answer the question "which of the
 points is closest to this one", and define the regions that way:
 
 .. plot::
+   :alt: " "
 
    >>> from scipy.spatial import KDTree
    >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
@@ -283,6 +287,7 @@ Voronoi diagrams can be used to create interesting generative art.  Try playing
 with the settings of this ``mandala`` function to create your own!
 
 .. plot::
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import spatial

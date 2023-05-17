@@ -8,14 +8,6 @@ class for generic tests" section.
 
 """
 
-__usage__ = """
-Build sparse:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.sparse.test()'
-Run tests if sparse is not installed:
-  python tests/test_base.py
-"""
 
 import contextlib
 import functools
@@ -55,7 +47,7 @@ IS_COLAB = ('google.colab' in sys.modules)
 
 
 def assert_in(member, collection, msg=None):
-    assert_(member in collection, msg=msg if msg is not None else "%r not found in %r" % (member, collection))
+    assert_(member in collection, msg=msg if msg is not None else f"{member!r} not found in {collection!r}")
 
 
 def assert_array_equal_dtype(x, y, **kwargs):
@@ -871,8 +863,8 @@ class _TestCommon:
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz = set([tuple(ij) for ij in transpose(A.nonzero())])
-        Asp_nz = set([tuple(ij) for ij in transpose(Asp.nonzero())])
+        A_nz = {tuple(ij) for ij in transpose(A.nonzero())}
+        Asp_nz = {tuple(ij) for ij in transpose(Asp.nonzero())}
 
         assert_equal(A_nz, Asp_nz)
 
@@ -881,8 +873,8 @@ class _TestCommon:
         A = array([[1, 0, 1], [0, 1, 1], [0, 0, 1]])
         Asp = self.spmatrix(A)
 
-        A_nz = set([tuple(ij) for ij in transpose(np.nonzero(A))])
-        Asp_nz = set([tuple(ij) for ij in transpose(np.nonzero(Asp))])
+        A_nz = {tuple(ij) for ij in transpose(np.nonzero(A))}
+        Asp_nz = {tuple(ij) for ij in transpose(np.nonzero(Asp))}
 
         assert_equal(A_nz, Asp_nz)
 
@@ -993,8 +985,8 @@ class _TestCommon:
     def test_mean(self):
         def check(dtype):
             dat = array([[0, 1, 2],
-                         [3, -4, 5],
-                         [-6, 7, 9]], dtype=dtype)
+                         [3, 4, 5],
+                         [6, 7, 9]], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
 
             assert_array_almost_equal(dat.mean(), datsp.mean())
@@ -1302,6 +1294,24 @@ class _TestCommon:
                 for attribute in ('offsets', 'data'):
                     check_equal_but_not_same_array_attribute(attribute)
 
+    @sup_complex
+    def test_astype_immutable(self):
+        D = array([[2.0 + 3j, 0, 0],
+                   [0, 4.0 + 5j, 0],
+                   [0, 0, 0]])
+        S = self.spmatrix(D)
+        if hasattr(S, 'data'):
+            S.data.flags.writeable = False
+        if hasattr(S, 'indptr'):
+            S.indptr.flags.writeable = False
+        if hasattr(S, 'indices'):
+            S.indices.flags.writeable = False
+        for x in supported_dtypes:
+            D_casted = D.astype(x)
+            S_casted = S.astype(x)
+            assert_equal(S_casted.dtype, D_casted.dtype)
+
+
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
 
@@ -1336,6 +1346,12 @@ class _TestCommon:
 
         for dtype in self.math_dtypes:
             check(dtype)
+
+    # github issue #15210
+    def test_rmul_scalar_type_error(self):
+        datsp = self.datsp_dtypes[np.float64]
+        with assert_raises(TypeError):
+            None * datsp
 
     def test_add(self):
         def check(dtype):
@@ -2133,14 +2149,14 @@ class _TestInplaceArithmetic:
             datsp = self.datsp_dtypes[dtype]
 
             # Avoid implicit casting.
-            if np.can_cast(type(2), dtype, casting='same_kind'):
+            if np.can_cast(int, dtype, casting='same_kind'):
                 a = datsp.copy()
                 a *= 2
                 b = dat.copy()
                 b *= 2
                 assert_array_equal(b, a.toarray())
 
-            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+            if np.can_cast(float, dtype, casting='same_kind'):
                 a = datsp.copy()
                 a *= 17.3
                 b = dat.copy()
@@ -2155,14 +2171,14 @@ class _TestInplaceArithmetic:
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
 
-            if np.can_cast(type(2), dtype, casting='same_kind'):
+            if np.can_cast(int, dtype, casting='same_kind'):
                 a = datsp.copy()
                 a /= 2
                 b = dat.copy()
                 b /= 2
                 assert_array_equal(b, a.toarray())
 
-            if np.can_cast(type(17.3), dtype, casting='same_kind'):
+            if np.can_cast(float, dtype, casting='same_kind'):
                 a = datsp.copy()
                 a /= 17.3
                 b = dat.copy()
@@ -2276,7 +2292,7 @@ class _TestGetSet:
         n, m = (5, 10)
 
         def _test_set(i, j, nitems):
-            msg = "%r ; %r ; %r" % (i, j, nitems)
+            msg = f"{i!r} ; {j!r} ; {nitems!r}"
             A = self.spmatrix((n, m))
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -2332,6 +2348,16 @@ class _TestSlicing:
         assert_equal(self.spmatrix((1,10), dtype=np.int32)[0,1:5].dtype, np.int32)
         assert_equal(self.spmatrix((1,10), dtype=np.float32)[0,1:5].dtype, np.float32)
         assert_equal(self.spmatrix((1,10), dtype=np.float64)[0,1:5].dtype, np.float64)
+
+    def test_dtype_preservation_empty_slice(self):
+        # This should be parametrized with pytest, but something in the parent
+        # class creation used in this file breaks pytest.mark.parametrize.
+        for dt in [np.int16, np.int32, np.float32, np.float64]:
+            A = self.spmatrix((3, 2), dtype=dt)
+            assert_equal(A[:, 0:0:2].dtype, dt)
+            assert_equal(A[0:0:2, :].dtype, dt)
+            assert_equal(A[0, 0:0:2].dtype, dt)
+            assert_equal(A[0:0:2, 0].dtype, dt)
 
     def test_get_horiz_slice(self):
         B = asmatrix(arange(50.).reshape(5,10))
@@ -2558,7 +2584,7 @@ class _TestSlicingAssign:
         n, m = (5, 10)
 
         def _test_set(i, j):
-            msg = "i=%r; j=%r" % (i, j)
+            msg = f"i={i!r}; j={j!r}"
             A = self.spmatrix((n, m))
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
@@ -2689,10 +2715,21 @@ class _TestSlicingAssign:
         A[1, :] = x
         assert_array_equal(A.toarray(), [[0, 1, 1], [0, 0, 0], [0, 1, 1]])
 
+
 class _TestFancyIndexing:
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
+
+    def test_dtype_preservation_empty_index(self):
+        # This should be parametrized with pytest, but something in the parent
+        # class creation used in this file breaks pytest.mark.parametrize.
+        for dt in [np.int16, np.int32, np.float32, np.float64]:
+            A = self.spmatrix((3, 2), dtype=dt)
+            assert_equal(A[:, [False, False]].dtype, dt)
+            assert_equal(A[[False, False, False], :].dtype, dt)
+            assert_equal(A[:, []].dtype, dt)
+            assert_equal(A[[], :].dtype, dt)
 
     def test_bad_index(self):
         A = self.spmatrix(np.zeros([5, 5]))
@@ -3222,11 +3259,13 @@ class _TestArithmetic:
 
         # check conversions
         for x in supported_dtypes:
-            A = self.__A.astype(x)
+            with np.errstate(invalid="ignore"):
+                A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if not np.issubdtype(y, np.complexfloating):
-                    B = self.__B.real.astype(y)
+                    with np.errstate(invalid="ignore"):
+                        B = self.__B.real.astype(y)
                 else:
                     B = self.__B.astype(y)
                 Bsp = self.spmatrix(B)
@@ -3261,13 +3300,15 @@ class _TestArithmetic:
                            self.__A @ self.__B.T)
 
         for x in supported_dtypes:
-            A = self.__A.astype(x)
+            with np.errstate(invalid="ignore"):
+                A = self.__A.astype(x)
             Asp = self.spmatrix(A)
             for y in supported_dtypes:
                 if np.issubdtype(y, np.complexfloating):
                     B = self.__B.astype(y)
                 else:
-                    B = self.__B.real.astype(y)
+                    with np.errstate(invalid="ignore"):
+                        B = self.__B.real.astype(y)
                 Bsp = self.spmatrix(B)
 
                 D1 = A @ B.T
@@ -3556,7 +3597,7 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                 continue
             old_cls = names.get(name)
             if old_cls is not None:
-                raise ValueError("Test class %s overloads test %s defined in %s" % (
+                raise ValueError("Test class {} overloads test {} defined in {}".format(
                     cls.__name__, name, old_cls.__name__))
             names[name] = cls
 
@@ -4846,7 +4887,7 @@ class Test64Bit:
         elif isinstance(m, dia_matrix):
             return (m.offsets.dtype == dtype)
         else:
-            raise ValueError("matrix %r has no integer indices" % (m,))
+            raise ValueError(f"matrix {m!r} has no integer indices")
 
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works

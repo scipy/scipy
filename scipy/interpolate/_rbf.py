@@ -59,7 +59,8 @@ class Rbf:
     A class for radial basis function interpolation of functions from
     N-D scattered data to an M-D domain.
 
-    .. note::
+    .. legacy:: class
+
         `Rbf` is legacy code, for new usage please use `RBFInterpolator`
         instead.
 
@@ -134,6 +135,7 @@ class Rbf:
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import Rbf
     >>> rng = np.random.default_rng()
     >>> x, y, z, d = rng.random((4, 50))

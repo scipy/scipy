@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array
 
-from ._base import spmatrix, isspmatrix, SparseEfficiencyWarning
+from ._base import _sparray, isspmatrix, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
@@ -120,7 +120,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    getnnz.__doc__ = _sparray.getnnz.__doc__
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -205,7 +205,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _scalar_binopt(self, other, op):
         """Scalar version of self._binopt, for cases in which no new nonzeros
-        are added. Produces a new spmatrix in canonical form.
+        are added. Produces a new sparse array in canonical form.
         """
         self.sum_duplicates()
         res = self._with_data(op(self.data, other), copy=True)
@@ -551,7 +551,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            self.data, y)
         return y
 
-    diagonal.__doc__ = spmatrix.diagonal.__doc__
+    diagonal.__doc__ = _sparray.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -584,13 +584,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._maximum_minimum(other, np.maximum,
                                      '_maximum_', lambda x: np.asarray(x) > 0)
 
-    maximum.__doc__ = spmatrix.maximum.__doc__
+    maximum.__doc__ = _sparray.maximum.__doc__
 
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum,
                                      '_minimum_', lambda x: np.asarray(x) < 0)
 
-    minimum.__doc__ = spmatrix.minimum.__doc__
+    minimum.__doc__ = _sparray.minimum.__doc__
 
     #####################
     # Reduce operations #
@@ -600,7 +600,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
-        # The spmatrix base class already does axis=0 and axis=1 efficiently
+        # The _sparray base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, 2)))[0]):
@@ -618,12 +618,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError('dimensions do not match')
 
             return ret.sum(axis=(), dtype=dtype, out=out)
-        # spmatrix will handle the remaining situations when axis
+        # _sparray will handle the remaining situations when axis
         # is in {None, -1, 0, 1}
         else:
-            return spmatrix.sum(self, axis=axis, dtype=dtype, out=out)
+            return _sparray.sum(self, axis=axis, dtype=dtype, out=out)
 
-    sum.__doc__ = spmatrix.sum.__doc__
+    sum.__doc__ = _sparray.sum.__doc__
 
     def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
@@ -695,7 +695,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M = len(indices)
         new_shape = self._swap((M, N))
         if M == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         row_nnz = self.indptr[indices + 1] - self.indptr[indices]
         idx_dtype = self.indices.dtype
@@ -722,7 +722,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M = len(range(start, stop, step))
         new_shape = self._swap((M, N))
         if M == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         # Work out what slices are needed for `row_nnz`
         # start,stop can be -1, only if step is negative
@@ -761,7 +761,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         k = len(idx)
         new_shape = self._swap((M, k))
         if k == 0:
-            return self.__class__(new_shape)
+            return self.__class__(new_shape, dtype=self.dtype)
 
         # pass 1: count idx entries and compute new indptr
         col_offsets = np.zeros(N, dtype=idx_dtype)
@@ -789,7 +789,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         start, stop, step = idx.indices(N)
         N = len(range(start, stop, step))
         if N == 0:
-            return self.__class__(self._swap((M, N)))
+            return self.__class__(self._swap((M, N)), dtype=self.dtype)
         if step == 1:
             return self._get_submatrix(minor=idx, copy=copy)
         # TODO: don't fall back to fancy indexing here
@@ -1043,7 +1043,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             dtype=self.dtype
         )
 
-    tocoo.__doc__ = spmatrix.tocoo.__doc__
+    tocoo.__doc__ = _sparray.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         if out is None and order is None:
@@ -1062,7 +1062,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_todense(M, N, x.indptr, x.indices, x.data, y)
         return out
 
-    toarray.__doc__ = spmatrix.toarray.__doc__
+    toarray.__doc__ = _sparray.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -1187,8 +1187,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into %s blocks. "
-                                 "Got %s" % (self.blocksize, shape))
+                raise ValueError("shape must be divisible into {} blocks. "
+                                 "Got {}".format(self.blocksize, shape))
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape)
@@ -1214,7 +1214,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = spmatrix.resize.__doc__
+    resize.__doc__ = _sparray.resize.__doc__
 
     ###################
     # utility methods #

@@ -135,7 +135,7 @@ class TestLocalMaxima1d:
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
             _local_maxima_1d(np.ones((1, 1)))
-        with raises(ValueError, match="expected 'float64_t'"):
+        with raises(ValueError, match="expected 'const float64_t'"):
             _local_maxima_1d(np.ones(1, dtype=int))
         with raises(TypeError, match="list"):
             _local_maxima_1d([1., 2.])
@@ -769,6 +769,26 @@ class TestFindPeaks:
         assert_equal(props["width_heights"], 1)
         for key in ("left_bases", "right_bases", "left_ips", "right_ips"):
             assert_equal(props[key], peaks)
+
+    @pytest.mark.parametrize("kwargs", [
+        {},
+        {"distance": 3.0},
+        {"prominence": (None, None)},
+        {"width": (None, 2)},
+
+    ])
+    def test_readonly_array(self, kwargs):
+        """
+        Test readonly arrays are accepted.
+        """
+        x = np.linspace(0, 10, 15)
+        x_readonly = x.copy()
+        x_readonly.flags.writeable = False
+
+        peaks, _ = find_peaks(x)
+        peaks_readonly, _ = find_peaks(x_readonly, **kwargs)
+
+        assert_allclose(peaks, peaks_readonly)
 
 
 class TestFindPeaksCwt:

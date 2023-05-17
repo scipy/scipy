@@ -4,24 +4,24 @@
 # Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
 
+# cython: cpow=True
+
 # distutils: language = c++
 
 import numpy as np
 import scipy.sparse
 
 cimport numpy as np
-from numpy.math cimport INFINITY
 
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libcpp.vector cimport vector
-from libcpp.algorithm cimport sort
 from libcpp cimport bool
+from libc.math cimport isinf, INFINITY
 
 cimport cython
 import os
 import threading
 import operator
-import warnings
 
 np.import_array()
 
@@ -40,8 +40,6 @@ cdef extern from *:
 # ===================
 
 cdef extern from "ckdtree_decl.h":
-    int ckdtree_isinf(np.float64_t x) nogil
-
     struct ckdtreenode:
         np.intp_t split_dim
         np.intp_t children
@@ -346,7 +344,7 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level) noexcept:
         cdef cKDTreeNode n1, n2
         self.level = level
         self.split_dim = node.split_dim
@@ -778,8 +776,7 @@ cdef class cKDTree:
         """
 
         cdef:
-            np.intp_t n, i, j
-            int overflown
+            np.intp_t n
             const np.float64_t [:, ::1] xx
             np.ndarray x_arr = np.ascontiguousarray(x, dtype=np.float64)
             ckdtree *cself = self.cself
@@ -901,6 +898,7 @@ cdef class cKDTree:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:4, 0:4]
         >>> points = np.c_[x.ravel(), y.ravel()]
@@ -1084,7 +1082,7 @@ cdef class cKDTree:
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0)
+        query_pairs(self, r, p=2., eps=0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 
@@ -1373,9 +1371,9 @@ cdef class cKDTree:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if not ckdtree_isinf(p):
+        if not isinf(p):
             for i in range(n_queries):
-                if not ckdtree_isinf(real_r[i]):
+                if not isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         if weights is None:
@@ -1548,9 +1546,8 @@ cdef class cKDTree:
 
     def __getstate__(cKDTree self):
         cdef object state
-        cdef np.intp_t size
         cdef ckdtree * cself = self.cself
-        size = cself.tree_buffer.size() * sizeof(ckdtreenode)
+        cdef np.intp_t size = cself.tree_buffer.size() * sizeof(ckdtreenode)
 
         cdef np.ndarray tree = np.asarray(<char[:size]> <char*> cself.tree_buffer.data())
 

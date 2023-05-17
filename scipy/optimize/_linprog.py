@@ -89,16 +89,16 @@ def linprog_verbose_callback(res):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float': lambda x: "{0: 12.4f}".format(x)})
+                        formatter={'float': lambda x: f"{x: 12.4f}"})
     if status:
         print('--------- Simplex Early Exit -------\n')
-        print('The simplex method exited early with status {0:d}'.format(status))
+        print(f'The simplex method exited early with status {status:d}')
         print(message)
     elif complete:
         print('--------- Simplex Complete --------\n')
-        print('Iterations required: {}'.format(nit))
+        print(f'Iterations required: {nit}')
     else:
-        print('--------- Iteration {0:d}  ---------\n'.format(nit))
+        print(f'--------- Iteration {nit:d}  ---------\n')
 
     if nit > 0:
         if phase == 1:
@@ -161,7 +161,7 @@ def linprog_terse_callback(res):
 
     if nit == 0:
         print("Iter:   X:")
-    print("{0: <5d}   ".format(nit), end="")
+    print(f"{nit: <5d}   ", end="")
     print(x)
 
 
@@ -187,18 +187,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Alternatively, that's:
 
-    minimize::
+        - minimize ::
 
-        c @ x
+            c @ x
 
-    such that::
+        - such that ::
 
-        A_ub @ x <= b_ub
-        A_eq @ x == b_eq
-        lb <= x <= ub
+            A_ub @ x <= b_ub
+            A_eq @ x == b_eq
+            lb <= x <= ub
 
-    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``.
+    Note that by default ``lb = 0`` and ``ub = None``. Other bounds can be
+    specified with ``bounds``.
 
     Parameters
     ----------
@@ -218,11 +218,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None``
-        to indicate that there is no bound. By default, bounds are
-        ``(0, None)`` (all decision variables are non-negative).
-        If a single tuple ``(min, max)`` is provided, then ``min`` and
-        ``max`` will serve as bounds for all decision variables.
+        the minimum and maximum values of that decision variable.
+        If a single tuple ``(min, max)`` is provided, then ``min`` and ``max``
+        will serve as bounds for all decision variables.
+        Use ``None`` to indicate that there is no bound. For instance, the
+        default bound ``(0, None)`` means that all decision variables are
+        non-negative, and the pair ``(None, None)`` means no bounds at all,
+        i.e. all variables are allowed to be any real.
     method : str, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs' <optimize.linprog-highs>` (default),
@@ -337,7 +339,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
 
-    integrality : 1-D array, optional
+    integrality : 1-D array or int, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.
@@ -351,13 +353,22 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``3`` : Semi-integer variable; decision variable must be an integer
         within `bounds` or take value ``0``.
 
-        By default, all variables are continuous. This argument is currently
-        used only by the ``'highs'`` method and ignored otherwise.
+        By default, all variables are continuous.
+
+        For mixed integrality constraints, supply an array of shape `c.shape`.
+        To infer a constraint on each decision variable from shorter inputs,
+        the argument will be broadcasted to `c.shape` using `np.broadcast_to`.
+
+        This argument is currently used only by the ``'highs'`` method and
+        ignored otherwise.
 
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields
+        below. Note that the return types of the fields may depend on whether
+        the optimization was successful, therefore it is recommended to check
+        `OptimizeResult.status` before relying on the other fields:
 
         x : 1-D array
             The values of the decision variables that minimizes the
@@ -526,7 +537,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Mathematical Programming Study 4 (1975): 146-166.
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
             "HiGHS - high performance software for linear optimization."
-            Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
             simplex method." Mathematical Programming Computation, 10 (1),
             119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -565,6 +576,33 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     array([10., -3.])
     >>> res.message
     'Optimization terminated successfully. (HiGHS Status 7: Optimal)'
+
+    The marginals (AKA dual values / shadow prices / Lagrange multipliers)
+    and residuals (slacks) are also available.
+
+    >>> res.ineqlin
+      residual: [ 3.900e+01  0.000e+00]
+     marginals: [-0.000e+00 -1.000e+00]
+
+    For example, because the marginal associated with the second inequality
+    constraint is -1, we expect the optimal value of the objective function
+    to decrease by ``eps`` if we add a small amount ``eps`` to the right hand
+    side of the second inequality constraint:
+
+    >>> eps = 0.05
+    >>> b[1] += eps
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.05
+
+    Also, because the residual on the first inequality constraint is 39, we
+    can decrease the right hand side of the first constraint by 39 without
+    affecting the optimal solution.
+
+    >>> b = [6, 4]  # reset to original values
+    >>> b[0] -= 39
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.0
+
     """
 
     meth = method.lower()
@@ -578,11 +616,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
 
-    if integrality and not meth == "highs":
+    if np.any(integrality) and not meth == "highs":
         integrality = None
         warning_message = ("Only `method='highs'` supports integer "
                            "constraints. Ignoring `integrality`.")
         warn(warning_message, OptimizeWarning)
+    elif np.any(integrality):
+        integrality = np.broadcast_to(integrality, np.shape(c))
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)
@@ -600,7 +640,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                              **solver_options)
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
-                          sol['con'], lp.bounds, tol, sol['message']))
+                          sol['con'], lp.bounds, tol, sol['message'],
+                          integrality))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
@@ -652,7 +693,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
-    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds,
+                                    tol, message, integrality)
 
     if disp:
         _display_summary(message, status, fun, iteration)

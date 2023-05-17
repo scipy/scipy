@@ -16,7 +16,7 @@ Dept of MS&E, Stanford University.
 
 """
 
-from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
+from numpy import array, arange, eye, zeros, ones, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import assert_allclose
 import pytest
@@ -183,46 +183,3 @@ def lowerBidiagonalMatrix(m, n):
         data = hstack((arange(1, n+1, dtype=float),
                        arange(1,n+1, dtype=float)))
         return coo_matrix((data,(row, col)), shape=(m,n))
-
-
-def lsmrtest(m, n, damp):
-    """Verbose testing of lsmr"""
-
-    A = lowerBidiagonalMatrix(m,n)
-    xtrue = arange(n,0,-1, dtype=float)
-    Afun = aslinearoperator(A)
-
-    b = Afun.matvec(xtrue)
-
-    atol = 1.0e-7
-    btol = 1.0e-7
-    conlim = 1.0e+10
-    itnlim = 10*n
-    show = 1
-
-    x, istop, itn, normr, normar, norma, conda, normx \
-      = lsmr(A, b, damp, atol, btol, conlim, itnlim, show)
-
-    j1 = min(n,5)
-    j2 = max(n-4,1)
-    print(' ')
-    print('First elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[0:j1]]
-    print(''.join(str))
-    print(' ')
-    print('Last  elements of x:')
-    str = ['%10.4f' % (xi) for xi in x[j2-1:]]
-    print(''.join(str))
-
-    r = b - Afun.matvec(x)
-    r2 = sqrt(norm(r)**2 + (damp*norm(x))**2)
-    print(' ')
-    str = 'normr (est.)  %17.10e' % (normr)
-    str2 = 'normr (true)  %17.10e' % (r2)
-    print(str)
-    print(str2)
-    print(' ')
-
-
-if __name__ == "__main__":
-    lsmrtest(20,10,0)

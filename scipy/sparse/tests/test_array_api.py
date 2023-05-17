@@ -59,6 +59,23 @@ def test_mean(A):
 
 
 @parametrize_sparrays
+def test_min_max(A):
+    # Some formats don't support min/max operations, so we skip those here.
+    if hasattr(A, 'min'):
+        assert not isinstance(A.min(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'max'):
+        assert not isinstance(A.max(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmin'):
+        assert not isinstance(A.argmin(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmax'):
+        assert not isinstance(A.argmax(axis=1), np.matrix), \
+            "Expected array, got matrix"
+
+
+@parametrize_sparrays
 def test_todense(A):
     assert not isinstance(A.todense(), np.matrix), \
         "Expected array, got matrix"
@@ -153,16 +170,6 @@ def test_no_H_attr(A):
 def test_getrow_getcol(A):
     assert A.getcol(0)._is_array
     assert A.getrow(0)._is_array
-
-
-@parametrize_sparrays
-def test_docstr(A):
-    if A.__doc__ is None:
-        return
-
-    docstr = A.__doc__.lower()
-    for phrase in ('matrix', 'matrices'):
-        assert phrase not in docstr
 
 
 # -- linalg --

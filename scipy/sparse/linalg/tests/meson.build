@@ -9,6 +9,5 @@ py3.install_sources([
     'test_propack.py',
     'test_pydata_sparse.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/tests'
 )

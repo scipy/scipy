@@ -6,7 +6,7 @@ from scipy._build_utils import numpy_nodepr_api
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
-    from scipy._build_utils.system_info import get_info
+    from numpy.distutils.system_info import get_info
     from scipy._build_utils import (uses_blas64, blas_ilp64_pre_build_hook,
                                     combine_dict, get_f2py_int64_options)
 

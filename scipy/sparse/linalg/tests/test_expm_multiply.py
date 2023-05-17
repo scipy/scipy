@@ -308,7 +308,7 @@ class TestExpmActionInterval:
 @pytest.mark.parametrize("b_is_matrix", [False, True])
 def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     """Make sure `expm_multiply` handles all numerical dtypes correctly."""
-    assert_allclose_ = (partial(assert_allclose, rtol=1e-3, atol=1e-5)
+    assert_allclose_ = (partial(assert_allclose, rtol=1.2e-3, atol=1e-5)
                         if {dtype_a, dtype_b} & IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data

@@ -5,8 +5,7 @@ The matfile specification last found here:
 https://www.mathworks.com/access/helpdesk/help/pdf_doc/matlab/matfile_format.pdf
 
 (as of December 5 2008)
-'''
-'''
+
 =================================
  Note on functions and mat files
 =================================
@@ -65,11 +64,10 @@ The mat files I was playing with are in ``tests/data``:
 See ``tests/test_mio.py:test_mio_funcs.py`` for the debugging
 script I was working with.
 
+Small fragments of current code adapted from matfile.py by Heiko
+Henkelmann; parts of the code for simplify_cells=True adapted from
+http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
-
-# Small fragments of current code adapted from matfile.py by Heiko
-# Henkelmann; parts of the code for simplify_cells=True adapted from
-# http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 
 import os
 import time
@@ -466,6 +464,8 @@ def to_writeable(source):
         return source
     if source is None:
         return None
+    if hasattr(source, "__array__"):
+        return np.asarray(source)
     # Objects that implement mappings
     is_mapping = (hasattr(source, 'keys') and hasattr(source, 'values') and
                   hasattr(source, 'items'))
@@ -474,8 +474,8 @@ def to_writeable(source):
         # NumPy scalars are never mappings (PyPy issue workaround)
         pass
     elif not is_mapping and hasattr(source, '__dict__'):
-        source = dict((key, value) for key, value in source.__dict__.items()
-                      if not key.startswith('_'))
+        source = {key: value for key, value in source.__dict__.items()
+                      if not key.startswith('_')}
         is_mapping = True
     if is_mapping:
         dtype = []
@@ -490,7 +490,10 @@ def to_writeable(source):
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    try:
+        narr = np.asanyarray(source)
+    except ValueError:
+        narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible

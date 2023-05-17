@@ -3,7 +3,6 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-import warnings
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
@@ -14,13 +13,12 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._distn_infrastructure import (
-    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape, _ShapeInfo)
+from ._distn_infrastructure import (rv_discrete, get_distribution_names,
+                                    _check_shape, _ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
-                        _PyWalleniusNCHypergeometric,
-                        _PyStochasticLib3)
+                         _PyWalleniusNCHypergeometric,
+                         _PyStochasticLib3)
 
 
 def _isintegral(x):
@@ -248,7 +246,7 @@ class betabinom_gen(rv_discrete):
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
-            g2 = a + b
+            g2 = (a + b).astype(e_p.dtype)
             g2 *= (a + b - 1 + 6 * n)
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
@@ -281,9 +279,9 @@ class nbinom_gen(rv_discrete):
 
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
-    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success,
-    and :math:`1-p` is the probability of a single failure.
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
 
     Another common parameterization of the negative binomial distribution is
     in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
@@ -356,20 +354,15 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _nbinom_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _nbinom_ppf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        return(
+        return (
             _boost._nbinom_mean(n, p),
             _boost._nbinom_variance(n, p),
             _boost._nbinom_skewness(n, p),
@@ -448,6 +441,9 @@ class geom_gen(rv_discrete):
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
 
+    def _entropy(self, p):
+        return -np.log(p) - np.log1p(-p) * (1.0-p) / p
+
 
 geom = geom_gen(a=1, name='geom', longname="A geometric")
 
@@ -482,6 +478,7 @@ class hypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import hypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -646,6 +643,7 @@ class nhypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -989,7 +987,7 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False)),
                 _ShapeInfo("N", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_, N):
@@ -1153,6 +1151,7 @@ class zipf_gen(rv_discrete):
 
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
@@ -1249,6 +1248,7 @@ class zipfian_gen(rv_discrete):
 
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipf
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
@@ -1332,8 +1332,13 @@ class dlaplace_gen(rv_discrete):
 
     def _cdf(self, x, a):
         k = floor(x)
-        f = lambda k, a: 1.0 - exp(-a * k) / (exp(a) + 1)
-        f2 = lambda k, a: exp(a * (k+1)) / (exp(a) + 1)
+
+        def f(k, a):
+            return 1.0 - exp(-a * k) / (exp(a) + 1)
+
+        def f2(k, a):
+            return exp(a * (k + 1)) / (exp(a) + 1)
+
         return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):
@@ -1419,17 +1424,19 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
-        # ncx2.pdf() returns nan's for extremely low probabilities
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+            # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -1507,16 +1514,17 @@ class yulesimon_gen(rv_discrete):
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
         mu2 = np.where(alpha > 2,
-                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
-                np.inf)
+                       alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                       np.inf)
         mu2 = np.where(alpha <= 1, np.nan, mu2)
         g1 = np.where(alpha > 3,
-                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
-                np.inf)
+                      sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                      np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
-                        (alpha - 4) * (alpha - 3)), np.inf)
+                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                                   (alpha * (alpha - 4) * (alpha - 3))),
+                      np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
         return mu, mu2, g1, g2
 
