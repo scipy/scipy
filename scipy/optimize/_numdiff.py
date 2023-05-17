@@ -439,6 +439,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError("Unknown method '%s'. " % method)
 
     x0 = np.atleast_1d(x0)
+    x0 = np.asfarray(x0, x0.dtype)
+
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
 
@@ -453,6 +455,9 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                          "`as_linear_operator` is True.")
 
     def fun_wrapped(x):
+        if np.issubdtype(x.dtype, np.floating):
+            x = np.asfarray(x, x0.dtype)
+
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
             raise RuntimeError("`fun` return value has "
