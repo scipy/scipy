@@ -376,9 +376,6 @@ class TestScalarFunction(TestCase):
         res = sf.fun(x0)
         assert res.dtype == np.float32
 
-        # ScalarFunction.grad always returns np.float64
-        sf.grad(x0)
-
 
 class ExVectorialFunction:
 

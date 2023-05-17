@@ -455,6 +455,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
                          "`as_linear_operator` is True.")
 
     def fun_wrapped(x):
+        # send user function same fp type as x0. (but only if cs is not being
+        # used
         if np.issubdtype(x.dtype, np.floating):
             x = np.asfarray(x, x0.dtype)
 
