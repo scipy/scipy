@@ -4,6 +4,7 @@ Unit test for Linear Programming via Simplex Algorithm.
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
+import pytest
 from scipy.optimize._linprog_util import _clean_inputs, _LPProblem
 from copy import deepcopy
 from datetime import date
@@ -97,6 +98,7 @@ def test_too_few_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_eq=bad, b_eq=cb))
 
 
+@pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 def test_inconsistent_dimensions():
     m = 2
     n = 4
@@ -236,6 +238,7 @@ def test__clean_inputs3():
     assert_(lp_cleaned.b_eq.shape == (2,), "")
 
 
+@pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 def test_bad_bounds():
     lp = _LPProblem(c=[1, 2])
 

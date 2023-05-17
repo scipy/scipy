@@ -478,6 +478,7 @@ class LinprogCommonTests:
         np.testing.assert_allclose(res.x, [1.8, 2.8])
         np.testing.assert_allclose(res.fun, -2.8)
 
+    @pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     def test_invalid_inputs(self):
 
         def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
