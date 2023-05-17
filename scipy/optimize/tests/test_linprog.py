@@ -478,7 +478,6 @@ class LinprogCommonTests:
         np.testing.assert_allclose(res.x, [1.8, 2.8])
         np.testing.assert_allclose(res.fun, -2.8)
 
-    @pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
     def test_invalid_inputs(self):
 
         def f(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
@@ -487,7 +486,9 @@ class LinprogCommonTests:
 
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
-        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(np.VisibleDeprecationWarning, "Creating an ndarray from ragged")
+            assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
         # Test other invalid inputs

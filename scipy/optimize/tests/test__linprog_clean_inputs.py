@@ -98,7 +98,6 @@ def test_too_few_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=cb, A_eq=bad, b_eq=cb))
 
 
-@pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 def test_inconsistent_dimensions():
     m = 2
     n = 4
@@ -114,7 +113,10 @@ def test_inconsistent_dimensions():
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Abad, b_eq=bgood))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, A_eq=Agood, b_eq=bbad))
     assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=boundsbad))
-    assert_raises(ValueError, _clean_inputs, _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(np.VisibleDeprecationWarning, "Creating an ndarray from ragged")
+        assert_raises(ValueError, _clean_inputs,
+                      _LPProblem(c=c, bounds=[[1, 2], [2, 3], [3, 4], [4, 5, 6]]))
 
 
 def test_type_errors():
@@ -238,13 +240,15 @@ def test__clean_inputs3():
     assert_(lp_cleaned.b_eq.shape == (2,), "")
 
 
-@pytest.mark.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 def test_bad_bounds():
     lp = _LPProblem(c=[1, 2])
 
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=(1, 2, 2)))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2, 2)]))
-    assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2, 2)]))
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(np.VisibleDeprecationWarning, "Creating an ndarray from ragged")
+        assert_raises(ValueError, _clean_inputs,
+                      lp._replace(bounds=[(1, 2), (1, 2, 2)]))
     assert_raises(ValueError, _clean_inputs, lp._replace(bounds=[(1, 2), (1, 2), (1, 2)]))
 
     lp = _LPProblem(c=[1, 2, 3, 4])
