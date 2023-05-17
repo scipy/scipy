@@ -29,7 +29,7 @@ import warnings
 import sys
 import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt, Inf, asfarray)
+                   asarray, sqrt, Inf)
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
