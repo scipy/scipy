@@ -222,7 +222,7 @@ class TestBounds:
         assert [-1, 2] in bounds
         assert [-2.4, 2] not in bounds
         assert [-1, 4.000001] not in bounds
-        assert [-1, 3.99999] not in bounds
+        assert [-1, 3.99999] in bounds
         bounds = Bounds([-np.inf, 2, -np.inf], [2, np.inf, np.inf])
         assert [0, 3, 0] in bounds
         assert [0, 1, 0] not in bounds

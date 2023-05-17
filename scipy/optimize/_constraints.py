@@ -318,7 +318,8 @@ class Bounds:
             Whether the input is within the bounds.
 
         """
-        return not (np.any(lower_bound > x0) or np.any(x0 > upper_bound))
+        y = np.atleast_1d(x)
+        return not (np.any(self.lb > y) or np.any(y > self.ub))
 
 
 class PreparedConstraint:
