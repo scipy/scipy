@@ -834,9 +834,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if bounds is not None:
         lower_bound, upper_bound = bounds.lb, bounds.ub
         # check bounds
-        if (lower_bound > upper_bound).any():
-            raise ValueError("Nelder Mead - one of the lower bounds is greater than an upper bound.")
-        if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
+        if x0 not in bounds:
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, 3)
 

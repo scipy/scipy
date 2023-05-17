@@ -250,6 +250,8 @@ class Bounds:
         except ValueError:
             message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
             raise ValueError(message)
+        if (self.lb > self.ub).any():
+            raise ValueError("One of the lower bounds is greater than an upper bound.")
 
     def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
         if issparse(lb) or issparse(ub):
@@ -297,6 +299,26 @@ class Bounds:
             The lower and upper residuals
         """
         return x - self.lb, self.ub - x
+
+    def __contains__(self, x):
+        """Check whether the input is within the bounds.
+
+        Verifies for each element the bound constraint::
+
+            lb <= x <= ub
+
+        Parameters
+        ----------
+        x: array_like
+            Vector of independent variables
+
+        Returns
+        -------
+        inside: bool
+            Whether the input is within the bounds.
+
+        """
+        return not (np.any(lower_bound > x0) or np.any(x0 > upper_bound))
 
 
 class PreparedConstraint:
