@@ -20,17 +20,16 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-import sys, pydoc
+import sys
 import sphinx
 import inspect
 import textwrap
-import warnings
+import pydoc
 
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
 from numpydoc.numpydoc import mangle_docstrings
-from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
 from scipy._lib._util import getfullargspec_no_self
