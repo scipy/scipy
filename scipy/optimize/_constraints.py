@@ -250,8 +250,15 @@ class Bounds:
         except ValueError:
             message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
             raise ValueError(message)
+        try:
+            lb = self.lb.astype(np.double)
+            ub = self.ub.astype(np.double)
+        except (ValueError, TypeError) as exc:
+            message = ("Lower and upper bounds must be reals")
+            raise ValueError(message) from exc
+
         if (self.lb > self.ub).any():
-            raise ValueError("One of the lower bounds is greater than an upper bound.")
+            raise ValueError("An upper bound is less than the corresponding lower bound.")
 
     def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
         if issparse(lb) or issparse(ub):

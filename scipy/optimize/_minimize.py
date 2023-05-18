@@ -991,10 +991,6 @@ def _add_to_array(x_in, i_fixed, x_fixed):
 def _validate_bounds(bounds, x0, meth):
     """Check that bounds are valid."""
 
-    msg = "An upper bound is less than the corresponding lower bound."
-    if np.any(bounds.ub < bounds.lb):
-        raise ValueError(msg)
-
     msg = "The number of bounds is not compatible with the length of `x0`."
     try:
         bounds.lb = np.broadcast_to(bounds.lb, x0.shape)

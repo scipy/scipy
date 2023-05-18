@@ -1574,11 +1574,6 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
-        bounds = Bounds([1, 6, 1], [3, 4, 2])
-        msg = 'An upper bound is less than the corresponding lower bound.'
-        with pytest.raises(ValueError, match=msg):
-            optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
-
     @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
     def test_minimize_warnings_gh1953(self, method):
         # test that minimize methods produce warnings rather than just using

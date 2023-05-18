@@ -212,6 +212,10 @@ class TestBounds:
         with pytest.raises(ValueError, match=message):
             Bounds([1, 2], [1, 2, 3])
 
+        message = "Lower and upper bounds must be reals"
+        with pytest.raises(ValueError, match=message):
+            Bounds(["3+4", 1], [1, 2])
+
     def test_residual(self):
         bounds = Bounds(-2, 4)
         x0 = [-1, 2]
