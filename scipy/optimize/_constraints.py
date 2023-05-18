@@ -248,6 +248,7 @@ class Bounds:
     Consider two variables, where the first must not be negative,
     and the second must be between 1 and 2:
 
+    >>> from scipy.optimize import Bounds
     >>> bounds = Bounds(lb=[0, 1], ub=[np.inf, 2])
 
     We can check whether something is inside the bounds:
