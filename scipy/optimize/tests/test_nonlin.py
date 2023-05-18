@@ -171,6 +171,7 @@ class TestNonlin:
     def _check_func_fail(self, *a, **kw):
         pass
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_problem_nonlin(self):
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for func in SOLVERS.values():
@@ -180,6 +181,7 @@ class TestNonlin:
                     continue
                 self._check_nonlin_func(f, func)
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     @pytest.mark.parametrize("method", ['lgmres', 'gmres', 'bicgstab', 'cgs',
                                         'minres', 'tfqmr'])
     def test_tol_norm_called(self, method):
@@ -195,6 +197,7 @@ class TestNonlin:
                              tol_norm=local_norm_func)
         assert_(self._tol_norm_used)
 
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_problem_root(self):
         for f in [F, F2, F2_lucky, F3, F4_powell, F5, F6]:
             for meth in SOLVERS:
