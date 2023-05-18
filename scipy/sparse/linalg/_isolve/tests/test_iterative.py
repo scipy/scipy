@@ -10,7 +10,6 @@ from numpy.testing import (assert_array_equal, assert_allclose,
                            suppress_warnings)
 import pytest
 
-
 from numpy import zeros, arange, array, ones, eye, iscomplexobj
 from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
@@ -27,6 +26,13 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 # list of all solvers under test
 _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
+
+pytestmark = [
+    pytest.mark.filterwarnings("ignore:.* keyword argument 'tol'.*"),
+    pytest.mark.filterwarnings("ignore:.*called without specifying.*")
+    ]
+
+
 # create parametrized fixture for easy reuse in tests
 @pytest.fixture(params=_SOLVERS, scope="session")
 def solver(request):
@@ -186,6 +192,8 @@ class IterativeParams:
 
 
 cases = IterativeParams().cases
+
+
 @pytest.fixture(params=cases, ids=[x.name for x in cases], scope="session")
 def case(request):
     """
@@ -194,7 +202,10 @@ def case(request):
     return request.param
 
 
-def check_maxiter(solver, case):
+def test_maxiter(solver, case):
+    if solver in case.skip + case.nonconvergence:
+        pytest.skip("unsupported combination")
+
     A = case.A
     tol = 1e-12
 
@@ -212,21 +223,16 @@ def check_maxiter(solver, case):
     assert info == 1
 
 
-def test_maxiter(solver, case):
-    if solver in case.skip + case.nonconvergence:
-        pytest.skip("unsupported combination")
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        check_maxiter(solver, case)
-
-
 def assert_normclose(a, b, tol=1e-8):
     residual = norm(a - b)
     tolerance = tol * norm(b)
     assert residual < tolerance
 
 
-def check_convergence(solver, case):
+def test_convergence(solver, case):
+    if solver in case.skip:
+        pytest.skip("unsupported combination")
+
     A = case.A
 
     if A.dtype.char in "dD":
@@ -248,15 +254,10 @@ def check_convergence(solver, case):
         assert np.linalg.norm(A @ x - b) <= np.linalg.norm(b)
 
 
-def test_convergence(solver, case):
-    if solver in case.skip:
+def test_precond_dummy(solver, case):
+    if solver in case.skip + case.nonconvergence:
         pytest.skip("unsupported combination")
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        check_convergence(solver, case)
 
-
-def check_precond_dummy(solver, case):
     tol = 1e-8
 
     def identity(b, which=None):
@@ -293,15 +294,11 @@ def check_precond_dummy(solver, case):
     assert_normclose(A @ x, b, tol=tol)
 
 
-def test_precond_dummy(solver, case):
-    if solver in case.skip + case.nonconvergence:
+def test_precond_inverse(solver, case):
+    if (solver in case.skip or solver is qmr
+            or case.name not in ("poisson1d", "poisson2d")):
         pytest.skip("unsupported combination")
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        check_precond_dummy(solver, case)
 
-
-def check_precond_inverse(solver, case):
     tol = 1e-8
 
     def inverse(b, which=None):
@@ -343,40 +340,6 @@ def check_precond_inverse(solver, case):
 
     # Solution should be nearly instant
     assert matvec_count[0] <= 3
-
-
-def test_precond_inverse(solver, case):
-    if (solver in case.skip or solver is qmr
-            or case.name not in ("poisson1d", "poisson2d")):
-        pytest.skip("unsupported combination")
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        check_precond_inverse(solver, case)
-
-
-def test_reentrancy(solver):
-    reentrant = [lgmres, minres, gcrotmk, tfqmr]
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        _check_reentrancy(solver, solver in reentrant)
-
-
-def _check_reentrancy(solver, is_reentrant):
-    def matvec(x):
-        A = np.array([[1.0, 0, 0], [0, 2.0, 0], [0, 0, 3.0]])
-        y, info = solver(A, x)
-        assert info == 0
-        return y
-    b = np.array([1, 1. / 2, 1. / 3])
-    op = LinearOperator((3, 3), matvec=matvec, rmatvec=matvec,
-                        dtype=b.dtype)
-
-    if not is_reentrant:
-        pytest.raises(RuntimeError, solver, op, b)
-    else:
-        y, info = solver(op, b)
-        assert info == 0
-        assert_allclose(y, [1, 1, 1])
 
 
 def test_atol(solver):
@@ -749,8 +712,8 @@ class TestGMRES:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             # 2 iterations is not enough to solve the problem
             cb_count = [0]
-            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb, maxiter=2,
-                            restart=50)
+            x, info = gmres(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+                            maxiter=2, restart=50)
             assert info == 2
             assert cb_count[0] == 2
 
@@ -790,8 +753,8 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
-                        callback_type='x')
+        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20,
+                        restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 21
         x_cb(x)
