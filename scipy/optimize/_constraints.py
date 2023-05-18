@@ -242,6 +242,22 @@ class Bounds:
         Whether to keep the constraint components feasible throughout
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
+
+    Examples
+    --------
+    Consider two variables, where the first must not be negative,
+    and the second must be between 1 and 2:
+
+    >>> bounds = Bounds(lb=[0, 1], ub=[np.inf, 2])
+
+    We can check whether something is inside the bounds:
+
+    >>> assert [100, 1.5] in bounds
+    >>> assert [-1, 2.5] not in bounds
+
+    If all variables have the same constraint, a single value is enough:
+
+    >>> bounds = Bounds(0, 1)
     """
     def _input_validation(self):
         try:
