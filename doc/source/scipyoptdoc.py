@@ -121,10 +121,7 @@ def wrap_mangling_directive(base_directive):
                 if arg not in impl_args and arg not in special_args:
                     remove_arg(arg)
 
-            # XXX deprecation that we should fix someday using Signature (?)
-            with warnings.catch_warnings(record=True):
-                warnings.simplefilter('ignore')
-                signature = str(inspect.signature(obj))
+            signature = str(inspect.signature(obj))
 
             # Produce output
             self.options['noindex'] = True
