@@ -425,28 +425,19 @@ class FastGeneratorInversion:
 
     Parameters
     ----------
-    distname : str
-        Name of the distribution in `scipy.stats`. The list of supported
-        distributions can be found in the Notes section.
-    args : tuple of floats or empty tuple, optional
-        The shape parameters (without `loc` and `scale`) of the distribution.
-        Important note: Only a single set of shape parameters is allowed, e.g.,
-        for the Gamma distribution with shape parameter `p`, `p` has to be a
-        float, and for the beta distribution with shape parameters (a, b), both
-        a and b have to be floats. The default is (), i.e., the distribution
-        has no shape parameters.
+    dist : rv_frozen object
+        Frozen distribution object from `scipy.stats`. The list of supported
+        distributions can be found in the Notes section. The shape parameters,
+        `loc` and `scale` used to create the distributions must be scalars.
+        For example, for the Gamma distribution with shape parameter `p`,
+        `p` has to be a float, and for the beta distribution with shape
+        parameters (a, b), both a and b have to be floats.
     domain : tuple of floats, optional
         If one wishes to sample from a truncated/conditional distribution,
         the domain has to be specified.
         The default is None. In that case, the random variates are not
         truncated, and the domain is inferred from the support of the
         distribution.
-    loc : float, optional
-        The location parameter. Note that only floats and no arrays are
-        allowed. The default is 0.
-    scale : float, optional
-        The scale parameter. Note that an array of floatsis not allowed.
-        The default is 1.
     ignore_shape_range : boolean, optional.
         If False, shape parameters that are outside of the valid range
         of values to ensure that the numerical accuracy (see Notes) is
@@ -487,8 +478,7 @@ class FastGeneratorInversion:
     Notes
     -----
     The class creates an object for continuous distributions specified
-    by `distname` with corresponding shape parameters args similar to a
-    frozen instance of a distribution. The method `rvs` uses a generator from
+    by `dist`. The method `rvs` uses a generator from
     `scipy.stats.sampling` that is created when the object is instantiated.
     In addition, the methods `qrvs` and `ppf_fast` are added.
     `qrvs` generate samples based on quasi-random numbers from
@@ -536,7 +526,8 @@ class FastGeneratorInversion:
     the interval (2, 4), this can be easily achieved by using the parameter
     `domain`.
 
-    The location and scale can be reset without having to rerun the setup
+    The location and scale that are initially defined by `dist`
+    can be reset without having to rerun the setup
     step to create the generator that is used for sampling. The relation
     of the distribution `Y` with `loc` and `scale` to the standard
     distribution `X` (i.e., ``loc=0`` and ``scale=1``) is given by
@@ -561,7 +552,7 @@ class FastGeneratorInversion:
     Let's start with a simple example to illustrate the main features:
 
     >>> gamma_frozen = stats.gamma(1.5)
-    >>> gamma_dist = FastGeneratorInversion('gamma', (1.5, ))
+    >>> gamma_dist = FastGeneratorInversion(gamma_frozen)
     >>> r = gamma_dist.rvs(size=1000)
 
     The mean should be approximately equal to the shape parameter 1.5:
@@ -602,7 +593,7 @@ class FastGeneratorInversion:
 
     Let us also illustrate how truncation can be applied:
 
-    >>> trunc_norm = FastGeneratorInversion('norm', domain=(3, 4))
+    >>> trunc_norm = FastGeneratorInversion(stats.norm(), domain=(3, 4))
     >>> r = trunc_norm.rvs(size=1000)
     >>> 3 < r.min() < r.max() < 4
     True
@@ -622,19 +613,26 @@ class FastGeneratorInversion:
 
     def __init__(
         self,
-        distname,
-        args=(),
+        dist,
         *,
         domain=None,
-        loc=0,
-        scale=1,
         ignore_shape_range=False,
         random_state=None,
     ):
 
-        if not isinstance(distname, str) or distname not in PINV_CONFIG.keys():
-            raise ValueError(f"Distribution '{distname}' is not supported."
-                             f"It must be one of {list(PINV_CONFIG.keys())}")
+        if isinstance(dist, stats.distributions.rv_frozen):
+            distname = dist.dist.name
+            if distname not in PINV_CONFIG.keys():
+                raise ValueError(
+                    f"Distribution '{distname}' is not supported."
+                    f"It must be one of {list(PINV_CONFIG.keys())}"
+                    )
+        else:
+            raise ValueError("`dist` must be a frozen distribution object")
+
+        loc = dist.kwds.get("loc", 0)
+        scale = dist.kwds.get("scale", 1)
+        args = dist.args
         if not np.isscalar(loc):
             raise ValueError("loc must be scalar.")
         if not np.isscalar(scale):
@@ -645,12 +643,14 @@ class FastGeneratorInversion:
             loc=loc,
             scale=scale,
         )
+        self._distname = distname
 
-        nargs = len(args)
-        nargs_expected = len(self._frozendist.args)
+        nargs = np.broadcast_arrays(args)[0].size
+        nargs_expected = self._frozendist.dist.numargs
         if nargs != nargs_expected:
             raise ValueError(
-                f"Length of args must be {nargs_expected}, but it is {nargs}"
+                f"Each of the {nargs_expected} shape parameters must be a "
+                f"scalar, but {nargs} values are provided."
             )
 
         self.random_state = random_state
@@ -665,7 +665,6 @@ class FastGeneratorInversion:
             _p_domain = self._frozendist.cdf(self._domain[1]) - self._p_lower
             self._p_domain = _p_domain
         self._set_domain_adj()
-        self._distname = distname
         self._ignore_shape_range = ignore_shape_range
 
         # the domain to be passed to NumericalInversePolynomial
@@ -990,7 +989,7 @@ class FastGeneratorInversion:
         Create an object for the normal distribution:
 
         >>> d_norm_frozen = stats.norm()
-        >>> d_norm = FastGeneratorInversion('norm')
+        >>> d_norm = FastGeneratorInversion(d_norm_frozen)
 
         To confirm that the numerical inversion is accurate, we evaluate the
         approximation error (u-error and x-error).
@@ -1064,11 +1063,12 @@ class FastGeneratorInversion:
         Examples
         --------
 
+        >>> from scipy import stats
         >>> from scipy.stats.sampling import FastGeneratorInversion
 
         Define a truncated normal distribution:
 
-        >>> d_norm = FastGeneratorInversion('norm', domain=(0, 1))
+        >>> d_norm = FastGeneratorInversion(stats.norm(), domain=(0, 1))
         >>> d_norm.support()
         (0, 1)
 
