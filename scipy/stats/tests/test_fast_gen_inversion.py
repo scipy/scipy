@@ -166,7 +166,7 @@ def test_rvs_ppf_loc_scale():
     r_rescaled = (r - loc) / scale
     assert stats.cramervonmises(r_rescaled, "norm").pvalue > 0.01
     q = [0.001, 0.1, 0.5, 0.9, 0.999]
-    assert_allclose(rng.ppf(q), rng.ppf_fast(q), atol=1e-10)
+    assert_allclose(rng._ppf(q), rng.ppf_fast(q), atol=1e-10)
 
 
 def test_domain():
@@ -227,23 +227,15 @@ def test_non_rvs_methods_with_domain():
     # take values that are inside and outside the domain
     x = (2.0, 2.4, 3.0, 3.4)
     p = (0.01, 0.5, 0.99)
-    assert_allclose(rng.pdf(x), trunc_norm.pdf(x))
-    assert_allclose(rng.cdf(x), trunc_norm.cdf(x))
-    assert_allclose(rng.logpdf(x), trunc_norm.logpdf(x))
-    assert_allclose(rng.sf(x), trunc_norm.sf(x))
-    assert_allclose(rng.isf(p), trunc_norm.isf(p))
-    assert_allclose(rng.ppf(p), trunc_norm.ppf(p))
+    assert_allclose(rng._cdf(x), trunc_norm.cdf(x))
+    assert_allclose(rng._ppf(p), trunc_norm.ppf(p))
     loc, scale = 2, 3
     rng.loc = 2
     rng.scale = 3
     trunc_norm = stats.truncnorm(2.3, 3.2, loc=loc, scale=scale)
     x = np.array(x) * scale + loc
-    assert_allclose(rng.pdf(x), trunc_norm.pdf(x))
-    assert_allclose(rng.cdf(x), trunc_norm.cdf(x))
-    assert_allclose(rng.logpdf(x), trunc_norm.logpdf(x))
-    assert_allclose(rng.sf(x), trunc_norm.sf(x))
-    assert_allclose(rng.isf(p), trunc_norm.isf(p))
-    assert_allclose(rng.ppf(p), trunc_norm.ppf(p))
+    assert_allclose(rng._cdf(x), trunc_norm.cdf(x))
+    assert_allclose(rng._ppf(p), trunc_norm.ppf(p))
 
     # do another sanity check with beta distribution
     # in that case, it is important to use the correct domain since beta
@@ -254,20 +246,12 @@ def test_non_rvs_methods_with_domain():
     # the support is 2.75, , 3.75 (2 + 2.5 * 0.3, 2 + 2.5 * 0.7)
     assert_array_equal(rng.support(), (2.75, 3.75))
     x = np.array([2.74, 2.76, 3.74, 3.76])
-    # the pdf needs to be zero outside of the domain
-    y = rng.pdf(x)
-    assert y[0] == y[3] == 0
-    assert np.min(y[1:3]) > 0
-    # similar test for the cdf
-    y_cdf = rng.cdf(x)
+    # the cdf needs to be zero outside of the domain
+    y_cdf = rng._cdf(x)
     assert_array_equal((y_cdf[0], y_cdf[3]), (0, 1))
     assert np.min(y_cdf[1:3]) > 0
     # ppf needs to map 0 and 1 to the boundaries
-    assert_allclose(rng.ppf(y_cdf), (2.75, 2.76, 3.74, 3.75))
-    # same approach for the sf / isf
-    y_sf = rng.sf(x)
-    assert_allclose(1 - y_cdf, y_sf)
-    assert_allclose(rng.isf(y_sf), (2.75, 2.76, 3.74, 3.75))
+    assert_allclose(rng._ppf(y_cdf), (2.75, 2.76, 3.74, 3.75))
 
 
 def test_non_rvs_methods_without_domain():
@@ -275,22 +259,14 @@ def test_non_rvs_methods_without_domain():
     norm_dist = stats.norm()
     x = np.linspace(-3, 3, num=10)
     p = (0.01, 0.5, 0.99)
-    assert_allclose(rng.pdf(x), norm_dist.pdf(x))
-    assert_allclose(rng.cdf(x), norm_dist.cdf(x))
-    assert_allclose(rng.logpdf(x), norm_dist.logpdf(x))
-    assert_allclose(rng.sf(x), norm_dist.sf(x))
-    assert_allclose(rng.isf(p), norm_dist.isf(p))
-    assert_allclose(rng.ppf(p), norm_dist.ppf(p))
+    assert_allclose(rng._cdf(x), norm_dist.cdf(x))
+    assert_allclose(rng._ppf(p), norm_dist.ppf(p))
     loc, scale = 0.5, 1.3
     rng.loc = loc
     rng.scale = scale
     norm_dist = stats.norm(loc=loc, scale=scale)
-    assert_allclose(rng.pdf(x), norm_dist.pdf(x))
-    assert_allclose(rng.cdf(x), norm_dist.cdf(x))
-    assert_allclose(rng.logpdf(x), norm_dist.logpdf(x))
-    assert_allclose(rng.sf(x), norm_dist.sf(x))
-    assert_allclose(rng.isf(p), norm_dist.isf(p))
-    assert_allclose(rng.ppf(p), norm_dist.ppf(p))
+    assert_allclose(rng._cdf(x), norm_dist.cdf(x))
+    assert_allclose(rng._ppf(p), norm_dist.ppf(p))
 
 @pytest.mark.parametrize(("domain, x"),
                          [(None, 0.5),
@@ -301,12 +277,8 @@ def test_scalar_inputs(domain, x):
     w/o domain since domain impacts pdf, cdf etc
     Take x inside and outside of domain """
     rng = FastGeneratorInversion("norm", domain=domain)
-    assert np.isscalar(rng.pdf(x))
-    assert np.isscalar(rng.cdf(x))
-    assert np.isscalar(rng.logpdf(x))
-    assert np.isscalar(rng.sf(x))
-    assert np.isscalar(rng.isf(0.5))
-    assert np.isscalar(rng.ppf(0.5))
+    assert np.isscalar(rng._cdf(x))
+    assert np.isscalar(rng._ppf(0.5))
 
 
 def test_domain_argus_large_chi():

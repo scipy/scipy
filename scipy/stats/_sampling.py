@@ -479,15 +479,10 @@ class FastGeneratorInversion:
     -------
     cdf
     evaluate_error
-    isf
-    logpdf
-    pdf
-    ppf
     ppf_fast
     qrvs
     rvs
     support
-    sf
 
     Notes
     -----
@@ -565,6 +560,7 @@ class FastGeneratorInversion:
 
     Let's start with a simple example to illustrate the main features:
 
+    >>> gamma_frozen = stats.gamma(1.5)
     >>> gamma_dist = FastGeneratorInversion('gamma', (1.5, ))
     >>> r = gamma_dist.rvs(size=1000)
 
@@ -582,7 +578,7 @@ class FastGeneratorInversion:
     Compare the PPF against approximation ppf_fast.
 
     >>> q = [0.001, 0.2, 0.5, 0.8, 0.999]
-    >>> np.max(np.abs(gamma_dist.ppf(q) - gamma_dist.ppf_fast(q)))
+    >>> np.max(np.abs(gamma_frozen.ppf(q) - gamma_dist.ppf_fast(q)))
     4.313394796895409e-08
 
     To confirm that the numerical inversion is accurate, we evaluate the
@@ -662,16 +658,12 @@ class FastGeneratorInversion:
         if domain is None:
             self._domain = self._frozendist.support()
             self._p_lower = 0.0
-            self._sf_lower = 0.0
             self._p_domain = 1.0
-            self._logp_domain = 0.0
         else:
             self._domain = domain
             self._p_lower = self._frozendist.cdf(self._domain[0])
-            self._sf_upper = self._frozendist.sf(self._domain[1])
             _p_domain = self._frozendist.cdf(self._domain[1]) - self._p_lower
             self._p_domain = _p_domain
-            self._logp_domain = np.log(self._p_domain)
         self._set_domain_adj()
         self._distname = distname
         self._ignore_shape_range = ignore_shape_range
@@ -834,9 +826,7 @@ class FastGeneratorInversion:
         relative error in the far tails. The numerical precision of the PPF
         is controlled by the u-error, that is,
         ``max |u - CDF(PPF_fast(u))|`` where the max is taken over points in
-        the interval [0,1]. Consider checking the
-        results against the values computed by the method `ppf`, see
-        `evaluate_error`.
+        the interval [0,1], see `evaluate_error`.
 
         Note that this PPF is designed to generate random samples.
         """
@@ -921,7 +911,7 @@ class FastGeneratorInversion:
         u = qmc_engine.random(N)
         if self._mirror_uniform:
             u = 1 - u
-        qrvs = self.ppf(u)
+        qrvs = self._ppf(u)
         if self._rvs_transform is not None:
             qrvs = self._rvs_transform(qrvs, *self._frozendist.args)
         if size is None:
@@ -994,10 +984,12 @@ class FastGeneratorInversion:
         --------
 
         >>> import numpy as np
+        >>> from scipy import stats
         >>> from scipy.stats.sampling import FastGeneratorInversion
 
         Create an object for the normal distribution:
 
+        >>> d_norm_frozen = stats.norm()
         >>> d_norm = FastGeneratorInversion('norm')
 
         To confirm that the numerical inversion is accurate, we evaluate the
@@ -1013,7 +1005,7 @@ class FastGeneratorInversion:
         Compare the PPF against approximation ppf_fast:
 
         >>> q = [0.001, 0.2, 0.4, 0.6, 0.8, 0.999]
-        >>> diff = np.abs(d_norm.ppf(q) - d_norm.ppf_fast(q))
+        >>> diff = np.abs(d_norm_frozen.ppf(q) - d_norm.ppf_fast(q))
         >>> x_error_abs = np.max(diff)
         >>> x_error_abs
         1.2937954707581412e-08
@@ -1021,7 +1013,7 @@ class FastGeneratorInversion:
         This is the absolute x-error evaluated at the points q. The relative
         error is given by
 
-        >>> x_error_rel = np.max(diff / np.abs(d_norm.ppf(q)))
+        >>> x_error_rel = np.max(diff / np.abs(d_norm_frozen.ppf(q)))
         >>> x_error_rel
         4.186725600453555e-09
 
@@ -1046,10 +1038,10 @@ class FastGeneratorInversion:
         if self._mirror_uniform:
             u = 1 - u
         x = self.ppf_fast(u)
-        uerr = np.max(np.abs(self.cdf(x) - u))
+        uerr = np.max(np.abs(self._cdf(x) - u))
         if not x_error:
             return uerr, np.nan
-        ppf_u = self.ppf(u)
+        ppf_u = self._ppf(u)
         x_error_abs = np.abs(self.ppf_fast(u) - ppf_u)
         x_error_rel = x_error_abs / np.abs(ppf_u)
         x_error_combined = np.array([x_error_abs, x_error_rel]).min(axis=0)
@@ -1089,7 +1081,7 @@ class FastGeneratorInversion:
         """
         return self._domain_adj
 
-    def cdf(self, x):
+    def _cdf(self, x):
         """Cumulative distribution function (CDF)
 
         Parameters
@@ -1108,59 +1100,7 @@ class FastGeneratorInversion:
             return y
         return np.clip((y - self._p_lower) / self._p_domain, 0, 1)
 
-    def pdf(self, x):
-        """Probability density function (PDF)
-
-        Parameters
-        ----------
-        x : array_like
-            The values where the PDF is evaluated
-
-        Returns
-        -------
-        y : ndarray
-            PDF evaluated at x
-
-        """
-        y = self._frozendist.pdf(x)
-        if self._p_domain == 1.0:
-            return y
-        x = np.asarray(x)
-        y = np.asarray(y / self._p_domain)
-        outside_domain = (self._domain_adj[0] > x) | (self._domain_adj[1] < x)
-        if np.any(outside_domain):
-            y[outside_domain] = 0
-        if y.ndim == 0:
-            return y[()]
-        return y
-
-    def logpdf(self, x):
-        """Log of the probability density function (PDF)
-
-        Parameters
-        ----------
-        x : array_like
-            The values where the log of the PDF is evaluated
-
-        Returns
-        -------
-        y : ndarray
-            Log of the PDF evaluated at x
-
-        """
-        y = self._frozendist.logpdf(x)
-        if self._p_domain == 1.0:
-            return y
-        x = np.asarray(x)
-        y = np.asarray(y - self._logp_domain)
-        outside_domain = (self._domain_adj[0] > x) | (self._domain_adj[1] < x)
-        if np.any(outside_domain):
-            y[outside_domain] = -np.inf
-        if y.ndim == 0:
-            return y[()]
-        return y
-
-    def ppf(self, q):
+    def _ppf(self, q):
         """Percent point function (inverse of `cdf`)
 
         Parameters
@@ -1177,42 +1117,4 @@ class FastGeneratorInversion:
         if self._p_domain == 1.0:
             return self._frozendist.ppf(q)
         x = self._frozendist.ppf(self._p_domain * np.array(q) + self._p_lower)
-        return np.clip(x, self._domain_adj[0], self._domain_adj[1])
-
-    def sf(self, x):
-        """Survival function (1 - `cdf`)
-
-        Parameters
-        ----------
-        x : array_like
-            Points where the survival function is evaluated.
-
-        Returns
-        -------
-        y : array_like
-            Survival function evaluated at x.
-
-        """
-        y = self._frozendist.sf(x)
-        if self._p_domain == 1.0:
-            return y
-        return np.clip((y - self._sf_upper) / self._p_domain, 0, 1)
-
-    def isf(self, q):
-        """Inverse survival function (inverse of `sf`)
-
-        Parameters
-        ----------
-        q : array_like
-            upper tail probability
-
-        Returns
-        -------
-        x : ndarray or scalar
-            Quantile corresponding to the upper tail probability q.
-
-        """
-        if self._p_domain == 1.0:
-            return self._frozendist.isf(q)
-        x = self._frozendist.isf(self._p_domain * np.array(q) + self._sf_upper)
         return np.clip(x, self._domain_adj[0], self._domain_adj[1])
