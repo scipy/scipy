@@ -306,6 +306,8 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+import warnings
+
 from . import _sigtools, windows
 from ._waveforms import *
 from ._max_len_seq import max_len_seq
@@ -343,7 +345,8 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey')
+                      'hann', 'exponential', 'tukey', 'taylor', 'lanczos',
+                      'dpss')
 
 
 def deco(name):
@@ -351,6 +354,10 @@ def deco(name):
     # Add deprecation to docstring
 
     def wrapped(*args, **kwargs):
+        warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
+                      "as of SciPy 1.11.0 and will raise an error in SciPy "
+                      "1.13.0.",
+                      DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
@@ -379,7 +386,7 @@ for name in deprecated_windows:
 
 del deprecated_windows, name, deco
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith('_') and s!="warnings"]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
