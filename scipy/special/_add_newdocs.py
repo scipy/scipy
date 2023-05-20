@@ -1307,8 +1307,6 @@ add_newdoc(
 
     Regularized incomplete beta function.
 
-    `scipy.special.btdtr` is an alias for this function.
-
     Computes the regularized incomplete beta function, defined as [1]_:
 
     .. math::
@@ -1317,6 +1315,9 @@ add_newdoc(
         t^{a-1}(1-t)^{b-1}dt,
 
     for :math:`0 \leq x \leq 1`.
+
+    This function is the cumulative distribution function for the beta
+    distribution; its range is [0, 1].
 
     Parameters
     ----------
@@ -1465,8 +1466,6 @@ add_newdoc(
 
     Inverse of the regularized incomplete beta function.
 
-    `scipy.special.btdtri` is an alias for this function.
-
     Computes :math:`x` such that:
 
     .. math::
@@ -1474,9 +1473,8 @@ add_newdoc(
         y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
         \int_0^x t^{a-1}(1-t)^{b-1}dt,
 
-    where :math:`I_x` is the normalized incomplete beta
-    function `betainc` and
-    :math:`\Gamma` is the `gamma` function [1]_.
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
 
     Parameters
     ----------
