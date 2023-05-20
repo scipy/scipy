@@ -75,7 +75,7 @@ class NdBSpline:
             k = (k,)*ndim
 
         if len(k) != ndim:
-            raise ValueError(f"len(t) = {ndim} != {len(k)} = len(k)")
+            raise ValueError(f"{len(t) = } != {len(k) = }.")
 
         self.k = tuple(operator.index(ki) for ki in k)
         self.t = tuple(np.ascontiguousarray(ti, dtype=float) for ti in t)
@@ -133,7 +133,7 @@ class NdBSpline:
             or an array with the shape (num_points, ndim).
         nu : array_like, optional, shape (ndim,)
             Orders of derivatives to evaluate. Each must be non-negative.
-        extrapolate : book, optional
+        extrapolate : bool, optional
             Whether to exrapolate based on first and last intervals in each
             dimension, or return `nan`. Default is to ``self.extrapolate``.
 
@@ -182,16 +182,10 @@ class NdBSpline:
         # prepare the coefficients: flatten the trailing dimensions
         c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
         c1r = c1.ravel()
-        assert c1r.flags.c_contiguous
+        # XXX: is c1r guaranteed to be C-contiguous? Cython code assumes it is.
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
-        strides_c1 = [1]*(ndim + 1)
-        for d in range(ndim-1, -1, -1):
-            strides_c1[d] = strides_c1[d+1] * c1.shape[d+1]
-
-        assert strides_c1 == [_//c1.dtype.itemsize for _ in c1.strides]
-        assert strides_c1[-1] == 1
-        _strides_c1 = np.asarray(strides_c1)
+        _strides_c1 = np.asarray([_//c1.dtype.itemsize for _ in c1.strides])
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
         out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)

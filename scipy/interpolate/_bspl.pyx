@@ -591,19 +591,20 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                              f" {xi.shape[1]}-D points.")
 
         if out.shape[0] != xi.shape[0]:
-            raise ValueError(f"out and xi are inconsistent: cxpected"
+            raise ValueError(f"out and xi are inconsistent: expected"
                              f" {xi.shape[0]} output values, got"
                              f" {out.shape[0]}.")
         if out.shape[1] != num_c_tr:
             raise ValueError(f"out and c are inconsistent: num_c={num_c_tr} "
                              f" and out.shape[1] = {out.shape[1]}.")
 
-        # the number of non-zero terms for each point in ``xi``.
-        volume = 1
-        for d in range(ndim):
-            volume *= k[d] + 1
 
         with nogil:
+            # the number of non-zero terms for each point in ``xi``.
+            volume = 1
+            for d in range(ndim):
+                volume *= k[d] + 1
+
             ### Iterate over the data points
             for j in range(xi.shape[0]):
                 xv = xi[j, :]
