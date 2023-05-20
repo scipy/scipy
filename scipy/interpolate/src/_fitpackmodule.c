@@ -228,6 +228,10 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
         goto fail;
     }
     z = (double *) PyArray_DATA(ap_z);
+    /* Try detecting an integer overflow in computations which are quadratic
+     * in the input data size, ~mx*my. On the other hand, k{x,y} and nu{x,y}
+     *  are of the order 1..5, thus kx*mx is unlikely to overflow.
+     */
     if (nux || nuy) {
         /* lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1); */
         lwrk = _mul_overflow_f_int(nx - kx - 1, ny - ky - 1);
