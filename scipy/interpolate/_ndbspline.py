@@ -177,7 +177,7 @@ class NdBSpline:
         # tabulate the flat indices for iterating over the (k+1)**ndim subarray
         shape = tuple(kd + 1 for kd in self.k)
         indices = np.unravel_index(np.arange(prod(shape)), shape)
-        _indices_k1d = np.asarray(indices).T
+        _indices_k1d = np.asarray(indices, dtype=np.intp).T
 
         # prepare the coefficients: flatten the trailing dimensions
         c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
@@ -185,7 +185,7 @@ class NdBSpline:
         # XXX: is c1r guaranteed to be C-contiguous? Cython code assumes it is.
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
-        _strides_c1 = np.asarray([_//c1.dtype.itemsize for _ in c1.strides])
+        _strides_c1 = np.asarray([_//c1.dtype.itemsize for _ in c1.strides], dtype=np.intp)
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
         out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
