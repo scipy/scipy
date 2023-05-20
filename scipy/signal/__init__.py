@@ -345,8 +345,7 @@ deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
                       'nuttall', 'blackmanharris', 'flattop', 'bartlett',
                       'barthann', 'hamming', 'kaiser', 'gaussian',
                       'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey', 'taylor', 'lanczos',
-                      'dpss')
+                      'hann', 'exponential', 'tukey')
 
 
 def deco(name):
@@ -355,8 +354,9 @@ def deco(name):
 
     def wrapped(*args, **kwargs):
         warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
-                      "as of SciPy 1.11.0 and will raise an error in SciPy "
-                      "1.13.0.",
+                      "and will raise an error in SciPy 1.13.0. Please use "
+                      f"'scipy.signal.window.{name}' or the convenience "
+                      "function 'scipy.signal.get_window' instead.",
                       DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
 
