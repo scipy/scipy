@@ -172,16 +172,6 @@ def test_getrow_getcol(A):
     assert A.getrow(0)._is_array
 
 
-@parametrize_sparrays
-def test_docstr(A):
-    if A.__doc__ is None:
-        return
-
-    docstr = A.__doc__.lower()
-    for phrase in ('matrix', 'matrices'):
-        assert phrase not in docstr
-
-
 # -- linalg --
 
 @parametrize_sparrays

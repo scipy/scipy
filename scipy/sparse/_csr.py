@@ -2,11 +2,12 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csr_matrix', 'isspmatrix_csr']
+__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from ._base import spmatrix
+from ._matrix import spmatrix, _array_doc_to_matrix
+from ._base import _sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
 from ._sputils import upcast, get_index_dtype
@@ -14,26 +15,26 @@ from ._sputils import upcast, get_index_dtype
 from ._compressed import _cs_matrix
 
 
-class csr_matrix(_cs_matrix):
+class csr_array(_cs_matrix):
     """
     Compressed Sparse Row matrix
 
     This can be instantiated in several ways:
-        csr_matrix(D)
+        csr_array(D)
             with a dense matrix or rank-2 ndarray D
 
-        csr_matrix(S)
+        csr_array(S)
             with another sparse matrix S (equivalent to S.tocsr())
 
-        csr_matrix((M, N), [dtype])
+        csr_array((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        csr_matrix((data, (row_ind, col_ind)), [shape=(M, N)])
+        csr_array((data, (row_ind, col_ind)), [shape=(M, N)])
             where ``data``, ``row_ind`` and ``col_ind`` satisfy the
             relationship ``a[row_ind[k], col_ind[k]] = data[k]``.
 
-        csr_matrix((data, indices, indptr), [shape=(M, N)])
+        csr_array((data, indices, indptr), [shape=(M, N)])
             is the standard CSR representation where the column indices for
             row i are stored in ``indices[indptr[i]:indptr[i+1]]`` and their
             corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
@@ -78,8 +79,8 @@ class csr_matrix(_cs_matrix):
     --------
 
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
-    >>> csr_matrix((3, 4), dtype=np.int8).toarray()
+    >>> from scipy.sparse import csr_array
+    >>> csr_array((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
@@ -87,7 +88,7 @@ class csr_matrix(_cs_matrix):
     >>> row = np.array([0, 0, 1, 2, 2, 2])
     >>> col = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -95,7 +96,7 @@ class csr_matrix(_cs_matrix):
     >>> indptr = np.array([0, 2, 3, 6])
     >>> indices = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_matrix((data, indices, indptr), shape=(3, 3)).toarray()
+    >>> csr_array((data, indices, indptr), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -105,7 +106,7 @@ class csr_matrix(_cs_matrix):
     >>> row = np.array([0, 1, 2, 0])
     >>> col = np.array([0, 1, 1, 0])
     >>> data = np.array([1, 2, 4, 8])
-    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
     array([[9, 0, 0],
            [0, 2, 0],
            [0, 4, 0]])
@@ -125,7 +126,7 @@ class csr_matrix(_cs_matrix):
     ...         data.append(1)
     ...     indptr.append(len(indices))
     ...
-    >>> csr_matrix((data, indices, indptr), dtype=int).toarray()
+    >>> csr_array((data, indices, indptr), dtype=int).toarray()
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
@@ -142,7 +143,7 @@ class csr_matrix(_cs_matrix):
         return self._csc_container((self.data, self.indices,
                                     self.indptr), shape=(N, M), copy=copy)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _sparray.transpose.__doc__
 
     def tolil(self, copy=False):
         lil = self._lil_container(self.shape, dtype=self.dtype)
@@ -159,7 +160,7 @@ class csr_matrix(_cs_matrix):
 
         return lil
 
-    tolil.__doc__ = spmatrix.tolil.__doc__
+    tolil.__doc__ = _sparray.tolil.__doc__
 
     def tocsr(self, copy=False):
         if copy:
@@ -167,7 +168,7 @@ class csr_matrix(_cs_matrix):
         else:
             return self
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsr.__doc__ = _sparray.tocsr.__doc__
 
     def tocsc(self, copy=False):
         idx_dtype = get_index_dtype((self.indptr, self.indices),
@@ -188,7 +189,7 @@ class csr_matrix(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    tocsc.__doc__ = spmatrix.tocsc.__doc__
+    tocsc.__doc__ = _sparray.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
         if blocksize is None:
@@ -224,10 +225,10 @@ class csr_matrix(_cs_matrix):
                 (data, indices, indptr), shape=self.shape
             )
 
-    tobsr.__doc__ = spmatrix.tobsr.__doc__
+    tobsr.__doc__ = _sparray.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redundancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_array
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """
@@ -331,7 +332,7 @@ class csr_matrix(_cs_matrix):
 
 
 def isspmatrix_csr(x):
-    """Is x of csr_matrix type?
+    """Is x of csr_array type?
 
     Parameters
     ----------
@@ -345,13 +346,18 @@ def isspmatrix_csr(x):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix, isspmatrix_csr
-    >>> isspmatrix_csr(csr_matrix([[5]]))
+    >>> from scipy.sparse import csr_array, isspmatrix_csr
+    >>> isspmatrix_csr(csr_array([[5]]))
     True
 
-    >>> from scipy.sparse import csc_matrix, csr_matrix, isspmatrix_csc
+    >>> from scipy.sparse import csc_matrix, csr_array, isspmatrix_csc
     >>> isspmatrix_csr(csc_matrix([[5]]))
     False
     """
-    from ._arrays import csr_array
     return isinstance(x, csr_matrix) or isinstance(x, csr_array)
+
+
+class csr_matrix(spmatrix, csr_array):
+    pass
+
+csr_matrix.__doc__ = _array_doc_to_matrix(csr_array.__doc__)

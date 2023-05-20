@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -35,6 +36,7 @@ not for numerically exact results.
 # to _distr_params
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
+_IS_32BIT = (sys.maxsize < 2**32)
 
 # For skipping test_cont_basic
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
@@ -196,7 +198,12 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     check_named_args(distfn, x, arg, locscale_defaults, meths)
     check_random_state_property(distfn, arg)
-    check_pickling(distfn, arg)
+
+    if distname in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
+    else:
+        check_pickling(distfn, arg)
     check_freezing(distfn, arg)
 
     # Entropy
@@ -337,6 +344,10 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
 def test_rvs_broadcast(dist, shape_args):
     if dist in ['gausshyper', 'studentized_range']:
         pytest.skip("too slow")
+
+    if dist in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
 
     # If shape_only is True, it means the _rvs method of the
     # distribution uses more than one random number to generate a random

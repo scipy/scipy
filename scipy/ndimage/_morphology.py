@@ -2117,13 +2117,13 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Parameters
     ----------
     input : array_like
-        Input
+        Input. Values of 0 are treated as background.
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
-        generate_binary_structure with a squared distance equal to 1. If
+        `generate_binary_structure` with a squared distance equal to 1. If
         the `metric` is equal to 'chessboard', a `metric` is generated
-        using generate_binary_structure with a squared distance equal to
+        using `generate_binary_structure` with a squared distance equal to
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
@@ -2160,6 +2160,77 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         example.
         Returned only when `return_indices` is True, and `indices` is not
         supplied.
+
+    See Also
+    --------
+    distance_transform_edt : Fast distance transform for euclidean metric
+    distance_transform_bf : Distance transform for different metrics using
+                            a slower brute force algorithm
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_cdt
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(5, 15))
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(3, 1), axes_pad=(0.5, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')
+    >>> top, middle, bottom = grid
+    >>> colorbar_ticks = [0, 10, 20]
+
+    The top image contains the original binary image.
+
+    >>> binary_image = top.imshow(image, cmap='gray')
+    >>> cbar_binary_image = top.cax.colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> top.set_title("Binary image: foreground in white")
+
+    The middle image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_taxicab = distance_transform_cdt(image, metric="taxicab")
+    >>> taxicab_transform = middle.imshow(distance_taxicab, cmap='gray')
+    >>> cbar_taxicab = middle.cax.colorbar(taxicab_transform)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> middle.set_title("Taxicab metric")
+
+    The bottom image contains the distance transform using the ``chessboard``
+    metric.
+
+    >>> distance_chessboard = distance_transform_cdt(image,
+    ...                                              metric="chessboard")
+    >>> chessboard_transform = bottom.imshow(distance_chessboard, cmap='gray')
+    >>> cbar_chessboard = bottom.cax.colorbar(chessboard_transform)
+    >>> cbar_chessboard.set_ticks(colorbar_ticks)
+    >>> bottom.set_title("Chessboard metric")
+    >>> plt.tight_layout()
+    >>> plt.show()
 
     """
     ft_inplace = isinstance(indices, numpy.ndarray)

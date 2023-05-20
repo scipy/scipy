@@ -389,7 +389,7 @@ with ``numpy.distutils``:
 The two CLIs that can be used to build wheels are ``pip`` and ``build``. In
 addition, the SciPy repo contains a ``python dev.py`` CLI for any kind of
 development task (see its ``--help`` for details). For a comparison between old
-(``distutils``) and new (``meson``) build commands, see :ref:`meson-faq`.
+(``distutils``) and new (``meson``) build commands, see :ref:`distutils-meson-equivalents`.
 
 For more information on the introduction of Meson support in SciPy, see
 `gh-13615 <https://github.com/scipy/scipy/issues/13615>`__ and
