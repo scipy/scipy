@@ -4206,6 +4206,27 @@ class TestBetaPrime:
         assert y < 1.0
         assert_allclose(y, expected, rtol=2e-5)
 
+    def test_sf(self):
+        # reference values were computed via the reference distribution,
+        # e.g.
+        # mp.dps = 50
+        # a, b = 5, 3
+        # x = 1e10
+        # BetaPrime(a=a, b=b).sf(x); returns 3.4999999979e-29
+        a = [5, 4, 2, 0.05, 0.05, 0.05, 0.05, 100.0, 100.0, 0.05, 0.05,
+             0.05, 1.5, 1.5]
+        b = [3, 2, 1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05, 100.0, 100.0,
+             100.0, 1.5, 1.5]
+        x = [1e10, 1e20, 1e30, 1e22, 1e-10, 1e-22, 1e-100, 1e22, 1e10,
+             1e-10, 1e-22, 1e-100, 1e10, 1e-10]
+        ref = [3.4999999979e-29, 9.999999999994357e-40, 1.9999999999999998e-30,
+               0.0021188533947081017, 0.78761154572905, 0.9466504323507127,
+               0.9999932836873578, 0.10269725645728331, 0.40884514172337383,
+               0.5911548582766262, 0.8973027435427167, 0.9999870711814124,
+               1.6976527260079727e-15, 0.9999999999999983]
+        sf_values = stats.betaprime.sf(x, a, b)
+        assert_allclose(sf_values, ref, rtol=1e-12)
+
     def test_fit_stats_gh18274(self):
         # gh-18274 reported spurious warning emitted when fitting `betaprime`
         # to data. Some of these were emitted by stats, too. Check that the
@@ -4213,39 +4234,6 @@ class TestBetaPrime:
         stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
         stats.betaprime(a=1, b=1).stats('mvsk')
 
-    # The expected values for test_sf() were computed with mpmath, e.g.
-    #
-    #   from mpmath import mp
-    #   a, b = mp.mpf(5), mp.mpf(3)
-    #   x = mp.mpf(1e10)
-    #   print(float(1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)))
-    #
-    # prints
-    #
-    #   3.4999999979e-29
-    #
-    @pytest.mark.parametrize(
-        'x, a, b, expected',
-        [
-            (1e10, 5, 3, 3.4999999979e-29),
-            (1e20, 4, 2, 9.999999999994357e-40),
-            (1e30, 2, 1, 1.9999999999999998e-30),
-            (1e22, 0.05, 0.1, 0.0021188533947081017),
-            (1e-10, 0.05, 0.1, 0.78761154572905),
-            (1e-22, 0.05, 0.1, 0.9466504323507127),
-            (1e-100, 0.05, 0.1, 0.9999932836873578),
-            (1e22, 100.0, 0.05, 0.10269725645728331),
-            (1e10, 100.0, 0.05, 0.40884514172337383),
-            (1e-10, 0.05, 100.0, 0.5911548582766262),
-            (1e-22, 0.05, 100.0, 0.8973027435427167),
-            (1e-100, 0.05, 100.0, 0.9999870711814124),
-            (1e10, 1.5, 1.5, 1.6976527260079727e-15),
-            (1e-10, 1.5, 1.5, 0.9999999999999983),
-        ]
-    )
-    def test_sf(self, x, a, b, expected):
-        sf_value = stats.betaprime.sf(x, a, b)
-        assert_allclose(sf_value, expected, rtol=1e-12)
 
 
 class TestGamma:
