@@ -199,7 +199,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_named_args(distfn, x, arg, locscale_defaults, meths)
     check_random_state_property(distfn, arg)
 
-    if distfn in ['rel_breitwigner'] and _IS_32BIT:
+    if distname in ['rel_breitwigner'] and _IS_32BIT:
         # gh18414
         pytest.skip("fails on Linux 32-bit")
     else:
