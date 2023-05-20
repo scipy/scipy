@@ -1339,6 +1339,7 @@ add_newdoc(
     beta : beta function
     betaincinv : inverse of the regularized incomplete beta function
     betaincc : complement of the regularized incomplete beta function
+    scipy.stats.beta : beta distribution
 
     Notes
     -----
@@ -1432,6 +1433,7 @@ add_newdoc(
     betainccinv :
         inverse of the complement of the regularized incomplete beta function
     beta : beta function
+    scipy.stats.beta : beta distribution
 
     Notes
     -----
