@@ -769,6 +769,8 @@ Convenience functions
 
 """
 
+import numpy as np
+
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
@@ -800,12 +802,7 @@ from ._spherical_bessel import (
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
 
-btdtr = _ufuncs.betainc
-btdtri = _ufuncs.betaincinv
-
 __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
-    'btdtr',
-    'btdtri',
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
@@ -825,3 +822,8 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+btdtr = np.deprecate(btdtr, "btdtr", "betainc")
+btdtri = np.deprecate(btdtri, "btdtri", "betaincinv")
+
+del np

@@ -562,7 +562,9 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    _test_factory(test)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning)
+        _test_factory(test)
 
 
 GSL_TESTS = [

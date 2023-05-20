@@ -261,6 +261,16 @@
             "boxcox1p": "dd->d"
         }
     },
+    "btdtr": {
+        "cephes.h": {
+            "btdtr": "ddd->d"
+        }
+    },
+    "btdtri": {
+        "cephes.h": {
+            "incbi": "ddd->d"
+        }
+    },
     "btdtria": {
         "cdf_wrappers.h": {
             "cdfbet3_wrap": "ddd->d"

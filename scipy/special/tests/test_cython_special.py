@@ -61,6 +61,8 @@ PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.betainccinv, cython_special.betainccinv, ('ddd',), None),
     (special.betaln, cython_special.betaln, ('dd',), None),
     (special.binom, cython_special.binom, ('dd',), None),
+    (special.btdtr, cython_special.btdtr, ('ddd',), None),
+    (special.btdtri, cython_special.btdtri, ('ddd',), None),
     (special.boxcox, cython_special.boxcox, ('dd',), None),
     (special.boxcox1p, cython_special.boxcox1p, ('dd',), None),
     (special.btdtria, cython_special.btdtria, ('ddd',), None),

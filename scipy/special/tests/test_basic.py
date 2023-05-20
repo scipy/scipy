@@ -167,10 +167,14 @@ class TestCephes:
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
     def test_btdtr(self):
-        assert_equal(special.btdtr(1, 1, 1), 1.0)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            assert_equal(special.btdtr(1, 1, 1), 1.0)
 
     def test_btdtri(self):
-        assert_equal(special.btdtri(1, 1, 1), 1.0)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            assert_equal(special.btdtri(1, 1, 1), 1.0)
 
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)
