@@ -2416,7 +2416,7 @@ cdef class Rotation:
     @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def approx_equal(Rotation self, Rotation other, float atol=1e-12):
+    def approx_equal(Rotation self, Rotation other, double atol=1e-8):
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
@@ -2428,7 +2428,7 @@ cdef class Rotation:
             Object containing the rotations to measure against this one.
         atol : float
             The absolute tolerance in radians, below which the rotations are
-            considered equal. If not given, then set to 1e-12 by default.
+            considered equal. If not given, then set to 1e-8 by default.
 
         Returns
         -------
