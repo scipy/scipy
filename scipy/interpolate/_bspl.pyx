@@ -564,7 +564,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
             npy_intp ndim = len(t)
 
             # 'intervals': indices for a point in xi into the knot arrays t
-            npy_intp[::1] i = np.empty(ndim, dtype=int)
+            npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
 
             # container for non-zero b-splines at each point in xi
             double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
