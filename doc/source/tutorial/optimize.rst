@@ -115,6 +115,14 @@ the objective function as keyword arguments.
     >>> print(res.x)
     [1.         1.         1.         1.         0.99999999]
 
+Another alternative is to use :py:func:`functools.partial`.
+
+    >>> from functools import partial
+    >>> partial_rosen = partial(rosen_with_args, a=0.5, b=1.)
+    >>> res = minimize(partial_rosen, x0, method='nelder-mead',
+    ...                options={'xatol': 1e-8,})
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

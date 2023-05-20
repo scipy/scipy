@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 """
 Wrappers to allow unit tests of internal C code.
 

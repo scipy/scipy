@@ -1,4 +1,5 @@
 import operator
+from math import prod
 
 import numpy as np
 from numpy.core.multiarray import normalize_axis_index
@@ -8,7 +9,6 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
 from scipy.optimize import minimize_scalar
 from . import _bspl
 from . import _fitpack_impl
-from scipy._lib._util import prod
 from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations

@@ -1,16 +1,17 @@
-"""Compressed Block Sparse Row matrix format"""
+"""Compressed Block Sparse Row format"""
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['bsr_matrix', 'isspmatrix_bsr']
+__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
 
 from warnings import warn
 
 import numpy as np
 
+from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import isspmatrix, _formats, spmatrix
+from ._base import isspmatrix, _formats, _sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        get_index_dtype, check_shape)
 from . import _sparsetools
@@ -19,54 +20,54 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_tocsr)
 
 
-class bsr_matrix(_cs_matrix, _minmax_mixin):
-    """Block Sparse Row matrix
+class bsr_array(_cs_matrix, _minmax_mixin):
+    """Block Sparse Row format sparse array.
 
     This can be instantiated in several ways:
-        bsr_matrix(D, [blocksize=(R,C)])
+        bsr_array(D, [blocksize=(R,C)])
             where D is a dense matrix or 2-D ndarray.
 
-        bsr_matrix(S, [blocksize=(R,C)])
-            with another sparse matrix S (equivalent to S.tobsr())
+        bsr_array(S, [blocksize=(R,C)])
+            with another sparse array S (equivalent to S.tobsr())
 
-        bsr_matrix((M, N), [blocksize=(R,C), dtype])
-            to construct an empty matrix with shape (M, N)
+        bsr_array((M, N), [blocksize=(R,C), dtype])
+            to construct an empty sparse array with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
+        bsr_array((data, ij), [blocksize=(R,C), shape=(M, N)])
             where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
 
-        bsr_matrix((data, indices, indptr), [shape=(M, N)])
+        bsr_array((data, indices, indptr), [shape=(M, N)])
             is the standard BSR representation where the block column
             indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
             and their corresponding block values are stored in
             ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
-            supplied, the matrix dimensions are inferred from the index arrays.
+            supplied, the array dimensions are inferred from the index arrays.
 
     Attributes
     ----------
     dtype : dtype
-        Data type of the matrix
+        Data type of the array
     shape : 2-tuple
-        Shape of the matrix
+        Shape of the array
     ndim : int
         Number of dimensions (this is always 2)
     nnz
         Number of stored values, including explicit zeros
     data
-        Data array of the matrix
+        Data array
     indices
         BSR format index array
     indptr
         BSR format index pointer array
     blocksize
-        Block size of the matrix
+        Block size
     has_sorted_indices
         Whether indices are sorted
 
     Notes
     -----
-    Sparse matrices can be used in arithmetic operations: they support
+    Sparse arrays can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
     **Summary of BSR format**
@@ -80,7 +81,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     **Blocksize**
 
-    The blocksize (R,C) must evenly divide the shape of the matrix (M,N).
+    The blocksize (R,C) must evenly divide the shape of the sparse array (M,N).
     That is, R and C must satisfy the relationship ``M % R = 0`` and
     ``N % C = 0``.
 
@@ -89,9 +90,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
     Examples
     --------
-    >>> from scipy.sparse import bsr_matrix
+    >>> from scipy.sparse import bsr_array
     >>> import numpy as np
-    >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
+    >>> bsr_array((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
@@ -99,7 +100,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     >>> row = np.array([0, 0, 1, 2, 2, 2])
     >>> col = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3 ,4, 5, 6])
-    >>> bsr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    >>> bsr_array((data, (row, col)), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -107,7 +108,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     >>> indptr = np.array([0, 2, 3, 6])
     >>> indices = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
-    >>> bsr_matrix((data,indices,indptr), shape=(6, 6)).toarray()
+    >>> bsr_array((data,indices,indptr), shape=(6, 6)).toarray()
     array([[1, 1, 0, 0, 2, 2],
            [1, 1, 0, 0, 2, 2],
            [0, 0, 0, 0, 3, 3],
@@ -187,7 +188,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                         raise ValueError('mismatching blocksize={} vs {}'.format(
                             blocksize, self.data.shape[1:]))
             else:
-                raise ValueError('unrecognized bsr_matrix constructor usage')
+                raise ValueError('unrecognized bsr_array constructor usage')
         else:
             # must be dense
             try:
@@ -299,7 +300,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    getnnz.__doc__ = _sparray.getnnz.__doc__
 
     def __repr__(self):
         format = _formats[self.getformat()][1]
@@ -320,7 +321,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                                   np.ravel(self.data), y)
         return y
 
-    diagonal.__doc__ = spmatrix.diagonal.__doc__
+    diagonal.__doc__ = _sparray.diagonal.__doc__
 
     ##########################
     # NotImplemented methods #
@@ -426,10 +427,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         """Convert this matrix into Block Sparse Row Format.
 
         With copy=False, the data/indices may be shared between this
-        matrix and the resultant bsr_matrix.
+        matrix and the resultant bsr_array.
 
         If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_matrix.
+        block size of the bsr_array.
         """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
@@ -459,12 +460,12 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                   data)
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsr.__doc__ = _sparray.tocsr.__doc__
 
     def tocsc(self, copy=False):
         return self.tocsr(copy=False).tocsc(copy=copy)
 
-    tocsc.__doc__ = spmatrix.tocsc.__doc__
+    tocsc.__doc__ = _sparray.tocsc.__doc__
 
     def tocoo(self, copy=True):
         """Convert this matrix to COOrdinate format.
@@ -505,7 +506,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    toarray.__doc__ = spmatrix.toarray.__doc__
+    toarray.__doc__ = _sparray.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -532,7 +533,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         return self._bsr_container((data, indices, indptr),
                                    shape=(N, M), copy=copy)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _sparray.transpose.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -695,7 +696,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
 
 def isspmatrix_bsr(x):
-    """Is x of a bsr_matrix type?
+    """Is x of a bsr_array type?
 
     Parameters
     ----------
@@ -709,13 +710,18 @@ def isspmatrix_bsr(x):
 
     Examples
     --------
-    >>> from scipy.sparse import bsr_matrix, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_matrix([[5]]))
+    >>> from scipy.sparse import bsr_array, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_array([[5]]))
     True
 
-    >>> from scipy.sparse import bsr_matrix, csr_matrix, isspmatrix_bsr
+    >>> from scipy.sparse import bsr_array, csr_matrix, isspmatrix_bsr
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
-    from ._arrays import bsr_array
     return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
+
+
+class bsr_matrix(spmatrix, bsr_array):
+    pass
+
+bsr_matrix.__doc__ = _array_doc_to_matrix(bsr_array.__doc__)

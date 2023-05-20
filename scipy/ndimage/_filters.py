@@ -433,19 +433,35 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the axis-specific Sobel gradient.
+    The horizontal edges can emphasised with the horizontal trasform (axis=0),
+    the vertical edges with the vertical transform (axis=1) and so on for higher
+    dimensions. These can be combined to give the magnitude.
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
+    >>> import numpy as np
+    >>> ascent = datasets.ascent().astype('int32')
+    >>> sobel_h = ndimage.sobel(ascent, 0)  # horizontal gradient
+    >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
+    >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
+    >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
+    >>> fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = datasets.ascent()
-    >>> result = ndimage.sobel(ascent)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> axs[0, 0].imshow(ascent)
+    >>> axs[0, 1].imshow(sobel_h)
+    >>> axs[1, 0].imshow(sobel_v)
+    >>> axs[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axs.ravel()):
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
     >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
@@ -950,7 +966,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
 
 @_ni_docstrings.docfiller
 def uniform_filter(input, size=3, output=None, mode="reflect",
-                   cval=0.0, origin=0):
+                   cval=0.0, origin=0, *, axes=None):
     """Multidimensional uniform filter.
 
     Parameters
@@ -964,6 +980,12 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -995,12 +1017,13 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     input = numpy.asarray(input)
     output = _ni_support._get_output(output, input,
                                      complex_output=input.dtype.kind == 'c')
-    sizes = _ni_support._normalize_sequence(size, input.ndim)
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
-    modes = _ni_support._normalize_sequence(mode, input.ndim)
-    axes = list(range(input.ndim))
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    sizes = _ni_support._normalize_sequence(size, num_axes)
+    origins = _ni_support._normalize_sequence(origin, num_axes)
+    modes = _ni_support._normalize_sequence(mode, num_axes)
     axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
-            for ii in range(len(axes)) if sizes[ii] > 1]
+            for ii in range(num_axes) if sizes[ii] > 1]
     if len(axes) > 0:
         for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,
@@ -1121,7 +1144,7 @@ def maximum_filter1d(input, size, axis=-1, output=None,
 
 
 def _min_or_max_filter(input, size, footprint, structure, output, mode,
-                       cval, origin, minimum):
+                       cval, origin, minimum, axes=None):
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set", UserWarning, stacklevel=3)
     if structure is None:
@@ -1155,11 +1178,12 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         # input and output arrays cannot share memory
         temp = output
         output = _ni_support._get_output(output.dtype, input)
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
     if separable:
-        sizes = _ni_support._normalize_sequence(size, input.ndim)
-        modes = _ni_support._normalize_sequence(mode, input.ndim)
-        axes = list(range(input.ndim))
+        origins = _ni_support._normalize_sequence(origin, num_axes)
+        sizes = _ni_support._normalize_sequence(size, num_axes)
+        modes = _ni_support._normalize_sequence(mode, num_axes)
         axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
                 for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
@@ -1173,6 +1197,14 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
+        origins = _ni_support._normalize_sequence(origin, input.ndim)
+        if num_axes < input.ndim:
+            if footprint.ndim != num_axes:
+                raise RuntimeError("footprint.ndim must match len(axes)")
+            footprint = numpy.expand_dims(
+                footprint,
+                tuple(ax for ax in range(input.ndim) if ax not in axes)
+            )
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
             raise RuntimeError('footprint array has incorrect shape.')
@@ -1184,6 +1216,11 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if structure is not None:
             if len(structure.shape) != input.ndim:
                 raise RuntimeError('structure array has incorrect shape')
+            if num_axes != structure.ndim:
+                structure = numpy.expand_dims(
+                    structure,
+                    tuple(ax for ax in range(structure.ndim) if ax not in axes)
+                )
             if not structure.flags.contiguous:
                 structure = structure.copy()
         if not isinstance(mode, str) and isinstance(mode, Iterable):
@@ -1201,7 +1238,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
 
 @_ni_docstrings.docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
-                   mode="reflect", cval=0.0, origin=0):
+                   mode="reflect", cval=0.0, origin=0, *, axes=None):
     """Calculate a multidimensional minimum filter.
 
     Parameters
@@ -1212,6 +1249,12 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1238,12 +1281,12 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
-                              cval, origin, 1)
+                              cval, origin, 1, axes)
 
 
 @_ni_docstrings.docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
-                   mode="reflect", cval=0.0, origin=0):
+                   mode="reflect", cval=0.0, origin=0, *, axes=None):
     """Calculate a multidimensional maximum filter.
 
     Parameters
@@ -1254,6 +1297,12 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(mode_multiple)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1280,7 +1329,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
-                              cval, origin, 0)
+                              cval, origin, 0, axes)
 
 
 @_ni_docstrings.docfiller
@@ -1614,6 +1663,47 @@ def generic_filter(input, function, size=None, footprint=None,
     In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
+
+    Examples
+    --------
+    Import the necessary modules and load the example image used for
+    filtering.
+
+    >>> import numpy as np
+    >>> from scipy import datasets
+    >>> from scipy.ndimage import generic_filter
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = datasets.ascent()
+
+    Compute a maximum filter with kernel size 10 by passing a simple NumPy
+    aggregation function as argument to `function`.
+
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+
+    While a maximmum filter could also directly be obtained using
+    `maximum_filter`, `generic_filter` allows generic Python function or
+    `scipy.LowLevelCallable` to be used as a filter. Here, we compute the
+    range between maximum and minimum value as an example for a kernel size
+    of 5.
+
+    >>> def custom_filter(image):
+    ...     return np.amax(image) - np.amin(image)
+    >>> custom_filter_result = generic_filter(ascent, custom_filter, [5, 5])
+
+    Plot the original and filtered images.
+
+    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, middle, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(ascent)
+    >>> top.set_title("Original image")
+    >>> middle.imshow(maximum_filter_result)
+    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> bottom.imshow(custom_filter_result)
+    >>> bottom.set_title("Custom filter, Kernel: 5x5")
+    >>> fig.tight_layout()
 
     """
     if (size is not None) and (footprint is not None):

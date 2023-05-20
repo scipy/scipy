@@ -4,6 +4,8 @@
 # Balanced kd-tree construction written by Jake Vanderplas for scikit-learn
 # Released under the scipy license
 
+# cython: cpow=True
+
 # distutils: language = c++
 
 import numpy as np
@@ -342,7 +344,7 @@ cdef class cKDTreeNode:
         readonly object       lesser
         readonly object       greater
 
-    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level):
+    cdef void _setup(cKDTreeNode self, cKDTree parent, ckdtreenode *node, np.intp_t level) noexcept:
         cdef cKDTreeNode n1, n2
         self.level = level
         self.split_dim = node.split_dim
@@ -1080,7 +1082,7 @@ cdef class cKDTree:
     def query_pairs(cKDTree self, np.float64_t r, np.float64_t p=2.,
                     np.float64_t eps=0, output_type='set'):
         """
-        query_pairs(self, r, p=2., eps=0)
+        query_pairs(self, r, p=2., eps=0, output_type='set')
 
         Find all pairs of points in `self` whose distance is at most r.
 

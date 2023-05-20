@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 import re
 import warnings
 import numpy as np
@@ -12,13 +14,13 @@ from libc.math cimport sqrt, sin, cos, atan2, acos, hypot, isnan, NAN, pi
 np.import_array()
 
 # utilities for empty array initialization
-cdef inline double[:] _empty1(int n):
+cdef inline double[:] _empty1(int n) noexcept:
     return array(shape=(n,), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :] _empty2(int n1, int n2):
+cdef inline double[:, :] _empty2(int n1, int n2) noexcept :
     return array(shape=(n1, n2), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :, :] _empty3(int n1, int n2, int n3):
+cdef inline double[:, :, :] _empty3(int n1, int n2, int n3) noexcept:
     return array(shape=(n1, n2, n3), itemsize=sizeof(double), format=b"d")
-cdef inline double[:, :] _zeros2(int n1, int n2):
+cdef inline double[:, :] _zeros2(int n1, int n2) noexcept:
     cdef double[:, :] arr = array(shape=(n1, n2),
         itemsize=sizeof(double), format=b"d")
     arr[:, :] = 0
@@ -27,7 +29,7 @@ cdef inline double[:, :] _zeros2(int n1, int n2):
 # flat implementations of numpy functions
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double[:] _cross3(const double[:] a, const double[:] b):
+cdef inline double[:] _cross3(const double[:] a, const double[:] b) noexcept:
     cdef double[:] result = _empty1(3)
     result[0] = a[1]*b[2] - a[2]*b[1]
     result[1] = a[2]*b[0] - a[0]*b[2]
@@ -36,17 +38,17 @@ cdef inline double[:] _cross3(const double[:] a, const double[:] b):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _dot3(const double[:] a, const double[:] b) nogil:
+cdef inline double _dot3(const double[:] a, const double[:] b) noexcept nogil:
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _norm3(const double[:] elems) nogil:
+cdef inline double _norm3(const double[:] elems) noexcept nogil:
     return sqrt(_dot3(elems, elems))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _normalize4(double[:] elems) nogil:
+cdef inline double _normalize4(double[:] elems) noexcept nogil:
     cdef double norm = sqrt(_dot3(elems, elems) + elems[3]*elems[3])
 
     if norm == 0:
@@ -61,7 +63,7 @@ cdef inline double _normalize4(double[:] elems) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline int _argmax4(double[:] a) nogil:
+cdef inline int _argmax4(double[:] a) noexcept nogil:
     cdef int imax = 0
     cdef double vmax = a[0]
 
@@ -80,14 +82,14 @@ cdef double[3] _ez = [0, 0, 1]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline const double[:] _elementary_basis_vector(uchar axis):
+cdef inline const double[:] _elementary_basis_vector(uchar axis) noexcept:
     if axis == b'x': return _ex
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
     
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline int _elementary_basis_index(uchar axis):
+cdef inline int _elementary_basis_index(uchar axis) noexcept:
     if axis == b'x': return 0
     elif axis == b'y': return 1
     elif axis == b'z': return 2
@@ -96,7 +98,7 @@ cdef inline int _elementary_basis_index(uchar axis):
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
     np.ndarray[double, ndim=3] matrix, const uchar[:] seq, bint extrinsic=False
-):
+) noexcept:
     # This is being replaced by the newer: _compute_euler_from_quat
     #
     # The algorithm assumes intrinsic frame transformations. The algorithm
@@ -239,7 +241,7 @@ cdef double[:, :] _compute_euler_from_matrix(
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_quat(
     np.ndarray[double, ndim=2] quat, const uchar[:] seq, bint extrinsic=False
-):
+) noexcept:
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
@@ -344,7 +346,7 @@ cdef double[:, :] _compute_euler_from_quat(
 @cython.wraparound(False)
 cdef inline void _compose_quat_single( # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
-):
+) noexcept:
     cdef double[:] cross = _cross3(p[:3], q[:3])
 
     r[0] = p[3]*q[0] + q[3]*p[0] + cross[0]
@@ -356,7 +358,7 @@ cdef inline void _compose_quat_single( # calculate p * q into r
 @cython.wraparound(False)
 cdef inline double[:, :] _compose_quat(
     const double[:, :] p, const double[:, :] q
-):
+) noexcept:
     cdef Py_ssize_t n = max(p.shape[0], q.shape[0])
     cdef double[:, :] product = _empty2(n, 4)
 
@@ -377,7 +379,7 @@ cdef inline double[:, :] _compose_quat(
 @cython.wraparound(False)
 cdef inline double[:, :] _make_elementary_quat(
     uchar axis, const double[:] angles
-):
+) noexcept:
     cdef Py_ssize_t n = angles.shape[0]
     cdef double[:, :] quat = _zeros2(n, 4)
 
@@ -395,7 +397,7 @@ cdef inline double[:, :] _make_elementary_quat(
 @cython.wraparound(False)
 cdef double[:, :] _elementary_quat_compose(
     const uchar[:] seq, const double[:, :] angles, bint intrinsic=False
-):
+) noexcept:
     cdef double[:, :] result = _make_elementary_quat(seq[0], angles[:, 0])
     cdef Py_ssize_t seq_len = seq.shape[0]
 

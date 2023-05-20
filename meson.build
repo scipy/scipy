@@ -6,7 +6,7 @@ project(
   # tools/version_utils.py
   version: '1.11.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 0.64.0',
+  meson_version: '>= 1.1.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
@@ -135,6 +135,10 @@ tempita = files('scipy/_build_utils/tempita.py')
 use_pythran = get_option('use-pythran')
 if use_pythran
   pythran = find_program('pythran', native: true)
+  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
+  # activation bug the default <prefix>/include/ may not be visible (see
+  # gh-15698). Hence look for xsimd explicitly.
+  xsimd_dep = dependency('xsimd', required: false)
 endif
 
 subdir('scipy')

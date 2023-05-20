@@ -4,7 +4,7 @@
 import sys
 import operator
 import numpy as np
-from scipy._lib._util import prod
+from math import prod
 import scipy.sparse as sp
 
 
@@ -385,13 +385,13 @@ def asmatrix(data, dtype=None):
 ###############################################################################
 
 
-def _todata(s: 'sp.spmatrix') -> np.ndarray:
+def _todata(s) -> np.ndarray:
     """Access nonzero values, possibly after summing duplicates.
 
     Parameters
     ----------
-    s : sparse matrix
-        Input sparse matrix.
+    s : sparse array
+        Input sparse array.
 
     Returns
     -------
@@ -402,10 +402,10 @@ def _todata(s: 'sp.spmatrix') -> np.ndarray:
     if isinstance(s, sp._data._data_matrix):
         return s._deduped_data()
 
-    if isinstance(s, sp.dok_matrix):
+    if isinstance(s, sp.dok_array):
         return np.fromiter(s.values(), dtype=s.dtype, count=s.nnz)
 
-    if isinstance(s, sp.lil_matrix):
+    if isinstance(s, sp.lil_array):
         data = np.empty(s.nnz, dtype=s.dtype)
         sp._csparsetools.lil_flatten_to_array(s.data, data)
         return data
