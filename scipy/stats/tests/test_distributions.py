@@ -4235,7 +4235,6 @@ class TestBetaPrime:
         stats.betaprime(a=1, b=1).stats('mvsk')
 
 
-
 class TestGamma:
     def test_pdf(self):
         # a few test cases to compare with R
