@@ -47,6 +47,57 @@ static PyObject *fitpack_error;
 
 
 /*
+ * Multiply mx*my, check for integer overflow.
+ * Inputs are Fortran ints, and the output is npy_intp, for use
+ * in PyArray_SimpleNew et al.
+ * Return -1 on overflow.
+ */
+npy_intp
+_mul_overflow_intp(F_INT mx, F_INT my) {
+    npy_intp int_max, mxy;
+
+    /* Limit is min of (largest array size, max of Fortran int) */
+    int_max = (F_INT_MAX < NPY_MAX_INTP) ? F_INT_MAX : NPY_MAX_INTP;
+    /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= int_max
+    */
+    if (my != 0 && int_max/my < mx) {
+        /* Integer overflow */
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot produce output of size %dx%d (size too large)",
+                     mx, my);
+        return -1;
+    }
+    mxy = (npy_intp)mx * (npy_intp)my;
+    return mxy;
+}
+
+
+/*
+ * Multiply mx*my, check for integer overflow, where both inputs and
+ * the output are Fortran ints.
+ * Return -1 on overflow.
+ */
+F_INT
+_mul_overflow_f_int(F_INT mx, F_INT my) {
+    F_INT mxy;
+
+    /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= F_INT_MAX
+    */
+    if (my != 0 && F_INT_MAX/my < mx) {
+        /* Integer overflow */
+        PyErr_Format(PyExc_RuntimeError,
+                     "Cannot produce output of size %dx%d (size too large)",
+                     mx, my);
+        return -1;
+    }
+    mxy = mx * my;
+    return mxy;
+}
+
+
+/*
  * Functions moved verbatim from __fitpack.h
  */
 
@@ -135,7 +186,7 @@ static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
     F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    npy_intp int_max, mxy;
+    npy_intp mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
@@ -166,26 +217,28 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-    /* Limit is min of (largest array size, max of Fortran int) */
-    int_max = (F_INT_MAX < NPY_MAX_INTP) ? F_INT_MAX : NPY_MAX_INTP;
-    /* v = int_max/my is largest integer multiple of `my` such that
-       v * my <= int_max
-    */
-    if (my != 0 && int_max/my < mx) {
-        /* Integer overflow */
-        PyErr_Format(PyExc_RuntimeError,
-                     "Cannot produce output of size %dx%d (size too large)",
-                     mx, my);
+
+    mxy = _mul_overflow_intp(mx, my);
+    if (mxy < 0) {
         goto fail;
     }
-    mxy = (npy_intp)mx * (npy_intp)my;
+
     ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
     if (ap_z == NULL) {
         goto fail;
     }
     z = (double *) PyArray_DATA(ap_z);
+    /* Try detecting an integer overflow in computations which are quadratic
+     * in the input data size, ~mx*my. On the other hand, k{x,y} and nu{x,y}
+     *  are of the order 1..5, thus kx*mx is unlikely to overflow.
+     */
     if (nux || nuy) {
-        lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1);
+        /* lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1); */
+        lwrk = _mul_overflow_f_int(nx - kx - 1, ny - ky - 1);
+        if (lwrk < 0) {
+            goto fail;
+        }    
+        lwrk += mx*(kx + 1 - nux) + my*(ky + 1 - nuy);
     }
     else {
         lwrk = mx*(kx + 1) + my*(ky + 1);
@@ -233,7 +286,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
 {
     F_INT iopt, m, kx, ky, nxest, nyest, lwrk1, lwrk2, *iwrk, kwrk, ier;
     F_INT lwa, nxo, nyo, i, lcest, nmax, nx, ny, lc;
-    npy_intp dims[1];
+    npy_intp dims[1], lc_intp;
     double *x, *y, *z, *w, xb, xe, yb, ye, s, *tx, *ty, *c, fp;
     double *wrk1, *wrk2, *wa = NULL, eps;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z, *ap_w = NULL;
@@ -272,7 +325,12 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     if (nmax < nyest) {
         nmax = nyest;
     }
-    lcest = (nxest - kx - 1)*(nyest - ky - 1);
+    /* lcest = (nxest - kx - 1)*(nyest - ky - 1); */
+    lcest = _mul_overflow_f_int(nxest - kx - 1, nyest - ky - 1);
+    if (lcest < 0) {
+        goto fail;
+    }
+    /* kwrk computation is unlikely to overflow if lcest above did not.*/
     kwrk = m + (nxest - 2*kx - 1)*(nyest - 2*ky - 1);
     lwa = 2*nmax + lcest + lwrk1 + lwrk2 + kwrk;
     if ((wa = malloc(lwa*sizeof(double))) == NULL) {
@@ -302,7 +360,12 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         memcpy(ty, PyArray_DATA(ap_ty), ny*sizeof(double));
     }
     if (iopt==1) {
-        lc = (nx - kx - 1)*(ny - ky - 1);
+        /* lc = (nx - kx - 1)*(ny - ky - 1); */
+        lc = _mul_overflow_f_int(nx - kx - 1, ny - ky -1);
+        if (lc < 0) {
+            goto fail;
+        }
+
         memcpy(wrk1, PyArray_DATA(ap_wrk), lc*sizeof(double));
         /*memcpy(iwrk,PyArray_DATA(ap_iwrk),n*sizeof(int));*/
     }
@@ -325,14 +388,19 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "Invalid inputs.");
         goto fail;
     }
-    lc = (nx - kx - 1)*(ny - ky - 1);
+
+    lc_intp = _mul_overflow_intp(nx - kx - 1, ny - ky -1);
+    if (lc_intp < 0) {
+        goto fail;
+    }
+
     Py_XDECREF(ap_tx);
     Py_XDECREF(ap_ty);
     dims[0] = nx;
     ap_tx = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     dims[0] = ny;
     ap_ty = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
-    dims[0] = lc;
+    dims[0] = lc_intp;
     ap_c = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     if (ap_tx == NULL
             || ap_ty == NULL
@@ -341,16 +409,16 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     }
     if ((iopt == 0)||(nx > nxo)||(ny > nyo)) {
         Py_XDECREF(ap_wrk);
-        dims[0] = lc;
+        dims[0] = lc_intp;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
         }
         /*ap_iwrk = (PyArrayObject *)PyArray_SimpleNew(1,&n,F_INT_NPY);*/
     }
-    if (PyArray_DIMS(ap_wrk)[0] < lc) {
+    if (PyArray_DIMS(ap_wrk)[0] < lc_intp) {
         Py_XDECREF(ap_wrk);
-        dims[0] = lc;
+        dims[0] = lc_intp;
         ap_wrk = (PyArrayObject *)PyArray_SimpleNew(1, dims, NPY_DOUBLE);
         if (ap_wrk == NULL) {
             goto fail;
@@ -358,8 +426,8 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     }
     memcpy(PyArray_DATA(ap_tx), tx, nx*sizeof(double));
     memcpy(PyArray_DATA(ap_ty), ty, ny*sizeof(double));
-    memcpy(PyArray_DATA(ap_c), c, lc*sizeof(double));
-    memcpy(PyArray_DATA(ap_wrk), wrk1, lc*sizeof(double));
+    memcpy(PyArray_DATA(ap_c), c, lc_intp*sizeof(double));
+    memcpy(PyArray_DATA(ap_wrk), wrk1, lc_intp*sizeof(double));
     /*memcpy(PyArray_DATA(ap_iwrk),iwrk,n*sizeof(int));*/
     free(wa);
     Py_DECREF(ap_x);
