@@ -615,7 +615,7 @@ class TestFit:
         # fit only scale
         loc, scale = 0, 2.5
         data = dist.rvs(scale=scale, size=N, random_state=rng)
-        scale_bounds = (0, 5)
+        scale_bounds = (0.01, 5)
         bounds = {'scale': scale_bounds}
         res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
