@@ -704,7 +704,7 @@ class _ScaledLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if not np.isscalar(alpha):
             raise ValueError('scalar expected as alpha')
-        if isinstance(A, type(self)):
+        if isinstance(A, _ScaledLinearOperator):
             A, alpha_original = A.args
             # Avoid in-place multiplication so that we don't accidentally mutate
             # the original prefactor.

@@ -121,6 +121,7 @@ class TestLinearOperator:
             # when the operator is multiplied by a number
             result = A @ np.array([1, 2, 3])
             B = A * 3
+            C = A / 5
             assert_equal(A @ np.array([1, 2, 3]), result)
 
             assert_((2j*A).dtype == np.complex_)
