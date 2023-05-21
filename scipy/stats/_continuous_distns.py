@@ -919,6 +919,13 @@ class betaprime_gen(rv_continuous):
             lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
+    def _sf(self, x, a, b):
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: beta._cdf(1/(1+x_), b_, a_),
+            f2=lambda x_, a_, b_: beta._sf(x_/(1+x_), a_, b_)
+        )
+
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
         # by default, compute compute the ppf by solving the following:
