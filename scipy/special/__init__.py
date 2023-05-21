@@ -769,8 +769,6 @@ Convenience functions
 
 """
 
-import numpy as np
-
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
@@ -797,6 +795,7 @@ from ._spherical_bessel import (
     spherical_in,
     spherical_kn
 )
+from ._deprecate_ufunc import deprecate_ufunc
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
@@ -823,7 +822,12 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-btdtr = np.deprecate(btdtr, "btdtr", "betainc")
-btdtri = np.deprecate(btdtri, "btdtri", "betaincinv")
+depr_msg = ('\nThis function was deprecated in SciPy 1.11.0, and will be '
+            'removed in SciPy 1.13.0.')
+btdtr = deprecate_ufunc(btdtr, old_name="btdtr", new_name="betainc",
+                        message=depr_msg)
+btdtri = deprecate_ufunc(btdtri, old_name="btdtri", new_name="betaincinv",
+                         message=depr_msg)
 
-del np
+del depr_msg
+del deprecate_ufunc
