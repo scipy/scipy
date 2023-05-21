@@ -320,7 +320,8 @@ for key in (
         'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
         'step2 is deprecated',  # Deprecation of scipy.signal.step2
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
-        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'kurtosistest only valid',  # intentionally "bad" excample in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
