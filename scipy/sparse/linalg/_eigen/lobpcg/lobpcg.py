@@ -68,18 +68,20 @@ def _makeMatMat(m):
 
 def _dot_inplace(x, y, verbosityLevel=0):
     """Perform 'np.dot' in-place if dtypes match."""
-    try:
-        np.dot(x, y, out=x)
-    except Exception:
-        if verbosityLevel:
-            warnings.warn(
-                f"Trying in-place x = x @ y, possibly their shapes "
-                f"{x.shape} and {y.shape} mismatch, or x.dtype {x.dtype} "
-                f"does not match y.dtype {y.dtype}, "
-                f"or x is a slice rather than a C-Array, "
-                f"so x needs to be overwritten preventing in-place.",
-                UserWarning, stacklevel=3
-            )
+    if y.shape[0] == y.shape[1]:
+        try:
+            np.dot(x, y, out=x)
+        except Exception:
+            if verbosityLevel:
+                warnings.warn(
+                    f"Trying in-place x = x @ y, possibly x.dtype {x.dtype} "
+                    f"does not match dtype of x @ y since y.dtype {y.dtype}, "
+                    f"or x is a slice rather than a C-Array, "
+                    f"so x needs to be overwritten preventing in-place.",
+                    UserWarning, stacklevel=3
+                )
+            x = x @ y
+    else:
         x = x @ y
     return x
 
