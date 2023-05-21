@@ -76,10 +76,7 @@ class NDInterpolatorBase:
         self.ndim = ndim
         points = _ndim_coords_from_arrays(points)
 
-        self.need_contiguous = need_contiguous
-        self._original_fill_value = fill_value
-
-        if self.need_contiguous:
+        if need_contiguous:
             points = np.ascontiguousarray(points, dtype=np.double)
 
         if not rescale:
@@ -93,10 +90,10 @@ class NDInterpolatorBase:
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
         
-        self._calculate_triangulation()
+        self._calculate_triangulation(self.points)
         
         if need_values or values is not None:
-            self._set_values(values)
+            self._set_values(values, fill_value, need_contiguous)
         else:
             self.values = None
         
@@ -104,10 +101,10 @@ class NDInterpolatorBase:
         self._xi_simplices = None
         self._xi_barycentric_coordinates = None
 
-    def _calculate_triangulation(self):
-        self.tri = qhull.Delaunay(self.points)
+    def _calculate_triangulation(self, points):
+        pass
 
-    def _set_values(self, values):
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True):
         values = np.asarray(values)
         _check_init_shape(self.points, values, ndim=self.ndim)
 
@@ -120,18 +117,17 @@ class NDInterpolatorBase:
             self.values = values.reshape(values.shape[0],
                                             np.prod(values.shape[1:]))
         
-
         # Complex or real?
         self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
         if self.is_complex:
-            if self.need_contiguous:
+            if need_contiguous:
                 self.values = np.ascontiguousarray(self.values,
                                                     dtype=np.complex128)
-            self.fill_value = complex(self._original_fill_value)
+            self.fill_value = complex(fill_value)
         else:
-            if self.need_contiguous:
+            if need_contiguous:
                 self.values = np.ascontiguousarray(self.values, dtype=np.double)
-            self.fill_value = float(self._original_fill_value)
+            self.fill_value = float(fill_value)
 
     def _check_call_shape(self, xi):
         xi = np.asanyarray(xi)
@@ -346,6 +342,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def __init__(self, points, values, fill_value=np.nan, rescale=False):
         NDInterpolatorBase.__init__(self, points, values, fill_value=fill_value,
                 rescale=rescale)
+
+    def _calculate_triangulation(self, points):
+        self.tri = qhull.Delaunay(points)
 
     def _evaluate_double(self, xi):
         return self._do_evaluate(xi, 1.0)
@@ -972,7 +971,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                                     fill_value=fill_value, rescale=rescale,
                                     need_values=False)
     
-    def _set_values(self, values):
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True):
         """
         Sets the values of the interpolation points.
 
@@ -981,10 +980,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         values : ndarray of float or complex, shape (npoints, ...)
             Data values.
         """
-        NDInterpolatorBase._set_values(self, values)
+        NDInterpolatorBase._set_values(self, values, fill_value=fill_value, need_contiguous=need_contiguous)
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                     tol=self.tol, maxiter=self.maxiter)
+    
+    def _calculate_triangulation(self, points):
+        self.tri = qhull.Delaunay(points)
 
     def _evaluate_double(self, xi=None):
         if xi is None:
