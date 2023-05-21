@@ -3,20 +3,21 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_matrix', 'isspmatrix_lil']
+__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 
 from bisect import bisect_left
 
 import numpy as np
 
-from ._base import spmatrix, isspmatrix
+from ._matrix import spmatrix, _array_doc_to_matrix
+from ._base import _sparray, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        get_index_dtype, check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
-class lil_matrix(spmatrix, IndexMixin):
+class lil_array(_sparray, IndexMixin):
     """Row-based LIst of Lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
@@ -25,13 +26,13 @@ class lil_matrix(spmatrix, IndexMixin):
     index, per row.
 
     This can be instantiated in several ways:
-        lil_matrix(D)
+        lil_array(D)
             with a dense matrix or rank-2 ndarray D
 
-        lil_matrix(S)
+        lil_array(S)
             with another sparse matrix S (equivalent to S.tolil())
 
-        lil_matrix((M, N), [dtype])
+        lil_array((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
@@ -81,7 +82,7 @@ class lil_matrix(spmatrix, IndexMixin):
     format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        spmatrix.__init__(self)
+        _sparray.__init__(self)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -110,7 +111,7 @@ class lil_matrix(spmatrix, IndexMixin):
                     self.rows[i] = []
                     self.data[i] = []
             else:
-                raise TypeError('unrecognized lil_matrix constructor usage')
+                raise TypeError('unrecognized lil_array constructor usage')
         else:
             # assume A is dense
             try:
@@ -168,8 +169,8 @@ class lil_matrix(spmatrix, IndexMixin):
     def count_nonzero(self):
         return sum(np.count_nonzero(rowvals) for rowvals in self.data)
 
-    getnnz.__doc__ = spmatrix.getnnz.__doc__
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    getnnz.__doc__ = _sparray.getnnz.__doc__
+    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def __str__(self):
         val = ''
@@ -305,28 +306,28 @@ class lil_matrix(spmatrix, IndexMixin):
                                     i, j, x)
 
     def _set_arrayXarray_sparse(self, row, col, x):
-        # Special case: full matrix assignment
-        if (x.shape == self.shape and
-                isinstance(row, slice) and row == slice(None) and
-                isinstance(col, slice) and col == slice(None)):
-            x = self._lil_container(x, dtype=self.dtype)
-            self.rows = x.rows
-            self.data = x.data
-            return
         # Fall back to densifying x
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
 
     def __setitem__(self, key, x):
-        # Fast path for simple (int, int) indexing.
-        if (isinstance(key, tuple) and len(key) == 2 and
-                isinstance(key[0], INT_TYPES) and
-                isinstance(key[1], INT_TYPES)):
-            x = self.dtype.type(x)
-            if x.size > 1:
-                raise ValueError("Trying to assign a sequence to an item")
-            return self._set_intXint(key[0], key[1], x)
+        if isinstance(key, tuple) and len(key) == 2:
+            row, col = key
+            # Fast path for simple (int, int) indexing.
+            if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
+                x = self.dtype.type(x)
+                if x.size > 1:
+                    raise ValueError("Trying to assign a sequence to an item")
+                return self._set_intXint(row, col, x)
+            # Fast path for full-matrix sparse assignment.
+            if (isinstance(row, slice) and isinstance(col, slice) and
+                    row == slice(None) and col == slice(None) and
+                    isspmatrix(x) and x.shape == self.shape):
+                x = self._lil_container(x, dtype=self.dtype)
+                self.rows = x.rows
+                self.data = x.data
+                return
         # Everything else takes the normal path.
         IndexMixin.__setitem__(self, key, x)
 
@@ -363,7 +364,7 @@ class lil_matrix(spmatrix, IndexMixin):
                                          0, N, 1, N)
         return new
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _sparray.copy.__doc__
 
     def reshape(self, *args, **kwargs):
         shape = check_shape(args, self.shape)
@@ -395,7 +396,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         return new
 
-    reshape.__doc__ = spmatrix.reshape.__doc__
+    reshape.__doc__ = _sparray.reshape.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -420,7 +421,7 @@ class lil_matrix(spmatrix, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = spmatrix.resize.__doc__
+    resize.__doc__ = _sparray.resize.__doc__
 
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
@@ -429,12 +430,12 @@ class lil_matrix(spmatrix, IndexMixin):
                 d[i, j] = self.data[i][pos]
         return d
 
-    toarray.__doc__ = spmatrix.toarray.__doc__
+    toarray.__doc__ = _sparray.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _sparray.transpose.__doc__
 
     def tolil(self, copy=False):
         if copy:
@@ -442,7 +443,7 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             return self
 
-    tolil.__doc__ = spmatrix.tolil.__doc__
+    tolil.__doc__ = _sparray.tolil.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -476,7 +477,7 @@ class lil_matrix(spmatrix, IndexMixin):
         # init csr matrix
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsr.__doc__ = _sparray.tocsr.__doc__
 
 
 def _prepare_index_for_memoryview(i, j, x=None):
@@ -521,7 +522,7 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 
 def isspmatrix_lil(x):
-    """Is x of lil_matrix type?
+    """Is x of lil_array type?
 
     Parameters
     ----------
@@ -535,13 +536,18 @@ def isspmatrix_lil(x):
 
     Examples
     --------
-    >>> from scipy.sparse import lil_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(lil_matrix([[5]]))
+    >>> from scipy.sparse import lil_array, isspmatrix_lil
+    >>> isspmatrix_lil(lil_array([[5]]))
     True
 
-    >>> from scipy.sparse import lil_matrix, csr_matrix, isspmatrix_lil
+    >>> from scipy.sparse import lil_array, csr_matrix, isspmatrix_lil
     >>> isspmatrix_lil(csr_matrix([[5]]))
     False
     """
-    from ._arrays import lil_array
     return isinstance(x, lil_matrix) or isinstance(x, lil_array)
+
+
+class lil_matrix(spmatrix, lil_array):
+    pass
+
+lil_matrix.__doc__ = _array_doc_to_matrix(lil_array.__doc__)

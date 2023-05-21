@@ -4,10 +4,10 @@ from warnings import warn
 import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
-                       get_sum_dtype, isdense, isintlike, isscalarlike,
+                       get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis)
 
-__all__ = ['spmatrix', 'isspmatrix', 'issparse',
+__all__ = ['isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -57,8 +57,8 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class spmatrix:
-    """ This class provides a base class for all sparse matrices.  It
+class _sparray:
+    """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
@@ -67,44 +67,44 @@ class spmatrix:
 
     @property
     def _bsr_container(self):
-        from ._bsr import bsr_matrix
-        return bsr_matrix
+        from ._bsr import bsr_array
+        return bsr_array
 
     @property
     def _coo_container(self):
-        from ._coo import coo_matrix
-        return coo_matrix
+        from ._coo import coo_array
+        return coo_array
 
     @property
     def _csc_container(self):
-        from ._csc import csc_matrix
-        return csc_matrix
+        from ._csc import csc_array
+        return csc_array
 
     @property
     def _csr_container(self):
-        from ._csr import csr_matrix
-        return csr_matrix
+        from ._csr import csr_array
+        return csr_array
 
     @property
     def _dia_container(self):
-        from ._dia import dia_matrix
-        return dia_matrix
+        from ._dia import dia_array
+        return dia_array
 
     @property
     def _dok_container(self):
-        from ._dok import dok_matrix
-        return dok_matrix
+        from ._dok import dok_array
+        return dok_array
 
     @property
     def _lil_container(self):
-        from ._lil import lil_matrix
-        return lil_matrix
+        from ._lil import lil_array
+        return lil_array
 
-    _is_array = False
+    _is_array = True
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == 'spmatrix':
+        if self.__class__.__name__ == '_sparray':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         self.maxprint = maxprint
@@ -113,11 +113,11 @@ class spmatrix:
         """See `reshape`."""
         # Make sure copy is False since this is in place
         # Make sure format is unchanged because we are doing a __dict__ swap
-        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_matrix.__dict__
+        new_self = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_self.__dict__
 
     def get_shape(self):
-        """Get shape of a matrix."""
+        """Get shape of a sparse array."""
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
@@ -125,7 +125,7 @@ class spmatrix:
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
 
-        Gives a new shape to a sparse matrix without changing its data.
+        Gives a new shape to a sparse array without changing its data.
 
         Parameters
         ----------
@@ -140,18 +140,17 @@ class spmatrix:
         copy : bool, optional
             Indicates whether or not attributes of self should be copied
             whenever possible. The degree to which attributes are copied varies
-            depending on the type of sparse matrix being used.
+            depending on the type of sparse array being used.
 
         Returns
         -------
-        reshaped_matrix : sparse matrix
-            A sparse matrix with the given `shape`, not necessarily of the same
+        reshaped : sparse array
+            A sparse array with the given `shape`, not necessarily of the same
             format as the current object.
 
         See Also
         --------
-        numpy.matrix.reshape : NumPy's implementation of 'reshape' for
-                               matrices
+        numpy.reshape : NumPy's implementation of 'reshape' for ndarrays
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
@@ -166,7 +165,7 @@ class spmatrix:
         return self.tocoo(copy=copy).reshape(shape, order=order, copy=False)
 
     def resize(self, shape):
-        """Resize the matrix in-place to dimensions given by ``shape``
+        """Resize the array in-place to dimensions given by ``shape``
 
         Any elements that lie within the new shape will remain at the same
         indices, while non-zero elements lying outside the new shape are
@@ -175,7 +174,7 @@ class spmatrix:
         Parameters
         ----------
         shape : (int, int)
-            number of rows and columns in the new matrix
+            number of rows and columns in the new array
 
         Notes
         -----
@@ -183,7 +182,7 @@ class spmatrix:
         `numpy.resize`. Here, the same data will be maintained at each index
         before and after reshape, if that index is within the new bounds. In
         numpy, resizing maintains contiguity of the array, moving elements
-        around in the logical matrix but not within a flattened representation.
+        around in the logical array but not within a flattened representation.
 
         We give no guarantees about whether the underlying data attributes
         (arrays, etc.) will be modified in place or replaced with new objects.
@@ -193,7 +192,7 @@ class spmatrix:
             f'{type(self).__name__}.resize is not implemented')
 
     def astype(self, dtype, casting='unsafe', copy=True):
-        """Cast the matrix elements to a specified type.
+        """Cast the array elements to a specified type.
 
         Parameters
         ----------
@@ -210,8 +209,8 @@ class spmatrix:
             'unsafe' means any data conversions may be done.
         copy : bool, optional
             If `copy` is `False`, the result might share some memory with this
-            matrix. If `copy` is `True`, it is guaranteed that the result and
-            this matrix do not share any memory.
+            array. If `copy` is `True`, it is guaranteed that the result and
+            this array do not share any memory.
         """
 
         dtype = np.dtype(dtype)
@@ -238,7 +237,7 @@ class spmatrix:
             return matrix(X, **kwargs)
 
     def asfptype(self):
-        """Upcast matrix to a floating point format (if necessary)"""
+        """Upcast array to a floating point format (if necessary)"""
 
         fp_types = ['f', 'd', 'F', 'D']
 
@@ -278,7 +277,7 @@ class spmatrix:
         Parameters
         ----------
         axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
+            Select between the number of values across the whole array, in
             each column, or in each row.
 
         See also
@@ -299,7 +298,7 @@ class spmatrix:
         return self.getnnz()
 
     def getformat(self):
-        """Format of a matrix representation as a string."""
+        """Format of an array representation as a string."""
         return getattr(self, 'format', 'und')
 
     def __repr__(self):
@@ -342,23 +341,23 @@ class spmatrix:
     # perhaps it should be the number of rows?  But for some uses the number of
     # non-zeros is more important.  For now, raise an exception!
     def __len__(self):
-        raise TypeError("sparse matrix length is ambiguous; use getnnz()"
+        raise TypeError("sparse array length is ambiguous; use getnnz()"
                         " or shape[0]")
 
     def asformat(self, format, copy=False):
-        """Return this matrix in the passed format.
+        """Return this array in the passed format.
 
         Parameters
         ----------
         format : {str, None}
-            The desired matrix format ("csr", "csc", "lil", "dok", "array", ...)
+            The desired sparse format ("csr", "csc", "lil", "dok", "array", ...)
             or None for no conversion.
         copy : bool, optional
             If True, the result is guaranteed to not share data with self.
 
         Returns
         -------
-        A : This matrix in the passed format.
+        A : This array in the passed format.
         """
         if format is None or format == self.format:
             if copy:
@@ -379,22 +378,22 @@ class spmatrix:
 
     ###################################################################
     #  NOTE: All arithmetic operations use csr_matrix by default.
-    # Therefore a new sparse matrix format just needs to define a
+    # Therefore a new sparse array format just needs to define a
     # .tocsr() method to provide arithmetic support. Any of these
     # methods can be overridden for efficiency.
     ####################################################################
 
     def multiply(self, other):
-        """Point-wise multiplication by another matrix
+        """Point-wise multiplication by another array
         """
         return self.tocsr().multiply(other)
 
     def maximum(self, other):
-        """Element-wise maximum between this and another matrix."""
+        """Element-wise maximum between this and another array."""
         return self.tocsr().maximum(other)
 
     def minimum(self, other):
-        """Element-wise minimum between this and another matrix."""
+        """Element-wise minimum between this and another array."""
         return self.tocsr().minimum(other)
 
     def dot(self, other):
@@ -403,8 +402,8 @@ class spmatrix:
         Examples
         --------
         >>> import numpy as np
-        >>> from scipy.sparse import csr_matrix
-        >>> A = csr_matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> v = np.array([1, 0, -1])
         >>> A.dot(v)
         array([ 1, -3, -1], dtype=int64)
@@ -465,8 +464,8 @@ class spmatrix:
                 return self.copy()
             # Now we would add this scalar to every element.
             raise NotImplementedError('adding a nonzero scalar to a '
-                                      'sparse matrix is not supported')
-        elif isspmatrix(other):
+                                      'sparse array is not supported')
+        elif issparse(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
             return self._add_sparse(other)
@@ -484,8 +483,8 @@ class spmatrix:
             if other == 0:
                 return self.copy()
             raise NotImplementedError('subtracting a nonzero scalar from a '
-                                      'sparse matrix is not supported')
-        elif isspmatrix(other):
+                                      'sparse array is not supported')
+        elif issparse(other):
             if other.shape != self.shape:
                 raise ValueError("inconsistent shapes")
             return self._sub_sparse(other)
@@ -499,7 +498,7 @@ class spmatrix:
         if isscalarlike(other):
             if other == 0:
                 return -self.copy()
-            raise NotImplementedError('subtracting a sparse matrix from a '
+            raise NotImplementedError('subtracting a sparse array from a '
                                       'nonzero scalar is not supported')
         elif isdense(other):
             other = np.broadcast_to(other, self.shape)
@@ -516,9 +515,8 @@ class spmatrix:
         self._mul_multivector()
         self._mul_sparse_matrix()
         """
-        # This method has to be different from `__mul__` because it is also
-        # called by sparse array classes via matmul, while their mul is
-        # elementwise.
+        # This method has to be different from `__matmul__` because it is also
+        # called by sparse matrix classes.
 
         M, N = self.shape
 
@@ -540,7 +538,7 @@ class spmatrix:
                 raise ValueError('dimension mismatch')
             return self._mul_sparse_matrix(other)
 
-        # If it's a list or whatever, treat it like a matrix
+        # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
 
         if other_a.ndim == 0 and other_a.dtype == np.object_:
@@ -586,8 +584,8 @@ class spmatrix:
         else:
             raise ValueError('could not interpret dimensions')
 
-    def __mul__(self, other):
-        return self._mul_dispatch(other)
+    def __mul__(self, *args, **kwargs):
+        return self.multiply(*args, **kwargs)
 
     # by default, use CSR for __mul__ handlers
     def _mul_scalar(self, other):
@@ -616,8 +614,8 @@ class spmatrix:
                 return NotImplemented
             return ret.transpose()
 
-    def __rmul__(self, other):  # other * self
-        return self._rmul_dispatch(other)
+    def __rmul__(self, *args, **kwargs):  # other * self
+        return self.multiply(*args, **kwargs)
 
     #######################
     # matmul (@) operator #
@@ -670,7 +668,7 @@ class spmatrix:
                     return np.true_divide(other, self.todense())
                 else:
                     return np.divide(other, self.todense())
-        elif isspmatrix(other):
+        elif issparse(other):
             if rdivide:
                 return other._divide(self, true_divide, rdivide=False)
 
@@ -715,36 +713,8 @@ class spmatrix:
     def __itruediv__(self, other):
         return NotImplemented
 
-    def __pow__(self, other):
-        M, N = self.shape[0], self.shape[1]
-        if M != N:
-            raise TypeError('matrix is not square')
-
-        if isintlike(other):
-            other = int(other)
-            if other < 0:
-                raise ValueError('exponent must be >= 0')
-
-            if other == 0:
-                from ._construct import eye
-                E = eye(M, dtype=self.dtype)
-                if self._is_array:
-                    from ._arrays import dia_array
-                    E = dia_array(E)
-                return E
-
-            elif other == 1:
-                return self.copy()
-            else:
-                tmp = self.__pow__(other//2)
-                if (other % 2):
-                    return self @ tmp @ tmp
-                else:
-                    return tmp @ tmp
-        elif isscalarlike(other):
-            raise ValueError('exponent must be an integer')
-        else:
-            return NotImplemented
+    def __pow__(self, *args, **kwargs):
+        return self.power(*args, **kwargs)
 
     def __getattr__(self, attr):
         if attr == 'A':
@@ -772,7 +742,7 @@ class spmatrix:
 
     def transpose(self, axes=None, copy=False):
         """
-        Reverses the dimensions of the sparse matrix.
+        Reverses the dimensions of the sparse array.
 
         Parameters
         ----------
@@ -783,7 +753,7 @@ class spmatrix:
         copy : bool, optional
             Indicates whether or not attributes of `self` should be
             copied whenever possible. The degree to which attributes
-            are copied varies depending on the type of sparse matrix
+            are copied varies depending on the type of sparse array
             being used.
 
         Returns
@@ -792,15 +762,14 @@ class spmatrix:
 
         See Also
         --------
-        numpy.matrix.transpose : NumPy's implementation of 'transpose'
-                                 for matrices
+        numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
     def conj(self, copy=True):
         """Element-wise complex conjugation.
 
-        If the matrix is of non-complex data type and `copy` is False,
+        If the array is of non-complex data type and `copy` is False,
         this method does nothing and the data is not copied.
 
         Parameters
@@ -827,7 +796,7 @@ class spmatrix:
 
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
-        """Return the Hermitian transpose of this matrix.
+        """Return the Hermitian transpose of this array.
 
         See Also
         --------
@@ -845,12 +814,12 @@ class spmatrix:
         """nonzero indices
 
         Returns a tuple of arrays (row,col) containing the indices
-        of the non-zero elements of the matrix.
+        of the non-zero elements of the array.
 
         Examples
         --------
-        >>> from scipy.sparse import csr_matrix
-        >>> A = csr_matrix([[1,2,0],[0,0,3],[4,0,5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1,2,0],[0,0,3],[4,0,5]])
         >>> A.nonzero()
         (array([0, 0, 1, 2, 2]), array([0, 1, 2, 0, 2]))
 
@@ -862,10 +831,10 @@ class spmatrix:
         return (A.row[nz_mask], A.col[nz_mask])
 
     def getcol(self, j):
-        """Returns a copy of column j of the matrix, as an (m x 1) sparse
-        matrix (column vector).
+        """Returns a copy of column j of the array, as an (m x 1) sparse
+        array (column vector).
         """
-        # Spmatrix subclasses should override this method for efficiency.
+        # Subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
         n = self.shape[1]
@@ -878,10 +847,10 @@ class spmatrix:
         return self @ col_selector
 
     def getrow(self, i):
-        """Returns a copy of row i of the matrix, as a (1 x n) sparse
-        matrix (row vector).
+        """Returns a copy of row i of the array, as a (1 x n) sparse
+        array (row vector).
         """
-        # Spmatrix subclasses should override this method for efficiency.
+        # Subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
         m = self.shape[0]
@@ -915,7 +884,7 @@ class spmatrix:
 
     def todense(self, order=None, out=None):
         """
-        Return a dense matrix representation of this matrix.
+        Return a dense matrix representation of this sparse array.
 
         Parameters
         ----------
@@ -930,14 +899,14 @@ class spmatrix:
             If specified, uses this array (or `numpy.matrix`) as the
             output buffer instead of allocating a new array to
             return. The provided array must have the same shape and
-            dtype as the sparse matrix on which you are calling the
+            dtype as the sparse array on which you are calling the
             method.
 
         Returns
         -------
         arr : numpy.matrix, 2-D
             A NumPy matrix object with the same shape and containing
-            the same data represented by the sparse matrix, with the
+            the same data represented by the sparse array, with the
             requested memory order. If `out` was passed and was an
             array (rather than a `numpy.matrix`), it will be filled
             with the appropriate values and returned wrapped in a
@@ -947,7 +916,7 @@ class spmatrix:
 
     def toarray(self, order=None, out=None):
         """
-        Return a dense ndarray representation of this matrix.
+        Return a dense ndarray representation of this sparse array.
 
         Parameters
         ----------
@@ -962,7 +931,7 @@ class spmatrix:
             If specified, uses this array as the output buffer
             instead of allocating a new array to return. The provided
             array must have the same shape and dtype as the sparse
-            matrix on which you are calling the method. For most
+            array on which you are calling the method. For most
             sparse types, `out` is required to be memory contiguous
             (either C or Fortran ordered).
 
@@ -970,95 +939,95 @@ class spmatrix:
         -------
         arr : ndarray, 2-D
             An array with the same shape and containing the same
-            data represented by the sparse matrix, with the requested
+            data represented by the sparse array, with the requested
             memory order. If `out` was passed, the same object is
             returned after being modified in-place to contain the
             appropriate values.
         """
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # Any sparse matrix format deriving from spmatrix must define one of
+    # Any sparse array format deriving from _sparray must define one of
     # tocsr or tocoo. The other conversion methods may be implemented for
     # efficiency, but are not required.
     def tocsr(self, copy=False):
-        """Convert this matrix to Compressed Sparse Row format.
+        """Convert this array to Compressed Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant csr_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant csr_array.
         """
         return self.tocoo(copy=copy).tocsr(copy=False)
 
     def todok(self, copy=False):
-        """Convert this matrix to Dictionary Of Keys format.
+        """Convert this array to Dictionary Of Keys format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant dok_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant dok_array.
         """
         return self.tocoo(copy=copy).todok(copy=False)
 
     def tocoo(self, copy=False):
-        """Convert this matrix to COOrdinate format.
+        """Convert this array to COOrdinate format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant coo_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant coo_array.
         """
         return self.tocsr(copy=False).tocoo(copy=copy)
 
     def tolil(self, copy=False):
-        """Convert this matrix to List of Lists format.
+        """Convert this array to List of Lists format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant lil_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant lil_array.
         """
         return self.tocsr(copy=False).tolil(copy=copy)
 
     def todia(self, copy=False):
-        """Convert this matrix to sparse DIAgonal format.
+        """Convert this array to sparse DIAgonal format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant dia_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant dia_array.
         """
         return self.tocoo(copy=copy).todia(copy=False)
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this matrix to Block Sparse Row format.
+        """Convert this array to Block Sparse Row format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant bsr_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant bsr_array.
 
         When blocksize=(R, C) is provided, it will be used for construction of
-        the bsr_matrix.
+        the bsr_array.
         """
         return self.tocsr(copy=False).tobsr(blocksize=blocksize, copy=copy)
 
     def tocsc(self, copy=False):
-        """Convert this matrix to Compressed Sparse Column format.
+        """Convert this array to Compressed Sparse Column format.
 
-        With copy=False, the data/indices may be shared between this matrix and
-        the resultant csc_matrix.
+        With copy=False, the data/indices may be shared between this array and
+        the resultant csc_array.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
 
     def copy(self):
-        """Returns a copy of this matrix.
+        """Returns a copy of this array.
 
         No data/indices will be shared between the returned value and current
-        matrix.
+        array.
         """
         return self.__class__(self, copy=True)
 
     def sum(self, axis=None, dtype=None, out=None):
         """
-        Sum the matrix elements over a given axis.
+        Sum the array elements over a given axis.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the sum of all the matrix elements, returning a scalar
+            compute the sum of all the array elements, returning a scalar
             (i.e., `axis` = `None`).
         dtype : dtype, optional
-            The type of the returned matrix and of the accumulator in which
+            The type of the returned array and of the accumulator in which
             the elements are summed.  The dtype of `a` is used by default
             unless `a` has an integer dtype of less precision than the default
             platform integer.  In that case, if `a` is signed then the platform
@@ -1088,7 +1057,7 @@ class spmatrix:
         validateaxis(axis)
 
         # We use multiplication by a matrix of ones to achieve this.
-        # For some sparse matrix formats more efficient methods are
+        # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
         m, n = self.shape
 
@@ -1125,8 +1094,8 @@ class spmatrix:
         """
         Compute the arithmetic mean along the specified axis.
 
-        Returns the average of the matrix elements. The average is taken
-        over all elements in the matrix by default, otherwise over the
+        Returns the average of the array elements. The average is taken
+        over all elements in the array by default, otherwise over the
         specified axis. `float64` intermediate and return values are used
         for integer inputs.
 
@@ -1134,7 +1103,7 @@ class spmatrix:
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the mean is computed. The default is to compute
-            the mean of all elements in the matrix (i.e., `axis` = `None`).
+            the mean of all elements in the array (i.e., `axis` = `None`).
         dtype : data-type, optional
             Type to use in computing the mean. For integer inputs, the default
             is `float64`; for floating point inputs, it is the same as the
@@ -1195,7 +1164,7 @@ class spmatrix:
                 axis=1, dtype=res_dtype, out=out)
 
     def diagonal(self, k=0):
-        """Returns the kth diagonal of the matrix.
+        """Returns the kth diagonal of the array.
 
         Parameters
         ----------
@@ -1211,8 +1180,8 @@ class spmatrix:
 
         Examples
         --------
-        >>> from scipy.sparse import csr_matrix
-        >>> A = csr_matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> A.diagonal()
         array([1, 0, 5])
         >>> A.diagonal(k=1)
@@ -1221,7 +1190,7 @@ class spmatrix:
         return self.tocsr().diagonal(k=k)
 
     def trace(self, offset=0):
-        """Returns the sum along diagonals of the sparse matrix.
+        """Returns the sum along diagonals of the sparse array.
 
         Parameters
         ----------
@@ -1254,7 +1223,7 @@ class spmatrix:
         """
         M, N = self.shape
         if (k > 0 and k >= N) or (k < 0 and -k >= M):
-            raise ValueError("k exceeds matrix dimensions")
+            raise ValueError("k exceeds array dimensions")
         self._setdiag(np.asarray(values), k)
 
     def _setdiag(self, values, k):
@@ -1291,25 +1260,25 @@ class spmatrix:
                                  'is not None')
             if out.shape != self.shape or out.dtype != self.dtype:
                 raise ValueError('out array must be same dtype and shape as '
-                                 'sparse matrix')
+                                 'sparse array')
             out[...] = 0.
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
 
 
-def isspmatrix(x):
-    """Is x of a sparse matrix type?
+def issparse(x):
+    """Is x of a sparse array type?
 
     Parameters
     ----------
     x
-        object to check for being a sparse matrix
+        object to check for being a sparse array
 
     Returns
     -------
     bool
-        True if x is a sparse matrix, False otherwise
+        True if x is a sparse array, False otherwise
 
     Notes
     -----
@@ -1317,15 +1286,15 @@ def isspmatrix(x):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix, isspmatrix
-    >>> isspmatrix(csr_matrix([[5]]))
+    >>> from scipy.sparse import csr_array, issparse
+    >>> issparse(csr_array([[5]]))
     True
 
-    >>> from scipy.sparse import isspmatrix
-    >>> isspmatrix(5)
+    >>> from scipy.sparse import issparse
+    >>> issparse(5)
     False
     """
-    return isinstance(x, spmatrix)
+    return isinstance(x, _sparray)
 
 
-issparse = isspmatrix
+isspmatrix = issparse

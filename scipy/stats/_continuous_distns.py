@@ -678,7 +678,8 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return _boost._beta_pdf(x, a, b)
+        with np.errstate(over='ignore'):
+            return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -697,8 +698,6 @@ class beta_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         with np.errstate(over='ignore'):  # see gh-17432
-            message = "overflow encountered in _beta_ppf"
-            warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
@@ -920,6 +919,13 @@ class betaprime_gen(rv_continuous):
             lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
+    def _sf(self, x, a, b):
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: beta._cdf(1/(1+x_), b_, a_),
+            f2=lambda x_, a_, b_: beta._sf(x_/(1+x_), a_, b_)
+        )
+
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
         # by default, compute compute the ppf by solving the following:
@@ -936,22 +942,27 @@ class betaprime_gen(rv_continuous):
 
     def _munp(self, n, a, b):
         if n == 1.0:
-            return np.where(b > 1,
-                            a/(b-1.0),
-                            np.inf)
+            return _lazywhere(
+                b > 1, (a, b),
+                lambda a, b: a/(b-1.0),
+                fillvalue=np.inf)
         elif n == 2.0:
-            return np.where(b > 2,
-                            a*(a+1.0)/((b-2.0)*(b-1.0)),
-                            np.inf)
+            return _lazywhere(
+                b > 2, (a, b),
+                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
+                fillvalue=np.inf)
         elif n == 3.0:
-            return np.where(b > 3,
-                            a*(a+1.0)*(a+2.0)/((b-3.0)*(b-2.0)*(b-1.0)),
-                            np.inf)
+            return _lazywhere(
+                b > 3, (a, b),
+                lambda a, b: (a*(a+1.0)*(a+2.0)
+                              / ((b-3.0)*(b-2.0)*(b-1.0))),
+                fillvalue=np.inf)
         elif n == 4.0:
-            return np.where(b > 4,
-                            (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                             ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                            np.inf)
+            return _lazywhere(
+                b > 4, (a, b),
+                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
+                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
+                fillvalue=np.inf)
         else:
             raise NotImplementedError
 
@@ -1653,17 +1664,7 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _entropy(self, a):
-        a = np.asarray([a])
-        def h1(a):
-            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
-            return h1
-
-        def h2(a):
-            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
-            return h2
-
-        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
-        return h
+        return stats.gamma._entropy(a) - np.log(0.5)
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
@@ -1731,6 +1732,15 @@ class dweibull_gen(rv_continuous):
         fac = 2. * np.where(q <= 0.5, q, 1. - q)
         fac = np.power(-np.log(fac), 1.0 / c)
         return np.where(q > 0.5, fac, -fac)
+
+    def _sf(self, x, c):
+        half_weibull_min_sf = 0.5 * stats.weibull_min._sf(np.abs(x), c)
+        return np.where(x > 0, half_weibull_min_sf, 1 - half_weibull_min_sf)
+
+    def _isf(self, q, c):
+        double_q = 2. * np.where(q <= 0.5, q, 1. - q)
+        weibull_min_isf = stats.weibull_min._isf(double_q, c)
+        return np.where(q > 0.5, -weibull_min_isf, weibull_min_isf)
 
     def _munp(self, n, c):
         return (1 - (n % 2)) * sc.gamma(1.0 + 1.0 * n / c)
@@ -1942,6 +1952,25 @@ class exponnorm_gen(rv_continuous):
 exponnorm = exponnorm_gen(name='exponnorm')
 
 
+def _pow1pm1(x, y):
+    """
+    Compute (1 + x)**y - 1.
+
+    Uses expm1 and xlog1py to avoid loss of precision when
+    (1 + x)**y is close to 1.
+
+    Note that the inverse of this function with respect to x is
+    ``_pow1pm1(x, 1/y)``.  That is, if
+
+        t = _pow1pm1(x, y)
+
+    then
+
+        x = _pow1pm1(t, 1/y)
+    """
+    return np.expm1(sc.xlog1py(y, x))
+
+
 class exponweib_gen(rv_continuous):
     r"""An exponentiated Weibull continuous random variable.
 
@@ -2006,6 +2035,12 @@ class exponweib_gen(rv_continuous):
 
     def _ppf(self, q, a, c):
         return (-sc.log1p(-q**(1.0/a)))**np.asarray(1.0/c)
+
+    def _sf(self, x, a, c):
+        return -_pow1pm1(-np.exp(-x**c), a)
+
+    def _isf(self, p, a, c):
+        return (-np.log(-_pow1pm1(-p, 1/a)))**(1/c)
 
 
 exponweib = exponweib_gen(a=0.0, name='exponweib')
@@ -2431,14 +2466,17 @@ class weibull_min_gen(rv_continuous):
     def _cdf(self, x, c):
         return -sc.expm1(-pow(x, c))
 
+    def _ppf(self, q, c):
+        return pow(-sc.log1p(-q), 1.0/c)
+
     def _sf(self, x, c):
-        return np.exp(-pow(x, c))
+        return np.exp(self._logsf(x, c))
 
     def _logsf(self, x, c):
         return -pow(x, c)
 
-    def _ppf(self, q, c):
-        return pow(-sc.log1p(-q), 1.0/c)
+    def _isf(self, q, c):
+        return (-np.log(q))**(1/c)
 
     def _munp(self, n, c):
         return sc.gamma(1.0+n*1.0/c)
@@ -4247,7 +4285,7 @@ class halfnorm_gen(rv_continuous):
         return 2 * _norm_sf(x)
 
     def _isf(self, p):
-        return  _norm_isf(p/2)
+        return _norm_isf(p/2)
 
     def _stats(self):
         return (np.sqrt(2.0/np.pi),
@@ -4449,6 +4487,7 @@ class invgamma_gen(rv_continuous):
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
         return h
+
 
 invgamma = invgamma_gen(a=0.0, name='invgamma')
 
@@ -7139,20 +7178,34 @@ class t_gen(rv_continuous):
             df == np.inf, (x, df),
             f=lambda x, df: norm._pdf(x),
             f2=lambda x, df: (
-                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
-                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+                np.exp(self._logpdf(x, df))
             )
         )
 
     def _logpdf(self, x, df):
-        return _lazywhere(
-            df == np.inf, (x, df),
-            f=lambda x, df: norm._logpdf(x),
-            f2=lambda x, df: (
-                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
-                - (0.5*np.log(df*np.pi)
-                   + (df+1)/2*np.log(1+(x**2)/df))
-            )
+
+        def regular_formula(x, df):
+            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
+                    - (0.5 * np.log(df*np.pi))
+                    - (df + 1)/2*np.log1p(x * x/df))
+
+        def asymptotic_formula(x, df):
+            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
+                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
+                    - 1/6 * df**-1. + 1/45*df**-3.
+                    - (df + 1)/2 * np.log1p(x*x/df))
+
+        def norm_logpdf(x, df):
+            return norm._logpdf(x)
+
+        return _lazyselect(
+            ((df == np.inf),
+             (df >= 200) & np.isfinite(df),
+             (df < 200)),
+            (norm_logpdf,
+             asymptotic_formula,
+             regular_formula),
+            (x, df, )
         )
 
     def _cdf(self, x, df):
@@ -7213,6 +7266,7 @@ class t_gen(rv_continuous):
 
         h = _lazywhere(df >= 100, (df, ), f=asymptotic, f2=regular)
         return h
+
 
 t = t_gen(name='t')
 
@@ -9078,6 +9132,12 @@ class truncexpon_gen(rv_continuous):
     def _ppf(self, q, b):
         return -sc.log1p(q*sc.expm1(-b))
 
+    def _sf(self, x, b):
+        return (np.exp(-b) - np.exp(-x))/sc.expm1(-b)
+
+    def _isf(self, q, b):
+        return -np.log(np.exp(-b) - q * sc.expm1(-b))
+
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
         # return sc.gamman+1)-sc.gammainc1+n, b)
@@ -9087,8 +9147,7 @@ class truncexpon_gen(rv_continuous):
             return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
         else:
             # return generic for higher moments
-            # return rv_continuous._mom1_sc(self, n, b)
-            return self._mom1_sc(n, b)
+            return super()._munp(n, b)
 
     def _entropy(self, b):
         eB = np.exp(b)
@@ -9110,7 +9169,6 @@ def _log_diff(log_p, log_q):
 
 def _log_gauss_mass(a, b):
     """Log of Gaussian probability mass within an interval"""
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
     a, b = np.broadcast_arrays(a, b)
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -9197,7 +9255,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logcdf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        logcdf = np.asarray(_log_gauss_mass(a, x) - _log_gauss_mass(a, b))
         i = logcdf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
@@ -9208,7 +9266,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logsf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        logsf = np.asarray(_log_gauss_mass(x, b) - _log_gauss_mass(a, b))
         i = logsf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
@@ -9720,8 +9778,8 @@ class FitUniformFixedScaleDataError(FitDataError):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood estimation with "
             "the uniform distribution and fixed scale requires that "
-            "data.ptp() <= fscale, but data.ptp() = %r and fscale = %r." %
-            (ptp, fscale),
+            f"data.ptp() <= fscale, but data.ptp() = {ptp} and "
+            f"fscale = {fscale}."
         )
 
 
@@ -9916,6 +9974,11 @@ class vonmises_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    scipy.stats.vonmises_fisher : Von-Mises Fisher distribution on a
+                                  hypersphere
+
     Notes
     -----
     The probability density function for `vonmises` and `vonmises_line` is:
@@ -9929,17 +9992,77 @@ class vonmises_gen(rv_continuous):
 
     `vonmises` is a circular distribution which does not restrict the
     distribution to a fixed interval. Currently, there is no circular
-    distribution framework in scipy. The ``cdf`` is implemented such that
+    distribution framework in SciPy. The ``cdf`` is implemented such that
     ``cdf(x + 2*np.pi) == cdf(x) + 1``.
 
     `vonmises_line` is the same distribution, defined on :math:`[-\pi, \pi]`
     on the real line. This is a regular (i.e. non-circular) distribution.
 
-    `vonmises` and `vonmises_line` take ``kappa`` as a shape parameter.
+    Note about distribution parameters: `vonmises` and `vonmises_line` take
+    ``kappa`` as a shape parameter (concentration) and ``loc`` as the location
+    (circular mean). A ``scale`` parameter is accepted but does not have any
+    effect.
 
-    %(after_notes)s
+    Examples
+    --------
+    Import the necessary modules.
 
-    %(example)s
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import vonmises
+
+    Define distribution parameters.
+
+    >>> loc = 0.5 * np.pi  # circular mean
+    >>> kappa = 1  # concentration
+
+    Compute the probability density at ``x=0`` via the ``pdf`` method.
+
+    >>> vonmises.pdf(loc, kappa, 0)
+    0.12570826359722018
+
+    Verify that the percentile function ``ppf`` inverts the cumulative
+    distribution function ``cdf`` up to floating point accuracy.
+
+    >>> x = 1
+    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
+    >>> x, cdf_value, ppf_value
+    (1, 0.31489339900904967, 1.0000000000000004)
+
+    Draw 1000 random variates by calling the ``rvs`` method.
+
+    >>> number_of_samples = 1000
+    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+
+    Plot the von Mises density on a Cartesian and polar grid to emphasize
+    that is is a circular distribution.
+
+    >>> fig = plt.figure(figsize=(12, 6))
+    >>> left = plt.subplot(121)
+    >>> right = plt.subplot(122, projection='polar')
+    >>> x = np.linspace(-np.pi, np.pi, 500)
+    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> ticks = [0, 0.15, 0.3]
+
+    The left image contains the Cartesian plot.
+
+    >>> left.plot(x, vonmises_pdf)
+    >>> left.set_yticks(ticks)
+    >>> number_of_bins = int(np.sqrt(number_of_samples))
+    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> left.set_title("Cartesian plot")
+    >>> left.set_xlim(-np.pi, np.pi)
+    >>> left.grid(True)
+
+    The right image contains the polar plot.
+
+    >>> right.plot(x, vonmises_pdf, label="PDF")
+    >>> right.set_yticks(ticks)
+    >>> right.hist(samples, density=True, bins=number_of_bins,
+    ...            label="Histogram")
+    >>> right.set_title("Polar plot")
+    >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
@@ -10035,7 +10158,7 @@ class vonmises_gen(rv_continuous):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                    bracket=(1e-8, 1e12))
+                                       bracket=(np.finfo(float).tiny, 1e16))
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
@@ -11103,6 +11226,155 @@ class studentized_range_gen(rv_continuous):
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
                                           b=np.inf)
+
+
+class rel_breitwigner_gen(rv_continuous):
+    r"""A relativistic Breit-Wigner random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    cauchy: Cauchy distribution, also known as the Breit-Wigner distribution.
+
+    Notes
+    -----
+
+    The probability density function for `rel_breitwigner` is
+
+    .. math::
+
+        f(x, \rho) = \frac{k}{(x^2 - \rho^2)^2 + \rho^2}
+
+    where
+
+    .. math::
+        k = \frac{2\sqrt{2}\rho^2\sqrt{\rho^2 + 1}}
+            {\pi\sqrt{\rho^2 + \rho\sqrt{\rho^2 + 1}}}
+
+    The relativistic Breit-Wigner distribution is used in high energy physics
+    to model resonances [1]_. It gives the uncertainty in the invariant mass,
+    :math:`M` [2]_, of a resonance with characteristic mass :math:`M_0` and
+    decay-width :math:`\Gamma`, where :math:`M`, :math:`M_0` and :math:`\Gamma`
+    are expressed in natural units. In SciPy's parametrization, the shape
+    parameter :math:`\rho` is equal to :math:`M_0/\Gamma` and takes values in
+    :math:`(0, \infty)`.
+
+    Equivalently, the relativistic Breit-Wigner distribution is said to give
+    the uncertainty in the center-of-mass energy :math:`E_{\text{cm}}`. In
+    natural units, the speed of light :math:`c` is equal to 1 and the invariant
+    mass :math:`M` is equal to the rest energy :math:`Mc^2`. In the
+    center-of-mass frame, the rest energy is equal to the total energy [3]_.
+
+    %(after_notes)s
+
+    :math:`\rho = M/\Gamma` and :math:`\Gamma` is the scale parameter. For
+    example, if one seeks to model the :math:`Z^0` boson with :math:`M_0
+    \approx 91.1876 \text{ GeV}` and :math:`\Gamma \approx 2.4952\text{ GeV}`
+    [4]_ one can set ``rho=91.1876/2.4952`` and ``scale=2.4952``.
+
+    To ensure a physically meaningful result when using the `fit` method, one
+    should set ``floc=0`` to fix the location parameter to 0.
+
+    References
+    ----------
+    .. [1] Relativistic Breit-Wigner distribution, Wikipedia,
+           https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
+    .. [2] Invariant mass, Wikipedia,
+           https://en.wikipedia.org/wiki/Invariant_mass
+    .. [3] Center-of-momentum frame, Wikipedia,
+           https://en.wikipedia.org/wiki/Center-of-momentum_frame
+    .. [4] M. Tanabashi et al. (Particle Data Group) Phys. Rev. D 98, 030001 -
+           Published 17 August 2018
+
+    %(example)s
+
+    """
+    def _argcheck(self, rho):
+        return rho > 0
+
+    def _shape_info(self):
+        return [_ShapeInfo("rho", False, (0, np.inf), (False, False))]
+
+    def _pdf(self, x, rho):
+        # C = k / rho**2
+        C = np.sqrt(
+            2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+        ) * 2 / np.pi
+        with np.errstate(over='ignore'):
+            return C / (((x - rho)*(x + rho)/rho)**2 + 1)
+
+    def _cdf(self, x, rho):
+        # C = k / (2 * rho**2) / np.sqrt(1 + 1/rho**2)
+        C = np.sqrt(2/(1 + np.sqrt(1 + 1/rho**2)))/np.pi
+        result = (
+            np.sqrt(-1 + 1j/rho)
+            * np.arctan(x/np.sqrt(-rho*(rho + 1j)))
+        )
+        result = C * 2 * np.imag(result)
+        # Sometimes above formula produces values greater than 1.
+        return np.clip(result, None, 1)
+
+    def _munp(self, n, rho):
+        if n == 1:
+            # C = k / (2 * rho)
+            C = np.sqrt(
+                2 * (1 + 1/rho**2) / (1 + np.sqrt(1 + 1/rho**2))
+            ) / np.pi * rho
+            return C * (np.pi/2 + np.arctan(rho))
+        if n == 2:
+            # C = pi * k / (4 * rho)
+            C = np.sqrt(
+                (1 + 1/rho**2) / (2 * (1 + np.sqrt(1 + 1/rho**2)))
+            ) * rho
+            result = (1 - rho * 1j) / np.sqrt(-1 - 1j/rho)
+            return 2 * C * np.real(result)
+        else:
+            return np.inf
+
+    def _stats(self, rho):
+        # Returning None from stats makes public stats use _munp.
+        # nan values will be omitted from public stats. Skew and
+        # kurtosis are actually infinite.
+        return None, None, np.nan, np.nan
+
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        # Override rv_continuous.fit to better handle case where floc is set.
+        data, _, floc, fscale = _check_fit_input_parameters(
+            self, data, args, kwds
+        )
+
+        censored = isinstance(data, CensoredData)
+        if censored:
+            if data.num_censored() == 0:
+                # There are no censored values in data, so replace the
+                # CensoredData instance with a regular array.
+                data = data._uncensored
+                censored = False
+
+        if floc is None or censored:
+            return super().fit(data, *args, **kwds)
+
+        if fscale is None:
+            # The interquartile range approximates the scale parameter gamma.
+            # The median approximates rho * gamma.
+            p25, p50, p75 = np.quantile(data - floc, [0.25, 0.5, 0.75])
+            scale_0 = p75 - p25
+            rho_0 = p50 / scale_0
+            if not args:
+                args = [rho_0]
+            if "scale" not in kwds:
+                kwds["scale"] = scale_0
+        else:
+            M_0 = np.median(data - floc)
+            rho_0 = M_0 / fscale
+            if not args:
+                args = [rho_0]
+        return super().fit(data, *args, **kwds)
+
+
+rel_breitwigner = rel_breitwigner_gen(a=0.0, name="rel_breitwigner")
 
 
 # Collect names of classes and objects in this module.

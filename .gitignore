@@ -135,6 +135,7 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/reference/generated
+**/.ipynb_checkpoints
 
 # Things specific to this project #
 ###################################

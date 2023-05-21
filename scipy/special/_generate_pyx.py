@@ -111,10 +111,10 @@ ctypedef fused number_t:
     double complex
     double
 
-cpdef number_t spherical_jn(long n, number_t z, bint derivative=*) nogil
-cpdef number_t spherical_yn(long n, number_t z, bint derivative=*) nogil
-cpdef number_t spherical_in(long n, number_t z, bint derivative=*) nogil
-cpdef number_t spherical_kn(long n, number_t z, bint derivative=*) nogil
+cpdef number_t spherical_jn(long n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_yn(long n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_in(long n, number_t z, bint derivative=*) noexcept nogil
+cpdef number_t spherical_kn(long n, number_t z, bint derivative=*) noexcept nogil
 """
 
 CYTHON_SPECIAL_PYX = """\
@@ -371,7 +371,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     name = "loop_{}_{}_{}_As_{}_{}".format(
         func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
         )
-    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:\n" % name
+    body = "cdef void %s(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) noexcept nogil:\n" % name
     body += "    cdef np.npy_intp i, n = dims[0]\n"
     body += "    cdef void *func = (<void**>data)[0]\n"
     body += "    cdef char *func_name = <char*>(<void**>data)[1]\n"
@@ -409,7 +409,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     else:
         rv = ""
 
-    funcall = "        {}(<{}(*)({}) nogil>func)({})\n".format(
+    funcall = "        {}(<{}(*)({}) noexcept nogil>func)({})\n".format(
         rv, CY_TYPES[func_retval], ", ".join(ftypes), ", ".join(fvars))
 
     # Cast-check inputs and call function
@@ -629,7 +629,7 @@ class Func:
             if header.endswith("h") and nptypes_for_h:
                 cy_proto = c_proto + "nogil"
             else:
-                cy_proto = "{} (*)({}) nogil".format(CY_TYPES[ret], ", ".join(cy_args))
+                cy_proto = "{} (*)({}) noexcept nogil".format(CY_TYPES[ret], ", ".join(cy_args))
             prototypes.append((func_name, c_proto, cy_proto, header))
         return prototypes
 
@@ -1013,7 +1013,7 @@ class FusedFunc(Func):
             # Functions from _ufuncs_cxx are exported as a void*
             # pointers; cast them to the correct types
             func_name = f"scipy.special._ufuncs_cxx._export_{func_name}"
-            func_name = "(<{}(*)({}) nogil>{})"\
+            func_name = "(<{}(*)({}) noexcept nogil>{})"\
                     .format(rettype, ", ".join(intypes + outtypes), func_name)
         else:
             func_name = self.cython_func_name(func_name, specialized=True)
@@ -1126,9 +1126,9 @@ class FusedFunc(Func):
                 callvars.append(f"{outtype} *{outvar}")
         if len(self.outvars) == 1:
             outtype, _ = self.outtypes[0]
-            dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+            dec = "cpdef {} {}({}) noexcept nogil".format(outtype, self.name, ", ".join(callvars))
         else:
-            dec = "cdef void {}({}) nogil".format(self.name, ", ".join(callvars))
+            dec = "cdef void {}({}) noexcept nogil".format(self.name, ", ".join(callvars))
         head.append(dec + ":")
         head.append(tab + f'"""{self.doc}"""')
         if len(self.outvars) == 1:
@@ -1174,7 +1174,7 @@ class FusedFunc(Func):
             callvars.append(f"{intype} {invar}")
         for outvar, (outtype, _) in zip(self.outvars, self.outtypes):
             callvars.append(f"{outtype} *{outvar}")
-        dec = "cdef void {}({}) nogil".format(self.name, ", ".join(callvars))
+        dec = "cdef void {}({}) noexcept nogil".format(self.name, ", ".join(callvars))
         head.append(dec + ":")
         head.append(tab + f'"""{self.doc}"""')
         head.extend(self._get_tmp_decs(all_tmpvars))
@@ -1259,7 +1259,7 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
     cxx_defs = []
     cxx_pxd_defs = [
         "from . cimport sf_error",
-        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) nogil"
+        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) noexcept nogil"
     ]
     cxx_defs_h = []
 

@@ -1,5 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
+from math import prod
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
@@ -7,7 +8,6 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
-from scipy._lib._util import prod
 
 from . import _fitpack_py
 from . import dfitpack
@@ -393,11 +393,13 @@ class interp1d(_Interpolator1D):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (npoints, ) array_like
         A 1-D array of real values.
-    y : (...,N,...) array_like
+    y : (..., npoints, ...) array_like
         A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+        axis must be equal to the length of `x`. Use the ``axis`` parameter
+        to select correct axis. Unlike other interpolators, the default
+        interpolation axis is the last axis of `y`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string or as an integer
         specifying the order of the spline interpolator to use.
@@ -410,8 +412,8 @@ class interp1d(_Interpolator1D):
         in that 'nearest-up' rounds up and 'nearest' rounds down. Default
         is 'linear'.
     axis : int, optional
-        Specifies the axis of `y` along which to interpolate.
-        Interpolation defaults to the last axis of `y`.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Unlike
+        other interpolators, defaults to ``axis=-1``.
     copy : bool, optional
         If True, the class makes internal copies of x and y.
         If False, references to `x` and `y` are used. The default is to copy.
