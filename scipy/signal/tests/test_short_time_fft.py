@@ -33,16 +33,16 @@ from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
 from scipy.signal.windows import gaussian
 
 
-def chk_VE(match):
-    """Assert for a ValueError matching regexp `match`.
-
-    This little wrapper allows a more concise code layout. Usage::
-
-        with chk_VE("Message RegExp"):
-            test_code
-            ...
-    """
-    return pytest.raises(ValueError, match=match)
+# def pytest.raises(ValueError, match=match):
+#     """Assert for a ValueError matching regexp `match`.
+#
+#     This little wrapper allows a more concise code layout. Usage::
+#
+#         with pytest.raises(ValueError, match="Message RegExp"):
+#             test_code
+#             ...
+#     """
+#     return pytest.raises(ValueError, match=match)
 
 
 def test__calc_dual_canonical_window_roundtrip():
@@ -75,18 +75,24 @@ def test__calc_dual_canonical_window_exceptions():
 def test_invalid_initializer_parameters():
     """Verify that exceptions get raised on invalid parameters when
     instantiating ShortTimeFFT. """
-    with chk_VE(r"Parameter win must be 1d, but win.shape=\(2, 2\)!"):
+    with pytest.raises(ValueError, match=r"Parameter win must be 1d, " +
+                                         r"but win.shape=\(2, 2\)!"):
         ShortTimeFFT(np.ones((2, 2)), hop=4, fs=1)
-    with chk_VE("Parameter win must have finite entries"):
+    with pytest.raises(ValueError, match="Parameter win must have " +
+                                         "finite entries"):
         ShortTimeFFT(np.array([1, np.inf, 2, 3]), hop=4, fs=1)
-    with chk_VE("Parameter hop=0 is not an integer >= 1!"):
+    with pytest.raises(ValueError, match="Parameter hop=0 is not " +
+                                         "an integer >= 1!"):
         ShortTimeFFT(np.ones(4), hop=0, fs=1)
-    with chk_VE("Parameter hop=2.0 is not an integer >= 1!"):
+    with pytest.raises(ValueError, match="Parameter hop=2.0 is not " +
+                                         "an integer >= 1!"):
         # noinspection PyTypeChecker
         ShortTimeFFT(np.ones(4), hop=2.0, fs=1)
-    with chk_VE(r"dual_win.shape=\(5,\) must equal win.shape=\(4,\)!"):
+    with pytest.raises(ValueError, match=r"dual_win.shape=\(5,\) must equal " +
+                                         r"win.shape=\(4,\)!"):
         ShortTimeFFT(np.ones(4), hop=2, fs=1, dual_win=np.ones(5))
-    with chk_VE("Parameter dual_win must be a finite array!"):
+    with pytest.raises(ValueError, match="Parameter dual_win must be " +
+                                         "a finite array!"):
         ShortTimeFFT(np.ones(3), hop=2, fs=1,
                      dual_win=np.array([np.nan, 2, 3]))
 
@@ -95,52 +101,66 @@ def test_exceptions_properties_methods():
     """Verify that exceptions get raised when setting properties or calling
     method of ShortTimeFFT to/with invalid values."""
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
-    with chk_VE("Sampling interval T=-1 must be positive!"):
+    with pytest.raises(ValueError, match="Sampling interval T=-1 must be " +
+                                         "positive!"):
         SFT.T = -1
-    with chk_VE("Sampling frequency fs=-1 must be positive!"):
+    with pytest.raises(ValueError, match="Sampling frequency fs=-1 must be " +
+                                         "positive!"):
         SFT.fs = -1
-    with chk_VE("fft_mode='invalid_typ' not in " +
-                r"\('twosided', 'centered', 'onesided', 'onesided2X'\)!"):
+    with pytest.raises(ValueError, match="fft_mode='invalid_typ' not in " +
+                                         r"\('twosided', 'centered', " +
+                                         r"'onesided', 'onesided2X'\)!"):
         SFT.fft_mode = 'invalid_typ'
-    with chk_VE("For scaling is None, fft_mode='onesided2X' is invalid.*"):
+    with pytest.raises(ValueError, match="For scaling is None, " +
+                                         "fft_mode='onesided2X' is invalid.*"):
         SFT.fft_mode = 'onesided2X'
-    with chk_VE("Attribute mfft=7 needs to be at least the window length.*"):
+    with pytest.raises(ValueError, match="Attribute mfft=7 needs to be " +
+                                         "at least the window length.*"):
         SFT.mfft = 7
-    with chk_VE("scaling='invalid' not in.*"):
+    with pytest.raises(ValueError, match="scaling='invalid' not in.*"):
         # noinspection PyTypeChecker
         SFT.scale_to('invalid')
-    with chk_VE("phase_shift=3.0 has the unit samples.*"):
+    with pytest.raises(ValueError, match="phase_shift=3.0 has the unit .*"):
         SFT.phase_shift = 3.0
-    with chk_VE("-mfft < phase_shift < mfft does not hold.*"):
+    with pytest.raises(ValueError, match="-mfft < phase_shift < mfft " +
+                                         "does not hold.*"):
         SFT.phase_shift = 2*SFT.mfft
-    with chk_VE("Parameter padding='invalid' not in.*"):
+    with pytest.raises(ValueError, match="Parameter padding='invalid' not.*"):
         # noinspection PyTypeChecker
         g = SFT._x_slices(np.zeros(16), k_off=0, p0=0, p1=1, padding='invalid')
         next(g)  # execute generator
-    with chk_VE("Trend type must be 'linear' or 'constant'"):
+    with pytest.raises(ValueError, match="Trend type must be 'linear' " +
+                                         "or 'constant'"):
         # noinspection PyTypeChecker
         SFT.stft_detrend(np.zeros(16), detr='invalid')
-    with chk_VE("Parameter detr=nan is not a str, function or None!"):
+    with pytest.raises(ValueError, match="Parameter detr=nan is not a str, " +
+                                         "function or None!"):
         # noinspection PyTypeChecker
         SFT.stft_detrend(np.zeros(16), detr=np.nan)
-    with chk_VE("Invalid Parameter p0=0, p1=200.*"):
+    with pytest.raises(ValueError, match="Invalid Parameter p0=0, p1=200.*"):
         SFT.p_range(100, 0, 200)
 
-    with chk_VE("f_axis=0 may not be equal to t_axis=0!"):
+    with pytest.raises(ValueError, match="f_axis=0 may not be equal to " +
+                                         "t_axis=0!"):
         SFT.istft(np.zeros((SFT.f_pts, 2)), t_axis=0, f_axis=0)
-    with chk_VE(r"S.shape\[f_axis\]=2 must be equal to self.f_pts=5.*"):
+    with pytest.raises(ValueError, match=r"S.shape\[f_axis\]=2 must be equal" +
+                                         " to self.f_pts=5.*"):
         SFT.istft(np.zeros((2, 2)))
-    with chk_VE(r"S.shape\[t_axis\]=1 needs to have at least 2 slices.*"):
+    with pytest.raises(ValueError, match=r"S.shape\[t_axis\]=1 needs to have" +
+                                         " at least 2 slices.*"):
         SFT.istft(np.zeros((SFT.f_pts, 1)))
-    with chk_VE(r".*\(k1=100\) <= \(k_max=12\) is false!$"):
+    with pytest.raises(ValueError, match=r".*\(k1=100\) <= \(k_max=12\) " +
+                                         "is false!$"):
         SFT.istft(np.zeros((SFT.f_pts, 3)), k1=100)
-    with chk_VE(r"\(k1=1\) - \(k0=0\) = 1 has to be at least.* length 4!"):
+    with pytest.raises(ValueError, match=r"\(k1=1\) - \(k0=0\) = 1 has to " +
+                                         "be at least.* length 4!"):
         SFT.istft(np.zeros((SFT.f_pts, 3)), k0=0, k1=1)
 
-    with chk_VE(r"Parameter axes_seq='invalid' not in \['tf', 'ft'\]!"):
+    with pytest.raises(ValueError, match=r"Parameter axes_seq='invalid' " +
+                                         r"not in \['tf', 'ft'\]!"):
         # noinspection PyTypeChecker
         SFT.extent(n=100, axes_seq='invalid')
-    with chk_VE("Attribute fft_mode=twosided must be in.*"):
+    with pytest.raises(ValueError, match="Attribute fft_mode=twosided must.*"):
         SFT.fft_mode = 'twosided'
         SFT.extent(n=100)
 
