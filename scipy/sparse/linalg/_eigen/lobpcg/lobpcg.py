@@ -68,7 +68,7 @@ def _makeMatMat(m):
 
 def _dot_inplace(x, y, verbosityLevel=0):
     """Perform 'np.dot' in-place if dtypes match."""
-    if x.flags["OWNDATA"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
+    if x.flags["CARRAY"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
         # conditions where we can guarantee that inplace updates will work;
         # i.e. x is not a view/slice, x & y have compatible dtypes, and the
         # shape of the result of x @ y matches the shape of x.
