@@ -845,8 +845,8 @@ class beta_gen(rv_continuous):
                 (110 * sum_ab**3 + 20 * sum_ab**2 + sum_ab - 2)
                 / (120 * sum_ab**4)
             )
-            t2 = (1 - 50 * a**3 - 10 * a** 2 - a) / (120 * a** 4)
-            t3 = (1 - 50 * b**3 - 10 * b** 2 - b) / (120 * b** 4)
+            t2 = (1 - 50 * a**3 - 10 * a**2 - a) / (120 * a**4)
+            t3 = (1 - 50 * b**3 - 10 * b**2 - b) / (120 * b**4)
             return log_term + t1 + t2 + t3
 
         return _lazywhere(
