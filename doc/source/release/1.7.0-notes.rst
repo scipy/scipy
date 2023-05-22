@@ -581,7 +581,7 @@ Issues closed for 1.7.0
 * `#13511 <https://github.com/scipy/scipy/issues/13511>`__: DOC: error in description of "direc" parameter of "fmin_powell"
 * `#13526 <https://github.com/scipy/scipy/issues/13526>`__: TST: stats: intermittent \`test_ttest_ind_randperm_alternative2...
 * `#13536 <https://github.com/scipy/scipy/issues/13536>`__: \`_within_tolerance\` seems an unnecessary repetition of \`numpy.isclose\`
-* `#13540 <https://github.com/scipy/scipy/issues/13540>`__: missing python 3.8 manylinux wheels on scipy-wheels-nightly
+* `#13540 <https://github.com/scipy/scipy/issues/13540>`__: missing python 3.8 manylinux wheels on scientific-python-nightly-wheels
 * `#13559 <https://github.com/scipy/scipy/issues/13559>`__: shape error in linprog with revised simplex
 * `#13587 <https://github.com/scipy/scipy/issues/13587>`__: binned_statistic unreliable with single precision
 * `#13589 <https://github.com/scipy/scipy/issues/13589>`__: Better argument preparation for distributions in stats package.
