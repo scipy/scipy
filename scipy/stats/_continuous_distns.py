@@ -832,8 +832,29 @@ class beta_gen(rv_continuous):
         return a, b, floc, fscale
 
     def _entropy(self, a, b):
-        return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
-                (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+        def regular(a, b):
+            return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
+                    (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+
+        def asymptotic_ab_large(a, b):
+            sum_ab = a + b
+            log_term = 0.5 * (
+                np.log(2 * np.pi * a * b) - 3 * np.log(sum_ab) + 1
+            )
+            t1 = (
+                (110 * sum_ab**3 + 20 * sum_ab**2 + sum_ab - 2)
+                / (120 * sum_ab**4)
+            )
+            t2 = (1 - 50 * a**3 - 10 * a** 2 - a) / (120 * a** 4)
+            t3 = (1 - 50 * b**3 - 10 * b** 2 - b) / (120 * b** 4)
+            return log_term + t1 + t2 + t3
+
+        return _lazywhere(
+            a >= 5e6 and b >= 5e6,
+            (a, b),
+            f=asymptotic_ab_large,
+            f2=regular,
+        )
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
