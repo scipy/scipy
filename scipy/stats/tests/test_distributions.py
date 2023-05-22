@@ -4132,7 +4132,7 @@ class TestBeta:
             (1e50, 1e50+20, -57.185409562486385, 1e-15),
         ]
     )
-    def test_t_extreme_entropy(self, a, b, ref, tol):
+    def test_extreme_entropy(self, a, b, ref, tol):
         # Reference values were calculated with mpmath:
         # from mpmath import mp
         # mp.dps = 500
