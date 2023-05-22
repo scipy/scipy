@@ -10,11 +10,75 @@ class TestLU:
     def setup_method(self):
         self.rng = np.random.default_rng(1682281250228846)
 
-    @pytest.mark.parametrize('shape', [[2, 2], [2, 4], [4, 2],
-                                       [20, 20], [20, 4], [4, 20],
-                                       [3, 2, 23, 23], [3, 2, 17, 5],
-                                       [3, 2, 11, 59]])
-    def test_simple_det_shapes_real_complex(self, shape):
+    def test_old_lu_smoke_tests(self):
+        "Tests from old fortran based lu test suite"
+        a = np.array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
+        p, l, u = lu(a)
+        result_lu = np.array([[2., 5., 6.], [0.5, -0.5, 0.], [0.5, 1., 0.]])
+        assert_allclose(p, np.rot90(np.eye(3)))
+        assert_allclose(l, np.tril(result_lu, k=-1)+np.eye(3))
+        assert_allclose(u, np.triu(result_lu))
+
+        a = np.array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
+        p, l, u = lu(a)
+        result_lu = np.array([[2., 5.j, 6.], [0.5, 2-2.5j, 0.], [0.5, 1., 0.]])
+        assert_allclose(p, np.rot90(np.eye(3)))
+        assert_allclose(l, np.tril(result_lu, k=-1)+np.eye(3))
+        assert_allclose(u, np.triu(result_lu))
+
+        b = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        p, l, u = lu(b)
+        assert_allclose(p, np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]]))
+        assert_allclose(l, np.array([[1, 0, 0], [1/7, 1, 0], [4/7, 0.5, 1]]))
+        assert_allclose(u, np.array([[7, 8, 9], [0, 6/7, 12/7], [0, 0, 0]]),
+                        rtol=0., atol=1e-14)
+
+        cb = np.array([[1.j, 2.j, 3.j], [4j, 5j, 6j], [7j, 8j, 9j]])
+        p, l, u = lu(cb)
+        assert_allclose(p, np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]]))
+        assert_allclose(l, np.array([[1, 0, 0], [1/7, 1, 0], [4/7, 0.5, 1]]))
+        assert_allclose(u, np.array([[7, 8, 9], [0, 6/7, 12/7], [0, 0, 0]])*1j,
+                        rtol=0., atol=1e-14)
+
+        # Rectangular matrices
+        hrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
+        p, l, u = lu(hrect)
+        assert_allclose(p, np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]]))
+        assert_allclose(l, np.array([[1, 0, 0], [1/9, 1, 0], [5/9, 0.5, 1]]))
+        assert_allclose(u, np.array([[9, 10, 12, 12], [0, 8/9,  15/9,  24/9],
+                                     [0, 0, -0.5, 0]]), rtol=0., atol=1e-14)
+
+        chrect = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])*1.j
+        p, l, u = lu(chrect)
+        assert_allclose(p, np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]]))
+        assert_allclose(l, np.array([[1, 0, 0], [1/9, 1, 0], [5/9, 0.5, 1]]))
+        assert_allclose(u, np.array([[9, 10, 12, 12], [0, 8/9,  15/9,  24/9],
+                                     [0, 0, -0.5, 0]])*1j, rtol=0., atol=1e-14)
+
+        vrect = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
+        p, l, u = lu(vrect)
+        assert_allclose(p, np.eye(4)[[1, 3, 2, 0], :])
+        assert_allclose(l, np.array([[1., 0, 0], [0.1, 1, 0], [0.7, -0.5, 1],
+                                     [0.4, 0.25, 0.5]]))
+        assert_allclose(u, np.array([[10, 12, 12],
+                                     [0, 0.8, 1.8],
+                                     [0, 0,  1.5]]))
+
+        cvrect = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])*1j
+        p, l, u = lu(cvrect)
+        assert_allclose(p, np.eye(4)[[1, 3, 2, 0], :])
+        assert_allclose(l, np.array([[1., 0, 0],
+                                     [0.1, 1, 0],
+                                     [0.7, -0.5, 1],
+                                     [0.4, 0.25, 0.5]]))
+        assert_allclose(u, np.array([[10, 12, 12],
+                                     [0, 0.8, 1.8],
+                                     [0, 0,  1.5]])*1j)
+
+    @pytest.mark.parametrize('shape', [[2, 2], [2, 4], [4, 2], [20, 20],
+                                       [20, 4], [4, 20], [3, 2, 9, 9],
+                                       [2, 2, 17, 5], [2, 2, 11, 7]])
+    def test_simple_lu_shapes_real_complex(self, shape):
         a = self.rng.uniform(-10., 10., size=shape)
         p, l, u = lu(a)
         assert_allclose(a, p @ l @ u)
@@ -28,7 +92,7 @@ class TestLU:
 
     @pytest.mark.parametrize('shape', [[2, 2], [2, 4], [4, 2], [20, 20],
                                        [20, 4], [4, 20]])
-    def test_simple_det_shapes_real_complex_2d_indices(self, shape):
+    def test_simple_lu_shapes_real_complex_2d_indices(self, shape):
         a = self.rng.uniform(-10., 10., size=shape)
         p, l, u = lu(a, p_indices=True)
         assert_allclose(a, l[p, :] @ u)
