@@ -533,7 +533,7 @@ class coo_array(_data_matrix, _minmax_mixin):
         # Assumes (data, row, col) not in canonical format.
         if len(data) == 0:
             return row, col, data
-        order = np.lexsort((row, col))
+        order = np.lexsort((col, row))
         row = row[order]
         col = col[order]
         data = data[order]
