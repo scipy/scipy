@@ -463,7 +463,7 @@ def test_inplace_warning():
     # A = A.astype(np.float32)
     X = rng.random((n, m))
     X = X.astype(np.float32)
-    with pytest.warns(UserWarning, match="Trying in-place"):
+    with pytest.warns(UserWarning, match="Inplace update"):
         eigvals, _ = lobpcg(A, X, verbosityLevel=1)
 
 
