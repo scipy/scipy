@@ -2126,3 +2126,16 @@ class TestNdBSpline:
 
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
+
+
+    def test_readonly(self):
+        t3, c3, k = self.make_3d_case()
+        bspl3 = NdBSpline(t3, c3, k=3)
+
+        for i in range(3):
+            t3[i].flags.writeable = False
+        c3.flags.writeable = False
+
+        bspl3_ = NdBSpline(t3, c3, k=3)
+
+        assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
