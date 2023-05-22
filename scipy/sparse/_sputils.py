@@ -245,7 +245,7 @@ def isshape(x, nonneg=False, allow_ndim=False) -> bool:
     if not allow_ndim and ndim != 2:
         return False
     for d in x:
-        if not isintlike(d) or np.ndim(d) != 0:
+        if not isintlike(d):
             return False
         if nonneg and d < 0:
             return False
