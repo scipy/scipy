@@ -3475,8 +3475,9 @@ class _TestMinMax:
         D2 = D1.transpose()
         D3 = np.array([[4, 3], [7, 5]])
         D4 = np.array([[4, 3], [7, 0]])
+        D5 = np.array([[5, 5, 3], [4, 9, 10], [3, 4, 9]])
 
-        for D in [D1, D2, D3, D4]:
+        for D in [D1, D2, D3, D4, D5]:
             mat = self.spmatrix(D)
             if not isinstance(mat, _data._minmax_mixin):
                 continue
