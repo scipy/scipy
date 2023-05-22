@@ -471,8 +471,7 @@ def test_gh_1766():
     tt_0 = np.arange(50)
     tt_1 = np.arange(50) * 3
     with pytest.raises(MemoryError):
-        v1 = bisplev(tt_0, tt_1, tck, 1, 1)
-
+        bisplev(tt_0, tt_1, tck, 1, 1)
 
 
 def test_spalde_scalar_input():
