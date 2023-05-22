@@ -567,6 +567,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, CityBlockDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_cosine",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, CosineDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_euclidean",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, EuclideanDistance{});
@@ -608,6 +613,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
     m.def("cdist_cityblock",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, CityBlockDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_cosine",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, CosineDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_euclidean",

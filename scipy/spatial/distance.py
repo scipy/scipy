@@ -1767,8 +1767,8 @@ _METRIC_INFOS = [
         canonical_name='cosine',
         aka={'cosine', 'cos'},
         dist_func=cosine,
-        cdist_func=CDistMetricWrapper('cosine'),
-        pdist_func=PDistMetricWrapper('cosine'),
+        cdist_func=_distance_pybind.cdist_cosine,
+        pdist_func=_distance_pybind.pdist_cosine,
     ),
     MetricInfo(
         canonical_name='dice',
