@@ -507,7 +507,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         message = ("Argument `a` is not recognized as numeric. "
                    "Support for input that cannot be coerced to a numeric "
                    "array was deprecated in SciPy 1.9.0 and removed in SciPy "
-                   "1.11.0. Please consider `pandas.DataFrame.mode`.")
+                   "1.11.0. Please consider `np.unique`.")
         raise TypeError(message)
 
     if a.size == 0:
@@ -8110,7 +8110,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     -------
     res: Power_divergenceResult
         An object containing attributes:
-        
+
         chisq : float or ndarray
             The chi-squared test statistic.  The value is a float if `axis` is
             None or `f_obs` and `f_exp` are 1-D.
