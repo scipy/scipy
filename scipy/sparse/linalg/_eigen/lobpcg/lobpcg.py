@@ -68,21 +68,25 @@ def _makeMatMat(m):
 
 def _dot_inplace(x, y, verbosityLevel=0):
     """Perform 'np.dot' in-place if dtypes match."""
-    if y.shape[0] == y.shape[1]:
+    if x.flags["OWNDATA"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
+        # conditions where we can guarantee that inplace updates will work;
+        # i.e. x is not a view/slice, x & y have compatible dtypes, and the
+        # shape of the result of x @ y matches the shape of x.
+        np.dot(x, y, out=x)
+    else:
+        # ideally, we'd have an exhaustive list of conditions above when
+        # inplace updates are possible; since we don't, we opportunistically
+        # try if it works, and fall back to overwriting if necessary
         try:
             np.dot(x, y, out=x)
         except Exception:
             if verbosityLevel:
                 warnings.warn(
-                    f"Trying in-place x = x @ y, possibly x.dtype {x.dtype} "
-                    f"does not match dtype of x @ y since y.dtype {y.dtype}, "
-                    f"or x is a slice rather than a C-Array, "
-                    f"so x needs to be overwritten preventing in-place.",
+                    "Inplace update of x = x @ y failed, "
+                    "x needs to be overwritten.",
                     UserWarning, stacklevel=3
                 )
             x = x @ y
-    else:
-        x = x @ y
     return x
 
 
