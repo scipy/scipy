@@ -220,6 +220,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
 
     mxy = _mul_overflow_intp(mx, my);
     if (mxy < 0) {
+        PyErr_NoMemory();
         goto fail;
     }
 
@@ -236,6 +237,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
         /* lwrk = mx*(kx + 1 - nux) + my*(ky + 1 - nuy) + (nx - kx - 1)*(ny - ky - 1); */
         lwrk = _mul_overflow_f_int(nx - kx - 1, ny - ky - 1);
         if (lwrk < 0) {
+            PyErr_NoMemory();
             goto fail;
         }    
         lwrk += mx*(kx + 1 - nux) + my*(ky + 1 - nuy);
@@ -328,6 +330,7 @@ fitpack_surfit(PyObject *dummy, PyObject *args)
     /* lcest = (nxest - kx - 1)*(nyest - ky - 1); */
     lcest = _mul_overflow_f_int(nxest - kx - 1, nyest - ky - 1);
     if (lcest < 0) {
+        PyErr_NoMemory();
         goto fail;
     }
     /* kwrk computation is unlikely to overflow if lcest above did not.*/
