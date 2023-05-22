@@ -165,6 +165,7 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
         Suitable index data type (int32 or int64)
 
     """
+    check_contents = False
 
     int32min = np.int32(np.iinfo(np.int32).min)
     int32max = np.int32(np.iinfo(np.int32).max)
