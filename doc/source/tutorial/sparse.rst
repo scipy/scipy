@@ -10,7 +10,7 @@ Sparse Arrays (`scipy.sparse`)
 Introduction
 -------------
 
-``scipy.sparse`` and its submodules provide tools for working with *sparse arrays*. Sparse arrays are arrays where only a few locations in the array have any data, most of the locations are considered as "empty."" Sparse arrays are useful because they allow for simpler, faster, and/or less memory-intensive algorithms for linear algebra (`scipy.sparse.linalg`) or graph-based computations (`scipy.sparse.csgraph`), but they are generally less flexible for operations like slicing, reshaping, or assignment. This guide will introduce the basics of sparse arrays in `scipy.sparse`, explain the unique aspects of sparse data structures, and refer onward for other sections of the user guide explaining `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_. 
+``scipy.sparse`` and its submodules provide tools for working with *sparse arrays*. Sparse arrays are arrays where only a few locations in the array have any data, most of the locations are considered as "empty". Sparse arrays are useful because they allow for simpler, faster, and/or less memory-intensive algorithms for linear algebra (`scipy.sparse.linalg`) or graph-based computations (`scipy.sparse.csgraph`), but they are generally less flexible for operations like slicing, reshaping, or assignment. This guide will introduce the basics of sparse arrays in `scipy.sparse`, explain the unique aspects of sparse data structures, and refer onward for other sections of the user guide explaining `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_. 
 
 Getting started with sparse arrays
 -----------------------------------
@@ -46,9 +46,9 @@ Most sparse array methods work in a similar fashion to dense array methods:
    >>> dense.mean()
    1.0833333333333333
 
-But a few "extra" methods, such as ``.getnnz()``, which returns the number of stored values, are present on sparse arrays as well: 
+A few "extra" properties, such as ``.nnz`` which returns the number of stored values, are present on sparse arrays as well: 
 
-   >>> sparse.getnnz()
+   >>> sparse.nnz
    5 
 
 Most of the reduction operations, such as ``.mean()``, ``.sum()``, or ``.max()`` will return a numpy array when applied over an axis of the sparse array: 
@@ -72,7 +72,7 @@ Different kinds of sparse arrays have different capabilities. For example, COO a
 
 But, other formats, such as the Compressed Sparse Row (CSR) :func:`csr_array()` support slicing and element indexing:
    
-   >>> sparse.tocsc()[2, 2]
+   >>> sparse.tocsr()[2, 2]
    5
 
 Sometimes, `scipy.sparse` will return a different sparse matrix format than the input sparse matrix format. For example, the dot product of two sparse arrays in COO format will be a CSR format array: 
@@ -86,11 +86,11 @@ This change occurs because `scipy.sparse` will change the format of input sparse
 The `scipy.sparse` module contains the following formats, each with their own distinct advantages and disadvantages: 
 
 - Block Sparse Row (BSR) arrays :func:`scipy.sparse.bsr_array()`, which are most appropriate when the parts of the array with data occur in contiguous blocks.  
-- Coordinate (COO) arrays :func:`scipy.sparse.coo_array()`, which are most useful because they provide a simple way to construct sparse arrays and modify them in place. COO can also be quickly converted into other formats, such CSR, CSC, or BSR. 
+- Coordinate (COO) arrays :func:`scipy.sparse.coo_array()`, which provide a simple way to construct sparse arrays and modify them in place. COO can also be quickly converted into other formats, such CSR, CSC, or BSR. 
 - Compressed Sparse Row (CSR) arrays :func:`scipy.sparse.csr_array()`, which are most useful for fast arithmetic, vector products, and slicing by row. 
 - Compressed Sparse Column (CSC) arrays :func:`scipy.sparse.csc_array()`, which are most useful for fast arithmetic, vector products, and slicing by column. 
-- Diagonal (DIA) arrays :func:`scipy.sparse.dia_array()`, which are useful for fast arithmatic so long as the data primarily occurs along diagonals of the array.
-- Dictionary of Keys (DOK) arrays :func:`scipy.sparse.dok_array()`, which are useful for fast construction of a sparse array.
+- Diagonal (DIA) arrays :func:`scipy.sparse.dia_array()`, which are useful for efficient storage and fast arithmetic so long as the data primarily occurs along diagonals of the array.
+- Dictionary of Keys (DOK) arrays :func:`scipy.sparse.dok_array()`, which are useful for fast construction and single-element access.
 - List of Lists (LIL) arrays :func:`scipy.sparse.lil_array()`, which are useful for fast construction and modification of sparse arrays. 
 
 More information on the strengths and weaknesses of each of the sparse array formats can be found in `their documentation <https://docs.scipy.org/doc/scipy/reference/sparse.html#sparse-array-classes>`_.
@@ -122,7 +122,7 @@ Sparse arrays, implicit zeros, and duplicates
 
 Sparse arrays are useful because they represent much of their values *implicitly*, without storing an actual placeholder value. In `scipy.sparse`, the value used to represent "no data" is an *implicit zero*. This can be confusing when *explicit zeros* are required. For example, in `graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ from `scipy.sparse.csgraph`, we often need to be able to distinguish between (A) a link connecting nodes ``i`` and ``j`` with zero weight and (B) no link between ``i`` and ``j``. Sparse matrices can do this, so long as we keep the *explicit* and *implicit* zeros in mind. 
 
-For example, in our previous ``csr`` array, we could include an explicit zero by inputting it into the ``data`` list. Let's treat the final entry in the array at the bottom row and last column as an *explicit zero*: 
+For example, in our previous ``csr`` array, we could include an explicit zero by including it in the ``data`` list. Let's treat the final entry in the array at the bottom row and last column as an *explicit zero*: 
 
    >>> row = [0,0,1,1,2,2]
    >>> col = [0,3,1,2,2,3]
@@ -137,7 +137,7 @@ Then, our sparse array will have *six* stored elements, not five:
 
 The "extra" element is our *explicit zero*. The two are still identical when converted back into a dense array, because dense arrays represent *everything* explicitly: 
 
-   >>> csc.todense()
+   >>> csr.todense()
    array([[1, 0, 0, 2],
        [0, 4, 1, 0],
        [0, 0, 5, 0]])
@@ -146,17 +146,17 @@ The "extra" element is our *explicit zero*. The two are still identical when con
        [0, 4, 1, 0],
        [0, 0, 5, 0]])
 
-But, for sparse arithmetic, linear algebra, and graph methods, the value at ``2,3`` will be considered an *explicit zero*. To remove this explicit zero, we can use the ``csc.eliminate_zeros()`` method. This operates on the sparse array *in place*, and removes any zero-value stored elements: 
+But, for sparse arithmetic, linear algebra, and graph methods, the value at ``2,3`` will be considered an *explicit zero*. To remove this explicit zero, we can use the ``csr.eliminate_zeros()`` method. This operates on the sparse array *in place*, and removes any zero-value stored elements: 
 
-   >>> csc
+   >>> csr
    <3x4 sparse array of type '<class 'numpy.int64'>'
         with 6 stored elements in Compressed Sparse Row format>
-   >>> csc.eliminate_zeros()
-   >>> csc
+   >>> csr.eliminate_zeros()
+   >>> csr
    <3x4 sparse array of type '<class 'numpy.int64'>'
         with 5 stored elements in Compressed Sparse Row format>
 
-Before ``csc.eliminate_zeros()``, there were six stored elements. After, there are only five stored elements. 
+Before ``csr.eliminate_zeros()``, there were six stored elements. After, there are only five stored elements. 
 
 Another point of complication arises from how *duplicates* are processed when constructing a sparse array. A *duplicate* can occur when we have two or more entries at ``row,col`` when constructing a sparse array. This often occurs when building sparse arrays using the ``data``, ``row``, and ``col`` vectors. For example, we might represent our previous array with a duplicate value at ``1,1``:
 
@@ -171,7 +171,7 @@ In this case, we can see that there are *two* ``data`` values that correspond to
    <3x4 sparse array of type '<class 'numpy.int64'>'
         with 6 stored elements in COOrdinate format>
 
-Note that there are six stored elements in this sparse array, despite only having five unique locations where data occurs. When these arrays are converted back to dense arrays, the duplicate values at sites are summed. So, at location ``1,1``, the dense array will contain the sum of duplicate stored entries, ``1 + 3``: 
+Note that there are six stored elements in this sparse array, despite only having five unique locations where data occurs. When these arrays are converted back to dense arrays, the duplicate values are summed. So, at location ``1,1``, the dense array will contain the sum of duplicate stored entries, ``1 + 3``: 
 
    >>> dupes.todense()
    array([[1, 0, 0, 2],
@@ -184,7 +184,7 @@ To remove duplicate values within the sparse array itself and thus reduce the nu
    <3x4 sparse array of type '<class 'numpy.int64'>'
         with 5 stored elements in COOrdinate format>
 
-Note now that there are only five stored elements in our sparse array, and it is identical to the array we have been working with throughout this guide: 
+Now there are only five stored elements in our sparse array, and it is identical to the array we have been working with throughout this guide: 
    
    >>> dupes.todense()
    array([[1, 0, 0, 2],
