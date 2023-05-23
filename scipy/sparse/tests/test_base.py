@@ -3473,6 +3473,7 @@ class _TestMinMax:
             [1, 2, 0, 0],
         ])
         D2 = D1.transpose()
+        # Non-regression test cases for gh-16929.
         D3 = np.array([[4, 3], [7, 5]])
         D4 = np.array([[4, 3], [7, 0]])
         D5 = np.array([[5, 5, 3], [4, 9, 10], [3, 4, 9]])

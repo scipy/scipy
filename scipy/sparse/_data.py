@@ -217,7 +217,7 @@ class _minmax_mixin:
         else:
             raise ValueError("axis out of range")
 
-    def _arg_min_or_max_axis(self, axis, op, compare):
+    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
         if self.shape[axis] == 0:
             raise ValueError("Can't apply the operation along a zero-sized "
                              "dimension.")
@@ -238,14 +238,14 @@ class _minmax_mixin:
             p, q = mat.indptr[i:i + 2]
             data = mat.data[p:q]
             indices = mat.indices[p:q]
-            am = op(data)
-            m = data[am]
-            if compare(m, zero) or q - p == line_size:
-                ret[i] = indices[am]
+            extreme_index = argmin_or_argmax(data)
+            extreme_value = data[extreme_index]
+            if compare(extreme_value, zero) or q - p == line_size:
+                ret[i] = indices[extreme_index]
             else:
                 zero_ind = _find_missing_index(indices, line_size)
-                if m == zero:
-                    ret[i] = min(am, zero_ind)
+                if extreme_value == zero:
+                    ret[i] = min(extreme_index, zero_ind)
                 else:
                     ret[i] = zero_ind
 
@@ -254,44 +254,50 @@ class _minmax_mixin:
 
         return self._ascontainer(ret)
 
-    def _arg_min_or_max(self, axis, out, op, compare):
+    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                             "an 'out' parameter.")
+            raise ValueError("Sparse types do not support an 'out' parameter.")
 
         validateaxis(axis)
 
         if axis is not None:
-            return self._arg_min_or_max_axis(axis, op, compare)
+            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
 
         if 0 in self.shape:
-            raise ValueError("Can't apply the operation to "
-                             "an empty matrix.")
+            raise ValueError("Can't apply the operation to an empty matrix.")
 
         if self.nnz == 0:
             return 0
 
         zero = self.dtype.type(0)
         mat = self.tocoo()
+        # Convert to canonical form: no duplicates, sorted indices.
         mat.sum_duplicates()
-        am = op(mat.data)
-        m = mat.data[am]
+        extreme_index = argmin_or_argmax(mat.data)
+        extreme_value = mat.data[extreme_index]
         num_row, num_col = mat.shape
 
-        if compare(m, zero):
+        # If the min value is less than zero, or max is greater than zero,
+        # then we don't need to worry about implicit zeros.
+        if compare(extreme_value, zero):
             # cast to Python int to avoid overflow and RuntimeError
-            return int(mat.row[am]) * num_col + int(mat.col[am])
+            return (int(mat.row[extreme_index]) * num_col +
+                    int(mat.col[extreme_index]))
 
+        # Cheap test for the rare case where we have no implicit zeros.
         size = num_row * num_col
         if size == mat.nnz:
-            return int(mat.row[am]) * num_col + int(mat.col[am])
+            return (int(mat.row[extreme_index]) * num_col +
+                    int(mat.col[extreme_index]))
 
-        ind = mat.row * num_col + mat.col
-        ind.sort()
-        zero_ind = _find_missing_index(ind, size)
-        if m == zero:
-            return min(zero_ind, am)
-        return zero_ind
+        # At this stage, any implicit zero could be the min or max value.
+        # After sum_duplicates(), the `row` and `col` arrays are guaranteed to
+        # be sorted in C-order, which means the linearized indices are sorted.
+        linear_indices = mat.row * num_col + mat.col
+        first_implicit_zero_index = _find_missing_index(linear_indices, size)
+        if extreme_value == zero:
+            return min(first_implicit_zero_index, extreme_index)
+        return first_implicit_zero_index
 
     def max(self, axis=None, out=None):
         """
