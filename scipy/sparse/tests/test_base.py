@@ -143,7 +143,8 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
         modules = [scipy.sparse._bsr, scipy.sparse._coo, scipy.sparse._csc,
                    scipy.sparse._csr, scipy.sparse._dia, scipy.sparse._dok,
                    scipy.sparse._lil, scipy.sparse._sputils,
-                   scipy.sparse._compressed, scipy.sparse._construct]
+                   scipy.sparse._compressed, scipy.sparse._construct,
+                   scipy.sparse._matrix_construct]
         try:
             for mod in modules:
                 backup.append((mod, 'get_index_dtype',

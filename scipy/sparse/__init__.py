@@ -277,10 +277,10 @@ from ._dok import *
 from ._coo import *
 from ._dia import *
 from ._bsr import *
-from ._construct import *
 from ._extract import *
 from ._matrix import spmatrix
 from ._matrix_io import *
+from ._matrix_construct import *
 
 # For backward compatibility with v0.19.
 from . import csgraph
