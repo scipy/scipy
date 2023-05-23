@@ -188,8 +188,8 @@ class coo_array(_data_matrix, _minmax_mixin):
                                          (shape, self._shape))
                 index_dtype = self._get_index_dtype(maxval=max(self._shape))
                 row, col = M.nonzero()
-                self.row = row.astype(index_dtype)
-                self.col = col.astype(index_dtype)
+                self.row = row.astype(index_dtype, copy=False)
+                self.col = col.astype(index_dtype, copy=False)
                 self.data = M[self.row, self.col]
                 self.has_canonical_format = True
 
