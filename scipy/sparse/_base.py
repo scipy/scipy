@@ -110,11 +110,11 @@ class _sparray:
                              " to be instantiated directly.")
         self.maxprint = maxprint
 
-    # Use this in 0.13:
+    # Use this in 1.13.0 and later:
     #
-    @property
-    def shape(self):
-       return self._shape
+    # @property
+    # def shape(self):
+    #   return self._shape
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -714,7 +714,8 @@ class _sparray:
         if attr == 'A':
             if self._is_array:
                 warn(np.VisibleDeprecationWarning(
-                    "Please use `.todense()` instead"
+                    "`.A` is deprecated and will be removed in v1.13.0. "
+                    "Use `.todense()` instead."
                 ))
             return self.toarray()
         elif attr == 'T':
@@ -722,7 +723,8 @@ class _sparray:
         elif attr == 'H':
             if self._is_array:
                 warn(np.VisibleDeprecationWarning(
-                    "Please use `.conj().T` instead"
+                    "`.H` is deprecated and will be removed in v1.13.0. "
+                    "Please use `.conj().T` instead."
                 ))
             return self.transpose().conjugate()
         elif attr == 'real':
@@ -1255,18 +1257,26 @@ class _sparray:
 
 
     ## All methods below are deprecated and should be released in
-    ## scipy 0.13
+    ## scipy 1.13.0
+    ##
+    ## Also uncomment the definition of shape above.
 
     def get_shape(self):
         """Get shape of a sparse array."""
-        msg = "`get_shape` is deprecated. Use `X.shape` instead."
+        msg = (
+            "`get_shape` is deprecated and will be removed in v1.13.0; "
+            "use `X.shape` instead."
+        )
         warn(msg, DeprecationWarning, stacklevel=2)
 
         return self._shape
 
     def set_shape(self, shape):
         """See `reshape`."""
-        msg = "Shape assignment is deprecated. Use `reshape` instead."
+        msg = (
+            "Shape assignment is deprecated and will be removed in v1.13.0; "
+            "use `reshape` instead."
+        )
         warn(msg, DeprecationWarning, stacklevel=2)
 
         # Make sure copy is False since this is in place
@@ -1280,7 +1290,7 @@ class _sparray:
         """Upcast array to a floating point format (if necessary)"""
         msg = (
             "`asfptype` is an internal function, and is deprecated "
-            "as part of the public API."
+            "as part of the public API. It will be removed in v1.13.0."
         )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._asfptype()
@@ -1289,14 +1299,17 @@ class _sparray:
         """Maximum number of elements to display when printed."""
         msg = (
             "`getmaxprint` is an internal function, and is deprecated "
-            "as part of the public API."
+            "as part of the public API. It will be removed in v1.13.0."
         )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._getmaxprint()
 
     def getformat(self):
         """Matrix storage format"""
-        msg = "`getformat` is deprecated; use `X.format` instead"
+        msg = (
+            "`getformat` is deprecated and will be removed in v1.13.0; "
+            "use `X.format` instead."
+        )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self.format
 
@@ -1313,7 +1326,10 @@ class _sparray:
         --------
         count_nonzero : Number of non-zero entries
         """
-        msg = "`getnnz` is deprecated; use `X.nnz` instead"
+        msg = (
+            "`getnnz` is deprecated and will be removed in v1.13.0; "
+            "use `X.nnz` instead."
+        )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._getnnz(axis=axis)
 
@@ -1325,7 +1341,8 @@ class _sparray:
         numpy.matrix.getH : NumPy's implementation of `getH` for matrices
         """
         msg = (
-            "`getH` is deprecated; use `X.conj().T` instead"
+            "`getH` is deprecated and will be removed in v1.13.0; "
+            "use `X.conj().T` instead."
         )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self.conjugate().transpose()
@@ -1335,7 +1352,8 @@ class _sparray:
         array (column vector).
         """
         msg = (
-            f"`getcol` is deprecated; use `X[:, [{j}]]` instead"
+            "`getcol` is deprecated and will be removed in v1.13.0; "
+            f"use `X[:, [{j}]]` instead."
         )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._getcol(j)
@@ -1345,7 +1363,8 @@ class _sparray:
         array (row vector).
         """
         msg = (
-            f"`getrow` is deprecated; use `X[[{i}]]` instead"
+            "`getrow` is deprecated and will be removed in v1.13.0; "
+            f"use `X[[{i}]]` instead."
         )
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._getrow(i)
@@ -1356,7 +1375,7 @@ class _sparray:
 def issparse(x):
     """Is x of a sparse array type?
 
-    Parameters
+y    Parameters
     ----------
     x
         object to check for being a sparse array
