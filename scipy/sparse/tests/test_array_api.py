@@ -4,7 +4,7 @@ import numpy.testing as npt
 import scipy.sparse
 import scipy.sparse.linalg as spla
 
-sparray_types = ('bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil')
+sparray_types = ('bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil', 'dps')
 
 sparray_classes = [
     getattr(scipy.sparse, f'{T}_array') for T in sparray_types
@@ -83,7 +83,7 @@ def test_todense(A):
 
 @parametrize_sparrays
 def test_indexing(A):
-    if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr'):
+    if A.__class__.__name__[:3] in ('dia', 'coo', 'bsr', 'dps'):
         return
 
     with pytest.raises(NotImplementedError):

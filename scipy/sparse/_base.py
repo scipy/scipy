@@ -43,7 +43,8 @@ _formats = {'csc': [0, "Compressed Sparse Column"],
             'jad': [16, "JAgged Diagonal"],
             'uss': [17, "Unsymmetric Sparse Skyline"],
             'vbr': [18, "Variable Block Row"],
-            'und': [19, "Undefined"]
+            'und': [19, "Undefined"],
+            'dps': [20, "Dense Pretending to be Sparse"],
             }
 
 
@@ -84,6 +85,11 @@ class _sparray:
     def _csr_container(self):
         from ._csr import csr_array
         return csr_array
+
+    @property
+    def _dps_container(self):
+        from ._dps import dps_array
+        return dps_array
 
     @property
     def _dia_container(self):
@@ -1007,6 +1013,11 @@ class _sparray:
         the resultant csc_array.
         """
         return self.tocsr(copy=copy).tocsc(copy=False)
+
+    def todps(self, copy=False):
+        """Convert this array to Dense Sparse format.
+        """
+        return self._dps_container(self.toarray(), copy=copy)
 
     def copy(self):
         """Returns a copy of this array.
