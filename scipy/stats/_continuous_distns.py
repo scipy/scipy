@@ -850,7 +850,7 @@ class beta_gen(rv_continuous):
             return log_term + t1 + t2 + t3
 
         return _lazywhere(
-            a >= 5e6 and b >= 5e6,
+            a >= 4.96e6 and b >= 4.96e6,
             (a, b),
             f=asymptotic_ab_large,
             f2=regular,
