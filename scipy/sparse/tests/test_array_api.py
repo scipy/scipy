@@ -348,3 +348,60 @@ def test_spilu():
 def test_power_operator(A):
     # https://github.com/scipy/scipy/issues/15948
     npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+
+@pytest.mark.parametrize(
+    ("fn", "args"),
+    [
+        (scipy.sparse.diags, ([0, 1, 2],)),
+        (scipy.sparse.eye, (3,)),
+        (scipy.sparse.spdiags, ([1, 2, 3], 0, 3, 3)),
+        (scipy.sparse.identity, (3,)),
+        # kron with dense B
+        (
+            scipy.sparse.kron,
+            (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]))
+        ),
+        # kron with sparse B
+        (
+            scipy.sparse.kron,
+            (np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]]))
+        ),
+        (
+            scipy.sparse.kronsum,
+            (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]))
+        ),
+        (scipy.sparse.random, (3, 3)),
+    ],
+)
+def test_default_construction_fn_matrices(fn, args):
+    """Regression test to ensure the creation functions in the scipy.sparse
+    namespace return matrices instead of arrays."""
+    m = fn(*args)
+    assert isinstance(m, scipy.sparse.spmatrix)
+
+
+@pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
+def test_stacks_default_construction_fn_matrices(fn):
+    """Same idea as `test_default_construction_fn_matrices`, but for the
+    stacking creation functions."""
+    A = scipy.sparse.coo_matrix(np.eye(2))
+    B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
+    m = fn([A, B])
+    assert isinstance(m, scipy.sparse.spmatrix)
+
+
+def test_blocks_default_construction_fn_matrices():
+    """Same idea as `test_default_construction_fn_matrices`, but for the block
+    creation function"""
+    A = scipy.sparse.coo_matrix(np.eye(2))
+    B = scipy.sparse.coo_matrix([[2], [0]])
+    C = scipy.sparse.coo_matrix([[3]])
+
+    # block diag
+    m = scipy.sparse.block_diag((A, B, C))
+    assert isinstance(m, scipy.sparse.spmatrix)
+
+    # bmat
+    m = scipy.sparse.bmat([[A, None], [None, C]])
+    assert isinstance(m, scipy.sparse.spmatrix)
