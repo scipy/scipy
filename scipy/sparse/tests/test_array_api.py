@@ -350,39 +350,58 @@ def test_power_operator(A):
     npt.assert_equal((A**2).todense(), (A.todense())**2)
 
 
-@pytest.mark.parametrize(
-    ("fn", "args"),
-    [
-        (scipy.sparse.diags, ([0, 1, 2],)),
-        (scipy.sparse.eye, (3,)),
-        (scipy.sparse.spdiags, ([1, 2, 3], 0, 3, 3)),
-        (scipy.sparse.identity, (3,)),
-        # kron with dense B
-        (
-            scipy.sparse.kron,
-            (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]))
-        ),
-        # kron with sparse B
-        (
-            scipy.sparse.kron,
-            (np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]]))
-        ),
-        (
-            scipy.sparse.kronsum,
-            (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]))
-        ),
-        (scipy.sparse.random, (3, 3)),
-    ],
-)
-def test_default_construction_fn_matrices(fn, args):
-    """Regression test to ensure the creation functions in the scipy.sparse
-    namespace return matrices instead of arrays."""
-    m = fn(*args)
+def test_default_is_matrix_diags():
+    m = scipy.sparse.diags([0, 1, 2])
+    assert not m._is_array
+
+
+def test_default_is_matrix_eye():
+    m = scipy.sparse.eye(3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_spdiags():
+    m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_identity():
+    m = scipy.sparse.identity(3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_kron_dense():
+    m = scipy.sparse.kron(
+        np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
+    )
+    assert not m._is_array
+
+
+def test_default_is_matrix_kron_sparse():
+    m = scipy.sparse.kron(
+        np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
+    )
+    assert not m._is_array
+
+
+def test_default_is_matrix_kronsum():
+    m = scipy.sparse.kronsum(
+        np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
+    )
+
+
+def test_default_is_matrix_random():
+    m = scipy.sparse.random(3, 3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_rand():
+    m = scipy.sparse.rand(3, 3)
     assert not m._is_array
 
 
 @pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
-def test_stacks_default_construction_fn_matrices(fn):
+def test_default_is_matrix_stacks(fn):
     """Same idea as `test_default_construction_fn_matrices`, but for the
     stacking creation functions."""
     A = scipy.sparse.coo_matrix(np.eye(2))
