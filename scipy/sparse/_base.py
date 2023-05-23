@@ -1272,7 +1272,7 @@ class _sparray:
 
         This wraps _sputils.get_index_dtype, providing compatibility for both
         array and matrix API sparse matrices. Matrix API sparse matrices would
-        attempt to downcast the indices – which can be computationally
+        attempt to downcast the indices - which can be computationally
         expensive and undesirable for users. The array API changes this
         behaviour.
 
