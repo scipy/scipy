@@ -129,8 +129,9 @@ def whiten(obs, check_finite=True):
            [ 1.75976538,  0.7038557 ,  7.21248917]])
 
     """
-    obs = as_xparray(obs, check_finite=check_finite)
-    std_dev = obs.std(axis=0)
+    xp = array_namespace(obs)
+    obs = as_xparray(obs, check_finite=check_finite, xp=xp)
+    std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
         std_dev[zero_std_mask] = 1.0
