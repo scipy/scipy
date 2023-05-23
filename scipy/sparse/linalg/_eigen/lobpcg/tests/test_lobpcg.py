@@ -445,7 +445,7 @@ def test_random_initial_float32():
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
-    X = rnd.standard_normal((n, m))
+    X = rnd.random((n, m))
     X = X.astype(np.float32)
     with np.testing.suppress_warnings() as sup:
         sup.filter(UserWarning)
@@ -590,7 +590,7 @@ def test_diagonal_data_types(n, m):
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
-        Xf64 = rnd.standard_normal((n, m))
+        Xf64 = rnd.random((n, m))
         Xf32 = Xf64.astype(np.float32)
         listX = [Xf64, Xf32]
 
