@@ -59,7 +59,7 @@ def compare_solutions(A, B, m):
     """
     n = A.shape[0]
     rnd = np.random.RandomState(0)
-    V = rnd.standard_normal((n, m))
+    V = rnd.random((n, m))
     X = orth(V)
     eigvals, _ = lobpcg(A, X, B=B, tol=1e-2, maxiter=50, largest=False)
     eigvals.sort()
@@ -228,7 +228,7 @@ def test_diagonal(n, m, m_excluded):
                           shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
-    X = rnd.standard_normal(size=(n, m))
+    X = rnd.normal(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -361,7 +361,7 @@ def test_hermitian():
         if k > s:
             continue
 
-        H = rnd.standard_normal((s, s)) + 1.j * rnd.standard_normal((s, s))
+        H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
         X = rnd.standard_normal((s, k))
@@ -372,7 +372,7 @@ def test_hermitian():
             w, v = lobpcg(H, X, maxiter=5000)
             w0, _ = eigh(H)
         else:
-            B = rnd.standard_normal((s, s)) + 1.j * rnd.standard_normal((s, s))
+            B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
