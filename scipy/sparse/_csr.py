@@ -171,7 +171,7 @@ class csr_array(_cs_matrix):
     tocsr.__doc__ = _sparray.tocsr.__doc__
 
     def tocsc(self, copy=False):
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, self.shape[0]))
         indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
@@ -209,7 +209,7 @@ class csr_array(_cs_matrix):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            idx_dtype = get_index_dtype((self.indptr, self.indices),
+            idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                         maxval=max(N//C, blks))
             indptr = np.empty(M//R+1, dtype=idx_dtype)
             indices = np.empty(blks, dtype=idx_dtype)

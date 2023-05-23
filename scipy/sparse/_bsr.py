@@ -149,7 +149,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
 
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
-                idx_dtype = get_index_dtype(maxval=max(M//R, N//C, R, C))
+                idx_dtype = self._get_index_dtype(maxval=max(M//R, N//C, R, C))
                 self.indices = np.zeros(0, dtype=idx_dtype)
                 self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
@@ -172,7 +172,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                     maxval = max(shape)
                 if blocksize is not None:
                     maxval = max(maxval, max(blocksize))
-                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval,
+                idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                             check_contents=True)
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
@@ -247,7 +247,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
             warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name)
 
-        idx_dtype = get_index_dtype((self.indices, self.indptr))
+        idx_dtype = self._get_index_dtype((self.indices, self.indptr))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -384,7 +384,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         else:
             other = other.tobsr(blocksize=(n,C))
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices))
 
         bnnz = csr_matmat_maxnnz(M//R, N//C,
@@ -393,7 +393,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                                  other.indptr.astype(idx_dtype),
                                  other.indices.astype(idx_dtype))
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
@@ -443,7 +443,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         M, N = self.shape
         R, C = self.blocksize
         nnz = self.nnz
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
@@ -639,7 +639,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=max_bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)

@@ -41,7 +41,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 M, N = self.shape
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
-                idx_dtype = get_index_dtype(maxval=max(M, N))
+                idx_dtype = self._get_index_dtype(maxval=max(M, N))
                 self.data = np.zeros(0, getdtype(dtype, default=float))
                 self.indices = np.zeros(0, idx_dtype)
                 self.indptr = np.zeros(self._swap((M, N))[0] + 1,
@@ -62,7 +62,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     maxval = None
                     if shape is not None:
                         maxval = max(shape)
-                    idx_dtype = get_index_dtype((indices, indptr),
+                    idx_dtype = self._get_index_dtype((indices, indptr),
                                                 maxval=maxval,
                                                 check_contents=True)
 
@@ -154,7 +154,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             warn("indices array has non-integer dtype ({})"
                  "".format(self.indices.dtype.name), stacklevel=3)
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices))
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -511,7 +511,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         major_axis = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices))
 
         fn = getattr(_sparsetools, self.format + '_matmat_maxnnz')
@@ -521,7 +521,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                  np.asarray(other.indptr, dtype=idx_dtype),
                  np.asarray(other.indices, dtype=idx_dtype))
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=nnz)
 
@@ -972,7 +972,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         do_sort = self.has_sorted_indices
 
         # Update index data type
-        idx_dtype = get_index_dtype((self.indices, self.indptr),
+        idx_dtype = self._get_index_dtype((self.indices, self.indptr),
                                     maxval=(self.indptr[-1] + x.size))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
@@ -1243,7 +1243,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         fn = getattr(_sparsetools, self.format + op + self.format)
 
         maxnnz = self.nnz + other.nnz
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=maxnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)

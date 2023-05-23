@@ -344,3 +344,20 @@ def test_spilu():
 def test_power_operator(A):
     # https://github.com/scipy/scipy/issues/15948
     npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+index_dtype = pytest.mark.parametrize(
+    "args,expected_dtype",
+    [
+        (
+            ((np.array([1, 2, 3]), (np.array([0, 0, 1], dtype=np.int64), np.array([0, 1, 2], dtype=np.int64))),),
+            np.int64
+        )
+    ]
+)
+
+@pytest.mark.parametrize("cls", [scipy.sparse.csr_array, scipy.sparse.csc_array])
+@index_dtype
+def test_index_dtype(cls, args, expected_dtype):
+    result = cls(*args)
+    assert result.indices.dtype == expected_dtype
+    assert result.indptr.dtype == expected_dtype

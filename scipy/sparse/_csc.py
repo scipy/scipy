@@ -132,7 +132,7 @@ class csc_array(_cs_matrix):
 
     def tocsr(self, copy=False):
         M,N = self.shape
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)

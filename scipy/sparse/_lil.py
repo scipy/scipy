@@ -460,11 +460,11 @@ class lil_array(_sparray, IndexMixin):
             np.cumsum(indptr, out=indptr)
             nnz = indptr[-1]
         else:
-            idx_dtype = get_index_dtype(maxval=N)
+            idx_dtype = self._get_index_dtype(maxval=N)
             lengths = np.empty(M, dtype=idx_dtype)
             _csparsetools.lil_get_lengths(self.rows, lengths)
             nnz = lengths.sum(dtype=np.int64)
-            idx_dtype = get_index_dtype(maxval=max(N, nnz))
+            idx_dtype = self._get_index_dtype(maxval=max(N, nnz))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indptr[0] = 0
             np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])

@@ -392,7 +392,7 @@ class dok_array(_sparray, IndexMixin, dict):
         if self.nnz == 0:
             return self._coo_container(self.shape, dtype=self.dtype)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = self._get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(self.values(), dtype=self.dtype, count=self.nnz)
         row = np.fromiter((i for i, _ in self.keys()), dtype=idx_dtype, count=self.nnz)
         col = np.fromiter((j for _, j in self.keys()), dtype=idx_dtype, count=self.nnz)
