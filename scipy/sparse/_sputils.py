@@ -235,22 +235,21 @@ def isintlike(x):
     return True
 
 
-def isshape(x, nonneg=False):
-    """Is x a valid 2-tuple of dimensions?
+def isshape(x, nonneg=False, allow_ndim=False) -> bool:
+    """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
+    If allow_ndim, shapes of any dimensionality are allowed.
     """
-    try:
-        # Assume it's a tuple of matrix dimensions (M, N)
-        (M, N) = x
-    except Exception:
+    ndim = len(x)
+    if not allow_ndim and ndim != 2:
         return False
-    else:
-        if isintlike(M) and isintlike(N):
-            if np.ndim(M) == 0 and np.ndim(N) == 0:
-                if not nonneg or (M >= 0 and N >= 0):
-                    return True
-        return False
+    for d in x:
+        if not isintlike(d):
+            return False
+        if nonneg and d < 0:
+            return False
+    return True
 
 
 def issequence(t):
