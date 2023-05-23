@@ -660,9 +660,10 @@ class _sparray:
         elif isdense(other):
             if not rdivide:
                 if true_divide:
-                    return np.true_divide(self.todense(), other)
+                    recip = np.true_divide(1., other)
                 else:
-                    return np.divide(self.todense(), other)
+                    recip = np.divide(1., other)
+                return self.multiply(recip)
             else:
                 if true_divide:
                     return np.true_divide(other, self.todense())

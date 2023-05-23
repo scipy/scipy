@@ -148,6 +148,10 @@ def test_pow(B):
 def test_sparse_divide(A):
     assert isinstance(A / A, np.ndarray)
 
+@parametrize_sparrays
+def test_sparse_dense_divide(A):
+    with pytest.warns(RuntimeWarning):
+        assert (A / A.todense())._is_array
 
 @parametrize_sparrays
 def test_dense_divide(A):
