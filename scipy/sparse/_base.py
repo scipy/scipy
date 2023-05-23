@@ -1265,27 +1265,12 @@ class _sparray:
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
-    
+
     def _get_index_dtype(self, arrays=(), maxval=None, check_contents=False):
         from ._sputils import get_index_dtype
 
         # Don't check contents for array API
         return get_index_dtype(arrays, maxval, (check_contents and not self._is_array))
-        # from functools import reduce
-
-        # int32max = np.int32(np.iinfo(np.int32).max)
-
-        # # not using intc directly due to misinteractions with pythran
-        # dtypes = [np.int32 if np.intc().itemsize == 4 else np.int64]
-        # if maxval is not None:
-        #     maxval = np.int64(maxval)
-        #     if maxval > int32max:
-        #         dtypes.append(np.int64)
-        # for array in arrays:
-        #     dtypes.append(array.dtype)
-
-        # return reduce(np.promote_types, dtypes)
-
 
 
 def issparse(x):
