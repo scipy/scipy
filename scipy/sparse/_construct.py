@@ -14,11 +14,11 @@ from scipy._lib._util import check_random_state, rng_integers
 from ._sputils import upcast, get_index_dtype, isscalarlike
 
 from ._sparsetools import csr_hstack
-from ._csr import csr_matrix
-from ._csc import csc_matrix
-from ._bsr import bsr_matrix
-from ._coo import coo_matrix
-from ._dia import dia_matrix
+from ._csr import csr_array
+from ._csc import csc_array
+from ._bsr import bsr_array
+from ._coo import coo_array
+from ._dia import dia_array
 
 from ._base import issparse
 
@@ -48,7 +48,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     See Also
     --------
     diags : more convenient form of this function
-    dia_matrix : the sparse DIAgonal format.
+    dia_array : the sparse DIAgonal format.
 
     Examples
     --------
@@ -67,7 +67,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
         m = n = len(data[0])
     elif n is None:
         m, n = m
-    return dia_matrix((data, diags), shape=(m, n)).asformat(format)
+    return dia_array((data, diags), shape=(m, n)).asformat(format)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
@@ -193,7 +193,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
                     j, len(diagonal), offset, m, n)) from e
             raise
 
-    return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
+    return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
 
 
 def identity(n, dtype='d', format=None):
@@ -269,14 +269,14 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             indptr = np.arange(n+1, dtype=idx_dtype)
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
+            cls = {'csr': csr_array, 'csc': csc_array}[format]
             return cls((data,indices,indptr),(n,n))
         elif format == 'coo':
             idx_dtype = get_index_dtype(maxval=n)
             row = np.arange(n, dtype=idx_dtype)
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            return coo_matrix((data, (row, col)), (n, n))
+            return coo_array((data, (row, col)), (n, n))
 
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
@@ -303,8 +303,8 @@ def kron(A, B, format=None):
     --------
     >>> import numpy as np
     >>> from scipy import sparse
-    >>> A = sparse.csr_matrix(np.array([[0, 2], [5, 0]]))
-    >>> B = sparse.csr_matrix(np.array([[1, 2], [3, 4]]))
+    >>> A = sparse.csr_array(np.array([[0, 2], [5, 0]]))
+    >>> B = sparse.csr_array(np.array([[1, 2], [3, 4]]))
     >>> sparse.kron(A, B).toarray()
     array([[ 0,  0,  2,  4],
            [ 0,  0,  6,  8],
@@ -318,30 +318,30 @@ def kron(A, B, format=None):
            [15, 20,  0,  0]])
 
     """
-    B = coo_matrix(B)
+    B = coo_array(B)
 
     if (format is None or format == "bsr") and 2*B.nnz >= B.shape[0] * B.shape[1]:
         # B is fairly dense, use BSR
-        A = csr_matrix(A,copy=True)
+        A = csr_array(A,copy=True)
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape).asformat(format)
+            return coo_array(output_shape).asformat(format)
 
         B = B.toarray()
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
         data = data * B
 
-        return bsr_matrix((data,A.indices,A.indptr), shape=output_shape)
+        return bsr_array((data,A.indices,A.indptr), shape=output_shape)
     else:
         # use COO
-        A = coo_matrix(A)
+        A = coo_array(A)
         output_shape = (A.shape[0]*B.shape[0], A.shape[1]*B.shape[1])
 
         if A.nnz == 0 or B.nnz == 0:
             # kronecker product is the zero matrix
-            return coo_matrix(output_shape).asformat(format)
+            return coo_array(output_shape).asformat(format)
 
         # expand entries of a into blocks
         row = A.row.repeat(B.nnz)
@@ -365,7 +365,7 @@ def kron(A, B, format=None):
         data = data.reshape(-1,B.nnz) * B.data
         data = data.reshape(-1)
 
-        return coo_matrix((data,(row,col)), shape=output_shape).asformat(format)
+        return coo_array((data,(row,col)), shape=output_shape).asformat(format)
 
 
 def kronsum(A, B, format=None):
@@ -394,8 +394,8 @@ def kronsum(A, B, format=None):
 
 
     """
-    A = coo_matrix(A)
-    B = coo_matrix(B)
+    A = coo_array(A)
+    B = coo_array(B)
 
     if A.shape[0] != A.shape[1]:
         raise ValueError('A is not square')
@@ -438,10 +438,10 @@ def _compressed_sparse_stack(blocks, axis):
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
     if axis == 0:
-        return csr_matrix((data, indices, indptr),
+        return csr_array((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
     else:
-        return csc_matrix((data, indices, indptr),
+        return csc_array((data, indices, indptr),
                           shape=(constant_dim, sum_dim))
 
 
@@ -495,10 +495,10 @@ def _stack_along_minor_axis(blocks, axis):
         data = np.empty(0, dtype=data_cat.dtype)
 
     if axis == 0:
-        return csc_matrix((data, indices, indptr),
+        return csc_array((data, indices, indptr),
                           shape=(sum_dim, constant_dim))
     else:
-        return csr_matrix((data, indices, indptr),
+        return csr_array((data, indices, indptr),
                           shape=(constant_dim, sum_dim))
 
 
@@ -524,9 +524,9 @@ def hstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, hstack
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
+    >>> from scipy.sparse import coo_array, hstack
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
     >>> hstack([A,B]).toarray()
     array([[1, 2, 5],
            [3, 4, 6]])
@@ -557,9 +557,9 @@ def vstack(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, vstack
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5, 6]])
+    >>> from scipy.sparse import coo_array, vstack
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5, 6]])
     >>> vstack([A, B]).toarray()
     array([[1, 2],
            [3, 4],
@@ -596,10 +596,10 @@ def bmat(blocks, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, bmat
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
-    >>> C = coo_matrix([[7]])
+    >>> from scipy.sparse import coo_array, bmat
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
+    >>> C = coo_array([[7]])
     >>> bmat([[A, B], [None, C]]).toarray()
     array([[1, 2, 5],
            [3, 4, 6],
@@ -620,7 +620,7 @@ def bmat(blocks, format=None, dtype=None):
     M,N = blocks.shape
 
     # check for fast path cases
-    if (format in (None, 'csr') and all(isinstance(b, csr_matrix)
+    if (format in (None, 'csr') and all(isinstance(b, csr_array)
                                         for b in blocks.flat)):
         if N > 1:
             # stack along columns (axis 1):
@@ -633,7 +633,7 @@ def bmat(blocks, format=None, dtype=None):
         if dtype is not None:
             A = A.astype(dtype)
         return A
-    elif (format in (None, 'csc') and all(isinstance(b, csc_matrix)
+    elif (format in (None, 'csc') and all(isinstance(b, csc_array)
                                           for b in blocks.flat)):
         if M > 1:
             # stack along rows (axis 0):
@@ -655,7 +655,7 @@ def bmat(blocks, format=None, dtype=None):
     for i in range(M):
         for j in range(N):
             if blocks[i,j] is not None:
-                A = coo_matrix(blocks[i,j])
+                A = coo_array(blocks[i,j])
                 blocks[i,j] = A
                 block_mask[i,j] = True
 
@@ -701,7 +701,7 @@ def bmat(blocks, format=None, dtype=None):
         np.add(B.col, col_offsets[j], out=col[idx], dtype=idx_dtype)
         nnz += B.nnz
 
-    return coo_matrix((data, (row, col)), shape=shape).asformat(format)
+    return coo_array((data, (row, col)), shape=shape).asformat(format)
 
 
 def block_diag(mats, format=None, dtype=None):
@@ -734,10 +734,10 @@ def block_diag(mats, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_matrix, block_diag
-    >>> A = coo_matrix([[1, 2], [3, 4]])
-    >>> B = coo_matrix([[5], [6]])
-    >>> C = coo_matrix([[7]])
+    >>> from scipy.sparse import coo_array, block_diag
+    >>> A = coo_array([[1, 2], [3, 4]])
+    >>> B = coo_array([[5], [6]])
+    >>> C = coo_array([[7]])
     >>> block_diag((A, B, C)).toarray()
     array([[1, 2, 0, 0],
            [3, 4, 0, 0],
@@ -753,7 +753,7 @@ def block_diag(mats, format=None, dtype=None):
     c_idx = 0
     for a in mats:
         if isinstance(a, (list, numbers.Number)):
-            a = coo_matrix(a)
+            a = coo_array(a)
         nrows, ncols = a.shape
         if issparse(a):
             a = a.tocoo()
@@ -770,7 +770,7 @@ def block_diag(mats, format=None, dtype=None):
     row = np.concatenate(row)
     col = np.concatenate(col)
     data = np.concatenate(data)
-    return coo_matrix((data, (row, col)),
+    return coo_array((data, (row, col)),
                       shape=(r_idx, c_idx),
                       dtype=dtype).asformat(format)
 
@@ -889,7 +889,7 @@ greater than %d - this is not supported on this machine
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
     vals = data_rvs(k).astype(dtype, copy=False)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format,
+    return coo_array((vals, (i, j)), shape=(m, n)).asformat(format,
                                                              copy=False)
 
 
