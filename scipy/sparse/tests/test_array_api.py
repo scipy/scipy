@@ -378,7 +378,7 @@ def test_default_construction_fn_matrices(fn, args):
     """Regression test to ensure the creation functions in the scipy.sparse
     namespace return matrices instead of arrays."""
     m = fn(*args)
-    assert isinstance(m, scipy.sparse.spmatrix)
+    assert not m._is_array
 
 
 @pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
@@ -388,7 +388,7 @@ def test_stacks_default_construction_fn_matrices(fn):
     A = scipy.sparse.coo_matrix(np.eye(2))
     B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
     m = fn([A, B])
-    assert isinstance(m, scipy.sparse.spmatrix)
+    assert not m._is_array
 
 
 def test_blocks_default_construction_fn_matrices():
@@ -400,8 +400,8 @@ def test_blocks_default_construction_fn_matrices():
 
     # block diag
     m = scipy.sparse.block_diag((A, B, C))
-    assert isinstance(m, scipy.sparse.spmatrix)
+    assert not m._is_array
 
     # bmat
     m = scipy.sparse.bmat([[A, None], [None, C]])
-    assert isinstance(m, scipy.sparse.spmatrix)
+    assert not m._is_array
