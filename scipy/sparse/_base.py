@@ -110,9 +110,11 @@ class _sparray:
                              " to be instantiated directly.")
         self.maxprint = maxprint
 
+    # Use this in 0.13:
+    #
     @property
     def shape(self):
-        return self._shape
+       return self._shape
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -1250,6 +1252,105 @@ class _sparray:
             return out
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
+
+
+    ## All methods below are deprecated and should be released in
+    ## scipy 0.13
+
+    def get_shape(self):
+        """Get shape of a sparse array."""
+        msg = "`get_shape` is deprecated. Use `X.shape` instead."
+        warn(msg, DeprecationWarning, stacklevel=2)
+
+        return self._shape
+
+    def set_shape(self, shape):
+        """See `reshape`."""
+        msg = "Shape assignment is deprecated. Use `reshape` instead."
+        warn(msg, DeprecationWarning, stacklevel=2)
+
+        # Make sure copy is False since this is in place
+        # Make sure format is unchanged because we are doing a __dict__ swap
+        new_self = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_self.__dict__
+
+    shape = property(fget=lambda self: self._shape, fset=set_shape)  # noqa: F811
+
+    def asfptype(self):
+        """Upcast array to a floating point format (if necessary)"""
+        msg = (
+            "`asfptype` is an internal function, and is deprecated "
+            "as part of the public API."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._asfptype()
+
+    def getmaxprint(self):
+        """Maximum number of elements to display when printed."""
+        msg = (
+            "`getmaxprint` is an internal function, and is deprecated "
+            "as part of the public API."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getmaxprint()
+
+    def getformat(self):
+        """Matrix storage format"""
+        msg = "`getformat` is deprecated; use `X.format` instead"
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self.format
+
+    def getnnz(self, axis=None):
+        """Number of stored values, including explicit zeros.
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole array, in
+            each column, or in each row.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        msg = "`getnnz` is deprecated; use `X.nnz` instead"
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getnnz(axis=axis)
+
+    def getH(self):
+        """Return the Hermitian transpose of this array.
+
+        See Also
+        --------
+        numpy.matrix.getH : NumPy's implementation of `getH` for matrices
+        """
+        msg = (
+            "`getH` is deprecated; use `X.conj().T` instead"
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self.conjugate().transpose()
+
+    def getcol(self, j):
+        """Returns a copy of column j of the array, as an (m x 1) sparse
+        array (column vector).
+        """
+        msg = (
+            f"`getcol` is deprecated; use `X[:, [{j}]]` instead"
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getcol(j)
+
+    def getrow(self, i):
+        """Returns a copy of row i of the array, as a (1 x n) sparse
+        array (row vector).
+        """
+        msg = (
+            f"`getrow` is deprecated; use `X[[{i}]]` instead"
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getrow(i)
+
+    ## End 0.13 deprecated methods
 
 
 def issparse(x):
