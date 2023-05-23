@@ -63,6 +63,7 @@ class _sparray:
     """
 
     __array_priority__ = 10.1
+    _format = 'und'  # undefined
     ndim = 2
 
     @property
@@ -109,18 +110,9 @@ class _sparray:
                              " to be instantiated directly.")
         self.maxprint = maxprint
 
-    def set_shape(self, shape):
-        """See `reshape`."""
-        # Make sure copy is False since this is in place
-        # Make sure format is unchanged because we are doing a __dict__ swap
-        new_self = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_self.__dict__
-
-    def get_shape(self):
-        """Get shape of a sparse array."""
+    @property
+    def shape(self):
         return self._shape
-
-    shape = property(fget=get_shape, fset=set_shape)
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -236,7 +228,7 @@ class _sparray:
         else:
             return matrix(X, **kwargs)
 
-    def asfptype(self):
+    def _asfptype(self):
         """Upcast array to a floating point format (if necessary)"""
 
         fp_types = ['f', 'd', 'F', 'D']
@@ -255,7 +247,7 @@ class _sparray:
         for r in range(self.shape[0]):
             yield self[r, :]
 
-    def getmaxprint(self):
+    def _getmaxprint(self):
         """Maximum number of elements to display when printed."""
         return self.maxprint
 
@@ -264,14 +256,14 @@ class _sparray:
 
         np.count_nonzero(a.toarray())
 
-        Unlike getnnz() and the nnz property, which return the number of stored
+        Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
         """
         raise NotImplementedError("count_nonzero not implemented for %s." %
                                   self.__class__.__name__)
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
         Parameters
@@ -295,21 +287,21 @@ class _sparray:
         --------
         count_nonzero : Number of non-zero entries
         """
-        return self.getnnz()
+        return self._getnnz()
 
-    def getformat(self):
-        """Format of an array representation as a string."""
-        return getattr(self, 'format', 'und')
+    @property
+    def format(self):
+        return self._format
 
     def __repr__(self):
-        _, format_name = _formats[self.getformat()]
+        _, format_name = _formats[self.format]
         sparse_cls = 'array' if self._is_array else 'matrix'
         return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
                (self.shape + (self.dtype.type, self.nnz, format_name))
 
     def __str__(self):
-        maxprint = self.getmaxprint()
+        maxprint = self._getmaxprint()
 
         A = self.tocoo()
 
@@ -730,13 +722,13 @@ class _sparray:
                 warn(np.VisibleDeprecationWarning(
                     "Please use `.conj().T` instead"
                 ))
-            return self.getH()
+            return self.transpose().conjugate()
         elif attr == 'real':
             return self._real()
         elif attr == 'imag':
             return self._imag()
         elif attr == 'size':
-            return self.getnnz()
+            return self._getnnz()
         else:
             raise AttributeError(attr + " not found")
 
@@ -766,7 +758,7 @@ class _sparray:
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         """Element-wise complex conjugation.
 
         If the array is of non-complex data type and `copy` is False,
@@ -783,26 +775,16 @@ class _sparray:
 
         """
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self.tocsr(copy=copy).conj(copy=False)
+            return self.tocsr(copy=copy).conjugate(copy=False)
         elif copy:
             return self.copy()
         else:
             return self
 
-    def conjugate(self, copy=True):
-        return self.conj(copy=copy)
+    def conj(self, copy=True):
+        return self.conjugate(copy=copy)
 
-    conjugate.__doc__ = conj.__doc__
-
-    # Renamed conjtranspose() -> getH() for compatibility with dense matrices
-    def getH(self):
-        """Return the Hermitian transpose of this array.
-
-        See Also
-        --------
-        numpy.matrix.getH : NumPy's implementation of `getH` for matrices
-        """
-        return self.transpose().conj()
+    conj.__doc__ = conjugate.__doc__
 
     def _real(self):
         return self.tocsr()._real()
@@ -830,7 +812,7 @@ class _sparray:
         nz_mask = A.data != 0
         return (A.row[nz_mask], A.col[nz_mask])
 
-    def getcol(self, j):
+    def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """
@@ -846,7 +828,7 @@ class _sparray:
                                            shape=(n, 1), dtype=self.dtype)
         return self @ col_selector
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the array, as a (1 x n) sparse
         array (row vector).
         """
@@ -1227,6 +1209,9 @@ class _sparray:
         self._setdiag(np.asarray(values), k)
 
     def _setdiag(self, values, k):
+        """This part of the implementation gets overridden by the
+        different formats.
+        """
         M, N = self.shape
         if k < 0:
             if values.ndim == 0:

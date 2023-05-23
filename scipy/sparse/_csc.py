@@ -104,7 +104,7 @@ class csc_array(_cs_matrix):
            [2, 3, 6]])
 
     """
-    format = 'csc'
+    _format = 'csc'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -180,7 +180,7 @@ class csc_array(_cs_matrix):
 
     nonzero.__doc__ = _cs_matrix.nonzero.__doc__
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
@@ -192,7 +192,7 @@ class csc_array(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         return self._get_submatrix(minor=i).tocsr()
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
         CSC matrix (column vector).
         """

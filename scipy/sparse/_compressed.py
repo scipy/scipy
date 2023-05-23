@@ -105,7 +105,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             return int(self.indptr[-1])
         else:
@@ -120,7 +120,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""

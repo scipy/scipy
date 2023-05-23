@@ -85,7 +85,7 @@ class dia_array(_data_matrix):
            [0., 0., 0., ..., 1., 2., 1.],
            [0., 0., 0., ..., 0., 1., 2.]])
     """
-    format = 'dia'
+    _format = 'dia'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -178,9 +178,9 @@ class dia_array(_data_matrix):
         mask = self._data_mask()
         return np.count_nonzero(self.data[mask])
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
+            raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DIA format")
         M,N = self.shape
         nnz = 0
@@ -191,7 +191,7 @@ class dia_array(_data_matrix):
                 nnz += min(M+k,N)
         return int(nnz)
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
     count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
