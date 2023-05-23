@@ -1256,7 +1256,7 @@ class _sparray:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
 
 
-    ## All methods below are deprecated and should be released in
+    ## All methods below are deprecated and should be removed in
     ## scipy 1.13.0
     ##
     ## Also uncomment the definition of shape above.
@@ -1369,13 +1369,13 @@ class _sparray:
         warn(msg, DeprecationWarning, stacklevel=2)
         return self._getrow(i)
 
-    ## End 0.13 deprecated methods
+    ## End 1.13.0 deprecated methods
 
 
 def issparse(x):
     """Is x of a sparse array type?
 
-y    Parameters
+    Parameters
     ----------
     x
         object to check for being a sparse array
