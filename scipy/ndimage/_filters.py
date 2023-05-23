@@ -1200,7 +1200,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         origins = _ni_support._normalize_sequence(origin, input.ndim)
         if num_axes < input.ndim:
             if footprint.ndim != num_axes:
-                raise RuntimeError("footprint.ndim must match len(axes)")
+                raise RuntimeError("footprint array has incorrect shape")
             footprint = numpy.expand_dims(
                 footprint,
                 tuple(ax for ax in range(input.ndim) if ax not in axes)
@@ -1368,14 +1368,14 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
 
         # insert singleton dimension along any non-filtered axes
         if footprint.ndim != num_axes:
-            raise RuntimeError("footprint.ndim must match len(axes)")
+            raise RuntimeError("footprint array has incorrect shape")
         footprint = numpy.expand_dims(
             footprint,
             tuple(ax for ax in range(input.ndim) if ax not in axes)
         )
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
-        raise RuntimeError('filter footprint array has incorrect shape.')
+        raise RuntimeError('footprint array has incorrect shape.')
     for origin, lenf in zip(origins, fshape):
         if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
             raise ValueError('invalid origin')
