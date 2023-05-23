@@ -41,7 +41,7 @@ def compliance_scipy(*arrays):
         elif not array_api_compat.is_array_api_obj(array):
             raise TypeError("Only support Array API compatible arrays")
         elif array.dtype is np.dtype('O'):
-            raise ValueError('object arrays are not supported')
+            raise TypeError('object arrays are not supported')
 
 
 def _check_finite(array, xp):

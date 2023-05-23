@@ -23,7 +23,7 @@ def test_array_namespace():
 
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
     xp = array_namespace(x, y)
-    assert xp.__name__ == 'numpy'
+    assert xp.__name__ == 'array_api_compat.numpy'
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
@@ -46,7 +46,7 @@ def test_as_xparray_namespace():
 
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
     x, y, xp_ = as_xparray_namespace(x, y)
-    assert xp_.__name__ == 'numpy'
+    assert xp_.__name__ == 'array_api_compat.numpy'
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
