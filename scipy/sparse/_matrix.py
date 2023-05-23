@@ -29,11 +29,6 @@ class spmatrix:
         return csr_matrix
 
     @property
-    def _dps_container(self):
-        from ._dps import dps_matrix
-        return dps_matrix
-
-    @property
     def _dia_container(self):
         from ._dia import dia_matrix
         return dia_matrix
