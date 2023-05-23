@@ -155,7 +155,7 @@ class coo_array(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = self._get_index_dtype((row, col), maxval=max(self.shape))
+                idx_dtype = self._get_index_dtype((row, col), maxval=max(self.shape), check_contents=True)
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = getdata(obj, copy=copy, dtype=dtype)

@@ -485,7 +485,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                 raise ValueError("Matrix too big to convert")
             indptr_diff = indptr_diff_limited
 
-        row = (R * np.arange(M//R)).repeat(indptr_diff)
+        row = (R * np.arange(M//R)).repeat(indptr_diff)  # Should this be a smaller dtype?
         row = row.repeat(R*C).reshape(-1,R,C)
         row += np.tile(np.arange(R).reshape(-1,1), (1,C))
         row = row.reshape(-1)
