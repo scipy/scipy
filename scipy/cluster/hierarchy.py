@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, as_xparray
+from scipy._lib._array_api import array_namespace, as_xparray, isdtype
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -164,12 +164,7 @@ def _copy_array_if_base_present(a):
     """
     Copy the array if its base points to a parent array.
     """
-    if a.base is not None:
-        return a.copy()
-    elif np.issubsctype(a, np.float32):
-        return a.astype('float64')
-    else:
-        return a
+    return a
 
 
 def _copy_arrays_if_base_present(T):
@@ -1548,16 +1543,14 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 def _convert_to_bool(X, xp):
     if X.dtype != xp.bool:
         X = xp.astype(X, bool)
-    if not X.flags.contiguous:
-        X = X.copy()
+    X = as_xparray(X, copy=True, xp=xp)
     return X
 
 
 def _convert_to_double(X, xp):
     if X.dtype != xp.float64:
         X = xp.astype(X, xp.float64)
-    if not X.flags.contiguous:
-        X = X.copy()
+    X = as_xparray(X, copy=True, xp=xp)
     return X
 
 
