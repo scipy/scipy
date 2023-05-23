@@ -173,7 +173,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                 if blocksize is not None:
                     maxval = max(maxval, max(blocksize))
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
-                                            check_contents=True)
+                                                  check_contents=True)
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)
@@ -385,7 +385,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
             other = other.tobsr(blocksize=(n,C))
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices))
+                                           other.indptr, other.indices))
 
         bnnz = csr_matmat_maxnnz(M//R, N//C,
                                  self.indptr.astype(idx_dtype),
@@ -394,8 +394,8 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                                  other.indices.astype(idx_dtype))
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=bnnz)
+                                           other.indptr, other.indices),
+                                          maxval=bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
@@ -444,7 +444,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R, C = self.blocksize
         nnz = self.nnz
         idx_dtype = self._get_index_dtype((self.indptr, self.indices),
-                                    maxval=max(nnz, N))
+                                          maxval=max(nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype))
@@ -485,15 +485,14 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                 raise ValueError("Matrix too big to convert")
             indptr_diff = indptr_diff_limited
 
-        row = (
-            R * np.arange(M//R, dtype=self._get_index_dtype(maxval=max(M, N)))
-        ).repeat(indptr_diff)
+        idx_dtype = self._get_index_dtype(maxval=max(M, N))
+        row = (R * np.arange(M//R, dtype=idx_dtype)).repeat(indptr_diff)
         row = row.repeat(R*C).reshape(-1,R,C)
-        row += np.tile(np.arange(R).reshape(-1,1), (1,C))
+        row += np.tile(np.arange(R, dtype=idx_dtype).reshape(-1,1), (1,C))
         row = row.reshape(-1)
 
-        col = (C * self.indices).repeat(R*C).reshape(-1,R,C)
-        col += np.tile(np.arange(C), (R,1))
+        col = (C * self.indices).astype(idx_type, copy=False).repeat(R*C).reshape(-1,R,C)
+        col += np.tile(np.arange(C, dtype=idx_dtype), (R,1))
         col = col.reshape(-1)
 
         data = self.data.reshape(-1)
@@ -642,8 +641,8 @@ class bsr_array(_cs_matrix, _minmax_mixin):
 
         max_bnnz = len(self.data) + len(other.data)
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=max_bnnz)
+                                           other.indptr, other.indices),
+                                          maxval=max_bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(max_bnnz, dtype=idx_dtype)
 
