@@ -168,8 +168,8 @@ def test_no_H_attr(A):
 
 @parametrize_sparrays
 def test_getrow_getcol(A):
-    assert A.getcol(0)._is_array
-    assert A.getrow(0)._is_array
+    assert A._getcol(0)._is_array
+    assert A._getrow(0)._is_array
 
 
 # -- linalg --
