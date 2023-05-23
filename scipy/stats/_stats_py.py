@@ -9799,11 +9799,11 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     In the more general (higher dimensional) and discrete case, it is also
     called the optimal transport problem or the Monge problem.
     Let the finite point sets :math:`\{x_i\}` and :math:`\{y_j\}` denote
-    the support set of probability mass function :math:`u` and :math:`u`
-    respectively. The Monge problem can be expressed in this form,
+    the support set of probability mass function :math:`u` and :math:`v`
+    respectively. The Monge problem can be expressed as follows,
 
     Let :math:`\Gamma` denote the transport plan, :math:`D` denote the
-    distance matrix and follows,
+    distance matrix and,
 
     .. math::
 
@@ -9819,11 +9819,12 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     the columns of the matrix.
     The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
-    probability mass transported from :math:`u` to :math:`v`. Summing over
-    the rows of :math:`\Gamma` should give the source distribution :math:`u` :
-    :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i` and summing
-    over the columns of :math:`\Gamma` should give the target distribution
-    :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all :math:`j`.
+    probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
+    Summing over the rows of :math:`\Gamma` should give the source distribution
+    :math:`u` : :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i`
+    and summing over the columns of :math:`\Gamma` should give the target
+    distribution :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all
+    :math:`j`.
     The distance matrix :math:`D` is a matrix :math:`[d_{ij}]`, in which
     :math:`d_{ij} = d(x_i, y_j)`.
 
