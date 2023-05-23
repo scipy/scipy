@@ -13,7 +13,7 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                       getdata, get_index_dtype, downcast_intp_index,
+                       getdata, downcast_intp_index,
                        check_shape, check_reshape_kwargs)
 
 import operator

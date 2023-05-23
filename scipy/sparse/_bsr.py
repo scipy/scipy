@@ -13,7 +13,7 @@ from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import isspmatrix, _formats, _sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
-                       get_index_dtype, check_shape)
+                       check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,

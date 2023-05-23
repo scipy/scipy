@@ -5,7 +5,7 @@ import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
-                       matrix, validateaxis, get_index_dtype,)
+                       matrix, validateaxis,)
 
 __all__ = ['isspmatrix', 'issparse',
            'SparseWarning', 'SparseEfficiencyWarning']
@@ -1267,9 +1267,10 @@ class _sparray:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
     
     def _get_index_dtype(self, arrays=(), maxval=None, check_contents=False):
-        from ._matrix import spmatrix
+        from ._sputils import get_index_dtype
 
-        return get_index_dtype(arrays, maxval, (check_contents and isinstance(self, spmatrix)))
+        # Don't check contents for array API
+        return get_index_dtype(arrays, maxval, (check_contents and not self._is_array))
         # from functools import reduce
 
         # int32max = np.int32(np.iinfo(np.int32).max)

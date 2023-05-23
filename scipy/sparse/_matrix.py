@@ -1,4 +1,4 @@
-from ._sputils import isintlike, isscalarlike, get_index_dtype
+from ._sputils import isintlike, isscalarlike
 
 
 class spmatrix:
@@ -77,9 +77,6 @@ class spmatrix:
         if isscalarlike(other):
             raise ValueError('exponent must be an integer')
         return NotImplemented
-    
-    def _get_index_dtype(self, arrays=(), maxval=None, check_contents=False):
-        return get_index_dtype(arrays, maxval, check_contents)
 
 
 def _array_doc_to_matrix(docstr):

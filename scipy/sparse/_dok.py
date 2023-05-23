@@ -11,7 +11,7 @@ from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                       upcast, upcast_scalar, get_index_dtype, check_shape)
+                       upcast, upcast_scalar, check_shape)
 
 try:
     from operator import isSequenceType as _is_sequence
