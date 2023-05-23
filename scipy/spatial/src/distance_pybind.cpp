@@ -3,6 +3,7 @@
 #include <numpy/arrayobject.h>
 #include <cmath>
 #include <cassert>
+#include <iostream>
 
 #include "function_ref.h"
 #include "views.h"
@@ -23,6 +24,29 @@ template <typename T>
 using WeightedDistanceFunc = FunctionRef<
     void(StridedView2D<T>, StridedView2D<const T>,
          StridedView2D<const T>, StridedView2D<const T>)>;
+
+template <typename T>
+using CosineDistanceFunc = FunctionRef<
+    void(StridedView2D<T>, StridedView2D<const T>,
+         StridedView2D<const T>, StridedView1D<T>,
+         StridedView1D<T>, StridedView1D<T>)>;
+
+template <typename T>
+using CosineWeightedDistanceFunc = FunctionRef<
+    void(StridedView2D<T>, StridedView2D<const T>,
+         StridedView2D<const T>, StridedView2D<const T>,
+         StridedView1D<T>, StridedView1D<T>, StridedView1D<T>)>;
+
+template <typename T>
+using JensenshannonDistanceFunc = FunctionRef<
+    void(StridedView2D<T>, StridedView2D<const T>,
+         StridedView2D<const T>, StridedView1D<T>,
+         StridedView1D<T>, StridedView1D<T>)>;
+
+template <typename T>
+using SeuclideanWithVarianceDistanceFunc = FunctionRef<
+    void(StridedView2D<T>, StridedView2D<const T>,
+         StridedView2D<const T>, StridedView1D<T>)>;
 
 // Validate weights are >= 0
 template <typename T>
@@ -100,6 +124,66 @@ void pdist_impl(ArrayDescriptor out, T* out_data,
 }
 
 template <typename T>
+void cosine_pdist_impl(ArrayDescriptor out, T* out_data,
+                       ArrayDescriptor x, const T* in_data,
+                       DistanceFunc<T> f) {
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[0], 0};
+    out_view.shape = {x.shape[0] - 1, x.shape[1]};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {x.strides[0], x.strides[1]};
+    x_view.shape = {out_view.shape[0], num_cols};
+    x_view.data = in_data + x.strides[0];
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {0, x.strides[1]};
+    y_view.shape = {out_view.shape[0], num_cols};
+    y_view.data = in_data;
+
+    StridedView1D<T> rownorms_view;
+    rownorms_view.shape = {x.shape[0]};
+    rownorms_view.data = new T[x.shape[0]];
+    for (intptr_t i = 0; i < num_rows; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = in_data[i*x.strides[0] + j*x.strides[1]];
+            rownorm += x_ij * x_ij;
+        }
+        rownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
+        f(out_view, x_view, y_view);
+
+        out_view.data += out_view.shape[0] * out_view.strides[0];
+        out_view.shape[0] -= 1;
+        x_view.shape[0] = y_view.shape[0] = out_view.shape[0];
+        x_view.data += x.strides[0];
+        y_view.data += x.strides[0];
+    }
+
+    T* out_data_copy = out_data;
+    for (intptr_t i = 0; i < num_rows; i++) {
+        intptr_t j;
+        for (j = i + 1; j + 1 < num_rows; j += 2) {
+            *out_data_copy = std::max(1.0 - (*out_data_copy)/(rownorms_view(i) * rownorms_view(j)), (T) 0.0);
+            *(out_data_copy + 1) = std::max(1.0 - (*(out_data_copy + 1))/(rownorms_view(i) * rownorms_view(j + 1)), (T) 0.0);
+            out_data_copy += 2;
+        }
+        for (; j < num_rows; j++) {
+            *out_data_copy = std::max(1.0 - (*out_data_copy)/(rownorms_view(i) * rownorms_view(j)), (T) 0.0);
+            out_data_copy++;
+        }
+    }
+
+    delete [] rownorms_view.data;
+}
+
+template <typename T>
 void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
                          ArrayDescriptor x, const T* x_data,
                          ArrayDescriptor w, const T* w_data,
@@ -138,6 +222,77 @@ void pdist_weighted_impl(ArrayDescriptor out, T* out_data,
         x_view.data += x.strides[0];
         y_view.data += x.strides[0];
     }
+}
+
+template <typename T>
+void cosine_pdist_weighted_impl(ArrayDescriptor out, T* out_data,
+                                ArrayDescriptor x, const T* x_data,
+                                ArrayDescriptor w, const T* w_data,
+                                WeightedDistanceFunc<T> f) {
+    if (x.ndim != 2) {
+        throw std::invalid_argument("x must be 2-dimensional");
+    }
+
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[0], 0};
+    out_view.shape = {x.shape[0] - 1, x.shape[1]};
+    out_view.data = out_data;
+
+    StridedView2D<const T> w_view;
+    w_view.strides = {0, w.strides[0]};
+    w_view.shape = out_view.shape;
+    w_view.data = w_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {x.strides[0], x.strides[1]};
+    x_view.shape = out_view.shape;
+    x_view.data = x_data + x.strides[0];
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {0, x.strides[1]};
+    y_view.shape = out_view.shape;
+    y_view.data = x_data;
+
+    StridedView1D<T> rownorms_view;
+    rownorms_view.shape = {x.shape[0]};
+    rownorms_view.data = new T[x.shape[0]];
+    for (intptr_t i = 0; i < num_rows; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            T w_ij = w_data[j*w.strides[0]];
+            rownorm += w_ij * x_ij * x_ij;
+        }
+        rownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
+        f(out_view, x_view, y_view, w_view);
+
+        out_view.data += out_view.shape[0] * out_view.strides[0];
+        out_view.shape[0] -= 1;
+        x_view.shape[0] = y_view.shape[0] = w_view.shape[0] = out_view.shape[0];
+        x_view.data += x.strides[0];
+        y_view.data += x.strides[0];
+    }
+
+    T* out_data_copy = out_data;
+    for (intptr_t i = 0; i < num_rows; i++) {
+        intptr_t j;
+        for (j = i + 1; j + 1 < num_rows; j += 2) {
+            *out_data_copy = std::max(1.0 - (*out_data_copy)/(rownorms_view(i) * rownorms_view(j)), (T) 0.0);
+            *(out_data_copy + 1) = std::max(1.0 - (*(out_data_copy + 1))/(rownorms_view(i) * rownorms_view(j + 1)), (T) 0.0);
+            out_data_copy += 2;
+        }
+        for (; j < num_rows; j++) {
+            *out_data_copy = std::max(1.0 - (*out_data_copy)/(rownorms_view(i) * rownorms_view(j)), (T) 0.0);
+            out_data_copy++;
+        }
+    }
+
+    delete [] rownorms_view.data;
 }
 
 template <typename T>
@@ -210,6 +365,611 @@ void cdist_weighted_impl(ArrayDescriptor out, T* out_data,
         out_view.data += out.strides[0];
         x_view.data += x.strides[0];
     }
+}
+
+template <typename T>
+void cosine_cdist_weighted_impl(ArrayDescriptor out, T* out_data,
+                         ArrayDescriptor x, const T* x_data,
+                         ArrayDescriptor y, const T* y_data,
+                         ArrayDescriptor w, const T* w_data,
+                         CosineWeightedDistanceFunc<T> f) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[1], 0};
+    out_view.shape = {num_rowsY, num_cols};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {0, x.strides[1]};
+    x_view.shape = {num_rowsY, num_cols};
+    x_view.data = x_data;
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {y.strides[0], y.strides[1]};
+    y_view.shape = {num_rowsY, num_cols};
+    y_view.data = y_data;
+
+    StridedView2D<const T> w_view;
+    w_view.strides = {0, w.strides[0]};
+    w_view.shape = {num_rowsY, num_cols};
+    w_view.data = w_data;
+
+    StridedView1D<T> xrownorms_view;
+    xrownorms_view.shape = {x.shape[0]};
+    xrownorms_view.data = new T[x.shape[0]];
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            T w_ij = w_data[j*w.strides[0]];
+            rownorm += w_ij * x_ij * x_ij;
+        }
+        xrownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    StridedView1D<T> yrownorms_view;
+    yrownorms_view.shape = {y.shape[0]};
+    yrownorms_view.data = new T[y.shape[0]];
+    for (intptr_t i = 0; i < num_rowsY; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T y_ij = y_data[i*y.strides[0] + j*y.strides[1]];
+            T w_ij = w_data[j*w.strides[0]];
+            rownorm += w_ij * y_ij * y_ij;
+        }
+        yrownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    StridedView1D<T> ix_view;
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        ix_view.shape = {i};
+        f(out_view, x_view, y_view, w_view,
+          xrownorms_view, yrownorms_view,
+          ix_view);
+
+        out_view.data += out.strides[0];
+        x_view.data += x.strides[0];
+    }
+
+    delete [] xrownorms_view.data;
+    delete [] yrownorms_view.data;
+}
+
+template <typename T>
+void cosine_cdist_impl(ArrayDescriptor out, T* out_data,
+                       ArrayDescriptor x, const T* x_data,
+                       ArrayDescriptor y, const T* y_data,
+                       CosineDistanceFunc<T> f) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[1], 0};
+    out_view.shape = {num_rowsY, num_cols};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {0, x.strides[1]};
+    x_view.shape = {num_rowsY, num_cols};
+    x_view.data = x_data;
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {y.strides[0], y.strides[1]};
+    y_view.shape = {num_rowsY, num_cols};
+    y_view.data = y_data;
+
+    StridedView1D<T> xrownorms_view;
+    xrownorms_view.shape = {x.shape[0]};
+    xrownorms_view.data = new T[x.shape[0]];
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            rownorm += x_ij * x_ij;
+        }
+        xrownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    StridedView1D<T> yrownorms_view;
+    yrownorms_view.shape = {y.shape[0]};
+    yrownorms_view.data = new T[y.shape[0]];
+    for (intptr_t i = 0; i < num_rowsY; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T y_ij = y_data[i*y.strides[0] + j*y.strides[1]];
+            rownorm += y_ij * y_ij;
+        }
+        yrownorms_view.data[i] = sqrt(rownorm);
+    }
+
+    StridedView1D<T> ix_view;
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        ix_view.shape = {i};
+        f(out_view, x_view, y_view,
+          xrownorms_view, yrownorms_view,
+          ix_view);
+
+        out_view.data += out.strides[0];
+        x_view.data += x.strides[0];
+    }
+
+    delete [] xrownorms_view.data;
+    delete [] yrownorms_view.data;
+}
+
+template <typename T>
+void jensenshannon_cdist_impl(ArrayDescriptor out, T* out_data,
+                       ArrayDescriptor x, const T* x_data,
+                       ArrayDescriptor y, const T* y_data,
+                       JensenshannonDistanceFunc<T> f) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+    bool is_x_negative = false, is_y_negative = false;
+    bool is_x_rownorm_0 = false, is_y_rownorm_0 = false;
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[1], 0};
+    out_view.shape = {num_rowsY, num_cols};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {0, x.strides[1]};
+    x_view.shape = {num_rowsY, num_cols};
+    x_view.data = x_data;
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {y.strides[0], y.strides[1]};
+    y_view.shape = {num_rowsY, num_cols};
+    y_view.data = y_data;
+
+    StridedView1D<T> xrownorms_view;
+    xrownorms_view.shape = {x.shape[0]};
+    xrownorms_view.data = new T[x.shape[0]];
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            is_x_negative = is_x_negative || (x_ij < 0.0);
+            rownorm += x_ij;
+        }
+        is_x_rownorm_0 = is_x_rownorm_0 || (rownorm == 0.0);
+        xrownorms_view.data[i] = rownorm;
+    }
+
+    StridedView1D<T> yrownorms_view;
+    yrownorms_view.shape = {y.shape[0]};
+    yrownorms_view.data = new T[y.shape[0]];
+    for (intptr_t i = 0; i < num_rowsY; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T y_ij = y_data[i*y.strides[0] + j*y.strides[1]];
+            is_y_negative = is_y_negative || (y_ij < 0.0);
+            rownorm += y_ij;
+        }
+        is_y_rownorm_0 = is_y_rownorm_0 || (rownorm == 0.0);
+        yrownorms_view.data[i] = rownorm;
+    }
+
+    if (is_x_negative || is_y_negative ||
+        is_x_rownorm_0 || is_y_rownorm_0) {
+        for (intptr_t i = 0; i < out.shape[0] * out.shape[1]; ++i) {
+            out_data[i] = INFINITY;
+        }
+    } else {
+        StridedView1D<T> ix_view;
+        for (intptr_t i = 0; i < num_rowsX; ++i) {
+            ix_view.shape = {i};
+            f(out_view, x_view, y_view,
+            xrownorms_view, yrownorms_view,
+            ix_view);
+
+            out_view.data += out.strides[0];
+            x_view.data += x.strides[0];
+        }
+    }
+
+    delete [] xrownorms_view.data;
+    delete [] yrownorms_view.data;
+}
+
+template <typename T>
+void jensenshannon_pdist_impl(ArrayDescriptor out, T* out_data,
+                              ArrayDescriptor x, const T* x_data,
+                              DistanceFunc<T> f) {
+    bool is_x_negative = false;
+    bool is_x_rownorm_0 = false;
+
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
+
+    for (intptr_t i = 0; i < num_rows; ++i) {
+        T rownorm = 0;
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            is_x_negative = is_x_negative || (x_ij < 0.0);
+            rownorm += x_ij;
+        }
+        is_x_rownorm_0 = is_x_rownorm_0 || (rownorm == 0.0);
+    }
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[0], 0};
+    out_view.shape = {x.shape[0] - 1, x.shape[1]};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {x.strides[0], x.strides[1]};
+    x_view.shape = {out_view.shape[0], num_cols};
+    x_view.data = x_data + x.strides[0];
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {0, x.strides[1]};
+    y_view.shape = {out_view.shape[0], num_cols};
+    y_view.data = x_data;
+
+    if (is_x_negative || is_x_rownorm_0) {
+        for (intptr_t i = 0; i < out.shape[0]; ++i) {
+            out_data[i] = INFINITY;
+        }
+    } else {
+        for (intptr_t i = 0; i < num_rows; ++i) {
+            f(out_view, x_view, y_view);
+
+            out_view.data += out_view.shape[0] * out_view.strides[0];
+            out_view.shape[0] -= 1;
+            x_view.shape[0] = y_view.shape[0] = out_view.shape[0];
+            x_view.data += x.strides[0];
+            y_view.data += x.strides[0];
+        }
+    }
+}
+
+template <typename T>
+void mahalanobis_cdist_impl(ArrayDescriptor out, T* out_data,
+                            ArrayDescriptor x, const T* x_data,
+                            ArrayDescriptor y, const T* y_data,
+                            ArrayDescriptor vi, const T* vi_data) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+    const intptr_t ilp_factor = 2;
+    T *u_v_diff = new T[2 * num_cols];
+    T *vi_uv = u_v_diff + num_cols;
+    T dot_prods[ilp_factor];
+    intptr_t i, j, k, iv, jv;
+
+    for (i = 0; i < num_rowsX; i++) {
+        for (j = 0; j < num_rowsY; j++) {
+            for (k = 0; k + ilp_factor - 1 < num_cols; k += ilp_factor) {
+                auto x_ik = x_data[i*x.strides[0] + k*x.strides[1]];
+                auto x_ik_1 = x_data[i*x.strides[0] + (k + 1)*x.strides[1]];
+                auto y_jk = y_data[j*y.strides[0] + k*y.strides[1]];
+                auto y_jk_1 = y_data[j*y.strides[0] + (k + 1)*y.strides[1]];
+                u_v_diff[k] = x_ik - y_jk;
+                u_v_diff[k + 1] = x_ik_1 - y_jk_1;
+            }
+            for (; k < num_cols; k++) {
+                auto x_ik = x_data[i*x.strides[0] + k*x.strides[1]];
+                auto y_jk = y_data[j*y.strides[0] + k*y.strides[1]];
+                u_v_diff[k] = x_ik - y_jk;
+            }
+
+            for (iv = 0; iv < num_cols; iv++) {
+                dot_prods[0] = dot_prods[1] = 0.0;
+                for (jv = 0; jv + ilp_factor - 1 < num_cols; jv += ilp_factor) {
+                    dot_prods[0] += vi_data[iv*vi.strides[0] + jv*vi.strides[1]] * u_v_diff[jv];
+                    dot_prods[1] += vi_data[iv*vi.strides[0] + (jv + 1)*vi.strides[1]] * u_v_diff[jv + 1];
+                }
+                for (; jv < num_cols; jv++) {
+                    dot_prods[0] += vi_data[iv*vi.strides[0] + jv*vi.strides[1]] * u_v_diff[jv];
+                }
+                vi_uv[iv] = dot_prods[0] + dot_prods[1];
+            }
+
+            dot_prods[0] = dot_prods[1] = 0.0;
+            for (k = 0; k + ilp_factor - 1 < num_cols; k += ilp_factor) {
+                dot_prods[0] += u_v_diff[k] * vi_uv[k];
+                dot_prods[1] += u_v_diff[k + 1] * vi_uv[k + 1];
+            }
+            for (; k < num_cols; k++) {
+                dot_prods[0] += u_v_diff[k] * vi_uv[k];
+            }
+            *out_data = sqrt(dot_prods[0] + dot_prods[1]);
+            out_data++;
+        }
+    }
+
+    delete [] u_v_diff;
+}
+
+template <typename T>
+void mahalanobis_pdist_impl(ArrayDescriptor out, T* out_data,
+                            ArrayDescriptor x, const T* x_data,
+                            ArrayDescriptor vi, const T* vi_data) {
+
+    const auto num_rows = x.shape[0];
+    const auto num_cols = x.shape[1];
+    const intptr_t ilp_factor = 2;
+    T *u_v_diff = new T[2 * num_cols];
+    T *vi_uv = u_v_diff + num_cols;
+    T dot_prods[ilp_factor];
+    intptr_t i, j, k, iv, jv;
+
+    for (i = 0; i < num_rows; i++) {
+        for (j = i + 1; j < num_rows; j++) {
+            for (k = 0; k + ilp_factor - 1 < num_cols; k += ilp_factor) {
+                auto x_ik = x_data[i*x.strides[0] + k*x.strides[1]];
+                auto x_ik_1 = x_data[i*x.strides[0] + (k + 1)*x.strides[1]];
+                auto y_jk = x_data[j*x.strides[0] + k*x.strides[1]];
+                auto y_jk_1 = x_data[j*x.strides[0] + (k + 1)*x.strides[1]];
+                u_v_diff[k] = x_ik - y_jk;
+                u_v_diff[k + 1] = x_ik_1 - y_jk_1;
+            }
+            for (; k < num_cols; k++) {
+                auto x_ik = x_data[i*x.strides[0] + k*x.strides[1]];
+                auto y_jk = x_data[j*x.strides[0] + k*x.strides[1]];
+                u_v_diff[k] = x_ik - y_jk;
+            }
+
+            for (iv = 0; iv < num_cols; iv++) {
+                dot_prods[0] = dot_prods[1] = 0.0;
+                for (jv = 0; jv + ilp_factor - 1 < num_cols; jv += ilp_factor) {
+                    dot_prods[0] += vi_data[iv*vi.strides[0] + jv*vi.strides[1]] * u_v_diff[jv];
+                    dot_prods[1] += vi_data[iv*vi.strides[0] + (jv + 1)*vi.strides[1]] * u_v_diff[jv + 1];
+                }
+                for (; jv < num_cols; jv++) {
+                    dot_prods[0] += vi_data[iv*vi.strides[0] + jv*vi.strides[1]] * u_v_diff[jv];
+                }
+                vi_uv[iv] = dot_prods[0] + dot_prods[1];
+            }
+
+            dot_prods[0] = dot_prods[1] = 0.0;
+            for (k = 0; k + ilp_factor - 1 < num_cols; k += ilp_factor) {
+                dot_prods[0] += u_v_diff[k] * vi_uv[k];
+                dot_prods[1] += u_v_diff[k + 1] * vi_uv[k + 1];
+            }
+            for (; k < num_cols; k++) {
+                dot_prods[0] += u_v_diff[k] * vi_uv[k];
+            }
+            *out_data = sqrt(dot_prods[0] + dot_prods[1]);
+            out_data++;
+        }
+    }
+
+    delete [] u_v_diff;
+}
+
+template <typename T>
+void seuclidean_cdist_with_variance_impl(ArrayDescriptor out, T* out_data,
+                           ArrayDescriptor x, const T* x_data,
+                           ArrayDescriptor y, const T* y_data,
+                           ArrayDescriptor V, const T* V_data,
+                           SeuclideanWithVarianceDistanceFunc<T> f) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[1], 0};
+    out_view.shape = {num_rowsY, num_cols};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {0, x.strides[1]};
+    x_view.shape = {num_rowsY, num_cols};
+    x_view.data = x_data;
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {y.strides[0], y.strides[1]};
+    y_view.shape = {num_rowsY, num_cols};
+    y_view.data = y_data;
+
+    StridedView1D<T> V_view;
+    V_view.shape = {num_cols};
+    V_view.data = const_cast<T*>(V_data);
+
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        f(out_view, x_view, y_view, V_view);
+
+        out_view.data += out.strides[0];
+        x_view.data += x.strides[0];
+    }
+
+}
+
+template <typename T>
+void seuclidean_pdist_with_variance_impl(ArrayDescriptor out, T* out_data,
+                                         ArrayDescriptor x, const T* x_data,
+                                         ArrayDescriptor V, const T* V_data,
+                                         SeuclideanWithVarianceDistanceFunc<T> f) {
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[0], 0};
+    out_view.shape = {x.shape[0] - 1, x.shape[1]};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {x.strides[0], x.strides[1]};
+    x_view.shape = {out_view.shape[0], num_cols};
+    x_view.data = x_data + x.strides[0];
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {0, x.strides[1]};
+    y_view.shape = {out_view.shape[0], num_cols};
+    y_view.data = x_data;
+
+    StridedView1D<T> V_view;
+    V_view.shape = {num_cols};
+    V_view.data = const_cast<T*>(V_data);
+
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
+        f(out_view, x_view, y_view, V_view);
+
+        out_view.data += out_view.shape[0] * out_view.strides[0];
+        out_view.shape[0] -= 1;
+        x_view.shape[0] = y_view.shape[0] = out_view.shape[0];
+        x_view.data += x.strides[0];
+        y_view.data += x.strides[0];
+    }
+
+}
+
+template <typename T>
+void seuclidean_cdist_without_variance_impl(ArrayDescriptor out, T* out_data,
+                           ArrayDescriptor x, const T* x_data,
+                           ArrayDescriptor y, const T* y_data,
+                           SeuclideanWithVarianceDistanceFunc<T> f) {
+
+    const auto num_rowsX = x.shape[0];
+    const auto num_rowsY = y.shape[0];
+    const auto num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[1], 0};
+    out_view.shape = {num_rowsY, num_cols};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {0, x.strides[1]};
+    x_view.shape = {num_rowsY, num_cols};
+    x_view.data = x_data;
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {y.strides[0], y.strides[1]};
+    y_view.shape = {num_rowsY, num_cols};
+    y_view.data = y_data;
+
+    StridedView1D<T> V_view, Sum;
+    V_view.shape = {num_cols};
+    V_view.data = new T[num_cols];
+    Sum.data = new T[num_cols];
+    T n = num_rowsX + num_rowsY;
+
+    for (intptr_t j = 0; j < num_cols; j++) {
+        Sum.data[j] = 0;
+        V_view.data[j] = 0;
+    }
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            Sum.data[j] += x_ij;
+        }
+    }
+    for (intptr_t i = 0; i < num_rowsY; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T y_ij = y_data[i*y.strides[0] + j*y.strides[1]];
+            Sum.data[j] += y_ij;
+        }
+    }
+    for (intptr_t j = 0; j < num_cols; j++) {
+        Sum.data[j] /= n;
+    }
+
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            T diff = x_ij - Sum.data[j];
+            V_view.data[j] += diff * diff;
+        }
+    }
+    for (intptr_t i = 0; i < num_rowsY; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T y_ij = y_data[i*y.strides[0] + j*y.strides[1]];
+            T diff = y_ij - Sum.data[j];
+            V_view.data[j] += diff * diff;
+        }
+    }
+
+    for (intptr_t j = 0; j < num_cols; j++) {
+        V_view.data[j] /= (n - 1);
+    }
+
+    for (intptr_t i = 0; i < num_rowsX; ++i) {
+        f(out_view, x_view, y_view, V_view);
+
+        out_view.data += out.strides[0];
+        x_view.data += x.strides[0];
+    }
+
+    delete [] Sum.data;
+
+}
+
+template <typename T>
+void seuclidean_pdist_without_variance_impl(ArrayDescriptor out, T* out_data,
+                                            ArrayDescriptor x, const T* x_data,
+                                            SeuclideanWithVarianceDistanceFunc<T> f) {
+
+    const intptr_t num_rows = x.shape[0], num_cols = x.shape[1];
+
+    StridedView2D<T> out_view;
+    out_view.strides = {out.strides[0], 0};
+    out_view.shape = {x.shape[0] - 1, x.shape[1]};
+    out_view.data = out_data;
+
+    StridedView2D<const T> x_view;
+    x_view.strides = {x.strides[0], x.strides[1]};
+    x_view.shape = {out_view.shape[0], num_cols};
+    x_view.data = x_data + x.strides[0];
+
+    StridedView2D<const T> y_view;
+    y_view.strides = {0, x.strides[1]};
+    y_view.shape = {out_view.shape[0], num_cols};
+    y_view.data = x_data;
+
+    StridedView1D<T> V_view, Sum;
+    V_view.shape = {num_cols};
+    V_view.data = new T[num_cols];
+    Sum.data = new T[num_cols];
+    T n = num_rows;
+
+    for (intptr_t j = 0; j < num_cols; j++) {
+        Sum.data[j] = 0;
+        V_view.data[j] = 0;
+    }
+    for (intptr_t i = 0; i < num_rows; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            Sum.data[j] += x_ij;
+        }
+    }
+    for (intptr_t j = 0; j < num_cols; j++) {
+        Sum.data[j] /= n;
+    }
+
+    for (intptr_t i = 0; i < num_rows; ++i) {
+        for (intptr_t j = 0; j < num_cols; j++) {
+            T x_ij = x_data[i*x.strides[0] + j*x.strides[1]];
+            T diff = x_ij - Sum.data[j];
+            V_view.data[j] += diff * diff;
+        }
+    }
+    for (intptr_t j = 0; j < num_cols; j++) {
+        V_view.data[j] /= (n - 1);
+    }
+
+    for (intptr_t i = 0; i < num_rows - 1; ++i) {
+        f(out_view, x_view, y_view, V_view);
+
+        out_view.data += out_view.shape[0] * out_view.strides[0];
+        out_view.shape[0] -= 1;
+        x_view.shape[0] = y_view.shape[0] = out_view.shape[0];
+        x_view.data += x.strides[0];
+        y_view.data += x.strides[0];
+    }
+
+    delete [] Sum.data;
+
 }
 
 // Extract shape and stride information from NumPy array. Converts byte-strides
@@ -308,6 +1068,47 @@ py::array pdist_weighted(
 }
 
 template <typename scalar_t>
+py::array cosine_pdist_weighted(
+        const py::array& out_obj, const py::array& x_obj,
+        const py::array& w_obj, WeightedDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                   NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto w = npy_asarray<scalar_t>(w_obj,
+                                   NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto w_desc = get_descriptor(w);
+    auto w_data = w.data();
+    {
+        py::gil_scoped_release guard;
+        validate_weights(w_desc, w_data);
+        cosine_pdist_weighted_impl(
+            out_desc, out_data, x_desc, x_data, w_desc, w_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array cosine_pdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                  DistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                   NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    {
+        py::gil_scoped_release guard;
+        cosine_pdist_impl(out_desc, out_data, x_desc, x_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
 py::array cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
                            const py::array& y_obj, DistanceFunc<scalar_t> f) {
     auto x = npy_asarray<scalar_t>(x_obj,
@@ -325,6 +1126,209 @@ py::array cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
     {
         py::gil_scoped_release guard;
         cdist_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array cosine_cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                  const py::array& y_obj, CosineDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    {
+        py::gil_scoped_release guard;
+        cosine_cdist_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array jensenshannon_pdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                         DistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    {
+        py::gil_scoped_release guard;
+        jensenshannon_pdist_impl(out_desc, out_data, x_desc, x_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array jensenshannon_cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                  const py::array& y_obj, JensenshannonDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    {
+        py::gil_scoped_release guard;
+        jensenshannon_cdist_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array seuclidean_cdist_with_variance(const py::array& out_obj, const py::array& x_obj,
+                                         const py::array& y_obj, const py::array& V_obj,
+                                         SeuclideanWithVarianceDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto V = npy_asarray<scalar_t>(V_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    auto V_desc = get_descriptor(V);
+    auto V_data = V.data();
+    {
+        py::gil_scoped_release guard;
+        seuclidean_cdist_with_variance_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, V_desc, V_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array seuclidean_pdist_with_variance(const py::array& out_obj, const py::array& x_obj,
+                                         const py::array& V_obj,
+                                         SeuclideanWithVarianceDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto V = npy_asarray<scalar_t>(V_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto V_desc = get_descriptor(V);
+    auto V_data = V.data();
+    {
+        py::gil_scoped_release guard;
+        seuclidean_pdist_with_variance_impl(out_desc, out_data, x_desc, x_data, V_desc, V_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array seuclidean_cdist_without_variance(const py::array& out_obj, const py::array& x_obj,
+                                            const py::array& y_obj,
+                                            SeuclideanWithVarianceDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    {
+        py::gil_scoped_release guard;
+        seuclidean_cdist_without_variance_impl(out_desc, out_data, x_desc, x_data, y_desc, y_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array seuclidean_pdist_without_variance(const py::array& out_obj, const py::array& x_obj,
+                                            SeuclideanWithVarianceDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    {
+        py::gil_scoped_release guard;
+        seuclidean_pdist_without_variance_impl(out_desc, out_data, x_desc, x_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array mahalanobis_cdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                       const py::array& y_obj, const py::array& VI_obj) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto VI = npy_asarray<scalar_t>(VI_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    auto VI_desc = get_descriptor(VI);
+    auto VI_data = VI.data();
+    {
+        py::gil_scoped_release guard;
+        mahalanobis_cdist_impl(out_desc, out_data, x_desc, x_data,
+                               y_desc, y_data, VI_desc, VI_data);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array mahalanobis_pdist_unweighted(const py::array& out_obj, const py::array& x_obj,
+                                       const py::array& VI_obj) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto VI = npy_asarray<scalar_t>(VI_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto VI_desc = get_descriptor(VI);
+    auto VI_data = VI.data();
+    {
+        py::gil_scoped_release guard;
+        mahalanobis_pdist_impl(out_desc, out_data, x_desc, x_data,
+                               VI_desc, VI_data);
     }
     return std::move(out);
 }
@@ -354,6 +1358,36 @@ py::array cdist_weighted(
         py::gil_scoped_release guard;
         validate_weights(w_desc, w_data);
         cdist_weighted_impl(
+            out_desc, out_data, x_desc, x_data, y_desc, y_data, w_desc, w_data, f);
+    }
+    return std::move(out);
+}
+
+template <typename scalar_t>
+py::array cosine_cdist_weighted(
+        const py::array& out_obj, const py::array& x_obj,
+        const py::array& y_obj, const py::array& w_obj,
+        CosineWeightedDistanceFunc<scalar_t> f) {
+    auto x = npy_asarray<scalar_t>(x_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto y = npy_asarray<scalar_t>(y_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto w = npy_asarray<scalar_t>(w_obj,
+                                 NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED);
+    auto out = py::cast<py::array_t<scalar_t>>(out_obj);
+
+    auto out_desc = get_descriptor(out);
+    auto out_data = out.mutable_data();
+    auto x_desc = get_descriptor(x);
+    auto x_data = x.data();
+    auto y_desc = get_descriptor(y);
+    auto y_data = y.data();
+    auto w_desc = get_descriptor(w);
+    auto w_data = w.data();
+    {
+        py::gil_scoped_release guard;
+        validate_weights(w_desc, w_data);
+        cosine_cdist_weighted_impl(
             out_desc, out_data, x_desc, x_data, y_desc, y_data, w_desc, w_data, f);
     }
     return std::move(out);
@@ -547,6 +1581,251 @@ py::array cdist(const py::object& out_obj, const py::object& x_obj,
     return out;
 }
 
+template <typename Func>
+py::array jensenshannon_cdist(const py::object& out_obj, const py::object& x_obj,
+                              const py::object& y_obj, Func&& f) {
+    auto x = npy_asarray(x_obj);
+    auto y = npy_asarray(y_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    if (y.ndim() != 2) {
+        throw std::invalid_argument("XB must be a 2-dimensional array.");
+    }
+    const intptr_t m = x.shape(1);
+    if (m != y.shape(1)) {
+        throw std::invalid_argument(
+            "XA and XB must have the same number of columns "
+            "(i.e. feature dimension).");
+    }
+
+    std::array<intptr_t, 2> out_shape{{x.shape(0), y.shape(0)}};
+
+    auto dtype = promote_type_real(common_type(x.dtype(), y.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        jensenshannon_cdist_unweighted<scalar_t>(out, x, y, f);
+    });
+    return out;
+}
+
+template <typename Func>
+py::array jensenshannon_pdist(const py::object& out_obj, const py::object& x_obj,
+                              Func&& f) {
+    auto x = npy_asarray(x_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    const intptr_t m = x.shape(0);
+
+    std::array<intptr_t, 1> out_shape{{(m * (m - 1)) / 2}};
+
+    auto dtype = promote_type_real(x.dtype());
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        jensenshannon_pdist_unweighted<scalar_t>(out, x, f);
+    });
+    return out;
+}
+
+template <typename Func>
+py::array cosine_cdist(const py::object& out_obj, const py::object& x_obj,
+                       const py::object& y_obj, const py::object& w_obj, Func&& f) {
+    auto x = npy_asarray(x_obj);
+    auto y = npy_asarray(y_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    if (y.ndim() != 2) {
+        throw std::invalid_argument("XB must be a 2-dimensional array.");
+    }
+    const intptr_t m = x.shape(1);
+    if (m != y.shape(1)) {
+        throw std::invalid_argument(
+            "XA and XB must have the same number of columns "
+            "(i.e. feature dimension).");
+    }
+
+    std::array<intptr_t, 2> out_shape{{x.shape(0), y.shape(0)}};
+    if (w_obj.is_none()) {
+        auto dtype = promote_type_real(common_type(x.dtype(), y.dtype()));
+        auto out = prepare_out_argument(out_obj, dtype, out_shape);
+        DISPATCH_DTYPE(dtype, [&]{
+            cosine_cdist_unweighted<scalar_t>(out, x, y, f);
+        });
+        return out;
+    }
+
+    auto w = prepare_single_weight(w_obj, m);
+    auto dtype = promote_type_real(
+        common_type(x.dtype(), y.dtype(), w.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        cosine_cdist_weighted<scalar_t>(out, x, y, w, f);
+    });
+    return out;
+}
+
+template <typename Func>
+py::array cosine_pdist(const py::object& out_obj, const py::object& x_obj,
+                       const py::object& w_obj, Func&& f) {
+    auto x = npy_asarray(x_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("x must be 2-dimensional");
+    }
+
+    const intptr_t m = x.shape(1);
+    const intptr_t n = x.shape(0);
+    std::array<intptr_t, 1> out_shape{{(n * (n - 1)) / 2}};
+    if (w_obj.is_none()) {
+        auto dtype = promote_type_real(x.dtype());
+        auto out = prepare_out_argument(out_obj, dtype, out_shape);
+        DISPATCH_DTYPE(dtype, [&]{
+            cosine_pdist_unweighted<scalar_t>(out, x, f);
+        });
+        return out;
+    }
+
+    auto w = prepare_single_weight(w_obj, m);
+    auto dtype = promote_type_real(common_type(x.dtype(), w.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        cosine_pdist_weighted<scalar_t>(out, x, w, f);
+    });
+    return out;
+}
+
+template <typename Func>
+py::array seuclidean_pdist(const py::object& out_obj, const py::object& x_obj,
+                           const py::object& V_obj, Func&& f) {
+    auto x = npy_asarray(x_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    const intptr_t m = x.shape(0);
+    const intptr_t n = x.shape(1);
+    std::array<intptr_t, 1> out_shape{{(m * (m - 1)) / 2}};
+    if (V_obj.is_none()) {
+        auto dtype = promote_type_real(x.dtype());
+        auto out = prepare_out_argument(out_obj, dtype, out_shape);
+        DISPATCH_DTYPE(dtype, [&]{
+            seuclidean_pdist_without_variance<scalar_t>(out, x, f);
+        });
+        return out;
+    }
+
+    auto V = prepare_single_weight(V_obj, n);
+    auto dtype = promote_type_real(
+        common_type(x.dtype(), V.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        seuclidean_pdist_with_variance<scalar_t>(out, x, V, f);
+    });
+    return out;
+}
+
+template <typename Func>
+py::array seuclidean_cdist(const py::object& out_obj, const py::object& x_obj,
+                           const py::object& y_obj, const py::object& V_obj,
+                           Func&& f) {
+    auto x = npy_asarray(x_obj);
+    auto y = npy_asarray(y_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    if (y.ndim() != 2) {
+        throw std::invalid_argument("XB must be a 2-dimensional array.");
+    }
+    const intptr_t m = x.shape(1);
+    if (m != y.shape(1)) {
+        throw std::invalid_argument(
+            "XA and XB must have the same number of columns "
+            "(i.e. feature dimension).");
+    }
+
+    std::array<intptr_t, 2> out_shape{{x.shape(0), y.shape(0)}};
+    if (V_obj.is_none()) {
+        auto dtype = promote_type_real(common_type(x.dtype(), y.dtype()));
+        auto out = prepare_out_argument(out_obj, dtype, out_shape);
+        DISPATCH_DTYPE(dtype, [&]{
+            seuclidean_cdist_without_variance<scalar_t>(out, x, y, f);
+        });
+        return out;
+    }
+
+    auto V = prepare_single_weight(V_obj, m);
+    auto dtype = promote_type_real(
+        common_type(x.dtype(), y.dtype(), V.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        seuclidean_cdist_with_variance<scalar_t>(out, x, y, V, f);
+    });
+    return out;
+}
+
+py::array mahalanobis_cdist(const py::object& out_obj, const py::object& x_obj,
+                            const py::object& y_obj, const py::object& VI_obj) {
+    auto x = npy_asarray(x_obj);
+    auto y = npy_asarray(y_obj);
+    auto VI = npy_asarray(VI_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    if (y.ndim() != 2) {
+        throw std::invalid_argument("XB must be a 2-dimensional array.");
+    }
+    if (VI.ndim() != 2) {
+        throw std::invalid_argument("VI must be a matrix.");
+    }
+    const intptr_t m = x.shape(1);
+    if (m != y.shape(1)) {
+        throw std::invalid_argument(
+            "XA and XB must have the same number of columns "
+            "(i.e. feature dimension).");
+    }
+    if (m != VI.shape(0) || m != VI.shape(1)) {
+        throw std::invalid_argument(
+            "VI must be a square matrix having order as "
+            "the number of columns");
+    }
+
+    std::array<intptr_t, 2> out_shape{{x.shape(0), y.shape(0)}};
+    auto dtype = promote_type_real(
+        common_type(x.dtype(), y.dtype(), VI.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        mahalanobis_cdist_unweighted<scalar_t>(out, x, y, VI);
+    });
+    return out;
+}
+
+py::array mahalanobis_pdist(const py::object& out_obj, const py::object& x_obj,
+                            const py::object& VI_obj) {
+    auto x = npy_asarray(x_obj);
+    auto VI = npy_asarray(VI_obj);
+    if (x.ndim() != 2) {
+        throw std::invalid_argument("XA must be a 2-dimensional array.");
+    }
+    if (VI.ndim() != 2) {
+        throw std::invalid_argument("VI must be a matrix.");
+    }
+    const intptr_t m = x.shape(1);
+    const intptr_t n = x.shape(0);
+    if (m != VI.shape(0) || m != VI.shape(1)) {
+        throw std::invalid_argument(
+            "VI must be a square matrix having order as "
+            "the number of columns");
+    }
+
+    std::array<intptr_t, 1> out_shape{{(n * (n - 1))/2}};
+    auto dtype = promote_type_real(common_type(x.dtype(), VI.dtype()));
+    auto out = prepare_out_argument(out_obj, dtype, out_shape);
+    DISPATCH_DTYPE(dtype, [&]{
+        mahalanobis_pdist_unweighted<scalar_t>(out, x, VI);
+    });
+    return out;
+}
+
 PYBIND11_MODULE(_distance_pybind, m) {
     if (_import_array() != 0) {
         throw py::error_already_set();
@@ -595,6 +1874,31 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, BraycurtisDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_cosine",
+          [](py::object x, py::object w, py::object out) {
+              return cosine_pdist(out, x, w, CosineDistanceWithoutRownorm{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_seuclidean",
+          [](py::object x, py::object V, py::object out) {
+              return seuclidean_pdist(out, x, V, SeuclideanDistance{});
+          },
+          "x"_a, "V"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_correlation",
+         [](py::object x, py::object w, py::object out) {
+             return cosine_pdist(out, x, w, CosineDistanceWithoutRownorm{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_jensenshannon",
+          [](py::object x, py::object out) {
+              return jensenshannon_pdist(out, x, JensenshannonDistanceWithoutNorm{});
+          },
+          "x"_a, "out"_a=py::none());
+    m.def("pdist_mahalanobis",
+          [](py::object x, py::object VI, py::object out) {
+              return mahalanobis_pdist(out, x, VI);
+          },
+          "x"_a, "VI"_a, "out"_a=py::none());
     m.def("cdist_canberra",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, CanberraDistance{});
@@ -615,6 +1919,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return cdist(out, x, y, w, EuclideanDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_jensenshannon",
+          [](py::object x, py::object y, py::object out) {
+              return jensenshannon_cdist(out, x, y, JensenshannonDistance{});
+          },
+          "x"_a, "y"_a, "out"_a=py::none());
     m.def("cdist_minkowski",
           [](py::object x, py::object y, py::object w, py::object out,
              double p) {
@@ -639,6 +1948,26 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return cdist(out, x, y, w, BraycurtisDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+   m.def("cdist_correlation",
+         [](py::object x, py::object y, py::object w, py::object out) {
+             return cosine_cdist(out, x, y, w, CosineDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_cosine",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cosine_cdist(out, x, y, w, CosineDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_seuclidean",
+          [](py::object x, py::object y, py::object V, py::object out) {
+              return seuclidean_cdist(out, x, y, V, SeuclideanDistance{});
+          },
+          "x"_a, "y"_a, "V"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_mahalanobis",
+          [](py::object x, py::object y, py::object VI, py::object out) {
+              return mahalanobis_cdist(out, x, y, VI);
+          },
+          "x"_a, "y"_a, "VI"_a, "out"_a=py::none());
 }
 
 }  // namespace (anonymous)

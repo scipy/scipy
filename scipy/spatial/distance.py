@@ -148,6 +148,45 @@ def _copy_array_if_base_present(a):
     return a
 
 
+def _distance_pybind_cdist_correlation(XA, XB, out=None, **kwargs):
+    centered = kwargs.pop("centered", True)
+    w = kwargs.pop("w", None)
+    if centered:
+        XA = XA - XA.mean(axis=1, keepdims=True)
+        XB = XB - XB.mean(axis=1, keepdims=True)
+    return _distance_pybind.cdist_correlation(XA, XB, w, out, **kwargs)
+
+
+def _distance_pybind_pdist_jensenshannon(X, out=None, **kwargs):
+    col_sum = np.sum(X.astype(np.float64, copy=False), axis=1)
+    X2 = X
+    if np.all(X >= 0) and np.all(col_sum > 0):
+        X2 = X / col_sum.reshape((X.shape[0],) + (1,))
+    return _distance_pybind.pdist_jensenshannon(X2, out, **kwargs)
+
+
+def _distance_pybind_pdist_correlation(X, out=None, **kwargs):
+    centered = kwargs.pop("centered", True)
+    w = kwargs.pop("w", None)
+    X2 = X
+    if centered:
+        X2 = X - np.average(X, axis=1, weights=w).reshape((X.shape[0],) + (1,))
+    return _distance_pybind.pdist_correlation(X2, w, out, **kwargs)
+
+
+def _distance_pybind_cdist_mahalanobis(XA, XB, out=None, **kwargs):
+    kwargs = _validate_mahalanobis_kwargs((XA, XB), XA.shape[0] + XB.shape[0],
+                                          XA.shape[1], **kwargs)
+    VI = kwargs.pop("VI")
+    return _distance_pybind.cdist_mahalanobis(XA, XB, VI, out, **kwargs)
+
+
+def _distance_pybind_pdist_mahalanobis(XA, out=None, **kwargs):
+    kwargs = _validate_mahalanobis_kwargs(XA, XA.shape[0],
+                                          XA.shape[1], **kwargs)
+    VI = kwargs.pop("VI")
+    return _distance_pybind.pdist_mahalanobis(XA, VI, out, **kwargs)
+
 def _correlation_cdist_wrap(XA, XB, dm, **kwargs):
     XA = XA - XA.mean(axis=1, keepdims=True)
     XB = XB - XB.mean(axis=1, keepdims=True)
@@ -1760,15 +1799,15 @@ _METRIC_INFOS = [
         canonical_name='correlation',
         aka={'correlation', 'co'},
         dist_func=correlation,
-        cdist_func=CDistMetricWrapper('correlation'),
-        pdist_func=PDistMetricWrapper('correlation'),
+        cdist_func=_distance_pybind_cdist_correlation,
+        pdist_func=_distance_pybind_pdist_correlation,
     ),
     MetricInfo(
         canonical_name='cosine',
         aka={'cosine', 'cos'},
         dist_func=cosine,
-        cdist_func=CDistMetricWrapper('cosine'),
-        pdist_func=PDistMetricWrapper('cosine'),
+        cdist_func=_distance_pybind.cdist_cosine,
+        pdist_func=_distance_pybind.pdist_cosine,
     ),
     MetricInfo(
         canonical_name='dice',
@@ -1806,8 +1845,8 @@ _METRIC_INFOS = [
         canonical_name='jensenshannon',
         aka={'jensenshannon', 'js'},
         dist_func=jensenshannon,
-        cdist_func=CDistMetricWrapper('jensenshannon'),
-        pdist_func=PDistMetricWrapper('jensenshannon'),
+        cdist_func=_distance_pybind.cdist_jensenshannon,
+        pdist_func=_distance_pybind_pdist_jensenshannon,
     ),
     MetricInfo(
         canonical_name='kulczynski1',
@@ -1822,8 +1861,8 @@ _METRIC_INFOS = [
         aka={'mahalanobis', 'mahal', 'mah'},
         validator=_validate_mahalanobis_kwargs,
         dist_func=mahalanobis,
-        cdist_func=CDistMetricWrapper('mahalanobis'),
-        pdist_func=PDistMetricWrapper('mahalanobis'),
+        cdist_func=_distance_pybind_cdist_mahalanobis,
+        pdist_func=_distance_pybind_pdist_mahalanobis,
     ),
     MetricInfo(
         canonical_name='minkowski',
@@ -1854,8 +1893,8 @@ _METRIC_INFOS = [
         aka={'seuclidean', 'se', 's'},
         validator=_validate_seuclidean_kwargs,
         dist_func=seuclidean,
-        cdist_func=CDistMetricWrapper('seuclidean'),
-        pdist_func=PDistMetricWrapper('seuclidean'),
+        cdist_func=_distance_pybind.cdist_seuclidean,
+        pdist_func=_distance_pybind.pdist_seuclidean,
     ),
     MetricInfo(
         canonical_name='sokalmichener',

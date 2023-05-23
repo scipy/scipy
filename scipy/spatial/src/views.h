@@ -24,3 +24,13 @@ struct StridedView2D {
         return data[i * strides[0] + j * strides[1]];
     }
 };
+
+template <typename T>
+struct StridedView1D {
+    std::array<intptr_t, 1> shape;
+    T* data;
+
+    T& operator()(intptr_t i) {
+        return data[i];
+    }
+};
