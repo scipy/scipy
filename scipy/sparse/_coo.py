@@ -354,8 +354,9 @@ class coo_array(_data_matrix, _minmax_mixin):
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = self._get_index_dtype((self.col, self.row),
-                                        maxval=max(self.nnz, M))
+            idx_dtype = self._get_index_dtype(
+                (self.col, self.row), maxval=max(self.nnz, M)
+            )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
 
@@ -395,8 +396,9 @@ class coo_array(_data_matrix, _minmax_mixin):
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = self._get_index_dtype((self.row, self.col),
-                                        maxval=max(self.nnz, N))
+            idx_dtype = self._get_index_dtype(
+                (self.row, self.col), maxval=max(self.nnz, N)
+            )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
 
