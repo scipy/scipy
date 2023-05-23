@@ -100,9 +100,11 @@ def check_fpu_mode(request):
 
 
 # Array API backend handling
-array_api_backends = (np,)
+array_api_backends = [np]
 
 if SCIPY_ARRAY_API:
+    array_api_backends = [np, numpy.array_api]
+
     array_api_available_backends = {
         'numpy': np, 'numpy.array_api': numpy.array_api,
     }
@@ -110,10 +112,9 @@ if SCIPY_ARRAY_API:
     try:
         import torch
         array_api_available_backends.update({'pytorch': torch})
+        array_api_backends.append(torch)
     except ImportError:
         pass
-
-    array_api_backends = (np, numpy.array_api)
 
     if SCIPY_ARRAY_API.lower() != "true":
         SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)

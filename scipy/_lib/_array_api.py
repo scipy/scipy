@@ -82,7 +82,7 @@ def array_namespace(*arrays):
     """
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         # here we could wrap the namespace if needed
-        return np
+        return array_api_compat.numpy
 
     arrays = [array for array in arrays if array is not None]
 
