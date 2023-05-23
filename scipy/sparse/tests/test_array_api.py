@@ -345,19 +345,55 @@ def test_power_operator(A):
     # https://github.com/scipy/scipy/issues/15948
     npt.assert_equal((A**2).todense(), (A.todense())**2)
 
-index_dtype = pytest.mark.parametrize(
-    "args,expected_dtype",
+
+@pytest.mark.parametrize(
+    "cls,indices_attrs",
     [
         (
-            ((np.array([1, 2, 3]), (np.array([0, 0, 1], dtype=np.int64), np.array([0, 1, 2], dtype=np.int64))),),
-            np.int64
-        )
+            scipy.sparse.csr_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.csc_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.coo_array,
+            ["row", "col"],
+        ),
     ]
 )
+@pytest.mark.parametrize("expected_dtype", [np.int64, np.int32])
+def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
+    input_array = scipy.sparse.coo_array(np.arange(9).reshape(3, 3))
+    coo_tuple = (
+        input_array.data,
+        (
+            input_array.row.astype(expected_dtype),
+            input_array.col.astype(expected_dtype),
+        )
+    )
 
-@pytest.mark.parametrize("cls", [scipy.sparse.csr_array, scipy.sparse.csc_array])
-@index_dtype
-def test_index_dtype(cls, args, expected_dtype):
-    result = cls(*args)
-    assert result.indices.dtype == expected_dtype
-    assert result.indptr.dtype == expected_dtype
+    result = cls(coo_tuple)
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    result = cls(coo_tuple, shape=(3, 3))
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    if issubclass(cls, scipy.sparse._compressed._cs_matrix):
+        input_array_csr = input_array.tocsr()
+        csr_tuple = (
+            input_array_csr.data,
+            input_array_csr.indices.astype(expected_dtype),
+            input_array_csr.indptr.astype(expected_dtype),
+        )
+
+        result = cls(csr_tuple)
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
+
+        result = cls(csr_tuple, shape=(3, 3))
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
