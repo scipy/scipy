@@ -66,20 +66,18 @@ def _makeMatMat(m):
         return lambda v: m @ v
 
 
-def _dot_inplace(x, y, verbosityLevel=0):
-    """Perform 'np.dot' in-place if dtypes match."""
+def _dot_matmul(x, y, verbosityLevel=0):
+    """Perform 'np.matmul' in-place if possible."""
     if x.flags["CARRAY"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
         # conditions where we can guarantee that inplace updates will work;
         # i.e. x is not a view/slice, x & y have compatible dtypes, and the
         # shape of the result of x @ y matches the shape of x.
-        # np.dot(x, y, out=x)
         np.matmul(x, y, out=x)
     else:
         # ideally, we'd have an exhaustive list of conditions above when
         # inplace updates are possible; since we don't, we opportunistically
         # try if it works, and fall back to overwriting if necessary
         try:
-            # np.dot(x, y, out=x)
             np.matmul(x, y, out=x)
         except Exception:
             if verbosityLevel:
@@ -129,12 +127,12 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        blockVectorV = _dot_inplace(
+        blockVectorV = _dot_matmul(
             blockVectorV, VBV,
             verbosityLevel=verbosityLevel
         )
         if B is not None:
-            blockVectorBV = _dot_inplace(
+            blockVectorBV = _dot_matmul(
                 blockVectorBV, VBV,
                 verbosityLevel=verbosityLevel
             )
@@ -624,16 +622,16 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    blockVectorX = _dot_inplace(
+    blockVectorX = _dot_matmul(
         blockVectorX, eigBlockVector,
         verbosityLevel=verbosityLevel
     )
-    blockVectorAX = _dot_inplace(
+    blockVectorAX = _dot_matmul(
         blockVectorAX, eigBlockVector,
         verbosityLevel=verbosityLevel
     )
     if B is not None:
-        blockVectorBX = _dot_inplace(
+        blockVectorBX = _dot_matmul(
             blockVectorBX, eigBlockVector,
             verbosityLevel=verbosityLevel
         )
@@ -770,7 +768,7 @@ def lobpcg(
                 activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = _dot_inplace(
+                activeBlockVectorAP = _dot_matmul(
                     activeBlockVectorAP, invR,
                     verbosityLevel=verbosityLevel
                 )
