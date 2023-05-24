@@ -116,7 +116,7 @@ class spmatrix:
 
         See also
         --------
-        count_nonzero : Number of non-zero entries
+        numpy.count_nonzero : Number of non-zero entries
         """
         return self._getnnz(axis=axis)
 
