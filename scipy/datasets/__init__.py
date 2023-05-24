@@ -21,6 +21,7 @@ Utility Methods
 .. autosummary::
    :toctree: generated/
 
+   CacheDir        -- Read and Set dataset cache directory.
    download_all    -- Download all the dataset files to specified path.
    clear_cache     -- Clear cached dataset directory.
 
@@ -79,10 +80,10 @@ the internet connectivity.
 
 from ._fetchers import face, ascent, electrocardiogram  # noqa: E402
 from ._download_all import download_all
-from ._utils import clear_cache
+from ._utils import clear_cache, CacheDir
 
 __all__ = ['ascent', 'electrocardiogram', 'face',
-           'download_all', 'clear_cache']
+           'download_all', 'clear_cache', 'CacheDir']
 
 
 from scipy._lib._testutils import PytestTester

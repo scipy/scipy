@@ -6,6 +6,7 @@ This doesn't require a full scipy build.
 Run: python _download_all.py <download_dir>
 """
 
+import os
 import argparse
 try:
     import pooch
@@ -36,12 +37,20 @@ def download_all(path=None):
         raise ImportError("Missing optional dependency 'pooch' required "
                           "for scipy.datasets module. Please use pip or "
                           "conda to install 'pooch'.")
-    if path is None:
-        path = pooch.os_cache('scipy-data')
+
+    if path:
+        cache_dir = path
+    else:
+        cache_dir = pooch.os_cache('scipy-data')
+    with open(_registry._CACHE_DIR_FILE, 'w') as f:
+        f.write(os.path.abspath(cache_dir)+'\n')
+
     for dataset_name, dataset_hash in _registry.registry.items():
-        pooch.retrieve(url=_registry.registry_urls[dataset_name],
-                       known_hash=dataset_hash,
-                       fname=dataset_name, path=path)
+        dataset_path = os.path.join(cache_dir, dataset_name)
+        if not (os.path.exists(dataset_path) and (pooch.file_hash(dataset_path) == dataset_hash)):
+            pooch.retrieve(url=_registry.registry_urls[dataset_name],
+                           known_hash=dataset_hash,
+                           fname=dataset_name, path=cache_dir)
 
 
 def main():

@@ -24,3 +24,5 @@ method_files_map = {
     "electrocardiogram": ["ecg.dat"],
     "face": ["face.dat"]
 }
+
+_CACHE_DIR_FILE = '/tmp/scipy_datasets_cache_dir'
