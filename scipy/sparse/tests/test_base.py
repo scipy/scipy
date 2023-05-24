@@ -841,12 +841,12 @@ class _TestCommon:
             assert_array_equal(m.diagonal(), values)
             m.setdiag(values, k=1)
             assert_array_equal(m.toarray(), np.array([[3, 3, 0],
-                                              [0, 2, 2],
-                                              [0, 0, 1]]))
+                                                      [0, 2, 2],
+                                                      [0, 0, 1]]))
             m.setdiag(values, k=-2)
             assert_array_equal(m.toarray(), np.array([[3, 3, 0],
-                                              [0, 2, 2],
-                                              [3, 0, 1]]))
+                                                      [0, 2, 2],
+                                                      [3, 0, 1]]))
             m.setdiag((9,), k=2)
             assert_array_equal(m.toarray()[0,2], 9)
             m.setdiag((9,), k=-2)
@@ -857,7 +857,7 @@ class _TestCommon:
             # test overwriting that same diagonal
             m2.setdiag([1, 1], k=2)
             assert_array_equal(m2.toarray()[:2], [[0, 0, 1, 0],
-                                          [0, 0, 0, 1]])
+                                                  [0, 0, 0, 1]])
 
     def test_nonzero(self):
         A = array([[1, 0, 1],[0, 1, 1],[0, 0, 1]])
@@ -3901,8 +3901,7 @@ class TestCSC(sparse_test_class()):
         # using (data, ij) format
         row = array([2, 3, 1, 3, 0, 1, 3, 0, 2, 1, 2])
         col = array([0, 1, 0, 0, 1, 1, 2, 2, 2, 2, 1])
-        data = array([6., 10., 3., 9., 1., 4.,
-                              11., 2., 8., 5., 7.])
+        data = array([6., 10., 3., 9., 1., 4., 11., 2., 8., 5., 7.])
 
         ij = vstack((row,col))
         csc = csc_matrix((data,ij),(4,3))
