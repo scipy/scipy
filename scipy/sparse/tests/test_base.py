@@ -638,11 +638,11 @@ class _TestCommon:
             a = self.spmatrix(shape, dtype=mytype)
             b = a + a
             c = 2 * a
-            d = a * a.tocsc()
-            e = a * a.tocsr()
-            f = a * a.tocoo()
+            d = a @ a.tocsc()
+            e = a @ a.tocsr()
+            f = a @ a.tocoo()
             for m in [a,b,c,d,e,f]:
-                assert_equal(m.toarray(), a.toarray()*a.toarray())
+                assert_equal(m.toarray(), a.toarray()@a.toarray())
                 # These fail in all revisions <= r1768:
                 assert_equal(m.dtype,mytype)
                 assert_equal(m.toarray().dtype,mytype)
@@ -1205,7 +1205,7 @@ class _TestCommon:
         assert_(chk is out)
         a = array([[1.,2.,3.]])
         dense_dot_dense = a @ self.dat
-        check = a * self.datsp.todense()
+        check = a @ self.datsp.todense()
         assert_array_equal(dense_dot_dense, check)
         b = array([[1.,2.,3.,4.]]).T
         dense_dot_dense = self.dat @ b
@@ -1584,9 +1584,9 @@ class _TestCommon:
 
     def test_rmatvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
-        assert_array_almost_equal([1,2,3,4]*M, dot([1,2,3,4], M.toarray()))
+        assert_array_almost_equal([1,2,3,4] @ M, dot([1,2,3,4], M.toarray()))
         row = array([[1,2,3,4]])
-        assert_array_almost_equal(row * M, row @ M.toarray())
+        assert_array_almost_equal(row @ M, row @ M.toarray())
 
     def test_small_multiplication(self):
         # test that A*x works for x with shape () (1,) (1,1) and (1,0)
@@ -1594,9 +1594,15 @@ class _TestCommon:
 
         assert_(isspmatrix(A * array(1)))
         assert_equal((A * array(1)).toarray(), [[1], [2], [3]])
-        assert_equal(A * array([1]), array([1, 2, 3]))
-        assert_equal(A * array([[1]]), array([[1], [2], [3]]))
-        assert_equal(A * np.ones((1, 0)), np.ones((3, 0)))
+
+        if not A._is_array:
+            assert_equal(A * array([1]), array([1, 2, 3]))
+            assert_equal(A * array([[1]]), array([[1], [2], [3]]))
+            assert_equal(A * np.ones((1, 0)), np.ones((3, 0)))
+
+        assert_equal(A @ array([1]), array([1, 2, 3]))
+        assert_equal(A @ array([[1]]), array([[1], [2], [3]]))
+        assert_equal(A @ np.ones((1, 0)), np.ones((3, 0)))
 
     def test_binop_custom_type(self):
         # Non-regression test: previously, binary operations would raise
@@ -1612,8 +1618,8 @@ class _TestCommon:
         assert_equal(B - A, "matrix on the right")
         assert_equal(B * A, "matrix on the right")
 
-        assert_equal(eval('A @ B'), "matrix on the left")
-        assert_equal(eval('B @ A'), "matrix on the right")
+        assert_equal(A @ B, "matrix on the left")
+        assert_equal(B @ A, "matrix on the right")
 
     def test_binop_custom_type_with_shape(self):
         A = self.spmatrix([[1], [2], [3]])
@@ -1625,8 +1631,8 @@ class _TestCommon:
         assert_equal(B - A, "matrix on the right")
         assert_equal(B * A, "matrix on the right")
 
-        assert_equal(eval('A @ B'), "matrix on the left")
-        assert_equal(eval('B @ A'), "matrix on the right")
+        assert_equal(A @ B, "matrix on the left")
+        assert_equal(B @ A, "matrix on the right")
 
     def test_dot_scalar(self):
         M = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
@@ -1641,35 +1647,37 @@ class _TestCommon:
         B = self.spmatrix(array([[0,1],[1,0],[0,2]],'d'))
         col = array([[1,2,3]]).T
 
+        matmul = operator.matmul
         # check matrix-vector
-        assert_array_almost_equal(operator.matmul(M, col),
-                                  M.toarray() @ col)
+        assert_array_almost_equal(matmul(M, col), M.toarray() @ col)
 
         # check matrix-matrix
-        assert_array_almost_equal(operator.matmul(M, B).toarray(),
-                                  (M * B).toarray())
-        assert_array_almost_equal(operator.matmul(M.toarray(), B),
-                                  (M * B).toarray())
-        assert_array_almost_equal(operator.matmul(M, B.toarray()),
-                                  (M * B).toarray())
+        assert_array_almost_equal(matmul(M, B).toarray(), (M @ B).toarray())
+        assert_array_almost_equal(matmul(M.toarray(), B), (M @ B).toarray())
+        assert_array_almost_equal(matmul(M, B.toarray()), (M @ B).toarray())
+        if not M._is_array:
+            assert_array_almost_equal(matmul(M, B).toarray(), (M * B).toarray())
+            assert_array_almost_equal(matmul(M.toarray(), B), (M * B).toarray())
+            assert_array_almost_equal(matmul(M, B.toarray()), (M * B).toarray())
 
         # check error on matrix-scalar
-        assert_raises(ValueError, operator.matmul, M, 1)
-        assert_raises(ValueError, operator.matmul, 1, M)
+        assert_raises(ValueError, matmul, M, 1)
+        assert_raises(ValueError, matmul, 1, M)
 
     def test_matvec(self):
         M = self.spmatrix(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         col = array([[1,2,3]]).T
-        assert_array_almost_equal(M * col, M.toarray() @ col)
+
+        assert_array_almost_equal(M @ col, M.toarray() @ col)
 
         # check result dimensions (ticket #514)
-        assert_equal((M * array([1,2,3])).shape,(4,))
-        assert_equal((M * array([[1],[2],[3]])).shape,(4,1))
-        assert_equal((M * matrix([[1],[2],[3]])).shape,(4,1))
+        assert_equal((M @ array([1,2,3])).shape,(4,))
+        assert_equal((M @ array([[1],[2],[3]])).shape,(4,1))
+        assert_equal((M @ matrix([[1],[2],[3]])).shape,(4,1))
 
         # check result type
-        assert_(isinstance(M * array([1,2,3]), ndarray))
-        assert_(isinstance(M * matrix([1,2,3]).T, np.matrix))
+        assert_(isinstance(M @ array([1,2,3]), ndarray))
+        assert_(isinstance(M @ matrix([1,2,3]).T, np.matrix))
 
         # ensure exception is raised for improper dimensions
         bad_vecs = [array([1,2]), array([1,2,3,4]), array([[1],[2]]),
@@ -1679,8 +1687,8 @@ class _TestCommon:
 
         # The current relationship between sparse matrix products and array
         # products is as follows:
-        assert_array_almost_equal(M*array([1,2,3]), dot(M.toarray(),[1,2,3]))
-        assert_array_almost_equal(M*[[1],[2],[3]], asmatrix(dot(M.toarray(),[1,2,3])).T)
+        assert_array_almost_equal(M@array([1,2,3]), dot(M.toarray(),[1,2,3]))
+        assert_array_almost_equal(M@[[1],[2],[3]], asmatrix(dot(M.toarray(),[1,2,3])).T)
         # Note that the result of M * x is dense if x has a singleton dimension.
 
         # Currently M.matvec(asarray(col)) is rank-1, whereas M.matvec(col)
@@ -1692,32 +1700,32 @@ class _TestCommon:
         b = matrix([[0,1],[1,0],[0,2]],'d')
         asp = self.spmatrix(a)
         bsp = self.spmatrix(b)
-        assert_array_almost_equal((asp*bsp).toarray(), a@b)
-        assert_array_almost_equal(asp*b, a@b)
-        assert_array_almost_equal(a*bsp, a@b)
-        assert_array_almost_equal(a2*bsp, a@b)
+        assert_array_almost_equal((asp @ bsp).toarray(), a @ b)
+        assert_array_almost_equal(asp @ b, a @ b)
+        assert_array_almost_equal(a @ bsp, a @ b)
+        assert_array_almost_equal(a2 @ bsp, a @ b)
 
         # Now try performing cross-type multplication:
         csp = bsp.tocsc()
         c = b
-        want = a@c
-        assert_array_almost_equal((asp*csp).toarray(), want)
-        assert_array_almost_equal(asp*c, want)
+        want = a @ c
+        assert_array_almost_equal((asp @ csp).toarray(), want)
+        assert_array_almost_equal(asp @ c, want)
 
-        assert_array_almost_equal(a*csp, want)
-        assert_array_almost_equal(a2*csp, want)
+        assert_array_almost_equal(a @ csp, want)
+        assert_array_almost_equal(a2 @ csp, want)
         csp = bsp.tocsr()
-        assert_array_almost_equal((asp*csp).toarray(), want)
-        assert_array_almost_equal(asp*c, want)
+        assert_array_almost_equal((asp @ csp).toarray(), want)
+        assert_array_almost_equal(asp @ c, want)
 
-        assert_array_almost_equal(a*csp, want)
-        assert_array_almost_equal(a2*csp, want)
+        assert_array_almost_equal(a @ csp, want)
+        assert_array_almost_equal(a2 @ csp, want)
         csp = bsp.tocoo()
-        assert_array_almost_equal((asp*csp).toarray(), want)
-        assert_array_almost_equal(asp*c, want)
+        assert_array_almost_equal((asp @ csp).toarray(), want)
+        assert_array_almost_equal(asp @ c, want)
 
-        assert_array_almost_equal(a*csp, want)
-        assert_array_almost_equal(a2*csp, want)
+        assert_array_almost_equal(a @ csp, want)
+        assert_array_almost_equal(a2 @ csp, want)
 
         # Test provided by Andy Fraser, 2006-03-26
         L = 30
@@ -1731,14 +1739,16 @@ class _TestCommon:
                     A[i,j] = r/frac
 
         A = self.spmatrix(A)
-        B = A*A.T
+        B = A @ A.T
         assert_array_almost_equal(B.toarray(), A.toarray() @ A.T.toarray())
         assert_array_almost_equal(B.toarray(), A.toarray() @ A.toarray().T)
 
         # check dimension mismatch 2x2 times 3x2
         A = self.spmatrix([[1,2],[3,4]])
         B = self.spmatrix([[1,2],[3,4],[5,6]])
-        assert_raises(ValueError, A.__mul__, B)
+        assert_raises(ValueError, A.__matmul__, B)
+        if A._is_array:
+            assert_raises(ValueError, A.__mul__, B)
 
     def test_matmat_dense(self):
         a = matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]])
@@ -1748,7 +1758,7 @@ class _TestCommon:
         bs = [array([[1,2],[3,4],[5,6]]), matrix([[1,2],[3,4],[5,6]])]
 
         for b in bs:
-            result = asp*b
+            result = asp @ b
             assert_(isinstance(result, type(b)))
             assert_equal(result.shape, (4,2))
             assert_equal(result, dot(a,b))
@@ -2132,13 +2142,15 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        # This is matrix product, from __rmul__
-        assert_raises(ValueError, operator.imul, x, b)
-        x = a.copy()
-        y = a.copy()
-        x = x.dot(a.T)
-        y *= b.T
-        assert_array_equal(x, y)
+        # TODO make this work for sparray
+        if not b._is_array:
+            # This is matrix product, from __rmul__
+            assert_raises(ValueError, operator.imul, x, b)
+            x = a.copy()
+            y = a.copy()
+            x = x.dot(a.T)
+            y *= b.T
+            assert_array_equal(x, y)
 
         # Matrix (non-elementwise) floor division is not defined
         assert_raises(TypeError, operator.ifloordiv, x, b)
@@ -2339,7 +2351,7 @@ class _TestSolve:
             sup.filter(SparseEfficiencyWarning,
                        "splu converted its input to CSC format")
             x = splu(A).solve(r)
-        assert_almost_equal(A*x,r)
+        assert_almost_equal(A @ x,r)
 
 
 class _TestSlicing:
@@ -3296,7 +3308,7 @@ class _TestArithmetic:
         self.__arith_init()
 
         # basic tests
-        assert_array_equal((self.__Asp * self.__Bsp.T).toarray(),
+        assert_array_equal((self.__Asp @ self.__Bsp.T).toarray(),
                            self.__A @ self.__B.T)
 
         for x in supported_dtypes:
@@ -3312,7 +3324,7 @@ class _TestArithmetic:
                 Bsp = self.spmatrix(B)
 
                 D1 = A @ B.T
-                S1 = Asp * Bsp.T
+                S1 = Asp @ Bsp.T
 
                 assert_allclose(S1.toarray(), D1,
                                 atol=1e-14*abs(D1).max())
