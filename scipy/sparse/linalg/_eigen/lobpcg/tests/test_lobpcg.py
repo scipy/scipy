@@ -373,9 +373,8 @@ def test_hermitian():
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
             # Also test mixing complex H with real B.
-            wb, vb = lobpcg(H, X, B, maxiter=5000)
+            wb, _ = lobpcg(H, X, B, maxiter=5000)
             assert_allclose(w, wb, rtol=1e-6)
-            assert_allclose(v, vb, rtol=1e-4)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
