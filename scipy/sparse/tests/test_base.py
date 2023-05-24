@@ -3464,6 +3464,7 @@ class _TestMinMax:
             assert_array_equal(np.max(datsp), np.max(dat))
 
     def test_argmax(self):
+        from scipy.sparse import _data
         D1 = np.array([
             [-1, 5, 2, 3],
             [0, 0, -1, -2],
@@ -3472,9 +3473,15 @@ class _TestMinMax:
             [1, 2, 0, 0],
         ])
         D2 = D1.transpose()
+        # Non-regression test cases for gh-16929.
+        D3 = np.array([[4, 3], [7, 5]])
+        D4 = np.array([[4, 3], [7, 0]])
+        D5 = np.array([[5, 5, 3], [4, 9, 10], [3, 4, 9]])
 
-        for D in [D1, D2]:
-            mat = csr_matrix(D)
+        for D in [D1, D2, D3, D4, D5]:
+            mat = self.spmatrix(D)
+            if not isinstance(mat, _data._minmax_mixin):
+                continue
 
             assert_equal(mat.argmax(), np.argmax(D))
             assert_equal(mat.argmin(), np.argmin(D))

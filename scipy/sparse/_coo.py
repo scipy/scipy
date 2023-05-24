@@ -537,7 +537,10 @@ class coo_array(_data_matrix, _minmax_mixin):
         # Assumes (data, row, col) not in canonical format.
         if len(data) == 0:
             return row, col, data
-        order = np.lexsort((row, col))
+        # Sort indices w.r.t. rows, then cols. This corresponds to C-order,
+        # which we rely on for argmin/argmax to return the first index in the
+        # same way that numpy does (in the case of ties).
+        order = np.lexsort((col, row))
         row = row[order]
         col = col[order]
         data = data[order]
