@@ -849,12 +849,10 @@ class beta_gen(rv_continuous):
             t3 = (1 - 50 * b**3 - 10 * b**2 - b) / (120 * b**4)
             return log_term + t1 + t2 + t3
 
-        return _lazywhere(
-            a >= 4.96e6 and b >= 4.96e6,
-            (a, b),
-            f=asymptotic_ab_large,
-            f2=regular,
-        )
+        if a >= 4.96e6 and b >= 4.96e6:
+            return asymptotic_ab_large(a, b)
+        else:
+            return regular(a, b)
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
