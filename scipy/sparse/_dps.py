@@ -3,7 +3,7 @@ import numpy as np
 
 from ._data import _data_matrix
 from ._base import _sparray
-from ._sputils import check_reshape_kwargs, check_shape
+from ._sputils import isshape, getdtype, check_reshape_kwargs, check_shape
 
 __all__ = ["dps_array", "issparray_dps"]
 
@@ -32,7 +32,7 @@ class dps_array(_data_matrix):
                 self.data = np.zeros((M, N), dtype=data_dtype)
                 self.has_canonical_format = True
             else:
-                raise TypeError("invalid input format") from e
+                raise TypeError("invalid input format")
         else:
             M = np.atleast_2d(np.asarray(arg1))
             self._shape = check_shape(M.shape)
