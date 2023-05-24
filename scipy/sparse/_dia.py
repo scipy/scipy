@@ -7,7 +7,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import issparse, _formats, _sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
@@ -95,7 +95,7 @@ class dia_array(_data_matrix):
             self.data = arg1.data
             self.offsets = arg1.offsets
             self._shape = check_shape(arg1.shape)
-        elif isspmatrix(arg1):
+        elif issparse(arg1):
             if isspmatrix_dia(arg1) and copy:
                 A = arg1.copy()
             else:

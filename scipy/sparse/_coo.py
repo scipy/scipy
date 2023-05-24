@@ -10,7 +10,7 @@ import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
+from ._base import issparse, SparseEfficiencyWarning, _sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index,
@@ -161,7 +161,7 @@ class coo_array(_data_matrix, _minmax_mixin):
                 self.data = getdata(obj, copy=copy, dtype=dtype)
                 self.has_canonical_format = False
         else:
-            if isspmatrix(arg1):
+            if issparse(arg1):
                 if isspmatrix_coo(arg1) and copy:
                     self.row = arg1.row.copy()
                     self.col = arg1.col.copy()

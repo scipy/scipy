@@ -10,7 +10,7 @@ from bisect import bisect_left
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, isspmatrix
+from ._base import _sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape, check_reshape_kwargs)
@@ -86,7 +86,7 @@ class lil_array(_sparray, IndexMixin):
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
-        if isspmatrix(arg1):
+        if issparse(arg1):
             if isspmatrix_lil(arg1) and copy:
                 A = arg1.copy()
             else:
@@ -323,7 +323,7 @@ class lil_array(_sparray, IndexMixin):
             # Fast path for full-matrix sparse assignment.
             if (isinstance(row, slice) and isinstance(col, slice) and
                     row == slice(None) and col == slice(None) and
-                    isspmatrix(x) and x.shape == self.shape):
+                    issparse(x) and x.shape == self.shape):
                 x = self._lil_container(x, dtype=self.dtype)
                 self.rows = x.rows
                 self.data = x.data

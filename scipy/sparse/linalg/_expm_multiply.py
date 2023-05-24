@@ -16,7 +16,7 @@ __all__ = ['expm_multiply']
 
 def _exact_inf_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=1).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=1))
@@ -26,7 +26,7 @@ def _exact_inf_norm(A):
 
 def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return max(abs(A).sum(axis=0).flat)
     elif is_pydata_spmatrix(A):
         return max(abs(A).sum(axis=0))
@@ -91,7 +91,7 @@ def traceest(A, m3, seed=None):
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
+    if scipy.sparse.issparse(A):
         return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
     elif is_pydata_spmatrix(A):

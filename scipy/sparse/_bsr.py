@@ -11,7 +11,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import issparse, _formats, _sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        check_shape)
 from . import _sparsetools
@@ -122,7 +122,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-        if isspmatrix(arg1):
+        if issparse(arg1):
             if isspmatrix_bsr(arg1) and copy:
                 arg1 = arg1.copy()
             else:

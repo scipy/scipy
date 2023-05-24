@@ -5,7 +5,7 @@
 import numpy as np
 cimport numpy as np
 from warnings import warn
-from scipy.sparse import (csr_matrix, isspmatrix, isspmatrix_coo,
+from scipy.sparse import (csr_matrix, issparse, isspmatrix_coo,
                           isspmatrix_csc, isspmatrix_csr,
                           SparseEfficiencyWarning)
 from . import maximum_bipartite_matching
@@ -226,7 +226,7 @@ def structural_rank(graph):
     4
 
     """
-    if not isspmatrix:
+    if not issparse:
         raise TypeError('Input must be a sparse matrix')
     if not isspmatrix_csr(graph):
         if not (isspmatrix_csc(graph) or isspmatrix_coo(graph)):

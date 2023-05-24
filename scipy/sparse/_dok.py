@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, isspmatrix
+from ._base import _sparray, issparse
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
@@ -80,7 +80,7 @@ class dok_array(_sparray, IndexMixin, dict):
         if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
             M, N = arg1
             self._shape = check_shape((M, N))
-        elif isspmatrix(arg1):  # Sparse ctor
+        elif issparse(arg1):  # Sparse ctor
             if isspmatrix_dok(arg1) and copy:
                 arg1 = arg1.copy()
             else:
@@ -257,7 +257,7 @@ class dok_array(_sparray, IndexMixin, dict):
             with np.errstate(over='ignore'):
                 dict.update(new,
                            ((k, new[k] + other[k]) for k in other.keys()))
-        elif isspmatrix(other):
+        elif issparse(other):
             csc = self.tocsc()
             new = csc + other
         elif isdense(other):
@@ -281,7 +281,7 @@ class dok_array(_sparray, IndexMixin, dict):
             dict.update(new, self)
             dict.update(new,
                        ((k, self[k] + other[k]) for k in other.keys()))
-        elif isspmatrix(other):
+        elif issparse(other):
             csc = self.tocsc()
             new = csc + other
         elif isdense(other):

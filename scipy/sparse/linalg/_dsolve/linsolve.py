@@ -2,7 +2,7 @@ from warnings import warn
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
+from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, issparse,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
@@ -215,7 +215,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
                 SparseEfficiencyWarning)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = isspmatrix(b) or is_pydata_spmatrix(b)
+    b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))

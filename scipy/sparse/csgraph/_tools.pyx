@@ -8,7 +8,7 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix,\
+from scipy.sparse import csr_matrix, issparse,\
     isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
 
 np.import_array()
@@ -483,13 +483,13 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     # Fix issue #4018:
     # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
     # (it is a numpy.matrix otherwise); handle this case separately.
-    if isspmatrix(data):
+    if issparse(data):
         data = data.todense()
     data = data.getA1()
 
     if not directed:
         data2 = csgraph[indices, pind]
-        if isspmatrix(data2):
+        if issparse(data2):
             data2 = data2.todense()
         data2 = data2.getA1()
         data[data == 0] = np.inf
