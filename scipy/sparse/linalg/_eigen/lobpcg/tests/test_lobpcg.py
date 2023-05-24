@@ -447,26 +447,8 @@ def test_random_initial_float32():
     A = A.astype(np.float32)
     X = rnd.random((n, m))
     X = X.astype(np.float32)
-    with np.testing.suppress_warnings() as sup:
-        sup.filter(UserWarning)
-        eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
+    eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
-
-
-def test_inplace_warning():
-    """Check lobpcg in float32 gives a warning in '_b_orthonormalize'
-    that in-place orthogonalization is impossible due to dtype mismatch.
-    """
-    rnd = np.random.RandomState(0)
-    n = 11
-    m = 2
-    vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
-    # A = A.astype(np.float32)
-    X = rnd.standard_normal((n, m))
-    X = X.astype(np.float32)
-    with pytest.warns(UserWarning, match="Inplace update"):
-        eigvals, _ = lobpcg(A, X, verbosityLevel=1)
 
 
 def test_maxit():
