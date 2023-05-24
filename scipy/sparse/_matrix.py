@@ -113,10 +113,6 @@ class spmatrix:
         axis : None, 0, or 1
             Select between the number of values across the whole array, in
             each column, or in each row.
-
-        See also
-        --------
-        numpy.count_nonzero : Number of non-zero entries
         """
         return self._getnnz(axis=axis)
 
