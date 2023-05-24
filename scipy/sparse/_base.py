@@ -1458,11 +1458,13 @@ def issparse(x):
 
     Examples
     --------
-    >>> from scipy.sparse import csr_array, issparse
-    >>> issparse(csr_array([[5]]))
+    >>> from scipy.sparse import csr_array, csr_matrix, issparse
+    >>> issparse(csr_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import issparse
+    >>> issparse(csr_array([[5]])
+    True
+    >>> issparse(np.array([[5]]))
+    False
     >>> issparse(5)
     False
     """
@@ -1489,7 +1491,9 @@ def isspmatrix(x):
     True
     >>> isspmatrix(csr_array([[5]]))
     False
-    >>> issparse(5)
+    >>> isspmatrix(np.array([[5]]))
+    False
+    >>> isspmatrix(5)
     False
     """
     return isinstance(x, spmatrix)
