@@ -122,7 +122,7 @@ class coo_array(_data_matrix, _minmax_mixin):
            [0, 0, 0, 1]])
 
     """
-    format = 'coo'
+    _format = 'coo'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -237,7 +237,7 @@ class coo_array(_data_matrix, _minmax_mixin):
 
     reshape.__doc__ = _sparray.reshape.__doc__
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             nnz = len(self.data)
             if nnz != len(self.row) or nnz != len(self.col):
@@ -261,7 +261,7 @@ class coo_array(_data_matrix, _minmax_mixin):
         else:
             raise ValueError('axis out of bounds')
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """

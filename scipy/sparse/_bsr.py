@@ -117,7 +117,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
            [4, 4, 5, 5, 6, 6]])
 
     """
-    format = 'bsr'
+    _format = 'bsr'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
@@ -293,17 +293,17 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         return self.data.shape[1:]
     blocksize = property(fget=_get_blocksize)
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
+            raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for BSR format")
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
 
     def __repr__(self):
-        format = _formats[self.getformat()][1]
+        format = _formats[self.format][1]
         return ("<%dx%d sparse matrix of type '%s'\n"
                 "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
                 (self.shape + (self.dtype.type, self.nnz) + self.blocksize +

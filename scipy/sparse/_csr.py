@@ -247,7 +247,7 @@ class csr_array(_cs_matrix):
             )
             i0 = i1
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
@@ -262,7 +262,7 @@ class csr_array(_cs_matrix):
         return self.__class__((data, indices, indptr), shape=(1, N),
                               dtype=self.dtype, copy=False)
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
         CSR matrix (column vector).
         """
@@ -278,13 +278,13 @@ class csr_array(_cs_matrix):
                               dtype=self.dtype, copy=False)
 
     def _get_intXarray(self, row, col):
-        return self.getrow(row)._minor_index_fancy(col)
+        return self._getrow(row)._minor_index_fancy(col)
 
     def _get_intXslice(self, row, col):
         if col.step in (1, None):
             return self._get_submatrix(row, col, copy=True)
         # TODO: uncomment this once it's faster:
-        # return self.getrow(row)._minor_slice(col)
+        # return self._getrow(row)._minor_slice(col)
 
         M, N = self.shape
         start, stop, stride = col.indices(N)

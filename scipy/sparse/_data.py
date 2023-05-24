@@ -80,15 +80,15 @@ class _data_matrix(_sparray):
 
     astype.__doc__ = _sparray.astype.__doc__
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self._with_data(self.data.conj(), copy=copy)
+            return self._with_data(self.data.conjugate(), copy=copy)
         elif copy:
             return self.copy()
         else:
             return self
 
-    conj.__doc__ = _sparray.conj.__doc__
+    conjugate.__doc__ = _sparray.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)

@@ -222,7 +222,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
     result_dtype = np.promote_types(A.dtype, b.dtype)
     if A.dtype != result_dtype:
         A = A.astype(result_dtype)
@@ -396,7 +396,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
@@ -489,7 +489,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
@@ -552,7 +552,7 @@ def factorized(A):
             warn('splu converted its input to CSC format',
                  SparseEfficiencyWarning)
 
-        A = A.asfptype()  # upcast to a floating point format
+        A = A._asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"

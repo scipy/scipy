@@ -79,7 +79,7 @@ class lil_array(_sparray, IndexMixin):
 
 
     """
-    format = 'lil'
+    _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _sparray.__init__(self)
@@ -151,7 +151,7 @@ class lil_array(_sparray, IndexMixin):
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
         if axis < 0:
@@ -169,7 +169,7 @@ class lil_array(_sparray, IndexMixin):
     def count_nonzero(self):
         return sum(np.count_nonzero(rowvals) for rowvals in self.data)
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
     count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def __str__(self):
