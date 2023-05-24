@@ -9,8 +9,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import isspmatrix, _formats, _sparray
 from ._data import _data_matrix
-from ._sputils import (isshape, upcast_char, getdtype, get_index_dtype,
-                       get_sum_dtype, validateaxis, check_shape)
+from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
 
 
@@ -110,7 +109,7 @@ class dia_array(_data_matrix):
                 # create empty matrix
                 self._shape = check_shape(arg1)
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
-                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                idx_dtype = self._get_index_dtype(maxval=max(self.shape))
                 self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
                 try:
@@ -123,7 +122,7 @@ class dia_array(_data_matrix):
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     self.offsets = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=get_index_dtype(maxval=max(shape)),
+                                                          dtype=self._get_index_dtype(maxval=max(shape)),
                                                           copy=copy))
                     self._shape = check_shape(shape)
         else:
@@ -378,7 +377,7 @@ class dia_array(_data_matrix):
         mask &= (offset_inds < num_cols)
         mask &= (self.data != 0)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = self._get_index_dtype(maxval=max(self.shape))
         indptr = np.zeros(num_cols + 1, dtype=idx_dtype)
         indptr[1:offset_len+1] = np.cumsum(mask.sum(axis=0)[:num_cols])
         if offset_len < num_cols:

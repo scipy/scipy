@@ -9,7 +9,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray
 from ._sparsetools import csc_tocsr, expandptr
-from ._sputils import upcast, get_index_dtype
+from ._sputils import upcast
 
 from ._compressed import _cs_matrix
 
@@ -132,7 +132,7 @@ class csc_array(_cs_matrix):
 
     def tocsr(self, copy=False):
         M,N = self.shape
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
