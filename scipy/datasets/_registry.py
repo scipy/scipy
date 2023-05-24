@@ -2,6 +2,7 @@
 # This file serves as the dataset registry for SciPy Datasets SubModule.
 ##########################################################################
 
+import os
 
 # To generate the SHA256 hash, use the command
 # openssl sha256 <filename>
@@ -25,4 +26,7 @@ method_files_map = {
     "face": ["face.dat"]
 }
 
-_CACHE_DIR_FILE = '/tmp/scipy_datasets_cache_dir'
+if 'SCIPY_CACHE_TMP_FILE' in os.environ:
+    _CACHE_DIR_FILE = os.path.abspath(os.environ['SCIPY_CACHE_TMP_FILE'])
+else:
+    _CACHE_DIR_FILE = '/tmp/scipy_datasets_cache_dir'
