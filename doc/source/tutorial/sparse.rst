@@ -181,6 +181,7 @@ Note that there are six stored elements in this sparse array, despite only havin
 To remove duplicate values within the sparse array itself and thus reduce the number of stored elements, we can use the ``.sum_duplicates()`` method:
 
    >>> dupes.sum_duplicates()
+   >>> dupes
    <3x4 sparse array of type '<class 'numpy.int64'>'
         with 5 stored elements in COOrdinate format>
 
