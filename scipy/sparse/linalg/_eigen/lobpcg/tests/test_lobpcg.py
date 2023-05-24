@@ -358,9 +358,9 @@ def test_hermitian():
     ks = [1, 2]
     gens = [True, False]
 
-    for s, k, gen, dh, dx, db
-        in itertools.product(sizes, ks, gens, gens, gens, gens):
-
+    for s, k, gen, dh, dx, db in (
+        itertools.product(sizes, ks, gens, gens, gens, gens)
+    ):
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
         H = H.astype(np.complex128) if df
