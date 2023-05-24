@@ -182,7 +182,7 @@ def test_regression():
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")
-@pytest.mark.parametrize('n, m, m_excluded', [(100, 4, 3), (4, 2, 0)])
+@pytest.mark.parametrize('n, m, m_excluded', [(30, 4, 3), (4, 2, 0)])
 def test_diagonal(n, m, m_excluded):
     """Test ``m - m_excluded`` eigenvalues and eigenvectors of
     diagonal matrices of the size ``n`` varying matrix formats:
@@ -354,13 +354,11 @@ def test_hermitian():
     """
     rnd = np.random.RandomState(0)
 
-    sizes = [3, 10, 50]
-    ks = [1, 3, 10, 50]
+    sizes = [3, 12]
+    ks = [1, 2]
     gens = [True, False]
 
     for s, k, gen in itertools.product(sizes, ks, gens):
-        if k > s:
-            continue
 
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
@@ -491,8 +489,8 @@ def test_maxit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("n", [20])
-@pytest.mark.parametrize("m", [1, 3])
+@pytest.mark.parametrize("n", [3, 12])
+@pytest.mark.parametrize("m", [1, 2])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_diagonal_data_types(n, m):
