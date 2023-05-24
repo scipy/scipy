@@ -1468,7 +1468,7 @@ def test_kdtree_nan():
         KDTree(data)
 
 
-def test_nonfintite_inputs_gh_18223():
+def test_nonfinite_inputs_gh_18223():
     rng = np.random.default_rng(12345)
     coords = rng.uniform(size=(100, 3), low=0.0, high=0.1)
     t = KDTree(coords, balanced_tree=False, compact_nodes=False)
