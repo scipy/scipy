@@ -11,7 +11,7 @@ from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
-                       upcast, upcast_scalar, get_index_dtype, check_shape)
+                       upcast, upcast_scalar, check_shape)
 
 try:
     from operator import isSequenceType as _is_sequence
@@ -70,7 +70,7 @@ class dok_array(_sparray, IndexMixin, dict):
     ...         S[i, j] = i + j    # Update element
 
     """
-    format = 'dok'
+    _format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
@@ -117,24 +117,16 @@ class dok_array(_sparray, IndexMixin, dict):
         from other _sparray classes. Has no checking if `data` is valid."""
         return dict.update(self, data)
 
-    def set_shape(self, shape):
-        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_matrix.__dict__
-        dict.clear(self)
-        dict.update(self, new_matrix)
-
-    shape = property(fget=_sparray.get_shape, fset=set_shape)
-
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
+            raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for DOK format.")
         return dict.__len__(self)
 
     def count_nonzero(self):
         return sum(x != 0 for x in self.values())
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
     count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def __len__(self):
@@ -392,7 +384,7 @@ class dok_array(_sparray, IndexMixin, dict):
         if self.nnz == 0:
             return self._coo_container(self.shape, dtype=self.dtype)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = self._get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(self.values(), dtype=self.dtype, count=self.nnz)
         row = np.fromiter((i for i, _ in self.keys()), dtype=idx_dtype, count=self.nnz)
         col = np.fromiter((j for _, j in self.keys()), dtype=idx_dtype, count=self.nnz)
@@ -457,6 +449,16 @@ def isspmatrix_dok(x):
 
 
 class dok_matrix(spmatrix, dok_array):
-    pass
+    def set_shape(self, shape):
+        new_matrix = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_matrix.__dict__
+        dict.clear(self)
+        dict.update(self, new_matrix)
+
+    def get_shape(self):
+        """Get shape of a sparse array."""
+        return self._shape
+
+    shape = property(fget=get_shape, fset=set_shape)
 
 dok_matrix.__doc__ = _array_doc_to_matrix(dok_array.__doc__)

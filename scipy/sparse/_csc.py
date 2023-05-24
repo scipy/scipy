@@ -9,7 +9,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray
 from ._sparsetools import csc_tocsr, expandptr
-from ._sputils import upcast, get_index_dtype
+from ._sputils import upcast
 
 from ._compressed import _cs_matrix
 
@@ -104,7 +104,7 @@ class csc_array(_cs_matrix):
            [2, 3, 6]])
 
     """
-    format = 'csc'
+    _format = 'csc'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -132,7 +132,7 @@ class csc_array(_cs_matrix):
 
     def tocsr(self, copy=False):
         M,N = self.shape
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
@@ -180,7 +180,7 @@ class csc_array(_cs_matrix):
 
     nonzero.__doc__ = _cs_matrix.nonzero.__doc__
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
@@ -192,7 +192,7 @@ class csc_array(_cs_matrix):
             raise IndexError('index (%d) out of range' % i)
         return self._get_submatrix(minor=i).tocsr()
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
         CSC matrix (column vector).
         """

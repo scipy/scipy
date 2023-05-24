@@ -80,15 +80,15 @@ class _data_matrix(_sparray):
 
     astype.__doc__ = _sparray.astype.__doc__
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self._with_data(self.data.conj(), copy=copy)
+            return self._with_data(self.data.conjugate(), copy=copy)
         elif copy:
             return self.copy()
         else:
             return self
 
-    conj.__doc__ = _sparray.conj.__doc__
+    conjugate.__doc__ = _sparray.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
@@ -167,6 +167,7 @@ class _minmax_mixin:
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
         M = self.shape[1 - axis]
+        idx_dtype = self._get_index_dtype(maxval=M)
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
@@ -181,12 +182,12 @@ class _minmax_mixin:
 
         if axis == 0:
             return self._coo_container(
-                (value, (np.zeros(len(value)), major_index)),
+                (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
                 dtype=self.dtype, shape=(1, M)
             )
         else:
             return self._coo_container(
-                (value, (major_index, np.zeros(len(value)))),
+                (value, (major_index, np.zeros(len(value), dtype=idx_dtype))),
                 dtype=self.dtype, shape=(M, 1)
             )
 

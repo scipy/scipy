@@ -172,8 +172,8 @@ def test_no_H_attr(A):
 
 @parametrize_sparrays
 def test_getrow_getcol(A):
-    assert A.getcol(0)._is_array
-    assert A.getrow(0)._is_array
+    assert A._getcol(0)._is_array
+    assert A._getrow(0)._is_array
 
 
 # -- linalg --
@@ -348,6 +348,59 @@ def test_spilu():
 def test_power_operator(A):
     # https://github.com/scipy/scipy/issues/15948
     npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+
+@pytest.mark.parametrize(
+    "cls,indices_attrs",
+    [
+        (
+            scipy.sparse.csr_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.csc_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.coo_array,
+            ["row", "col"],
+        ),
+    ]
+)
+@pytest.mark.parametrize("expected_dtype", [np.int64, np.int32])
+def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
+    input_array = scipy.sparse.coo_array(np.arange(9).reshape(3, 3))
+    coo_tuple = (
+        input_array.data,
+        (
+            input_array.row.astype(expected_dtype),
+            input_array.col.astype(expected_dtype),
+        )
+    )
+
+    result = cls(coo_tuple)
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    result = cls(coo_tuple, shape=(3, 3))
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    if issubclass(cls, scipy.sparse._compressed._cs_matrix):
+        input_array_csr = input_array.tocsr()
+        csr_tuple = (
+            input_array_csr.data,
+            input_array_csr.indices.astype(expected_dtype),
+            input_array_csr.indptr.astype(expected_dtype),
+        )
+
+        result = cls(csr_tuple)
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
+
+        result = cls(csr_tuple, shape=(3, 3))
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
 
 
 def test_default_is_matrix_diags():

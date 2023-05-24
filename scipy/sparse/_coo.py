@@ -13,7 +13,7 @@ from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-                       getdata, get_index_dtype, downcast_intp_index,
+                       getdata, downcast_intp_index,
                        check_shape, check_reshape_kwargs)
 
 import operator
@@ -122,7 +122,7 @@ class coo_array(_data_matrix, _minmax_mixin):
            [0, 0, 0, 1]])
 
     """
-    format = 'coo'
+    _format = 'coo'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -131,7 +131,7 @@ class coo_array(_data_matrix, _minmax_mixin):
             if isshape(arg1):
                 M, N = arg1
                 self._shape = check_shape((M, N))
-                idx_dtype = get_index_dtype(maxval=max(M, N))
+                idx_dtype = self._get_index_dtype(maxval=max(M, N))
                 data_dtype = getdtype(dtype, default=float)
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
@@ -155,7 +155,7 @@ class coo_array(_data_matrix, _minmax_mixin):
                     M, N = shape
                     self._shape = check_shape((M, N))
 
-                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                idx_dtype = self._get_index_dtype((row, col), maxval=max(self.shape), check_contents=True)
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = getdata(obj, copy=copy, dtype=dtype)
@@ -186,8 +186,10 @@ class coo_array(_data_matrix, _minmax_mixin):
                     if check_shape(shape) != self._shape:
                         raise ValueError('inconsistent shapes: %s != %s' %
                                          (shape, self._shape))
-
-                self.row, self.col = M.nonzero()
+                index_dtype = self._get_index_dtype(maxval=max(self._shape))
+                row, col = M.nonzero()
+                self.row = row.astype(index_dtype, copy=False)
+                self.col = col.astype(index_dtype, copy=False)
                 self.data = M[self.row, self.col]
                 self.has_canonical_format = True
 
@@ -213,12 +215,12 @@ class coo_array(_data_matrix, _minmax_mixin):
             # Upcast to avoid overflows: the coo_array constructor
             # below will downcast the results to a smaller dtype, if
             # possible.
-            dtype = get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
+            dtype = self._get_index_dtype(maxval=(ncols * max(0, nrows - 1) + max(0, ncols - 1)))
 
             flat_indices = np.multiply(ncols, self.row, dtype=dtype) + self.col
             new_row, new_col = divmod(flat_indices, shape[1])
         elif order == 'F':
-            dtype = get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
+            dtype = self._get_index_dtype(maxval=(nrows * max(0, ncols - 1) + max(0, nrows - 1)))
 
             flat_indices = np.multiply(nrows, self.col, dtype=dtype) + self.row
             new_col, new_row = divmod(flat_indices, shape[0])
@@ -237,7 +239,7 @@ class coo_array(_data_matrix, _minmax_mixin):
 
     reshape.__doc__ = _sparray.reshape.__doc__
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             nnz = len(self.data)
             if nnz != len(self.row) or nnz != len(self.col):
@@ -261,7 +263,7 @@ class coo_array(_data_matrix, _minmax_mixin):
         else:
             raise ValueError('axis out of bounds')
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
@@ -274,7 +276,7 @@ class coo_array(_data_matrix, _minmax_mixin):
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = self._get_index_dtype((self.row, self.col), maxval=max(self.shape))
         self.row = np.asarray(self.row, dtype=idx_dtype)
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -352,8 +354,9 @@ class coo_array(_data_matrix, _minmax_mixin):
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype((self.col, self.row),
-                                        maxval=max(self.nnz, M))
+            idx_dtype = self._get_index_dtype(
+                (self.col, self.row), maxval=max(self.nnz, M)
+            )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
 
@@ -393,8 +396,9 @@ class coo_array(_data_matrix, _minmax_mixin):
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype((self.row, self.col),
-                                        maxval=max(self.nnz, N))
+            idx_dtype = self._get_index_dtype(
+                (self.row, self.col), maxval=max(self.nnz, N)
+            )
             row = self.row.astype(idx_dtype, copy=False)
             col = self.col.astype(idx_dtype, copy=False)
 

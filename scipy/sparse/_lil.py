@@ -13,7 +13,7 @@ from ._matrix import spmatrix, _array_doc_to_matrix
 from ._base import _sparray, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
-                       get_index_dtype, check_shape, check_reshape_kwargs)
+                       check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
@@ -79,7 +79,7 @@ class lil_array(_sparray, IndexMixin):
 
 
     """
-    format = 'lil'
+    _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _sparray.__init__(self)
@@ -151,7 +151,7 @@ class lil_array(_sparray, IndexMixin):
     # Whenever the dimensions change, empty lists should be created for each
     # row
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
         if axis < 0:
@@ -169,7 +169,7 @@ class lil_array(_sparray, IndexMixin):
     def count_nonzero(self):
         return sum(np.count_nonzero(rowvals) for rowvals in self.data)
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _sparray._getnnz.__doc__
     count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def __str__(self):
@@ -460,11 +460,11 @@ class lil_array(_sparray, IndexMixin):
             np.cumsum(indptr, out=indptr)
             nnz = indptr[-1]
         else:
-            idx_dtype = get_index_dtype(maxval=N)
+            idx_dtype = self._get_index_dtype(maxval=N)
             lengths = np.empty(M, dtype=idx_dtype)
             _csparsetools.lil_get_lengths(self.rows, lengths)
             nnz = lengths.sum(dtype=np.int64)
-            idx_dtype = get_index_dtype(maxval=max(N, nnz))
+            idx_dtype = self._get_index_dtype(maxval=max(N, nnz))
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indptr[0] = 0
             np.cumsum(lengths, dtype=idx_dtype, out=indptr[1:])
