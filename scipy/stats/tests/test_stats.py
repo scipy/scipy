@@ -492,6 +492,45 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
+    def test_resampling_pvalue(self, method, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        size = 100 if method == 'permutation' else 1000
+        x = rng.normal(size=size)
+        y = rng.normal(size=size)
+        methods = {'permutation': stats.PermutationMethod(random_state=rng),
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
+        method = methods[method]
+        res = stats.pearsonr(x, y, alternative=alternative, method=method)
+        ref = stats.pearsonr(x, y, alternative=alternative)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    def test_bootstrap_ci(self, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        x = rng.normal(size=100)
+        y = rng.normal(size=100)
+        res = stats.pearsonr(x, y, alternative=alternative)
+
+        method = stats.BootstrapMethod(random_state=rng)
+        res_ci = res.confidence_interval(method=method)
+        ref_ci = res.confidence_interval()
+
+        assert_allclose(res_ci, ref_ci, atol=1e-2)
+
+    def test_invalid_method(self):
+        message = "`method` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+        res = stats.pearsonr([1, 2], [3, 4])
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(method="exact")
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
@@ -2364,14 +2403,22 @@ class TestMode:
         assert_equal(res.count.ravel(), ref.count.ravel())
         assert res.count.shape == (1, 1)
 
-    def test_gh16952(self):
-        # Check that bug reported in gh-16952 is resolved
+    @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
+    def test_gh16955(self, nan_policy):
+        # Check that bug reported in gh-16955 is resolved
         shape = (4, 3)
         data = np.ones(shape)
         data[0, 0] = np.nan
-        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy="omit")
+        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy=nan_policy)
         assert_array_equal(res.mode, [1, 1, 1, 1])
         assert_array_equal(res.count, [2, 3, 3, 3])
+
+        # Test with input from gh-16595. Support for non-numeric input
+        # was deprecated, so check for the appropriate error.
+        my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
+        test = np.zeros(10, dtype=my_dtype)
+        with pytest.raises(TypeError, match="Argument `a` is not..."):
+            stats.mode(test, nan_policy=nan_policy)
 
     def test_gh9955(self):
         # The behavior of mode with empty slices (whether the input was empty

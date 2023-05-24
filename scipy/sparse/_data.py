@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
+from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -16,9 +16,9 @@ __all__ = []
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(spmatrix):
+class _data_matrix(_sparray):
     def __init__(self):
-        spmatrix.__init__(self)
+        _sparray.__init__(self)
 
     def _get_dtype(self):
         return self.data.dtype
@@ -46,8 +46,8 @@ class _data_matrix(spmatrix):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+            raise NotImplementedError('negating a boolean sparse array is not '
+                                      'supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -78,27 +78,27 @@ class _data_matrix(spmatrix):
         else:
             return self
 
-    astype.__doc__ = spmatrix.astype.__doc__
+    astype.__doc__ = _sparray.astype.__doc__
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self._with_data(self.data.conj(), copy=copy)
+            return self._with_data(self.data.conjugate(), copy=copy)
         elif copy:
             return self.copy()
         else:
             return self
 
-    conj.__doc__ = spmatrix.conj.__doc__
+    conjugate.__doc__ = _sparray.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _sparray.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -167,6 +167,7 @@ class _minmax_mixin:
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
         M = self.shape[1 - axis]
+        idx_dtype = self._get_index_dtype(maxval=M)
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
@@ -181,12 +182,12 @@ class _minmax_mixin:
 
         if axis == 0:
             return self._coo_container(
-                (value, (np.zeros(len(value)), major_index)),
+                (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
                 dtype=self.dtype, shape=(1, M)
             )
         else:
             return self._coo_container(
-                (value, (major_index, np.zeros(len(value)))),
+                (value, (major_index, np.zeros(len(value), dtype=idx_dtype))),
                 dtype=self.dtype, shape=(M, 1)
             )
 

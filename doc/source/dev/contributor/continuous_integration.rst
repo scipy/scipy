@@ -33,10 +33,10 @@ by CI resources providers.
 GitHub Actions
 --------------
 * ``Lint``: PEP8 and code style
-* ``Windows Tests``: test suite runs for Windows (``x86_64``)
-* ``Linux Tests``: test suite runs for Linux (``x86_64``)
+* ``Windows Tests``: test suite runs for Windows
+* ``Linux Tests``: test suite runs for Linux
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
-* ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
+* ``Wheels builder``: builds wheels for SciPy releases as well as *nightly* builds.
 * ``Check the rendered docs here!``: live preview of the documentation
 * ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
   dependencies and check coverage
@@ -47,12 +47,6 @@ The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
 (lowest-supported to nightly builds), 32-bit vs. 64-bit, different compilers,
 and more - for details, see the ``.yml`` configuration files.
-
-Azure
------
-* ``Windows Python``: test suite runs for Windows
-* ``Linux_Python_xx_32bit_full``: 32-bit Linux
-* ``source_distribution``: install via ``sdist``, then run the test suite
 
 CircleCI
 --------
@@ -82,7 +76,6 @@ integration.
 
 Skipping CI can be achieved by adding a special text in the commit message:
 
-* ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
 * ``[skip cirrus]``: will skip CirrusCI
@@ -96,7 +89,7 @@ GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
 
-    [skip azp] [skip actions] [skip cirrus]
+    [skip actions] [skip cirrus]
 
 Wheel builds
 ============
