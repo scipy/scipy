@@ -101,7 +101,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     rank = np.zeros(N, dtype=ITYPE)
     predecessors = np.arange(N, dtype=ITYPE)
 
-    i_sort = np.argsort(data).astype(ITYPE)
+    i_sort = np.argsort(data, kind='stable').astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
