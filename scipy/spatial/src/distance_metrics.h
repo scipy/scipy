@@ -403,8 +403,8 @@ struct DiceDistance {
     void operator()(StridedView2D<T> out, StridedView2D<const T> x, StridedView2D<const T> y) const {
         transform_reduce_2d_<2>(out, x, y, [](T x, T y) INLINE_LAMBDA {
             Acc<T> acc;
-            acc.nonmatches = (x != y);
-            acc.tt_matches = (x != 0) & (y != 0);
+            acc.nonmatches = x * (1.0 - y) + y * (1.0 - x);
+            acc.tt_matches = x * y;
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
