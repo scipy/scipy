@@ -1860,17 +1860,24 @@ class TestOrthoGroup:
         dets = np.array([[np.linalg.det(x) for x in xx] for xx in xs])
         assert_allclose(np.fabs(dets), np.ones(dets.shape), rtol=1e-13)
 
-        # Test that we get both positive and negative determinants
-        # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
-        # Test each dimension separately
-        assert_array_less([0]*10, [np.nonzero(d < 0)[0].shape[0] for d in dets])
-        assert_array_less([np.nonzero(d < 0)[0].shape[0] for d in dets], [10]*10)
-
         # Test that these are orthogonal matrices
         for xx in xs:
             for x in xx:
                 assert_array_almost_equal(np.dot(x, x.T),
                                           np.eye(x.shape[0]))
+
+    @pytest.mark.parametrize("dim", [2, 5, 10, 20])
+    def test_det_distribution_gh18272(self, dim):
+        # Test that positive and negative determinants are equally likely.
+        rng = np.random.default_rng(6796248956179332344)
+        dist = ortho_group(dim=dim)
+        rvs = dist.rvs(size=5000, random_state=rng)
+        dets = scipy.linalg.det(rvs)
+        k = np.sum(dets > 0)
+        n = len(dets)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
 
     def test_haar(self):
         # Test that the distribution is constant under rotation
@@ -2468,7 +2475,7 @@ class TestMultivariateT:
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3
-        rng = np.random.default_rng(413722918996573)
+        rng = np.random.default_rng(41372291899657)
         w = 10 ** rng.uniform(-1, 1, size=dim)
         cov = _random_covariance(dim, w, rng, singular=True)
         mean = rng.random(dim)

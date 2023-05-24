@@ -148,6 +148,10 @@ def test_pow(B):
 def test_sparse_divide(A):
     assert isinstance(A / A, np.ndarray)
 
+@parametrize_sparrays
+def test_sparse_dense_divide(A):
+    with pytest.warns(RuntimeWarning):
+        assert (A / A.todense())._is_array
 
 @parametrize_sparrays
 def test_dense_divide(A):
@@ -168,18 +172,8 @@ def test_no_H_attr(A):
 
 @parametrize_sparrays
 def test_getrow_getcol(A):
-    assert A.getcol(0)._is_array
-    assert A.getrow(0)._is_array
-
-
-@parametrize_sparrays
-def test_docstr(A):
-    if A.__doc__ is None:
-        return
-
-    docstr = A.__doc__.lower()
-    for phrase in ('matrix', 'matrices'):
-        assert phrase not in docstr
+    assert A._getcol(0)._is_array
+    assert A._getrow(0)._is_array
 
 
 # -- linalg --

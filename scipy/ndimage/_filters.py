@@ -433,19 +433,35 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the axis-specific Sobel gradient.
+    The horizontal edges can emphasised with the horizontal trasform (axis=0),
+    the vertical edges with the vertical transform (axis=1) and so on for higher
+    dimensions. These can be combined to give the magnitude.
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
+    >>> import numpy as np
+    >>> ascent = datasets.ascent().astype('int32')
+    >>> sobel_h = ndimage.sobel(ascent, 0)  # horizontal gradient
+    >>> sobel_v = ndimage.sobel(ascent, 1)  # vertical gradient
+    >>> magnitude = np.sqrt(sobel_h**2 + sobel_v**2)
+    >>> magnitude *= 255.0 / np.max(magnitude)  # normalization
+    >>> fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = datasets.ascent()
-    >>> result = ndimage.sobel(ascent)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> axs[0, 0].imshow(ascent)
+    >>> axs[0, 1].imshow(sobel_h)
+    >>> axs[1, 0].imshow(sobel_v)
+    >>> axs[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axs.ravel()):
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
     >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
@@ -1647,6 +1663,47 @@ def generic_filter(input, function, size=None, footprint=None,
     In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
+
+    Examples
+    --------
+    Import the necessary modules and load the example image used for
+    filtering.
+
+    >>> import numpy as np
+    >>> from scipy import datasets
+    >>> from scipy.ndimage import generic_filter
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = datasets.ascent()
+
+    Compute a maximum filter with kernel size 10 by passing a simple NumPy
+    aggregation function as argument to `function`.
+
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+
+    While a maximmum filter could also directly be obtained using
+    `maximum_filter`, `generic_filter` allows generic Python function or
+    `scipy.LowLevelCallable` to be used as a filter. Here, we compute the
+    range between maximum and minimum value as an example for a kernel size
+    of 5.
+
+    >>> def custom_filter(image):
+    ...     return np.amax(image) - np.amin(image)
+    >>> custom_filter_result = generic_filter(ascent, custom_filter, [5, 5])
+
+    Plot the original and filtered images.
+
+    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, middle, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(ascent)
+    >>> top.set_title("Original image")
+    >>> middle.imshow(maximum_filter_result)
+    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> bottom.imshow(custom_filter_result)
+    >>> bottom.set_title("Custom filter, Kernel: 5x5")
+    >>> fig.tight_layout()
 
     """
     if (size is not None) and (footprint is not None):

@@ -1,9 +1,11 @@
+from abc import abstractmethod
 import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, suppress_warnings)
 from pytest import raises as assert_raises
+from pytest import warns
 
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -11,7 +13,6 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -410,7 +411,13 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class TestLsim:
+class _TestLsimFuncs:
+    digits_accuracy = 7
+
+    @abstractmethod
+    def func(self, *args, **kwargs):
+        pass
+
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -423,34 +430,64 @@ class TestLsim:
         system = self.lti_nowarn(-1.,1.,1.,0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.exp(-tout)
         assert_almost_equal(x, expected_x)
         assert_almost_equal(y, expected_x)
+
+    def test_second_order(self):
+        t = np.linspace(0, 10, 1001)
+        u = np.zeros_like(t)
+        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
+        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
+        # is (1-t)*exp(-t).
+        system = self.lti_nowarn([1.0], [1.0, 2.0, 1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0, 0.0])
+        expected_x = (1.0 - tout) * np.exp(-tout)
+        assert_almost_equal(x[:, 0], expected_x)
 
     def test_integrator(self):
         # integrator: y' = u
         system = self.lti_nowarn(0., 1., 1., 0.)
         t = np.linspace(0,5)
         u = t
-        tout, y, x = lsim(system, u, t)
+        tout, y, x = self.func(system, u, t)
         expected_x = 0.5 * tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_x)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_x, decimal=self.digits_accuracy)
+
+    def test_two_states(self):
+        # A system with two state variables, two inputs, and one output.
+        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
+        B = np.array([[1.0, 0.0], [0.0, 1.0]])
+        C = np.array([1.0, 0.0])
+        D = np.zeros((1, 2))
+
+        system = self.lti_nowarn(A, B, C, D)
+
+        t = np.linspace(0, 10.0, 21)
+        u = np.zeros((len(t), 2))
+        tout, y, x = self.func(system, U=u, T=t, X0=[1.0, 1.0])
+        expected_y = np.exp(-tout)
+        expected_x0 = np.exp(-tout)
+        expected_x1 = np.exp(-2.0 * tout)
+        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x[:, 0], expected_x0)
+        assert_almost_equal(x[:, 1], expected_x1)
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = matrix([[0., 1.], [0., 0.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[2., 0.]])
+        A = np.array([[0., 1.], [0., 0.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
-        tout, y, x = lsim(system, u, t)
+        tout, y, x = self.func(system, u, t)
         expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
         expected_y = tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x, expected_x, decimal=self.digits_accuracy)
+        assert_almost_equal(y, expected_y, decimal=self.digits_accuracy)
 
     def test_jordan_block(self):
         # Non-diagonalizable A matrix
@@ -458,13 +495,13 @@ class TestLsim:
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = matrix([[-1., 1.], [0., -1.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[1., 0.]])
+        A = np.array([[-1., 1.], [0., -1.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[0.0, 1.0])
+        tout, y, x = self.func(system, u, t, X0=[0.0, 1.0])
         expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
@@ -477,8 +514,8 @@ class TestLsim:
         system = self.lti_nowarn(A, B, C, D)
 
         t = np.linspace(0, 5.0, 101)
-        u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0, 1.0])
+        u = np.zeros((len(t), 2))
+        tout, y, x = self.func(system, u, t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0*tout)
@@ -486,86 +523,63 @@ class TestLsim:
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
 
+
+class TestLsim(_TestLsimFuncs):
+
+    def func(self, *args, **kwargs):
+        return lsim(*args, **kwargs)
+
     def test_nonzero_initial_time(self):
         system = self.lti_nowarn(-1.,1.,1.,0.)
         t = np.linspace(1,2)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
+    def test_nonequal_timesteps(self):
+        t = np.array([0.0, 1.0, 1.0, 3.0])
+        u = np.array([0.0, 0.0, 1.0, 1.0])
+        # Simple integrator: x'(t) = u(t)
+        system = ([1.0], [1.0, 0.0])
+        with assert_raises(ValueError,
+                           match="Time steps are not equally spaced."):
+            tout, y, x = self.func(system, u, t, X0=[1.0])
 
-class Test_lsim2:
 
-    def test_01(self):
-        t = np.linspace(0,10,1001)
-        u = np.zeros_like(t)
-        # First order system: x'(t) + x(t) = u(t), x(0) = 1.
-        # Exact solution is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
-        expected_x = np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
+class TestLsim2(_TestLsimFuncs):
+    digits_accuracy = 6
 
-    def test_02(self):
+    def func(self, *args, **kwargs):
+        with warns(DeprecationWarning, match="lsim2 is deprecated"):
+            t, y, x = lsim2(*args, **kwargs)
+        return t, np.squeeze(y), np.squeeze(x)
+
+    def test_integrator_nonequal_timestamp(self):
         t = np.array([0.0, 1.0, 1.0, 3.0])
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0],[1.0,0.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.maximum(1.0, tout)
-        assert_almost_equal(x[:,0], expected_x)
+        assert_almost_equal(x, expected_x)
 
-    def test_03(self):
+    def test_integrator_nonequal_timestamp_kwarg(self):
         t = np.array([0.0, 1.0, 1.0, 1.1, 1.1, 2.0])
         u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
         # Simple integrator:  x'(t) = u(t)
         system = ([1.0],[1.0, 0.0])
-        tout, y, x = lsim2(system, u, t, hmax=0.01)
+        tout, y, x = self.func(system, u, t, hmax=0.01)
         expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
-        assert_almost_equal(x[:,0], expected_x)
+        assert_almost_equal(x, expected_x)
 
-    def test_04(self):
-        t = np.linspace(0, 10, 1001)
-        u = np.zeros_like(t)
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
-        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
-        # is (1-t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0, 0.0])
-        expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_05(self):
-        # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal._filter_design, but the test passes.  I think the warning
-        # is related to the incomplete handling of multi-input systems in
-        # scipy.signal.
-
-        # A system with two state variables, two inputs, and one output.
-        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
-        B = np.array([[1.0, 0.0], [0.0, 1.0]])
-        C = np.array([1.0, 0.0])
-        D = np.zeros((1, 2))
-
-        t = np.linspace(0, 10.0, 101)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
-        expected_y = np.exp(-tout)
-        expected_x0 = np.exp(-tout)
-        expected_x1 = np.exp(-2.0 * tout)
-        assert_almost_equal(y, expected_y)
-        assert_almost_equal(x[:,0], expected_x0)
-        assert_almost_equal(x[:,1], expected_x1)
-
-    def test_06(self):
+    def test_default_arguments(self):
         # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
         # is (1-t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, X0=[1.0, 0.0])
+        tout, y, x = self.func(system, X0=[1.0, 0.0])
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
@@ -573,7 +587,7 @@ class Test_lsim2:
 class _TestImpulseFuncs:
     # Common tests for impulse/impulse2 (= self.func)
 
-    def test_01(self):
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
         system = ([1.0], [1.0,1.0])
@@ -581,7 +595,7 @@ class _TestImpulseFuncs:
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -595,7 +609,7 @@ class _TestImpulseFuncs:
         expected_y = np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -605,7 +619,7 @@ class _TestImpulseFuncs:
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -615,14 +629,14 @@ class _TestImpulseFuncs:
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0,0.0])
         tout, y = self.func(system)
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact impulse response is t*exp(-t).
@@ -644,17 +658,20 @@ class _TestImpulseFuncs:
 
 
 class TestImpulse2(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse2
+
+    def func(self, *args, **kwargs):
+        with warns(DeprecationWarning, match="impulse2 is deprecated"):
+            return impulse2(*args, **kwargs)
 
 
 class TestImpulse(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse
+
+    def func(self, *args, **kwargs):
+        return impulse(*args, **kwargs)
 
 
 class _TestStepFuncs:
-    def test_01(self):
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
         system = ([1.0], [1.0,1.0])
@@ -662,7 +679,7 @@ class _TestStepFuncs:
         expected_y = 1.0 - np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -676,7 +693,7 @@ class _TestStepFuncs:
         expected_y = 1 - np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -686,7 +703,7 @@ class _TestStepFuncs:
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -696,7 +713,7 @@ class _TestStepFuncs:
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
         system = ([1.0],[1.0,0.0])
@@ -704,7 +721,7 @@ class _TestStepFuncs:
         expected_y = tout
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact step response is 1 - (1 + t)*exp(-t).
@@ -721,10 +738,11 @@ class _TestStepFuncs:
 
 
 class TestStep2(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step2
+    def func(self, *args, **kwargs):
+        with warns(DeprecationWarning, match="step2 is deprecated"):
+            return step2(*args, **kwargs)
 
-    def test_05(self):
+    def test_integrator(self):
         # This test is almost the same as the one it overwrites in the base
         # class.  The only difference is the tolerances passed to step2:
         # the default tolerances are not accurate enough for this test
@@ -738,8 +756,8 @@ class TestStep2(_TestStepFuncs):
 
 
 class TestStep(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step
+    def func(self, *args, **kwargs):
+        return step(*args, **kwargs)
 
     def test_complex_input(self):
         # Test that complex input doesn't raise an error.

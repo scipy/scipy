@@ -199,7 +199,7 @@ class IndexMixin:
             x[x < 0] += length
         return x
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Return a copy of row i of the matrix, as a (1 x n) row vector.
         """
         M, N = self.shape
@@ -210,7 +210,7 @@ class IndexMixin:
             i += M
         return self._get_intXslice(i, slice(None))
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Return a copy of column i of the matrix, as a (m x 1) column vector.
         """
         M, N = self.shape
@@ -269,8 +269,8 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from ._base import spmatrix, isspmatrix
-    if (isinstance(index, (spmatrix, np.ndarray)) and
+    from ._base import _sparray, isspmatrix
+    if (isinstance(index, (_sparray, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()
 

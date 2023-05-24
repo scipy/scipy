@@ -89,19 +89,31 @@ class ReferenceDistribution:
         raise NotImplementedError("_pdf must be overridden.")
 
     def _cdf(self, x, **kwargs):
+        if ((self._cdf.__func__ is ReferenceDistribution._cdf)
+                and (self._sf.__func__ is not ReferenceDistribution._sf)):
+            return mp.one - self._sf(x, **kwargs)
         a, _ = self._support(**kwargs)
         return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
 
     def _sf(self, x, **kwargs):
+        if ((self._sf.__func__ is ReferenceDistribution._sf)
+                and (self._cdf.__func__ is not ReferenceDistribution._cdf)):
+            return mp.one - self._cdf(x, **kwargs)
         _, b = self._support(**kwargs)
         return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
 
     def _ppf(self, p, guess=0, **kwargs):
+        if ((self._ppf.__func__ is ReferenceDistribution._ppf)
+                and (self._isf.__func__ is not ReferenceDistribution._isf)):
+            return self._isf(mp.one - p, guess, **kwargs)
         def f(x):
             return self._cdf(x, **kwargs) - p
         return mp.findroot(f, guess)
 
     def _isf(self, p, guess=0, **kwargs):
+        if ((self._isf.__func__ is ReferenceDistribution._isf)
+                and (self._ppf.__func__ is not ReferenceDistribution._ppf)):
+            return self._ppf(mp.one - p, guess, **kwargs)
         def f(x):
             return self._sf(x, **kwargs) - p
         return mp.findroot(f, guess)
@@ -263,6 +275,11 @@ class SkewNormal(ReferenceDistribution):
         # separately for a specific distribution.
         super().__init__(a=a)
 
+    def _support(self, a):
+        # Override _support if the support of the distribution is a subset of
+        # the real line
+        return -mp.inf, mp.inf
+
     def _pdf(self, x, a):
         # Write PDFs following a scholarly reference as closely as possible.
         # Trust mpmath for the accuracy, and don't worry about speed. What's
@@ -277,6 +294,24 @@ class SkewNormal(ReferenceDistribution):
     # believed to be inaccurate (e.g. due to numerical difficulties) or it is
     # too slow. Why? Less code to write, less code to review, and a guarantee
     # that there is no *mistake* in the implementation (e.g. wrong formula).
+
+
+class BetaPrime(ReferenceDistribution):
+
+    def __init__(self, *, a, b):
+        super().__init__(a=a, b=b)
+
+    def _support(self, **kwargs):
+        return mp.zero, mp.inf
+
+    def _logpdf(self, x, a, b):
+        return (a - mp.one)*mp.log(x) - (a + b)*mp.log1p(x) - mp.log(mp.beta(a, b))
+
+    def _pdf(self, x, a, b):
+        return mp.exp(self._logpdf(x=x, a=a, b=b))
+
+    def _sf(self, x, a, b):
+        return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
 
 
 class Normal(ReferenceDistribution):
@@ -296,3 +331,28 @@ class NormInvGauss(ReferenceDistribution):
         q = mp.sqrt(1 + x**2)
         a = mp.pi**-1 * alpha * mp.exp(mp.sqrt(alpha**2 - beta**2))
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
+
+
+class StudentT(ReferenceDistribution):
+
+    def __init(self, *, df):
+        super().__init__(df=df)
+
+    def _pdf(self, x, df):
+        return (mp.gamma((df + mp.one)/2)/(mp.sqrt(df * mp.pi) * mp.gamma(df/2))
+                * (mp.one + x*x/df)**(-(df + mp.one)/2))
+
+
+class TruncExpon(ReferenceDistribution):
+
+    def __init__(self, *, b):
+        super().__init__(b=b)
+
+    def _support(self, b):
+        return 0, b
+
+    def _pdf(self, x, b):
+        return -mp.exp(-x)/mp.expm1(-b)
+
+    def _sf(self, x, b):
+        return (mp.exp(-b) - mp.exp(-x))/mp.expm1(-b)

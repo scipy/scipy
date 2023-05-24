@@ -1204,6 +1204,7 @@ class TestPPoly:
 
         for writeable in (True, False):
             x.flags.writeable = writeable
+            c.flags.writeable = writeable
             f = PPoly(c, x)
             vals = f(xnew)
             assert_(np.isfinite(vals).all())
