@@ -358,21 +358,29 @@ def test_hermitian():
     ks = [1, 2]
     gens = [True, False]
 
-    for s, k, gen in itertools.product(sizes, ks, gens):
+    for s, k, gen, dh, dx, db
+        in itertools.product(sizes, ks, gens, gens, gens, gens):
 
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
+        H = H.astype(np.complex128) if df
 
         X = rnd.standard_normal((s, k))
         X = X + 1.j * rnd.standard_normal((s, k))
+        X = X.astype(np.complex128) if dx
 
         if not gen:
             B = np.eye(s)
             w, v = lobpcg(H, X, maxiter=5000)
+            # Also test mixing complex H with real B.
+            wb, vb = lobpcg(H, X, B, maxiter=5000)
+            assert_allclose(w, wb, rtol=1e-6)
+            assert_allclose(v, vb, rtol=1e-4)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
+            B = B.astype(np.complex128) if db
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
@@ -489,12 +497,13 @@ def test_maxit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("n", [3, 12])
+@pytest.mark.parametrize("n", [15])
 @pytest.mark.parametrize("m", [1, 2])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
+    Constraints are imposed, so a dense eigensolver eig cannot run.
     """
     rnd = np.random.RandomState(0)
     # Define the generalized eigenvalue problem Av = cBv
