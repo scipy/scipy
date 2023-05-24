@@ -282,6 +282,9 @@ from ._matrix import spmatrix
 from ._matrix_io import *
 from ._matrix_construct import *
 
+# Namespace for array creation functions
+from . import array
+
 # For backward compatibility with v0.19.
 from . import csgraph
 

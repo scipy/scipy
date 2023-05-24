@@ -33,6 +33,7 @@ python_sources = [
   '_matrix.py',
   '_spfuncs.py',
   '_sputils.py',
+  'array.py',
   'base.py',
   'bsr.py',
   'compressed.py',
