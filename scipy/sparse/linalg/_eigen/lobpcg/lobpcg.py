@@ -127,29 +127,15 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        try:
-            np.matmul(blockVectorV, VBV, out=blockVectorV)
-        except Exception:
-            if verbosityLevel:
-                warnings.warn(
-                    f"The blockVectorX dtype {blockVectorV.dtype} "
-                    f"does not match {VBV.dtype} or is a slice "
-                    f"and needs to be changed preventing in-place.",
-                    UserWarning, stacklevel=3
-                )
-            blockVectorV = blockVectorV @ VBV
+        blockVectorV = _dot_inplace(
+            blockVectorV, VBV,
+            verbosityLevel=verbosityLevel
+        )
         if B is not None:
-            try:
-                np.matmul(blockVectorBV, VBV, out=blockVectorBV)
-            except Exception:
-                if verbosityLevel:
-                    warnings.warn(
-                        f"The blockVectorX dtype {blockVectorBV.dtype} "
-                        f"does not match {VBV.dtype} "
-                        f"and needs to be changed preventing in-place.",
-                        UserWarning, stacklevel=3
-                    )
-                blockVectorBV = blockVectorBV @ VBV
+            blockVectorBV = _dot_inplace(
+                blockVectorBV, VBV,
+                verbosityLevel=verbosityLevel
+            )
         return blockVectorV, blockVectorBV, VBV
     except LinAlgError:
         if verbosityLevel:
