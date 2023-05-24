@@ -48,7 +48,7 @@ def _check_finite(array, xp):
     """Check for NaNs or Infs."""
     msg = "array must not contain infs or NaNs"
     try:
-        if not xp.isfinite(array).all():
+        if not xp.all(xp.isfinite(array)):
             raise ValueError(msg)
     except TypeError:
         raise ValueError(msg)
