@@ -79,7 +79,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.9 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.33 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.21.6 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch && \
             apt-get -y install build-essential gfortran wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
