@@ -72,13 +72,15 @@ def _dot_inplace(x, y, verbosityLevel=0):
         # conditions where we can guarantee that inplace updates will work;
         # i.e. x is not a view/slice, x & y have compatible dtypes, and the
         # shape of the result of x @ y matches the shape of x.
-        np.dot(x, y, out=x)
+        # np.dot(x, y, out=x)
+        np.matmul(x, y, out=x)
     else:
         # ideally, we'd have an exhaustive list of conditions above when
         # inplace updates are possible; since we don't, we opportunistically
         # try if it works, and fall back to overwriting if necessary
         try:
-            np.dot(x, y, out=x)
+            # np.dot(x, y, out=x)
+            np.matmul(x, y, out=x)
         except Exception:
             if verbosityLevel:
                 warnings.warn(
