@@ -123,7 +123,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         _data_matrix.__init__(self)
 
         if issparse(arg1):
-            if isspmatrix_bsr(arg1) and copy:
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)

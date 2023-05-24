@@ -162,7 +162,7 @@ class coo_array(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = False
         else:
             if issparse(arg1):
-                if isspmatrix_coo(arg1) and copy:
+                if arg1.format == self.format and copy:
                     self.row = arg1.row.copy()
                     self.col = arg1.col.copy()
                     self.data = arg1.data.copy()

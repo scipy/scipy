@@ -81,7 +81,7 @@ class dok_array(_sparray, IndexMixin, dict):
             M, N = arg1
             self._shape = check_shape((M, N))
         elif issparse(arg1):  # Sparse ctor
-            if isspmatrix_dok(arg1) and copy:
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.todok()

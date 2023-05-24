@@ -96,7 +96,7 @@ class dia_array(_data_matrix):
             self.offsets = arg1.offsets
             self._shape = check_shape(arg1.shape)
         elif issparse(arg1):
-            if isspmatrix_dia(arg1) and copy:
+            if arg1.format == self.format and copy:
                 A = arg1.copy()
             else:
                 A = arg1.todia()
