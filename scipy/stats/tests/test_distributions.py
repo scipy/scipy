@@ -4144,7 +4144,6 @@ class TestBeta:
         #       - (b - 1) * mp.digamma(b) + (a + b - 2) * mp.digamma(a + b)
         #     )
         #     return float(entropy)
-        print(stats.beta(a, b).entropy())
         assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
 
 
