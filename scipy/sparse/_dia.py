@@ -392,7 +392,9 @@ class dia_array(_data_matrix):
     def tocoo(self, copy=False):
         num_rows, num_cols = self.shape
         num_offsets, offset_len = self.data.shape
-        offset_inds = np.arange(offset_len)
+
+        idx_dtype = self._get_index_dtype(maxval=max(self.shape))
+        offset_inds = np.arange(offset_len, dtype=idx_dtype)
 
         row = offset_inds - self.offsets[:,None]
         mask = (row >= 0)
