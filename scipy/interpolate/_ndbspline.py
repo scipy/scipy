@@ -185,7 +185,8 @@ class NdBSpline:
         # XXX: is c1r guaranteed to be C-contiguous? Cython code assumes it is.
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
-        _strides_c1 = np.asarray([_//c1.dtype.itemsize for _ in c1.strides], dtype=np.intp)
+        _strides_c1 = np.asarray([s // c1.dtype.itemsize
+                                  for s in c1.strides], dtype=np.intp)
 
         num_c_tr = c1.shape[-1]  # # of trailing coefficients
         out = np.empty(xi.shape[:-1] + (num_c_tr,), dtype=c1.dtype)
