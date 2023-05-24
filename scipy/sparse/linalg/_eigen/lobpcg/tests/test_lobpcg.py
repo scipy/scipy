@@ -363,11 +363,11 @@ def test_hermitian():
     ):
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
-        H = H.astype(np.complex128) if df
+        H = H.astype(np.complex128) if dh else None
 
         X = rnd.standard_normal((s, k))
         X = X + 1.j * rnd.standard_normal((s, k))
-        X = X.astype(np.complex128) if dx
+        X = X.astype(np.complex128) if dx else None
 
         if not gen:
             B = np.eye(s)
@@ -380,7 +380,7 @@ def test_hermitian():
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
-            B = B.astype(np.complex128) if db
+            B = B.astype(np.complex128) if db else None
             w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
             w0, _ = eigh(H, B)
 
