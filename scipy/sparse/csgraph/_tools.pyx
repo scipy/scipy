@@ -8,8 +8,7 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, issparse,\
-    isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
+from scipy.sparse import csr_matrix, issparse
 
 np.import_array()
 
@@ -315,10 +314,11 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
-    if isspmatrix_csc(csgraph) or isspmatrix_lil(csgraph):
-        csgraph = csgraph.tocsr()
-    elif not isspmatrix_csr(csgraph):
+    if not issparse(csgraph):
+        raise ValueError("csgraph must be sparse")
+    if csgraph.format not in ("lil", "csc", "csr"):
         raise ValueError("csgraph must be lil, csr, or csc format")
+    csgraph = csgraph.tocsr()
 
     N = csgraph.shape[0]
     if csgraph.shape[1] != N:

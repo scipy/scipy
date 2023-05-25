@@ -6,7 +6,7 @@ cimport numpy as np
 from libc.math cimport INFINITY
 
 
-from scipy.sparse import isspmatrix_coo, isspmatrix_csc, isspmatrix_csr
+from scipy.sparse import issparse
 
 np.import_array()
 
@@ -130,10 +130,11 @@ def maximum_bipartite_matching(graph, perm_type='row'):
      [2 0 0 3]]
 
     """
-    if isspmatrix_csc(graph) or isspmatrix_coo(graph):
-        graph = graph.tocsr()
-    elif not isspmatrix_csr(graph):
+    if not issparse(graph):
+        raise TypeError("graph must be sparse")
+    if graph.format not in ("csr", "csc", "coo"):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
+    graph = graph.tocsr()
     i, j = graph.shape
     x, y = _hopcroft_karp(graph.indices, graph.indptr, i, j)
     return np.asarray(x if perm_type == 'column' else y)
@@ -443,9 +444,9 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     28.0
 
     """
-    if not isspmatrix_csr(biadjacency_matrix)\
-            and not isspmatrix_csc(biadjacency_matrix)\
-            and not isspmatrix_coo(biadjacency_matrix):
+    if not issparse(biadjacency_matrix):
+        raise TypeError("graph must be sparse")
+    if biadjacency_matrix.format not in ("csr", "csc", "coo"):
         raise TypeError("graph must be in CSC, CSR, or COO format.")
 
     if not (np.issubdtype(biadjacency_matrix.dtype, np.number) or
@@ -473,7 +474,7 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     # The algorithm expects more columns than rows in the graph.
     if j < i:
         biadjacency_matrix_t = biadjacency_matrix.T
-        if not isspmatrix_csr(biadjacency_matrix_t):
+        if biadjacency_matrix_t.format != "csr":
             biadjacency_matrix_t = biadjacency_matrix_t.tocsr()
         b = np.asarray(_lapjvsp(biadjacency_matrix_t.indptr,
                                 biadjacency_matrix_t.indices,
@@ -482,7 +483,7 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
         indices = np.argsort(b)
         return (b[indices], a[indices])
     else:
-        if not isspmatrix_csr(biadjacency_matrix):
+        if biadjacency_matrix.format != "csr":
             biadjacency_matrix = biadjacency_matrix.tocsr()
         b = np.asarray(_lapjvsp(biadjacency_matrix.indptr,
                                 biadjacency_matrix.indices,
