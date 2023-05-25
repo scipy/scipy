@@ -31,10 +31,9 @@ from pytest import raises as assert_raises
 import scipy.linalg
 
 import scipy.sparse as sparse
-from scipy.sparse import (
-    bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix, dok_matrix, lil_matrix,
-    bsr_array, coo_array, csc_array, csr_array, dia_array, dok_array, lil_array,
-    eye, isspmatrix, SparseEfficiencyWarning)
+from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
+        coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
+        eye, isspmatrix, SparseEfficiencyWarning)
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
@@ -1253,18 +1252,6 @@ class _TestCommon:
         spbool = self.spmatrix(self.dat, dtype=bool)
         arrbool = dat.astype(bool)
         assert_array_equal(spbool.toarray(), arrbool)
-
-    def test_format_property(self):
-        ARR_CLASSES = [bsr_array, coo_array, csc_array, csr_array,
-                       dia_array, dok_array, lil_array]
-        formats = ["bsr", "coo", "csc", "csr", "dia", "dok", "lil"]
-        for xxx, cls in zip(formats, ARR_CLASSES):
-            M = cls([[1, 2]])
-            assert M.format == xxx
-            assert M._format == xxx
-            assert M._format == xxx
-            with pytest.raises(AttributeError, match=r"can't set attribute"):
-                M.format = "qqq"
 
     @sup_complex
     def test_astype(self):
