@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
                            assert_array_almost_equal)
 import pytest
@@ -453,13 +454,9 @@ class TestNdimageMorphology:
                             [0, 0, 0, 1, 1, 1, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0],
                             [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
-        metric_arg = numpy.array([[1, 1, 1],
-                                  [1, 1, 1],
-                                  [1, 1, 1]])
-        try:
-            ndimage.distance_transform_cdt(data, metric=metric_arg)
-        except Exception as exc:
-            raise pytest.fail("Unit test failed. Raised {0}".format(exc))
+        metric_arg = np.ones((3, 3))
+        actual = ndimage.distance_transform_cdt(data, metric=metric_arg)
+        assert actual.sum() == -21
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype):
@@ -2389,3 +2386,9 @@ def test_binary_hit_or_miss_input_as_output():
     # data should now contain the expected result
     ndimage.binary_hit_or_miss(data, output=data)
     assert_array_equal(expected, data)
+
+
+def test_distance_transform_cdt_invalid_metric():
+    with pytest.raises(ValueError):
+        ndimage.distance_transform_cdt(np.ones((5, 5)),
+                                       metric="garbage")
