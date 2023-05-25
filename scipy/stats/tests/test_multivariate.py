@@ -2603,15 +2603,14 @@ class TestMultivariateT:
             (1e100, 1.4189385332046727, 1e-15),
         ]
     )
-    def test_t_extreme_entropy(self, df, ref, tol):
+    def test_extreme_entropy(self, df, ref, tol):
         # Reference values were calculated with mpmath:
         # from mpmath import mp
         # mp.dps = 500
         #
-        # def mul_t_mpmath_entropy(dim, df=1, shape=1):
+        # def mul_t_mpmath_entropy(dim, df=1):
         #     dim = mp.mpf(dim)
         #     df = mp.mpf(df)
-        #     shape = mp.mpf(shape)
         #     halfsum = 0.5 * (dim + df)
         #     half_df = 0.5 * df
         #
