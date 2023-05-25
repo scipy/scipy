@@ -118,7 +118,8 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = B @ X
     BX = BX.astype(BVdtype)
     dtype = min(X.dtype, B.dtype, BX.dtype)
-    atol = m * n * np.finfo(dtype).eps
+    # np.longdouble tol cannot be achieved on most systems
+    atol = min(m * n * np.finfo(dtype).eps, 3e-16)
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # Check in-place.
