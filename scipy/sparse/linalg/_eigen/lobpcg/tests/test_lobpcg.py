@@ -10,6 +10,7 @@ from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
+from scipy import sparse
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
@@ -443,14 +444,14 @@ def test_tolerance_float32():
 
 
 INT_DTYPES = {np.intc, np.int_, np.longlong. np.uintc, np.uint, np.ulonglong}
-REAL_DTYPES = {numpy.half, np.single, np.double, np.longdouble}
+REAL_DTYPES = {np.half, np.single, np.double, np.longdouble}
 COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
 VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 
 
-@pytest.mark.parametrize("vdtype", DTYPES)
+@pytest.mark.parametrize("vdtype", VDTYPES)
 @pytest.mark.parametrize("mdtype", MDTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
