@@ -99,9 +99,9 @@ def test_MikotaPair():
 
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
-@pytest.mark.parametrize("Vdtype", VDTYPES)
-@pytest.mark.parametrize("Bdtype", VDTYPES)
-@pytest.mark.parametrize("BVdtype", VDTYPES)
+@pytest.mark.parametrize("Vdtype", REAL_DTYPES)
+@pytest.mark.parametrize("Bdtype", REAL_DTYPES)
+@pytest.mark.parametrize("BVdtype", REAL_DTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
