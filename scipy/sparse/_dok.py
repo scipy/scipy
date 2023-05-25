@@ -2,8 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok',
-           'is_dok', 'is_dok_array', 'is_dok_matrix']
+__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 
 import itertools
 import numpy as np
@@ -447,18 +446,6 @@ def isspmatrix_dok(x):
     False
     """
     return isinstance(x, dok_matrix) or isinstance(x, dok_array)
-
-def is_dok(x):
-    return x._format == "dok"
-    return isinstance(x, _dok_array)
-
-def is_dok_array(x):
-    return x._format == "dok" and x._is_array
-    return isinstance(x, dok_array)
-
-def is_dok_matrix(x):
-    return x._format == "dok" and not x._is_array
-    return isinstance(x, dok_matrix)
 
 class dok_array(_dok_array, sparray):
     pass

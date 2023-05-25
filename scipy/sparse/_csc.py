@@ -1,8 +1,7 @@
 """Compressed Sparse Column matrix format"""
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc',
-           'is_csc', 'is_csc_array', 'is_csc_matrix']
+__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
 
 import numpy as np
@@ -259,18 +258,6 @@ def isspmatrix_csc(x):
     False
     """
     return isinstance(x, csc_matrix) or isinstance(x, csc_array)
-
-def is_csc(x):
-    return x._format == "csc"
-    return isinstance(x, _csc_array)
-
-def is_csc_array(x):
-    return x._format == "csc" and x._is_array
-    return isinstance(x, csc_array)
-
-def is_csc_matrix(x):
-    return x._format == "csc" and not x._is_array
-    return isinstance(x, csc_matrix)
 
 class csc_array(_csc_array, sparray):
     pass

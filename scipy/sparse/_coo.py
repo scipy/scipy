@@ -2,8 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo',
-           'is_coo', 'is_coo_array', 'is_coo_matrix']
+__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
 
 from warnings import warn
 
@@ -620,18 +619,6 @@ def isspmatrix_coo(x):
     """
     return isinstance(x, coo_matrix) or isinstance(x, coo_array)
 
-
-def is_coo(x):
-    return x._format == "coo"
-    return isinstance(x, _coo_array)
-
-def is_coo_array(x):
-    return x._format == "coo" and x._is_array
-    return isinstance(x, coo_array)
-
-def is_coo_matrix(x):
-    return x._format == "coo" and not x._is_array
-    return isinstance(x, coo_matrix)
 
 class coo_array(_coo_array, sparray):
     pass

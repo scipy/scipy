@@ -2,8 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr',
-           'is_bsr', 'is_bsr_array', 'is_bsr_matrix']
+__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
 
 from warnings import warn
 
@@ -722,18 +721,6 @@ def isspmatrix_bsr(x):
     """
     return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
 
-
-def is_bsr(x):
-    return x._format == "bsr"
-    return isinstance(x, _bsr_array)
-
-def is_bsr_array(x):
-    return x._format == "bsr" and x._is_array
-    return isinstance(x, bsr_array)
-
-def is_bsr_matrix(x):
-    return x._format == "bsr" and not x._is_array
-    return isinstance(x, bsr_matrix)
 
 class bsr_array(_bsr_array, sparray):
     pass

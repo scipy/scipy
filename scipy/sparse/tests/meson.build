@@ -7,7 +7,6 @@ python_sources = [
   'test_csc.py',
   'test_csr.py',
   'test_extract.py',
-  'test_isinstance.py',
   'test_matrix_io.py',
   'test_sparsetools.py',
   'test_spfuncs.py',

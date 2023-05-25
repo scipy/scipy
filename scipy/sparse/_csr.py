@@ -2,8 +2,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr',
-           'is_csr', 'is_csr_array', 'is_csr_matrix']
+__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
@@ -132,7 +131,7 @@ class _csr_array(_cs_matrix):
            [0, 1, 1, 1]])
 
     """
-    _format = 'csr'
+    format = 'csr'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -357,18 +356,6 @@ def isspmatrix_csr(x):
     """
     return isinstance(x, csr_matrix) or isinstance(x, csr_array)
 
-def is_csr(x):
-    print(x._format)
-    return x._format == "csr"
-    return isinstance(x, _csr_array)
-
-def is_csr_array(x):
-    return x._format == "csr" and x._is_array
-    return isinstance(x, csr_array)
-
-def is_csr_matrix(x):
-    return x._format == "csr" and not x._is_array
-    return isinstance(x, csr_matrix)
 
 class csr_array(_csr_array, sparray):
     pass

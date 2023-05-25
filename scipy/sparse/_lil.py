@@ -3,8 +3,7 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil',
-           'is_lil', 'is_lil_array', 'is_lil_matrix']
+__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 
 from bisect import bisect_left
 
@@ -546,18 +545,6 @@ def isspmatrix_lil(x):
     False
     """
     return isinstance(x, lil_matrix) or isinstance(x, lil_array)
-
-def is_lil(x):
-    return x._format == "lil"
-    return isinstance(x, _lil_array)
-
-def is_lil_array(x):
-    return x._format == "lil" and x._is_array
-    return isinstance(x, lil_array)
-
-def is_lil_matrix(x):
-    return x._format == "lil" and not x._is_array
-    return isinstance(x, lil_matrix)
 
 class lil_array(_lil_array, sparray):
     pass
