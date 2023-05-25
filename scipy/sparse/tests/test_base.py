@@ -1595,14 +1595,23 @@ class _TestCommon:
         assert_(isspmatrix(A * array(1)))
         assert_equal((A * array(1)).toarray(), [[1], [2], [3]])
 
-        if not A._is_array:
+        assert_equal(A @ array([1]), array([1, 2, 3]))
+        assert_equal(A @ array([[1]]), array([[1], [2], [3]]))
+        assert_equal(A @ np.ones((1, 1)), array([[1], [2], [3]]))
+        assert_equal(A @ np.ones((1, 0)), np.ones((3, 0)))
+
+    def test_start_vs_at_sign_for_sparray_and_spmatrix(self):
+        # test that * is matmul for spmatrix and mul for sparray
+        A = self.spcreator([[1],[2],[3]])
+
+        if A._is_array:
+            assert_array_almost_equal(A * np.ones((3,1)), A)
+            assert_array_almost_equal(A * array([[1]]), A)
+            assert_array_almost_equal(A * np.ones((3,1)), A)
+        else:
             assert_equal(A * array([1]), array([1, 2, 3]))
             assert_equal(A * array([[1]]), array([[1], [2], [3]]))
             assert_equal(A * np.ones((1, 0)), np.ones((3, 0)))
-
-        assert_equal(A @ array([1]), array([1, 2, 3]))
-        assert_equal(A @ array([[1]]), array([[1], [2], [3]]))
-        assert_equal(A @ np.ones((1, 0)), np.ones((3, 0)))
 
     def test_binop_custom_type(self):
         # Non-regression test: previously, binary operations would raise
