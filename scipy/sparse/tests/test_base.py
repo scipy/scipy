@@ -2727,7 +2727,7 @@ class _TestSlicingAssign:
         assert_raises(ValueError, A.__setitem__, (slice(4), 0),
                       [[1, 2], [3, 4]])
 
-    def test_assign_empty_spcreator(self):
+    def test_assign_empty(self):
         A = self.spcreator(np.ones((2, 3)))
         B = self.spcreator((1, 2))
         A[1, :2] = B
