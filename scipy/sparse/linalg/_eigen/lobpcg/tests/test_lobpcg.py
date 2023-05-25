@@ -463,8 +463,7 @@ def test_dtypes(vdtype, mdtype, arr_type):
     rnd = np.random.RandomState(0)
     n = 12
     m = 2
-    A = arr_type(np.diag([np.arange(1, n + 1)])
-    A = A.astype(mdtype)
+    A = arr_type(np.diag([np.arange(1, n + 1)]).astype(mdtype))
     X = rnd.random((n, m))
     X = X.astype(vdtype)
     eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False, verbosityLevel=1)
