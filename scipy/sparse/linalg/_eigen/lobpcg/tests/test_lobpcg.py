@@ -371,23 +371,23 @@ def test_hermitian():
 
         if not gen:
             B = np.eye(s)
-            w, v = lobpcg(H, X, maxiter=5000)
+            w, v = lobpcg(H, X, maxiter=50, verbosityLevel=1)
             # Also test mixing complex H with real B.
-            wb, _ = lobpcg(H, X, B, maxiter=5000)
+            wb, _ = lobpcg(H, X, B, maxiter=50, verbosityLevel=1)
             assert_allclose(w, wb, rtol=1e-6)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             B = B.astype(np.complex128) if db else B.astype(np.complex64)
-            w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
+            w, v = lobpcg(H, X, B, maxiter=50, verbosityLevel=1)
             w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
             # Check eigenvector
-            # assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
-            #                 / np.linalg.norm(H.dot(vx)),
-            #                 0, atol=5e-4, rtol=0)
+            assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
+                            / np.linalg.norm(H.dot(vx)),
+                            0, atol=5e-2, rtol=0)
 
             # Compare eigenvalues
             j = np.argmin(abs(w0 - wx))
@@ -442,19 +442,34 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-def test_random_initial_float32():
-    """Check lobpcg in float32 runs in-place without warning.
+INT_DTYPES = {np.intc, np.int_, np.longlong. np.uintc, np.uint, np.ulonglong}
+REAL_DTYPES = {numpy.half, np.single, np.double, np.longdouble}
+COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+# use sorted tuple to ensure fixed order of tests
+VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+
+
+@pytest.mark.parametrize("vdtype", DTYPES)
+@pytest.mark.parametrize("mdtype", MDTYPES)
+@pytest.mark.parametrize("arr_type", [np.array,
+                                      sparse.csr_matrix,
+                                      sparse.coo_matrix])
+def test_dtypes(vdtype, mdtype, arr_type):
+    """Test lobpcg in various dtypes.
     """
     rnd = np.random.RandomState(0)
-    n = 50
-    m = 4
-    vals = -np.arange(1, n + 1)
-    A = diags([vals], [0], (n, n))
-    A = A.astype(np.float32)
+    n = 12
+    m = 2
+    vals = np.arange(1, n + 1)
+    A = arr_type(diags([vals], [0], (n, n)))
+    A = A.astype(mdtype)
     X = rnd.random((n, m))
-    X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
+    X = X.astype(vdtype)
+    eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False, verbosityLevel=1)
+    assert_allclose(eigvals, np.arange(1, 1 + m), atol=1e-1)
+    # eigenvectors must be nearly real in any case
+    assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
 
 
 def test_maxit():
