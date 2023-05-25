@@ -195,7 +195,8 @@ Now there are only five stored elements in our sparse array, and it is identical
 Canonical formats
 -----------------
 
-Several sparse array formats have "canonical formats" to allow for more efficient operations. Generally these consist of added restrictions like:
+Several sparse array formats have "canonical formats" to allow for more efficient operations.
+Generally these consist of added restrictions like:
 
 - No duplicate entries for any value
 - Sorted indices

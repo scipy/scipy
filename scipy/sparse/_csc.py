@@ -79,6 +79,7 @@ class csc_array(_cs_matrix):
     Canonical format
       - In the canonical format, CSC matrices have indices sorted per row, 
         and cannot contain duplicate entries.
+
     Examples
     --------
 
