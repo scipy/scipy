@@ -11,6 +11,7 @@ python_sources = [
   'test_decomp_ldl.py',
   'test_decomp_polar.py',
   'test_decomp_update.py',
+  'test_cholesky_update.py',
   'test_fblas.py',
   'test_interpolative.py',
   'test_lapack.py',
