@@ -19,7 +19,7 @@ from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
 import operator
 
 
-class _coo_array(_data_matrix, _minmax_mixin):
+class _coo_base(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.
 
@@ -621,10 +621,10 @@ def isspmatrix_coo(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class coo_array(_coo_array, sparray):
+class coo_array(_coo_base, sparray):
     pass
 
-class coo_matrix(spmatrix, _coo_array):
+class coo_matrix(spmatrix, _coo_base):
     pass
 
-coo_matrix.__doc__ = _array_doc_to_matrix(_coo_array.__doc__)
+coo_matrix.__doc__ = _array_doc_to_matrix(_coo_base.__doc__)

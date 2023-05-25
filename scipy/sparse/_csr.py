@@ -15,7 +15,7 @@ from ._sputils import upcast
 from ._compressed import _cs_matrix
 
 
-class _csr_array(_cs_matrix):
+class _csr_base(_cs_matrix):
     """
     Compressed Sparse Row matrix
 
@@ -358,10 +358,10 @@ def isspmatrix_csr(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class csr_array(_csr_array, sparray):
+class csr_array(_csr_base, sparray):
     pass
 
-class csr_matrix(spmatrix, _csr_array):
+class csr_matrix(spmatrix, _csr_base):
     pass
 
-csr_matrix.__doc__ = _array_doc_to_matrix(_csr_array.__doc__)
+csr_matrix.__doc__ = _array_doc_to_matrix(_csr_base.__doc__)

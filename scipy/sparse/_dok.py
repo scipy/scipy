@@ -21,7 +21,7 @@ except ImportError:
                 or hasattr(x, 'next'))
 
 
-class _dok_array(_sparray, IndexMixin, dict):
+class _dok_base(_sparray, IndexMixin, dict):
     """
     Dictionary Of Keys based sparse matrix.
 
@@ -449,10 +449,10 @@ def isspmatrix_dok(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class dok_array(_dok_array, sparray):
+class dok_array(_dok_base, sparray):
     pass
 
-class dok_matrix(spmatrix, _dok_array):
+class dok_matrix(spmatrix, _dok_base):
     def set_shape(self, shape):
         new_matrix = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_matrix.__dict__
@@ -465,4 +465,4 @@ class dok_matrix(spmatrix, _dok_array):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-dok_matrix.__doc__ = _array_doc_to_matrix(_dok_array.__doc__)
+dok_matrix.__doc__ = _array_doc_to_matrix(_dok_base.__doc__)

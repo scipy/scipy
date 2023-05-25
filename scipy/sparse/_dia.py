@@ -13,7 +13,7 @@ from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateax
 from ._sparsetools import dia_matvec
 
 
-class _dia_array(_data_matrix):
+class _dia_base(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
     This can be instantiated in several ways:
@@ -470,10 +470,10 @@ def isspmatrix_dia(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class dia_array(_dia_array, sparray):
+class dia_array(_dia_base, sparray):
     pass
 
-class dia_matrix(spmatrix, _dia_array):
+class dia_matrix(spmatrix, _dia_base):
     pass
 
-dia_matrix.__doc__ = _array_doc_to_matrix(_dia_array.__doc__)
+dia_matrix.__doc__ = _array_doc_to_matrix(_dia_base.__doc__)

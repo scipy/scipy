@@ -17,7 +17,7 @@ from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
 from . import _csparsetools
 
 
-class _lil_array(_sparray, IndexMixin):
+class _lil_base(_sparray, IndexMixin):
     """Row-based LIst of Lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
@@ -548,10 +548,10 @@ def isspmatrix_lil(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class lil_array(_lil_array, sparray):
+class lil_array(_lil_base, sparray):
     pass
 
-class lil_matrix(spmatrix, _lil_array):
+class lil_matrix(spmatrix, _lil_base):
     pass
 
-lil_matrix.__doc__ = _array_doc_to_matrix(_lil_array.__doc__)
+lil_matrix.__doc__ = _array_doc_to_matrix(_lil_base.__doc__)

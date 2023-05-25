@@ -20,7 +20,7 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_tocsr)
 
 
-class _bsr_array(_cs_matrix, _minmax_mixin):
+class _bsr_base(_cs_matrix, _minmax_mixin):
     """Block Sparse Row format sparse array.
 
     This can be instantiated in several ways:
@@ -723,10 +723,10 @@ def isspmatrix_bsr(x):
 
 
 # This namespace class separates array from matrix with ininstance
-class bsr_array(_bsr_array, sparray):
+class bsr_array(_bsr_base, sparray):
     pass
 
-class bsr_matrix(spmatrix, _bsr_array):
+class bsr_matrix(spmatrix, _bsr_base):
     pass
 
-bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_array.__doc__)
+bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_base.__doc__)
