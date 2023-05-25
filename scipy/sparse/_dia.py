@@ -89,20 +89,21 @@ class dia_array(_data_matrix):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-        if isspmatrix_dia(arg1):
-            if copy:
-                arg1 = arg1.copy()
-            self.data = arg1.data
-            self.offsets = arg1.offsets
-            self._shape = check_shape(arg1.shape)
-        elif issparse(arg1):
-            if arg1.format == self.format and copy:
-                A = arg1.copy()
+        if issparse(arg1)
+            if arg1.format == "dia":
+                if copy:
+                    arg1 = arg1.copy()
+                self.data = arg1.data
+                self.offsets = arg1.offsets
+                self._shape = check_shape(arg1.shape)
             else:
-                A = arg1.todia()
-            self.data = A.data
-            self.offsets = A.offsets
-            self._shape = check_shape(A.shape)
+                if arg1.format == self.format and copy:
+                    A = arg1.copy()
+                else:
+                    A = arg1.todia()
+                self.data = A.data
+                self.offsets = A.offsets
+                self._shape = check_shape(A.shape)
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)

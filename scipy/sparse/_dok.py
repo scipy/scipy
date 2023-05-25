@@ -246,20 +246,21 @@ class dok_array(_sparray, IndexMixin, dict):
                 if aij:
                     new[key] = aij
             # new.dtype.char = self.dtype.char
-        elif isspmatrix_dok(other):
-            if other.shape != self.shape:
-                raise ValueError("Matrix dimensions are not equal.")
-            # We could alternatively set the dimensions to the largest of
-            # the two matrices to be summed.  Would this be a good idea?
-            res_dtype = upcast(self.dtype, other.dtype)
-            new = self._dok_container(self.shape, dtype=res_dtype)
-            dict.update(new, self)
-            with np.errstate(over='ignore'):
-                dict.update(new,
-                           ((k, new[k] + other[k]) for k in other.keys()))
         elif issparse(other):
-            csc = self.tocsc()
-            new = csc + other
+            if other.format == "dok":
+                if other.shape != self.shape:
+                    raise ValueError("Matrix dimensions are not equal.")
+                # We could alternatively set the dimensions to the largest of
+                # the two matrices to be summed.  Would this be a good idea?
+                res_dtype = upcast(self.dtype, other.dtype)
+                new = self._dok_container(self.shape, dtype=res_dtype)
+                dict.update(new, self)
+                with np.errstate(over='ignore'):
+                    dict.update(new,
+                               ((k, new[k] + other[k]) for k in other.keys()))
+            else:
+                csc = self.tocsc()
+                new = csc + other
         elif isdense(other):
             new = self.todense() + other
         else:
@@ -274,16 +275,17 @@ class dok_array(_sparray, IndexMixin, dict):
                 aij = dict.get(self, (key), 0) + other
                 if aij:
                     new[key] = aij
-        elif isspmatrix_dok(other):
-            if other.shape != self.shape:
-                raise ValueError("Matrix dimensions are not equal.")
-            new = self._dok_container(self.shape, dtype=self.dtype)
-            dict.update(new, self)
-            dict.update(new,
-                       ((k, self[k] + other[k]) for k in other.keys()))
         elif issparse(other):
-            csc = self.tocsc()
-            new = csc + other
+            if other.format == "dok":
+                if other.shape != self.shape:
+                    raise ValueError("Matrix dimensions are not equal.")
+                new = self._dok_container(self.shape, dtype=self.dtype)
+                dict.update(new, self)
+                dict.update(new,
+                           ((k, self[k] + other[k]) for k in other.keys()))
+            else:
+                csc = self.tocsc()
+                new = csc + other
         elif isdense(other):
             new = other + self.todense()
         else:

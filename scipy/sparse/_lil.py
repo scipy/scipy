@@ -87,7 +87,7 @@ class lil_array(_sparray, IndexMixin):
 
         # First get the shape
         if issparse(arg1):
-            if isspmatrix_lil(arg1) and copy:
+            if arg1.format == "lil" and copy:
                 A = arg1.copy()
             else:
                 A = arg1.tolil()

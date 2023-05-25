@@ -372,14 +372,12 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,n = self.blocksize
 
         # convert to this format
-        if isspmatrix_bsr(other):
+        if isparse(other) and other.format == "bsr":
             C = other.blocksize[1]
         else:
             C = 1
 
-        from ._csr import isspmatrix_csr
-
-        if isspmatrix_csr(other) and n == 1:
+        if other.format == "csr" and n == 1:
             other = other.tobsr(blocksize=(n,C), copy=False)  # lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))

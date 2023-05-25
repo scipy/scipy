@@ -2,7 +2,7 @@ from warnings import warn
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, issparse,
+from scipy.sparse import (issparse,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
@@ -209,7 +209,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
+    if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
                 SparseEfficiencyWarning)
@@ -264,7 +264,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             b_is_sparse = False
 
         if not b_is_sparse:
-            if isspmatrix_csc(A):
+            if A.format == "csc":
                 flag = 1  # CSC format
             else:
                 flag = 0  # CSR format
@@ -281,7 +281,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             # b is sparse
             Afactsolve = factorized(A)
 
-            if not (isspmatrix_csc(b) or is_pydata_spmatrix(b)):
+            if not (b.format == "csc" or is_pydata_spmatrix(b)):
                 warn('spsolve is more efficient when sparse b '
                      'is in the CSC matrix format', SparseEfficiencyWarning)
                 b = csc_matrix(b)
@@ -390,7 +390,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     else:
         csc_construct_func = csc_matrix
 
-    if not isspmatrix_csc(A):
+    if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
         warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
@@ -482,7 +482,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     else:
         csc_construct_func = csc_matrix
 
-    if not isspmatrix_csc(A):
+    if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
         warn('spilu converted its input to CSC format',
              SparseEfficiencyWarning)
@@ -547,7 +547,7 @@ def factorized(A):
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
-        if not isspmatrix_csc(A):
+        if not (issparse(A) and A.format == "csc"):
             A = csc_matrix(A)
             warn('splu converted its input to CSC format',
                  SparseEfficiencyWarning)
@@ -638,7 +638,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         A = A.to_scipy_sparse().tocsr()
 
     # Check the input for correct type and format.
-    if not isspmatrix_csr(A):
+    if not (issparse(A) and A.format == "csr"):
         warn('CSR matrix format is required. Converting to CSR matrix.',
              SparseEfficiencyWarning)
         A = csr_matrix(A)
