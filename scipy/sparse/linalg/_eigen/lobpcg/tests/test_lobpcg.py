@@ -372,16 +372,16 @@ def test_hermitian():
 
         if not gen:
             B = np.eye(s)
-            w, v = lobpcg(H, X, maxiter=50, verbosityLevel=0)
+            w, v = lobpcg(H, X, maxiter=99, verbosityLevel=0)
             # Also test mixing complex H with real B.
-            wb, _ = lobpcg(H, X, B, maxiter=50, verbosityLevel=0)
+            wb, _ = lobpcg(H, X, B, maxiter=99, verbosityLevel=0)
             assert_allclose(w, wb, rtol=1e-6)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             B = B.astype(np.complex128) if db else B.astype(np.complex64)
-            w, v = lobpcg(H, X, B, maxiter=50, verbosityLevel=0)
+            w, v = lobpcg(H, X, B, maxiter=99, verbosityLevel=0)
             w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
@@ -463,7 +463,7 @@ def test_dtypes(vdtype, mdtype, arr_type):
     rnd = np.random.RandomState(0)
     n = 12
     m = 2
-    A = arr_type(np.diag([np.arange(1, n + 1)]).astype(mdtype))
+    A = arr_type(np.diag(np.arange(1, n + 1)).astype(mdtype))
     X = rnd.random((n, m))
     X = X.astype(vdtype)
     eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False, verbosityLevel=1)
