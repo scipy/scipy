@@ -20,7 +20,8 @@ from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 _IS_32BIT = (sys.maxsize < 2**32)
 
 INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
-REAL_DTYPES = {np.half, np.single, np.double, np.longdouble}
+# np.half is unsupported on many test systems so excluded
+REAL_DTYPES = {np.single, np.double, np.longdouble}
 COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
 VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
