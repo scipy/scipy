@@ -66,8 +66,11 @@ def _makeMatMat(m):
         return lambda v: m @ v
 
 
-def _dot_matmul(x, y, verbosityLevel=0):
-    """Perform 'np.matmul' in-place if possible."""
+def _matmul_inplace(x, y, verbosityLevel=0):
+    """Perform 'np.matmul' in-place if possible.
+    If some sufficient conditions for inplace matmul are met, do so.
+    Otherwise try inplace update and fall back to overwrite if that fails.
+    """
     if x.flags["CARRAY"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
         # conditions where we can guarantee that inplace updates will work;
         # i.e. x is not a view/slice, x & y have compatible dtypes, and the
@@ -127,12 +130,12 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        blockVectorV = _dot_matmul(
+        blockVectorV = _matmul_inplace(
             blockVectorV, VBV,
             verbosityLevel=verbosityLevel
         )
         if B is not None:
-            blockVectorBV = _dot_matmul(
+            blockVectorBV = _matmul_inplace(
                 blockVectorBV, VBV,
                 verbosityLevel=verbosityLevel
             )
@@ -622,16 +625,16 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    blockVectorX = _dot_matmul(
+    blockVectorX = _matmul_inplace(
         blockVectorX, eigBlockVector,
         verbosityLevel=verbosityLevel
     )
-    blockVectorAX = _dot_matmul(
+    blockVectorAX = _matmul_inplace(
         blockVectorAX, eigBlockVector,
         verbosityLevel=verbosityLevel
     )
     if B is not None:
-        blockVectorBX = _dot_matmul(
+        blockVectorBX = _matmul_inplace(
             blockVectorBX, eigBlockVector,
             verbosityLevel=verbosityLevel
         )
@@ -768,7 +771,7 @@ def lobpcg(
                 activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = _dot_matmul(
+                activeBlockVectorAP = _matmul_inplace(
                     activeBlockVectorAP, invR,
                     verbosityLevel=verbosityLevel
                 )
