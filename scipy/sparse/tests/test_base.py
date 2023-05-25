@@ -2585,12 +2585,18 @@ class _TestSlicing:
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spcreator(b)
 
-        assert_array_equal(a[..., ...].toarray(), b[:, :].A)
-        assert_array_equal(a[..., ..., ...].toarray(), b[:, :].A)
-        assert_array_equal(a[1, ..., ...].toarray(), b[1, :].A)
-        assert_array_equal(a[1:, ..., ...].toarray(), b[1:, :].A)
-        assert_array_equal(a[..., ..., 1:].toarray(), b[:, 1:].A)
-        assert_array_equal(a[..., ..., 1].toarray(), b[:, 1].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[..., ...].toarray(), b[:, :].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[..., ..., ...].toarray(), b[:, :].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[1, ..., ...].toarray(), b[1, :].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[1:, ..., ...].toarray(), b[1:, :].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[..., ..., 1:].toarray(), b[:, 1:].A)
+        with pytest.deprecated_call(match='removed in v1.13'):
+            assert_array_equal(a[..., ..., 1].toarray(), b[:, 1].A)
 
 
 class _TestSlicingAssign:
