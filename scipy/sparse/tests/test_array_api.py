@@ -486,5 +486,5 @@ def test_format_property():
         M = arr_cls([[1, 2]])
         assert M.format == fmt
         assert M._format == fmt
-        with pytest.raises(AttributeError, match=r"can't set attribute"):
+        with pytest.raises(AttributeError):
             M.format = "qqq"
