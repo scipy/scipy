@@ -317,36 +317,18 @@ def _check_ellipsis(index):
 
     if not isinstance(index, tuple):
         return index
-
-    # TODO: Deprecate this multiple-ellipsis handling,
-    #       as numpy no longer supports it.
-
-    # Find first ellipsis.
-    for j, v in enumerate(index):
-        if v is Ellipsis:
-            first_ellipsis = j
-            break
-    else:
+    
+    # Find any Ellipsis objects.
+    ellipsis_indices = [i for i, v in enumerate(index) if v is Ellipsis]
+    if not ellipsis_indices:
         return index
+    if len(ellipsis_indices) > 1:
+        raise IndexError("an index can only have a single ellipsis ('...')")
 
-    # Try to expand it using shortcuts for common cases
-    if len(index) == 1:
-        return (slice(None), slice(None))
-    if len(index) == 2:
-        if first_ellipsis == 0:
-            if index[1] is Ellipsis:
-                return (slice(None), slice(None))
-            return (slice(None), index[1])
-        return (index[0], slice(None))
-
-    # Expand it using a general-purpose algorithm
-    tail = []
-    for v in index[first_ellipsis+1:]:
-        if v is not Ellipsis:
-            tail.append(v)
-    nd = first_ellipsis + len(tail)
-    nslice = max(0, 2 - nd)
-    return index[:first_ellipsis] + (slice(None),)*nslice + tuple(tail)
+    # Replace the Ellipsis object with 0, 1, or 2 null-slices as needed.
+    i, = ellipsis_indices
+    num_slices = max(0, 3 - len(index))
+    return index[:i] + (slice(None),) * num_slices + index[i + 1:]
 
 
 def _maybe_bool_ndarray(idx):

@@ -2582,15 +2582,15 @@ class _TestSlicing:
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
     def test_multiple_ellipsis_slicing(self):
-        b = asmatrix(arange(50).reshape(5,10))
-        a = self.spcreator(b)
+        a = self.spcreator(arange(6).reshape(3, 2))
 
-        assert_array_equal(a[..., ...].toarray(), b[:, :].A)
-        assert_array_equal(a[..., ..., ...].toarray(), b[:, :].A)
-        assert_array_equal(a[1, ..., ...].toarray(), b[1, :].A)
-        assert_array_equal(a[1:, ..., ...].toarray(), b[1:, :].A)
-        assert_array_equal(a[..., ..., 1:].toarray(), b[:, 1:].A)
-        assert_array_equal(a[..., ..., 1].toarray(), b[:, 1].A)
+        with pytest.raises(IndexError,
+                           match='an index can only have a single ellipsis'):
+            a[..., ...]
+
+        with pytest.raises(IndexError,
+                           match='an index can only have a single ellipsis'):
+            a[..., 1, ...]
 
 
 class _TestSlicingAssign:
