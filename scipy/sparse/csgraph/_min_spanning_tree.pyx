@@ -101,6 +101,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     rank = np.zeros(N, dtype=ITYPE)
     predecessors = np.arange(N, dtype=ITYPE)
 
+    # Stable sort is a necessary but not sufficient operation
+    # to get to a canonical representation of solutions.
     i_sort = np.argsort(data, kind='stable').astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
