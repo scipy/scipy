@@ -89,7 +89,7 @@ class dia_array(_data_matrix):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-        if issparse(arg1)
+        if issparse(arg1):
             if arg1.format == "dia":
                 if copy:
                     arg1 = arg1.copy()
