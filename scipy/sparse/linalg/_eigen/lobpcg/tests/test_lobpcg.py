@@ -443,7 +443,7 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-INT_DTYPES = {np.intc, np.int_, np.longlong. np.uintc, np.uint, np.ulonglong}
+INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
 REAL_DTYPES = {np.half, np.single, np.double, np.longdouble}
 COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
