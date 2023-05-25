@@ -7,7 +7,7 @@ __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, sparray
+from ._base import _spbase, sparray
 from ._sparsetools import csc_tocsr, expandptr
 from ._sputils import upcast
 
@@ -117,7 +117,7 @@ class _csc_base(_cs_matrix):
         return self._csr_container((self.data, self.indices,
                                     self.indptr), (N, M), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def __iter__(self):
         yield from self.tocsr()
@@ -128,7 +128,7 @@ class _csc_base(_cs_matrix):
         else:
             return self
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocsr(self, copy=False):
         M,N = self.shape
@@ -153,7 +153,7 @@ class _csc_base(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    tocsr.__doc__ = _sparray.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def nonzero(self):
         # CSC can't use _cs_matrix's .nonzero method because it

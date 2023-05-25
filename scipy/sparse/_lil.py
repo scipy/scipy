@@ -10,14 +10,14 @@ from bisect import bisect_left
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, sparray, isspmatrix
+from ._base import _spbase, sparray, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
-class _lil_base(_sparray, IndexMixin):
+class _lil_base(_spbase, IndexMixin):
     """Row-based LIst of Lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
@@ -82,7 +82,7 @@ class _lil_base(_sparray, IndexMixin):
     _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _sparray.__init__(self)
+        _spbase.__init__(self)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -169,8 +169,8 @@ class _lil_base(_sparray, IndexMixin):
     def count_nonzero(self):
         return sum(np.count_nonzero(rowvals) for rowvals in self.data)
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def __str__(self):
         val = ''
@@ -364,7 +364,7 @@ class _lil_base(_sparray, IndexMixin):
                                          0, N, 1, N)
         return new
 
-    copy.__doc__ = _sparray.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def reshape(self, *args, **kwargs):
         shape = check_shape(args, self.shape)
@@ -396,7 +396,7 @@ class _lil_base(_sparray, IndexMixin):
 
         return new
 
-    reshape.__doc__ = _sparray.reshape.__doc__
+    reshape.__doc__ = _spbase.reshape.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -421,7 +421,7 @@ class _lil_base(_sparray, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
     def toarray(self, order=None, out=None):
         d = self._process_toarray_args(order, out)
@@ -430,12 +430,12 @@ class _lil_base(_sparray, IndexMixin):
                 d[i, j] = self.data[i][pos]
         return d
 
-    toarray.__doc__ = _sparray.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False).tolil(copy=False)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def tolil(self, copy=False):
         if copy:
@@ -443,7 +443,7 @@ class _lil_base(_sparray, IndexMixin):
         else:
             return self
 
-    tolil.__doc__ = _sparray.tolil.__doc__
+    tolil.__doc__ = _spbase.tolil.__doc__
 
     def tocsr(self, copy=False):
         M, N = self.shape
@@ -477,7 +477,7 @@ class _lil_base(_sparray, IndexMixin):
         # init csr matrix
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = _sparray.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
 
 def _prepare_index_for_memoryview(i, j, x=None):

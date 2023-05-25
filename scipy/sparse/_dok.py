@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, sparray, isspmatrix
+from ._base import _spbase, sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
@@ -21,7 +21,7 @@ except ImportError:
                 or hasattr(x, 'next'))
 
 
-class _dok_base(_sparray, IndexMixin, dict):
+class _dok_base(_spbase, IndexMixin, dict):
     """
     Dictionary Of Keys based sparse matrix.
 
@@ -74,7 +74,7 @@ class _dok_base(_sparray, IndexMixin, dict):
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         dict.__init__(self)
-        _sparray.__init__(self)
+        _spbase.__init__(self)
 
         self.dtype = getdtype(dtype, default=float)
         if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
@@ -114,7 +114,7 @@ class _dok_base(_sparray, IndexMixin, dict):
     def _update(self, data):
         """An update method for dict data defined for direct access to
         `dok_array` data. Main purpose is to be used for effcient conversion
-        from other _sparray classes. Has no checking if `data` is valid."""
+        from other _spbase classes. Has no checking if `data` is valid."""
         return dict.update(self, data)
 
     def _getnnz(self, axis=None):
@@ -126,8 +126,8 @@ class _dok_base(_sparray, IndexMixin, dict):
     def count_nonzero(self):
         return sum(x != 0 for x in self.values())
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def __len__(self):
         return dict.__len__(self)
@@ -363,7 +363,7 @@ class _dok_base(_sparray, IndexMixin, dict):
                           for (left, right), val in self.items()))
         return new
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def conjtransp(self):
         """Return the conjugate transpose."""
@@ -378,7 +378,7 @@ class _dok_base(_sparray, IndexMixin, dict):
         dict.update(new, self)
         return new
 
-    copy.__doc__ = _sparray.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def tocoo(self, copy=False):
         if self.nnz == 0:
@@ -394,19 +394,19 @@ class _dok_base(_sparray, IndexMixin, dict):
         A.has_canonical_format = True
         return A
 
-    tocoo.__doc__ = _sparray.tocoo.__doc__
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def todok(self, copy=False):
         if copy:
             return self.copy()
         return self
 
-    todok.__doc__ = _sparray.todok.__doc__
+    todok.__doc__ = _spbase.todok.__doc__
 
     def tocsc(self, copy=False):
         return self.tocoo(copy=False).tocsc(copy=copy)
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -419,7 +419,7 @@ class _dok_base(_sparray, IndexMixin, dict):
                     del self[i, j]
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
 
 def isspmatrix_dok(x):

@@ -10,7 +10,7 @@ import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from ._base import isspmatrix, SparseEfficiencyWarning, _sparray, sparray
+from ._base import isspmatrix, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index,
@@ -237,7 +237,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return self.__class__((new_data, (new_row, new_col)),
                               shape=shape, copy=False)
 
-    reshape.__doc__ = _sparray.reshape.__doc__
+    reshape.__doc__ = _spbase.reshape.__doc__
 
     def _getnnz(self, axis=None):
         if axis is None:
@@ -263,7 +263,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             raise ValueError('axis out of bounds')
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
@@ -301,7 +301,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return self.__class__((self.data, (self.col, self.row)),
                               shape=(N, M), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def resize(self, *shape):
         shape = check_shape(shape)
@@ -317,10 +317,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `_sparray.toarray`."""
+        """See the docstring for `_spbase.toarray`."""
         B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
         if not fortran and not B.flags.c_contiguous:
@@ -420,7 +420,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             return self
 
-    tocoo.__doc__ = _sparray.tocoo.__doc__
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def todia(self, copy=False):
         self.sum_duplicates()
@@ -441,7 +441,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         return self._dia_container((data, diags), shape=self.shape)
 
-    todia.__doc__ = _sparray.todia.__doc__
+    todia.__doc__ = _spbase.todia.__doc__
 
     def todok(self, copy=False):
         self.sum_duplicates()
@@ -450,7 +450,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         return dok
 
-    todok.__doc__ = _sparray.todok.__doc__
+    todok.__doc__ = _spbase.todok.__doc__
 
     def diagonal(self, k=0):
         rows, cols = self.shape
