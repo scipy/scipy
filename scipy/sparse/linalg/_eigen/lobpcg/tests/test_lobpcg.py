@@ -372,16 +372,16 @@ def test_hermitian():
 
         if not gen:
             B = np.eye(s)
-            w, v = lobpcg(H, X, maxiter=50, verbosityLevel=1)
+            w, v = lobpcg(H, X, maxiter=50, verbosityLevel=0)
             # Also test mixing complex H with real B.
-            wb, _ = lobpcg(H, X, B, maxiter=50, verbosityLevel=1)
+            wb, _ = lobpcg(H, X, B, maxiter=50, verbosityLevel=0)
             assert_allclose(w, wb, rtol=1e-6)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
             B = B.astype(np.complex128) if db else B.astype(np.complex64)
-            w, v = lobpcg(H, X, B, maxiter=50, verbosityLevel=1)
+            w, v = lobpcg(H, X, B, maxiter=50, verbosityLevel=0)
             w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
@@ -456,14 +456,14 @@ MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
                                       sparse.coo_matrix])
+@pytest.mark.filterwarnings("ignore:Inplace")
 def test_dtypes(vdtype, mdtype, arr_type):
     """Test lobpcg in various dtypes.
     """
     rnd = np.random.RandomState(0)
     n = 12
     m = 2
-    vals = np.arange(1, n + 1)
-    A = arr_type(diags([vals], [0], (n, n)))
+    A = arr_type(np.diag([np.arange(1, n + 1)])
     A = A.astype(mdtype)
     X = rnd.random((n, m))
     X = X.astype(vdtype)
