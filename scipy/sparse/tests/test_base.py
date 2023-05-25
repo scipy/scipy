@@ -249,8 +249,12 @@ class _TestCommon:
         cls.dat = array([[1, 0, 0, 2], [3, 0, 1, 0], [0, 2, 0, 0]], 'd')
         cls.datsp = cls.spcreator(cls.dat)
 
-        # Some sparse and dense matrices with data for every supported
-        # dtype.
+        # set array/matrix testing mode for this class based on the class attribute
+        # Could use spcreator._is_array except that some test classes (e.g. TextCSR)
+        # use a method to filter warnings produced when creating the sparse object.
+        cls._is_array = cls.datsp._is_array
+
+        # Some sparse and dense matrices with data for every supported dtype.
         # This set union is a workaround for numpy#6295, which means that
         # two np.int64 dtypes don't hash to the same value.
         cls.checked_dtypes = set(supported_dtypes).union(cls.math_dtypes)
@@ -3638,7 +3642,6 @@ class TestCSR(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csr_matrix is expensive")
             return csr_matrix(*args, **kwargs)
-    spcreator._is_array = csr_matrix._is_array
     math_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
@@ -3892,7 +3895,6 @@ class TestCSC(sparse_test_class()):
             sup.filter(SparseEfficiencyWarning,
                        "Changing the sparsity structure of a csc_matrix is expensive")
             return csc_matrix(*args, **kwargs)
-    spcreator._is_array = csc_matrix._is_array
     math_dtypes = [np.bool_, np.int_, np.float_, np.complex_]
 
     def test_constructor1(self):
@@ -4732,7 +4734,6 @@ class _NonCanonicalMixin:
         # TODO check that NC has duplicates (which are not explicit zeros)
 
         return NC
-    spcreator._is_array = super().spcreator._is_array
 
     @pytest.mark.skip(reason='bool(matrix) counts explicit zeros')
     def test_bool(self):
