@@ -3444,11 +3444,12 @@ class _TestMinMax:
 
         X_nan_maximum = X.nanmax()
         assert np.isscalar(X_nan_maximum)
-        assert X_nan_maximum = np.nanmax(X)
+        assert X_nan_maximum == np.nanmax(D)
 
         X_nan_minimum = X.nanmin()
         assert np.isscalar(X_nan_minimum)
-        assert X_nan_minimum = np.nanmin(X)
+        assert X_nan_minimum == np.nanmin(D)
+
         axes = [-2, -1, 0, 1]
         for axis in axes:
             X_nan_maxima = X.nanmax(axis=axis)
