@@ -3442,11 +3442,23 @@ class _TestMinMax:
         D[1, 4] = np.nan
         X = self.spmatrix(D)
 
+        X_nan_maximum = X.nanmax()
+        assert np.isscalar(X_nan_maximum)
+        assert X_nan_maximum = np.nanmax(X)
+
+        X_nan_minimum = X.nanmin()
+        assert np.isscalar(X_nan_minimum)
+        assert X_nan_minimum = np.nanmin(X)
         axes = [-2, -1, 0, 1]
         for axis in axes:
-            assert_allclose(X.nanmax(axis=axis).toarray(),
+            X_nan_maxima = X.nanmax(axis=axis)
+            assert isinstance(X_nan_maxima, coo_matrix)
+            assert_allclose(X_nan_maxima.toarray(),
                             np.nanmax(D, axis=axis))
-            assert_allclose(X.nanmin(axis=axis).toarray(),
+
+            X_nan_minima = X.nanmin(axis=axis)
+            assert isinstance(X_nan_minima, coo_matrix)
+            assert_allclose(X_nan_minima.toarray(),
                             np.nanmin(D, axis=axis))
 
     def test_minmax_invalid_params(self):

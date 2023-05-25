@@ -369,7 +369,7 @@ class _minmax_mixin:
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
-            Axis along which the sum is computed. The default is to
+            Axis along which the maximum is computed. The default is to
             compute the maximum over all the matrix elements, returning
             a scalar (i.e., `axis` = `None`).
 
@@ -407,7 +407,7 @@ class _minmax_mixin:
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
-            Axis along which the sum is computed. The default is to
+            Axis along which the minimum is computed. The default is to
             compute the minimum over all the matrix elements, returning
             a scalar (i.e., `axis` = `None`).
 
