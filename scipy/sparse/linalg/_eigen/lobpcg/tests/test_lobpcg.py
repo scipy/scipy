@@ -19,6 +19,13 @@ from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
+INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
+REAL_DTYPES = {np.half, np.single, np.double, np.longdouble}
+COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+# use sorted tuple to ensure fixed order of tests
+VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+
 
 def sign_align(A, B):
     """Align signs of columns of A match those of B: column-wise remove
@@ -92,9 +99,9 @@ def test_MikotaPair():
 
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
-@pytest.mark.parametrize("Vdtype", (float, np.float32))
-@pytest.mark.parametrize("Bdtype", (float, np.float32))
-@pytest.mark.parametrize("BVdtype", (float, np.float32))
+@pytest.mark.parametrize("Vdtype", VDTYPES)
+@pytest.mark.parametrize("Bdtype", MDTYPES)
+@pytest.mark.parametrize("BVdtype", VDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
     The function '_b_orthonormalize' is key in LOBPCG but may
@@ -441,14 +448,6 @@ def test_tolerance_float32():
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1.25e-5, maxiter=50, verbosityLevel=0)
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
-
-
-INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
-REAL_DTYPES = {np.half, np.single, np.double, np.longdouble}
-COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
-# use sorted tuple to ensure fixed order of tests
-VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
-MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 
 
 @pytest.mark.parametrize("vdtype", VDTYPES)
