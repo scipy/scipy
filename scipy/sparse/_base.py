@@ -7,7 +7,7 @@ from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis,)
 
-__all__ = ['isspmatrix', 'issparse',
+__all__ = ['isspmatrix', 'issparse', 'issparray', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -1441,8 +1441,13 @@ settable. To change the array shape, use `X.reshape` instead.
     ## End 1.13.0 deprecated methods
 
 
-def issparse(x):
-    """Is x of a sparse array type?
+class sparray:
+    """A namespace class to separate sparray from spmatrix"""
+    pass
+
+
+def issparray(x):
+    """Is x a sparse array type?
 
     Parameters
     ----------
@@ -1456,7 +1461,42 @@ def issparse(x):
 
     Notes
     -----
-    issparse and isspmatrix are aliases for the same function.
+    Sparse matrix is not an array type so return False
+    numpy arrays are not sparse so return False
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_array, issparse
+    >>> issparse(csr_array([[5]]))
+    True
+
+    >>> from scipy.sparse import issparse
+    >>> issparse(5)
+    False
+    """
+    try:
+        return x._is_array
+    except Exception:
+        return False
+    return isinstance(x, sparray)
+
+
+def issparse(x):
+    """Is x of a sparse type?
+
+    Parameters
+    ----------
+    x
+        object to check for being sparse type
+
+    Returns
+    -------
+    bool
+        True if x is a sparse type, False otherwise
+
+    Notes
+    -----
+    issparse reports True for any sparse array or sparse matrix
 
     Examples
     --------

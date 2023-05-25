@@ -2,7 +2,8 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr']
+__all__ = ['bsr_array', 'bsr_matrix', 'isspmatrix_bsr',
+           'is_bsr', 'is_bsr_array', 'is_bsr_matrix']
 
 from warnings import warn
 
@@ -11,7 +12,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import isspmatrix, _formats, _sparray, sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        check_shape)
 from . import _sparsetools
@@ -20,7 +21,7 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_tocsr)
 
 
-class bsr_array(_cs_matrix, _minmax_mixin):
+class _bsr_array(_cs_matrix, _minmax_mixin):
     """Block Sparse Row format sparse array.
 
     This can be instantiated in several ways:
@@ -722,7 +723,22 @@ def isspmatrix_bsr(x):
     return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
 
 
-class bsr_matrix(spmatrix, bsr_array):
+def is_bsr(x):
+    return x._format == "bsr"
+    return isinstance(x, _bsr_array)
+
+def is_bsr_array(x):
+    return x._format == "bsr" and x._is_array
+    return isinstance(x, bsr_array)
+
+def is_bsr_matrix(x):
+    return x._format == "bsr" and not x._is_array
+    return isinstance(x, bsr_matrix)
+
+class bsr_array(_bsr_array, sparray):
     pass
 
-bsr_matrix.__doc__ = _array_doc_to_matrix(bsr_array.__doc__)
+class bsr_matrix(spmatrix, _bsr_array):
+    pass
+
+bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_array.__doc__)

@@ -2,7 +2,8 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo']
+__all__ = ['coo_array', 'coo_matrix', 'isspmatrix_coo',
+           'is_coo', 'is_coo_array', 'is_coo_matrix']
 
 from warnings import warn
 
@@ -10,7 +11,7 @@ import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from ._base import isspmatrix, SparseEfficiencyWarning, _sparray
+from ._base import isspmatrix, SparseEfficiencyWarning, _sparray, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index,
@@ -19,7 +20,7 @@ from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
 import operator
 
 
-class coo_array(_data_matrix, _minmax_mixin):
+class _coo_array(_data_matrix, _minmax_mixin):
     """
     A sparse matrix in COOrdinate format.
 
@@ -620,7 +621,22 @@ def isspmatrix_coo(x):
     return isinstance(x, coo_matrix) or isinstance(x, coo_array)
 
 
-class coo_matrix(spmatrix, coo_array):
+def is_coo(x):
+    return x._format == "coo"
+    return isinstance(x, _coo_array)
+
+def is_coo_array(x):
+    return x._format == "coo" and x._is_array
+    return isinstance(x, coo_array)
+
+def is_coo_matrix(x):
+    return x._format == "coo" and not x._is_array
+    return isinstance(x, coo_matrix)
+
+class coo_array(_coo_array, sparray):
     pass
 
-coo_matrix.__doc__ = _array_doc_to_matrix(coo_array.__doc__)
+class coo_matrix(spmatrix, _coo_array):
+    pass
+
+coo_matrix.__doc__ = _array_doc_to_matrix(_coo_array.__doc__)

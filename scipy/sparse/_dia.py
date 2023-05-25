@@ -2,18 +2,19 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
+__all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia',
+           'is_dia', 'is_dia_array', 'is_dia_matrix']
 
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import isspmatrix, _formats, _sparray, sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
 
 
-class dia_array(_data_matrix):
+class _dia_array(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
     This can be instantiated in several ways:
@@ -468,8 +469,22 @@ def isspmatrix_dia(x):
     """
     return isinstance(x, dia_matrix) or isinstance(x, dia_array)
 
+def is_dia(x):
+    return x._format == "dia"
+    return isinstance(x, _dia_array)
 
-class dia_matrix(spmatrix, dia_array):
+def is_dia_array(x):
+    return x._format == "dia" and x._is_array
+    return isinstance(x, dia_array)
+
+def is_dia_matrix(x):
+    return x._format == "dia" and not x._is_array
+    return isinstance(x, dia_matrix)
+
+class dia_array(_dia_array, sparray):
     pass
 
-dia_matrix.__doc__ = _array_doc_to_matrix(dia_array.__doc__)
+class dia_matrix(spmatrix, _dia_array):
+    pass
+
+dia_matrix.__doc__ = _array_doc_to_matrix(_dia_array.__doc__)

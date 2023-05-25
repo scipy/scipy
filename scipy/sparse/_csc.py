@@ -1,20 +1,21 @@
 """Compressed Sparse Column matrix format"""
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
+__all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc',
+           'is_csc', 'is_csc_array', 'is_csc_matrix']
 
 
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray
+from ._base import _sparray, sparray
 from ._sparsetools import csc_tocsr, expandptr
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
 
 
-class csc_array(_cs_matrix):
+class _csc_array(_cs_matrix):
     """
     Compressed Sparse Column matrix
 
@@ -259,8 +260,22 @@ def isspmatrix_csc(x):
     """
     return isinstance(x, csc_matrix) or isinstance(x, csc_array)
 
+def is_csc(x):
+    return x._format == "csc"
+    return isinstance(x, _csc_array)
 
-class csc_matrix(spmatrix, csc_array):
+def is_csc_array(x):
+    return x._format == "csc" and x._is_array
+    return isinstance(x, csc_array)
+
+def is_csc_matrix(x):
+    return x._format == "csc" and not x._is_array
+    return isinstance(x, csc_matrix)
+
+class csc_array(_csc_array, sparray):
     pass
 
-csc_matrix.__doc__ = _array_doc_to_matrix(csc_array.__doc__)
+class csc_matrix(spmatrix, _csc_array):
+    pass
+
+csc_matrix.__doc__ = _array_doc_to_matrix(_csc_array.__doc__)

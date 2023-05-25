@@ -3,21 +3,22 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
+__all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil',
+           'is_lil', 'is_lil_array', 'is_lil_matrix']
 
 from bisect import bisect_left
 
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, isspmatrix
+from ._base import _sparray, sparray, isspmatrix
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape, check_reshape_kwargs)
 from . import _csparsetools
 
 
-class lil_array(_sparray, IndexMixin):
+class _lil_array(_sparray, IndexMixin):
     """Row-based LIst of Lists sparse matrix
 
     This is a structure for constructing sparse matrices incrementally.
@@ -546,8 +547,22 @@ def isspmatrix_lil(x):
     """
     return isinstance(x, lil_matrix) or isinstance(x, lil_array)
 
+def is_lil(x):
+    return x._format == "lil"
+    return isinstance(x, _lil_array)
 
-class lil_matrix(spmatrix, lil_array):
+def is_lil_array(x):
+    return x._format == "lil" and x._is_array
+    return isinstance(x, lil_array)
+
+def is_lil_matrix(x):
+    return x._format == "lil" and not x._is_array
+    return isinstance(x, lil_matrix)
+
+class lil_array(_lil_array, sparray):
     pass
 
-lil_matrix.__doc__ = _array_doc_to_matrix(lil_array.__doc__)
+class lil_matrix(spmatrix, _lil_array):
+    pass
+
+lil_matrix.__doc__ = _array_doc_to_matrix(_lil_array.__doc__)

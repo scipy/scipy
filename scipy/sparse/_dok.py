@@ -2,13 +2,14 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
+__all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok',
+           'is_dok', 'is_dok_array', 'is_dok_matrix']
 
 import itertools
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray, isspmatrix
+from ._base import _sparray, sparray, isspmatrix
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
@@ -21,7 +22,7 @@ except ImportError:
                 or hasattr(x, 'next'))
 
 
-class dok_array(_sparray, IndexMixin, dict):
+class _dok_array(_sparray, IndexMixin, dict):
     """
     Dictionary Of Keys based sparse matrix.
 
@@ -447,8 +448,22 @@ def isspmatrix_dok(x):
     """
     return isinstance(x, dok_matrix) or isinstance(x, dok_array)
 
+def is_dok(x):
+    return x._format == "dok"
+    return isinstance(x, _dok_array)
 
-class dok_matrix(spmatrix, dok_array):
+def is_dok_array(x):
+    return x._format == "dok" and x._is_array
+    return isinstance(x, dok_array)
+
+def is_dok_matrix(x):
+    return x._format == "dok" and not x._is_array
+    return isinstance(x, dok_matrix)
+
+class dok_array(_dok_array, sparray):
+    pass
+
+class dok_matrix(spmatrix, _dok_array):
     def set_shape(self, shape):
         new_matrix = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_matrix.__dict__
@@ -461,4 +476,4 @@ class dok_matrix(spmatrix, dok_array):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-dok_matrix.__doc__ = _array_doc_to_matrix(dok_array.__doc__)
+dok_matrix.__doc__ = _array_doc_to_matrix(_dok_array.__doc__)

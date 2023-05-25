@@ -2,12 +2,13 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
+__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr',
+           'is_csr', 'is_csr_array', 'is_csr_matrix']
 
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray
+from ._base import _sparray, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
 from ._sputils import upcast
@@ -15,7 +16,7 @@ from ._sputils import upcast
 from ._compressed import _cs_matrix
 
 
-class csr_array(_cs_matrix):
+class _csr_array(_cs_matrix):
     """
     Compressed Sparse Row matrix
 
@@ -356,8 +357,23 @@ def isspmatrix_csr(x):
     """
     return isinstance(x, csr_matrix) or isinstance(x, csr_array)
 
+def is_csr(x):
+    print(x._format)
+    return x._format == "csr"
+    return isinstance(x, _csr_array)
 
-class csr_matrix(spmatrix, csr_array):
+def is_csr_array(x):
+    return x._format == "csr" and x._is_array
+    return isinstance(x, csr_array)
+
+def is_csr_matrix(x):
+    return x._format == "csr" and not x._is_array
+    return isinstance(x, csr_matrix)
+
+class csr_array(_csr_array, sparray):
     pass
 
-csr_matrix.__doc__ = _array_doc_to_matrix(csr_array.__doc__)
+class csr_matrix(spmatrix, _csr_array):
+    pass
+
+csr_matrix.__doc__ = _array_doc_to_matrix(_csr_array.__doc__)
