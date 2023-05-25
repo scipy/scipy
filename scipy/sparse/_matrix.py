@@ -81,17 +81,18 @@ class spmatrix:
     ## Backward compatibility
 
     def set_shape(self, shape):
-        """See `reshape`."""
+        """Set the shape of the matrix in-place"""
         # Make sure copy is False since this is in place
         # Make sure format is unchanged because we are doing a __dict__ swap
         new_self = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_self.__dict__
 
     def get_shape(self):
-        """Get shape of a sparse array."""
+        """Get the shape of the matrix"""
         return self._shape
 
-    shape = property(fget=get_shape, fset=set_shape)
+    shape = property(fget=get_shape, fset=set_shape,
+                     doc="Shape of the matrix")
 
     def asfptype(self):
         """Upcast array to a floating point format (if necessary)"""
