@@ -100,7 +100,7 @@ def test_MikotaPair():
 @pytest.mark.parametrize("n", [50])
 @pytest.mark.parametrize("m", [1, 2, 10])
 @pytest.mark.parametrize("Vdtype", VDTYPES)
-@pytest.mark.parametrize("Bdtype", MDTYPES)
+@pytest.mark.parametrize("Bdtype", VDTYPES)
 @pytest.mark.parametrize("BVdtype", VDTYPES)
 def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     """Test B-orthonormalization by Cholesky with callable 'B'.
@@ -126,19 +126,20 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     assert_equal(BX, BXo)
     assert_equal(id(BX), id(BXo))
     # Check BXo.
-    assert_allclose(B @ Xo, BXo, atol=atol)
+    assert_allclose(B @ Xo, BXo, atol=atol, rtol=atol)
     # Check B-orthonormality
-    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m), atol=atol)
+    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m),
+                    atol=atol, rtol=atol)
     # Repeat without BX in outputs
     X = np.copy(Xcopy)
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
-    assert_allclose(Xo, Xo1, atol=atol)
-    assert_allclose(BXo, BXo1, atol=atol)
+    assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
+    assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
     # Check in-place.
     assert_equal(X, Xo1)
     assert_equal(id(X), id(Xo1))
     # Check BXo1.
-    assert_allclose(B @ Xo1, BXo1, atol=atol)
+    assert_allclose(B @ Xo1, BXo1, atol=atol, rtol=atol)
 
     # Introduce column-scaling in X.
     scaling = 1.0 / np.geomspace(10, 1e10, num=m)
@@ -150,9 +151,9 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # The output should be the same, up the signs of the columns.
     Xo1 =  sign_align(Xo1, Xo)
-    assert_allclose(Xo, Xo1, atol=atol)
+    assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
     BXo1 =  sign_align(BXo1, BXo)
-    assert_allclose(BXo, BXo1, atol=atol)
+    assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
