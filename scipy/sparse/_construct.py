@@ -1,10 +1,11 @@
-"""Functions to construct sparse matrices
+"""Functions to construct sparse matrices and arrays
 """
 
 __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
+           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
+           'diags_array']
 
 import numbers
 from functools import partial
@@ -14,13 +15,21 @@ from scipy._lib._util import check_random_state, rng_integers
 from ._sputils import upcast, get_index_dtype, isscalarlike
 
 from ._sparsetools import csr_hstack
-from ._csr import csr_matrix
-from ._csc import csc_matrix
 from ._bsr import bsr_matrix
 from ._coo import coo_matrix
-from ._dia import dia_matrix
+from ._csc import csc_matrix
+from ._csr import csr_matrix
+from ._dia import dia_matrix, dia_array
+from ._dok import dok_matrix
+from ._lil import lil_matrix
 
 from ._base import issparse
+from ._matrix import _array_doc_to_matrix
+
+_fmt_to_spmatrix = {
+    "bsr": bsr_matrix, "coo": coo_matrix, "csc": csc_matrix, "csr": csr_matrix,
+    "dia": dia_matrix, "dok": dok_matrix, "lil": lil_matrix,
+}
 
 
 def spdiags(data, diags, m=None, n=None, format=None):
@@ -70,14 +79,14 @@ def spdiags(data, diags, m=None, n=None, format=None):
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
-def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
+def diags_array(diagonals, offsets=0, shape=None, format=None, dtype=None):
     """
-    Construct a sparse matrix from diagonals.
+    Construct a sparse array from diagonals.
 
     Parameters
     ----------
     diagonals : sequence of array_like
-        Sequence of arrays containing the matrix diagonals,
+        Sequence of arrays containing the array diagonals,
         corresponding to `offsets`.
     offsets : sequence of int or an int, optional
         Diagonals to set:
@@ -85,24 +94,17 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
           - k > 0  the kth upper diagonal
           - k < 0  the kth lower diagonal
     shape : tuple of int, optional
-        Shape of the result. If omitted, a square matrix large enough
+        Shape of the result. If omitted, a square array large enough
         to contain the diagonals is returned.
     format : {"dia", "csr", "csc", "lil", ...}, optional
         Matrix format of the result. By default (format=None) an
-        appropriate sparse matrix format is returned. This choice is
+        appropriate sparse array format is returned. This choice is
         subject to change.
     dtype : dtype, optional
-        Data type of the matrix.
-
-    See Also
-    --------
-    spdiags : construct matrix from diagonals
+        Data type of the array.
 
     Notes
     -----
-    This function differs from `spdiags` in the way it handles
-    off-diagonals.
-
     The result from `diags` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
@@ -115,9 +117,9 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import diags
+    >>> from scipy.sparse import diags_array
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
-    >>> diags(diagonals, [0, -1, 2]).toarray()
+    >>> diags_array(diagonals, [0, -1, 2]).toarray()
     array([[1, 0, 1, 0],
            [1, 2, 0, 2],
            [0, 2, 3, 0],
@@ -126,7 +128,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags_array([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -136,7 +138,7 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags([1, 2, 3], 1).toarray()
+    >>> diags_array([1, 2, 3], 1).toarray()
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
@@ -189,11 +191,17 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
             if len(diagonal) != length and len(diagonal) != 1:
                 raise ValueError(
                     "Diagonal length (index %d: %d at offset %d) does not "
-                    "agree with matrix size (%d, %d)." % (
+                    "agree with array size (%d, %d)." % (
                     j, len(diagonal), offset, m, n)) from e
             raise
 
-    return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
+    return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
+
+
+def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
+    A = diags_array(diagonals, offsets, shape, format, dtype)
+    return _fmt_to_spmatrix[A.format](A)
+diags.__doc__ = _array_doc_to_matrix(diags_array.__doc__)
 
 
 def identity(n, dtype='d', format=None):
