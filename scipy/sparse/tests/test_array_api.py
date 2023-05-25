@@ -404,64 +404,107 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
 
 
 def test_default_is_matrix_diags():
-    m = scipy.sparse.diags([0, 1, 2])
+    inp = [0, 1, 2]
+    m = scipy.sparse.diags(inp)
     assert not m._is_array
+
+    a = scipy.sparse.array.diags(inp)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_default_is_matrix_eye():
     m = scipy.sparse.eye(3)
     assert not m._is_array
 
+    a = scipy.sparse.array.eye(3)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
+
 
 def test_default_is_matrix_spdiags():
-    m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
+    inp = ([1, 2, 3], 0, 3, 3)
+    m = scipy.sparse.spdiags(*inp)
     assert not m._is_array
+
+    a = scipy.sparse.array.spdiags(*inp)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_default_is_matrix_identity():
     m = scipy.sparse.identity(3)
     assert not m._is_array
 
+    a = scipy.sparse.array.identity(3)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
+
 
 def test_default_is_matrix_kron_dense():
-    m = scipy.sparse.kron(
-        np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
-    )
+    inp = (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]))
+    m = scipy.sparse.kron(*inp)
     assert not m._is_array
+
+    a = scipy.sparse.array.kron(*inp)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_default_is_matrix_kron_sparse():
-    m = scipy.sparse.kron(
-        np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
-    )
+    inp = (np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]]))
+    m = scipy.sparse.kron(*inp)
     assert not m._is_array
+
+    a = scipy.sparse.array.kron(*inp)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_default_is_matrix_kronsum():
-    m = scipy.sparse.kronsum(
-        np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
-    )
+    inp = (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]))
+    m = scipy.sparse.kronsum(*inp)
     assert not m._is_array
+
+    a = scipy.sparse.array.kronsum(*inp)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_default_is_matrix_random():
     m = scipy.sparse.random(3, 3)
     assert not m._is_array
 
+    a = scipy.sparse.array.random(3, 3)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
+
 
 def test_default_is_matrix_rand():
     m = scipy.sparse.rand(3, 3)
     assert not m._is_array
 
+    a = scipy.sparse.array.rand(3, 3)
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
-@pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
+
+@pytest.mark.parametrize("fn", ("hstack", "vstack"))
 def test_default_is_matrix_stacks(fn):
     """Same idea as `test_default_construction_fn_matrices`, but for the
     stacking creation functions."""
+    # Inputs
     A = scipy.sparse.coo_matrix(np.eye(2))
     B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
-    m = fn([A, B])
+
+    # Matrix and array version of creation function
+    mat_fn = getattr(scipy.sparse, fn)
+    ary_fn = getattr(scipy.sparse.array, fn)
+
+    m, a = mat_fn([A, B]), ary_fn([A, B])
     assert not m._is_array
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
 
 def test_blocks_default_construction_fn_matrices():
@@ -474,7 +517,13 @@ def test_blocks_default_construction_fn_matrices():
     # block diag
     m = scipy.sparse.block_diag((A, B, C))
     assert not m._is_array
+    a = scipy.sparse.array.block_diag((A, B, C))
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
 
     # bmat
     m = scipy.sparse.bmat([[A, None], [None, C]])
     assert not m._is_array
+    a = scipy.sparse.array.bmat([[A, None], [None, C]])
+    assert a._is_array
+    npt.assert_array_equal(m.toarray(), a.toarray())
