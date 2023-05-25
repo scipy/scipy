@@ -2389,6 +2389,7 @@ def test_binary_hit_or_miss_input_as_output():
 
 
 def test_distance_transform_cdt_invalid_metric():
-    with pytest.raises(ValueError):
+    msg = 'invalid metric provided'
+    with pytest.raises(ValueError, match=msg):
         ndimage.distance_transform_cdt(np.ones((5, 5)),
                                        metric="garbage")
