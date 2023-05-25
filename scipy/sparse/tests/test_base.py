@@ -2155,15 +2155,18 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        # TODO make this work for sparray
-        if not b._is_array:
+        x = a.copy()
+        y = a.copy()
+        if b._is_array:
+            assert_raises(ValueError, operator.imul, x, b.T)
+            x = x * a
+            y *= b
+        else:
             # This is matrix product, from __rmul__
             assert_raises(ValueError, operator.imul, x, b)
-            x = a.copy()
-            y = a.copy()
             x = x.dot(a.T)
             y *= b.T
-            assert_array_equal(x, y)
+        assert_array_equal(x, y)
 
         # Matrix (non-elementwise) floor division is not defined
         assert_raises(TypeError, operator.ifloordiv, x, b)
