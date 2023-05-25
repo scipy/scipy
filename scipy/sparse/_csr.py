@@ -131,7 +131,7 @@ class csr_array(_cs_matrix):
            [0, 1, 1, 1]])
 
     """
-    format = 'csr'
+    _format = 'csr'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:

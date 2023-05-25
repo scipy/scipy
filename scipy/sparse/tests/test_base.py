@@ -2587,7 +2587,6 @@ class _TestSlicing:
         with pytest.raises(IndexError,
                            match='an index can only have a single ellipsis'):
             a[..., ...]
-
         with pytest.raises(IndexError,
                            match='an index can only have a single ellipsis'):
             a[..., 1, ...]

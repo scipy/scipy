@@ -1,13 +1,10 @@
 """Indexing mixin for sparse matrix classes.
 """
 import numpy as np
+from warnings import warn
 from ._sputils import isintlike
 
-try:
-    INT_TYPES = (int, long, np.integer)
-except NameError:
-    # long is not defined in Python3
-    INT_TYPES = (int, np.integer)
+INT_TYPES = (int, np.integer)
 
 
 def _broadcast_arrays(a, b):
@@ -317,7 +314,7 @@ def _check_ellipsis(index):
 
     if not isinstance(index, tuple):
         return index
-    
+
     # Find any Ellipsis objects.
     ellipsis_indices = [i for i, v in enumerate(index) if v is Ellipsis]
     if not ellipsis_indices:
