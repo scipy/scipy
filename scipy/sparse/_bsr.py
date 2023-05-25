@@ -722,6 +722,7 @@ def isspmatrix_bsr(x):
     return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
 
 
+# This namespace class separates array from matrix with ininstance
 class bsr_array(_bsr_array, sparray):
     pass
 

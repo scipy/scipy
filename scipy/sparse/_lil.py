@@ -546,6 +546,8 @@ def isspmatrix_lil(x):
     """
     return isinstance(x, lil_matrix) or isinstance(x, lil_array)
 
+
+# This namespace class separates array from matrix with ininstance
 class lil_array(_lil_array, sparray):
     pass
 

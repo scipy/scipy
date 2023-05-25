@@ -447,6 +447,8 @@ def isspmatrix_dok(x):
     """
     return isinstance(x, dok_matrix) or isinstance(x, dok_array)
 
+
+# This namespace class separates array from matrix with ininstance
 class dok_array(_dok_array, sparray):
     pass
 
