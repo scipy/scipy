@@ -51,6 +51,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "signal",
     "signal.windows",
     "sparse",
+    "sparse.array",
     "sparse.linalg",
     "sparse.csgraph",
     "spatial",
