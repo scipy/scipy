@@ -1372,6 +1372,11 @@ settable. To change the array shape, use `X.reshape` instead.
     def getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0. Use `X.nnz`
+           instead.  The `axis` argument will no longer be supported;
+           please let us know if you still need this functionality.
+
         Parameters
         ----------
         axis : None, 0, or 1
@@ -1381,11 +1386,6 @@ settable. To change the array shape, use `X.reshape` instead.
         See also
         --------
         count_nonzero : Number of non-zero entries
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.13.0. Use `X.nnz`
-           instead.  The `axis` argument will no longer be supported;
-           please let us know if you still need this functionality.
         """
         msg = (
             "`getnnz` is deprecated and will be removed in v1.13.0; "
