@@ -595,7 +595,7 @@ class coo_array(_data_matrix, _minmax_mixin):
 
 
 def isspmatrix_coo(x):
-    """Is x of coo_array type?
+    """Is `x` of coo_matrix type?
 
     Parameters
     ----------
@@ -605,19 +605,19 @@ def isspmatrix_coo(x):
     Returns
     -------
     bool
-        True if x is a coo matrix, False otherwise
+        True if `x` is a coo matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import coo_array, isspmatrix_coo
-    >>> isspmatrix_coo(coo_array([[5]]))
+    >>> from scipy.sparse import coo_array, coo_matrix, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import coo_array, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_array([[5]]))
+    False
     >>> isspmatrix_coo(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, coo_matrix) or isinstance(x, coo_array)
+    return isinstance(x, coo_matrix)
 
 
 class coo_matrix(spmatrix, coo_array):

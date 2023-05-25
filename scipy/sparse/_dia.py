@@ -445,7 +445,7 @@ class dia_array(_data_matrix):
 
 
 def isspmatrix_dia(x):
-    """Is x of dia_array type?
+    """Is `x` of dia_matrix type?
 
     Parameters
     ----------
@@ -455,19 +455,19 @@ def isspmatrix_dia(x):
     Returns
     -------
     bool
-        True if x is a dia matrix, False otherwise
+        True if `x` is a dia matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import dia_array, isspmatrix_dia
-    >>> isspmatrix_dia(dia_array([[5]]))
+    >>> from scipy.sparse import dia_array, dia_matrix, coo_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(dia_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import dia_array, csr_matrix, isspmatrix_dia
-    >>> isspmatrix_dia(csr_matrix([[5]]))
+    >>> isspmatrix_dia(dia_array([[5]]))
+    False
+    >>> isspmatrix_dia(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, dia_matrix) or isinstance(x, dia_array)
+    return isinstance(x, dia_matrix)
 
 
 class dia_matrix(spmatrix, dia_array):

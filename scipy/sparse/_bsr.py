@@ -695,7 +695,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
 
 
 def isspmatrix_bsr(x):
-    """Is x of a bsr_array type?
+    """Is `x` of a bsr_matrix type?
 
     Parameters
     ----------
@@ -705,19 +705,19 @@ def isspmatrix_bsr(x):
     Returns
     -------
     bool
-        True if x is a bsr matrix, False otherwise
+        True if `x` is a bsr matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import bsr_array, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_array([[5]]))
+    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_matrix([[5]])
     True
-
-    >>> from scipy.sparse import bsr_array, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_array([[5]]))
+    False
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
+    return isinstance(x, bsr_matrix)
 
 
 class bsr_matrix(spmatrix, bsr_array):

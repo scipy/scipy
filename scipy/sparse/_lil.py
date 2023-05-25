@@ -522,7 +522,7 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 
 def isspmatrix_lil(x):
-    """Is x of lil_array type?
+    """Is `x` of lil_matrix type?
 
     Parameters
     ----------
@@ -532,19 +532,19 @@ def isspmatrix_lil(x):
     Returns
     -------
     bool
-        True if x is a lil matrix, False otherwise
+        True if `x` is a lil matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import lil_array, isspmatrix_lil
-    >>> isspmatrix_lil(lil_array([[5]]))
+    >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
+    >>> isspmatrix_lil(lil_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import lil_array, csr_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(csr_matrix([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))
+    False
+    >>> isspmatrix_lil(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, lil_matrix) or isinstance(x, lil_array)
+    return isinstance(x, lil_matrix)
 
 
 class lil_matrix(spmatrix, lil_array):

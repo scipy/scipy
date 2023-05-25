@@ -425,7 +425,7 @@ class dok_array(_sparray, IndexMixin, dict):
 
 
 def isspmatrix_dok(x):
-    """Is x of dok_array type?
+    """Is `x` of dok_array type?
 
     Parameters
     ----------
@@ -435,19 +435,19 @@ def isspmatrix_dok(x):
     Returns
     -------
     bool
-        True if x is a dok matrix, False otherwise
+        True if `x` is a dok matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import dok_array, isspmatrix_dok
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(dok_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import dok_array, csr_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(csr_matrix([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))
+    False
+    >>> isspmatrix_dok(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, dok_matrix) or isinstance(x, dok_array)
+    return isinstance(x, dok_matrix)
 
 
 class dok_matrix(spmatrix, dok_array):
