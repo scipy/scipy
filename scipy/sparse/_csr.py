@@ -75,6 +75,10 @@ class csr_array(_cs_matrix):
       - slow column slicing operations (consider CSC)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
+    Canonical Format
+        - In the canonical format, CSR matrices have indices sorted per row, 
+          and cannot contain duplicate entries.
+
     Examples
     --------
 

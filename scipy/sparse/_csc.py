@@ -76,7 +76,9 @@ class csc_array(_cs_matrix):
       - slow row slicing operations (consider CSR)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
-
+    Canonical format
+      - In the canonical format, CSC matrices have indices sorted per row, 
+        and cannot contain duplicate entries.
     Examples
     --------
 

@@ -86,6 +86,18 @@ class coo_array(_data_matrix, _minmax_mixin):
           entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
+    Canonical COOrdinate format
+        - In order to perform fast operations on COO format arrays, it is
+          useful to enforce a canonical form.  There are three rules for this
+          form:
+            1. Indices are sorted by row, then column
+            2. No duplicate entries for (i,j) allowed
+        - You can tell if an array is in canonical COO form by checking
+          the property ``array.has_canonical_format``
+        - For arrays which are not in canonical format, the indices may not be sorted,
+          and there may be duplicated values for any (i, j) location. Canoncial format
+          COO arrays MAY have explicit zeros.
+        
     Examples
     --------
 
