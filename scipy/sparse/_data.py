@@ -358,6 +358,82 @@ class _minmax_mixin:
         """
         return self._min_or_max(axis, out, np.minimum)
 
+    def nanmax(self, axis=None, out=None):
+        """
+        Return the maximum of the matrix or maximum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the sum is computed. The default is to
+            compute the maximum over all the matrix elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except
+            for the default value, as this argument is not used.
+
+        Returns
+        -------
+        amax : coo_matrix or scalar
+            Maximum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmin : The minimum value of a sparse matrix along a given axis,
+                 ignoring NaNs.
+        max : The maximum value of a sparse matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmax : NumPy's implementation of 'nanmax'.
+
+        """
+        return self._min_or_max(axis, out, np.fmax)
+
+    def nanmin(self, axis=None, out=None):
+        """
+        Return the minimum of the matrix or minimum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the sum is computed. The default is to
+            compute the minimum over all the matrix elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+        amin : coo_matrix or scalar
+            Minimum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmax : The maximum value of a sparse matrix along a given axis,
+                 ignoring NaNs.
+        min : The minimum value of a sparse matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmin : NumPy's implementation of 'nanmin'.
+
+        """
+        return self._min_or_max(axis, out, np.fmin)
+
     def argmax(self, axis=None, out=None):
         """Return indices of maximum elements along an axis.
 
