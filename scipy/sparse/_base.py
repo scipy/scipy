@@ -282,7 +282,7 @@ class _spbase:
                                   self.__class__.__name__)
 
     @property
-    def nnz(self):
+    def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
         See also
@@ -292,7 +292,8 @@ class _spbase:
         return self._getnnz()
 
     @property
-    def format(self):
+    def format(self) -> str:
+        """Format string for matrix."""
         return self._format
 
     def __repr__(self):
@@ -713,6 +714,13 @@ class _spbase:
 
     @property
     def A(self) -> np.ndarray:
+        """DEPRECATED: Return a dense array.
+
+        .. deprecated:: 1.11.0
+
+            `.A` is deprecated and will be removed in v1.13.0.
+            Use `.toarray()` instead.
+        """
         if self._is_array:
             warn(np.VisibleDeprecationWarning(
                 "`.A` is deprecated and will be removed in v1.13.0. "
@@ -722,10 +730,18 @@ class _spbase:
 
     @property
     def T(self):
+        """Transpose."""
         return self.transpose()
 
     @property
     def H(self):
+        """DEPRECATED: Returns the (complex) conjugate transpose.
+
+        .. deprecated:: 1.11.0
+
+            `.H` is deprecated and will be removed in v1.13.0.
+            Please use `.T.conjugate()` instead.
+        """
         if self._is_array:
             warn(np.VisibleDeprecationWarning(
                 "`.H` is deprecated and will be removed in v1.13.0. "
@@ -742,7 +758,13 @@ class _spbase:
         return self._imag()
 
     @property
-    def size(self):
+    def size(self) -> int:
+        """Number of stored values.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero values.
+        """
         return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
