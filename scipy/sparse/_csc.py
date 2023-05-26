@@ -254,7 +254,7 @@ def isspmatrix_csc(x):
     True
     >>> isspmatrix_csc(csc_array([[5]]))
     False
-    >>> isspmatrix_csc(csr_matrix([[5]]))
+    >>> isspmatrix_csc(coo_matrix([[5]]))
     False
     """
     return isinstance(x, csc_matrix)
