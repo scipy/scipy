@@ -5,14 +5,13 @@ from itertools import product
 
 import numpy as np
 from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
-                   conjugate, absolute, amax, sign, isfinite)
+                   conjugate, absolute, amax, sign, isfinite, triu)
 from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
-from ._special_matrices import triu
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
@@ -122,6 +121,7 @@ def fractional_matrix_power(A, t):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import fractional_matrix_power
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = fractional_matrix_power(a, 0.5)
@@ -183,6 +183,7 @@ def logm(A, disp=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import logm, expm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = logm(a)
@@ -250,6 +251,7 @@ def expm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Matrix version of the formula exp(0) = 1:
@@ -411,6 +413,7 @@ def cosm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -450,6 +453,7 @@ def sinm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -489,6 +493,7 @@ def tanm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanm, sinm, cosm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanm(a)
@@ -527,6 +532,7 @@ def coshm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> c = coshm(a)
@@ -565,6 +571,7 @@ def sinhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> s = sinhm(a)
@@ -603,6 +610,7 @@ def tanhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanhm(a)
@@ -651,17 +659,6 @@ def funm(A, func, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
-    Examples
-    --------
-    >>> from scipy.linalg import funm
-    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
-    >>> funm(a, lambda x: x*x)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-    >>> a.dot(a)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-
     Notes
     -----
     This function implements the general algorithm based on Schur decomposition
@@ -683,6 +680,18 @@ def funm(A, func, disp=True):
     References
     ----------
     .. [1] Gene H. Golub, Charles F. van Loan, Matrix Computations 4th ed.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import funm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> funm(a, lambda x: x*x)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+    >>> a.dot(a)
+    array([[  4.,  15.],
+           [  5.,  19.]])
 
     """
     A = _asarray_square(A)
@@ -825,6 +834,10 @@ def khatri_rao(a, b):
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
 
+    See Also
+    --------
+    kron : Kronecker product
+
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
@@ -837,12 +850,9 @@ def khatri_rao(a, b):
 
         c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
 
-    See Also
-    --------
-    kron : Kronecker product
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1, 2, 3], [4, 5, 6]])
     >>> b = np.array([[3, 4, 5], [6, 7, 8], [2, 3, 9]])
@@ -858,7 +868,7 @@ def khatri_rao(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
 
-    if not(a.ndim == 2 and b.ndim == 2):
+    if not (a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
 
     if not a.shape[1] == b.shape[1]:

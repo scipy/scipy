@@ -73,7 +73,6 @@ class TestSmokeTests:
             tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
             tt = tck[0][k:-k] if at_nodes else x1
 
-            nd = []
             for d in range(k+1):
                 tol = err_est(k, d)
                 err = norm2(f1(tt, d) - splev(tt, tck, d)) / norm2(f1(tt, d))
@@ -308,6 +307,41 @@ class TestSplder:
             assert_equal(k, spl3[2])
 
 
+class TestSplint:
+    def test_len_c(self):
+        n, k = 7, 3
+        x = np.arange(n)
+        y = x**3
+        t, c, k = splrep(x, y, s=0)
+
+        # note that len(c) == len(t) == 11 (== len(x) + 2*(k-1))
+        assert len(t) == len(c) == n + 2*(k-1)
+
+        # integrate directly: $\int_0^6 x^3 dx = 6^4 / 4$
+        res = splint(0, 6, (t, c, k))
+        assert_allclose(res, 6**4 / 4, atol=1e-15)
+
+        # check that the coefficients past len(t) - k - 1 are ignored
+        c0 = c.copy()
+        c0[len(t)-k-1:] = np.nan
+        res0 = splint(0, 6, (t, c0, k))
+        assert_allclose(res0, 6**4 / 4, atol=1e-15)
+
+        # however, all other coefficients *are* used
+        c0[6] = np.nan
+        assert np.isnan(splint(0, 6, (t, c0, k)))
+
+        # check that the coefficient array can have length `len(t) - k - 1`
+        c1 = c[:len(t) - k - 1]
+        res1 = splint(0, 6, (t, c1, k))
+        assert_allclose(res1, 6**4 / 4, atol=1e-15)
+
+        # however shorter c arrays raise. The error from f2py is a
+        # `dftipack.error`, which is an Exception but not ValueError etc.
+        with assert_raises(Exception, match=r">=n-k-1"):
+            splint(0, 1, (np.ones(10), np.ones(5), 3))
+
+
 class TestBisplrep:
     def test_overflow(self):
         from numpy.lib.stride_tricks import as_strided
@@ -392,7 +426,7 @@ def test_splprep_segfault():
     x = np.sin(2*np.pi*t)
     y = np.cos(2*np.pi*t)
     tck, u = splprep([x, y], s=0)
-    unew = np.arange(0, 1.01, 0.01)
+    np.arange(0, 1.01, 0.01)
 
     uknots = tck[0]  # using the knots from the previous fitting
     tck, u = splprep([x, y], task=-1, t=uknots)  # here is the crash
@@ -415,6 +449,29 @@ def test_bisplev_integer_overflow():
     yp = np.zeros([2621440])
 
     assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
+
+
+@pytest.mark.xslow
+def test_gh_1766():
+    # this should fail gracefully instead of segfaulting (int overflow)
+    size = 22
+    kx, ky = 3, 3
+    def f2(x, y):
+        return np.sin(x+y)
+
+    x = np.linspace(0, 10, size)
+    y = np.linspace(50, 700, size)
+    xy = makepairs(x, y)
+    tck = bisplrep(xy[0], xy[1], f2(xy[0], xy[1]), s=0, kx=kx, ky=ky)
+    # the size value here can either segfault
+    # or produce a MemoryError on main
+    tx_ty_size = 500000
+    tck[0] = np.arange(tx_ty_size)
+    tck[1] = np.arange(tx_ty_size) * 4
+    tt_0 = np.arange(50)
+    tt_1 = np.arange(50) * 3
+    with pytest.raises(MemoryError):
+        bisplev(tt_0, tt_1, tck, 1, 1)
 
 
 def test_spalde_scalar_input():

@@ -59,10 +59,12 @@ class TestODEClass:
     def _do_problem(self, problem, integrator, method='adams'):
 
         # ode has callback arguments in different order than odeint
-        f = lambda t, z: problem.f(z, t)
+        def f(t, z):
+            return problem.f(z, t)
         jac = None
         if hasattr(problem, 'jac'):
-            jac = lambda t, z: problem.jac(z, t)
+            def jac(t, z):
+                return problem.jac(z, t)
 
         integrator_params = {}
         if problem.lband is not None or problem.uband is not None:
@@ -141,7 +143,8 @@ class TestOde(TestODEClass):
 
     def test_concurrent_fail(self):
         for sol in ('vode', 'zvode', 'lsoda'):
-            f = lambda t, y: 1.0
+            def f(t, y):
+                return 1.0
 
             r = ode(f).set_integrator(sol)
             r.set_initial_value(0, 0)
@@ -155,7 +158,8 @@ class TestOde(TestODEClass):
             assert_raises(RuntimeError, r.integrate, r.t + 0.1)
 
     def test_concurrent_ok(self):
-        f = lambda t, y: 1.0
+        def f(t, y):
+            return 1.0
 
         for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):

@@ -3,6 +3,7 @@ python_sources = [
   'test_array_api.py',
   'test_base.py',
   'test_construct.py',
+  'test_deprecations.py',
   'test_csc.py',
   'test_csr.py',
   'test_extract.py',
@@ -15,7 +16,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/sparse/tests'
 )
 
@@ -26,6 +26,5 @@ data_sources = [
 
 py3.install_sources(
   data_sources,
-  pure: false,
   subdir: 'scipy/sparse/tests/data'
 )

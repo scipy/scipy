@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from scipy._lib._util import check_random_state
 
@@ -64,7 +63,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     The algorithm is not changed if one replaces `pdf` by k * `pdf` for any
     constant k > 0. Thus, it is often convenient to work with a function
     that is proportional to the probability density function by dropping
-    unneccessary normalization factors.
+    unnecessary normalization factors.
 
     Intuitively, the method works well if `A` fills up most of the
     enclosing rectangle such that the probability is high that `(U, V)`

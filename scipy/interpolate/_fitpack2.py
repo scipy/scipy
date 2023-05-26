@@ -24,7 +24,7 @@ import warnings
 from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
-from . import _fitpack_py
+from . import _fitpack_impl
 from . import dfitpack
 
 
@@ -84,7 +84,7 @@ class UnivariateSpline:
         1-D array of dependent input data, of the same length as `x`.
     w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If `w` is None,
-        weights are all equal. Default is None.
+        weights are all 1. Default is None.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         `bbox` is None, ``bbox=[x[0], x[-1]]``. Default is None.
@@ -97,9 +97,24 @@ class UnivariateSpline:
 
             sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) <= s
 
-        If `s` is None, ``s = len(w)`` which should be a good value if
-        ``1/w[i]`` is an estimate of the standard deviation of ``y[i]``.
-        If 0, spline will interpolate through all data points. Default is None.
+        However, because of numerical issues, the actual condition is::
+
+            abs(sum((w[i] * (y[i]-spl(x[i])))**2, axis=0) - s) < 0.001 * s
+
+        If `s` is None, `s` will be set as `len(w)` for a smoothing spline
+        that uses all data points.
+        If 0, spline will interpolate through all data points. This is
+        equivalent to `InterpolatedUnivariateSpline`.
+        Default is None.
+        The user can use the `s` to control the tradeoff between closeness
+        and smoothness of fit. Larger `s` means more smoothing while smaller
+        values of `s` indicate less smoothing.
+        Recommended values of `s` depend on the weights, `w`. If the weights
+        represent the inverse of the standard-deviation of `y`, then a good
+        `s` value should be found in the range (m-sqrt(2*m),m+sqrt(2*m))
+        where m is the number of datapoints in `x`, `y`, and `w`. This means
+        ``s = len(w)`` should be a good value if ``1/w[i]`` is an
+        estimate of the standard deviation of ``y[i]``.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -162,6 +177,7 @@ class UnivariateSpline:
     with ``nan``. A workaround is to use zero weights for not-a-number
     data points:
 
+    >>> import numpy as np
     >>> from scipy.interpolate import UnivariateSpline
     >>> x, y = np.array([1, 2, 3, 4]), np.array([1, np.nan, 3, 4])
     >>> w = np.isnan(y)
@@ -171,8 +187,24 @@ class UnivariateSpline:
     Notice the need to replace a ``nan`` by a numerical value (precise value
     does not matter as long as the corresponding weight is zero.)
 
+    References
+    ----------
+    Based on algorithms described in [1]_, [2]_, [3]_, and [4]_:
+
+    .. [1] P. Dierckx, "An algorithm for smoothing, differentiation and
+       integration of experimental data using spline functions",
+       J.Comp.Appl.Maths 1 (1975) 165-184.
+    .. [2] P. Dierckx, "A fast algorithm for smoothing data on a rectangular
+       grid while using spline functions", SIAM J.Numer.Anal. 19 (1982)
+       1286-1304.
+    .. [3] P. Dierckx, "An improved algorithm for curve fitting with spline
+       functions", report tw54, Dept. Computer Science,K.U. Leuven, 1981.
+    .. [4] P. Dierckx, "Curve and surface fitting with splines", Monographs on
+       Numerical Analysis, Oxford University Press, 1993.
+
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import UnivariateSpline
     >>> rng = np.random.default_rng()
@@ -193,6 +225,7 @@ class UnivariateSpline:
     >>> plt.show()
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3, s=None,
                  ext=0, check_finite=False):
 
@@ -296,8 +329,8 @@ class UnivariateSpline:
         else:
             if not n <= nest:
                 raise ValueError("`nest` can only be increased")
-        t, c, fpint, nrdata = [np.resize(data[j], nest) for j in
-                               [8, 9, 11, 12]]
+        t, c, fpint, nrdata = (np.resize(data[j], nest) for j in
+                               [8, 9, 11, 12])
 
         args = data[:8] + (t, c, n, fpint, nrdata, data[13])
         data = dfitpack.fpcurf1(*args)
@@ -359,7 +392,7 @@ class UnivariateSpline:
                 ext = _extrap_modes[ext]
             except KeyError as e:
                 raise ValueError("Unknown extrapolation mode %s." % ext) from e
-        return _fitpack_py.splev(x, self._eval_args, der=nu, ext=ext)
+        return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of interior knots of the spline.
@@ -403,6 +436,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -422,7 +456,7 @@ class UnivariateSpline:
         0.0
 
         """
-        return dfitpack.splint(*(self._eval_args+(a, b)))
+        return _fitpack_impl.splint(a, b, self._eval_args)
 
     def derivatives(self, x):
         """ Return all derivatives of the spline at the point x.
@@ -439,6 +473,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 3, 11)
         >>> y = x**2
@@ -447,10 +482,7 @@ class UnivariateSpline:
         array([2.25, 3.0, 2.0, 0])
 
         """
-        d, ier = dfitpack.spalde(*(self._eval_args+(x,)))
-        if not ier == 0:
-            raise ValueError("Error code returned by spalde: %s" % ier)
-        return d
+        return _fitpack_impl.spalde(x, self._eval_args)
 
     def roots(self):
         """ Return the zeros of the spline.
@@ -495,10 +527,9 @@ class UnivariateSpline:
         """
         k = self._data[5]
         if k == 3:
-            z, m, ier = dfitpack.sproot(*self._eval_args[:2])
-            if not ier == 0:
-                raise ValueError("Error code returned by spalde: %s" % ier)
-            return z[:m]
+            t = self._eval_args[0]
+            mest = 3 * (len(t) - 7)
+            return _fitpack_impl.sproot(self._eval_args, mest=mest)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 
@@ -530,6 +561,7 @@ class UnivariateSpline:
         --------
         This can be used for finding maxima of a curve:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, 10, 70)
         >>> y = np.sin(x)
@@ -546,7 +578,7 @@ class UnivariateSpline:
         :math:`\\cos(x) = \\sin'(x)`.
 
         """
-        tck = _fitpack_py.splder(self._eval_args, n)
+        tck = _fitpack_impl.splder(self._eval_args, n)
         # if self.ext is 'const', derivative.ext will be 'zeros'
         ext = 1 if self.ext == 3 else self.ext
         return UnivariateSpline._from_tck(tck, ext=ext)
@@ -577,6 +609,7 @@ class UnivariateSpline:
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.interpolate import UnivariateSpline
         >>> x = np.linspace(0, np.pi/2, 70)
         >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
@@ -602,7 +635,7 @@ class UnivariateSpline:
         2.2572053268208538
 
         """
-        tck = _fitpack_py.splantider(self._eval_args, n)
+        tck = _fitpack_impl.splantider(self._eval_args, n)
         return UnivariateSpline._from_tck(tck, self.ext)
 
 
@@ -612,7 +645,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Fits a spline y = spl(x) of degree `k` to the provided `x`, `y` data.
     Spline function passes through all provided points. Equivalent to
-    `UnivariateSpline` with  s=0.
+    `UnivariateSpline` with  `s` = 0.
 
     Parameters
     ----------
@@ -622,12 +655,13 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
         input dimension of data points
     w : (N,) array_like, optional
         Weights for spline fitting.  Must be positive.  If None (default),
-        weights are all equal.
+        weights are all 1.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox=[x[0], x[-1]]``.
     k : int, optional
-        Degree of the smoothing spline.  Must be 1 <= `k` <= 5.
+        Degree of the smoothing spline.  Must be ``1 <= k <= 5``. Default is
+        ``k = 3``, a cubic spline.
     ext : int or str, optional
         Controls the extrapolation mode for elements
         not in the interval defined by the knot sequence.
@@ -674,6 +708,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import InterpolatedUnivariateSpline
     >>> rng = np.random.default_rng()
@@ -691,6 +726,7 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
     0.0
 
     """
+
     def __init__(self, x, y, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
@@ -740,7 +776,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     w : (N,) array_like, optional
         weights for spline fitting. Must be positive. If None (default),
-        weights are all equal.
+        weights are all 1.
     bbox : (2,) array_like, optional
         2-sequence specifying the boundary of the approximation interval. If
         None (default), ``bbox = [x[0], x[-1]]``.
@@ -798,6 +834,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -924,8 +961,9 @@ class _BivariateSplineBase:
             defined by the coordinate arrays x, y. The arrays must be
             sorted to increasing order.
 
-            Note that the axis ordering is inverted relative to
-            the output of meshgrid.
+            The ordering of axes is consistent with
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int
             Order of x-derivative
 
@@ -940,6 +978,43 @@ class _BivariateSplineBase:
 
             .. versionadded:: 0.14.0
 
+        Examples
+        --------
+        Suppose that we want to bilinearly interpolate an exponentially decaying
+        function in 2 dimensions.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectBivariateSpline
+
+        We sample the function on a coarse grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> xarr = np.linspace(-3, 3, 100)
+        >>> yarr = np.linspace(-3, 3, 100)
+        >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
+
+        The function to interpolate decays faster along one axis than the other.
+
+        >>> zdata = np.exp(-np.sqrt((xgrid / 2) ** 2 + ygrid**2))
+
+        Next we sample on a finer grid using interpolation (kx=ky=1 for bilinear).
+
+        >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
+        >>> xarr_fine = np.linspace(-3, 3, 200)
+        >>> yarr_fine = np.linspace(-3, 3, 200)
+        >>> xgrid_fine, ygrid_fine = np.meshgrid(xarr_fine, yarr_fine, indexing="ij")
+        >>> zdata_interp = rbs(xgrid_fine, ygrid_fine, grid=False)
+
+        And check that the result agrees with the input by plotting both.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 2, 1, aspect="equal")
+        >>> ax2 = fig.add_subplot(1, 2, 2, aspect="equal")
+        >>> ax1.imshow(zdata)
+        >>> ax2.imshow(zdata_interp)
+        >>> plt.show()
         """
         x = np.asarray(x)
         y = np.asarray(y)
@@ -1125,6 +1200,9 @@ class BivariateSpline(_BivariateSplineBase):
         ----------
         xi, yi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
+            The ordering of axes is consistent with
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dx : int, optional
             Order of x-derivative
 
@@ -1133,6 +1211,43 @@ class BivariateSpline(_BivariateSplineBase):
             Order of y-derivative
 
             .. versionadded:: 0.14.0
+
+        Examples
+        --------
+        Suppose that we want to bilinearly interpolate an exponentially decaying
+        function in 2 dimensions.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectBivariateSpline
+        >>> def f(x, y):
+        ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
+
+        We sample the function on a coarse grid and set up the interpolator. Note that
+        the default ``indexing="xy"`` of meshgrid would result in an unexpected (transposed)
+        result after interpolation.
+
+        >>> xarr = np.linspace(-3, 3, 21)
+        >>> yarr = np.linspace(-3, 3, 21)
+        >>> xgrid, ygrid = np.meshgrid(xarr, yarr, indexing="ij")
+        >>> zdata = f(xgrid, ygrid)
+        >>> rbs = RectBivariateSpline(xarr, yarr, zdata, kx=1, ky=1)
+
+        Next we sample the function along a diagonal slice through the coordinate space
+        on a finer grid using interpolation.
+
+        >>> xinterp = np.linspace(-3, 3, 201)
+        >>> yinterp = np.linspace(3, -3, 201)
+        >>> zinterp = rbs.ev(xinterp, yinterp)
+
+        And check that the interpolation passes through the function evaluations as a
+        function of the distance from the origin along the slice.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 1, 1)
+        >>> ax1.plot(np.sqrt(xarr**2 + yarr**2), np.diag(zdata), "or")
+        >>> ax1.plot(np.sqrt(xinterp**2 + yinterp**2), zinterp, "-b")
+        >>> plt.show()
         """
         return self.__call__(xi, yi, dx=dx, dy=dy, grid=False)
 
@@ -1256,6 +1371,22 @@ class SmoothBivariateSpline(BivariateSpline):
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
 
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
+
+    This routine constructs spline knot vectors automatically via the FITPACK
+    algorithm. The spline knots may be placed away from the data points. For
+    some data sets, this routine may fail to construct an interpolating spline,
+    even if one is requested via ``s=0`` parameter. In such situations, it is
+    recommended to use `bisplrep` / `bisplev` directly instead of this routine
+    and, if needed, increase the values of ``nxest`` and ``nyest`` parameters
+    of `bisplrep`.
+
+    For linear interpolation, prefer `LinearNDInterpolator`.
+    See ``https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff``
+    for discussion.
+
     """
 
     def __init__(self, x, y, z, w=None, bbox=[None] * 4, kx=3, ky=3, s=None,
@@ -1340,6 +1471,10 @@ class LSQBivariateSpline(BivariateSpline):
     Notes
     -----
     The length of `x`, `y` and `z` should be at least ``(kx+1) * (ky+1)``.
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 
@@ -1433,6 +1568,13 @@ class RectBivariateSpline(BivariateSpline):
         a function to find a bivariate B-spline representation of a surface
     bisplev :
         a function to evaluate a bivariate B-spline and its derivatives
+
+    Notes
+    -----
+
+    If the input data is such that input dimensions have incommensurate
+    units and differ by many orders of magnitude, the interpolant may have
+    numerical artifacts. Consider rescaling the data before interpolating.
 
     """
 
@@ -1529,6 +1671,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
             If `grid` is True: evaluate spline at the grid points
             defined by the coordinate arrays theta, phi. The arrays
             must be sorted to increasing order.
+            The ordering of axes is consistent with
+            ``np.meshgrid(..., indexing="ij")`` and inconsistent with the
+            default ordering ``np.meshgrid(..., indexing="xy")``.
         dtheta : int, optional
             Order of theta-derivative
 
@@ -1543,6 +1688,44 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
             .. versionadded:: 0.14.0
 
+        Examples
+        --------
+
+        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
+        The value of the function is known on a grid of longitudes and colatitudes.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectSphereBivariateSpline
+        >>> def f(theta, phi):
+        ...     return np.sin(theta) * np.cos(phi)
+
+        We evaluate the function on the grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> thetaarr = np.linspace(0, np.pi, 22)[1:-1]
+        >>> phiarr = np.linspace(0, 2 * np.pi, 21)[:-1]
+        >>> thetagrid, phigrid = np.meshgrid(thetaarr, phiarr, indexing="ij")
+        >>> zdata = f(thetagrid, phigrid)
+
+        We next set up the interpolator and use it to evaluate the function
+        on a finer grid.
+
+        >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
+        >>> thetaarr_fine = np.linspace(0, np.pi, 200)
+        >>> phiarr_fine = np.linspace(0, 2 * np.pi, 200)
+        >>> zdata_fine = rsbs(thetaarr_fine, phiarr_fine)
+
+        Finally we plot the coarsly-sampled input data alongside the
+        finely-sampled interpolated data to check that they agree.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 2, 1)
+        >>> ax2 = fig.add_subplot(1, 2, 2)
+        >>> ax1.imshow(zdata)
+        >>> ax2.imshow(zdata_fine)
+        >>> plt.show()
         """
         theta = np.asarray(theta)
         phi = np.asarray(phi)
@@ -1564,6 +1747,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         ----------
         theta, phi : array_like
             Input coordinates. Standard Numpy broadcasting is obeyed.
+            The ordering of axes is consistent with
+            np.meshgrid(..., indexing="ij") and inconsistent with the
+            default ordering np.meshgrid(..., indexing="xy").
         dtheta : int, optional
             Order of theta-derivative
 
@@ -1572,6 +1758,43 @@ class SphereBivariateSpline(_BivariateSplineBase):
             Order of phi-derivative
 
             .. versionadded:: 0.14.0
+
+        Examples
+        --------
+        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
+        The value of the function is known on a grid of longitudes and colatitudes.
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import RectSphereBivariateSpline
+        >>> def f(theta, phi):
+        ...     return np.sin(theta) * np.cos(phi)
+
+        We evaluate the function on the grid. Note that the default indexing="xy"
+        of meshgrid would result in an unexpected (transposed) result after
+        interpolation.
+
+        >>> thetaarr = np.linspace(0, np.pi, 22)[1:-1]
+        >>> phiarr = np.linspace(0, 2 * np.pi, 21)[:-1]
+        >>> thetagrid, phigrid = np.meshgrid(thetaarr, phiarr, indexing="ij")
+        >>> zdata = f(thetagrid, phigrid)
+
+        We next set up the interpolator and use it to evaluate the function
+        at points not on the original grid.
+
+        >>> rsbs = RectSphereBivariateSpline(thetaarr, phiarr, zdata)
+        >>> thetainterp = np.linspace(thetaarr[0], thetaarr[-1], 200)
+        >>> phiinterp = np.linspace(phiarr[0], phiarr[-1], 200)
+        >>> zinterp = rsbs.ev(thetainterp, phiinterp)
+
+        Finally we plot the original data for a diagonal slice through the
+        initial grid, and the spline approximation along the same slice.
+
+        >>> import matplotlib.pyplot as plt
+        >>> fig = plt.figure()
+        >>> ax1 = fig.add_subplot(1, 1, 1)
+        >>> ax1.plot(np.sin(thetaarr) * np.sin(phiarr), np.diag(zdata), "or")
+        >>> ax1.plot(np.sin(thetainterp) * np.sin(phiinterp), zinterp, "-b")
+        >>> plt.show()
         """
         return self.__call__(theta, phi, dtheta=dtheta, dphi=dphi, grid=False)
 
@@ -1633,6 +1856,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
     Suppose we have global data on a coarse grid (the input data does not
     have to be on a grid):
 
+    >>> import numpy as np
     >>> theta = np.linspace(0., np.pi, 7)
     >>> phi = np.linspace(0., 2*np.pi, 9)
     >>> data = np.empty((theta.shape[0], phi.shape[0]))
@@ -1778,6 +2002,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
     have to be on a grid):
 
     >>> from scipy.interpolate import LSQSphereBivariateSpline
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     >>> theta = np.linspace(0, np.pi, num=7)
@@ -1983,6 +2208,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
     --------
     Suppose we have global data on a coarse grid
 
+    >>> import numpy as np
     >>> lats = np.linspace(10, 170, 9) * np.pi / 180.
     >>> lons = np.linspace(0, 350, 18) * np.pi / 180.
     >>> data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,

@@ -6,10 +6,12 @@ from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
                            assert_equal, assert_, assert_array_less,
                            suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
+from scipy import signal
 
 
 window_funcs = [
@@ -37,17 +39,29 @@ window_funcs = [
     ('lanczos', ()),
     ]
 
+@pytest.mark.parametrize(["method", "args"], window_funcs)
+def test_deprecated_import(method, args):
+    if method in ('taylor', 'lanczos', 'dpss'):
+        pytest.skip("Deprecation test not applicable")
+    func = getattr(signal, method)
+    msg = f"Importing {method}"
+    with pytest.deprecated_call(match=msg):
+        func(1, *args)
+        
 
 class TestBartHann:
 
     def test_basic(self):
         assert_allclose(windows.barthann(6, sym=True),
                         [0, 0.35857354213752, 0.8794264578624801,
-                         0.8794264578624801, 0.3585735421375199, 0])
+                         0.8794264578624801, 0.3585735421375199, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(7),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(6, False),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestBartlett:
@@ -400,16 +414,20 @@ class TestHann:
 
     def test_basic(self):
         assert_allclose(windows.hann(6, sym=False),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7, sym=False),
                         [0, 0.1882550990706332, 0.6112604669781572,
                          0.9504844339512095, 0.9504844339512095,
-                         0.6112604669781572, 0.1882550990706332])
+                         0.6112604669781572, 0.1882550990706332],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(6, True),
                         [0, 0.3454915028125263, 0.9045084971874737,
-                         0.9045084971874737, 0.3454915028125263, 0])
+                         0.9045084971874737, 0.3454915028125263, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestKaiser:
@@ -562,7 +580,7 @@ class TestTukey:
                 assert_raises(ValueError, windows.tukey, *k)
             else:
                 win = windows.tukey(*k)
-                assert_allclose(win, v, rtol=1e-14)
+                assert_allclose(win, v, rtol=1e-15, atol=1e-15)
 
     def test_extremes(self):
         # Test extremes of alpha correspond to boxcar and hann
@@ -602,19 +620,19 @@ class TestDPSS:
             win = windows.dpss(M, M / 2.1)
             expected = M % 2  # one for odd, none for even
             assert_equal(np.isclose(win, 1.).sum(), expected,
-                         err_msg='%s' % (win,))
+                         err_msg=f'{win}')
             # corrected w/subsample delay (slower)
             win_sub = windows.dpss(M, M / 2.1, norm='subsample')
             if M > 2:
                 # @M=2 the subsample doesn't do anything
                 assert_equal(np.isclose(win_sub, 1.).sum(), expected,
-                             err_msg='%s' % (win_sub,))
+                             err_msg=f'{win_sub}')
                 assert_allclose(win, win_sub, rtol=0.03)  # within 3%
             # not the same, l2-norm
             win_2 = windows.dpss(M, M / 2.1, norm=2)
             expected = 1 if M == 1 else 0
             assert_equal(np.isclose(win_2, 1.).sum(), expected,
-                         err_msg='%s' % (win_2,))
+                         err_msg=f'{win_2}')
 
     def test_extremes(self):
         # Test extremes of alpha

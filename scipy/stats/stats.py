@@ -32,7 +32,7 @@ __all__ = [  # noqa: F822
     'brunnermunzel', 'alexandergovern', 'gcd', 'namedtuple', 'array',
     'ma', 'cdist', 'check_random_state', 'MapWrapper',
     'rng_integers', 'float_factorial', 'linalg', 'distributions',
-    'mstats_basic', 'make_dataclass', 'ModeResult', 'DescribeResult',
+    'mstats_basic', 'ModeResult', 'DescribeResult',
     'SkewtestResult', 'KurtosistestResult', 'NormaltestResult',
     'Jarque_beraResult', 'HistogramResult', 'CumfreqResult',
     'RelfreqResult', 'SigmaclipResult', 'F_onewayResult',

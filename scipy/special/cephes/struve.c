@@ -121,12 +121,12 @@ static double struve_hl(double v, double z, int is_h)
             return tmp * struve_hl(v, -z, is_h);
         }
         else {
-            return NPY_NAN;
+            return NAN;
         }
     }
     else if (z == 0) {
         if (v < -1) {
-            return gammasgn(v + 1.5) * NPY_INFINITY;
+            return gammasgn(v + 1.5) * INFINITY;
         }
         else if (v == -1) {
             return 2 / sqrt(M_PI) / Gamma(0.5);
@@ -154,7 +154,7 @@ static double struve_hl(double v, double z, int is_h)
         }
     }
     else {
-        err[0] = NPY_INFINITY;
+        err[0] = INFINITY;
     }
 
     /* Try power series */
@@ -171,7 +171,7 @@ static double struve_hl(double v, double z, int is_h)
         }
     }
     else {
-        err[2] = NPY_INFINITY;
+        err[2] = INFINITY;
     }
 
     /* Return the best of the three, if it is acceptable */
@@ -189,12 +189,12 @@ static double struve_hl(double v, double z, int is_h)
     }
     if (tmp > 700) {
         sf_error("struve", SF_ERROR_OVERFLOW, NULL);
-        return NPY_INFINITY * gammasgn(v + 1.5);
+        return INFINITY * gammasgn(v + 1.5);
     }
 
     /* Failure */
     sf_error("struve", SF_ERROR_NO_RESULT, NULL);
-    return NPY_NAN;
+    return NAN;
 }
 
 
@@ -255,7 +255,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_TINY * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_TINY * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }
@@ -269,8 +269,8 @@ double struve_power_series(double v, double z, int is_h, double *err)
 
     if (sum == 0 && term == 0 && v < 0 && !is_h) {
         /* Spurious underflow */
-        *err = NPY_INFINITY;
-        return NPY_NAN;
+        *err = INFINITY;
+        return NAN;
     }
 
     return sum;
@@ -288,8 +288,8 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
 
     if (is_h && v < 0) {
         /* Works less reliably in this region */
-        *err = NPY_INFINITY;
-        return NPY_NAN;
+        *err = INFINITY;
+        return NAN;
     }
 
     sum = 0;
@@ -310,7 +310,7 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }
@@ -353,14 +353,14 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
         maxiter = (int)m;
     }
     if (maxiter == 0) {
-        *err = NPY_INFINITY;
-        return NPY_NAN;
+        *err = INFINITY;
+        return NAN;
     }
 
     if (z < v) {
         /* Exclude regions where our error estimation fails */
-        *err = NPY_INFINITY;
-        return NPY_NAN;
+        *err = INFINITY;
+        return NAN;
     }
 
     /* Evaluate sum */
@@ -374,7 +374,7 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }

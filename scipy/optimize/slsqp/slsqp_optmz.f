@@ -843,7 +843,7 @@ C     20.3.1987, DIETER KRAFT, DFVLR OBERPFAFFENHOFEN
       INTEGER          jw(*),i,ie,IF,ig,iw,j,k,krank,l,lc,LE,lg,
      .                 mc,mc1,me,mg,mode,n
       DOUBLE PRECISION c(lc,n),e(LE,n),g(lg,n),d(lc),f(LE),h(lg),x(n),
-     .                 w(*),t,ddot_sl,xnrm,dnrm2_,epmach,ZERO
+     .                 w(*),t,ddot_sl,xnrm,rnorm(1),dnrm2_,epmach,ZERO
       DATA             epmach/2.22d-16/,ZERO/0.0d+00/
 
       mode=2
@@ -893,7 +893,10 @@ C  SOLVE LS WITHOUT INEQUALITY CONSTRAINTS
       mode=7
       k=MAX(LE,n)
       t=SQRT(epmach)
-      CALL hfti (w(ie),me,me,l,w(IF),k,1,t,krank,xnrm,w,w(l+1),jw)
+      CALL hfti (w(ie),me,me,l,w(IF),k,1,t,krank,rnorm,w,w(l+1),jw)
+C  HFTI IS MORE GENERIC, BUT WE ONLY CALL IT WITH NB=1, SO RETRIEVE THE
+C  SINGLE VALUE WE NEED FROM RNORM HERE
+      xnrm = rnorm(1)
       CALL dcopy_(l,w(IF),1,x(mc1),1)
       IF(krank.NE.l)                   GOTO 75
       mode=1

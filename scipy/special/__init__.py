@@ -5,8 +5,13 @@ Special functions (:mod:`scipy.special`)
 
 .. currentmodule:: scipy.special
 
-Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules.
+Almost all of the functions below accept NumPy arrays as input
+arguments as well as single numbers. This means they follow
+broadcasting and automatic array-looping rules. Technically,
+they are `NumPy universal functions
+<https://numpy.org/doc/stable/user/basics.ufuncs.html#ufuncs-basics>`_.
+Functions which do not accept NumPy arrays are marked by a warning
+in the section description.
 
 .. seealso::
 
@@ -95,7 +100,8 @@ Bessel functions
    hankel2e      -- Exponentially scaled Hankel function of the second kind.
    wright_bessel -- Wright's generalized Bessel function.
 
-The following is not a universal function:
+The following function does not accept NumPy arrays (it is not a
+universal function):
 
 .. autosummary::
    :toctree: generated/
@@ -105,7 +111,8 @@ The following is not a universal function:
 Zeros of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -178,7 +185,8 @@ Spherical Bessel functions
 Riccati-Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -204,6 +212,9 @@ Raw statistical functions
 
 .. seealso:: :mod:`scipy.stats`: Friendly versions of these functions.
 
+Binomial distribution
+^^^^^^^^^^^^^^^^^^^^^
+
 .. autosummary::
    :toctree: generated/
 
@@ -212,66 +223,172 @@ Raw statistical functions
    bdtri        -- Inverse function to `bdtr` with respect to `p`.
    bdtrik       -- Inverse function to `bdtr` with respect to `k`.
    bdtrin       -- Inverse function to `bdtr` with respect to `n`.
+
+Beta distribution
+^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    btdtr        -- Cumulative distribution function of the beta distribution.
    btdtri       -- The `p`-th quantile of the beta distribution.
    btdtria      -- Inverse of `btdtr` with respect to `a`.
    btdtrib      -- btdtria(a, p, x).
+
+F distribution
+^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    fdtr         -- F cumulative distribution function.
    fdtrc        -- F survival function.
    fdtri        -- The `p`-th quantile of the F-distribution.
    fdtridfd     -- Inverse to `fdtr` vs dfd.
+
+Gamma distribution
+^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    gdtr         -- Gamma distribution cumulative distribution function.
    gdtrc        -- Gamma distribution survival function.
    gdtria       -- Inverse of `gdtr` vs a.
    gdtrib       -- Inverse of `gdtr` vs b.
    gdtrix       -- Inverse of `gdtr` vs x.
+
+Negative binomial distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nbdtr        -- Negative binomial cumulative distribution function.
    nbdtrc       -- Negative binomial survival function.
    nbdtri       -- Inverse of `nbdtr` vs `p`.
    nbdtrik      -- Inverse of `nbdtr` vs `k`.
    nbdtrin      -- Inverse of `nbdtr` vs `n`.
+
+Noncentral F distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    ncfdtr       -- Cumulative distribution function of the non-central F distribution.
    ncfdtridfd   -- Calculate degrees of freedom (denominator) for the noncentral F-distribution.
    ncfdtridfn   -- Calculate degrees of freedom (numerator) for the noncentral F-distribution.
    ncfdtri      -- Inverse cumulative distribution function of the non-central F distribution.
    ncfdtrinc    -- Calculate non-centrality parameter for non-central F distribution.
+
+Noncentral t distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nctdtr       -- Cumulative distribution function of the non-central `t` distribution.
    nctdtridf    -- Calculate degrees of freedom for non-central t distribution.
    nctdtrit     -- Inverse cumulative distribution function of the non-central t distribution.
    nctdtrinc    -- Calculate non-centrality parameter for non-central t distribution.
+
+Normal distribution
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nrdtrimn     -- Calculate mean of normal distribution given other params.
    nrdtrisd     -- Calculate standard deviation of normal distribution given other params.
+   ndtr         -- Normal cumulative distribution function.
+   log_ndtr     -- Logarithm of normal cumulative distribution function.
+   ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Poisson distribution
+^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    pdtr         -- Poisson cumulative distribution function.
    pdtrc        -- Poisson survival function.
    pdtri        -- Inverse to `pdtr` vs m.
    pdtrik       -- Inverse to `pdtr` vs k.
+
+Student t distribution
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    stdtr        -- Student t distribution cumulative distribution function.
    stdtridf     -- Inverse of `stdtr` vs df.
    stdtrit      -- Inverse of `stdtr` vs `t`.
+
+Chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chdtr        -- Chi square cumulative distribution function.
    chdtrc       -- Chi square survival function.
    chdtri       -- Inverse to `chdtrc`.
    chdtriv      -- Inverse to `chdtr` vs `v`.
-   ndtr         -- Gaussian cumulative distribution function.
-   log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
-   ndtri        -- Inverse of `ndtr` vs x.
-   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Non-central chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
    chndtrix     -- Inverse to `chndtr` vs `x`.
+
+Kolmogorov distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function.
    smirnovi     -- Inverse to `smirnov`.
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution.
    kolmogi      -- Inverse function to `kolmogorov`.
-   tklmbda      -- Tukey-Lambda cumulative distribution function.
-   logit        -- Logit ufunc for ndarrays.
-   expit        -- Logistic sigmoid function.
-   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Box-Cox transformation
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
    inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+
+
+Sigmoidal functions
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   logit        -- Logit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   tklmbda      -- Tukey-Lambda cumulative distribution function.
    owens_t      -- Owen's T Function.
 
 
@@ -334,7 +451,8 @@ Error function and Fresnel integrals
    modfresnelm   -- Modified Fresnel negative integrals.
    voigt_profile -- Voigt profile.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -352,7 +470,8 @@ Legendre functions
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -477,7 +596,8 @@ Parabolic cylinder functions
    pbvv -- Parabolic cylinder function V.
    pbwa -- Parabolic cylinder function W.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -495,7 +615,8 @@ Mathieu and related functions
    mathieu_a -- Characteristic value of even Mathieu functions.
    mathieu_b -- Characteristic value of odd Mathieu functions.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -561,7 +682,8 @@ Kelvin functions
    kerp         -- Derivative of the Kelvin function ker.
    keip         -- Derivative of the Kelvin function kei.
 
-These are not universal functions:
+The following functions do not accept NumPy arrays (they are not
+universal functions):
 
 .. autosummary::
    :toctree: generated/
@@ -633,8 +755,9 @@ Convenience functions
    tandg     -- Tangent of angle x given in degrees.
    cotdg     -- Cotangent of the angle `x` given in degrees.
    log1p     -- Calculates log(1+x) for use when `x` is near zero.
-   expm1     -- exp(x) - 1 for use when `x` is near zero.
-   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   expm1     -- ``exp(x) - 1`` for use when `x` is near zero.
+   cosm1     -- ``cos(x) - 1`` for use when `x` is near zero.
+   powm1     -- ``x**y - 1`` for use when `y` is near zero or `x` is near 1.
    round     -- Round to nearest integer.
    xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
    xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.

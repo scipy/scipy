@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
+from collections.abc import Sequence
 import inspect
 
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _rename_parameter
 from scipy.special import ndtr, ndtri, comb, factorial
 from scipy._lib._util import rng_integers
-from dataclasses import make_dataclass
+from dataclasses import dataclass
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -69,12 +72,13 @@ def _bootstrap_resample(sample, n_resamples=None, random_state=None):
 
 def _percentile_of_score(a, score, axis):
     """Vectorized, simplified `scipy.stats.percentileofscore`.
+    Uses logic of the 'mean' value of percentileofscore's kind parameter.
 
     Unlike `stats.percentileofscore`, the percentile returned is a fraction
     in [0, 1].
     """
     B = a.shape[axis]
-    return (a < score).sum(axis=axis) / B
+    return ((a < score).sum(axis=axis) + (a <= score).sum(axis=axis)) / (2 * B)
 
 
 def _percentile_along_axis(theta_hat_b, alpha):
@@ -103,23 +107,44 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
-    # closely follows [2] "BCa Bootstrap CIs"
-    sample = data[0]  # only works with 1 sample statistics right now
+    # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
+    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    theta_hat_i = []  # would be better to fill pre-allocated array
-    for jackknife_sample in _jackknife_resample(sample, batch):
-        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
-    theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
-    theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
-    num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
-    den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
-    a_hat = num / den
+    theta_hat_ji = []  # j is for sample of data, i is for jackknife resample
+    for j, sample in enumerate(data):
+        # _jackknife_resample will add an axis prior to the last axis that
+        # corresponds with the different jackknife resamples. Do the same for
+        # each sample of the data to ensure broadcastability. We need to
+        # create a copy of the list containing the samples anyway, so do this
+        # in the loop to simplify the code. This is not the bottleneck...
+        samples = [np.expand_dims(sample, -2) for sample in data]
+        theta_hat_i = []
+        for jackknife_sample in _jackknife_resample(sample, batch):
+            samples[j] = jackknife_sample
+            broadcasted = _broadcast_arrays(samples, axis=-1)
+            theta_hat_i.append(statistic(*broadcasted, axis=-1))
+        theta_hat_ji.append(theta_hat_i)
+
+    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+                    for theta_hat_i in theta_hat_ji]
+
+    n_j = [theta_hat_i.shape[-1] for theta_hat_i in theta_hat_ji]
+
+    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+                       for theta_hat_i in theta_hat_ji]
+
+    U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
+            for theta_hat_dot, theta_hat_i, n
+            in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
+
+    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
     z_alpha = ndtri(alpha)
@@ -128,11 +153,12 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
     alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
-    return alpha_1, alpha_2
+    return alpha_1, alpha_2, a_hat  # return a_hat for testing
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+                  alternative, n_resamples, batch, method, bootstrap_result,
+                  random_state):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -187,9 +213,14 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     confidence_level_float = float(confidence_level)
 
+    alternative = alternative.lower()
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be one of {alternatives}")
+
     n_resamples_int = int(n_resamples)
-    if n_resamples != n_resamples_int or n_resamples_int <= 0:
-        raise ValueError("`n_resamples` must be a positive integer.")
+    if n_resamples != n_resamples_int or n_resamples_int < 0:
+        raise ValueError("`n_resamples` must be a non-negative integer.")
 
     if batch is None:
         batch_iv = batch
@@ -203,29 +234,58 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
-    message = "`method = 'BCa' is only available for one-sample statistics"
-    if not paired and n_samples > 1 and method == 'bca':
+    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+    if (bootstrap_result is not None
+            and not hasattr(bootstrap_result, "bootstrap_distribution")):
+        raise ValueError(message)
+
+    message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
+               "`n_resamples` must be positive.")
+    if ((not bootstrap_result or
+         not bootstrap_result.bootstrap_distribution.size)
+            and n_resamples_int == 0):
         raise ValueError(message)
 
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
-            confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+            confidence_level_float, alternative, n_resamples_int, batch_iv,
+            method, bootstrap_result, random_state)
 
 
-fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
-BootstrapResult = make_dataclass("BootstrapResult", fields)
+@dataclass
+class BootstrapResult:
+    """Result object returned by `scipy.stats.bootstrap`.
+
+    Attributes
+    ----------
+    confidence_interval : ConfidenceInterval
+        The bootstrap confidence interval as an instance of
+        `collections.namedtuple` with attributes `low` and `high`.
+    bootstrap_distribution : ndarray
+        The bootstrap distribution, that is, the value of `statistic` for
+        each resample. The last dimension corresponds with the resamples
+        (e.g. ``res.bootstrap_distribution.shape[-1] == n_resamples``).
+    standard_error : float or ndarray
+        The bootstrap standard error, that is, the sample standard
+        deviation of the bootstrap distribution.
+
+    """
+    confidence_interval: ConfidenceInterval
+    bootstrap_distribution: np.ndarray
+    standard_error: float | np.ndarray
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', random_state=None):
+              alternative='two-sided', method='BCa', bootstrap_result=None,
+              random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
-    When `method` is ``'percentile'``, a bootstrap confidence interval is
-    computed according to the following procedure.
+    When `method` is ``'percentile'`` and `alternative` is ``'two-sided'``,
+    a bootstrap confidence interval is computed according to the following
+    procedure.
 
     1. Resample the data: for each sample in `data` and for each of
        `n_resamples`, take a random sample of the original sample
@@ -285,12 +345,26 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         calculated.
     confidence_level : float, default: ``0.95``
         The confidence level of the confidence interval.
+    alternative : {'two-sided', 'less', 'greater'}, default: ``'two-sided'``
+        Choose ``'two-sided'`` (default) for a two-sided confidence interval,
+        ``'less'`` for a one-sided confidence interval with the lower bound
+        at ``-np.inf``, and ``'greater'`` for a one-sided confidence interval
+        with the upper bound at ``np.inf``. The other bound of the one-sided
+        confidence intervals is the same as that of a two-sided confidence
+        interval with `confidence_level` twice as far from 1.0; e.g. the upper
+        bound of a 95% ``'less'``  confidence interval is the same as the upper
+        bound of a 90% ``'two-sided'`` confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``).
-        Note that only ``'percentile'`` and ``'basic'`` support multi-sample
-        statistics at this time.
+        (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
+        interval (``'basic'``), or the bias-corrected and accelerated bootstrap
+        confidence interval (``'BCa'``).
+    bootstrap_result : BootstrapResult, optional
+        Provide the result object returned by a previous call to `bootstrap`
+        to include the previous bootstrap distribution in the new bootstrap
+        distribution. This can be used, for example, to change
+        `confidence_level`, change `method`, or see the effect of performing
+        additional resampling without repeating computations.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -506,17 +580,42 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
+    The result object can be passed back into `bootstrap` to perform additional
+    resampling:
+
+    >>> len(res.bootstrap_distribution)
+    9999
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                 n_resamples=1001, random_state=rng,
+    ...                 bootstrap_result=res)
+    >>> len(res.bootstrap_distribution)
+    11000
+
+    or to change the confidence interval options:
+
+    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  method='percentile', confidence_level=0.9)
+    >>> np.testing.assert_equal(res2.bootstrap_distribution,
+    ...                         res.bootstrap_distribution)
+    >>> res.confidence_interval
+    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+
+    without repeating computation of the original bootstrap distribution.
+
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
-                         confidence_level, n_resamples, batch, method,
-                         random_state)
-    data, statistic, vectorized, paired, axis = args[:5]
-    confidence_level, n_resamples, batch, method, random_state = args[5:]
+                         confidence_level, alternative, n_resamples, batch,
+                         method, bootstrap_result, random_state)
+    (data, statistic, vectorized, paired, axis, confidence_level,
+     alternative, n_resamples, batch, method, bootstrap_result,
+     random_state) = args
 
-    theta_hat_b = []
+    theta_hat_b = ([] if bootstrap_result is None
+                   else [bootstrap_result.bootstrap_distribution])
 
-    batch_nominal = batch or n_resamples
+    batch_nominal = batch or n_resamples or 1
 
     for k in range(0, n_resamples, batch_nominal):
         batch_actual = min(batch_nominal, n_resamples-k)
@@ -532,10 +631,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     theta_hat_b = np.concatenate(theta_hat_b, axis=-1)
 
     # Calculate percentile interval
-    alpha = (1 - confidence_level)/2
+    alpha = ((1 - confidence_level)/2 if alternative == 'two-sided'
+             else (1 - confidence_level))
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha
@@ -550,12 +650,17 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         theta_hat = statistic(*data, axis=-1)
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
+    if alternative == 'less':
+        ci_l = np.full_like(ci_l, -np.inf)
+    elif alternative == 'greater':
+        ci_u = np.full_like(ci_u, np.inf)
+
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            bootstrap_distribution=theta_hat_b,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 
-def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
+def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
 
@@ -566,8 +671,16 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
-    if not callable(rvs):
-        raise TypeError("`rvs` must be callable.")
+    if not isinstance(rvs, Sequence):
+        rvs = (rvs,)
+        data = (data,)
+    for rvs_i in rvs:
+        if not callable(rvs_i):
+            raise TypeError("`rvs` must be callable or sequence of callables.")
+
+    if not len(rvs) == len(data):
+        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
+        raise ValueError(message)
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
@@ -580,8 +693,12 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     else:
         statistic_vectorized = statistic
 
-    sample = np.atleast_1d(sample)
-    sample = np.moveaxis(sample, axis, -1)
+    data = _broadcast_arrays(data, axis)
+    data_iv = []
+    for sample in data:
+        sample = np.atleast_1d(sample)
+        sample = np.moveaxis(sample, axis_int, -1)
+        data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
     if n_resamples != n_resamples_int or n_resamples_int <= 0:
@@ -599,59 +716,80 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
-    return (sample, rvs, statistic_vectorized, vectorized, n_resamples_int,
+    return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
             batch_iv, alternative, axis_int)
 
 
-fields = ['statistic', 'pvalue', 'null_distribution']
-MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
+@dataclass
+class MonteCarloTestResult:
+    """Result object returned by `scipy.stats.monte_carlo_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the sample.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
-def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
+@_rename_parameter('sample', 'data')
+def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
                      axis=0):
-    r"""
-    Monte Carlo test that a sample is drawn from a given distribution.
+    r"""Perform a Monte Carlo hypothesis test.
 
-    The null hypothesis is that the provided `sample` was drawn at random from
-    the distribution for which `rvs` generates random variates. The value of
-    the `statistic` for the given sample is compared against a Monte Carlo null
-    distribution: the value of the statistic for each of `n_resamples`
-    samples generated by `rvs`. This gives the p-value, the probability of
-    observing such an extreme value of the test statistic under the null
-    hypothesis.
+    `data` contains a sample or a sequence of one or more samples. `rvs`
+    specifies the distribution(s) of the sample(s) in `data` under the null
+    hypothesis. The value of `statistic` for the given `data` is compared
+    against a Monte Carlo null distribution: the value of the statistic for
+    each of `n_resamples` sets of samples generated using `rvs`. This gives
+    the p-value, the probability of observing such an extreme value of the
+    test statistic under the null hypothesis.
 
     Parameters
     ----------
-    sample : array-like
-        An array of observations.
-    rvs : callable
-        Generates random variates from the distribution against which `sample`
-        will be tested. `rvs` must be a callable that accepts keyword argument
-        ``size`` (e.g. ``rvs(size=(m, n))``) and returns an N-d array sample
-        of that shape.
+    data : array-like or sequence of array-like
+        An array or sequence of arrays of observations.
+    rvs : callable or tuple of callables
+        A callable or sequence of callables that generates random variates
+        under the null hypothesis. Each element of `rvs` must be a callable
+        that accepts keyword argument ``size`` (e.g. ``rvs(size=(m, n))``) and
+        returns an N-d array sample of that shape. If `rvs` is a sequence, the
+        number of callables in `rvs` must match the number of samples in
+        `data`, i.e. ``len(rvs) == len(data)``. If `rvs` is a single callable,
+        `data` is treated as a single sample.
     statistic : callable
         Statistic for which the p-value of the hypothesis test is to be
         calculated. `statistic` must be a callable that accepts a sample
-        (e.g. ``statistic(sample)``) and returns the resulting statistic.
+        (e.g. ``statistic(sample)``) or ``len(rvs)`` separate samples (e.g.
+        ``statistic(samples1, sample2)`` if `rvs` contains two callables and
+        `data` contains two samples) and returns the resulting statistic.
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
-        provided `axis` of the sample array.
+        provided `axis` of the samples in `data`.
     vectorized : bool, optional
         If `vectorized` is set ``False``, `statistic` will not be passed
         keyword argument `axis` and is expected to calculate the statistic
         only for 1D samples. If ``True``, `statistic` will be passed keyword
         argument `axis` and is expected to calculate the statistic along `axis`
-        when passed an ND sample array. If ``None`` (default), `vectorized`
+        when passed ND sample arrays. If ``None`` (default), `vectorized`
         will be set ``True`` if ``axis`` is a parameter of `statistic`. Use of
         a vectorized statistic typically reduces computation time.
     n_resamples : int, default: 9999
-        Number of random permutations used to approximate the Monte Carlo null
-        distribution.
+        Number of samples drawn from each of the callables of `rvs`.
+        Equivalently, the number statistic values under the null hypothesis
+        used as the Monte Carlo null distribution.
     batch : int, optional
-        The number of permutations to process in each call to `statistic`.
-        Memory usage is O(`batch`*``sample.size[axis]``). Default is
-        ``None``, in which case `batch` equals `n_resamples`.
+        The number of Monte Carlo samples to process in each call to
+        `statistic`. Memory usage is O(`batch`*``sample.size[axis]``). Default
+        is ``None``, in which case `batch` equals `n_resamples`.
     alternative : {'two-sided', 'less', 'greater'}
         The alternative hypothesis for which the p-value is calculated.
         For each alternative, the p-value is defined as follows.
@@ -663,16 +801,21 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
         - ``'two-sided'`` : twice the smaller of the p-values above.
 
     axis : int, default: 0
-        The axis of `sample` over which to calculate the statistic.
+        The axis of `data` (or each sample within `data`) over which to
+        calculate the statistic.
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the sample.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : MonteCarloTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The test statistic of the observed `data`.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     References
     ----------
@@ -720,7 +863,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
-    our chosen threshold of 5%, so we cannot consider this to to be significant
+    our chosen threshold of 5%, so we cannot consider this to be significant
     evidence against the null hypothesis.
 
     Note that this p-value essentially matches that of
@@ -749,21 +892,22 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     >>> plt.show()
 
     """
-    args = _monte_carlo_test_iv(sample, rvs, statistic, vectorized,
+    args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
-    (sample, rvs, statistic, vectorized,
+    (data, rvs, statistic, vectorized,
      n_resamples, batch, alternative, axis) = args
 
     # Some statistics return plain floats; ensure they're at least np.float64
-    observed = np.asarray(statistic(sample, axis=-1))[()]
+    observed = np.asarray(statistic(*data, axis=-1))[()]
 
-    n_observations = sample.shape[-1]
+    n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples
     null_distribution = []
     for k in range(0, n_resamples, batch_nominal):
-        batch_actual = min(batch_nominal, n_resamples-k)
-        resamples = rvs(size=(batch_actual, n_observations))
-        null_distribution.append(statistic(resamples, axis=-1))
+        batch_actual = min(batch_nominal, n_resamples - k)
+        resamples = [rvs_i(size=(batch_actual, n_observations_i))
+                     for rvs_i, n_observations_i in zip(rvs, n_observations)]
+        null_distribution.append(statistic(*resamples, axis=-1))
     null_distribution = np.concatenate(null_distribution)
     null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
 
@@ -793,8 +937,23 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 
 
-attributes = ('statistic', 'pvalue', 'null_distribution')
-PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
+@dataclass
+class PermutationTestResult:
+    """Result object returned by `scipy.stats.permutation_test`.
+
+    Attributes
+    ----------
+    statistic : float or ndarray
+        The observed test statistic of the data.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null
+        hypothesis.
+    """
+    statistic: float | np.ndarray
+    pvalue: float | np.ndarray
+    null_distribution: np.ndarray
 
 
 def _all_partitions_concatenated(ns):
@@ -833,6 +992,33 @@ def _batch_generator(iterable, batch):
     while z:  # we don't want StopIteration without yielding an empty list
         yield z
         z = [item for i, item in zip(range(batch), iterator)]
+
+
+def _pairings_permutations_gen(n_permutations, n_samples, n_obs_sample, batch,
+                               random_state):
+    # Returns a generator that yields arrays of size
+    # `(batch, n_samples, n_obs_sample)`.
+    # Each row is an independent permutation of indices 0 to `n_obs_sample`.
+    batch = min(batch, n_permutations)
+
+    if hasattr(random_state, 'permuted'):
+        def batched_perm_generator():
+            indices = np.arange(n_obs_sample)
+            indices = np.tile(indices, (batch, n_samples, 1))
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                # Don't permute in place, otherwise results depend on `batch`
+                permuted_indices = random_state.permuted(indices, axis=-1)
+                yield permuted_indices[:batch_actual]
+    else:  # RandomState and early Generators don't have `permuted`
+        def batched_perm_generator():
+            for k in range(0, n_permutations, batch):
+                batch_actual = min(batch, n_permutations-k)
+                size = (batch_actual, n_samples, n_obs_sample)
+                x = random_state.random(size=size)
+                yield np.argsort(x, axis=-1)[:batch_actual]
+
+    return batched_perm_generator()
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
@@ -911,22 +1097,23 @@ def _calculate_null_pairings(data, statistic, n_permutations, batch,
     if n_permutations >= n_max:
         exact_test = True
         n_permutations = n_max
+        batch = batch or int(n_permutations)
         # cartesian product of the sets of all permutations of indices
         perm_generator = product(*(permutations(range(n_obs_sample))
                                    for i in range(n_samples)))
+        batched_perm_generator = _batch_generator(perm_generator, batch=batch)
     else:
         exact_test = False
+        batch = batch or int(n_permutations)
         # Separate random permutations of indices for each sample.
         # Again, it would be nice if RandomState/Generator.permutation
         # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
+        args = n_permutations, n_samples, n_obs_sample, batch, random_state
+        batched_perm_generator = _pairings_permutations_gen(*args)
 
-    batch = batch or int(n_permutations)
     null_distribution = []
 
-    for indices in _batch_generator(perm_generator, batch=batch):
+    for indices in batched_perm_generator:
         indices = np.array(indices)
 
         # `indices` is 3D: the zeroth axis is for permutations, the next is
@@ -1159,12 +1346,16 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     Returns
     -------
-    statistic : float or ndarray
-        The observed test statistic of the data.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
+    res : PermutationTestResult
+        An object with attributes:
+
+        statistic : float or ndarray
+            The observed test statistic of the data.
+        pvalue : float or ndarray
+            The p-value for the given alternative.
+        null_distribution : ndarray
+            The values of the test statistic generated under the null
+            hypothesis.
 
     Notes
     -----
@@ -1213,7 +1404,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     case, if ``n`` is an array of the number of observations within each
     sample, the number of distinct partitions is::
 
-        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
+        np.prod([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
 
     **Paired statistics, permute pairings** (``permutation_type='pairings'``):
 
@@ -1371,7 +1562,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is 0.4329%. This is less than our
-    chosen threshold of 5%, so we consider this to to be significant evidence
+    chosen threshold of 5%, so we consider this to be significant evidence
     against the null hypothesis in favor of the alternative.
 
     Because the size of the samples above was small, `permutation_test` could
@@ -1514,3 +1705,143 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     pvalues = np.clip(pvalues, 0, 1)
 
     return PermutationTestResult(observed, pvalues, null_distribution)
+
+
+@dataclass
+class ResamplingMethod:
+    """Configuration information for a statistical resampling method.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a resampling or Monte Carlo version
+    of the hypothesis test.
+
+    Attributes
+    ----------
+    n_resamples : int
+        The number of resamples to perform or Monte Carlo samples to draw.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    """
+    n_resamples: int = 9999
+    batch: int = None  # type: ignore[assignment]
+
+
+@dataclass
+class MonteCarloMethod(ResamplingMethod):
+    """Configuration information for a Monte Carlo hypothesis test.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a Monte Carlo version of the
+    hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int, optional
+        The number of Monte Carlo samples to draw. Default is 9999.
+    batch : int, optional
+        The number of Monte Carlo samples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all samples in a single batch.
+    rvs : callable or tuple of callables, optional
+        A callable or sequence of callables that generates random variates
+        under the null hypothesis. Each element of `rvs` must be a callable
+        that accepts keyword argument ``size`` (e.g. ``rvs(size=(m, n))``) and
+        returns an N-d array sample of that shape. If `rvs` is a sequence, the
+        number of callables in `rvs` must match the number of samples passed
+        to the hypothesis test in which the `MonteCarloMethod` is used. Default
+        is ``None``, in which case the hypothesis test function chooses values
+        to match the standard version of the hypothesis test. For example,
+        the null hypothesis of `scipy.stats.pearsonr` is typically that the
+        samples are drawn from the standard normal distribution, so
+        ``rvs = (rng.normal, rng.normal)`` where
+        ``rng = np.random.default_rng()``.
+    """
+    rvs: object = None
+
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    rvs=self.rvs)
+
+
+@dataclass
+class PermutationMethod(ResamplingMethod):
+    """Configuration information for a permutation hypothesis test.
+
+    Instances of this class can be passed into the `method` parameter of some
+    hypothesis test functions to perform a permutation version of the
+    hypothesis tests.
+
+    Attributes
+    ----------
+    n_resamples : int, optional
+        The number of resamples to perform. Default is 9999.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+    """
+    random_state: object = None
+
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    random_state=self.random_state)
+
+
+@dataclass
+class BootstrapMethod(ResamplingMethod):
+    """Configuration information for a bootstrap confidence interval.
+
+    Instances of this class can be passed into the `method` parameter of some
+    confidence interval methods to generate a bootstrap confidence interval.
+
+    Attributes
+    ----------
+    n_resamples : int, optional
+        The number of resamples to perform. Default is 9999.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        the statistic. Batch sizes >>1 tend to be faster when the statistic
+        is vectorized, but memory usage scales linearly with the batch size.
+        Default is ``None``, which processes all resamples in a single batch.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate resamples.
+
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, then that instance is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+
+    method : {'bca', 'percentile', 'basic'}
+        Whether to use the 'percentile' bootstrap ('percentile'), the 'basic'
+        (AKA 'reverse') bootstrap ('basic'), or the bias-corrected and
+        accelerated bootstrap ('BCa', default).
+    """
+    random_state: object = None
+    method: str = 'BCa'
+
+    def _asdict(self):
+        # `dataclasses.asdict` deepcopies; we don't want that.
+        return dict(n_resamples=self.n_resamples, batch=self.batch,
+                    random_state=self.random_state, method=self.method)

@@ -5,6 +5,12 @@ Sparse matrices (:mod:`scipy.sparse`)
 
 .. currentmodule:: scipy.sparse
 
+.. toctree::
+   :hidden:
+
+   sparse.csgraph
+   sparse.linalg
+
 SciPy 2-D sparse array package for numeric data.
 
 .. note::
@@ -273,11 +279,8 @@ from ._dia import *
 from ._bsr import *
 from ._construct import *
 from ._extract import *
+from ._matrix import spmatrix
 from ._matrix_io import *
-
-from ._arrays import (
-    csr_array, csc_array, lil_array, dok_array, coo_array, dia_array, bsr_array
-)
 
 # For backward compatibility with v0.19.
 from . import csgraph

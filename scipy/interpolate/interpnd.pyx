@@ -1,3 +1,4 @@
+# cython: cpow=True
 """
 Simple N-D interpolation
 
@@ -218,9 +219,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
-        Data point coordinates, or a precomputed Delaunay triangulation.
+        2-D array of data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
-        Data values.
+        N-D array of data values at `points`.  The length of `values` along the
+        first axis must be equal to the length of `points`. Unlike some
+        interpolators, the interpolation axis cannot be changed.
     fill_value : float, optional
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
@@ -236,11 +239,14 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -266,6 +272,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------
@@ -290,11 +300,10 @@ class LinearNDInterpolator(NDInterpolatorBase):
     def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, m, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 
@@ -347,9 +356,9 @@ class GradientEstimationWarning(Warning):
     pass
 
 @cython.cdivision(True)
-cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
+cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
                                        int maxiter, double tol,
-                                       double *y) nogil:
+                                       double *y) noexcept nogil:
     """
     Estimate gradients of a function at the vertices of a 2d triangulation.
 
@@ -582,7 +591,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
                                                 int isimplex,
                                                 double *b,
                                                 double_or_complex *f,
-                                                double_or_complex *df) nogil:
+                                                double_or_complex *df) noexcept nogil:
     """
     Evaluate Clough-Tocher interpolant on a 2D triangle.
 
@@ -623,9 +632,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     cdef double_or_complex \
          f1, f2, f3, df12, df13, df21, df23, df31, df32
     cdef double g[3]
-    cdef double \
-         e12x, e12y, e23x, e23y, e31x, e31y, \
-         e14x, e14y, e24x, e24y, e34x, e34y
+    cdef double e12x, e12y, e23x, e23y, e31x, e31y
     cdef double_or_complex w
     cdef double minval
     cdef double b1, b2, b3, b4
@@ -649,15 +656,6 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
             - d.points[0 + 2*d.simplices[3*isimplex + 2]])
     e31y = (+ d.points[1 + 2*d.simplices[3*isimplex + 0]]
             - d.points[1 + 2*d.simplices[3*isimplex + 2]])
-
-    e14x = (e12x - e31x)/3
-    e14y = (e12y - e31y)/3
-
-    e24x = (-e12x + e23x)/3
-    e24y = (-e12y + e23y)/3
-
-    e34x = (e31x - e23x)/3
-    e34y = (e31y - e23y)/3
 
     f1 = f[0]
     f2 = f[1]
@@ -817,9 +815,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     Parameters
     ----------
     points : ndarray of floats, shape (npoints, ndims); or Delaunay
-        Data point coordinates, or a precomputed Delaunay triangulation.
+        2-D array of data point coordinates, or a precomputed Delaunay triangulation.
     values : ndarray of float or complex, shape (npoints, ...)
-        Data values.
+        N-D array of data values at `points`. The length of `values` along the
+        first axis must be equal to the length of `points`. Unlike some
+        interpolators, the interpolation axis cannot be changed.
     fill_value : float, optional
         Value used to fill in for requested points outside of the
         convex hull of the input points.  If not provided, then
@@ -846,11 +846,14 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 
+    .. note:: For data on a regular grid use `interpn` instead.
+
     Examples
     --------
     We can interpolate values on a 2D plane:
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = rng.random(10) - 0.5
@@ -876,6 +879,10 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
         Nearest-neighbor interpolation in N > 1 dimensions.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     References
     ----------
@@ -921,14 +928,13 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef const double[:,::1] points = self.points
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
+        cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
         cdef double eps, eps_broad
 
