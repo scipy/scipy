@@ -509,7 +509,10 @@ def quad(func, a, b, args=(), full_output=None, epsabs=1.49e-8, epsrel=1.49e-8,
 
     ier = retval[-1]
     if ier == 0:
-        return QuadResult(*retval[:-2], infodict=retval[-2], message="", explain="")
+        if full_output:
+            return retval[:-1]
+        else:
+            return QuadResult(*retval[:-2], infodict=retval[-2], message="", explain="")
 
     msgs = {80: "A Python error occurred possibly while calling the function.",
              1: "The maximum number of subdivisions (%d) has been achieved.\n  If increasing the limit yields no improvement it is advised to analyze \n  the integrand in order to determine the difficulties.  If the position of a \n  local difficulty can be determined (singularity, discontinuity) one will \n  probably gain from splitting up the interval and calling the integrator \n  on the subranges.  Perhaps a special-purpose integrator should be used." % limit,
