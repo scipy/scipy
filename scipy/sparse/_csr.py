@@ -76,8 +76,8 @@ class csr_array(_cs_matrix):
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
     Canonical Format
-        - In the canonical format, CSR matrices have indices sorted per row,
-          and cannot contain duplicate entries.
+        - Within each column, indices are sorted by row.
+        - There are no duplicate entries.
 
     Examples
     --------

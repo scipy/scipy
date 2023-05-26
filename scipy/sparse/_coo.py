@@ -87,7 +87,7 @@ class coo_array(_data_matrix, _minmax_mixin):
           construction of finite element matrices and the like. (see example)
 
     Canonical format
-        - Entries sorted by row, then column indices sorted per row,
+        - Entries and indices sorted by row, then column.
         - There are no duplicate entries (i.e. duplicate (i,j) locations)
         - Arrays MAY have explicit zeros.
 
