@@ -20,8 +20,6 @@ from ._coo import coo_matrix
 from ._csc import csc_matrix
 from ._csr import csr_matrix
 from ._dia import dia_matrix, dia_array
-from ._dok import dok_matrix
-from ._lil import lil_matrix
 
 from ._base import issparse
 from ._matrix import _array_doc_to_matrix
