@@ -487,7 +487,7 @@ def test_inplace_warning():
     A = A.astype(np.cdouble)
     X = rnd.standard_normal((n, m))
     with pytest.warns(UserWarning, match="Inplace update"):
-        eigvals, _ = lobpcg(A, X, maxit=2, verbosityLevel=1)
+        eigvals, _ = lobpcg(A, X, maxiter=2, verbosityLevel=1)
 
 
 def test_maxit():
