@@ -260,7 +260,7 @@ def isspmatrix_csc(x):
     return isinstance(x, csc_matrix) or isinstance(x, csc_array)
 
 
-# This namespace class separates array from matrix with ininstance
+# This namespace class separates array from matrix with isinstance
 class csc_array(_csc_base, sparray):
     pass
 

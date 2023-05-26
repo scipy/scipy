@@ -620,7 +620,7 @@ def isspmatrix_coo(x):
     return isinstance(x, coo_matrix) or isinstance(x, coo_array)
 
 
-# This namespace class separates array from matrix with ininstance
+# This namespace class separates array from matrix with isinstance
 class coo_array(_coo_base, sparray):
     pass
 

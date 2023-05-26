@@ -469,7 +469,7 @@ def isspmatrix_dia(x):
     return isinstance(x, dia_matrix) or isinstance(x, dia_array)
 
 
-# This namespace class separates array from matrix with ininstance
+# This namespace class separates array from matrix with isinstance
 class dia_array(_dia_base, sparray):
     pass
 

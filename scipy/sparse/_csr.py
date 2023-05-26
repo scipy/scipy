@@ -357,7 +357,7 @@ def isspmatrix_csr(x):
     return isinstance(x, csr_matrix) or isinstance(x, csr_array)
 
 
-# This namespace class separates array from matrix with ininstance
+# This namespace class separates array from matrix with isinstance
 class csr_array(_csr_base, sparray):
     pass
 
