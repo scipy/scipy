@@ -26,11 +26,6 @@ from ._lil import lil_matrix
 from ._base import issparse
 from ._matrix import _array_doc_to_matrix
 
-_fmt_to_spmatrix = {
-    "bsr": bsr_matrix, "coo": coo_matrix, "csc": csc_matrix, "csr": csr_matrix,
-    "dia": dia_matrix, "dok": dok_matrix, "lil": lil_matrix,
-}
-
 
 def spdiags(data, diags, m=None, n=None, format=None):
     """
@@ -199,8 +194,8 @@ def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
-    A = diags_array(diagonals, offsets, shape=shape, format=format, dtype=dtype)
-    return _fmt_to_spmatrix[A.format](A)
+    A = diags_array(diagonals, offsets, shape=shape, dtype=dtype)
+    return dia_matrix(A).asformat(format)
 diags.__doc__ = _array_doc_to_matrix(diags_array.__doc__)
 
 
