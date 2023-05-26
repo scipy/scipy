@@ -206,7 +206,7 @@ See the docstrings of these classes for details on each canonical representation
 
 To check if an instance of these classes is in canonical form, use the ``.has_canonical_format`` attribute:
 
-   >>> coo = sparse.coo_array(([1, 1, 1], ([0, 2, 1], [0, 1, 2])))
+   >>> coo = sp.sparse.coo_array(([1, 1, 1], ([0, 2, 1], [0, 1, 2])))
    >>> coo.has_canonical_format
    False
 
