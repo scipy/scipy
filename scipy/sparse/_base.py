@@ -716,7 +716,7 @@ class _spbase:
         if self._is_array:
             warn(np.VisibleDeprecationWarning(
                 "`.A` is deprecated and will be removed in v1.13.0. "
-                "Use `.todense()` instead."
+                "Use `.toarray()` instead."
             ))
         return self.toarray()
 
@@ -729,9 +729,9 @@ class _spbase:
         if self._is_array:
             warn(np.VisibleDeprecationWarning(
                 "`.H` is deprecated and will be removed in v1.13.0. "
-                "Please use `.conj().T` instead."
+                "Please use `.T.conjugate()` instead."
             ))
-        return self.transpose().conjugate()
+        return self.T.conjugate()
 
     @property
     def real(self):
