@@ -7,13 +7,13 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import isspmatrix, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
 
 
-class dia_array(_data_matrix):
+class _dia_base(_data_matrix):
     """Sparse matrix with DIAgonal storage
 
     This can be instantiated in several ways:
@@ -190,8 +190,8 @@ class dia_array(_data_matrix):
                 nnz += min(M+k,N)
         return int(nnz)
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def sum(self, axis=None, dtype=None, out=None):
         validateaxis(axis)
@@ -231,7 +231,7 @@ class dia_array(_data_matrix):
 
         return ret.sum(axis=(), dtype=dtype, out=out)
 
-    sum.__doc__ = _sparray.sum.__doc__
+    sum.__doc__ = _spbase.sum.__doc__
 
     def _add_sparse(self, other):
 
@@ -239,7 +239,7 @@ class dia_array(_data_matrix):
         if not isinstance(other, type(self)):
             # If other is not of type dia_array, default to
             # converting to csr_matrix, as is done in the _add_sparse
-            # method of parent class _sparray
+            # method of parent class _spbase
             return self.tocsr()._add_sparse(other)
 
         # The task is to compute m = self + other
@@ -319,7 +319,7 @@ class dia_array(_data_matrix):
         else:
             return self
 
-    todia.__doc__ = _sparray.todia.__doc__
+    todia.__doc__ = _spbase.todia.__doc__
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -343,7 +343,7 @@ class dia_array(_data_matrix):
         return self._dia_container((data, offsets), shape=(
             num_cols, num_rows), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def diagonal(self, k=0):
         rows, cols = self.shape
@@ -361,7 +361,7 @@ class dia_array(_data_matrix):
             result = np.pad(result, (0, padding), mode='constant')
         return result
 
-    diagonal.__doc__ = _sparray.diagonal.__doc__
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     def tocsc(self, copy=False):
         if self.nnz == 0:
@@ -387,7 +387,7 @@ class dia_array(_data_matrix):
         return self._csc_container((data, indices, indptr), shape=self.shape,
                                    dtype=self.dtype)
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=False):
         num_rows, num_cols = self.shape
@@ -409,7 +409,7 @@ class dia_array(_data_matrix):
         A.has_canonical_format = True
         return A
 
-    tocoo.__doc__ = _sparray.tocoo.__doc__
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     # needed by _data_matrix
     def _with_data(self, data, copy=True):
@@ -440,7 +440,7 @@ class dia_array(_data_matrix):
 
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
 
 def isspmatrix_dia(x):
@@ -469,7 +469,11 @@ def isspmatrix_dia(x):
     return isinstance(x, dia_matrix) or isinstance(x, dia_array)
 
 
-class dia_matrix(spmatrix, dia_array):
+# This namespace class separates array from matrix with isinstance
+class dia_array(_dia_base, sparray):
     pass
 
-dia_matrix.__doc__ = _array_doc_to_matrix(dia_array.__doc__)
+class dia_matrix(spmatrix, _dia_base):
+    pass
+
+dia_matrix.__doc__ = _array_doc_to_matrix(_dia_base.__doc__)

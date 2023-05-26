@@ -211,8 +211,9 @@ class OptimizeResult(dict):
 
     Notes
     -----
-    `OptimizeResult` may have additional attributes not listed here depending
-    on the specific solver being used. Since this class is essentially a
+    Depending on the specific solver being used, `OptimizeResult` may
+    not have all attributes listed here, and they may have additional
+    attributes not listed here. Since this class is essentially a
     subclass of dict with attribute accessors, one can see which
     attributes are available using the `OptimizeResult.keys` method.
     """

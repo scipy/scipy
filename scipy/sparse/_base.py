@@ -7,7 +7,7 @@ from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis,)
 
-__all__ = ['isspmatrix', 'issparse',
+__all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -57,7 +57,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _sparray:
+class _spbase:
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -105,7 +105,7 @@ class _sparray:
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == '_sparray':
+        if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         self.maxprint = maxprint
@@ -933,7 +933,7 @@ class _sparray:
         """
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # Any sparse array format deriving from _sparray must define one of
+    # Any sparse array format deriving from _spbase must define one of
     # tocsr or tocoo. The other conversion methods may be implemented for
     # efficiency, but are not required.
     def tocsr(self, copy=False):
@@ -1285,7 +1285,12 @@ class _sparray:
     ## Also uncomment the definition of shape above.
 
     def get_shape(self):
-        """Get shape of a sparse array."""
+        """Get shape of a sparse array.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.shape` instead.
+        """
         msg = (
             "`get_shape` is deprecated and will be removed in v1.13.0; "
             "use `X.shape` instead."
@@ -1295,7 +1300,12 @@ class _sparray:
         return self._shape
 
     def set_shape(self, shape):
-        """See `reshape`."""
+        """See `reshape`.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.reshape` instead.
+        """
         msg = (
             "Shape assignment is deprecated and will be removed in v1.13.0; "
             "use `reshape` instead."
@@ -1307,10 +1317,23 @@ class _sparray:
         new_self = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_self.__dict__
 
-    shape = property(fget=lambda self: self._shape, fset=set_shape)  # noqa: F811
+    shape = property(
+        fget=lambda self: self._shape,
+        fset=set_shape,
+        doc="""The shape of the array.
+
+Note that, starting in SciPy 1.13.0, this property will no longer be
+settable. To change the array shape, use `X.reshape` instead.
+"""
+    )  # noqa: F811
 
     def asfptype(self):
-        """Upcast array to a floating point format (if necessary)"""
+        """Upcast array to a floating point format (if necessary)
+
+        .. deprecated:: 1.11.0
+           This method is for internal use only, and will be removed from the
+           public API in SciPy 1.13.0.
+        """
         msg = (
             "`asfptype` is an internal function, and is deprecated "
             "as part of the public API. It will be removed in v1.13.0."
@@ -1319,7 +1342,12 @@ class _sparray:
         return self._asfptype()
 
     def getmaxprint(self):
-        """Maximum number of elements to display when printed."""
+        """Maximum number of elements to display when printed.
+
+        .. deprecated:: 1.11.0
+           This method is for internal use only, and will be removed from the
+           public API in SciPy 1.13.0.
+        """
         msg = (
             "`getmaxprint` is an internal function, and is deprecated "
             "as part of the public API. It will be removed in v1.13.0."
@@ -1328,7 +1356,12 @@ class _sparray:
         return self._getmaxprint()
 
     def getformat(self):
-        """Matrix storage format"""
+        """Matrix storage format.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.format` instead.
+        """
         msg = (
             "`getformat` is deprecated and will be removed in v1.13.0; "
             "use `X.format` instead."
@@ -1338,6 +1371,11 @@ class _sparray:
 
     def getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0. Use `X.nnz`
+           instead.  The `axis` argument will no longer be supported;
+           please let us know if you still need this functionality.
 
         Parameters
         ----------
@@ -1359,9 +1397,9 @@ class _sparray:
     def getH(self):
         """Return the Hermitian transpose of this array.
 
-        See Also
-        --------
-        numpy.matrix.getH : NumPy's implementation of `getH` for matrices
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.conj().T` instead.
         """
         msg = (
             "`getH` is deprecated and will be removed in v1.13.0; "
@@ -1373,6 +1411,10 @@ class _sparray:
     def getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use array indexing instead.
         """
         msg = (
             "`getcol` is deprecated and will be removed in v1.13.0; "
@@ -1384,6 +1426,10 @@ class _sparray:
     def getrow(self, i):
         """Returns a copy of row i of the array, as a (1 x n) sparse
         array (row vector).
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use array indexing instead.
         """
         msg = (
             "`getrow` is deprecated and will be removed in v1.13.0; "
@@ -1393,6 +1439,11 @@ class _sparray:
         return self._getrow(i)
 
     ## End 1.13.0 deprecated methods
+
+
+class sparray:
+    """A namespace class to separate sparray from spmatrix"""
+    pass
 
 
 def issparse(x):
@@ -1422,7 +1473,7 @@ def issparse(x):
     >>> issparse(5)
     False
     """
-    return isinstance(x, _sparray)
+    return isinstance(x, _spbase)
 
 
 isspmatrix = issparse

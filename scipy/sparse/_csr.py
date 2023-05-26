@@ -7,7 +7,7 @@ __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _sparray
+from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
 from ._sputils import upcast
@@ -15,7 +15,7 @@ from ._sputils import upcast
 from ._compressed import _cs_matrix
 
 
-class csr_array(_cs_matrix):
+class _csr_base(_cs_matrix):
     """
     Compressed Sparse Row matrix
 
@@ -131,7 +131,7 @@ class csr_array(_cs_matrix):
            [0, 1, 1, 1]])
 
     """
-    format = 'csr'
+    _format = 'csr'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -143,7 +143,7 @@ class csr_array(_cs_matrix):
         return self._csc_container((self.data, self.indices,
                                     self.indptr), shape=(N, M), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def tolil(self, copy=False):
         lil = self._lil_container(self.shape, dtype=self.dtype)
@@ -160,7 +160,7 @@ class csr_array(_cs_matrix):
 
         return lil
 
-    tolil.__doc__ = _sparray.tolil.__doc__
+    tolil.__doc__ = _spbase.tolil.__doc__
 
     def tocsr(self, copy=False):
         if copy:
@@ -168,7 +168,7 @@ class csr_array(_cs_matrix):
         else:
             return self
 
-    tocsr.__doc__ = _sparray.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
         idx_dtype = self._get_index_dtype((self.indptr, self.indices),
@@ -189,7 +189,7 @@ class csr_array(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
         if blocksize is None:
@@ -225,7 +225,7 @@ class csr_array(_cs_matrix):
                 (data, indices, indptr), shape=self.shape
             )
 
-    tobsr.__doc__ = _sparray.tobsr.__doc__
+    tobsr.__doc__ = _spbase.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redundancy between csc_matrix and csr_array
@@ -357,7 +357,11 @@ def isspmatrix_csr(x):
     return isinstance(x, csr_matrix) or isinstance(x, csr_array)
 
 
-class csr_matrix(spmatrix, csr_array):
+# This namespace class separates array from matrix with isinstance
+class csr_array(_csr_base, sparray):
     pass
 
-csr_matrix.__doc__ = _array_doc_to_matrix(csr_array.__doc__)
+class csr_matrix(spmatrix, _csr_base):
+    pass
+
+csr_matrix.__doc__ = _array_doc_to_matrix(_csr_base.__doc__)

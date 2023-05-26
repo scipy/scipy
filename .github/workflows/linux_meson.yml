@@ -289,7 +289,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install "git+https://github.com/cython/cython.git"
+        python -m pip install "Cython>=3.0.0b3"
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
