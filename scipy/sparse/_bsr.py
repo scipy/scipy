@@ -88,6 +88,11 @@ class bsr_array(_cs_matrix, _minmax_mixin):
     If no blocksize is specified, a simple heuristic is applied to determine
     an appropriate blocksize.
 
+    **Canonical Format**
+
+    In canonical format, there are no duplicate blocks and indices are sorted
+    per row.
+
     Examples
     --------
     >>> from scipy.sparse import bsr_array

@@ -201,7 +201,7 @@ Generally these consist of added restrictions like:
 - No duplicate entries for any value
 - Sorted indices
 
-Classes with a canonical form include: :func:`coo_array()`, :func:`csr_array`, :func:`csc_array`, and :func:`bsr_array`.
+Classes with a canonical form include: :func:`coo_array`, :func:`csr_array`, :func:`csc_array`, and :func:`bsr_array`.
 See the docstrings of these classes for details on each classes canonical representations.
 
 To check if an instance of these classes is in canonical form, use the ``.has_canonical_format`` attribute:
