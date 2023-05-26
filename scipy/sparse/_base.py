@@ -711,31 +711,39 @@ class _spbase:
     def __pow__(self, *args, **kwargs):
         return self.power(*args, **kwargs)
 
-    def __getattr__(self, attr):
-        if attr == 'A':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "`.A` is deprecated and will be removed in v1.13.0. "
-                    "Use `.todense()` instead."
-                ))
-            return self.toarray()
-        elif attr == 'T':
-            return self.transpose()
-        elif attr == 'H':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "`.H` is deprecated and will be removed in v1.13.0. "
-                    "Please use `.conj().T` instead."
-                ))
-            return self.transpose().conjugate()
-        elif attr == 'real':
-            return self._real()
-        elif attr == 'imag':
-            return self._imag()
-        elif attr == 'size':
-            return self._getnnz()
-        else:
-            raise AttributeError(attr + " not found")
+    @property
+    def A(self) -> np.ndarray:
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.A` is deprecated and will be removed in v1.13.0. "
+                "Use `.todense()` instead."
+            ))
+        return self.toarray()
+
+    @property
+    def T(self):
+        return self.transpose()
+
+    @property
+    def H(self):
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.H` is deprecated and will be removed in v1.13.0. "
+                "Please use `.conj().T` instead."
+            ))
+        return self.transpose().conjugate()
+
+    @property
+    def real(self):
+        return self._real()
+
+    @property
+    def imag(self):
+        return self._imag()
+
+    @property
+    def size(self):
+        return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
         """
