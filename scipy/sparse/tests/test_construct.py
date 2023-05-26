@@ -580,3 +580,22 @@ class TestConstructUtils:
         sparse_matrix = construct.random(10, 10, density=0.1265)
         assert_equal(sparse_matrix.count_nonzero(),13)
 
+
+def test_diags_array():
+    """Tests of diags_array that do not rely on diags wrapper."""
+    diag = np.arange(1, 5)
+
+    assert_array_equal(construct.diags_array(diag).toarray(), np.diag(diag))
+
+    assert_array_equal(
+        construct.diags_array(diag, offsets=2).toarray(), np.diag(diag, k=2)
+    )
+
+    assert_array_equal(
+        construct.diags_array(diag, offsets=2, shape=(4, 4)).toarray(),
+        np.diag(diag, k=2)[:4, :4]
+    )
+
+    # Offset outside bounds when shape specified
+    with pytest.raises(ValueError, match=".*out of bounds"):
+        construct.diags(np.arange(1, 5), 5, shape=(4, 4))
