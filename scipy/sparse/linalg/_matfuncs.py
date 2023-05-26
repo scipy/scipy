@@ -8,7 +8,7 @@ Sparse matrix functions
 #          Jake Vanderplas, August 2012 (Sparse Updates)
 #
 
-__all__ = ['expm', 'inv']
+__all__ = ['expm', 'inv', 'matrix_power']
 
 import numpy as np
 from scipy.linalg._basic import solve, solve_triangular
@@ -861,3 +861,34 @@ def _ell(A, m):
     log2_alpha_div_u = np.log2(alpha/u)
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
+
+def matrix_power(A, power, structure=None):
+    """
+    Raise a square matrix to the integer power, `power`.
+
+    For positive integers, ``A**power`` is computed using repeated
+    matrix multiplications. If ``power==0``, the identity matrix of
+    the same shape as M is returned. If ``power < 0``, then the
+    inverse is computed and ``A`` is raised to ``abs(power)``
+
+    Parameters
+    ----------
+    A : (M, M) square sparse array or matrix
+        sparse array that will be raised to power `power`
+    power : int
+        Exponent used to raise sparse array `A`
+
+    Returns
+    -------
+    A**power : (M, M) sparse array or matrix
+        The output matrix will be the same shape as A, and will preserve
+        the class of A, but the format of the output may be changed.
+
+    """
+    M, N = A.shape
+    if A.ndim != 2 or M != N:
+        raise ValueError("expected A to be like a square matrix")
+    A = A.tocsc()
+    return scipy.sparse.eye(M, dtype=A.dtype) @ MatrixPowerOperator(
+        A, power, structure=structure
+    )
