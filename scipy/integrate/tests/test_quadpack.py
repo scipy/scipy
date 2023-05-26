@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_, assert_equal,
+from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
@@ -540,7 +540,6 @@ class TestQuad:
 
 
 class TestNQuad:
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -676,23 +675,3 @@ class TestNQuad:
         except TypeError:
             assert False
 
-    def test_result_object(self):
-        # Check that result object contains attributes `integral`, `abserr`,
-        # and `neval`. During the `full_output` deprecation period, also check
-        # that specifying `full_output` produces a warning and that values
-        # are the same whether `full_output` is True, False, or unspecified.
-        def func(x):
-            return x**2 + 1
-
-        res = nquad(func, ranges=[[0, 4]])
-        with np.testing.assert_warns(DeprecationWarning):
-            res2 = nquad(func, ranges=[[0, 4]], full_output=False)
-        with np.testing.assert_warns(DeprecationWarning):
-            res3 = nquad(func, ranges=[[0, 4]], full_output=True)
-
-        assert_equal(res, res2)
-        assert res.integral == res2.integral
-        assert res.abserr == res2.abserr
-
-        assert_equal(res, res3[:2])
-        assert_equal(res.neval, res3[2]['neval'])
