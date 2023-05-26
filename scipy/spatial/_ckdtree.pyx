@@ -791,6 +791,9 @@ cdef class cKDTree:
         if p < 1:
             raise ValueError("Only p-norms with 1<=p<=infinity permitted")
 
+        if not np.isfinite(x).all():
+            raise ValueError("'x' must be finite, check for nan or inf values")
+
         cdef:
             bool single = (x_arr.ndim == 1)
             bool nearest = False
@@ -940,6 +943,9 @@ cdef class cKDTree:
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
+        
+        if not np.isfinite(x).all():
+            raise ValueError("'x' must be finite, check for nan or inf values")
 
         if rlen:
             result = np.empty(retshape, dtype=np.intp)
