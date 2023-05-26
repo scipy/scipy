@@ -4427,6 +4427,12 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         expected = m.toarray()
         assert_array_equal(m.tocsc().toarray(), expected)
         assert_array_equal(m.tocsr().toarray(), expected)
+    
+    def test_tocoo_gh10050(self):
+        # regression test for gh-10050
+        m = dia_matrix([[1, 2], [3, 4]]).tocoo()
+        flat_inds = np.ravel_multi_index((m.row, m.col), m.shape)
+        assert m.has_canonical_format == (np.diff(flat_inds) > 0).all()
 
 
 TestDIA.init_class()
