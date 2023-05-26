@@ -76,7 +76,7 @@ class csr_array(_cs_matrix):
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
     Canonical Format
-        - Within each column, indices are sorted by row.
+        - Within each row, indices are sorted by column.
         - There are no duplicate entries.
 
     Examples
