@@ -14,7 +14,7 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix
+from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.csgraph._validation import validate_graph
 
 cimport cython
@@ -157,14 +157,14 @@ def shortest_path(csgraph, method='auto',
                    copy_if_dense=(not overwrite),
                    copy_if_sparse=(not overwrite))
 
-    cdef bint issparse
+    cdef bint is_sparse
     cdef ssize_t N      # XXX cdef ssize_t Nk fails in Python 3 (?)
 
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
         N = csgraph.shape[0]
-        issparse = isspmatrix(csgraph)
-        if issparse:
+        is_sparse = issparse(csgraph)
+        if is_sparse:
             Nk = csgraph.nnz
             if csgraph.format in ('csr', 'csc', 'coo'):
                 edges = csgraph.data
@@ -301,7 +301,7 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-    if not isspmatrix(csgraph):
+    if not issparse(csgraph):
         # for dense array input, zero entries represent non-edge
         dist_matrix[dist_matrix == 0] = INFINITY
 

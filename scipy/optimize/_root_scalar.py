@@ -304,7 +304,11 @@ def root_scalar(f, args=(), method=None, bracket=None,
             # approximate fprime with finite differences
 
             def fprime(x):
-                return approx_derivative(f, x, method='2-point')
+                # `root_scalar` doesn't actually seem to support vectorized
+                # use of `newton`. In that case, `approx_derivative` will
+                # always get scalar input. Nonetheless, it always returns an
+                # array, so we extract the element to produce scalar output.
+                return approx_derivative(f, x, method='2-point')[0]
 
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')

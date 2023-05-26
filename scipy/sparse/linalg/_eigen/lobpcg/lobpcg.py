@@ -22,7 +22,7 @@ import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
 from scipy.sparse.linalg import LinearOperator
-from scipy.sparse import isspmatrix
+from scipy.sparse import issparse
 
 __all__ = ["lobpcg"]
 
@@ -68,6 +68,7 @@ def _makeMatMat(m):
 
 def _matmul_inplace(x, y, verbosityLevel=0):
     """Perform 'np.matmul' in-place if possible.
+
     If some sufficient conditions for inplace matmul are met, do so.
     Otherwise try inplace update and fall back to overwrite if that fails.
     """
@@ -520,7 +521,7 @@ def lobpcg(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
                     )
-            elif isspmatrix(A):
+            elif issparse(A):
                 A = A.toarray()
             else:
                 A = np.asarray(A)
@@ -540,7 +541,7 @@ def lobpcg(
                             f"The shape {B.shape} of the secondary matrix\n"
                             f"defined by a callable object is wrong.\n"
                         )
-                elif isspmatrix(B):
+                elif issparse(B):
                     B = B.toarray()
                 else:
                     B = np.asarray(B)

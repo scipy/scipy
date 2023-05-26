@@ -2239,28 +2239,31 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = numpy.asarray(input)
-    if metric in ['taxicab', 'cityblock', 'manhattan']:
-        rank = input.ndim
-        metric = generate_binary_structure(rank, 1)
-    elif metric == 'chessboard':
-        rank = input.ndim
-        metric = generate_binary_structure(rank, rank)
+    if isinstance(metric, str):
+        if metric in ['taxicab', 'cityblock', 'manhattan']:
+            rank = input.ndim
+            metric = generate_binary_structure(rank, 1)
+        elif metric == 'chessboard':
+            rank = input.ndim
+            metric = generate_binary_structure(rank, rank)
+        else:
+            raise ValueError('invalid metric provided')
     else:
         try:
             metric = numpy.asarray(metric)
         except Exception as e:
-            raise RuntimeError('invalid metric provided') from e
+            raise ValueError('invalid metric provided') from e
         for s in metric.shape:
             if s != 3:
-                raise RuntimeError('metric sizes must be equal to 3')
+                raise ValueError('metric sizes must be equal to 3')
 
     if not metric.flags.contiguous:
         metric = metric.copy()
     if dt_inplace:
         if distances.dtype.type != numpy.int32:
-            raise RuntimeError('distances must be of int32 type')
+            raise ValueError('distances must be of int32 type')
         if distances.shape != input.shape:
-            raise RuntimeError('distances has wrong shape')
+            raise ValueError('distances has wrong shape')
         dt = distances
         dt[...] = numpy.where(input, -1, 0).astype(numpy.int32)
     else:
@@ -2285,9 +2288,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         ft = numpy.ravel(ft)
         if ft_inplace:
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices array must be int32')
+                raise ValueError('indices array must be int32')
             if indices.shape != (dt.ndim,) + dt.shape:
-                raise RuntimeError('indices array has wrong shape')
+                raise ValueError('indices array has wrong shape')
             tmp = indices
         else:
             tmp = numpy.indices(dt.shape, dtype=numpy.int32)

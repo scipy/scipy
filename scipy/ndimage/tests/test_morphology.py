@@ -1,4 +1,5 @@
 import numpy
+import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
                            assert_array_almost_equal)
 import pytest
@@ -440,6 +441,22 @@ class TestNdimageMorphology:
                 return_indices=False,
                 indices=indices_out
             )
+
+    @pytest.mark.parametrize('dtype', types)
+    def test_distance_transform_cdt05(self, dtype):
+        # test custom metric type per dicussion on issue #17381
+        data = numpy.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 1, 1, 1, 1, 1, 0, 0],
+                            [0, 0, 0, 1, 1, 1, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0]], dtype)
+        metric_arg = np.ones((3, 3))
+        actual = ndimage.distance_transform_cdt(data, metric=metric_arg)
+        assert actual.sum() == -21
 
     @pytest.mark.parametrize('dtype', types)
     def test_distance_transform_edt01(self, dtype):
@@ -2369,3 +2386,10 @@ def test_binary_hit_or_miss_input_as_output():
     # data should now contain the expected result
     ndimage.binary_hit_or_miss(data, output=data)
     assert_array_equal(expected, data)
+
+
+def test_distance_transform_cdt_invalid_metric():
+    msg = 'invalid metric provided'
+    with pytest.raises(ValueError, match=msg):
+        ndimage.distance_transform_cdt(np.ones((5, 5)),
+                                       metric="garbage")

@@ -11,16 +11,16 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import isspmatrix, _formats, _sparray
+from ._base import issparse, _formats, _spbase, sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
-                       get_index_dtype, check_shape)
+                       check_shape)
 from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,
                            bsr_tocsr)
 
 
-class bsr_array(_cs_matrix, _minmax_mixin):
+class _bsr_base(_cs_matrix, _minmax_mixin):
     """Block Sparse Row format sparse array.
 
     This can be instantiated in several ways:
@@ -117,13 +117,13 @@ class bsr_array(_cs_matrix, _minmax_mixin):
            [4, 4, 5, 5, 6, 6]])
 
     """
-    format = 'bsr'
+    _format = 'bsr'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-        if isspmatrix(arg1):
-            if isspmatrix_bsr(arg1) and copy:
+        if issparse(arg1):
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)
@@ -149,7 +149,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
 
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
-                idx_dtype = get_index_dtype(maxval=max(M//R, N//C, R, C))
+                idx_dtype = self._get_index_dtype(maxval=max(M//R, N//C, R, C))
                 self.indices = np.zeros(0, dtype=idx_dtype)
                 self.indptr = np.zeros(M//R + 1, dtype=idx_dtype)
 
@@ -172,8 +172,8 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                     maxval = max(shape)
                 if blocksize is not None:
                     maxval = max(maxval, max(blocksize))
-                idx_dtype = get_index_dtype((indices, indptr), maxval=maxval,
-                                            check_contents=True)
+                idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
+                                                  check_contents=True)
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)
@@ -247,7 +247,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
             warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name)
 
-        idx_dtype = get_index_dtype((self.indices, self.indptr))
+        idx_dtype = self._get_index_dtype((self.indices, self.indptr))
         self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
         self.indices = np.asarray(self.indices, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -293,17 +293,17 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         return self.data.shape[1:]
     blocksize = property(fget=_get_blocksize)
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
+            raise NotImplementedError("_getnnz over an axis is not implemented "
                                       "for BSR format")
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
 
-    getnnz.__doc__ = _sparray.getnnz.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def __repr__(self):
-        format = _formats[self.getformat()][1]
+        format = _formats[self.format][1]
         return ("<%dx%d sparse matrix of type '%s'\n"
                 "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
                 (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
@@ -321,7 +321,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                                   np.ravel(self.data), y)
         return y
 
-    diagonal.__doc__ = _sparray.diagonal.__doc__
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     ##########################
     # NotImplemented methods #
@@ -372,20 +372,18 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,n = self.blocksize
 
         # convert to this format
-        if isspmatrix_bsr(other):
+        if other.format == "bsr":
             C = other.blocksize[1]
         else:
             C = 1
 
-        from ._csr import isspmatrix_csr
-
-        if isspmatrix_csr(other) and n == 1:
+        if other.format == "csr" and n == 1:
             other = other.tobsr(blocksize=(n,C), copy=False)  # lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices))
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
+                                           other.indptr, other.indices))
 
         bnnz = csr_matmat_maxnnz(M//R, N//C,
                                  self.indptr.astype(idx_dtype),
@@ -393,9 +391,9 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                                  other.indptr.astype(idx_dtype),
                                  other.indices.astype(idx_dtype))
 
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=bnnz)
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
+                                           other.indptr, other.indices),
+                                          maxval=bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(bnnz, dtype=idx_dtype)
         data = np.empty(R*C*bnnz, dtype=upcast(self.dtype,other.dtype))
@@ -443,8 +441,8 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         M, N = self.shape
         R, C = self.blocksize
         nnz = self.nnz
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
-                                    maxval=max(nnz, N))
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
+                                          maxval=max(nnz, N))
         indptr = np.empty(M + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype))
@@ -460,12 +458,12 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                   data)
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = _sparray.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
         return self.tocsr(copy=False).tocsc(copy=copy)
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
         """Convert this matrix to COOrdinate format.
@@ -485,13 +483,14 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                 raise ValueError("Matrix too big to convert")
             indptr_diff = indptr_diff_limited
 
-        row = (R * np.arange(M//R)).repeat(indptr_diff)
+        idx_dtype = self._get_index_dtype(maxval=max(M, N))
+        row = (R * np.arange(M//R, dtype=idx_dtype)).repeat(indptr_diff)
         row = row.repeat(R*C).reshape(-1,R,C)
-        row += np.tile(np.arange(R).reshape(-1,1), (1,C))
+        row += np.tile(np.arange(R, dtype=idx_dtype).reshape(-1,1), (1,C))
         row = row.reshape(-1)
 
-        col = (C * self.indices).repeat(R*C).reshape(-1,R,C)
-        col += np.tile(np.arange(C), (R,1))
+        col = (C * self.indices).astype(idx_dtype, copy=False).repeat(R*C).reshape(-1,R,C)
+        col += np.tile(np.arange(C, dtype=idx_dtype), (R,1))
         col = col.reshape(-1)
 
         data = self.data.reshape(-1)
@@ -506,7 +505,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    toarray.__doc__ = _sparray.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -533,7 +532,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         return self._bsr_container((data, indices, indptr),
                                    shape=(N, M), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -639,9 +638,9 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
 
         max_bnnz = len(self.data) + len(other.data)
-        idx_dtype = get_index_dtype((self.indptr, self.indices,
-                                     other.indptr, other.indices),
-                                    maxval=max_bnnz)
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices,
+                                           other.indptr, other.indices),
+                                          maxval=max_bnnz)
         indptr = np.empty(self.indptr.shape, dtype=idx_dtype)
         indices = np.empty(max_bnnz, dtype=idx_dtype)
 
@@ -696,7 +695,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
 
 
 def isspmatrix_bsr(x):
-    """Is x of a bsr_array type?
+    """Is `x` of a bsr_matrix type?
 
     Parameters
     ----------
@@ -706,22 +705,26 @@ def isspmatrix_bsr(x):
     Returns
     -------
     bool
-        True if x is a bsr matrix, False otherwise
+        True if `x` is a bsr matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import bsr_array, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_array([[5]]))
+    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import bsr_array, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_array([[5]]))
+    False
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
+    return isinstance(x, bsr_matrix)
 
 
-class bsr_matrix(spmatrix, bsr_array):
+# This namespace class separates array from matrix with isinstance
+class bsr_array(_bsr_base, sparray):
     pass
 
-bsr_matrix.__doc__ = _array_doc_to_matrix(bsr_array.__doc__)
+class bsr_matrix(spmatrix, _bsr_base):
+    pass
+
+bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_base.__doc__)
