@@ -473,6 +473,23 @@ def test_dtypes(vdtype, mdtype, arr_type):
     assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
 
 
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_inplace_warning():
+    """Check lobpcg gives a warning in '_b_orthonormalize'
+    that in-place orthogonalization is impossible due to dtype mismatch.
+    """
+    rnd = np.random.RandomState(0)
+    n = 6
+    m = 1
+    vals = -np.arange(1, n + 1)
+    A = diags([vals], [0], (n, n))
+    A = A.astype(np.cdouble)
+    X = rnd.standard_normal((n, m))
+    with pytest.warns(UserWarning, match="Inplace update"):
+        eigvals, _ = lobpcg(A, X, maxit=2, verbosityLevel=1)
+
+
 def test_maxit():
     """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)
