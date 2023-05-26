@@ -540,6 +540,7 @@ class TestQuad:
 
 
 class TestNQuad:
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -550,9 +551,9 @@ class TestNQuad:
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}])
-        assert_quad(res, 1.5267454070738635)
-        assert res.neval > 0 and res.neval < 4e5
+                    opts=[opts_basic, {}, {}, {}], full_output=True)
+        assert_quad(res[:-1], 1.5267454070738635)
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
 
     def test_variable_limits(self):
         scale = .1
