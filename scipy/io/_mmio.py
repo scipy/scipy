@@ -16,7 +16,7 @@ import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
-from scipy.sparse import coo_matrix, isspmatrix
+from scipy.sparse import coo_matrix, issparse
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -490,7 +490,7 @@ class MMFile:
         isherm = a.dtype.char in 'FD'
 
         # sparse input
-        if isspmatrix(a):
+        if issparse(a):
             # check if number of nonzero entries of lower and upper triangle
             # matrix are equal
             a = a.tocoo()
@@ -846,7 +846,7 @@ class MMFile:
                         a = a.astype('D')
 
         else:
-            if not isspmatrix(a):
+            if not issparse(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
 
             rep = 'coordinate'
