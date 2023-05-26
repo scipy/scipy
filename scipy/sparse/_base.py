@@ -1454,7 +1454,7 @@ def issparse(x):
     Returns
     -------
     bool
-        True if `x` is a sparse array, False otherwise
+        True if `x` is a sparse array or a sparse matrix, False otherwise
 
     Examples
     --------
