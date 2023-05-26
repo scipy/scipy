@@ -3474,7 +3474,7 @@ class _TestMinMax:
         D[2, 2] = -1
         D[4, 2] = np.nan
         D[1, 4] = np.nan
-        X = self.spmatrix(D)
+        X = self.spcreator(D)
 
         X_nan_maximum = X.nanmax()
         assert np.isscalar(X_nan_maximum)
