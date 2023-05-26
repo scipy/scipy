@@ -372,7 +372,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,n = self.blocksize
 
         # convert to this format
-        if issparse(other) and other.format == "bsr":
+        if other.format == "bsr":
             C = other.blocksize[1]
         else:
             C = 1
