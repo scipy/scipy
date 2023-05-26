@@ -1458,6 +1458,7 @@ def issparse(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csr_array, csr_matrix, issparse
     >>> issparse(csr_matrix([[5]]))
     True
