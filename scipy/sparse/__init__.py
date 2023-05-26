@@ -54,6 +54,7 @@ Sparse array classes
    dia_array - Sparse array with DIAgonal storage
    dok_array - Dictionary Of Keys based sparse array
    lil_array - Row-based list of lists sparse array
+   sparray - Sparse array base class
 
 Sparse matrix classes
 ---------------------

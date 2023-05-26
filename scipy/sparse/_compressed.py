@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array
 
-from ._base import _sparray, isspmatrix, SparseEfficiencyWarning
+from ._base import _spbase, isspmatrix, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
@@ -119,7 +119,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -550,7 +550,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            self.data, y)
         return y
 
-    diagonal.__doc__ = _sparray.diagonal.__doc__
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -583,13 +583,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._maximum_minimum(other, np.maximum,
                                      '_maximum_', lambda x: np.asarray(x) > 0)
 
-    maximum.__doc__ = _sparray.maximum.__doc__
+    maximum.__doc__ = _spbase.maximum.__doc__
 
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum,
                                      '_minimum_', lambda x: np.asarray(x) < 0)
 
-    minimum.__doc__ = _sparray.minimum.__doc__
+    minimum.__doc__ = _spbase.minimum.__doc__
 
     #####################
     # Reduce operations #
@@ -599,7 +599,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
-        # The _sparray base class already does axis=0 and axis=1 efficiently
+        # The _spbase base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, 2)))[0]):
@@ -617,12 +617,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError('dimensions do not match')
 
             return ret.sum(axis=(), dtype=dtype, out=out)
-        # _sparray will handle the remaining situations when axis
+        # _spbase will handle the remaining situations when axis
         # is in {None, -1, 0, 1}
         else:
-            return _sparray.sum(self, axis=axis, dtype=dtype, out=out)
+            return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
-    sum.__doc__ = _sparray.sum.__doc__
+    sum.__doc__ = _spbase.sum.__doc__
 
     def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
@@ -1042,7 +1042,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             dtype=self.dtype
         )
 
-    tocoo.__doc__ = _sparray.tocoo.__doc__
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         if out is None and order is None:
@@ -1061,7 +1061,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_todense(M, N, x.indptr, x.indices, x.data, y)
         return out
 
-    toarray.__doc__ = _sparray.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -1213,7 +1213,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
     ###################
     # utility methods #

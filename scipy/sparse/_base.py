@@ -7,7 +7,7 @@ from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis,)
 
-__all__ = ['isspmatrix', 'issparse',
+__all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -57,7 +57,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _sparray:
+class _spbase:
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -105,7 +105,7 @@ class _sparray:
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == '_sparray':
+        if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         self.maxprint = maxprint
@@ -933,7 +933,7 @@ class _sparray:
         """
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # Any sparse array format deriving from _sparray must define one of
+    # Any sparse array format deriving from _spbase must define one of
     # tocsr or tocoo. The other conversion methods may be implemented for
     # efficiency, but are not required.
     def tocsr(self, copy=False):
@@ -1441,6 +1441,11 @@ settable. To change the array shape, use `X.reshape` instead.
     ## End 1.13.0 deprecated methods
 
 
+class sparray:
+    """A namespace class to separate sparray from spmatrix"""
+    pass
+
+
 def issparse(x):
     """Is x of a sparse array type?
 
@@ -1468,7 +1473,7 @@ def issparse(x):
     >>> issparse(5)
     False
     """
-    return isinstance(x, _sparray)
+    return isinstance(x, _spbase)
 
 
 isspmatrix = issparse
