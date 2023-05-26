@@ -1,6 +1,3 @@
-from ._sputils import isintlike, isscalarlike
-
-
 class spmatrix:
     """This class provides a base class for all sparse matrix classes.
 
