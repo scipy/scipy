@@ -289,9 +289,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         #    warn('Indices were not in sorted order. Sorting indices.')
         #    self.sort_indices(check_first=False)
 
-    def _get_blocksize(self):
+    @property
+    def blocksize(self) -> tuple:
+        """Block size of the matrix."""
         return self.data.shape[1:]
-    blocksize = property(fget=_get_blocksize)
 
     def _getnnz(self, axis=None):
         if axis is not None:
