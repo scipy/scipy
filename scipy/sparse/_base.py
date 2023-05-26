@@ -7,6 +7,8 @@ from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis,)
 
+from ._matrix import spmatrix
+
 __all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
@@ -1447,7 +1449,7 @@ class sparray:
 
 
 def issparse(x):
-    """Is x of a sparse array type?
+    """Is `x` of a sparse array type?
 
     Parameters
     ----------
@@ -1457,23 +1459,48 @@ def issparse(x):
     Returns
     -------
     bool
-        True if x is a sparse array, False otherwise
-
-    Notes
-    -----
-    issparse and isspmatrix are aliases for the same function.
+        True if `x` is a sparse array or a sparse matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import csr_array, issparse
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, issparse
+    >>> issparse(csr_matrix([[5]]))
+    True
     >>> issparse(csr_array([[5]]))
     True
-
-    >>> from scipy.sparse import issparse
+    >>> issparse(np.array([[5]]))
+    False
     >>> issparse(5)
     False
     """
     return isinstance(x, _spbase)
 
 
-isspmatrix = issparse
+def isspmatrix(x):
+    """Is `x` of a sparse matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse matrix
+
+    Returns
+    -------
+    bool
+        True if `x` is a sparse matrix, False otherwise
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
+    >>> isspmatrix(csr_matrix([[5]]))
+    True
+    >>> isspmatrix(csr_array([[5]]))
+    False
+    >>> isspmatrix(np.array([[5]]))
+    False
+    >>> isspmatrix(5)
+    False
+    """
+    return isinstance(x, spmatrix)

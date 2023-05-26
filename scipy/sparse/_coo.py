@@ -10,7 +10,7 @@ import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from ._base import isspmatrix, SparseEfficiencyWarning, _spbase, sparray
+from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index,
@@ -161,8 +161,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self.data = getdata(obj, copy=copy, dtype=dtype)
                 self.has_canonical_format = False
         else:
-            if isspmatrix(arg1):
-                if isspmatrix_coo(arg1) and copy:
+            if issparse(arg1):
+                if arg1.format == self.format and copy:
                     self.row = arg1.row.copy()
                     self.col = arg1.col.copy()
                     self.data = arg1.data.copy()
@@ -595,7 +595,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
 
 def isspmatrix_coo(x):
-    """Is x of coo_array type?
+    """Is `x` of coo_matrix type?
 
     Parameters
     ----------
@@ -605,19 +605,19 @@ def isspmatrix_coo(x):
     Returns
     -------
     bool
-        True if x is a coo matrix, False otherwise
+        True if `x` is a coo matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import coo_array, isspmatrix_coo
-    >>> isspmatrix_coo(coo_array([[5]]))
+    >>> from scipy.sparse import coo_array, coo_matrix, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import coo_array, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_array([[5]]))
+    False
     >>> isspmatrix_coo(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, coo_matrix) or isinstance(x, coo_array)
+    return isinstance(x, coo_matrix)
 
 
 # This namespace class separates array from matrix with isinstance

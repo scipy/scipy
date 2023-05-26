@@ -10,7 +10,7 @@ from bisect import bisect_left
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _spbase, sparray, isspmatrix
+from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape, check_reshape_kwargs)
@@ -86,8 +86,8 @@ class _lil_base(_spbase, IndexMixin):
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
-        if isspmatrix(arg1):
-            if isspmatrix_lil(arg1) and copy:
+        if issparse(arg1):
+            if arg1.format == "lil" and copy:
                 A = arg1.copy()
             else:
                 A = arg1.tolil()
@@ -323,7 +323,7 @@ class _lil_base(_spbase, IndexMixin):
             # Fast path for full-matrix sparse assignment.
             if (isinstance(row, slice) and isinstance(col, slice) and
                     row == slice(None) and col == slice(None) and
-                    isspmatrix(x) and x.shape == self.shape):
+                    issparse(x) and x.shape == self.shape):
                 x = self._lil_container(x, dtype=self.dtype)
                 self.rows = x.rows
                 self.data = x.data
@@ -522,7 +522,7 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 
 def isspmatrix_lil(x):
-    """Is x of lil_array type?
+    """Is `x` of lil_matrix type?
 
     Parameters
     ----------
@@ -532,19 +532,19 @@ def isspmatrix_lil(x):
     Returns
     -------
     bool
-        True if x is a lil matrix, False otherwise
+        True if `x` is a lil matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import lil_array, isspmatrix_lil
-    >>> isspmatrix_lil(lil_array([[5]]))
+    >>> from scipy.sparse import lil_array, lil_matrix, coo_matrix, isspmatrix_lil
+    >>> isspmatrix_lil(lil_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import lil_array, csr_matrix, isspmatrix_lil
-    >>> isspmatrix_lil(csr_matrix([[5]]))
+    >>> isspmatrix_lil(lil_array([[5]]))
+    False
+    >>> isspmatrix_lil(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, lil_matrix) or isinstance(x, lil_array)
+    return isinstance(x, lil_matrix)
 
 
 # This namespace class separates array from matrix with isinstance
