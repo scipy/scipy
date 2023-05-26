@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -16,9 +16,9 @@ __all__ = []
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(_sparray):
+class _data_matrix(_spbase):
     def __init__(self):
-        _sparray.__init__(self)
+        _spbase.__init__(self)
 
     def _get_dtype(self):
         return self.data.dtype
@@ -78,7 +78,7 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    astype.__doc__ = _sparray.astype.__doc__
+    astype.__doc__ = _spbase.astype.__doc__
 
     def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
@@ -88,17 +88,17 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    conjugate.__doc__ = _sparray.conjugate.__doc__
+    conjugate.__doc__ = _spbase.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = _sparray.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """

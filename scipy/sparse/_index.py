@@ -266,8 +266,8 @@ def _unpack_index(index):
     Valid type for row/col is integer, slice, or array of integers.
     """
     # First, check if indexing with single boolean matrix.
-    from ._base import _sparray, issparse
-    if (isinstance(index, (_sparray, np.ndarray)) and
+    from ._base import _spbase, issparse
+    if (isinstance(index, (_spbase, np.ndarray)) and
             index.ndim == 2 and index.dtype.kind == 'b'):
         return index.nonzero()
 

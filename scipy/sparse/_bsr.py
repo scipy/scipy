@@ -11,7 +11,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import issparse, _formats, _sparray
+from ._base import issparse, _formats, _spbase, sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        check_shape)
 from . import _sparsetools
@@ -20,7 +20,7 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_tocsr)
 
 
-class bsr_array(_cs_matrix, _minmax_mixin):
+class _bsr_base(_cs_matrix, _minmax_mixin):
     """Block Sparse Row format sparse array.
 
     This can be instantiated in several ways:
@@ -300,7 +300,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         R,C = self.blocksize
         return int(self.indptr[-1] * R * C)
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def __repr__(self):
         format = _formats[self.format][1]
@@ -321,7 +321,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                                   np.ravel(self.data), y)
         return y
 
-    diagonal.__doc__ = _sparray.diagonal.__doc__
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     ##########################
     # NotImplemented methods #
@@ -458,12 +458,12 @@ class bsr_array(_cs_matrix, _minmax_mixin):
                   data)
         return self._csr_container((data, indices, indptr), shape=self.shape)
 
-    tocsr.__doc__ = _sparray.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
         return self.tocsr(copy=False).tocsc(copy=copy)
 
-    tocsc.__doc__ = _sparray.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
         """Convert this matrix to COOrdinate format.
@@ -505,7 +505,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
     def toarray(self, order=None, out=None):
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    toarray.__doc__ = _sparray.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -532,7 +532,7 @@ class bsr_array(_cs_matrix, _minmax_mixin):
         return self._bsr_container((data, indices, indptr),
                                    shape=(N, M), copy=copy)
 
-    transpose.__doc__ = _sparray.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -720,7 +720,11 @@ def isspmatrix_bsr(x):
     return isinstance(x, bsr_matrix)
 
 
-class bsr_matrix(spmatrix, bsr_array):
+# This namespace class separates array from matrix with isinstance
+class bsr_array(_bsr_base, sparray):
     pass
 
-bsr_matrix.__doc__ = _array_doc_to_matrix(bsr_array.__doc__)
+class bsr_matrix(spmatrix, _bsr_base):
+    pass
+
+bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_base.__doc__)

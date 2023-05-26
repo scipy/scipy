@@ -235,6 +235,15 @@ cython_lapack = py3.extension_module('cython_lapack',
   subdir: 'scipy/linalg'
 )
 
+py3.extension_module('_decomp_lu_cython',
+  linalg_cython_gen.process('_decomp_lu_cython.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
@@ -286,6 +295,7 @@ python_sources = [
   '_decomp_cossin.py',
   '_decomp_ldl.py',
   '_decomp_lu.py',
+  '_decomp_lu_cython.pyi',
   '_decomp_polar.py',
   '_decomp_qr.py',
   '_decomp_qz.py',
