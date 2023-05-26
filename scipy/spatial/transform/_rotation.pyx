@@ -1366,16 +1366,19 @@ cdef class Rotation:
         reverses the sign of each component, represent the same spatial
         rotation. The returned value is in scalar-last (x, y, z, w) format.
 
-        Returns
-        -------
-        quat : `numpy.ndarray`, shape (4,) or (N, 4)
-            Shape depends on shape of inputs used for initialization.
+        Parameters
+        ----------
         canonical : `bool`, default False
             Whether to map the redundant double cover of rotation space to a
             unique "canonical" single cover. If True, then the quaternion is
             chosen from {q, -q} such that the w term is positive. If the w term
             is 0, then the quaternion is chosen such that the first nonzero
             term of the x, y, and z terms is positive.
+
+        Returns
+        -------
+        quat : `numpy.ndarray`, shape (4,) or (N, 4)
+            Shape depends on shape of inputs used for initialization.
 
         References
         ----------
