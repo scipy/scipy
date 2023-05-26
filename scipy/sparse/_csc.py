@@ -77,7 +77,7 @@ class csc_array(_cs_matrix):
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
     Canonical format
-      - In the canonical format, CSC matrices have indices sorted per column, 
+      - In the canonical format, CSC matrices have indices sorted per column,
         and cannot contain duplicate entries.
 
     Examples

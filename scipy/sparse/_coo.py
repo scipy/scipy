@@ -86,11 +86,11 @@ class coo_array(_data_matrix, _minmax_mixin):
           entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
-    Canonical COOrdinate format
-        - Entries sorted by row, then column indices sorted per row, 
+    Canonical format
+        - Entries sorted by row, then column indices sorted per row,
         - There are no duplicate entries (i.e. duplicate (i,j) locations)
         - Arrays MAY have explicit zeros.
-        
+
     Examples
     --------
 
