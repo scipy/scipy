@@ -1,4 +1,5 @@
 """Sparse DIAgonal format"""
+from warnings import warn
 
 __docformat__ = "restructuredtext en"
 
@@ -446,6 +447,12 @@ class _dia_base(_data_matrix):
 def isspmatrix_dia(x):
     """Is `x` of dia_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_dia is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "dia"`` to test sparsity & dia format or
+        Use ``isinstance(x, scipy.sparse.dia_matrix)`` to test for sparse matrix & dia
+
     Parameters
     ----------
     x
@@ -466,6 +473,10 @@ def isspmatrix_dia(x):
     >>> isspmatrix_dia(coo_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_dia is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "dia"` to check sparsity and dia format\n'
+         'or `isinstance(x, dia_matrix)` to check for sparse matrix and dia format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, dia_matrix)
 
 

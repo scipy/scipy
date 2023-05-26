@@ -602,6 +602,12 @@ class _coo_base(_data_matrix, _minmax_mixin):
 def isspmatrix_coo(x):
     """Is `x` of coo_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_coo is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "coo"`` to test sparsity & coo format or
+        Use ``isinstance(x, scipy.sparse.coo_matrix)`` to test for sparse matrix & coo
+
     Parameters
     ----------
     x
@@ -622,6 +628,10 @@ def isspmatrix_coo(x):
     >>> isspmatrix_coo(csr_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_coo is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "coo"` to check sparsity and coo format\n'
+         'or `isinstance(x, coo_matrix)` to check for sparse matrix and coo format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, coo_matrix)
 
 

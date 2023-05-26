@@ -3,6 +3,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['csc_array', 'csc_matrix', 'isspmatrix_csc']
 
+from warnings import warn
 
 import numpy as np
 
@@ -240,6 +241,12 @@ class _csc_base(_cs_matrix):
 def isspmatrix_csc(x):
     """Is `x` of csc_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_csc is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "csc"`` to test sparsity & csc format or
+        Use ``isinstance(x, scipy.sparse.csc_matrix)`` to test for sparse matrix & csc
+
     Parameters
     ----------
     x
@@ -260,6 +267,10 @@ def isspmatrix_csc(x):
     >>> isspmatrix_csc(coo_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_csc is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "csc"` to check sparsity and csc format\n'
+         'or `isinstance(x, csc_matrix)` to check for sparse matrix and csc format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, csc_matrix)
 
 

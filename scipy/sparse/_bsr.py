@@ -702,6 +702,12 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 def isspmatrix_bsr(x):
     """Is `x` of a bsr_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_bsr is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "bsr"`` to test sparsity & bsr format or
+        Use ``isinstance(x, scipy.sparse.bsr_matrix)`` to test for sparse matrix & bsr
+
     Parameters
     ----------
     x
@@ -722,6 +728,10 @@ def isspmatrix_bsr(x):
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_bsr is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "bsr"` to check sparsity and bsr format\n'
+         'or `isinstance(x, bsr_matrix)` to check for sparse matrix and bsr format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, bsr_matrix)
 
 

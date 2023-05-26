@@ -183,6 +183,12 @@ warnings.filterwarnings(
     message=r'There is no current event loop',
     category=DeprecationWarning,
 )
+# warnings in sparse for isspmatrix and isspmatrix_fmt
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*isspmatrix.*',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output

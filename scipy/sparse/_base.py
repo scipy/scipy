@@ -1490,6 +1490,12 @@ def issparse(x):
 def isspmatrix(x):
     """Is `x` of a sparse matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x)`` to test sparsity (sparray or spmatrix)
+        Use ``isinstance(x, scipy.sparse.spmatrix)`` to test sparse matrix
+
     Parameters
     ----------
     x
@@ -1513,4 +1519,8 @@ def isspmatrix(x):
     >>> isspmatrix(5)
     False
     """
+    warn('\nisspmatrix is deprecated and will be removed in v1.13.0\n'
+         'Use issparse(x) to check sparsity (sparray or spmatrix) or\n'
+         'isinstance(x, spmatrix) to check for sparse matrix',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, spmatrix)

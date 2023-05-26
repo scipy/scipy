@@ -1,4 +1,5 @@
 """Dictionary Of Keys based matrix"""
+from warnings import warn
 
 __docformat__ = "restructuredtext en"
 
@@ -427,6 +428,12 @@ class _dok_base(_spbase, IndexMixin, dict):
 def isspmatrix_dok(x):
     """Is `x` of dok_array type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_dok is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "dok"`` to test sparsity & dok format or
+        Use ``isinstance(x, scipy.sparse.dok_matrix)`` to test for sparse matrix & dok
+
     Parameters
     ----------
     x
@@ -447,6 +454,10 @@ def isspmatrix_dok(x):
     >>> isspmatrix_dok(coo_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_dok is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "dok"` to check sparsity and dok format\n'
+         'or `isinstance(x, dok_matrix)` to check for sparse matrix and dok format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, dok_matrix)
 
 

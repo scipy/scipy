@@ -32,3 +32,39 @@ def test_array_api_deprecations():
 
     with pytest.deprecated_call(match=msg):
         X.getrow(1).todense()
+
+
+def test_isspmatrix_deprecations():
+    msg = "1.13.0"
+
+    X = sp.sparse.csr_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix(X)
+
+    X = sp.sparse.bsr_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_bsr(X)
+
+    X = sp.sparse.coo_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_coo(X)
+
+    X = sp.sparse.csc_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_csc(X)
+
+    X = sp.sparse.csr_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_csr(X)
+
+    X = sp.sparse.dia_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_dia(X)
+
+    X = sp.sparse.dok_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_dok(X)
+
+    X = sp.sparse.lil_matrix([[1, 0], [0, 1]])
+    with pytest.deprecated_call(match=msg):
+        sp.sparse.isspmatrix_lil(X)

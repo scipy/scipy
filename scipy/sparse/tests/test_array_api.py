@@ -506,18 +506,19 @@ def test_issparse():
 
 
 def test_isspmatrix():
-    m = scipy.sparse.eye(3)
-    a = scipy.sparse.csr_array(m)
-    assert not m._is_array
-    assert a._is_array
+    with pytest.deprecated_call(match='isspmatrix'):
+        m = scipy.sparse.eye(3)
+        a = scipy.sparse.csr_array(m)
+        assert not m._is_array
+        assert a._is_array
 
-    # Should only be true for sparse matrices, not sparse arrays
-    assert not scipy.sparse.isspmatrix(a)
-    assert scipy.sparse.isspmatrix(m)
+        # Should only be true for sparse matrices, not sparse arrays
+        assert not scipy.sparse.isspmatrix(a)
+        assert scipy.sparse.isspmatrix(m)
 
-    # ndarray and array_likes are not sparse
-    assert not scipy.sparse.isspmatrix(a.todense())
-    assert not scipy.sparse.isspmatrix(m.todense())
+        # ndarray and array_likes are not sparse
+        assert not scipy.sparse.isspmatrix(a.todense())
+        assert not scipy.sparse.isspmatrix(m.todense())
 
 
 @pytest.mark.parametrize(
@@ -533,15 +534,16 @@ def test_isspmatrix():
     ),
 )
 def test_isspmatrix_format(fmt, fn):
-    m = scipy.sparse.eye(3, format=fmt)
-    a = scipy.sparse.csr_array(m).asformat(fmt)
-    assert not m._is_array
-    assert a._is_array
+    with pytest.deprecated_call(match='isspmatrix'):
+        m = scipy.sparse.eye(3, format=fmt)
+        a = scipy.sparse.csr_array(m).asformat(fmt)
+        assert not m._is_array
+        assert a._is_array
 
-    # Should only be true for sparse matrices, not sparse arrays
-    assert not fn(a)
-    assert fn(m)
+        # Should only be true for sparse matrices, not sparse arrays
+        assert not fn(a)
+        assert fn(m)
 
-    # ndarray and array_likes are not sparse
-    assert not fn(a.todense())
-    assert not fn(m.todense())
+        # ndarray and array_likes are not sparse
+        assert not fn(a.todense())
+        assert not fn(m.todense())

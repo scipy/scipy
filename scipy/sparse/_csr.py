@@ -1,4 +1,5 @@
 """Compressed Sparse Row matrix format"""
+from warnings import warn
 
 __docformat__ = "restructuredtext en"
 
@@ -338,6 +339,12 @@ class _csr_base(_cs_matrix):
 def isspmatrix_csr(x):
     """Is `x` of csr_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_csr is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "csr"`` to test sparsity & csr format or
+        Use ``isinstance(x, scipy.sparse.csr_matrix)`` to test for sparse matrix & csr
+
     Parameters
     ----------
     x
@@ -358,6 +365,10 @@ def isspmatrix_csr(x):
     >>> isspmatrix_csr(coo_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_csr is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "csr"` to check sparsity and csr format\n'
+         'or `isinstance(x, csr_matrix)` to check for sparse matrix and csr format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, csr_matrix)
 
 

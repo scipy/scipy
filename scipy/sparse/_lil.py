@@ -1,5 +1,6 @@
 """List of Lists sparse matrix class
 """
+from warnings import warn
 
 __docformat__ = "restructuredtext en"
 
@@ -524,6 +525,12 @@ def _prepare_index_for_memoryview(i, j, x=None):
 def isspmatrix_lil(x):
     """Is `x` of lil_matrix type?
 
+    .. deprecated:: 1.11.0
+
+        isspmatrix_lil is deprecated and will be removed in SciPy 1.13.0
+        Use ``issparse(x) and x.format == "lil"`` to test sparsity & lil format or
+        Use ``isinstance(x, scipy.sparse.lil_matrix)`` to test for sparse matrix & lil
+
     Parameters
     ----------
     x
@@ -544,6 +551,10 @@ def isspmatrix_lil(x):
     >>> isspmatrix_lil(coo_matrix([[5]]))
     False
     """
+    warn('\nisspmatrix_lil is deprecated and will be removed in SciPy 1.13.0\n'
+         'Use `issparse(x) and x.format == "lil"` to check sparsity and lil format\n'
+         'or `isinstance(x, lil_matrix)` to check for sparse matrix and lil format',
+         DeprecationWarning, stacklevel=2)
     return isinstance(x, lil_matrix)
 
 
