@@ -72,7 +72,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
-def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None):
+def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
     """
     Construct a sparse array from diagonals.
 
@@ -112,7 +112,7 @@ def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None)
     --------
     >>> from scipy.sparse import diags_array
     >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
-    >>> diags_array(diagonals, [0, -1, 2]).toarray()
+    >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
     array([[1, 0, 1, 0],
            [1, 2, 0, 2],
            [0, 2, 3, 0],
@@ -121,7 +121,7 @@ def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None)
     Broadcasting of scalars is supported (but shape needs to be
     specified):
 
-    >>> diags_array([1, -2, 1], [-1, 0, 1], shape=(4, 4)).toarray()
+    >>> diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4)).toarray()
     array([[-2.,  1.,  0.,  0.],
            [ 1., -2.,  1.,  0.],
            [ 0.,  1., -2.,  1.],
@@ -131,7 +131,7 @@ def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None)
     If only one diagonal is wanted (as in `numpy.diag`), the following
     works as well:
 
-    >>> diags_array([1, 2, 3], 1).toarray()
+    >>> diags_array([1, 2, 3], offsets=1).toarray()
     array([[ 0.,  1.,  0.,  0.],
            [ 0.,  0.,  2.,  0.],
            [ 0.,  0.,  0.,  3.],
@@ -192,7 +192,7 @@ def diags_array(diagonals, /, offsets=0, *, shape=None, format=None, dtype=None)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
-    A = diags_array(diagonals, offsets, shape=shape, dtype=dtype)
+    A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
     return dia_matrix(A).asformat(format)
 diags.__doc__ = _array_doc_to_matrix(diags_array.__doc__)
 

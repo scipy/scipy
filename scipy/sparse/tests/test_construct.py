@@ -147,12 +147,12 @@ class TestConstructUtils:
 
         for d, o, shape, result in cases:
             err_msg = f"{d!r} {o!r} {shape!r} {result!r}"
-            assert_equal(construct.diags(d, o, shape=shape).toarray(),
+            assert_equal(construct.diags(d, offsets=o, shape=shape).toarray(),
                          result, err_msg=err_msg)
 
             if shape[0] == shape[1] and hasattr(d[0], '__len__') and len(d[0]) <= max(shape):
                 # should be able to find the shape automatically
-                assert_equal(construct.diags(d, o).toarray(), result,
+                assert_equal(construct.diags(d, offsets=o).toarray(), result,
                              err_msg=err_msg)
 
     def test_diags_default(self):
@@ -178,9 +178,9 @@ class TestConstructUtils:
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
-            assert_raises(ValueError, construct.diags, d, o, shape)
+            assert_raises(ValueError, construct.diags, d, offsets=o, shape=shape)
 
-        assert_raises(TypeError, construct.diags, [[None]], [0])
+        assert_raises(TypeError, construct.diags, [[None]], offsets=[0])
 
     def test_diags_vs_diag(self):
         # Check that
@@ -199,26 +199,26 @@ class TestConstructUtils:
 
             diagonals = [np.random.rand(n - abs(q)) for q in offsets]
 
-            mat = construct.diags(diagonals, offsets)
+            mat = construct.diags(diagonals, offsets=offsets)
             dense_mat = sum([np.diag(x, j) for x, j in zip(diagonals, offsets)])
 
             assert_array_almost_equal_nulp(mat.toarray(), dense_mat)
 
             if len(offsets) == 1:
-                mat = construct.diags(diagonals[0], offsets[0])
+                mat = construct.diags(diagonals[0], offsets=offsets[0])
                 dense_mat = np.diag(diagonals[0], offsets[0])
                 assert_array_almost_equal_nulp(mat.toarray(), dense_mat)
 
     def test_diags_dtype(self):
-        x = construct.diags([2.2], [0], shape=(2, 2), dtype=int)
+        x = construct.diags([2.2], offsets=[0], shape=(2, 2), dtype=int)
         assert_equal(x.dtype, int)
         assert_equal(x.toarray(), [[2, 0], [0, 2]])
 
     def test_diags_one_diagonal(self):
         d = list(range(5))
         for k in range(-5, 6):
-            assert_equal(construct.diags(d, k).toarray(),
-                         construct.diags([d], [k]).toarray())
+            assert_equal(construct.diags(d, offsets=k).toarray(),
+                         construct.diags([d], offsets=[k]).toarray())
 
     def test_diags_empty(self):
         x = construct.diags([])
