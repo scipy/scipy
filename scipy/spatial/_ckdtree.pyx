@@ -72,11 +72,11 @@ cdef extern from "ckdtree_decl.h":
                          np.float64_t *maxes,
                          np.float64_t *mins,
                          int _median,
-                         int _compact) nogil except +
+                         int _compact) except + nogil
 
     int build_weights(ckdtree *self,
                          np.float64_t *node_weights,
-                         np.float64_t *weights) nogil except +
+                         np.float64_t *weights) except + nogil
 
     int query_knn(const ckdtree *self,
                      np.float64_t *dd,
@@ -88,13 +88,13 @@ cdef extern from "ckdtree_decl.h":
                      const np.intp_t    kmax,
                      const np.float64_t eps,
                      const np.float64_t p,
-                     const np.float64_t distance_upper_bound) nogil except +
+                     const np.float64_t distance_upper_bound) except + nogil
 
     int query_pairs(const ckdtree *self,
                        const np.float64_t r,
                        const np.float64_t p,
                        const np.float64_t eps,
-                       vector[ordered_pair] *results) nogil except +
+                       vector[ordered_pair] *results) except + nogil
 
     int count_neighbors_unweighted(const ckdtree *self,
                            const ckdtree *other,
@@ -102,7 +102,7 @@ cdef extern from "ckdtree_decl.h":
                            np.float64_t  *real_r,
                            np.intp_t     *results,
                            const np.float64_t p,
-                           int cumulative) nogil except +
+                           int cumulative) except + nogil
 
     int count_neighbors_weighted(const ckdtree *self,
                            const ckdtree *other,
@@ -114,7 +114,7 @@ cdef extern from "ckdtree_decl.h":
                            np.float64_t  *real_r,
                            np.float64_t     *results,
                            const np.float64_t p,
-                           int cumulative) nogil except +
+                           int cumulative) except + nogil
 
     int query_ball_point(const ckdtree *self,
                          const np.float64_t *x,
@@ -124,20 +124,20 @@ cdef extern from "ckdtree_decl.h":
                          const np.intp_t n_queries,
                          vector[np.intp_t] *results,
                          const bool return_length,
-                         const bool sort_output) nogil except +
+                         const bool sort_output) except + nogil
 
     int query_ball_tree(const ckdtree *self,
                            const ckdtree *other,
                            const np.float64_t r,
                            const np.float64_t p,
                            const np.float64_t eps,
-                           vector[np.intp_t] *results) nogil except +
+                           vector[np.intp_t] *results) except + nogil
 
     int sparse_distance_matrix(const ckdtree *self,
                                   const ckdtree *other,
                                   const np.float64_t p,
                                   const np.float64_t max_distance,
-                                  vector[coo_entry] *results) nogil except +
+                                  vector[coo_entry] *results) except + nogil
 
 
 # C++ helper functions
