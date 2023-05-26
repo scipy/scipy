@@ -2,7 +2,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_equal,
+from numpy.testing import (assert_, assert_equal,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
