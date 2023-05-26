@@ -6,7 +6,7 @@ with safe_import():
 
 class BenchMatrixPower(Benchmark):
     params = [
-        [0, 1, 2, 3],
+        [0, 1, 2, 3, 8, 9],
         [1000],
         [1e-6, 1e-3],
     ]
