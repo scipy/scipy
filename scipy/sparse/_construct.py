@@ -98,7 +98,7 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     Notes
     -----
-    The result from `diags` is the sparse equivalent of::
+    The result from `diags_array` is the sparse equivalent of::
 
         np.diag(diagonals[0], offsets[0])
         + ...
