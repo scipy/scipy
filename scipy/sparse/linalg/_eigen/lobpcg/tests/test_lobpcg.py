@@ -458,7 +458,6 @@ def test_tolerance_float32():
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
                                       sparse.coo_matrix])
-@pytest.mark.filterwarnings("ignore:Inplace")
 def test_dtypes(vdtype, mdtype, arr_type):
     """Test lobpcg in various dtypes.
     """
@@ -468,7 +467,7 @@ def test_dtypes(vdtype, mdtype, arr_type):
     A = arr_type(np.diag(np.arange(1, n + 1)).astype(mdtype))
     X = rnd.random((n, m))
     X = X.astype(vdtype)
-    eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False, verbosityLevel=1)
+    eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False)
     assert_allclose(eigvals, np.arange(1, 1 + m), atol=1e-1)
     # eigenvectors must be nearly real in any case
     assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
