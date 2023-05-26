@@ -79,7 +79,7 @@ def spdiags(data, diags, m=None, n=None, format=None):
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
-def diags_array(diagonals, offsets=0, shape=None, format=None, dtype=None):
+def diags_array(diagonals, offsets=0, *, shape=None, format=None, dtype=None):
     """
     Construct a sparse array from diagonals.
 
@@ -199,7 +199,7 @@ def diags_array(diagonals, offsets=0, shape=None, format=None, dtype=None):
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
-    A = diags_array(diagonals, offsets, shape, format, dtype)
+    A = diags_array(diagonals, offsets, shape=shape, format=format, dtype=dtype)
     return _fmt_to_spmatrix[A.format](A)
 diags.__doc__ = _array_doc_to_matrix(diags_array.__doc__)
 
