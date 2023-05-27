@@ -551,6 +551,8 @@ def isspmatrix_lil(x):
 class lil_array(_lil_base, sparray):
     pass
 
+lil_array.__doc__ = _lil_base.__doc__
+
 class lil_matrix(spmatrix, _lil_base):
     pass
 
