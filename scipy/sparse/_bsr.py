@@ -734,6 +734,8 @@ def isspmatrix_bsr(x):
 class bsr_array(_bsr_base, sparray):
     pass
 
+bsr_array.__doc__ = _bsr_base.__doc__
+
 class bsr_matrix(spmatrix, _bsr_base):
     pass
 

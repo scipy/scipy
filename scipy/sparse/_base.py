@@ -1477,6 +1477,8 @@ class sparray:
     """A namespace class to separate sparray from spmatrix"""
     pass
 
+sparray.__doc__ = _spbase.__doc__
+
 
 def issparse(x):
     """Is `x` of a sparse array type?

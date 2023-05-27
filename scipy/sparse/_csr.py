@@ -368,6 +368,8 @@ def isspmatrix_csr(x):
 class csr_array(_csr_base, sparray):
     pass
 
+csr_array.__doc__ = _csr_base.__doc__
+
 class csr_matrix(spmatrix, _csr_base):
     pass
 

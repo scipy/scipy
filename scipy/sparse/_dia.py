@@ -477,6 +477,8 @@ def isspmatrix_dia(x):
 class dia_array(_dia_base, sparray):
     pass
 
+dia_array.__doc__ = _dia_base.__doc__
+
 class dia_matrix(spmatrix, _dia_base):
     pass
 

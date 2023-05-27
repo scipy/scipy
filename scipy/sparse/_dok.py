@@ -458,6 +458,8 @@ def isspmatrix_dok(x):
 class dok_array(_dok_base, sparray):
     pass
 
+dok_array.__doc__ = _dok_base.__doc__
+
 class dok_matrix(spmatrix, _dok_base):
     def set_shape(self, shape):
         new_matrix = self.reshape(shape, copy=False).asformat(self.format)

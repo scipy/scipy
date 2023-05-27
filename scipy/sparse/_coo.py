@@ -635,6 +635,8 @@ def isspmatrix_coo(x):
 class coo_array(_coo_base, sparray):
     pass
 
+coo_array.__doc__ = _coo_base.__doc__
+
 class coo_matrix(spmatrix, _coo_base):
     pass
 
