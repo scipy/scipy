@@ -267,6 +267,8 @@ def isspmatrix_csc(x):
 class csc_array(_csc_base, sparray):
     pass
 
+csc_array.__doc__ = _csc_base.__doc__
+
 class csc_matrix(spmatrix, _csc_base):
     pass
 
