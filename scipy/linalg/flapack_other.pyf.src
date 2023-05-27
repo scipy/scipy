@@ -2399,4 +2399,4 @@ subroutine <prefix2>tgsyl_lwork(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,l
     
     integer intent(out):: info
 
-end subroutine <prefix2>tgsyl_work
+end subroutine <prefix2>tgsyl_lwork
