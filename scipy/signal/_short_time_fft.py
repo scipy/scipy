@@ -17,7 +17,7 @@ Implementation Notes (as of 2023-04)
 """
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
-# Linter does allow to import ``Generator`` from ``typing`` module:
+# Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
 from functools import cache, lru_cache, partial
 from typing import Callable, get_args, Literal, Union
@@ -364,7 +364,7 @@ class ShortTimeFFT:
                     phase_shift: int | None = 0):
         """Instantiate `ShortTimeFFT` by using `get_window`.
 
-        This method `get_window` is used to create a window of length
+        The method `get_window` is used to create a window of length
         `nperseg`. The parameter names `noverlap`, and `nperseg` are used here,
         since they more inline with other classical STFT libraries.
 

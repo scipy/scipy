@@ -33,18 +33,6 @@ from scipy.signal._short_time_fft import FFT_MODE_TYPE, \
 from scipy.signal.windows import gaussian
 
 
-# def pytest.raises(ValueError, match=match):
-#     """Assert for a ValueError matching regexp `match`.
-#
-#     This little wrapper allows a more concise code layout. Usage::
-#
-#         with pytest.raises(ValueError, match="Message RegExp"):
-#             test_code
-#             ...
-#     """
-#     return pytest.raises(ValueError, match=match)
-
-
 def test__calc_dual_canonical_window_roundtrip():
     """Test dual window calculation with a round trip to verify duality.
 
@@ -536,7 +524,7 @@ def test_tutorial_stft_legacy_stft():
                                    scale_to='magnitude', phase_shift=None)
     Sz1 = SFT.stft(z)
 
-    assert np.allclose(Sz0, Sz1[:, 2:-1])
+    assert_allclose(Sz0, Sz1[:, 2:-1])
 
     assert_allclose((abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()),
                     (6.925060911593139e-07, 8.00271269218721e-07))
@@ -545,11 +533,11 @@ def test_tutorial_stft_legacy_stft():
                        scaling='spectrum')
     z1_r = SFT.istft(Sz1, k1=N)
     assert len(z0_r) == N + 9
-    assert np.allclose(z0_r[:N], z)
-    assert np.allclose(z1_r, z)
+    assert_allclose(z0_r[:N], z)
+    assert_allclose(z1_r, z)
 
     #  Spectrogram is just the absolute square of th STFT:
-    np.allclose(SFT.spectrogram(z), abs(Sz1) ** 2)
+    assert_allclose(SFT.spectrogram(z), abs(Sz1) ** 2)
 
 
 def test_tutorial_stft_legacy_spectrogram():
@@ -559,7 +547,7 @@ def test_tutorial_stft_legacy_spectrogram():
     In :ref:`tutorial_stft_legacy_stft` (file ``signal.rst``) of the
     :ref:`user_guide` the legacy and the new implementation are compared.
     """
-    fs, N = 200, 1001  # # 200 Hz sampling rate for almost 5 s signal
+    fs, N = 200, 1001  # 200 Hz sampling rate for almost 5 s signal
     t_z = np.arange(N) / fs  # time indexes for signal
     z = np.exp(2j*np.pi*70 * (t_z - 0.2*t_z**2))  # complex-valued sweep
 
@@ -580,9 +568,9 @@ def test_tutorial_stft_legacy_spectrogram():
     Sz3 = SFT.stft(z, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
     t3 = SFT.t(N, p0=0, p1=(N-noverlap) // SFT.hop, k_offset=nperseg // 2)
 
-    assert np.allclose(t2, t3)
-    assert np.allclose(f2, SFT.f)
-    assert np.allclose(Sz2, Sz3)
+    assert_allclose(t2, t3)
+    assert_allclose(f2, SFT.f)
+    assert_allclose(Sz2, Sz3)
 
 
 def test_permute_axes():
