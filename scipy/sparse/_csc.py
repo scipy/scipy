@@ -51,7 +51,7 @@ class _csc_base(_cs_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of stored values, including explicit zeros
+    size
     data
         Data array of the matrix
     indices
@@ -59,7 +59,10 @@ class _csc_base(_cs_matrix):
     indptr
         CSC format index pointer array
     has_sorted_indices
-        Whether indices are sorted
+    has_canonical_format
+    T
+    A
+    H
 
     Notes
     -----

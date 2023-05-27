@@ -50,15 +50,18 @@ class _csr_base(_cs_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of stored values, including explicit zeros
+    size
     data
-        CSR format data array of the matrix
+        Data array of the matrix
     indices
-        CSR format index array of the matrix
+        CSC format index array
     indptr
-        CSR format index pointer array of the matrix
+        CSC format index pointer array
     has_sorted_indices
-        Whether indices are sorted
+    has_canonical_format
+    T
+    A
+    H
 
     Notes
     -----
