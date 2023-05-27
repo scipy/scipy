@@ -659,11 +659,6 @@ All functions
    dsytrf_lwork
    csytrf_lwork
    zsytrf_lwork
-
-   stgsyl
-   dtgsyl 
-   stgsyl_lwork
-   dtgsyl_lwork 
    
    stbtrs
    dtbtrs
@@ -699,6 +694,12 @@ All functions
    dtgsen_lwork
    ctgsen_lwork
    ztgsen_lwork
+
+   stgsyl
+   dtgsyl 
+   
+   stgsyl_lwork
+   dtgsyl_lwork 
 
    stpttf
    dtpttf
