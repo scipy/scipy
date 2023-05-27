@@ -53,7 +53,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of stored values, including explicit zeros
+    size
     data
         Data array
     indices
@@ -62,8 +62,12 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         BSR format index pointer array
     blocksize
         Block size
-    has_sorted_indices
+    has_sorted_indices : bool
         Whether indices are sorted
+    has_canonical_format : bool
+    T
+    A
+    H
 
     Notes
     -----
