@@ -660,6 +660,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   stgsyl
+   dtgsyl 
+   stgsyl_lwork
+   dtgsyl_lwork 
+   
    stbtrs
    dtbtrs
    ctbtrs

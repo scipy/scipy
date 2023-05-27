@@ -2319,8 +2319,8 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     ! scaling factor chosen to avoid overflow.
 
 
-    callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&ijob,&m,&n,&a,&lda,&b,&ldb,&c,&ldc,&d,&ldd,&e,&lde,&f,&ldf,&scale,&dif,&work,&lwork,&iwork,&info)
-    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>,<ctype2>,<ctype2>*,F_INT*,F_INT*,F_INT*
+    callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,work,&lwork,iwork,&info)
+    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer optional,intent(in),check(trans>=0 && trans <=2):: trans = 0
     integer optional,intent(in),check(ijob>=0 && ijob <=4):: ijob = 0
@@ -2345,14 +2345,11 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     <ftype2> intent(in,copy,out,out=l),dimension(ldf,n):: f
     integer intent(hide),depend(f):: ldf = max(shape(f,0),1)
     
+    <ftype2> intent(out):: scale
     <ftype2> intent(out):: dif
-    <ftype2> intent(out):: scal
-     
     <ftype2> intent(hide,cache),depend(lwork),dimension(MAX(1,lwork)):: work 
-     
-    integer optional,intent(in),depend(ijob,trans,m,n),check ( ((((ijob==1)||ijob==2))&&!trans)?(lwork>=max(1,2*m*n)):(lwork>=n||lwork==-1)):: lwork = max(1,2*m*n)
+    integer optional,intent(in),depend(ijob,trans,m,n),check ( ((ijob==1||ijob==2) && trans) ? lwork>=max(1,2*m*n):lwork>=n):: lwork = max(1,2*m*n)
     integer intent(out),depend(m,n),dimension(m+n+6):: iwork
-    
     integer intent(out):: info
 
 end subroutine <prefix2>tgsyl
@@ -2363,8 +2360,8 @@ subroutine <prefix2>tgsyl_lwork(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,l
     
     fortranname <prefix2>tgsyl
     
-    callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&ijob,&m,&n,&a,&lda,&b,&ldb,&c,&ldc,&d,&ldd,&e,&lde,&f,&ldf,&scale,&dif,&work,&lwork,&iwork,&info)
-    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>,<ctype2>,<ctype2>*,F_INT*,F_INT*,F_INT*
+    callstatement (*f2py_func)((trans?(trans==2?"C":"T"):"N"),&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,&work,&lwork,iwork,&info)
+    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     integer optional,intent(in),check(trans>=0 && trans <=2):: trans = 0
     integer optional,intent(in),check(ijob>=0 && ijob <=4):: ijob = 0
@@ -2389,14 +2386,11 @@ subroutine <prefix2>tgsyl_lwork(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,l
     <ftype2> intent(hide,copy,out,out=l),dimension(ldf,n):: f
     integer intent(hide),depend(f):: ldf = max(shape(f,0),1)
     
+    <ftype2> intent(out):: scale
     <ftype2> intent(out):: dif
-    <ftype2> intent(out):: scal
-     
     <ftype2> intent(out):: work 
-     
     integer intent(hide):: lwork = -1
     integer intent(out),depend(m,n),dimension(m+n+6):: iwork
-    
     integer intent(out):: info
 
 end subroutine <prefix2>tgsyl_lwork
