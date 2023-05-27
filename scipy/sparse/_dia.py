@@ -7,7 +7,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import isspmatrix, _formats, _spbase, sparray
+from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
 from ._sparsetools import dia_matvec
@@ -89,20 +89,21 @@ class _dia_base(_data_matrix):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-        if isspmatrix_dia(arg1):
-            if copy:
-                arg1 = arg1.copy()
-            self.data = arg1.data
-            self.offsets = arg1.offsets
-            self._shape = check_shape(arg1.shape)
-        elif isspmatrix(arg1):
-            if isspmatrix_dia(arg1) and copy:
-                A = arg1.copy()
+        if issparse(arg1):
+            if arg1.format == "dia":
+                if copy:
+                    arg1 = arg1.copy()
+                self.data = arg1.data
+                self.offsets = arg1.offsets
+                self._shape = check_shape(arg1.shape)
             else:
-                A = arg1.todia()
-            self.data = A.data
-            self.offsets = A.offsets
-            self._shape = check_shape(A.shape)
+                if arg1.format == self.format and copy:
+                    A = arg1.copy()
+                else:
+                    A = arg1.todia()
+                self.data = A.data
+                self.offsets = A.offsets
+                self._shape = check_shape(A.shape)
         elif isinstance(arg1, tuple):
             if isshape(arg1):
                 # It's a tuple of matrix dimensions (M, N)
@@ -444,7 +445,7 @@ class _dia_base(_data_matrix):
 
 
 def isspmatrix_dia(x):
-    """Is x of dia_array type?
+    """Is `x` of dia_matrix type?
 
     Parameters
     ----------
@@ -454,19 +455,19 @@ def isspmatrix_dia(x):
     Returns
     -------
     bool
-        True if x is a dia matrix, False otherwise
+        True if `x` is a dia matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import dia_array, isspmatrix_dia
-    >>> isspmatrix_dia(dia_array([[5]]))
+    >>> from scipy.sparse import dia_array, dia_matrix, coo_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(dia_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import dia_array, csr_matrix, isspmatrix_dia
-    >>> isspmatrix_dia(csr_matrix([[5]]))
+    >>> isspmatrix_dia(dia_array([[5]]))
+    False
+    >>> isspmatrix_dia(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, dia_matrix) or isinstance(x, dia_array)
+    return isinstance(x, dia_matrix)
 
 
 # This namespace class separates array from matrix with isinstance

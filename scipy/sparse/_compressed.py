@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array
 
-from ._base import _spbase, isspmatrix, SparseEfficiencyWarning
+from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
@@ -25,7 +25,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-        if isspmatrix(arg1):
+        if issparse(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
@@ -233,7 +233,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif is_pydata_spmatrix(other):
             return NotImplemented
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
             # TODO sparse broadcasting
@@ -271,7 +271,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif is_pydata_spmatrix(other):
             return NotImplemented
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 return True
@@ -298,7 +298,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return op(self.todense(), other)
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 raise ValueError("inconsistent shapes")
@@ -369,7 +369,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if isscalarlike(other):
             return self._mul_scalar(other)
         # Sparse matrix or vector.
-        if isspmatrix(other):
+        if issparse(other):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
@@ -574,7 +574,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return mat
         elif isdense(other):
             return npop(self.todense(), other)
-        elif isspmatrix(other):
+        elif issparse(other):
             return self._binopt(other, op_name)
         else:
             raise ValueError("Operands not compatible.")

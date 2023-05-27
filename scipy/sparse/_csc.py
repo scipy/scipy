@@ -76,6 +76,9 @@ class _csc_base(_cs_matrix):
       - slow row slicing operations (consider CSR)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
+    Canonical format
+      - Within each column, indices are sorted by row.
+      - There are no duplicate entries.
 
     Examples
     --------
@@ -235,7 +238,7 @@ class _csc_base(_cs_matrix):
 
 
 def isspmatrix_csc(x):
-    """Is x of csc_array type?
+    """Is `x` of csc_matrix type?
 
     Parameters
     ----------
@@ -245,19 +248,19 @@ def isspmatrix_csc(x):
     Returns
     -------
     bool
-        True if x is a csc matrix, False otherwise
+        True if `x` is a csc matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import csc_array, isspmatrix_csc
-    >>> isspmatrix_csc(csc_array([[5]]))
+    >>> from scipy.sparse import csc_array, csc_matrix, coo_matrix, isspmatrix_csc
+    >>> isspmatrix_csc(csc_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import csc_array, csr_matrix, isspmatrix_csc
-    >>> isspmatrix_csc(csr_matrix([[5]]))
+    >>> isspmatrix_csc(csc_array([[5]]))
+    False
+    >>> isspmatrix_csc(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, csc_matrix) or isinstance(x, csc_array)
+    return isinstance(x, csc_matrix)
 
 
 # This namespace class separates array from matrix with isinstance

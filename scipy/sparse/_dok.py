@@ -8,7 +8,7 @@ import itertools
 import numpy as np
 
 from ._matrix import spmatrix, _array_doc_to_matrix
-from ._base import _spbase, sparray, isspmatrix
+from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
@@ -80,8 +80,8 @@ class _dok_base(_spbase, IndexMixin, dict):
         if isinstance(arg1, tuple) and isshape(arg1):  # (M,N)
             M, N = arg1
             self._shape = check_shape((M, N))
-        elif isspmatrix(arg1):  # Sparse ctor
-            if isspmatrix_dok(arg1) and copy:
+        elif issparse(arg1):  # Sparse ctor
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.todok()
@@ -246,20 +246,21 @@ class _dok_base(_spbase, IndexMixin, dict):
                 if aij:
                     new[key] = aij
             # new.dtype.char = self.dtype.char
-        elif isspmatrix_dok(other):
-            if other.shape != self.shape:
-                raise ValueError("Matrix dimensions are not equal.")
-            # We could alternatively set the dimensions to the largest of
-            # the two matrices to be summed.  Would this be a good idea?
-            res_dtype = upcast(self.dtype, other.dtype)
-            new = self._dok_container(self.shape, dtype=res_dtype)
-            dict.update(new, self)
-            with np.errstate(over='ignore'):
-                dict.update(new,
-                           ((k, new[k] + other[k]) for k in other.keys()))
-        elif isspmatrix(other):
-            csc = self.tocsc()
-            new = csc + other
+        elif issparse(other):
+            if other.format == "dok":
+                if other.shape != self.shape:
+                    raise ValueError("Matrix dimensions are not equal.")
+                # We could alternatively set the dimensions to the largest of
+                # the two matrices to be summed.  Would this be a good idea?
+                res_dtype = upcast(self.dtype, other.dtype)
+                new = self._dok_container(self.shape, dtype=res_dtype)
+                dict.update(new, self)
+                with np.errstate(over='ignore'):
+                    dict.update(new,
+                               ((k, new[k] + other[k]) for k in other.keys()))
+            else:
+                csc = self.tocsc()
+                new = csc + other
         elif isdense(other):
             new = self.todense() + other
         else:
@@ -274,16 +275,17 @@ class _dok_base(_spbase, IndexMixin, dict):
                 aij = dict.get(self, (key), 0) + other
                 if aij:
                     new[key] = aij
-        elif isspmatrix_dok(other):
-            if other.shape != self.shape:
-                raise ValueError("Matrix dimensions are not equal.")
-            new = self._dok_container(self.shape, dtype=self.dtype)
-            dict.update(new, self)
-            dict.update(new,
-                       ((k, self[k] + other[k]) for k in other.keys()))
-        elif isspmatrix(other):
-            csc = self.tocsc()
-            new = csc + other
+        elif issparse(other):
+            if other.format == "dok":
+                if other.shape != self.shape:
+                    raise ValueError("Matrix dimensions are not equal.")
+                new = self._dok_container(self.shape, dtype=self.dtype)
+                dict.update(new, self)
+                dict.update(new,
+                           ((k, self[k] + other[k]) for k in other.keys()))
+            else:
+                csc = self.tocsc()
+                new = csc + other
         elif isdense(other):
             new = other + self.todense()
         else:
@@ -423,7 +425,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
 
 def isspmatrix_dok(x):
-    """Is x of dok_array type?
+    """Is `x` of dok_array type?
 
     Parameters
     ----------
@@ -433,19 +435,19 @@ def isspmatrix_dok(x):
     Returns
     -------
     bool
-        True if x is a dok matrix, False otherwise
+        True if `x` is a dok matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import dok_array, isspmatrix_dok
-    >>> isspmatrix_dok(dok_array([[5]]))
+    >>> from scipy.sparse import dok_array, dok_matrix, coo_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(dok_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import dok_array, csr_matrix, isspmatrix_dok
-    >>> isspmatrix_dok(csr_matrix([[5]]))
+    >>> isspmatrix_dok(dok_array([[5]]))
+    False
+    >>> isspmatrix_dok(coo_matrix([[5]]))
     False
     """
-    return isinstance(x, dok_matrix) or isinstance(x, dok_array)
+    return isinstance(x, dok_matrix)
 
 
 # This namespace class separates array from matrix with isinstance

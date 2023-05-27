@@ -134,7 +134,7 @@ cirrus_wheels_upload_task:
         # For cron jobs (restricted to main branch)
         # an upload to:
         #
-        # https://anaconda.org/scipy-wheels-nightly/scipy
+        # https://anaconda.org/scientific-python-nightly-wheels/scipy
         # 
         # Pushes to a maintenance branch that contain '[wheel build]' will
         # cause wheels to be built and uploaded to:

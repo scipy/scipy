@@ -11,7 +11,7 @@ import numpy as np
 from ._matrix import spmatrix, _array_doc_to_matrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
-from ._base import isspmatrix, _formats, _spbase, sparray
+from ._base import issparse, _formats, _spbase, sparray
 from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
                        check_shape)
 from . import _sparsetools
@@ -88,6 +88,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     If no blocksize is specified, a simple heuristic is applied to determine
     an appropriate blocksize.
 
+    **Canonical Format**
+
+    In canonical format, there are no duplicate blocks and indices are sorted
+    per row.
+
     Examples
     --------
     >>> from scipy.sparse import bsr_array
@@ -122,8 +127,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
         _data_matrix.__init__(self)
 
-        if isspmatrix(arg1):
-            if isspmatrix_bsr(arg1) and copy:
+        if issparse(arg1):
+            if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)
@@ -373,14 +378,12 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         R,n = self.blocksize
 
         # convert to this format
-        if isspmatrix_bsr(other):
+        if other.format == "bsr":
             C = other.blocksize[1]
         else:
             C = 1
 
-        from ._csr import isspmatrix_csr
-
-        if isspmatrix_csr(other) and n == 1:
+        if other.format == "csr" and n == 1:
             other = other.tobsr(blocksize=(n,C), copy=False)  # lightweight conversion
         else:
             other = other.tobsr(blocksize=(n,C))
@@ -698,7 +701,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
 
 def isspmatrix_bsr(x):
-    """Is x of a bsr_array type?
+    """Is `x` of a bsr_matrix type?
 
     Parameters
     ----------
@@ -708,19 +711,19 @@ def isspmatrix_bsr(x):
     Returns
     -------
     bool
-        True if x is a bsr matrix, False otherwise
+        True if `x` is a bsr matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import bsr_array, isspmatrix_bsr
-    >>> isspmatrix_bsr(bsr_array([[5]]))
+    >>> from scipy.sparse import bsr_array, bsr_matrix, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import bsr_array, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_array([[5]]))
+    False
     >>> isspmatrix_bsr(csr_matrix([[5]]))
     False
     """
-    return isinstance(x, bsr_matrix) or isinstance(x, bsr_array)
+    return isinstance(x, bsr_matrix)
 
 
 # This namespace class separates array from matrix with isinstance
