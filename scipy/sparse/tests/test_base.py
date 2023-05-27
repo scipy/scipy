@@ -3466,6 +3466,36 @@ class _TestMinMax:
             assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).toarray())
             assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).toarray())
 
+    def test_nanminmax(self):
+        D = matrix(np.arange(50).reshape(5,10), dtype=float)
+        D[1, :] = 0
+        D[:, 9] = 0
+        D[3, 3] = 0
+        D[2, 2] = -1
+        D[4, 2] = np.nan
+        D[1, 4] = np.nan
+        X = self.spcreator(D)
+
+        X_nan_maximum = X.nanmax()
+        assert np.isscalar(X_nan_maximum)
+        assert X_nan_maximum == np.nanmax(D)
+
+        X_nan_minimum = X.nanmin()
+        assert np.isscalar(X_nan_minimum)
+        assert X_nan_minimum == np.nanmin(D)
+
+        axes = [-2, -1, 0, 1]
+        for axis in axes:
+            X_nan_maxima = X.nanmax(axis=axis)
+            assert isinstance(X_nan_maxima, coo_matrix)
+            assert_allclose(X_nan_maxima.toarray(),
+                            np.nanmax(D, axis=axis))
+
+            X_nan_minima = X.nanmin(axis=axis)
+            assert isinstance(X_nan_minima, coo_matrix)
+            assert_allclose(X_nan_minima.toarray(),
+                            np.nanmin(D, axis=axis))
+
     def test_minmax_invalid_params(self):
         dat = array([[0, 1, 2],
                      [3, -4, 5],
