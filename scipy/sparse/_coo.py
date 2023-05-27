@@ -86,6 +86,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
           entries will be summed together.  This facilitates efficient
           construction of finite element matrices and the like. (see example)
 
+    Canonical format
+        - Entries and indices sorted by row, then column.
+        - There are no duplicate entries (i.e. duplicate (i,j) locations)
+        - Arrays MAY have explicit zeros.
+
     Examples
     --------
 

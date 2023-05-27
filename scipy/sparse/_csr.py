@@ -75,6 +75,10 @@ class _csr_base(_cs_matrix):
       - slow column slicing operations (consider CSC)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
+    Canonical Format
+        - Within each row, indices are sorted by column.
+        - There are no duplicate entries.
+
     Examples
     --------
 
