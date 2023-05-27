@@ -146,5 +146,4 @@ def _array_doc_to_matrix(docstr):
     return (
         docstr.replace('sparse arrays', 'sparse matrices')
               .replace('sparse array', 'sparse matrix')
-              .replace('diags_array', 'diags')
     )

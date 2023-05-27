@@ -105,6 +105,8 @@ def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None)
 
     Repeated diagonal offsets are disallowed.
 
+    .. versionadded:: 1.11
+
     Examples
     --------
     >>> from scipy.sparse import diags_array
