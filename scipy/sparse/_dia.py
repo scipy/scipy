@@ -46,8 +46,7 @@ class _dia_base(_data_matrix):
     offsets
         DIA format offset array of the matrix
     T
-    A
-    H
+
 
     Notes
     -----

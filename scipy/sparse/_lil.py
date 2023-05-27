@@ -51,8 +51,7 @@ class _lil_base(_spbase, IndexMixin):
     rows
         LIL format row index array of the matrix
     T
-    A
-    H
+
 
     Notes
     -----

@@ -60,8 +60,7 @@ class _csr_base(_cs_matrix):
     has_sorted_indices
     has_canonical_format
     T
-    A
-    H
+
 
     Notes
     -----

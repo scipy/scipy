@@ -65,8 +65,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         Whether the matrix has sorted indices and no duplicates
     format
     T
-    A
-    H
+
 
     Notes
     -----

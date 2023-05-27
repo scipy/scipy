@@ -51,8 +51,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         Number of nonzero elements
     size
     T
-    A
-    H
+
 
     Notes
     -----

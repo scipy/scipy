@@ -66,8 +66,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         Whether indices are sorted
     has_canonical_format : bool
     T
-    A
-    H
+
 
     Notes
     -----
