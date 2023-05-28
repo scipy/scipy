@@ -150,7 +150,6 @@ change is made.
 * `scipy.stats`
 
   - `scipy.stats.contingency`
-  - ``scipy.stats.distributions``
   - `scipy.stats.mstats`
   - `scipy.stats.qmc`
   - `scipy.stats.sampling`
