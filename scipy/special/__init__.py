@@ -826,17 +826,17 @@ del PytestTester
 depr_msg = ('\nThis function was deprecated in SciPy 1.11.0, and will be '
             'removed in SciPy 1.13.0.')
 
-def btdtr(*args, **kwargs):
+def btdtr(*args, **kwargs):  # type: ignore [no-redef]
     warnings.warn(depr_msg, category=DeprecationWarning, stacklevel=2)
     return _ufuncs.btdtr(*args, **kwargs)
 
 
-btdtr.__doc__ = _ufuncs.btdtr.__doc__
+btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
 
 
-def btdtri(*args, **kwargs):
+def btdtri(*args, **kwargs):  # type: ignore [no-redef]
     warnings.warn(depr_msg, category=DeprecationWarning, stacklevel=2)
     return _ufuncs.btdtri(*args, **kwargs)
 
 
-btdtri.__doc__ = _ufuncs.btdtri.__doc__
+btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
