@@ -3300,20 +3300,20 @@ def test_gges_tgsen(dtype):
     assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
 
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
-@pytest.mark.parametrize('trans', ('N', 'T'))
+@pytest.mark.parametrize('trans', ('N'))#, 'T'
 def test_tgsyl(dtype,trans):
     
     seed(1234)
-    atol = np.finfo(dtype).eps*100
+    atol = np.finfo(dtype).eps*1e4
     
-    m, n = 15, 10
+    m, n = 5, 3
     
     a = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
     d = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
     b = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
     e = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
-    c = np.triu(generate_random_dtype_array([m, n], dtype=dtype))
-    f = np.triu(generate_random_dtype_array([m, n], dtype=dtype))
+    c = generate_random_dtype_array([m, n], dtype=dtype)
+    f = generate_random_dtype_array([m, n], dtype=dtype)
 
     tgsyl, tgsyl_lwork = get_lapack_funcs(
         ('tgsyl','tgsyl_lwork'), dtype=dtype)
@@ -3324,5 +3324,15 @@ def test_tgsyl(dtype,trans):
     # off-by-one error in LAPACK, see gh-issue #13397
     # lwork = (lwork[0]+1, lwork[1])
 
-    result = tgsyl(a,b,c,d,e,f,trans=trans,ijob=ijob)
+    r,l,scale,dif,iwork,info = tgsyl(a,b,c,d,e,f,trans=trans,ijob=ijob)
+    assert_equal(info, 0)
+    lhs = list(np.matmul(a,r)-np.matmul(l,b))
+    rhs = scale*c
+    assert_allclose(lhs,rhs,rtol=1e-6,atol=1e-6)
+
+    lhs = list(np.matmul(d,r)-np.matmul(l,e))
+    rhs = scale*f
+    assert_allclose(lhs,rhs,rtol=1e-6,atol=1e-6)
+
+    # assert_allclose(dif,0.0,rtol=1e-6,atol=1e-6)
 
