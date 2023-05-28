@@ -562,8 +562,11 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning)
+    if test.func in [btdtr, btdtri, btdtri_comp]:
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            _test_factory(test)
+    else:
         _test_factory(test)
 
 
