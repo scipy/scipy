@@ -154,7 +154,7 @@ def test_exceptions_properties_methods():
 
 
 @pytest.mark.parametrize('m', ('onesided', 'onesided2X'))
-def test_exceptions_fft_mode_complex_win(m: Literal['onesided', 'onesided2x']):
+def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
     """Verify hat one-sided spectra are not allowed with complex-valued
     windows.
 
