@@ -1815,6 +1815,10 @@ add_newdoc("btdtr",
 
     where :math:`\Gamma` is the gamma function.
 
+    .. deprecated:: 1.11.0
+        This function is deprecated and will be removed from SciPy 1.13.0.
+        Use `scipy.special.betainc` instead.
+
     Parameters
     ----------
     a : array_like
@@ -1838,10 +1842,6 @@ add_newdoc("btdtr",
 
     Notes
     -----
-
-    .. deprecated:: 1.11.0
-        This function is deprecated and will be removed from SciPy 1.13.0.
-        Use `scipy.special.betainc` instead.
 
     This function is identical to the incomplete beta integral function
     `betainc`.
@@ -1867,6 +1867,10 @@ add_newdoc("btdtri",
     .. math::
         p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
 
+    .. deprecated:: 1.11.0
+        This function is deprecated and will be removed from SciPy 1.13.0.
+        Use `scipy.special.betaincinv` instead.
+
     Parameters
     ----------
     a : array_like
@@ -1890,11 +1894,6 @@ add_newdoc("btdtri",
 
     Notes
     -----
-
-    .. deprecated:: 1.11.0
-        This function is deprecated and will be removed from SciPy 1.13.0.
-        Use `scipy.special.betaincinv` instead.
-
     The value of `x` is found by interval halving or Newton iterations.
 
     Wrapper for the Cephes [1]_ routine `incbi`, which solves the equivalent
