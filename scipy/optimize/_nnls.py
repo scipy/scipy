@@ -5,20 +5,23 @@ from scipy.linalg import solve
 __all__ = ['nnls']
 
 
-def nnls(A, b, maxiter=None, atol=None):
+def nnls(A, b, maxiter=None, *, atol=None):
     """
-    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
-    for a FORTRAN non-negative least squares solver.
+    Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``.
+
+    This problem, often called as NonNegative Least Squares, is a convex
+    optimization problem with convex constraints. It typically arises when
+    the ``x`` models quantities for which only nonnegative values are
+    attainable; weight of ingredients, component costs and so on.
 
     Parameters
     ----------
-    A : ndarray
-        Matrix ``A`` as shown above.
-    b : ndarray
+    A : (m, n) ndarray
+        Coefficient array
+    b : (m,) ndarray, float
         Right-hand side vector.
     maxiter: int, optional
-        Maximum number of iterations, optional.
-        Default is ``3 * A.shape[1]``.
+        Maximum number of iterations, optional. Default value is ``3 * n``.
     atol: float
         Tolerance value used in the algorithm to assess closeness to zero in
         the projected residual ``(A.T @ (A x - b)`` entries. Increasing this
@@ -32,7 +35,7 @@ def nnls(A, b, maxiter=None, atol=None):
     x : ndarray
         Solution vector.
     rnorm : float
-        The residual, ``|| Ax-b ||_2``.
+        The 2-norm of the residual, ``|| Ax-b ||_2``.
 
     See Also
     --------
@@ -148,6 +151,10 @@ def _nnls(A, b, maxiter=None, tol=None):
         resid = Atb - AtA @ x
 
         if iter == maxiter:
-            return x, np.linalg.norm(A@x - b), -1
+            # Typically following line should return
+            # return x, np.linalg.norm(A@x - b), -1
+            # however at the top level, -1 raises an exception wasting norm
+            # Instead return dummy number 0.
+            return x, 0., -1
 
     return x, np.linalg.norm(A@x - b), 1
