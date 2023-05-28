@@ -153,6 +153,23 @@ def test_exceptions_properties_methods():
         SFT.extent(n=100)
 
 
+@pytest.mark.parametrize('m', ('onesided', 'onesided2X'))
+def test_exceptions_fft_mode_complex_win(m: Literal['onesided', 'onesided2x']):
+    """Verify hat one-sided spectra are not allowed with complex-valued
+    windows.
+
+    The reason being, the `rfft` function only accepts real-valued input.
+    """
+    with pytest.raises(ValueError,
+                       match=f"One-sided spectra, i.e., fft_mode='{m}'.*"):
+        ShortTimeFFT(np.ones(8)*1j, hop=4, fs=1, fft_mode=m)
+
+    SFT = ShortTimeFFT(np.ones(8)*1j, hop=4, fs=1, fft_mode='twosided')
+    with pytest.raises(ValueError,
+                       match=f"One-sided spectra, i.e., fft_mode='{m}'.*"):
+        SFT.fft_mode = m
+
+
 def test_invalid_fft_mode_RuntimeError():
     """Ensure exception gets raised when property `fft_mode` is invalid. """
     SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1)
@@ -643,6 +660,26 @@ def test_roundtrip_windows(window, n: int, nperseg: int, noverlap: int):
     x32_1 = SFT.istft(Sx32, k1=len(x32))
     assert_allclose(x32, x32_1,
                     err_msg="Roundtrip for 32 Bit float values failed")
+
+
+@pytest.mark.parametrize('signal_type', ('real', 'complex'))
+def test_roundtrip_complex_window(signal_type):
+    """Test roundtrip for complex-valued window function
+
+    The purpose of this test is to check if the dual window is calculated
+    correctly for complex-valued windows.
+    """
+    np.random.seed(1354654)
+    win = np.exp(2j*np.linspace(0, np.pi, 8))
+    SFT = ShortTimeFFT(win, 3, fs=1, fft_mode='twosided')
+
+    z = 10 * np.random.randn(11)
+    if signal_type == 'complex':
+        z = z + 2j * z
+    Sz = SFT.stft(z)
+    z1 = SFT.istft(Sz, k1=len(z))
+    assert_allclose(z, z1,
+                    err_msg="Roundtrip for complex-valued window failed")
 
 
 def test_average_all_segments():

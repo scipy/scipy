@@ -567,6 +567,10 @@ class ShortTimeFFT:
         if t not in (fft_mode_types := get_args(FFT_MODE_TYPE)):
             raise ValueError(f"fft_mode='{t}' not in {fft_mode_types}!")
 
+        if t in {'onesided', 'onesided2X'} and np.iscomplexobj(self.win):
+            raise ValueError(f"One-sided spectra, i.e., fft_mode='{t}', " +
+                             "are not allowed for complex-valued windows!")
+
         if t == 'onesided2X' and self.scaling is None:
             raise ValueError(f"For scaling is None, fft_mode='{t}' is invalid!"
                              "Do scale_to('psd') or scale_to('magnitude')!")
