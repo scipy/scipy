@@ -697,9 +697,6 @@ All functions
 
    stgsyl
    dtgsyl 
-   
-   stgsyl_lwork
-   dtgsyl_lwork 
 
    stpttf
    dtpttf

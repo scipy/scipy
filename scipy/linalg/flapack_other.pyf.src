@@ -398,13 +398,12 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     ! triangular and D, E are upper triangular.
     ! The solution (R, L) overwrites (C, F). 0 <= SCALE <= 1 is an output
     ! scaling factor chosen to avoid overflow.
-
-
+    
     callstatement (*f2py_func)(trans,&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,work,&lwork,iwork,&info)
     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
     character optional,intent(in),check((*trans=='N')||(*trans=='T')) :: trans = 'N'
-    integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 1
+    integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 0
     integer intent(hide),depend(a):: m = shape(a,1)
     integer intent(hide),depend(b):: n = shape(b,1)
      
@@ -430,51 +429,10 @@ subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,sca
     <ftype2> intent(out):: dif
     <ftype2> intent(hide),depend(lwork),dimension(max(1,lwork)):: work 
     integer optional,intent(in),depend(ijob,trans,m,n),check ( ((ijob==1||ijob==2) && (*trans=='N')) ? lwork>=max(1,2*m*n):(lwork>=n||lwork==-1)):: lwork = max(1,2*m*n)
-    integer intent(out),depend(m,n),dimension(m+n+6):: iwork
+    integer intent(hide),depend(m,n),dimension(m+n+6):: iwork
     integer intent(out):: info
 
 end subroutine <prefix2>tgsyl
-
-subroutine <prefix2>tgsyl_lwork(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,scale,dif,work,lwork,iwork,info)
-
-    ! lwork computation for ?TGSYL
-    
-    fortranname <prefix2>tgsyl
-    
-    callstatement (*f2py_func)(trans,&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,&work,&lwork,&iwork,&info)
-    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
-
-    character optional,intent(in),check((*trans=='N')||(*trans=='T')):: trans = 'N'
-    integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 0
-    integer intent(in),check(m>=0):: m 
-    integer intent(in),check(n>=0):: n 
-     
-    <ftype2> intent(hide),dimension(m,m):: a 
-    integer intent(hide):: lda = max(m,1)
-     
-    <ftype2> intent(hide),dimension(n,n):: b
-    integer intent(hide):: ldb = max(n,1)
-
-    <ftype2> intent(hide),dimension(m,n):: c
-    integer intent(hide):: ldc = max(m,1)
-
-    <ftype2> intent(hide),dimension(m,m):: d
-    integer intent(hide):: ldd = max(m,1)
-     
-    <ftype2> intent(hide),dimension(n,n):: e
-    integer intent(hide):: lde = max(n,1)
-
-    <ftype2> intent(hide),dimension(m,n):: f
-    integer intent(hide):: ldf = max(m,1)
-    
-    <ftype2> intent(hide):: scale
-    <ftype2> intent(hide):: dif
-    <ftype2> intent(out):: work 
-    integer intent(hide):: lwork = -1
-    integer intent(hide):: iwork
-    integer intent(out):: info
-
-end subroutine <prefix2>tgsyl_lwork
 
 subroutine <prefix2>pbtrf(lower,n,kd,ab,ldab,info)
     ! Compute Cholesky decomposition of banded symmetric positive definite

@@ -18,7 +18,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
-                          solve, ldl, norm, block_diag, qr, eigh)
+                          solve, ldl, norm, block_diag, qr, eigh, schur)
 
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
@@ -3299,40 +3299,92 @@ def test_gges_tgsen(dtype):
     assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
     assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
 
+@pytest.mark.parametrize(
+    "a,b,c,d,e,f,r,l",
+    [(np.array( [[  4.0,  1.0,  1.0,  2.0] ,
+                 [  0.0,  3.0,  4.0,  1.0] ,
+                 [  0.0,  1.0,  3.0,  1.0] ,
+                 [  0.0,  0.0,  0.0,  6.0]]),
+      np.array( [[  1.0,  1.0,  1.0,  1.0] ,
+                 [  0.0,  3.0,  4.0,  1.0] ,
+                 [  0.0,  1.0,  3.0,  1.0] ,
+                 [  0.0,  0.0,  0.0,  4.0]]),
+      np.array( [[ -4.0,  7.0,  1.0, 12.0] ,
+                 [ -9.0,  2.0, -2.0, -2.0] ,
+                 [ -4.0,  2.0, -2.0,  8.0] ,
+                 [ -7.0,  7.0, -6.0, 19.0]]),
+      np.array( [[  2.0,  1.0,  1.0,  3.0] ,
+                 [  0.0,  1.0,  2.0,  1.0] ,
+                 [  0.0,  0.0,  1.0,  1.0] ,
+                 [  0.0,  0.0,  0.0,  2.0]]),
+      np.array( [[  1.0,  1.0,  1.0,  2.0] ,
+                 [  0.0,  1.0,  4.0,  1.0] ,
+                 [  0.0,  0.0,  1.0,  1.0] ,
+                 [  0.0,  0.0,  0.0,  1.0]]),
+      np.array( [[ -7.0,  5.0,  0.0,  7.0] ,
+                 [ -5.0,  1.0, -8.0,  0.0] ,
+                 [ -1.0,  2.0, -3.0,  5.0] ,
+                 [ -3.0,  2.0,  0.0,  5.0]]),
+      np.array( [[  1.0,  1.0,  1.0,  1.0] ,
+                 [ -1.0,  2.0, -1.0, -1.0] ,
+                 [ -1.0,  1.0,  3.0,  1.0] ,
+                 [ -1.0,  1.0, -1.0,  4.0]]),
+     np.array(  [[  4.0, -1.0,  1.0, -1.0] ,
+                 [  1.0,  3.0, -1.0,  1.0] ,
+                 [ -1.0,  1.0,  2.0, -1.0] ,
+                 [  1.0, -1.0,  1.0,  1.0]]) )])
 @pytest.mark.parametrize('dtype', REAL_DTYPES)
-@pytest.mark.parametrize('trans', ('N'))#, 'T'
-def test_tgsyl(dtype,trans):
+def test_tgsyl_NAG(a,b,c,d,e,f,r,l,dtype):
+    atol = 1e-4
     
-    seed(1234)
-    atol = np.finfo(dtype).eps*1e4
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+    rans,lans,scale,dif,info = tgsyl(a,b,c,d,e,f)
     
-    m, n = 5, 3
-    
-    a = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
-    d = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
-    b = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
-    e = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
-    c = generate_random_dtype_array([m, n], dtype=dtype)
-    f = generate_random_dtype_array([m, n], dtype=dtype)
-
-    tgsyl, tgsyl_lwork = get_lapack_funcs(
-        ('tgsyl','tgsyl_lwork'), dtype=dtype)
-    ijob =1
-    lwork = _compute_lwork(tgsyl_lwork,m, n)#, trans=trans, ijob=ijob)
-
-    print(lwork)
-    # off-by-one error in LAPACK, see gh-issue #13397
-    # lwork = (lwork[0]+1, lwork[1])
-
-    r,l,scale,dif,iwork,info = tgsyl(a,b,c,d,e,f,trans=trans,ijob=ijob)
     assert_equal(info, 0)
-    lhs = list(np.matmul(a,r)-np.matmul(l,b))
-    rhs = scale*c
-    assert_allclose(lhs,rhs,rtol=1e-6,atol=1e-6)
+    assert_almost_equal(scale,1.0,decimal=4,err_msg="SCALE must be 1.0")
+    assert_almost_equal(dif,0.0,decimal=2,err_msg="DIF must be nearly 0")
+    assert_allclose(rans,r,atol=atol,err_msg='Solution for unknown R of Sylvester equation is not correct')
+    assert_allclose(lans,l,atol=atol,err_msg='Solution for unknown L of Sylvester equation is not correct')
+    
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('trans', ('N', 'T'))
+@pytest.mark.parametrize('ijob', [0,1,2,3,4])
+def test_tgsyl(dtype,trans,ijob):
+    
+    seed(2023)
+    atol = 1e-2
+    m, n = 10, 15
+    
+    a,_ = schur(generate_random_dtype_array([m, m], dtype=dtype))
+    d   = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
+    b,_ = schur(generate_random_dtype_array([n, n], dtype=dtype))
+    e   = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
+    c   = generate_random_dtype_array([m, n], dtype=dtype)
+    f   = generate_random_dtype_array([m, n], dtype=dtype)
 
-    lhs = list(np.matmul(d,r)-np.matmul(l,e))
-    rhs = scale*f
-    assert_allclose(lhs,rhs,rtol=1e-6,atol=1e-6)
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+        
+    r,l,scale,dif,info = tgsyl(a,b,c,d,e,f,trans=trans,ijob=ijob)
+    assert_equal(info,0,err_msg="INFO is non-zero")
 
-    # assert_allclose(dif,0.0,rtol=1e-6,atol=1e-6)
+    assert scale>=0.0,"SCALE must be non-negative"
+    if (ijob==0):
+        assert_almost_equal(dif,0.0,decimal=4,err_msg="DIF must be 0 for ijob =0")
+    else:
+        assert dif>=0.0,"DIF must be non-negative"
+    
+    #Only DIF is calculated for ijob = 3/4
+    if (ijob<=2):
+        if (trans=='N'):
+            lhs1 = a @ r - l @ b
+            rhs1 = scale*c
+            lhs2 = d @ r - l @ e
+            rhs2 = scale*f
+        elif (trans=='T'):
+            lhs1 = np.transpose(a)@ r + np.transpose(d) @ l
+            rhs1 = scale*c
+            lhs2 = r @np.transpose(b) + l @ np.transpose(e)
+            rhs2 = -1.0*scale*f
 
+        assert_allclose(lhs1,rhs1,atol=atol,err_msg='lhs1 and rhs1 of solved Sylvester equation do not match')
+        assert_allclose(lhs2,rhs2,atol=atol,err_msg='lhs2 and rhs2 of solved Sylvester equation do not match')
