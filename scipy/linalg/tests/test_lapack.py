@@ -3298,3 +3298,31 @@ def test_gges_tgsen(dtype):
 
     assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
     assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('trans', ('N', 'T'))
+def test_tgsyl(dtype,trans):
+    
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+    
+    m, n = 15, 10
+    
+    a = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
+    d = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
+    b = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
+    e = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
+    c = np.triu(generate_random_dtype_array([m, n], dtype=dtype))
+    f = np.triu(generate_random_dtype_array([m, n], dtype=dtype))
+
+    tgsyl, tgsyl_lwork = get_lapack_funcs(
+        ('tgsyl','tgsyl_lwork'), dtype=dtype)
+    ijob =1
+    lwork = _compute_lwork(tgsyl_lwork,m, n)#, trans=trans, ijob=ijob)
+
+    print(lwork)
+    # off-by-one error in LAPACK, see gh-issue #13397
+    # lwork = (lwork[0]+1, lwork[1])
+
+    result = tgsyl(a,b,c,d,e,f,trans=trans,ijob=ijob)
+
