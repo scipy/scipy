@@ -131,7 +131,6 @@ New features
   were made consistent in their behavior (in terms of dimensionality,
   errors etc.). Additionally, ``factorial2`` can now handle arrays with
   ``exact=True``, and ``factorialk`` can handle arrays.
--
 
 
 `scipy.stats` improvements
@@ -341,9 +340,8 @@ Authors
 * Evandro (1) +
 * Tom Eversdijk (2) +
 * Isuru Fernando (1)
-* Franz Forstmayr (3)
+* Franz Forstmayr (4)
 * Joseph Fox-Rabinovitz (1)
-* Franz (1) +
 * Stefano Frazzetto (1) +
 * Neil Girdhar (1)
 * Caden Gobat (1) +
@@ -438,7 +436,7 @@ Authors
 * Zaikun ZHANG (1) +
 * Alex Zverianskii (1) +
 
-A total of 132 people contributed to this release.
+A total of 131 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
