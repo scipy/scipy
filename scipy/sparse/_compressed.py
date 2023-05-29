@@ -1122,7 +1122,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.prune()  # nnz may have changed
         self.has_canonical_format = True
 
-
     @property
     def has_sorted_indices(self) -> bool:
         """Whether the indices are sorted
