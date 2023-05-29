@@ -54,9 +54,9 @@ class _csr_base(_cs_matrix):
     data
         Data array of the matrix
     indices
-        CSC format index array
+        CSR format index array
     indptr
-        CSC format index pointer array
+        CSR format index pointer array
     has_sorted_indices
     has_canonical_format
     T
