@@ -41,7 +41,7 @@ class NdBSpline:
         A single integer is interpreted as having this degree for
         all dimensions.
     extrapolate : bool, optional
-        Whether to exrapolate out-of-bounds inputs, or return `nan`.
+        Whether to extrapolate out-of-bounds inputs, or return `nan`.
         Default is to extrapolate.
 
     Attributes
@@ -62,7 +62,7 @@ class NdBSpline:
     See Also
     --------
     BSpline : a one-dimensional B-spline object
-    NdPPoly : an N-dimensional piecewise tensor product polynomal
+    NdPPoly : an N-dimensional piecewise tensor product polynomial
 
     """
     def __init__(self, t, c, k, extrapolate=None):
