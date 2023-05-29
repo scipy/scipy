@@ -1842,7 +1842,6 @@ add_newdoc("btdtr",
 
     Notes
     -----
-
     This function is identical to the incomplete beta integral function
     `betainc`.
 
