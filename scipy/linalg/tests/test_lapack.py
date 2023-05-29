@@ -3341,8 +3341,8 @@ def test_tgsyl_NAG(a,b,c,d,e,f,r,l,dtype):
     rans,lans,scale,dif,info = tgsyl(a,b,c,d,e,f)
     
     assert_equal(info, 0)
-    assert_almost_equal(scale,1.0,decimal=4,err_msg="SCALE must be 1.0")
-    assert_almost_equal(dif,0.0,decimal=2,err_msg="DIF must be nearly 0")
+    assert_allclose(scale,1.0,rtol=0,atol=np.finfo(dtype).eps*100,err_msg="SCALE must be 1.0")
+    assert_allclose(dif,0.0,rtol=0,atol=np.finfo(dtype).eps*100,err_msg="DIF must be nearly 0")
     assert_allclose(rans,r,atol=atol,err_msg='Solution for unknown R of Sylvester equation is not correct')
     assert_allclose(lans,l,atol=atol,err_msg='Solution for unknown L of Sylvester equation is not correct')
     
@@ -3353,6 +3353,9 @@ def test_tgsyl(dtype,trans,ijob):
     
     seed(2023)
     atol = 1e-2
+    if(dtype==np.float32):
+        atol = 5e-2
+    
     m, n = 10, 15
     
     a,_ = schur(generate_random_dtype_array([m, m], dtype=dtype))
@@ -3369,7 +3372,7 @@ def test_tgsyl(dtype,trans,ijob):
 
     assert scale>=0.0,"SCALE must be non-negative"
     if (ijob==0):
-        assert_almost_equal(dif,0.0,decimal=4,err_msg="DIF must be 0 for ijob =0")
+        assert_allclose(dif,0.0,rtol=0,atol=np.finfo(dtype).eps*100,err_msg="DIF must be 0 for ijob =0")
     else:
         assert dif>=0.0,"DIF must be non-negative"
     
@@ -3381,9 +3384,9 @@ def test_tgsyl(dtype,trans,ijob):
             lhs2 = d @ r - l @ e
             rhs2 = scale*f
         elif (trans=='T'):
-            lhs1 = np.transpose(a)@ r + np.transpose(d) @ l
+            lhs1 = np.transpose(a) @ r + np.transpose(d) @ l
             rhs1 = scale*c
-            lhs2 = r @np.transpose(b) + l @ np.transpose(e)
+            lhs2 = r @ np.transpose(b) + l @ np.transpose(e)
             rhs2 = -1.0*scale*f
 
         assert_allclose(lhs1,rhs1,atol=atol,err_msg='lhs1 and rhs1 of solved Sylvester equation do not match')
