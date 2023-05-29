@@ -98,7 +98,7 @@ musllinux_amd64_test_task:
   python_dependencies_script: |
     cd $_CWD
     python -m pip install cython
-    pip install --upgrade --pre -i https://pypi.anaconda.org/scipy-wheels-nightly/simple numpy
+    pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
     python -m pip install meson ninja pybind11 pythran pytest
     python -m pip install click rich_click doit pydevtool pooch
 

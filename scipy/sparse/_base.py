@@ -5,9 +5,11 @@ import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
-                       matrix, validateaxis)
+                       matrix, validateaxis,)
 
-__all__ = ['isspmatrix', 'issparse',
+from ._matrix import spmatrix
+
+__all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -57,12 +59,13 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _sparray:
+class _spbase:
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
     __array_priority__ = 10.1
+    _format = 'und'  # undefined
     ndim = 2
 
     @property
@@ -104,23 +107,16 @@ class _sparray:
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == '_sparray':
+        if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         self.maxprint = maxprint
 
-    def set_shape(self, shape):
-        """See `reshape`."""
-        # Make sure copy is False since this is in place
-        # Make sure format is unchanged because we are doing a __dict__ swap
-        new_self = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_self.__dict__
-
-    def get_shape(self):
-        """Get shape of a sparse array."""
-        return self._shape
-
-    shape = property(fget=get_shape, fset=set_shape)
+    # Use this in 1.13.0 and later:
+    #
+    # @property
+    # def shape(self):
+    #   return self._shape
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -236,7 +232,7 @@ class _sparray:
         else:
             return matrix(X, **kwargs)
 
-    def asfptype(self):
+    def _asfptype(self):
         """Upcast array to a floating point format (if necessary)"""
 
         fp_types = ['f', 'd', 'F', 'D']
@@ -255,7 +251,7 @@ class _sparray:
         for r in range(self.shape[0]):
             yield self[r, :]
 
-    def getmaxprint(self):
+    def _getmaxprint(self):
         """Maximum number of elements to display when printed."""
         return self.maxprint
 
@@ -264,14 +260,14 @@ class _sparray:
 
         np.count_nonzero(a.toarray())
 
-        Unlike getnnz() and the nnz property, which return the number of stored
+        Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
         """
         raise NotImplementedError("count_nonzero not implemented for %s." %
                                   self.__class__.__name__)
 
-    def getnnz(self, axis=None):
+    def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
         Parameters
@@ -295,21 +291,21 @@ class _sparray:
         --------
         count_nonzero : Number of non-zero entries
         """
-        return self.getnnz()
+        return self._getnnz()
 
-    def getformat(self):
-        """Format of an array representation as a string."""
-        return getattr(self, 'format', 'und')
+    @property
+    def format(self):
+        return self._format
 
     def __repr__(self):
-        _, format_name = _formats[self.getformat()]
+        _, format_name = _formats[self.format]
         sparse_cls = 'array' if self._is_array else 'matrix'
         return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
                (self.shape + (self.dtype.type, self.nnz, format_name))
 
     def __str__(self):
-        maxprint = self.getmaxprint()
+        maxprint = self._getmaxprint()
 
         A = self.tocoo()
 
@@ -660,9 +656,10 @@ class _sparray:
         elif isdense(other):
             if not rdivide:
                 if true_divide:
-                    return np.true_divide(self.todense(), other)
+                    recip = np.true_divide(1., other)
                 else:
-                    return np.divide(self.todense(), other)
+                    recip = np.divide(1., other)
+                return self.multiply(recip)
             else:
                 if true_divide:
                     return np.true_divide(other, self.todense())
@@ -716,29 +713,39 @@ class _sparray:
     def __pow__(self, *args, **kwargs):
         return self.power(*args, **kwargs)
 
-    def __getattr__(self, attr):
-        if attr == 'A':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "Please use `.todense()` instead"
-                ))
-            return self.toarray()
-        elif attr == 'T':
-            return self.transpose()
-        elif attr == 'H':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "Please use `.conj().T` instead"
-                ))
-            return self.getH()
-        elif attr == 'real':
-            return self._real()
-        elif attr == 'imag':
-            return self._imag()
-        elif attr == 'size':
-            return self.getnnz()
-        else:
-            raise AttributeError(attr + " not found")
+    @property
+    def A(self) -> np.ndarray:
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.A` is deprecated and will be removed in v1.13.0. "
+                "Use `.toarray()` instead."
+            ))
+        return self.toarray()
+
+    @property
+    def T(self):
+        return self.transpose()
+
+    @property
+    def H(self):
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.H` is deprecated and will be removed in v1.13.0. "
+                "Please use `.T.conjugate()` instead."
+            ))
+        return self.T.conjugate()
+
+    @property
+    def real(self):
+        return self._real()
+
+    @property
+    def imag(self):
+        return self._imag()
+
+    @property
+    def size(self):
+        return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
         """
@@ -766,7 +773,7 @@ class _sparray:
         """
         return self.tocsr(copy=copy).transpose(axes=axes, copy=False)
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         """Element-wise complex conjugation.
 
         If the array is of non-complex data type and `copy` is False,
@@ -783,26 +790,16 @@ class _sparray:
 
         """
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self.tocsr(copy=copy).conj(copy=False)
+            return self.tocsr(copy=copy).conjugate(copy=False)
         elif copy:
             return self.copy()
         else:
             return self
 
-    def conjugate(self, copy=True):
-        return self.conj(copy=copy)
+    def conj(self, copy=True):
+        return self.conjugate(copy=copy)
 
-    conjugate.__doc__ = conj.__doc__
-
-    # Renamed conjtranspose() -> getH() for compatibility with dense matrices
-    def getH(self):
-        """Return the Hermitian transpose of this array.
-
-        See Also
-        --------
-        numpy.matrix.getH : NumPy's implementation of `getH` for matrices
-        """
-        return self.transpose().conj()
+    conj.__doc__ = conjugate.__doc__
 
     def _real(self):
         return self.tocsr()._real()
@@ -830,7 +827,7 @@ class _sparray:
         nz_mask = A.data != 0
         return (A.row[nz_mask], A.col[nz_mask])
 
-    def getcol(self, j):
+    def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """
@@ -846,7 +843,7 @@ class _sparray:
                                            shape=(n, 1), dtype=self.dtype)
         return self @ col_selector
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the array, as a (1 x n) sparse
         array (row vector).
         """
@@ -946,7 +943,7 @@ class _sparray:
         """
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # Any sparse array format deriving from _sparray must define one of
+    # Any sparse array format deriving from _spbase must define one of
     # tocsr or tocoo. The other conversion methods may be implemented for
     # efficiency, but are not required.
     def tocsr(self, copy=False):
@@ -1227,6 +1224,9 @@ class _sparray:
         self._setdiag(np.asarray(values), k)
 
     def _setdiag(self, values, k):
+        """This part of the implementation gets overridden by the
+        different formats.
+        """
         M, N = self.shape
         if k < 0:
             if values.ndim == 0:
@@ -1266,9 +1266,200 @@ class _sparray:
         else:
             return np.zeros(self.shape, dtype=self.dtype, order=order)
 
+    def _get_index_dtype(self, arrays=(), maxval=None, check_contents=False):
+        """
+        Determine index dtype for array.
+
+        This wraps _sputils.get_index_dtype, providing compatibility for both
+        array and matrix API sparse matrices. Matrix API sparse matrices would
+        attempt to downcast the indices - which can be computationally
+        expensive and undesirable for users. The array API changes this
+        behaviour.
+
+        See discussion: https://github.com/scipy/scipy/issues/16774
+
+        The get_index_dtype import is due to implementation details of the test
+        suite. It allows the decorator ``with_64bit_maxval_limit`` to mock a
+        lower int32 max value for checks on the matrix API's downcasting
+        behaviour.
+        """
+        from ._sputils import get_index_dtype
+
+        # Don't check contents for array API
+        return get_index_dtype(arrays, maxval, (check_contents and not self._is_array))
+
+
+    ## All methods below are deprecated and should be removed in
+    ## scipy 1.13.0
+    ##
+    ## Also uncomment the definition of shape above.
+
+    def get_shape(self):
+        """Get shape of a sparse array.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.shape` instead.
+        """
+        msg = (
+            "`get_shape` is deprecated and will be removed in v1.13.0; "
+            "use `X.shape` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+
+        return self._shape
+
+    def set_shape(self, shape):
+        """See `reshape`.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.reshape` instead.
+        """
+        msg = (
+            "Shape assignment is deprecated and will be removed in v1.13.0; "
+            "use `reshape` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+
+        # Make sure copy is False since this is in place
+        # Make sure format is unchanged because we are doing a __dict__ swap
+        new_self = self.reshape(shape, copy=False).asformat(self.format)
+        self.__dict__ = new_self.__dict__
+
+    shape = property(
+        fget=lambda self: self._shape,
+        fset=set_shape,
+        doc="""The shape of the array.
+
+Note that, starting in SciPy 1.13.0, this property will no longer be
+settable. To change the array shape, use `X.reshape` instead.
+"""
+    )  # noqa: F811
+
+    def asfptype(self):
+        """Upcast array to a floating point format (if necessary)
+
+        .. deprecated:: 1.11.0
+           This method is for internal use only, and will be removed from the
+           public API in SciPy 1.13.0.
+        """
+        msg = (
+            "`asfptype` is an internal function, and is deprecated "
+            "as part of the public API. It will be removed in v1.13.0."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._asfptype()
+
+    def getmaxprint(self):
+        """Maximum number of elements to display when printed.
+
+        .. deprecated:: 1.11.0
+           This method is for internal use only, and will be removed from the
+           public API in SciPy 1.13.0.
+        """
+        msg = (
+            "`getmaxprint` is an internal function, and is deprecated "
+            "as part of the public API. It will be removed in v1.13.0."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getmaxprint()
+
+    def getformat(self):
+        """Matrix storage format.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.format` instead.
+        """
+        msg = (
+            "`getformat` is deprecated and will be removed in v1.13.0; "
+            "use `X.format` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self.format
+
+    def getnnz(self, axis=None):
+        """Number of stored values, including explicit zeros.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0. Use `X.nnz`
+           instead.  The `axis` argument will no longer be supported;
+           please let us know if you still need this functionality.
+
+        Parameters
+        ----------
+        axis : None, 0, or 1
+            Select between the number of values across the whole array, in
+            each column, or in each row.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero entries
+        """
+        msg = (
+            "`getnnz` is deprecated and will be removed in v1.13.0; "
+            "use `X.nnz` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getnnz(axis=axis)
+
+    def getH(self):
+        """Return the Hermitian transpose of this array.
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use `X.conj().T` instead.
+        """
+        msg = (
+            "`getH` is deprecated and will be removed in v1.13.0; "
+            "use `X.conj().T` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self.conjugate().transpose()
+
+    def getcol(self, j):
+        """Returns a copy of column j of the array, as an (m x 1) sparse
+        array (column vector).
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use array indexing instead.
+        """
+        msg = (
+            "`getcol` is deprecated and will be removed in v1.13.0; "
+            f"use `X[:, [{j}]]` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getcol(j)
+
+    def getrow(self, i):
+        """Returns a copy of row i of the array, as a (1 x n) sparse
+        array (row vector).
+
+        .. deprecated:: 1.11.0
+           This method will be removed in SciPy 1.13.0.
+           Use array indexing instead.
+        """
+        msg = (
+            "`getrow` is deprecated and will be removed in v1.13.0; "
+            f"use `X[[{i}]]` instead."
+        )
+        warn(msg, DeprecationWarning, stacklevel=2)
+        return self._getrow(i)
+
+    ## End 1.13.0 deprecated methods
+
+
+class sparray:
+    """A namespace class to separate sparray from spmatrix"""
+    pass
+
+sparray.__doc__ = _spbase.__doc__
+
 
 def issparse(x):
-    """Is x of a sparse array type?
+    """Is `x` of a sparse array type?
 
     Parameters
     ----------
@@ -1278,23 +1469,48 @@ def issparse(x):
     Returns
     -------
     bool
-        True if x is a sparse array, False otherwise
-
-    Notes
-    -----
-    issparse and isspmatrix are aliases for the same function.
+        True if `x` is a sparse array or a sparse matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import csr_array, issparse
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, issparse
+    >>> issparse(csr_matrix([[5]]))
+    True
     >>> issparse(csr_array([[5]]))
     True
-
-    >>> from scipy.sparse import issparse
+    >>> issparse(np.array([[5]]))
+    False
     >>> issparse(5)
     False
     """
-    return isinstance(x, _sparray)
+    return isinstance(x, _spbase)
 
 
-isspmatrix = issparse
+def isspmatrix(x):
+    """Is `x` of a sparse matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse matrix
+
+    Returns
+    -------
+    bool
+        True if `x` is a sparse matrix, False otherwise
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
+    >>> isspmatrix(csr_matrix([[5]]))
+    True
+    >>> isspmatrix(csr_array([[5]]))
+    False
+    >>> isspmatrix(np.array([[5]]))
+    False
+    >>> isspmatrix(5)
+    False
+    """
+    return isinstance(x, spmatrix)

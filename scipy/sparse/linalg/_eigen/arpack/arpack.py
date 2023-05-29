@@ -38,7 +38,7 @@ Uses ARPACK: https://github.com/opencollab/arpack-ng
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
+from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse._sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
@@ -1038,7 +1038,7 @@ class IterOpInv(LinearOperator):
 
 def _fast_spmatrix_to_csc(A, hermitian=False):
     """Convert sparse matrix to CSC (by transposing, if possible)"""
-    if (isspmatrix_csr(A) and hermitian
+    if (A.format == "csr" and hermitian
             and not np.issubdtype(A.dtype, np.complexfloating)):
         return A.T
     elif is_pydata_spmatrix(A):
@@ -1051,7 +1051,7 @@ def _fast_spmatrix_to_csc(A, hermitian=False):
 def get_inv_matvec(M, hermitian=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
-    elif isspmatrix(M) or is_pydata_spmatrix(M):
+    elif issparse(M) or is_pydata_spmatrix(M):
         M = _fast_spmatrix_to_csc(M, hermitian=hermitian)
         return SpLuInv(M).matvec
     else:
@@ -1072,7 +1072,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
                 A = A + 0j
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
-        elif isspmatrix(A) or is_pydata_spmatrix(A):
+        elif issparse(A) or is_pydata_spmatrix(A):
             A = A - sigma * eye(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
@@ -1080,8 +1080,8 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              M, sigma, tol=tol).matvec
     else:
-        if ((not isdense(A) and not isspmatrix(A) and not is_pydata_spmatrix(A)) or
-                (not isdense(M) and not isspmatrix(M) and not is_pydata_spmatrix(A))):
+        if ((not isdense(A) and not issparse(A) and not is_pydata_spmatrix(A)) or
+                (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(A))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              _aslinearoperator_with_dtype(M),
                              sigma, tol=tol).matvec

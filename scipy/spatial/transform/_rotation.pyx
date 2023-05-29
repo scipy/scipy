@@ -94,6 +94,27 @@ cdef inline int _elementary_basis_index(uchar axis) noexcept:
     elif axis == b'y': return 1
     elif axis == b'z': return 2
 
+# Reduce the quaternion double coverage of the rotation group to a unique
+# canonical "positive" single cover
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _quat_canonical_single(double[:] q) nogil:
+    if ((q[3] < 0)
+        or (q[3] == 0 and q[0] < 0)
+        or (q[3] == 0 and q[0] == 0 and q[1] < 0)
+        or (q[3] == 0 and q[0] == 0 and q[1] == 0 and q[2] < 0)):
+        q[0] *= -1.0
+        q[1] *= -1.0
+        q[2] *= -1.0
+        q[3] *= -1.0
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef inline void _quat_canonical(double[:, :] q):
+    cdef Py_ssize_t n = q.shape[0]
+    for ind in range(n):
+        _quat_canonical_single(q[ind])
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef double[:, :] _compute_euler_from_matrix(
@@ -759,9 +780,9 @@ cdef class Rotation:
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
-            Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format. Each quaternion will be normalized to unit
-            norm.
+            Each row is a (possibly non-unit norm) quaternion representing an
+            active rotation, in scalar-last (x, y, z, w) format. Each
+            quaternion will be normalized to unit norm.
 
         Returns
         -------
@@ -1336,14 +1357,23 @@ cdef class Rotation:
             return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
-    def as_quat(self):
+    def as_quat(self, canonical=False):
         """Represent as quaternions.
 
-        Rotations in 3 dimensions can be represented using unit norm
+        Active rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
         rotation. The returned value is in scalar-last (x, y, z, w) format.
+
+        Parameters
+        ----------
+        canonical : `bool`, default False
+            Whether to map the redundant double cover of rotation space to a
+            unique "canonical" single cover. If True, then the quaternion is
+            chosen from {q, -q} such that the w term is positive. If the w term
+            is 0, then the quaternion is chosen such that the first nonzero
+            term of the x, y, and z terms is positive.
 
         Returns
         -------
@@ -1381,11 +1411,25 @@ cdef class Rotation:
         >>> r.as_quat().shape
         (2, 4)
 
+        Quaternions can be mapped from a redundant double cover of the
+        rotation space to a canonical representation with a positive w term.
+
+        >>> r = R.from_quat([0, 0, 0, -1])
+        >>> r.as_quat()
+        array([0. , 0. , 0. , -1.])
+        >>> r.as_quat(canonical=True)
+        array([0. , 0. , 0. , 1.])
         """
         if self._single:
-            return np.array(self._quat[0], copy=True)
+            q = np.array(self._quat[0], copy=True)
+            if canonical:
+                _quat_canonical_single(q)
         else:
-            return np.array(self._quat, copy=True)
+            q = np.array(self._quat, copy=True)
+            if canonical:
+                _quat_canonical(q)
+
+        return q
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)
@@ -1565,12 +1609,8 @@ cdef class Rotation:
         cdef double[:] quat
 
         for ind in range(num_rotations):
-            if self._quat[ind, 3] < 0:  # w > 0 to ensure 0 <= angle <= pi
-                quat = self._quat[ind, :].copy()
-                for i in range(4):
-                    quat[i] *= -1
-            else:
-                quat = self._quat[ind, :]
+            quat = self._quat[ind, :].copy()
+            _quat_canonical_single(quat)  # w > 0 ensures that 0 <= angle <= pi
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
@@ -2147,7 +2187,9 @@ cdef class Rotation:
 
         """
         cdef np.ndarray quat = np.array(self._quat, copy=True)
-        quat[:, -1] *= -1
+        quat[:, 0] *= -1
+        quat[:, 1] *= -1
+        quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
         return self.__class__(quat, copy=False)

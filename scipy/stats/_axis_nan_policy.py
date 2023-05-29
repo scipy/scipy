@@ -493,21 +493,23 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             ndims = np.array([sample.ndim for sample in samples])
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
-                contains_nans = []
-                for sample in samples:
-                    contains_nan, _ = _contains_nan(sample, nan_policy)
-                    contains_nans.append(contains_nan)
+                if nan_policy != 'propagate' or override['nan_propagation']:
+                    contains_nan = [_contains_nan(sample, nan_policy)[0]
+                                    for sample in samples]
+                else:
+                    # Behave as though there are no NaNs (even if there are)
+                    contains_nan = [False]*len(samples)
 
                 # Addresses nan_policy == "propagate"
-                if any(contains_nans) and (nan_policy == 'propagate'
-                                           and override['nan_propagation']):
+                if any(contains_nan) and (nan_policy == 'propagate'
+                                          and override['nan_propagation']):
                     res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
-                if any(contains_nans) and nan_policy == 'omit':
-                    # consider passing in contains_nans
+                if any(contains_nan) and nan_policy == 'omit':
+                    # consider passing in contains_nan
                     samples = _remove_nans(samples, paired)
 
                 # ideally, this is what the behavior would be:
@@ -540,7 +542,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
-            contains_nan, _ = _contains_nan(x, nan_policy)
+            if nan_policy != 'propagate' or override['nan_propagation']:
+                contains_nan, _ = _contains_nan(x, nan_policy)
+            else:
+                contains_nan = False  # behave like there are no NaNs
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)

@@ -296,6 +296,24 @@ class SkewNormal(ReferenceDistribution):
     # that there is no *mistake* in the implementation (e.g. wrong formula).
 
 
+class BetaPrime(ReferenceDistribution):
+
+    def __init__(self, *, a, b):
+        super().__init__(a=a, b=b)
+
+    def _support(self, **kwargs):
+        return mp.zero, mp.inf
+
+    def _logpdf(self, x, a, b):
+        return (a - mp.one)*mp.log(x) - (a + b)*mp.log1p(x) - mp.log(mp.beta(a, b))
+
+    def _pdf(self, x, a, b):
+        return mp.exp(self._logpdf(x=x, a=a, b=b))
+
+    def _sf(self, x, a, b):
+        return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
+
+
 class Normal(ReferenceDistribution):
 
     def _pdf(self, x):
