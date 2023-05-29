@@ -131,108 +131,98 @@ New features
 
 `scipy.stats` improvements
 ==========================
-- Added `scipy.stats.sobol_indices`, a method to compute sensitivity indices of
-  Sobol.
-- Added `scipy.stats.dunnett`, a function that performs Dunnett's test of the
-  means of multiple experimental groups against the mean of a control group.
-- Added `scipy.stats.ecdf` for computing the empirical CDF and complementary
+
+New Features
+------------
+- `scipy.stats.sobol_indices`, a method to compute Sobol' sensitivity indices.
+- `scipy.stats.dunnett`, which performs Dunnett's test of the means of multiple
+  experimental groups against the mean of a control group.
+- `scipy.stats.ecdf` for computing the empirical CDF and complementary
   CDF (survival function / SF) from uncensored or right-censored data. This
   function is also useful for survival analysis / Kaplain-Meier estimation.
-- Added `scipy.stats.fdr_control` for adjusting p-values to control the false
-  discovery rate of multiple tests.
-- Added Filliben's test of whether a sample was not drawn from a hypothesized
-  distribution as ``method='Filliben'`` of `scipy.stats.goodness_of_fit`.
-- Added handling of censored data to the ``fit`` method of univariate
-  continuous distributions for fitting by maximum likelihood estimation. A
-  new class, ``CensoredData``, is added to represent censored data.
-- `scipy.stats.anderson_ksamp` now performs a permutation version of the test
-  if the user provides argument ``n_resamples``. The is particularly useful
-  when the p-value would be beyond the range of the tabulated values.
-- Improvements to the speed and precision of several statistical distributions.
-  
-  - `scipy.stats.betaprime` ``cdf``, ``ppf``
-  - `scipy.stats.genlogistic` ``logcdf``
-  - `scipy.stats.genhyperbolic` ``cdf`` and ``sf``
-  - `scipy.stats.halfnorm` ``cdf``
-  - `scipy.stats.johnsonsu` ``stats``
-  - `scipy.stats.powerlognorm` ``logsf`` and ``logpdf``
-  - `scipy.stats.dgamma` ``cdf`` and ``ppf``
-  - `scipy.stats.foldnorm` ``cdf``, ``sf``
-
-- Improvements to the ``sf`` and ``isf`` methods of `scipy.stats.dgamma`,
-  `scipy.stats.genlogistic`, `scipy.stats.gibrat`, `scipy.stats.gompertz`,
-  `scipy.stats.halfnorm`, `scipy.stats.johnsonsb`, `scipy.stats.johnsonsu`,
-  `scipy.stats.powerlognorm`, `scipy.stats.powernorm`,
-  `scipy.stats.truncexpon`, `scipy.stats.halflogistic`, `scipy.stats.maxwell`.
-- Improvements to the ``fit`` method of `scipy.stats.lognorm`,
-  `scipy.stats.truncpareto`, and `scipy.stats.vonmises`.
-- Improvements to the ``entropy`` method of several statistical distributions:
-  `scipy.stats.beta`, `scipy.stats.chi`, `scipy.stats.chi2`,
-  `scipy.stats.dweibull`, `scipy.stats.dgamma`, `scipy.stats.f`,
-  `scipy.stats.gamma`, `scipy.stats.gengamma`, `scipy.stats.genlogistic`,
-  `scipy.stats.invamma`, `scipy.stats.invgauss`, `scipy.stats.nakagami`,
-  `scipy.stats.t`, `scipy.stats.truncnorm`, and `scipy.stats.invgamma`.
-- Added support for ``axis``, ``nan_policy``, and masked arrays to
-  `scipy.stats.sem`, `scipy.stats.iqr`.
-- Added the Dirichlet multinomial distribution as
-  `scipy.stats.dirichlet_multinomial`.
-- `scipy.stats.multivariate_t` now has a ``cdf`` method for integrating the
-  PDF within rectangular limits of integration, and a new `entropy` method.
-- Added the ``sf`` method to `scipy.stats.betaprime`.
-- Improved t distribution ``logpdf`` and ``pdf`` for large degrees of freedom.
-- `scipy.stats.rankdata` performance was improved for ``method=ordinal`` and
-  ``method=dense``.
-- `scipy.stats.exponweib` now has improved tail precision.
-- `scipy.stats.dweibull` now has improved precision for positive values.
-- `scipy.stats.monte_carlo_test` now supports multi-sample statistics.
-- Added one-sided confidence intervals to `scipy.stats.bootstrap`.
-- `scipy.stats.geom` ``entropy`` is now calculated analytically.
-- Added `scipy.stats.log_rank` to get a statistical difference between two
-  survival functions.
-- Improved precision of `scipy.stats.anglit`
-- `scipy.stats.moment` now supports non-central moment calculation
-- We now allow a single observation for equal variance in
-  `scipy.stats.ttest_ind`.
-- `scipy.stats.multivariate_normal` and `scipy.stats.invwishart` now have an
-  ``entropy`` method.
-- ``multinomial`` now supports zero trial scenarios
-- Generating random variates with ``genexpon`` is much faster.
-- Implemented ``sf`` and ``isf`` for ``halfcauchy``; ``sf`` for
-  ``foldcauchy`` and ``powerlaw``.
-- ``loguniform`` is now less prone to overflow.
-- New distribution, `scipy.stats.vonmises_fisher` was added. This distribution
-  is the most common analogue of the normal distribution on the unit sphere.
-- New distribution, ``rel_breitwigner``, frequently used in high energy
-  physics to model resonances.
-- Added `scipy.stats.false_discovery_control`, which adjusts p-values to
-  control the false discovery rate.
-- `scipy.stats.anderson` now supports ``weibull_min`` distribution.
-
-Hypothesis Tests
-----------------
-
-
-Sample statistics
------------------
-
+- `scipy.stats.logrank` to compare survival functions underlying samples.
+- `scipy.stats.false_discovery_control` for adjusting p-values to control the
+  false discovery rate of multiple hypothesis tests using the Benjamini-Hochberg
+  or Benjamini-Yekutieli procedures.
+- `scipy.stats.CensoredData` to represent censored data. It can be used as input
+  to the ``fit`` method of univariate distributions and to the new ``ecdf`` function.
+- Filliben's goodness of fit test as ``method='Filliben'`` of
+  `scipy.stats.goodness_of_fit`.
+- `scipy.stats.ttest_ind` has a new method, ``confidence_interval`` for computing
+  confidence intervals.
+- `scipy.stats.MonteCarloMethod`, `scipy.stats.PermutationMethod`, and
+  `scipy.stats.BootstrapMethod` are new classes to configure resampling and/or
+  Monte Carlo versions of hypothesis tests. They can currently be used with
+  `scipy.stats.pearsonr`.
 
 Statistical Distributions
 -------------------------
+- Added the von-Mises Fisher distribution as `scipy.stats.vonmises_fisher`.
+  This distribution is the most common analogue of the normal distribution
+  on the unit sphere.
+- Added the relativistic Breit-Wigner distribution as `scipy.stats.rel_breitwigner`.
+  It is used in high energy physics to model resonances.
+- Added the Dirichlet multinomial distribution as `scipy.stats.dirichlet_multinomial`.
+- Improved the speed and precision of several univariate statistical distributions.
 
+  - `scipy.stats.anglit` ``sf``
+  - `scipy.stats.beta` ``entropy``
+  - `scipy.stats.betaprime` ``cdf``, ``sf``, ``ppf``
+  - `scipy.stats.chi` ``entropy``
+  - `scipy.stats.chi2` ``entropy``
+  - `scipy.stats.dgamma` ``entropy``, ``cdf``, ``sf``, ``ppf``, and ``isf``
+  - `scipy.stats.dweibull` ``entropy``, ``sf``, and ``isf``
+  - `scipy.stats.exponweib` ``sf`` and ``isf``
+  - `scipy.stats.f` ``entropy``
+  - `scipy.stats.foldcauchy` ``sf``
+  - `scipy.stats.foldnorm` ``cdf`` and ``sf``
+  - `scipy.stats.gamma` ``entropy``
+  - `scipy.stats.genexpon` ``ppf``, ``isf``, ``rvs``
+  - `scipy.stats.gengamma` ``entropy``
+  - `scipy.stats.geom` ``entropy``
+  - `scipy.stats.genlogistic` ``entropy``, ``logcdf``, ``sf``, ``ppf``, and ``isf``
+  - `scipy.stats.genhyperbolic` ``cdf`` and ``sf``
+  - `scipy.stats.gibrat` ``sf`` and ``isf``
+  - `scipy.stats.gompertz` ``entropy``, ``sf``. and ``isf``
+  - `scipy.stats.halflogistic` ``sf``, and ``isf``
+  - `scipy.stats.halfcauchy` ``sf`` and ``isf``
+  - `scipy.stats.halfnorm` ``cdf``, ``sf``, and ``isf``
+  - `scipy.stats.invgamma` ``entropy``
+  - `scipy.stats.invgauss` ``entropy``
+  - `scipy.stats.johnsonsb` ``pdf``, ``cdf``, ``sf``, ``ppf``, and ``isf``
+  - `scipy.stats.johnsonsu` ``pdf``, ``sf``, ``isf``, and ``stats``
+  - `scipy.stats.lognorm` ``fit``
+  - `scipy.stats.loguniform` ``entropy``, ``logpdf``, ``pdf``, ``cdf``, ``ppf``, and ``stats``
+  - `scipy.stats.maxwell` ``sf`` and ``isf``
+  - `scipy.stats.nakagami` ``entropy``
+  - `scipy.stats.powerlaw` ``sf``
+  - `scipy.stats.powerlognorm` ``logpdf``, ``logsf``, ``sf``, and ``isf``
+  - `scipy.stats.powernorm` ``sf`` and ``isf``
+  - `scipy.stats.t` ``entropy``, ``logpdf``, and ``pdf``
+  - `scipy.stats.truncexpon` ``sf``, and ``isf``
+  - `scipy.stats.truncnorm` ``entropy``
+  - `scipy.stats.truncpareto` ``fit``
+  - `scipy.stats.vonmises` ``fit``
 
-Other
------
+- `scipy.stats.multivariate_t` now has ``cdf`` and ``entropy`` methods.
+- `scipy.stats.multivariate_normal`, `scipy.stats.matrix_normal`, and
+  `scipy.stats.invwishart` now have an ``entropy`` method.
 
-
-
+Other Improvements
+------------------
+- `scipy.stats.monte_carlo_test` now supports multi-sample statistics.
+- `scipy.stats.bootstrap` can now produce one-sided confidence intervals.
+- `scipy.stats.rankdata` performance was improved for ``method=ordinal`` and
+  ``method=dense``.
+- `scipy.stats.moment` now supports non-central moment calculation.
+- `scipy.stats.anderson` now supports the ``weibull_min`` distribution.
+- `scipy.stats.sem` and `scipy.stats.iqr`now support ``axis``, ``nan_policy``,
+  and masked array input.
 
 *******************
 Deprecated features
 *******************
 
-- The ``full_output`` keywords of `scipy.integrate.nquad` and
-  `scipy.integrate.quad_vec` have been deprecated and will be removed in SciPy
-  1.13.
 - The `scipy.linalg` functions ``tri``, ``triu`` & ``tril`` are deprecated and
   will be removed in SciPy 1.13. Users are recommended to use the NumPy
   versions of these functions with identical names.
