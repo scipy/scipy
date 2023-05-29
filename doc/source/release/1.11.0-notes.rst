@@ -56,7 +56,7 @@ New features
 ===========================
 - `scipy.linalg.det` is improved and now accepts nD-arrays.
 - `scipy.linalg.lu` is improved and now accepts nD-arrays. With the new
-  ``matrix_p`` switch the output permutation argument can be 1D ``(n,)``
+  ``p_indices`` switch the output permutation argument can be 1D ``(n,)``
   permutation index instead of the full ``(n, n)`` array.
 
 
@@ -101,7 +101,12 @@ New features
 ===========================
 - `scipy.sparse` array (not matrix) classes now return a sparse array instead
   of a dense array when divided by a dense array.
--
+- A new public base class `scipy.sparse.sparray` was introduced, allowing `isinstance(x, scipy.sparse.sparray)` to select the new sparse array classes, while `isinstance(x, scipy.sparse.spmatrix)` selects only the old sparse matrix types.
+- The behavior of `scipy.sparse.isspmatrix()` was updated to return True for only the sparse matrix types. If you want to check for either sparse arrays or sparse matrices, use `scipy.sparse.issparse()` instead. (Previously, these had identical behavior.)
+- Several methods were deprecated for sparse arrays: `asfptype`, `getrow`, `getcol`, `getnnz`, and `getformat`. Additionally, the `.A` and `.H` attributes were deprecated. Sparse matrix types are not affected.
+- Sparse arrays constructed with 64-bit indices will no longer automatically downcast to 32-bit.
+- A new `scipy.sparse.diags_array` function was added, which behaves like the existing `scipy.sparse.diags` function except that it returns a sparse array instead of a sparse matrix.
+- `argmin` and `argmax` methods now return the correct result when no implicit zeros are present.
 
 `scipy.sparse.linalg` improvements
 ==================================
@@ -216,7 +221,7 @@ Other Improvements
   ``method=dense``.
 - `scipy.stats.moment` now supports non-central moment calculation.
 - `scipy.stats.anderson` now supports the ``weibull_min`` distribution.
-- `scipy.stats.sem` and `scipy.stats.iqr`now support ``axis``, ``nan_policy``,
+- `scipy.stats.sem` and `scipy.stats.iqr` now support ``axis``, ``nan_policy``,
   and masked array input.
 
 *******************
