@@ -61,7 +61,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     indptr
         BSR format index pointer array
     blocksize
-        Block size
     has_sorted_indices : bool
         Whether indices are sorted
     has_canonical_format : bool
