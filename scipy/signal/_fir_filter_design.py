@@ -475,7 +475,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 #
 # Rewritten by Warren Weckesser, 2010.
 
-def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
+def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming',
             antisymmetric=False, fs=None):
     """
     FIR filter design using the window method.
@@ -510,13 +510,6 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         Window function to use. Default is "hamming". See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `freq` must be
-        between 0 and `nyq`. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firwin2` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -583,7 +576,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
-    nyq = 0.5 * _get_fs(fs, nyq)
+    nyq = 0.5 * _get_fs(fs)
 
     if len(freq) != len(gain):
         raise ValueError('freq and gain must be of same length.')
