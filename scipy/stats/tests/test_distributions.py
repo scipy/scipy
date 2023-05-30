@@ -5203,42 +5203,44 @@ class TestLevyStable:
         )
 
     @pytest.mark.parametrize(
-        'alpha,beta,expected',
+        'x,alpha,beta,expected',
         [
-            (1.7720732804618808, 0.5059373136902996, 0.27893263679826763),
-            (1.9217001522410235, -0.8779442746685926, 0.2810547572023162),
-            (1.5654806051633634, -0.4016220341911392, 0.2712821331942038),
-            (1.7420803447784388, -0.38180029468259247, 0.28020219924424716),
-            (1.5748002527689913, -0.25200194914153684, 0.28013657621866517),
+            (0, 1.7720732804618808, 0.5059373136902996, 0.27893263679826763),
+            (0, 1.9217001522410235, -0.8779442746685926, 0.28105475720231615),
+            (0, 1.5654806051633634, -0.4016220341911392, 0.27128213319420375),
+            (0, 1.7420803447784388, -0.38180029468259247, 0.2802021992442472),
+            (0, 1.5748002527689913, -0.25200194914153684, 0.2801365762186652),
+            (1e-4, 1.7720732804618808, 0.5059373136902996, 0.278929165344589),
+            (1e-4, 1.9217001522410235, -0.8779442746685926, 0.28105656433220405),
+            (1e-4, 1.5654806051633634, -0.4016220341911392, 0.2712888705212272),
+            (1e-4, 1.7420803447784388, -0.38180029468259247, 0.28020531127154746),
+            (1e-4, 1.5748002527689913, -0.25200194914153684, 0.2801409652499931),
+            (-1e-4, 1.7720732804618808, 0.5059373136902996, 0.2789361067486084),
+            (-1e-4, 1.9217001522410235, -0.8779442746685926, 0.2810529486327333),
+            (-1e-4, 1.5654806051633634, -0.4016220341911392, 0.2712753943985031),
+            (-1e-4, 1.7420803447784388, -0.38180029468259247, 0.2801990856495152),
+            (-1e-4, 1.5748002527689913, -0.25200194914153684, 0.2801321854400478),
         ]
     )
     def test_x_near_zeta(
-            self, alpha, beta, expected
+            self, x, alpha, beta, expected
     ):
-        """Ensure the pdf/cdf routines do not return bad values when x near zeta.
+        """Test pdf for x near zeta.
 
-        With S1 parametrization: x0 = x + zeta if alpha != 1
-        So, for x = 0, x0 will be close to zeta.
+        With S1 parametrization: x0 = x + zeta if alpha != 1 So, for x = 0, x0
+        will be close to zeta.
 
-        When case "x close to zeta" is not handled properly and quad_eps is not low enough:
-            - pdf may be less than 0
-            - logpdf is nan
+        When case "x close to zeta" is not handled properly and quad_eps is not
+        low enough: - pdf may be less than 0 - logpdf is nan
 
-        The points from the parametrize block are found randomly so that PDF is less than 0.
+        The points from the parametrize block are found randomly so that PDF is
+        less than 0.
         """
         stats.levy_stable.quad_eps = 1.2e-11
-        delta = 0.0001
+
         assert_almost_equal(
-            stats.levy_stable.pdf(0, alpha=alpha, beta=beta),
-            expected
-        )
-        assert_almost_equal(
-            stats.levy_stable.pdf(delta, alpha=alpha, beta=beta),
-            expected
-        )
-        assert_almost_equal(
-            stats.levy_stable.pdf(-delta, alpha=alpha, beta=beta),
-            expected
+            stats.levy_stable.pdf(x, alpha=alpha, beta=beta),
+            expected,
         )
 
 
