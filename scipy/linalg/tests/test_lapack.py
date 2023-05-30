@@ -3359,7 +3359,7 @@ def test_tgsyl(dtype, trans, ijob):
 
     seed(2023)
     atol = 1e-2
-    if (dtype == np.float32):
+    if dtype == np.float32:
         atol = 5e-2
 
     m, n = 10, 15
@@ -3377,20 +3377,20 @@ def test_tgsyl(dtype, trans, ijob):
 
     assert_equal(info, 0, err_msg="INFO is non-zero")
     assert scale >= 0.0, "SCALE must be non-negative"
-    if (ijob == 0):
+    if ijob == 0:
         assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
                         err_msg="DIF must be 0 for ijob =0")
     else:
         assert dif >= 0.0, "DIF must be non-negative"
 
     # Only DIF is calculated for ijob = 3/4
-    if (ijob <= 2):
-        if (trans == 'N'):
+    if ijob <= 2:
+        if trans == 'N':
             lhs1 = a @ rout - lout @ b
             rhs1 = scale*c
             lhs2 = d @ rout - lout @ e
             rhs2 = scale*f
-        elif (trans == 'T'):
+        elif trans == 'T':
             lhs1 = np.transpose(a) @ rout + np.transpose(d) @ lout
             rhs1 = scale*c
             lhs2 = rout @ np.transpose(b) + lout @ np.transpose(e)
