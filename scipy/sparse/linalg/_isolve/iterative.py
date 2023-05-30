@@ -14,14 +14,14 @@ def _get_atol(name, b, tol=None, atol=0., rtol=1e-5):
     if tol is not None:
         msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               "v.1.13.0. Until then, if set, will override 'rtol'.")
+               "v.1.14.0. Until then, if set, will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         rtol = float(tol)
 
     if atol == 'legacy':
         warnings.warn("scipy.sparse.linalg.{name} called with `atol` set to "
                       "string. This behavior is deprecated and atol parameter"
-                      " only excepts floats. In SciPy 1.13, this will result"
+                      " only excepts floats. In SciPy 1.14, this will result"
                       " with an error.", category=DeprecationWarning,
                       stacklevel=4)
         atol = 0
@@ -63,9 +63,9 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `bicg` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.13.0.
+           will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -191,9 +191,9 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `bicgstab` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.13.0.
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -334,9 +334,9 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `cg` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.13.0.
+           will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -447,9 +447,9 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `cgs` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.13.0.
+           will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -516,11 +516,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
 
         rho_cur = dotprod(rtilde, r)
         if np.abs(rho_cur) < rhotol:  # Breakdown case
-            # It broke down but maybe converged?
-            if np.linalg.norm(r) < atol:
-                return postprocess(x), 0
-            else:
-                return postprocess, -10
+            return postprocess, -10
 
         if iteration > 0:
             beta = rho_cur / rho_prev
@@ -629,9 +625,9 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
            `restart` and will be removed in SciPy 1.12.0.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.13.0
+           will be removed in SciPy 1.14.0
 
     Returns
     -------
@@ -890,9 +886,9 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.11.0
+        .. deprecated 1.12.0
            `qmr` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.13.0.
+           will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -902,7 +898,7 @@ def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
-            <0 : illegal input or breakdown
+            <0 : parameter breakdown
 
     See Also
     --------
