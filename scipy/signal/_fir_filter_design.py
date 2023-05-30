@@ -841,7 +841,7 @@ def remez(numtaps, bands, desired, weight=None, type='bandpass',
                             maxiter, grid_density)
 
 
-def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
+def firls(numtaps, bands, desired, weight=None, fs=None):
     """
     FIR filter design using least-squares error minimization.
 
@@ -871,13 +871,6 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
         A relative weighting to give to each band region when solving
         the least squares problem. `weight` has to be half the size of
         `bands`.
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `bands` must be
-        between 0 and `nyq` (inclusive). Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firls` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `bands`
         must be between 0 and ``fs/2`` (inclusive). Default is 2.
@@ -958,7 +951,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     >>> plt.show()
 
     """  # noqa
-    nyq = 0.5 * _get_fs(fs, nyq)
+    nyq = 0.5 * _get_fs(fs)
 
     numtaps = int(numtaps)
     if numtaps % 2 == 0 or numtaps < 1:
