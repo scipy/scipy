@@ -1091,15 +1091,6 @@ class LatinHypercube(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    centered : bool, optional
-        Center samples within cells of a multi-dimensional grid.
-        Default is False.
-
-        .. deprecated:: 1.10.0
-            `centered` is deprecated as of SciPy 1.10.0 and will be removed in
-            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
-            ``scramble=False``.
-
     scramble : bool, optional
         When False, center samples within cells of a multi-dimensional grid.
         Otherwise, samples are randomly placed within cells of the grid.
@@ -1273,21 +1264,12 @@ class LatinHypercube(QMCEngine):
     """
 
     def __init__(
-        self, d: IntNumber, *, centered: bool = False,
+        self, d: IntNumber, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
-        if centered:
-            scramble = False
-            warnings.warn(
-                "'centered' is deprecated and will be removed in SciPy 1.12."
-                " Please use 'scramble' instead. 'centered=True' corresponds"
-                " to 'scramble=False'.",
-                stacklevel=2
-            )
-
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
                            'optimization': optimization}
