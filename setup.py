@@ -450,9 +450,9 @@ def setup_package():
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
     np_minversion = '1.21.6'
-    np_maxversion = '9.9.99'
+    np_maxversion = '1.28.0'
     python_minversion = '3.9'
-    python_maxversion = '3.11'
+    python_maxversion = '3.12'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
         req_py = '>={},<{}'.format(python_minversion, python_maxversion)
