@@ -2306,7 +2306,7 @@ def _random_cd(
     Create a base LHS and do random permutations of coordinates to
     lower the centered discrepancy.
     Because it starts with a normal LHS, it also works with the
-    `centered` keyword argument.
+    `scramble` keyword argument.
 
     Two stopping criterion are used to stop the algorithm: at most,
     `n_iters` iterations are performed; or if there is no improvement
