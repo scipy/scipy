@@ -8195,6 +8195,9 @@ class rdist_gen(rv_continuous):
     def _cdf(self, x, c):
         return beta._cdf((x + 1)/2, c/2, c/2)
 
+    def _sf(self, x, c):
+        return beta._sf((x + 1)/2, c/2, c/2)
+
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
