@@ -670,7 +670,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming',
     return out
 
 
-def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
+def remez(numtaps, bands, desired, weight=None, type='bandpass',
           maxiter=25, grid_density=16, fs=None):
     """
     Calculate the minimax optimal filter using the Remez exchange algorithm.
@@ -695,12 +695,6 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     weight : array_like, optional
         A relative weighting to give to each band region. The length of
         `weight` has to be half the length of `bands`.
-    Hz : scalar, optional, deprecated
-        The sampling frequency in Hz. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `remez` keyword argument `Hz` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
@@ -828,15 +822,8 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> plt.show()
 
     """
-    if Hz is None and fs is None:
+    if fs is None:
         fs = 1.0
-    elif Hz is not None:
-        if fs is not None:
-            raise ValueError("Values cannot be given for both 'Hz' and 'fs'.")
-        msg = ("'remez' keyword argument 'Hz' is deprecated in favour of 'fs'"
-               " and will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        fs = Hz
 
     # Convert type
     try:
