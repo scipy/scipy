@@ -256,7 +256,7 @@ def kaiserord(ripple, width):
 
 
 def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
-           scale=True, nyq=None, fs=None):
+           scale=True, fs=None):
     """
     FIR filter design using the window method.
 
@@ -305,14 +305,6 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         - `fs/2` (the Nyquist frequency) if the first passband ends at
           `fs/2` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
-
-    nyq : float, optional, deprecated
-        This is the Nyquist frequency. Each frequency in `cutoff` must be
-        between 0 and `nyq`. Default is 1.
-
-        .. deprecated:: 1.0.0
-           `firwin` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `cutoff`
         must be between 0 and ``fs/2``.  Default is 2.
@@ -383,7 +375,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
 
-    nyq = 0.5 * _get_fs(fs, nyq)
+    nyq = 0.5 * _get_fs(fs)
 
     cutoff = np.atleast_1d(cutoff) / float(nyq)
 
