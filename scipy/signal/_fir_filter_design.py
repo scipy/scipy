@@ -16,19 +16,12 @@ __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
 
 
-def _get_fs(fs, nyq):
+def _get_fs(fs):
     """
-    Utility for replacing the argument 'nyq' (with default 1) with 'fs'.
+    Utility for replacing the argument fs with default 2.
     """
-    if nyq is None and fs is None:
+    if fs is None:
         fs = 2
-    elif nyq is not None:
-        if fs is not None:
-            raise ValueError("Values cannot be given for both 'nyq' and 'fs'.")
-        msg = ("Keyword argument 'nyq' is deprecated in favour of 'fs' and "
-               "will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=3)
-        fs = 2*nyq
     return fs
 
 
