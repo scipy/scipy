@@ -1399,14 +1399,6 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
-def test_kendalltau_dep_initial_lexsort():
-    with pytest.warns(
-        DeprecationWarning,
-        match="'kendalltau' keyword argument 'initial_lexsort'"
-    ):
-        stats.kendalltau([], [], initial_lexsort=True)
-
-
 def test_kendalltau_gh18139_overflow():
     # gh-18139 reported an overflow in `kendalltau` that appeared after
     # SciPy 0.15.1. Check that this particular overflow does not occur.
