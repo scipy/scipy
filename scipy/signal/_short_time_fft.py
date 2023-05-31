@@ -153,7 +153,7 @@ class ShortTimeFFT:
     >>> f_i = 1 * np.arctan((t_x - t_x[N // 2]) / 2) + 5  # varying frequency
     >>> x = np.sin(2*np.pi*np.cumsum(f_i)*T_x) # the signal
 
-    The utitlized Gaussian window is 50 samples or 2.5 s long. The parameter
+    The utilized Gaussian window is 50 samples or 2.5 s long. The parameter
     ``mfft=200`` in `ShortTimeFFT` causes the spectrum to be oversampled
     by a factor of 4:
 
