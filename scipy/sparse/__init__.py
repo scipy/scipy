@@ -74,13 +74,6 @@ Sparse matrix classes
 Functions
 ---------
 
-Building sparse arrays:
-
-.. autosummary::
-   :toctree: generated/
-
-   diags_array - Return a sparse array from diagonals
-
 Building sparse matrices:
 
 .. autosummary::
