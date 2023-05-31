@@ -53,6 +53,9 @@ endif
 if not cy.version().version_compare('>=0.29.35')
   error('SciPy requires Cython >= 0.29.35')
 endif
+if not cy.version().version_compare('<3.0')
+  error('SciPy requires Cython < 3.0')
+endif
 
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
