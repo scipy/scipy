@@ -220,10 +220,11 @@ def test_nnlf_and_related_methods(dist, params):
 def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
+                      'arcsine'}
 
     # Please keep this list in alphabetical order...
-    slow_basic_fit = {'alpha', 'arcsine',
+    slow_basic_fit = {'alpha',
                       'betaprime', 'binom', 'bradford', 'burr12',
                       'chi', 'crystalball', 'dweibull', 'exponpow',
                       'f', 'fatiguelife', 'fisk', 'foldcauchy',
@@ -521,6 +522,19 @@ class TestFit:
     @pytest.mark.parametrize("dist_name", cases_test_fit_mse())
     def test_basic_fit_mse(self, dist_name):
         self.basic_fit_test(dist_name, "mse")
+
+    def test_arcsine(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.arcsine
+        shapes = (1., 2.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_argus(self):
         # Can't guarantee that all distributions will fit all data with
