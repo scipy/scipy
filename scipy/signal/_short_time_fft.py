@@ -1011,7 +1011,7 @@ class ShortTimeFFT:
             STFT values.
         k0, k1
             The start and the end index of the reconstructed signal. The
-            default (``k0, k1 = 0, None``) assumes that the maximum length
+            default (``k0 = 0``, ``k1 = None``) assumes that the maximum length
             signal should be reconstructed.
         f_axis, t_axis
             The axes in `S` denoting the frequency and the time dimension.
@@ -1019,10 +1019,10 @@ class ShortTimeFFT:
         Notes
         -----
         It is required that `S` has `f_pts` entries along the `f_axis`. For
-        the `t_axis` it assumed the first entry corresponds to `p_min` *
-        `delta_t` (being <= 0). The length of `t_axis` needs compatible with
-        `k1`. I.e.,``S._shape[t_axis] >= self.p_max(k1)`` must hold, `k1` is
-        not ``None``. Else `k1` is set to `k_max` with::
+        the `t_axis` it is assumed that the first entry corresponds to
+        `p_min` * `delta_t` (being <= 0). The length of `t_axis` needs to be
+        compatible with `k1`. I.e., ``S.shape[t_axis] >= self.p_max(k1)`` must
+        hold, if `k1` is not ``None``. Else `k1` is set to `k_max` with::
 
             q_max = S.shape[t_range] + self.p_min
             k_max = (q_max - 1) * self.hop + self.m_num - self.m_num_mid

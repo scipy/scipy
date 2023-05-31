@@ -1076,19 +1076,22 @@ implementation.
 Short-Time Fourier Transform
 ----------------------------
 This section gives some background information on using the |ShortTimeFFT|
-class: For a complex-valued signal :math:`x: \IR \mapsto\IC` the Short-time
-Fourier transform (STFT) is defined [4]_ as
+class: The short-time Fourier transform (STFT) can be utilized to analyze the
+spectral properties of signals over time. It divides a signal into overlapping
+chunks by utilizing a sliding window and calculates the Fourier transform
+of each chunk. For a continuous-time complex-valued signal :math:`x(t)` the
+STFT is defined [4]_ as
 
 .. math::
 
-    S(f, t) := \int_\IR x(\xi)\, \conj{w(\xi-t)}\,\e^{-\jj2\pi f \xi}\dd\xi
+    S(f, t) := \int_\IR x(\xi)\, \conj{w(\xi-t)}\,\e^{-\jj2\pi f \xi}\dd\xi\ ,
 
-for a given window function :math:`w: \IR \mapsto\IC` with its complex
+where :math:`w(t)` is a complex-valued window function with its complex
 conjugate being :math:`\conj{w(t)}`. It can be interpreted as determining the
 scalar product of :math:`x` with the window :math:`w` which is translated by
 the time :math:`t` and then modulated (i.e., frequency-shifted) by the
 frequency :math:`f`.
-For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ` with
+For working with sampled signals :math:`x[k] := x(kT)`, :math:`k\in\IZ`, with
 sampling interval :math:`T` (being the inverse of the sampling frequency `fs`),
 the discrete version, i.e., only evaluating the STFT at discrete grid points
 :math:`S[q, p] := S(q \Delta f, p\Delta t)`, :math:`q,p\in\IZ`, needs to be
@@ -1100,15 +1103,15 @@ used. It can be formulated as
     S[q,p] = \sum_{k=0}^{N-1} x[k]\,\conj{w[k-p h]}\, \e^{-\jj2\pi q k / N}\ ,
               \quad q,p\in\IZ\ ,
 
-with the time interval :math:`\Delta t := h T`, :math:`h\in\IN` (see `delta_t`)
-being expressed as the `hop` size of :math:`h` samples and the frequency
-interval :math:`\Delta f := 1 / (N T)` (see `delta_f`), which makes it FFT
-compatible. :math:`w[m] := w(mT)` , :math:`m\in\IZ` is the sampled window
-function.
+with `p` representing the time index of :math:`S` with time interval
+:math:`\Delta t := h T`, :math:`h\in\IN` (see `delta_t`), which can be
+expressed as the `hop` size of :math:`h` samples. :math:`q` represents the
+frequency index of :math:`S` with step size :math:`\Delta f := 1 / (N T)`
+(see `delta_f`), which makes it FFT compatible. :math:`w[m] := w(mT)`,
+:math:`m\in\IZ` is the sampled window function.
 
 To be more aligned to the implementation of |ShortTimeFFT|, it makes sense to
 reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
-
 
 #. Extract the :math:`p`-th slice by windowing with the window :math:`w[m]`
    made up of :math:`M` samples (see `m_num`) centered
@@ -1522,9 +1525,10 @@ The ISTFT can be utilized to reconstruct the original signal:
     True
 
 Note that the legacy implementation returns a signal which is longer than the
-original. On the other hand, the new `istft` allows the signal length or
-the slice to be specified. The deviation in length in the old implementation is
-caused by the fact the signal length is not a multiple of the slices.
+original. On the other hand, the new `istft` allows the start and the end index
+of the reconstructed signal to be specified. The length discrepancy in the old
+implementation is caused by the fact that the signal length is not a multiple
+of the slices.
 
 Further differences between the new and legacy versions in this example are:
 
