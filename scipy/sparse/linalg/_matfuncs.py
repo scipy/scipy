@@ -15,11 +15,12 @@ from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse._base import issparse
 from scipy.sparse.linalg import spsolve
-from scipy.sparse._sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix, isintlike
 
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg._interface import LinearOperator
+from scipy.sparse._construct import eye
 
 from ._expm_multiply import _ident_like, _exact_1_norm as _onenorm
 
@@ -886,9 +887,24 @@ def matrix_power(A, power, structure=None):
 
     """
     M, N = A.shape
-    if A.ndim != 2 or M != N:
-        raise ValueError("expected A to be like a square matrix")
-    A = A.tocsc()
-    return scipy.sparse.eye(M, dtype=A.dtype) @ MatrixPowerOperator(
-        A, power, structure=structure
-    )
+    if M != N:
+        raise TypeError('sparse matrix is not square')
+
+    if isintlike(power):
+        other = int(power)
+        if power < 0:
+            raise ValueError('exponent must be >= 0')
+
+        if power == 0:
+            return eye(M, dtype=A.dtype)
+
+        if power == 1:
+            return A.copy()
+
+        tmp = matrix_power(A, power // 2)
+        if power % 2:
+            return A @ tmp @ tmp
+        else:
+            return tmp @ tmp
+    else:
+        raise ValueError("exponent must be an integer")

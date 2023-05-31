@@ -1580,11 +1580,11 @@ class _TestCommon:
 
         # invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
-            assert_raises(Exception, B.__pow__, exponent)
+            assert_raises(ValueError, B.__pow__, exponent)
 
         # nonsquare matrix
         B = self.spcreator(A[:3,:])
-        assert_raises(Exception, B.__pow__, 1)
+        assert_raises(TypeError, B.__pow__, 1)
 
     def test_rmatvec(self):
         M = self.spcreator(matrix([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
