@@ -70,9 +70,32 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Convert LAPACK's ``piv`` array to NumPy index and test the permutation
 
-    >>> piv_py = [2, 0, 3, 1]
+    >>> def pivot_to_permutation(piv):
+    ...     perm = np.arange(len(piv))
+    ...     for i in range(len(piv)):
+    ...         perm[i], perm[piv[i]] = perm[piv[i]], perm[i]
+    ...     return perm
+    ...
+    >>> p_inv = pivot_to_permutation(piv)
+    >>> p_inv
+    array([2, 0, 3, 1])
     >>> L, U = np.tril(lu, k=-1) + np.eye(4), np.triu(lu)
-    >>> np.allclose(A[piv_py] - L @ U, np.zeros((4, 4)))
+    >>> np.allclose(A[p_inv] - L @ U, np.zeros((4, 4)))
+    True
+
+    The P matrix in P L U is defined by the inverse permutation and
+    can be recovered using argsort:
+
+    >>> p = np.argsort(p_inv)
+    >>> p
+    array([1, 3, 0, 2])
+    >>> np.allclose(A - L[p] @ U, np.zeros((4, 4)))
+    True
+
+    or alternatively:
+
+    >>> P = np.eye(4)[p]
+    >>> np.allclose(A - P @ L @ U, np.zeros((4, 4)))
     True
     """
     if check_finite:
