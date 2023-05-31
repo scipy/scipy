@@ -1076,7 +1076,7 @@ implementation.
 Short-Time Fourier Transform
 ----------------------------
 This section gives some background information on using the |ShortTimeFFT|
-class: For a complex valued signal :math:`x: \IR \mapsto\IC` the Short-time
+class: For a complex-valued signal :math:`x: \IR \mapsto\IC` the Short-time
 Fourier transform (STFT) is defined [4]_ as
 
 .. math::
@@ -1112,8 +1112,8 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
 
 #. Extract the :math:`p`-th slice by windowing with the window :math:`w[m]`
    made up of :math:`M` samples (see `m_num`) centered
-   at :math:`t[p] :=  p \Delta t = h T` (see `delta_t`).
-   I. e.,
+   at :math:`t[p] :=  p \Delta t = h T` (see `delta_t`),
+   i.e.,
 
     .. math::
         :label: eq_STFT_windowing
@@ -1141,7 +1141,7 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
    definition to ``phase_shift = 0``), which suppresses linear phase components
    for unshifted signals.
    Furthermore, the FFT may be oversampled by padding :math:`w[m]` with zeros.
-   This can be achieved by specifying `mfft` to be larger that than the window
+   This can be achieved by specifying `mfft` to be larger than the window
    length `m_num`---this sets :math:`M` to `mfft` (implying that also
    :math:`w[m]:=0` for :math:`m\not\in\{0, 1, \ldots, M-1\}` holds).
 
@@ -1167,7 +1167,7 @@ these two steps:
    canonical dual window of :math:`w[m]` and is also made up of :math:`M`
    samples.
 
-Note that not for all windows and hops an inverse STFT exists. For a given
+Note that an inverse STFT does not necessarily exist for all windows and hop sizes. For a given
 window :math:`w[m]` the hop size :math:`h` must be small enough to ensure that
 every sample of :math:`x[k]` is touched by a non-zero value of at least one
 window slice. This is sometimes referred as the "non-zero overlap condition"
@@ -1212,7 +1212,7 @@ The behavior at the end of the signal is depicted for a signal with
     :width: 66%
     :align: center
 
-Here the last slice has index :math:`p=26` -- hence, following Python
+Here the last slice has index :math:`p=26`.  Hence, following Python
 convention of the end index being outside the range, `p_max` = 27 indicates the
 first slice not touching the signal. The corresponding sample index is
 `k_max` = 55. The first slice, which sticks out to the right is
@@ -1397,7 +1397,7 @@ incorporated inversion), so only components overlapping with :math:`w[m]` have
 an effect. Hence, all :math:`U_p[m, k]` far enough from the border are
 identical windows. To circumvent border effects, :math:`x[k]` is padded with
 zeros, enlarging :math:`\vb{U}` so all slices which touch :math:`x[k]` contain
-identical the dual window
+the identical dual window
 
 .. math::
 
@@ -1416,7 +1416,7 @@ only required to sum over the indexes :math:`\eta` fulfilling
 
 showing that :math:`\vb{U}_p` and :math:`\vb{W}_{\!p}` are interchangeable.
 Hence, :math:`w_d[m]` is also a valid window with dual window :math:`w[m]`.
-Note that :math:`w_d[m]` is not a unique dual window, due :math:`\vb{s}`
+Note that :math:`w_d[m]` is not a unique dual window, due to :math:`\vb{s}`
 typically having more entries than :math:`\vb{x}`. It can be shown, that
 :math:`w_d[m]` has the minimal energy (or :math:`L_2` norm) [4_], which is the
 reason for being named the  "canonical dual window".
@@ -1431,7 +1431,7 @@ The functions |old_stft|, |old_istft|, and the |old_spectrogram| predate the
 between the older "legacy" and the newer |ShortTimeFFT| implementations. The
 main motivation for a rewrite was the insight that integrating :ref:`dual
 windows <tutorial_stft_dual_win>` could not be done in a sane way without
-breaking compatability. This opened the opportunity for rethinking the code
+breaking compatibility. This opened the opportunity for rethinking the code
 structure and the parametrization, thus making some implicit behavior more
 explicit.
 
@@ -1494,15 +1494,15 @@ the main difference. As laid out in the :ref:`tutorial_stft_sliding_win`
 section, all slices which touch the signal are incorporated in the new version.
 This has the advantage that the STFT can be sliced and reassembled as shown in
 the |ShortTimeFFT| code example. Furthermore, using all touching slices makes
-the ISTFT more robust in the case the windows are not non-zero everywhere.
+the ISTFT more robust in the case of windows that are zero somewhere.
 
 Note that the slices with identical time stamps produce equal results
-(up to numerical accuracy), i. e.:
+(up to numerical accuracy), i.e.:
 
     >>> np.allclose(Sz0, Sz1[:, 2:-1])
     True
 
-Generally, those the additional slices contain non-zero values. Due to the
+Generally, those additional slices contain non-zero values. Due to the
 large overlap in our example, they are quite small. E.g.:
 
     >>> abs(Sz1[:, 1]).min(), abs(Sz1[:, 1]).max()
@@ -1521,8 +1521,8 @@ The ISTFT can be utilized to reconstruct the original signal:
     >>> np.allclose(z1_r, z)
     True
 
-Note that the legacy implementation returns a signal, which is longer than the
-original. On the other hand, the new `istft` allows the length signal length or
+Note that the legacy implementation returns a signal which is longer than the
+original. On the other hand, the new `istft` allows the signal length or
 the slice to be specified. The deviation in length in the old implementation is
 caused by the fact the signal length is not a multiple of the slices.
 
@@ -1531,9 +1531,9 @@ Further differences between the new and legacy versions in this example are:
 * The parameter ``fft_mode='centered'`` ensures that the zero frequency is
   vertically centered for two-sided FFTs in the plot. With the legacy
   implementation, `fftshift <scipy.fft.fftshift>` needs to be utilized.
-  ``fftyp='twosided'`` produces the same behavior as the old version.
+  ``fft_mode='twosided'`` produces the same behavior as the old version.
 * The parameter ``phase_shift=None`` ensures identical phases of the two
-  versions. |ShortTimeFFT|'s default value of ``0`` produces an STFT slices
+  versions. |ShortTimeFFT|'s default value of ``0`` produces STFT slices
   with an additional linear phase term.
 
 .. The unit test ``test_short_time_fft.test_tutorial_stft_legacy_stft``
@@ -1570,7 +1570,7 @@ obtain an identical SFT as produced with the legacy |old_spectrogram|:
     >>> np.allclose(Sz2, Sz3)
     True
 
-The difference to the other STFTs is that the time slices do not start at 0 but
+The difference from the other STFTs is that the time slices do not start at 0 but
 at ``nperseg//2``, i.e.:
 
     >>> t2
@@ -1579,7 +1579,7 @@ at ``nperseg//2``, i.e.:
            4.625, 4.675, 4.725, 4.775, 4.825, 4.875])
 
 Furthermore, only slices which do not stick out to the right are returned,
-making the last slice be centered at 4.875 s, being shorter as with the default
+centering the last slice at 4.875 s, which makes it shorter than with the default
 `stft` parametrization.
 
 Using the ``mode`` parameter, the legacy |old_spectrogram| can also return the
