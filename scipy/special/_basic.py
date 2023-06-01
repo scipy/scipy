@@ -3158,7 +3158,7 @@ def softplus(x, **kwargs):
     r"""
     Compute the softplus function element-wise.
 
-    The softplus function is defined as: softplus(x) = log(1 + exp(x)).
+    The softplus function is defined as: ``softplus(x) = log(1 + exp(x))``.
     It is a smooth approximation of the rectifier function (ReLU).
 
     Parameters
