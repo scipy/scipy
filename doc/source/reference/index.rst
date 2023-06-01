@@ -88,76 +88,8 @@ unlikely to be renamed or changed in an incompatible way, and if that is
 necessary, a deprecation warning will be raised for one SciPy release before the
 change is made.
 
-* `scipy`
-
-* `scipy.cluster`
-
-  - `scipy.cluster.vq`
-  - `scipy.cluster.hierarchy`
-
-* `scipy.constants`
-
-* `scipy.datasets`
-
-* `scipy.fft`
-
-* `scipy.fftpack`
-
-* `scipy.integrate`
-
-* `scipy.interpolate`
-
-* `scipy.io`
-
-  - `scipy.io.arff`
-  - `scipy.io.matlab`
-  - `scipy.io.wavfile`
-
-* `scipy.linalg`
-
-  - `scipy.linalg.blas`
-  - `scipy.linalg.cython_blas`
-  - `scipy.linalg.lapack`
-  - `scipy.linalg.cython_lapack`
-  - `scipy.linalg.interpolative`
-
-* `scipy.misc`
-
-* `scipy.ndimage`
-
-* `scipy.odr`
-
-* `scipy.optimize`
-
-  - `scipy.optimize.cython_optimize`
-
-* `scipy.signal`
-
-  - `scipy.signal.windows`
-
-* `scipy.sparse`
-
-  - `scipy.sparse.linalg`
-  - `scipy.sparse.csgraph`
-
-* `scipy.spatial`
-
-  - `scipy.spatial.distance`
-  - `scipy.spatial.transform`
-
-* `scipy.special`
-
-* `scipy.stats`
-
-  - `scipy.stats.contingency`
-  - ``scipy.stats.distributions``
-  - `scipy.stats.mstats`
-  - `scipy.stats.qmc`
-  - `scipy.stats.sampling`
-
 .. toctree::
    :maxdepth: 1
-   :hidden:
    :titlesonly:
 
    scipy <main_namespace>
