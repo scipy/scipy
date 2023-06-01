@@ -116,6 +116,13 @@ if SCIPY_ARRAY_API:
     except ImportError:
         pass
 
+    try:
+        import cupy
+        array_api_available_backends.update({'cupy': cupy})
+        array_api_backends.append(cupy)
+    except ImportError:
+        pass
+
     if SCIPY_ARRAY_API.lower() != "true":
         SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
 
