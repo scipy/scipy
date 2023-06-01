@@ -47,7 +47,8 @@ python_sources = [
   'test_trig.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
-  'test_zeta.py'
+  'test_zeta.py',
+  'test_softplus.py'
 ]
 
 
