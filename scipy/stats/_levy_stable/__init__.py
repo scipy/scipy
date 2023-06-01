@@ -128,6 +128,25 @@ _pdf_single_value_cf_integrate_Z1 = partial(
 )
 
 
+def _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta):
+    """Round x close to zeta for Nolan's method in [NO]."""
+    #   "8. When |x0-beta*tan(pi*alpha/2)| is small, the
+    #   computations of the density and cumulative have numerical problems.
+    #   The program works around this by setting
+    #   z = beta*tan(pi*alpha/2) when
+    #   |z-beta*tan(pi*alpha/2)| < tol(5)*alpha**(1/alpha).
+    #   (The bound on the right is ad hoc, to get reasonable behavior
+    #   when alpha is small)."
+    # where tol(5) = 0.5e-2 by default.
+    #
+    # We seem to have partially addressed this through re-expression of
+    # g(theta) here, but it still needs to be used in some extreme cases.
+    # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
+    if np.abs(x0 - zeta) < x_tol_near_zeta * alpha ** (1 / alpha):
+        x0 = zeta
+    return x0
+
+
 def _nolan_round_difficult_input(
     x0, alpha, beta, zeta, x_tol_near_zeta, alpha_tol_near_one
 ):
@@ -145,21 +164,7 @@ def _nolan_round_difficult_input(
     #   problems.  The current version sets beta=0."
     # We seem to have addressed this through re-expression of g(theta) here
 
-    #   "8. When |x0-beta*tan(pi*alpha/2)| is small, the
-    #   computations of the density and cumulative have numerical problems.
-    #   The program works around this by setting
-    #   z = beta*tan(pi*alpha/2) when
-    #   |z-beta*tan(pi*alpha/2)| < tol(5)*alpha**(1/alpha).
-    #   (The bound on the right is ad hoc, to get reasonable behavior
-    #   when alpha is small)."
-    # where tol(5) = 0.5e-2 by default.
-    #
-    # We seem to have partially addressed this through re-expression of
-    # g(theta) here, but it still needs to be used in some extreme cases.
-    # Perhaps tol(5) = 0.5e-2 could be reduced for our implementation.
-    if np.abs(x0 - zeta) < x_tol_near_zeta * alpha ** (1 / alpha):
-        x0 = zeta
-
+    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     return x0, alpha, beta
 
 
@@ -211,11 +216,11 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return 1 / (1 + x0 ** 2) / np.pi
 
     return _pdf_single_value_piecewise_post_rounding_Z0(
-        x0, alpha, beta, quad_eps
+        x0, alpha, beta, quad_eps, x_tol_near_zeta
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
     """Calculate pdf using Nolan's methods as detailed in [NO].
     """
 
@@ -225,6 +230,10 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     c2 = _nolan.c2
     g = _nolan.g
 
+    # round x0 to zeta again if needed. zeta was recomputed and may have
+    # changed due to floating point differences.
+    # See https://github.com/scipy/scipy/pull/18133
+    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
     if x0 == zeta:
         return (
@@ -235,7 +244,7 @@ def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
         )
     elif x0 < zeta:
         return _pdf_single_value_piecewise_post_rounding_Z0(
-            -x0, alpha, -beta, quad_eps
+            -x0, alpha, -beta, quad_eps, x_tol_near_zeta
         )
 
     # following Nolan, we may now assume
@@ -328,11 +337,11 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         return 0.5 + np.arctan(x0) / np.pi
 
     return _cdf_single_value_piecewise_post_rounding_Z0(
-        x0, alpha, beta, quad_eps
+        x0, alpha, beta, quad_eps, x_tol_near_zeta
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
     """Calculate cdf using Nolan's methods as detailed in [NO].
     """
     _nolan = Nolan(alpha, beta, x0)
@@ -342,7 +351,10 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
     # c2 = _nolan.c2
     c3 = _nolan.c3
     g = _nolan.g
-
+    # round x0 to zeta again if needed. zeta was recomputed and may have
+    # changed due to floating point differences.
+    # See https://github.com/scipy/scipy/pull/18133
+    x0 = _nolan_round_x_near_zeta(x0, alpha, zeta, x_tol_near_zeta)
     # handle Nolan's initial case logic
     if (alpha == 1 and beta < 0) or x0 < zeta:
         # NOTE: Nolan's paper has a typo here!
@@ -350,7 +362,7 @@ def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps):
         # incorrect since F(-infty) would be 1.0 in this case
         # Indeed, the alpha != 1, x0 < zeta case is correct here.
         return 1 - _cdf_single_value_piecewise_post_rounding_Z0(
-            -x0, alpha, -beta, quad_eps
+            -x0, alpha, -beta, quad_eps, x_tol_near_zeta
         )
     elif x0 == zeta:
         return 0.5 - xi / np.pi
