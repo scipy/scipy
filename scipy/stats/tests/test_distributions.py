@@ -1699,6 +1699,28 @@ class TestHypergeom:
         expected = np.full(3, -7.565148879229e-23)  # filled from R result
         assert_almost_equal(result, expected, decimal=15)
 
+    def test_mean_gh18511(self):
+        # gh-18511 reported that the `mean` was incorrect for large arguments;
+        # check that this is resolved
+        M = 390_000
+        n = 370_000
+        N = 12_000
+
+        hm = stats.hypergeom.mean(M, n, N)
+        rm = n / M * N
+        assert_allclose(hm, rm)
+
+    def test_sf_gh18506(self):
+        # gh-18506 reported that `sf` was incorrect for large population;
+        # check that this is resolved
+        n = 10
+        N = 10**5
+        i = np.arange(5, 15)
+        population_size = 10.**i
+        p = stats.hypergeom.sf(n - 1, population_size, N, n)
+        assert np.all(p > 0)
+        assert np.all(np.diff(p) < 0)
+
 
 class TestLoggamma:
 
