@@ -11,7 +11,7 @@ import pytest
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
-from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_TORCH_DEVICE
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 
 def pytest_configure(config):
@@ -110,13 +110,14 @@ if SCIPY_ARRAY_API:
         import torch
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
-        torch.set_default_device(SCIPY_TORCH_DEVICE)
+        torch.set_default_device(SCIPY_DEVICE)
     except ImportError:
         pass
 
     try:
         import cupy
         xp_available_backends.update({'cupy': cupy})
+        SCIPY_DEVICE = 'cuda'
     except ImportError:
         pass
 
@@ -142,4 +143,9 @@ array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.value
 skip_if_array_api = pytest.mark.skipif(
     SCIPY_ARRAY_API,
     reason="do not run with Array API on",
+)
+
+skip_if_array_api_gpu = pytest.mark.skipif(
+    SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
+    reason="do not run with Array API on and not on CPU",
 )
