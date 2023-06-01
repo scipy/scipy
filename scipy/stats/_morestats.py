@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array,
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
@@ -22,7 +22,6 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
-from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',

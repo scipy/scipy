@@ -6401,6 +6401,7 @@ class TestGeometricStandardDeviation:
         assert_allclose(gstd_actual, gstd_desired)
         assert_equal(gstd_actual.mask, mask)
 
+
 def test_binomtest():
     # precision tests compared to R for ticket:986
     pp = np.concatenate((np.linspace(0.1, 0.2, 5),
@@ -6422,6 +6423,7 @@ def test_binomtest():
     assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
                         5.8320387857343647e-024,
                         significant=12)
+
 
 def test_binomtest2():
     # test added for issue #2384
