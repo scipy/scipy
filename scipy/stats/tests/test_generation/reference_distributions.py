@@ -333,6 +333,18 @@ class NormInvGauss(ReferenceDistribution):
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
 
 
+class Pearson3(ReferenceDistribution):
+    def __init__(self, *, skew):
+        super().__init__(skew=skew)
+
+    def _pdf(self, x, skew):
+        b = 2 / skew
+        a = b**2
+        c = -b
+        res = abs(b)/mp.gamma(a) * (b*(x-c))**(a-1) * mp.exp(-b*(x-c))
+        return res if abs(res.real) == res else 0
+
+
 class StudentT(ReferenceDistribution):
 
     def __init(self, *, df):

@@ -7713,6 +7713,23 @@ class pearson3_gen(rv_continuous):
 
         return ans
 
+    def _sf(self, x, skew):
+        ans, x, transx, mask, invmask, _, alpha, _ = (
+            self._preprocess(x, skew))
+
+        ans[mask] = _norm_sf(x[mask])
+
+        skew = np.broadcast_to(skew, invmask.shape)
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        ans[invmask1a] = gamma.sf(transx[invmask1b], alpha[invmask1b])
+
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        ans[invmask2a] = gamma.cdf(transx[invmask2b], alpha[invmask2b])
+
+        return ans
+
     def _rvs(self, skew, size=None, random_state=None):
         skew = np.broadcast_to(skew, size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
