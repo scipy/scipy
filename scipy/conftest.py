@@ -100,46 +100,44 @@ def check_fpu_mode(request):
 
 
 # Array API backend handling
-array_api_backends = [np]
+xp_available_backends = {'numpy': np}
 
 if SCIPY_ARRAY_API:
-    array_api_backends = [np, numpy.array_api]
-
-    array_api_available_backends = {
-        'numpy': np, 'numpy.array_api': numpy.array_api,
-    }
+    # fill the dict of backends with available libraries
+    xp_available_backends.update({'numpy.array_api': numpy.array_api})
 
     try:
         import torch
-        array_api_available_backends.update({'pytorch': torch})
-        array_api_backends.append(torch)
+        xp_available_backends.update({'pytorch': torch})
+        # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_TORCH_DEVICE)
     except ImportError:
         pass
 
     try:
         import cupy
-        array_api_available_backends.update({'cupy': cupy})
-        array_api_backends.append(cupy)
+        xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass
 
+    # by default, use all available backends
     if SCIPY_ARRAY_API.lower() != "true":
         SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
 
         if 'all' in SCIPY_ARRAY_API:
-            array_api_backends = array_api_available_backends.values()
+            pass  # same as True
         else:
+            # only select a subset of backend by filtering out the dict
             try:
-                array_api_backends = [
-                    array_api_available_backends[backend]
+                xp_available_backends = {
+                    'backend': xp_available_backends[backend]
                     for backend in SCIPY_ARRAY_API
-                ]
+                }
             except KeyError:
-                msg = f"'--array-api-backend' must be in {array_api_available_backends}"
+                msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
                 raise ValueError(msg)
 
-array_api_compatible = pytest.mark.parametrize("xp", array_api_backends)
+array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
 skip_if_array_api = pytest.mark.skipif(
     SCIPY_ARRAY_API,
