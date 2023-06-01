@@ -6638,7 +6638,7 @@ class TestRdist:
     # def rdist_sf_mpmath(x, c):
     #     x = mp.mpf(x)
     #     c = mp.mpf(c)
-    #     return float(mp.one - mp.betainc(c/2, c/2, 0, (x+1)/2, regularized=True))
+    #     return float(mp.betainc(c/2, c/2, (x+1)/2, mp.one, regularized=True))
     @pytest.mark.parametrize(
         "x, c, ref",
         [
