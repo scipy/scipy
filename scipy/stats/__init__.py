@@ -444,13 +444,6 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
-Deprecated and Legacy Functions
--------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   binom_test
 
 The following functions are related to the tests above but do not belong in the
 above categories.
