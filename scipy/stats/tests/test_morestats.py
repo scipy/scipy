@@ -2803,3 +2803,36 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
         assert_array_equal(stats.false_discovery_control(0.25), 0.25)
         assert_array_equal(stats.false_discovery_control([]), [])
+
+
+def test_morestats_deprecation():
+    # gh-18279 noted that deprecation warnings for imports from private modules
+    # were misleading. Check that this is resolved.
+    import scipy.stats.morestats as module
+
+    # Attributes that were formerly in `morestats` can still be imported from
+    # `morestats`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy.stats` or not.
+
+    for attr_name in module._deprecated:
+        message = f"`scipy.stats.morestats.{attr_name}` is deprecated..."
+        with pytest.warns(DeprecationWarning, match=message):
+            getattr(module, attr_name)
+        # Just checking that the `_deprecated` list is correct - that the
+        # deprecated attribute is not in `scipy.stats`. Python will produce the
+        # message it produces; no need to match it.
+        with pytest.raises(AttributeError):
+            getattr(stats, attr_name)
+
+    for attr_name in module.__all__:
+        message = f"Please import `{attr_name}` from the `scipy.stats`..."
+        with pytest.warns(DeprecationWarning, match=message):
+            getattr(module, attr_name)
+
+    # Attributes that were not in `morestats` get an error notifying the user
+    # that the attribute is not in `morestats` and that `morestats` is
+    # deprecated.
+
+    message = "`scipy.stats.morestats` is deprecated..."
+    with pytest.raises(AttributeError, match=message):
+        getattr(module, "ekki")
