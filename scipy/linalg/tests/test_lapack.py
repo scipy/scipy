@@ -3372,10 +3372,10 @@ def test_tgsyl(dtype, trans, ijob):
     # Adjust the spectrum of the matrices to get a more precise solution
     adjustment_m = np.eye(m, dtype=dtype)
     adjustment_n = np.eye(n, dtype=dtype)
-    a += adjustment_m
-    d -= 5.0 * adjustment_m
-    b += adjustment_n
-    e -= 5.0 * adjustment_n
+    a += np.eye(m, dtype=dtype)
+    d -= np.diag(5*np.ones(m, dtype=dtype))
+    b += np.eye(n, dtype=dtype)
+    e -= np.diag(5*np.ones(n, dtype=dtype))
 
     tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
     rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f,
@@ -3402,7 +3402,7 @@ def test_tgsyl(dtype, trans, ijob):
             lhs2 = rout @ np.transpose(b) + lout @ np.transpose(e)
             rhs2 = -1.0*scale*f
 
-        assert_allclose(lhs1, rhs1, atol=atol,
+        assert_allclose(lhs1, rhs1, atol=atol, rtol=0.,
                         err_msg='lhs1 and rhs1 do not match')
-        assert_allclose(lhs2, rhs2, atol=atol,
+        assert_allclose(lhs2, rhs2, atol=atol, rtol=0.,
                         err_msg='lhs2 and rhs2 do not match')
