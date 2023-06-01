@@ -11,7 +11,9 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import skip_if_array_api, array_api_compatible
+from scipy.conftest import (
+    skip_if_array_api, skip_if_array_api_gpu, array_api_compatible
+)
 from scipy.sparse._sputils import matrix
 from scipy._lib._array_api import SCIPY_ARRAY_API
 
@@ -119,6 +121,7 @@ class TestWhiten:
 
 
 class TestVq:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
@@ -318,6 +321,7 @@ class TestKMean:
         res, _ = kmeans2(TESTDATA_2D, np.asarray(2), minit='++')
         assert_allclose(res, prev_res)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_kpp_high_dim(self, xp):
         # Regression test for gh-11462
