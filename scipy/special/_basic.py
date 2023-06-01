@@ -3163,23 +3163,23 @@ def softplus(x, **kwargs):
 
     Parameters
     ----------
-        x (array-like):
-            Input array-like object.
+    x : array_like
+        Input array-like object.
 
-        **kwargs:
-            Additional keyword arguments to be passed to np.logaddexp().
+    **kwargs :
+        Additional keyword arguments to be passed to `np.logaddexp`.
 
     Returns
     -------
-        numpy.ndarray:
-            Array containing the softplus of each element in x.
+    softplus : array_like
+        Array containing the softplus of each element in `x`.
 
     Examples
     --------
-        >>> softplus(0)
-        0.6931471805599453
+    >>> softplus(0)
+    0.6931471805599453
 
-        >>> softplus([-1, 0, 1])
-        array([0.31326169, 0.69314718, 1.31326169])
+    >>> softplus([-1, 0, 1])
+    array([0.31326169, 0.69314718, 1.31326169])
     """
     return np.logaddexp(0, x, **kwargs)
