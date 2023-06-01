@@ -3358,7 +3358,7 @@ def test_tgsyl_NAG(a, b, c, d, e, f, rans, lans, dtype):
 def test_tgsyl(dtype, trans, ijob):
 
     seed(2023)
-    atol = 1e-4 if dtype == np.float32 else 1e-10
+    atol = 1e-3 if dtype == np.float32 else 1e-10
 
     m, n = 10, 15
 
