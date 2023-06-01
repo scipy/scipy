@@ -823,8 +823,8 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-depr_msg = ('\nThis function was deprecated in SciPy 1.11.0, and will be '
-            'removed in SciPy 1.13.0.')
+depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
+            'removed in SciPy 1.14.0.')
 
 def btdtr(*args, **kwargs):  # type: ignore [no-redef]
     warnings.warn(depr_msg, category=DeprecationWarning, stacklevel=2)

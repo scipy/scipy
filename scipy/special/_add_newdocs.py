@@ -1815,8 +1815,8 @@ add_newdoc("btdtr",
 
     where :math:`\Gamma` is the gamma function.
 
-    .. deprecated:: 1.11.0
-        This function is deprecated and will be removed from SciPy 1.13.0.
+    .. deprecated:: 1.12.0
+        This function is deprecated and will be removed from SciPy 1.14.0.
         Use `scipy.special.betainc` instead.
 
     Parameters
@@ -1866,8 +1866,8 @@ add_newdoc("btdtri",
     .. math::
         p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
 
-    .. deprecated:: 1.11.0
-        This function is deprecated and will be removed from SciPy 1.13.0.
+    .. deprecated:: 1.12.0
+        This function is deprecated and will be removed from SciPy 1.14.0.
         Use `scipy.special.betaincinv` instead.
 
     Parameters
