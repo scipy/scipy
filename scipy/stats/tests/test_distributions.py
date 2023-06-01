@@ -1710,6 +1710,17 @@ class TestHypergeom:
         rm = n / M * N
         assert_allclose(hm, rm)
 
+    def test_sf_gh18506(self):
+        # gh-18506 reported that `sf` was incorrect for large population;
+        # check that this is resolved
+        n = 10
+        N = 10**5
+        i = np.arange(5, 15)
+        population_size = 10.**i
+        p = stats.hypergeom.sf(n - 1, population_size, N, n)
+        assert np.all(p > 0)
+        assert np.all(np.diff(p) < 0)
+
 
 class TestLoggamma:
 
