@@ -3358,9 +3358,7 @@ def test_tgsyl_NAG(a, b, c, d, e, f, rans, lans, dtype):
 def test_tgsyl(dtype, trans, ijob):
 
     seed(2023)
-    atol = 1e-10
-    if dtype == np.float32:
-        atol = 5e-3
+    atol = 1e-4 if dtype == np.float32 else 1e-10
 
     m, n = 10, 15
 
@@ -3372,9 +3370,12 @@ def test_tgsyl(dtype, trans, ijob):
     f = generate_random_dtype_array([m, n], dtype=dtype)
 
     # Adjust the spectrum of the matrices to get a more precise solution
-    adjustment = 5*np.eye(m, dtype=dtype)
-    a = a + adjustment
-    d = d - adjustment
+    adjustment_m = np.eye(m, dtype=dtype)
+    adjustment_n = np.eye(n, dtype=dtype)
+    a += adjustment_m
+    d -= 5.0 * adjustment_m
+    b += adjustment_n
+    e -= 5.0 * adjustment_n
 
     tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
     rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f,
