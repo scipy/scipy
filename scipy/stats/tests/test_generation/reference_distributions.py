@@ -336,37 +336,13 @@ class NormInvGauss(ReferenceDistribution):
 class Pearson3(ReferenceDistribution):
     def __init__(self, *, skew):
         super().__init__(skew=skew)
-        self.norm2pearson_transition = mp.mpf(0.000016)
 
-    def _preprocess(self, x, skew):
-        loc = mp.zero
-        scale = mp.one
-
-        beta = 2.0 / (skew * scale)
-        alpha = (scale * beta) ** 2.0
-        zeta = loc - alpha / beta
-
-        transx = beta * (x - zeta)
-        return transx, beta, alpha, zeta
-
-    def _gamma_logpdf(self, x, a):
-        return (a - mp.one) * mp.log(x) - x - mp.loggamma(a)
-
-    def _logpdf(self, x, skew):
-        transx, beta, alpha, zeta = self._preprocess(x, skew)
-        if mp.fabs(skew) < self.norm2pearson_transition:
-            return mp.log(mp.npdf(x))
-
-        return mp.log(mp.fabs(beta)) + self._gamma_logpdf(transx, alpha)
-
-    def _sf(self, x, skew):
-        transx, beta, alpha, zeta = self._preprocess(x, skew)
-        if mp.fabs(skew) < self.norm2pearson_transition:
-            return mp.ncdf(-x)
-        elif skew > 0:
-            return mp.gammainc(alpha, transx, mp.inf, regularized=True)
-        else:
-            return mp.gammainc(alpha, 0, transx, regularized=True)
+    def _pdf(self, x, skew):
+        b = 2 / skew
+        a = b**2
+        c = -b
+        res = abs(b)/mp.gamma(a) * (b*(x-c))**(a-1) * mp.exp(-b*(x-c))
+        return res if abs(res.real) == res else 0
 
 
 class StudentT(ReferenceDistribution):

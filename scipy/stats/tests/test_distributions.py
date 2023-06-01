@@ -2331,11 +2331,14 @@ class TestPearson3:
 
     def test_sf(self):
         # reference values were computed via the reference distribution, e.g.
-        # mp.dps = 500; Pearson3(skew=skew).sf(x)
-        skew = [0.1, 0.5, 1.0]
-        x = [5.0, 10.0, 50.0]
-        ref = [1.64721926440872e-06, 8.271911573556123e-11, 1.3149506021756343e-40]
-        assert_allclose(stats.pearson3.sf(x, skew), ref, rtol=1e-14)
+        # mp.dps = 50; Pearson3(skew=skew).sf(x). Check positive, negative,
+        # and zero skew due to branching.
+        skew = [0.1, 0.5, 1.0, -0.1]
+        x = [5.0, 10.0, 50.0, 8.0]
+        ref = [1.64721926440872e-06, 8.271911573556123e-11,
+               1.3149506021756343e-40, 2.763057937820296e-21]
+        assert_allclose(stats.pearson3.sf(x, skew), ref, rtol=2e-14)
+        assert_allclose(stats.pearson3.sf(x, 0), stats.norm.sf(x), rtol=2e-14)
 
 
 class TestKappa4:
