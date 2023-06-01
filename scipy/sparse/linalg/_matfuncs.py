@@ -891,7 +891,7 @@ def matrix_power(A, power, structure=None):
         raise TypeError('sparse matrix is not square')
 
     if isintlike(power):
-        other = int(power)
+        power = int(power)
         if power < 0:
             raise ValueError('exponent must be >= 0')
 
