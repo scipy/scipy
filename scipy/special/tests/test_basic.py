@@ -167,14 +167,14 @@ class TestCephes:
         assert_equal(cephes.besselpoly(0,0,0),1.0)
 
     def test_btdtr(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            assert_equal(special.btdtr(1, 1, 1), 1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtr(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtri(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            assert_equal(special.btdtri(1, 1, 1), 1.0)
+        with pytest.deprecated_call(match='deprecated in SciPy 1.12.0'):
+            y = special.btdtri(1, 1, 1)
+        assert_equal(y, 1.0)
 
     def test_btdtria(self):
         assert_equal(cephes.btdtria(1,1,1),5.0)

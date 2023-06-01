@@ -564,8 +564,7 @@ BOOST_TESTS = [
 def test_boost(test):
     # Filter deprecation warnings of any deprecated functions.
     if test.func in [btdtr, btdtri, btdtri_comp]:
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
+        with pytest.deprecated_call():
             _test_factory(test)
     else:
         _test_factory(test)
