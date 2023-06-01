@@ -21,8 +21,12 @@ __all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
 array_api_dispatch = os.environ.get("array_api_dispatch", False)
 SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
+SCIPY_TORCH_DEVICE = os.environ.get("SCIPY_TORCH_DEVICE", "cpu")
 
-_GLOBAL_CONFIG = {"SCIPY_ARRAY_API": SCIPY_ARRAY_API}
+_GLOBAL_CONFIG = {
+    "SCIPY_ARRAY_API": SCIPY_ARRAY_API,
+    "SCIPY_TORCH_DEVICE": SCIPY_TORCH_DEVICE,
+}
 
 
 def compliance_scipy(*arrays):

@@ -11,7 +11,7 @@ import pytest
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
-from scipy._lib._array_api import SCIPY_ARRAY_API
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_TORCH_DEVICE
 
 
 def pytest_configure(config):
@@ -113,6 +113,7 @@ if SCIPY_ARRAY_API:
         import torch
         array_api_available_backends.update({'pytorch': torch})
         array_api_backends.append(torch)
+        torch.set_default_device(SCIPY_TORCH_DEVICE)
     except ImportError:
         pass
 
