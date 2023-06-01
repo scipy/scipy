@@ -39,6 +39,7 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy.special import softplus
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
     _FACTORIALK_LIMITS_32BITS
@@ -3594,6 +3595,22 @@ class TestRiccati:
             C[1,n] = x*yp + y
         assert_array_almost_equal(C, special.riccati_yn(n, x), 8)
 
+
+class TestSoftplus:
+    @pytest.mark.parametrize("value, expected", [
+        (0, 0.6931471805599453),
+        ([-1, 0, 1], np.array([0.31326169, 0.69314718, 1.31326169])),
+        (100, 100.0),
+        (-5, 0.00671534848911849),
+        (-100, 0.0),
+        (10000, 10000.0)
+    ])
+    def test_softplus(self, value, expected):
+        """
+        Test cases for the softplus function.
+        """
+        result = softplus(value)
+        assert np.allclose(result, expected)
 
 class TestRound:
     def test_round(self):
