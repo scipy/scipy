@@ -117,7 +117,6 @@ if SCIPY_ARRAY_API:
     try:
         import cupy
         xp_available_backends.update({'cupy': cupy})
-        SCIPY_DEVICE = 'cuda'
     except ImportError:
         pass
 
@@ -137,6 +136,9 @@ if SCIPY_ARRAY_API:
             except KeyError:
                 msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
                 raise ValueError(msg)
+
+if 'cupy' in xp_available_backends:
+    SCIPY_DEVICE = 'cuda'
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
