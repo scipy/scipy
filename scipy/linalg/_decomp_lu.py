@@ -59,6 +59,9 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     :func:`lu`, it outputs the L and U factors into a single array
     and returns pivot indices instead of a permutation matrix.
 
+    While the underlying ``*GETRF`` routines return 1-based pivot indices, the
+    ``piv`` array returned by ``lu_factor`` contains 0-based indices.
+
     Examples
     --------
     >>> import numpy as np
@@ -120,7 +123,8 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     Parameters
     ----------
     (lu, piv)
-        Factorization of the coefficient matrix a, as given by lu_factor
+        Factorization of the coefficient matrix a, as given by lu_factor.
+        In particular piv are 0-indexed pivot indices.
     b : array
         Right-hand side
     trans : {0, 1, 2}, optional
