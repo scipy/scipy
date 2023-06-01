@@ -68,14 +68,14 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'softplus',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
     'yn_zeros',
     'ynp_zeros',
     'yvp',
-    'zeta',
-    'softplus'
+    'zeta'
 ]
 
 
