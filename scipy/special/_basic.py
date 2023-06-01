@@ -3176,10 +3176,12 @@ def softplus(x, **kwargs):
 
     Examples
     --------
-    >>> softplus(0)
+    >>> import scipy.special as sc
+    
+    >>> sc.softplus(0)
     0.6931471805599453
 
-    >>> softplus([-1, 0, 1])
+    >>> sc.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
     return np.logaddexp(0, x, **kwargs)
