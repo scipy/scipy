@@ -22,6 +22,7 @@ Matrix Operations
    inv -- compute the sparse matrix inverse
    expm -- compute the sparse matrix exponential
    expm_multiply -- compute the product of a matrix exponential and a matrix
+   matrix_power -- compute the matrix power by raising a matrix to an exponent
 
 Matrix norms
 ------------
