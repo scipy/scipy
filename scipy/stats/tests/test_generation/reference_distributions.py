@@ -333,6 +333,42 @@ class NormInvGauss(ReferenceDistribution):
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
 
 
+class Pearson3(ReferenceDistribution):
+    def __init__(self, *, skew):
+        super().__init__(skew=skew)
+        self.norm2pearson_transition = mp.mpf(0.000016)
+
+    def _preprocess(self, x, skew):
+        loc = mp.zero
+        scale = mp.one
+
+        beta = 2.0 / (skew * scale)
+        alpha = (scale * beta) ** 2.0
+        zeta = loc - alpha / beta
+
+        transx = beta * (x - zeta)
+        return transx, beta, alpha, zeta
+
+    def _gamma_logpdf(self, x, a):
+        return (a - mp.one) * mp.log(x) - x - mp.loggamma(a)
+
+    def _logpdf(self, x, skew):
+        transx, beta, alpha, zeta = self._preprocess(x, skew)
+        if mp.fabs(skew) < self.norm2pearson_transition:
+            return mp.log(mp.npdf(x))
+
+        return mp.log(mp.fabs(beta)) + self._gamma_logpdf(transx, alpha)
+
+    def _sf(self, x, skew):
+        transx, beta, alpha, zeta = self._preprocess(x, skew)
+        if mp.fabs(skew) < self.norm2pearson_transition:
+            return mp.ncdf(-x)
+        elif skew > 0:
+            return mp.gammainc(alpha, transx, mp.inf, regularized=True)
+        else:
+            return mp.gammainc(alpha, 0, transx, regularized=True)
+
+
 class StudentT(ReferenceDistribution):
 
     def __init(self, *, df):
