@@ -2646,6 +2646,7 @@ template<typename T0> class T_dcst23
             c[0]*=sqrt2;
           else
             c[N-1]*=sqrt2;
+          }
         if (!cosine)
           for (size_t k=0, kc=N-1; k<NS2; ++k, --kc)
             std::swap(c[k], c[kc]);
