@@ -2630,11 +2630,22 @@ template<typename T0> class T_dcst23
         if (!cosine)
           for (size_t k=0, kc=N-1; k<kc; ++k, --kc)
             std::swap(c[k], c[kc]);
-        if (ortho) c[0]*=sqrt2*T0(0.5);
+        if (ortho)
+          {
+          if (cosine)
+            c[0]*=sqrt2*T0(0.5);
+          else
+            c[N-1]*=sqrt2*T0(0.5);
+          }
         }
       else
         {
-        if (ortho) c[0]*=sqrt2;
+        if (ortho)
+          {
+          if (cosine)
+            c[0]*=sqrt2;
+          else
+            c[N-1]*=sqrt2;
         if (!cosine)
           for (size_t k=0, kc=N-1; k<NS2; ++k, --kc)
             std::swap(c[k], c[kc]);
