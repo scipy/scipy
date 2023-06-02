@@ -8431,6 +8431,9 @@ class reciprocal_gen(rv_continuous):
     def _cdf(self, x, a, b):
         return (np.log(x)-np.log(a)) / (np.log(b) - np.log(a))
 
+    def _sf(self, x, a, b):
+        return (np.log(b) - np.log(x)) / (np.log(b) - np.log(a))
+
     def _ppf(self, q, a, b):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
 

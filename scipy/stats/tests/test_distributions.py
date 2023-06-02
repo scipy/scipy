@@ -8599,6 +8599,17 @@ class TestLogUniform:
         mean = (b - a)/(np.log(b) - np.log(a))
         assert_allclose(dist.mean(), mean)
 
+    def test_sf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 50; Reciprocal(a=a, b=b).sf(x).
+        a = [1.0, 3.0, 5.0, 2.0]
+        b = [5.0, 4.0, 10.0, 4.0]
+        x = [0.5, 1e-2, 1e-4, 1e-10]
+        ref = [1.4306765580733931, 20.826687238608606, 16.609640474436812,
+               35.219280948873624]
+
+        assert_allclose(stats.loguniform.sf(x, a, b), ref, rtol=1e-15)
+
 
 class TestArgus:
     def test_argus_rvs_large_chi(self):
