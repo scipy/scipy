@@ -188,7 +188,8 @@ class OdeSolution:
 
     def _call_single(self, t):
         # Here we preserve a certain symmetry that when t is in self.ts,
-        # then we prioritize a segment with a lower index.
+        # if alt_segment=False, then we prioritize a segment with a lower
+        # index.
         ind = np.searchsorted(self.ts_sorted, t, side=self.side)
 
         segment = min(max(ind - 1, 0), self.n_segments - 1)
