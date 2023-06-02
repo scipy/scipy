@@ -352,6 +352,9 @@ class Reciprocal(ReferenceDistribution):
     def __init__(self, *, a, b):
         super().__init__(a=a, b=b)
 
+    def _support(self, a, b):
+        return a, b
+
     def _pdf(self, x, a, b):
         return mp.one / (x * (mp.log(b) - mp.log(a)))
 
