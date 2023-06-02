@@ -3606,9 +3606,11 @@ class TestSoftplus:
         (10000, 10000.0)
     ])
     def test_softplus(self, value, expected):
-        """
-        Test cases for the softplus function.
-        """
+        
+        # Test cases for the softplus function.
+        # Note : ``value`` is selected based on the intervals provided in Eq.(10) of the the following paper:
+        # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision Floating-Point Reliable.
+        # Retrieved from https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
         result = softplus(value)
         assert np.allclose(result, expected)
 
