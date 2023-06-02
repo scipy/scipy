@@ -314,6 +314,24 @@ class BetaPrime(ReferenceDistribution):
         return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
 
 
+class LogLaplace(ReferenceDistribution):
+
+    def __init__(self, *, c):
+        super().__init__(c=c)
+
+    def _pdf(self, x, c):
+        if x < mp.one:
+            return c / 2.0 * x**(c - mp.one)
+        else:
+            return c / 2.0 * x**(-c - mp.one)
+
+    def _sf(self, x, c):
+        if x < mp.one:
+            return mp.one - 0.5 * x**c
+        else:
+            return 0.5 * x**(-c)
+
+
 class Normal(ReferenceDistribution):
 
     def _pdf(self, x):
