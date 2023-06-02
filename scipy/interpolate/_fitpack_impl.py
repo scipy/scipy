@@ -667,7 +667,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
 
-    msg = "Too big data points to interpolate"
+    msg = f"Too many data points to interpolate."
 
     _int_overflow(x.size * y.size, MemoryError, msg=msg)
 
