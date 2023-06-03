@@ -6017,6 +6017,9 @@ class loglaplace_gen(rv_continuous):
     def _cdf(self, x, c):
         return np.where(x < 1, 0.5*x**c, 1-0.5*x**(-c))
 
+    def _sf(self, x, c):
+        return np.where(x < 1, 1 - 0.5*x**c, 0.5*x**(-c))
+
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
 
