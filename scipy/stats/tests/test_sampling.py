@@ -13,9 +13,11 @@ from scipy.stats.sampling import (
     DiscreteGuideTable,
     NumericalInversePolynomial,
     NumericalInverseHermite,
+    RatioUniforms,
     SimpleRatioUniforms,
     UNURANError
 )
+from pytest import raises as assert_raises
 from scipy import stats
 from scipy import special
 from scipy.stats import chisquare, cramervonmises
@@ -1363,3 +1365,76 @@ class TestSimpleRatioUniforms:
         # pdf_area < 0
         with pytest.raises(ValueError, match=r"`pdf_area` must be > 0"):
             SimpleRatioUniforms(StandardNormal(), mode=0, pdf_area=-1)
+
+
+class TestRatioUniforms:
+    """ Tests for rvs_ratio_uniforms.
+    """
+
+    def test_rv_generation(self):
+        # use KS test to check distribution of rvs
+        # normal distribution
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        gen = RatioUniforms(f, umax, vmin, vmax, random_state=12345)
+        assert_equal(stats.kstest(gen.rvs(2500), 'norm')[1] > 0.25, True)
+
+        # exponential distribution
+        gen = RatioUniforms(lambda x: np.exp(-x), umax=1,
+                            vmin=0, vmax=2*np.exp(-1), random_state=12345)
+        assert_equal(stats.kstest(gen.rvs(1000), 'expon')[1] > 0.25, True)
+
+    def test_shape(self):
+        # test shape of return value depending on size parameter
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+
+        gen1 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        gen2 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        gen3 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        r1, r2, r3 = gen1.rvs(3), gen2.rvs((3,)), gen3.rvs((3, 1))
+        assert_equal(r1, r2)
+        assert_equal(r2, r3.flatten())
+        assert_equal(r1.shape, (3,))
+        assert_equal(r3.shape, (3, 1))
+
+        gen4 = RatioUniforms(f, umax, vmin, vmax, random_state=12)
+        gen5 = RatioUniforms(f, umax, vmin, vmax, random_state=12)
+        r4, r5 = gen4.rvs(size=(3, 3, 3)), gen5.rvs(size=27)
+        assert_equal(r4.flatten(), r5)
+        assert_equal(r4.shape, (3, 3, 3))
+
+        gen6 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        gen7 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        gen8 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        r6, r7, r8 = gen6.rvs(), gen7.rvs(1), gen8.rvs((1,))
+        assert_equal(r6, r7)
+        assert_equal(r7, r8)
+
+    def test_random_state(self):
+        f = stats.norm.pdf
+        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
+        gen1 = RatioUniforms(f, umax, vmin, vmax, random_state=1234)
+        r1 = gen1.rvs(10)
+        r2 = gen1.rvs(10, random_state=1234)
+        np.random.seed(1234)
+        gen2 = RatioUniforms(f, umax, vmin, vmax)
+        r3 = gen2.rvs(10)
+        assert_equal(r1, r2)
+        assert_equal(r1, r3)
+
+    def test_exceptions(self):
+        f = stats.norm.pdf
+        # need vmin < vmax
+        assert_raises(ValueError,
+                      RatioUniforms, pdf=f, umax=1, vmin=3, vmax=1)
+        assert_raises(ValueError,
+                      RatioUniforms, pdf=f, umax=1, vmin=1, vmax=1)
+        # need umax > 0
+        assert_raises(ValueError,
+                      RatioUniforms, pdf=f, umax=-1, vmin=1, vmax=1)
+        assert_raises(ValueError,
+                      RatioUniforms, pdf=f, umax=0, vmin=1, vmax=1)
