@@ -3,6 +3,7 @@ import os
 import io
 import shutil
 import textwrap
+import warnings
 
 import numpy as np
 from numpy import array, transpose, pi
@@ -12,10 +13,23 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from scipy.io import mminfo, mmread, mmwrite
+import scipy.io
+import scipy.io._fast_matrix_market as fmm
+
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
+
+
+# Run the entire test suite on both _mmio and _fast_matrix_market implementations
+@pytest.fixture(scope='module', params=(scipy.io, fmm), autouse=True)
+def implementations(request):
+    global mminfo
+    global mmread
+    global mmwrite
+    mminfo = request.param.mminfo
+    mmread = request.param.mmread
+    mmwrite = request.param.mmwrite
 
 
 class TestMMIOArray:
@@ -769,3 +783,42 @@ def test_gh18123(tmp_path):
     with open(test_file, "w") as f:
         f.writelines(lines)
     mmread(test_file)
+
+
+_longcomplex_array = '''\
+%%MatrixMarket matrix array complex general
+%1-by-1 matrix that uses a value too large to fit in a double
+1 1
+1E310 1E310
+'''
+
+_longdouble_coordinate = """\
+%%MatrixMarket matrix coordinate real general
+%1-by-1 matrix that uses a value too large to fit in a double
+1 1 1
+1 1 1E310
+"""
+
+
+def test_long_types():
+    if mmread != fmm.mmread:
+        # Only works with FMM implementation
+        return
+
+    longcomplex_array = _longcomplex_array
+    longdouble_coordinate = _longdouble_coordinate
+
+    # Check whether numpy is built with longdouble and longcomplex > 64-bit.
+    long_val = "1E310"  # Value out of range of a 64-bit float but in range of an 80-bit float.
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore')
+        d = np.array([long_val], dtype="double")
+        ld = np.array([long_val], dtype="longdouble")
+
+    if d[0] == ld[0]:
+        # longdouble on this platform is only 64-bit.
+        longcomplex_array = longcomplex_array.replace('1E310', '1E300')
+        longdouble_coordinate = longdouble_coordinate.replace('1E310', '1E300')
+
+    mmread(io.StringIO(longcomplex_array), long_type=True)
+    mmread(io.StringIO(longdouble_coordinate), long_type=True)
