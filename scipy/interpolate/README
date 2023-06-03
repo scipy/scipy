@@ -85,7 +85,6 @@ interpolate.fitpack
 interpolate.fitpack2
 interpolate.insert
 interpolate.interp1d
-interpolate.interp2d
 interpolate.interpolate
 interpolate.lagrange
 interpolate.ppform

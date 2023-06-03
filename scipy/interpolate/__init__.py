@@ -47,7 +47,6 @@ Unstructured data:
    CloughTocher2DInterpolator
    RBFInterpolator
    Rbf
-   interp2d
 
 For data on a grid:
 

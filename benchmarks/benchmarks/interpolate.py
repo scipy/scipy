@@ -106,24 +106,6 @@ class Interpolate1d(Benchmark):
         self.interpolator(self.xp)
 
 
-class Interpolate2d(Benchmark):
-    param_names = ['n_samples', 'method']
-    params = [
-        [10, 50, 100],
-        ['linear', 'cubic', 'quintic'],
-    ]
-
-    def setup(self, n_samples, method):
-        r_samples = n_samples / 2.
-        self.x = np.arange(-r_samples, r_samples, 0.25)
-        self.y = np.arange(-r_samples, r_samples, 0.25)
-        self.xx, self.yy = np.meshgrid(self.x, self.y)
-        self.z = np.sin(self.xx**2+self.yy**2)
-
-    def time_interpolate(self, n_samples, method):
-        interpolate.interp2d(self.x, self.y, self.z, kind=method)
-
-
 class Rbf(Benchmark):
     param_names = ['n_samples', 'function']
     params = [
