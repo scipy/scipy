@@ -92,15 +92,21 @@ class ReferenceDistribution:
         if ((self._cdf.__func__ is ReferenceDistribution._cdf)
                 and (self._sf.__func__ is not ReferenceDistribution._sf)):
             return mp.one - self._sf(x, **kwargs)
-        a, _ = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+        res = res if res < 0.5 else mp.one - self._sf(x, **kwargs)
+        return res
 
     def _sf(self, x, **kwargs):
         if ((self._sf.__func__ is ReferenceDistribution._sf)
                 and (self._cdf.__func__ is not ReferenceDistribution._cdf)):
             return mp.one - self._cdf(x, **kwargs)
-        _, b = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+        res = res if res < 0.5 else mp.one - self._cdf(x, **kwargs)
+        return res
 
     def _ppf(self, p, guess=0, **kwargs):
         if ((self._ppf.__func__ is ReferenceDistribution._ppf)
@@ -319,17 +325,14 @@ class LogLaplace(ReferenceDistribution):
     def __init__(self, *, c):
         super().__init__(c=c)
 
+    def _support(self, c):
+        return 0, mp.inf
+
     def _pdf(self, x, c):
         if x < mp.one:
-            return c / 2.0 * x**(c - mp.one)
+            return c / 2 * x**(c - mp.one)
         else:
-            return c / 2.0 * x**(-c - mp.one)
-
-    def _sf(self, x, c):
-        if x < mp.one:
-            return mp.one - 0.5 * x**c
-        else:
-            return 0.5 * x**(-c)
+            return c / 2 * x**(-c - mp.one)
 
 
 class Normal(ReferenceDistribution):

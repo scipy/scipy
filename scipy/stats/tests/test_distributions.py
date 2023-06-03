@@ -2930,10 +2930,10 @@ class TestLogLaplace:
 
     def test_sf(self):
         # reference values were computed via the reference distribution, e.g.
-        # mp.dps = 50; LogLaplace(c=c).sf(x).
+        # mp.dps = 100; LogLaplace(c=c).sf(x).
         c = np.array([2.0, 3.0, 5.0])
-        x = np.array([1e5, 1e10, 1e15])
-        ref = [5e-11, 5e-31, 5e-76]
+        x = np.array([1e-5, 1e10, 1e15])
+        ref = [0.99999999995, 5e-31, 5e-76]
         assert_allclose(stats.loglaplace.sf(x, c), ref, rtol=1e-15)
 
 
