@@ -18,7 +18,7 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
-                          solve, ldl, norm, block_diag, qr, eigh, schur)
+                          solve, ldl, norm, block_diag, qr, eigh, qz)
 
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
@@ -3357,29 +3357,26 @@ def test_tgsyl_NAG(a, b, c, d, e, f, rans, lans, dtype):
 @pytest.mark.parametrize('ijob', [0, 1, 2, 3, 4])
 def test_tgsyl(dtype, trans, ijob):
 
-    seed(2023)
-    atol = 1e-2 if dtype == np.float32 else 1e-10
-
+    atol = 1e-3 if dtype == np.float32 else 1e-10
+    rng = np.random.default_rng(1685779866898198)
     m, n = 10, 15
 
-    a, _ = schur(generate_random_dtype_array([m, m], dtype=dtype))
-    d = np.triu(generate_random_dtype_array([m, m], dtype=dtype))
-    b, _ = schur(generate_random_dtype_array([n, n], dtype=dtype))
-    e = np.triu(generate_random_dtype_array([n, n], dtype=dtype))
-    c = generate_random_dtype_array([m, n], dtype=dtype)
-    f = generate_random_dtype_array([m, n], dtype=dtype)
+    a, d, *_ = qz(rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  output='real')
 
-    # Adjust the spectrum of the matrices to get a more precise solution
-    a += np.eye(m, dtype=dtype)
-    d -= np.diag(5*np.ones(m, dtype=dtype))
-    b += np.eye(n, dtype=dtype)
-    e -= np.diag(5*np.ones(n, dtype=dtype))
+    b, e, *_ = qz(rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  output='real')
+
+    c = rng.uniform(-2, 2, [m, n]).astype(dtype)
+    f = rng.uniform(-2, 2, [m, n]).astype(dtype)
 
     tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
     rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f,
                                          trans=trans, ijob=ijob)
 
-    assert_equal(info, 0, err_msg="INFO is non-zero")
+    assert info == 0, "INFO is non-zero"
     assert scale >= 0.0, "SCALE must be non-negative"
     if ijob == 0:
         assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
