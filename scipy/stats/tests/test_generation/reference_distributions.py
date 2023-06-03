@@ -345,23 +345,6 @@ class Pearson3(ReferenceDistribution):
         return res if abs(res.real) == res else 0
 
 
-class Reciprocal(ReferenceDistribution):
-    """
-    Also known as the LogUniform distribution
-    """
-    def __init__(self, *, a, b):
-        super().__init__(a=a, b=b)
-
-    def _support(self, a, b):
-        return a, b
-
-    def _pdf(self, x, a, b):
-        return mp.one / (x * (mp.log(b) - mp.log(a)))
-
-    def _cdf(self, x, a, b):
-        return (mp.log(x) - mp.log(a)) / (mp.log(b) - mp.log(a))
-
-
 class StudentT(ReferenceDistribution):
 
     def __init(self, *, df):

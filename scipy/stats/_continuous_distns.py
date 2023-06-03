@@ -8403,9 +8403,9 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
     >>> plt.show()
 
-    Details related to defining the surival function for this
-    distribution can be found in the PR:
-        https://github.com/scipy/scipy/pull/18614
+    Details related to the decision of not defining
+    the surival function for this distribution can be
+    found in the PR: https://github.com/scipy/scipy/pull/18614
     """
     def _argcheck(self, a, b):
         return (a > 0) & (b > a)
