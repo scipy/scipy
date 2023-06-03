@@ -3295,8 +3295,7 @@ def gstd(a, axis=0, ddof=1):
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'raw': 1.0,
-                      'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
 @_axis_nan_policy_factory(
@@ -3332,18 +3331,15 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         Percentiles over which to compute the range. Each must be
         between 0 and 100, inclusive. The default is the true IQR:
         ``(25, 75)``. The order of the elements is not important.
-    scale : scalar or str, optional
+    scale : scalar or str or array_like of reals, optional
         The numerical value of scale will be divided out of the final
-        result. The following string values are recognized:
+        result. The following string value is also recognized:
 
-          * 'raw' : No scaling, just return the raw IQR.
-            **Deprecated!**  Use ``scale=1`` instead.
           * 'normal' : Scale by
             :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 1.0. The use of ``scale='raw'`` is deprecated infavor
-        of ``scale=1`` and will raise an error in SciPy 1.12.0.
-        Array-like `scale` is also allowed, as long
+        The default is 1.0.
+        Array-like `scale` of real dtype is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -3426,10 +3422,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError(f"{scale} not a valid scale for `iqr`")
-        if scale_key == 'raw':
-            msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
-                   "'scale=1' and will raise an error in SciPy 1.12.0.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
