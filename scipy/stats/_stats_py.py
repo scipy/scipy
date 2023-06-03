@@ -3331,7 +3331,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         Percentiles over which to compute the range. Each must be
         between 0 and 100, inclusive. The default is the true IQR:
         ``(25, 75)``. The order of the elements is not important.
-    scale : scalar or str, optional
+    scale : scalar or str or array_like of reals, optional
         The numerical value of scale will be divided out of the final
         result. The following string value is also recognized:
 
