@@ -8403,6 +8403,9 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
     >>> plt.show()
 
+    Details related to defining the surival function for this
+    distribution can be found in the PR:
+        https://github.com/scipy/scipy/pull/18614
     """
     def _argcheck(self, a, b):
         return (a > 0) & (b > a)
@@ -8430,9 +8433,6 @@ class reciprocal_gen(rv_continuous):
 
     def _cdf(self, x, a, b):
         return (np.log(x)-np.log(a)) / (np.log(b) - np.log(a))
-
-    def _sf(self, x, a, b):
-        return (np.log(b) - np.log(x)) / (np.log(b) - np.log(a))
 
     def _ppf(self, q, a, b):
         return np.exp(np.log(a) + q*(np.log(b) - np.log(a)))
