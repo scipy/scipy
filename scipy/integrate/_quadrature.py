@@ -8,6 +8,7 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -522,7 +523,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even=None):
+def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
@@ -531,7 +532,7 @@ def simps(y, x=None, dx=1.0, axis=-1, even=None):
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even=None):
+def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -580,7 +581,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
 
         .. deprecated:: 1.11.0
             Parameter `even` is deprecated and will be removed in SciPy
-            1.13.0. After this time the behaviour for an even number of
+            1.14.0. After this time the behaviour for an even number of
             points will follow that of `even='simpson'`.
 
     Returns
@@ -656,10 +657,10 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
                              "same as y.")
 
     # even keyword parameter is deprecated
-    if even is not None:
+    if even is not _NoValue:
         warnings.warn(
             "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
-            "removed in SciPy 1.13.0",
+            "removed in SciPy 1.14.0",
             DeprecationWarning, stacklevel=2
         )
 
@@ -669,7 +670,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
         slice_all = (slice(None),) * nd
 
         # default is 'simpson'
-        even = even if even is not None else "simpson"
+        even = even if even is not _NoValue else "simpson"
 
         if even not in ['avg', 'last', 'first', 'simpson']:
             raise ValueError(
