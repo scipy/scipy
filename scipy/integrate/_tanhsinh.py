@@ -36,8 +36,6 @@ def compute_pairs(k):
 
 def quadts(f, a, b, m=5):
 
-    h, xjc, wj = compute_pairs(m)
-    wj = np.concatenate((wj, wj[1:]))
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
@@ -54,23 +52,38 @@ def quadts(f, a, b, m=5):
             return f(1/x - 1 + a)*x**-2
         a, b = 0, 1
 
-    alpha = (b-a)/2
-    xj = np.concatenate((-alpha * xjc + b,
-                         alpha*xjc[1:] + a))
-    wj *= alpha
+    s = 0
 
-    i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
-    xj = xj[i]
-    wj = wj[i]
+    for i in range(m+1):
+        s /= 2
+        h, xjc, wj = compute_pairs(m)
 
-    fj = f(xj)
-    s = (fj @ wj) * h
+        if i == 0:
+            wj[0] /= 2
+        else:
+            wj = wj[1::2]
+            xjc = xjc[1::2]
+
+        wj = np.concatenate((wj, wj))
+
+        alpha = (b-a)/2
+        xj = np.concatenate((-alpha * xjc + b,
+                             alpha * xjc + a))
+        wj *= alpha
+
+        i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
+        xj = xj[i]
+        wj = wj[i]
+
+        fj = f(xj)
+        s += (fj @ wj) * h
+
     return s
 
-m = 3
+m = 4
 
 test = TestTanhSinh()
-f = test.f3
+f = test.f1
 ref = f.ref
 res = quadts(f, 0, f.b, m=m)
 
