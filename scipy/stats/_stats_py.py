@@ -61,6 +61,7 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
+from scipy._lib.deprecation import _NoValue
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -5581,9 +5582,6 @@ def pointbiserialr(x, y):
     res = SignificanceResult(rpb, prob)
     res.correlation = rpb
     return res
-
-
-_NoValue = object()
 
 
 def kendalltau(x, y, initial_lexsort=_NoValue, nan_policy='propagate',

@@ -9,13 +9,13 @@ from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
+from scipy._lib.deprecation import _NoValue
 
 from . import _sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
 
-_NoValue = object()
 
 def _get_fs(fs, nyq):
     """

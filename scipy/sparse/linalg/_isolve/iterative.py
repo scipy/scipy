@@ -12,6 +12,7 @@ from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import non_reentrant
+from scipy._lib.deprecation import _NoValue
 
 _type_conv = {'f':'s', 'd':'d', 'F':'c', 'D':'z'}
 
@@ -486,9 +487,6 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
         info = iter_
 
     return postprocess(x), info
-
-
-_NoValue = object()
 
 
 @non_reentrant()
