@@ -457,3 +457,96 @@ class TestQMCQuad:
         res = qmc_quad(func, 0, 1)
         ref = stats.norm.cdf(1, scale=2) - stats.norm.cdf(0, scale=2)
         assert_allclose(res.integral, ref, 1e-2)
+
+
+class TestTanhSinh:
+    def f1(self, t):
+        return t * np.log(1 + t)
+
+    f1.ref = 0.25
+    f1.b = 1
+
+    def f2(self, t):
+        return t ** 2 * np.arctan(t)
+
+    f2.ref = (np.pi - 2 + 2 * np.log(2)) / 12
+    f2.b = 1
+
+    def f3(self, t):
+        return np.exp(t) * np.cos(t)
+
+    f3.ref = (np.exp(np.pi / 2) - 1) / 2
+    f3.b = np.pi / 2
+
+    def f4(self, t):
+        a = np.sqrt(2 + t ** 2)
+        return np.arctan(a) / ((1 + t ** 2) * a)
+
+    f4.ref = 5 * np.pi ** 2 / 96
+    f4.b = 1
+
+    def f5(self, t):
+        return np.sqrt(t) * np.log(t)
+
+    f5.ref = -4 / 9
+    f5.b = 1
+
+    def f6(self, t):
+        return np.sqrt(1 - t ** 2)
+
+    f6.ref = np.pi / 4
+    f6.b = 1
+
+    def f7(self, t):
+        return np.sqrt(t) / np.sqrt(1 - t ** 2)
+
+    f7.ref = 2 * np.sqrt(np.pi) * sc.gamma(3 / 4) / sc.gamma(1 / 4)
+    f7.b = 1
+
+    def f8(self, t):
+        return np.log(t) ** 2
+
+    f8.ref = 2
+    f8.b = 1
+
+    def f9(self, t):
+        return np.log(np.cos(t))
+
+    f9.ref = -np.pi * np.log(2) / 2
+    f9.b = np.pi / 2
+
+    def f10(self, t):
+        return np.sqrt(np.tan(t))
+
+    f10.ref = np.pi * np.sqrt(2) / 2
+    f10.b = np.pi / 2
+
+    def f11(self, t):
+        return 1 / (1 + t ** 2)
+
+    f11.ref = np.pi / 2
+    f11.b = np.inf
+
+    def f12(self, t):
+        return np.exp(-t) / np.sqrt(t)
+
+    f12.ref = np.sqrt(np.pi)
+    f12.b = np.inf
+
+    def f13(self, t):
+        return np.exp(-t ** 2 / 2)
+
+    f13.ref = np.sqrt(np.pi / 2)
+    f13.b = np.inf
+
+    def f14(self, t):
+        return np.exp(-t) * np.cos(t)
+
+    f14.ref = 0.5
+    f14.b = np.inf
+
+    def f15(self, t):
+        return np.sin(t) / t
+
+    f15.ref = np.pi / 2
+    f15.b = np.inf
