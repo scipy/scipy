@@ -2060,3 +2060,154 @@ def _median_bias(n):
     """
     ii_2 = 2 * np.arange(1., (n-1) // 2 + 1)
     return 1 + np.sum(1. / (ii_2 + 1) - 1. / ii_2)
+
+def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
+              noverlap=None, nfft=None, detrend='constant',
+              return_onesided=True, scaling='density', axis=-1,
+              average='mean'):
+    r"""
+    Estimate the cross cyclic spectral density, Pxy, using Welch's method.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    y : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` and `y` time series. Defaults to 16.
+    alpha : float, optional
+        Modulation frequency of the `x` and `y` time series. Defaults to 4.
+    sym : bool, optional
+        Choice between the symmetric version: E{Y(f+alpha/2)X*(f-alpha/2)}, and the
+        asymmetric one: E{Y(f)X*(f-alpha)}.
+    window : str or tuple or array_like, optional
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
+    nperseg : int, optional
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
+    noverlap: int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
+    return_onesided : bool, optional
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum.
+    scaling : { 'density', 'spectrum' }, optional
+        Selects between computing the cross cyclic spectral density ('density')
+        where `Pxy` has units of V**2/Hz and computing the cross cyclic
+        spectrum ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
+        measured in V and `fs` is measured in Hz. Defaults to 'density'
+    axis : int, optional
+        Axis along which the cross cyclic spectral analysis is computed for
+        both inputs; the default is over the last axis (i.e. ``axis=-1``).
+    average : { 'mean', 'median' }, optional
+        Method to use when averaging periodograms. Defaults to 'mean'.
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    Pxy : ndarray
+        Cross cyclic spectral density or cross cyclic power spectrum of x,y.
+
+    See Also
+    --------
+    welch: Power spectral density by Welch's method.
+    csd: Cross spectral density by Welch's method.
+
+    Notes
+    -----
+    Use analytic signal to avoid correlation between positive and negative
+    frequencies.
+
+    By convention, Pxy is computed with the conjugate FFT of X
+    multiplied by the FFT of Y.
+
+    If the input series differ in length, the shorter series will be
+    zero-padded to match.
+
+    An appropriate amount of overlap will depend on the choice of window
+    and on your requirements. It is recommended to use nfft = 2*nperseg and
+    noverlap = 2/3*nperseg with a Hann window, or noverlap = 1/2*nperseg with a
+    half-sine window.
+
+    .. versionadded:: 1.9
+
+    References
+    ----------
+    .. [1] W. Gardner, "Measurement of spectral correlation", IEEE Trans
+           Acoust. vol. 34, pp. 1111-1123, 1986.
+
+    .. [2] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
+           Process. vol. 21, pp. 597-630, 2007.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+    
+    Generate a test signal with some common features.
+    
+    >>> fs = 1e4
+    >>> N = 1e5
+    >>> freq_carrier = 1234.0
+    >>> half_freq_modulation = 28.0 # the modulation is expected to occur at a double frequency 28 * 2 = 56
+    >>> noise_power = 10
+    >>> time = np.arange(N) / fs
+    >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> x += np.sin(2*np.pi*freq_carrier*time)*np.sin(2*np.pi*half_freq_modulation*time)
+    
+    >>> freqs = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
+    >>> alpha = np.arange(1, 100)
+    >>> Sx_f_alpha = np.empty((freqs.size, alpha.size), dtype=np.complex128)
+    
+    >>> for i_alpha, alpha_i in enumerate(alpha):
+    >>>     Sx_f_alpha[:, i_alpha] = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=alpha_i)[1]
+        
+    >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
+    >>> freqs = freqs[freqs >= 0]
+    
+    >>> plt.pcolormesh(alpha, freqs, np.abs(Sx_f_alpha))
+    >>> plt.xlabel('Carrier Frequency [Hz]')
+    >>> plt.xlabel('Modulation Frequency [Hz]')
+    >>> plt.show()
+    """
+
+    if alpha > fs / 2:
+        raise ValueError('Modulation frequency must be inferior to Nyquist '
+                         'frequency, got %s' % (alpha,))
+
+    # to avoid artefacts in results noverlap >= nperseg // 4 * 3 
+    if (noverlap is None) and (nperseg is None):
+       nperseg = 256
+       noverlap = nperseg // 4 * 3             
+
+    if sym:
+        y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[-1]))
+        x = x * np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
+    else:
+        x = x * np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
+
+    freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
+                     noverlap=noverlap, nfft=nfft, detrend=detrend,
+                     return_onesided=return_onesided, scaling=scaling,
+                     axis=axis, average=average)
+
+    return freqs, Pxy
