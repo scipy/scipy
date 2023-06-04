@@ -21,7 +21,8 @@ def compute_pairs(k):
     # endpoints of the interval or be given infinite weight. Neither of these
     # is supposed to happen.
     max = int(np.ceil(6.115 * 2**k))
-    j = np.arange(max)
+    # For iterations after the first, we only need
+    j = np.arange(max) if k == 0 else np.arange(1, max, 2)
     jh = j * h
 
     pi_2 = np.pi / 2
@@ -31,11 +32,12 @@ def compute_pairs(k):
     # See [1] page 9. "We actually store 1-xj = 1/(...)."
     xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
     wj = u1 / np.cosh(u2)**2
-
+    # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
+    # code, the function will be evaluated there twice; each gets half weight.
+    wj[0] = wj[0] / 2 if k == 0 else wj[0]
     return h, xjc, wj
 
 def quadts(f, a, b, m=5):
-
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
@@ -56,13 +58,7 @@ def quadts(f, a, b, m=5):
 
     for i in range(m+1):
         s /= 2
-        h, xjc, wj = compute_pairs(m)
-
-        if i == 0:
-            wj[0] /= 2
-        else:
-            wj = wj[1::2]
-            xjc = xjc[1::2]
+        h, xjc, wj = compute_pairs(i)
 
         wj = np.concatenate((wj, wj))
 
@@ -71,6 +67,7 @@ def quadts(f, a, b, m=5):
                              alpha * xjc + a))
         wj *= alpha
 
+        # This is needed for badly behaved functions
         i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
         xj = xj[i]
         wj = wj[i]
