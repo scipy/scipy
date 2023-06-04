@@ -41,7 +41,7 @@ def compute_pairs(k):
     wj[0] = wj[0] / 2 if k == 0 else wj[0]
     return h, xjc, wj
 
-def quadts(f, a, b, m=5):
+def quadts(f, a, b, maxiter=10):
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
@@ -58,10 +58,10 @@ def quadts(f, a, b, m=5):
             return f(1/x - 1 + a)*x**-2
         a, b = 0, 1
 
-    s = 0  # initial estimate of integral
+    Sk = []
 
-    for i in range(m+1):
-        h, xjc, wj = compute_pairs(i)
+    for n in range(maxiter):
+        h, xjc, wj = compute_pairs(n)
 
         # If we had stored xj instead of xjc, we would have
         # xj = alpha * xj + beta, where beta = (a + b)/2
@@ -70,26 +70,47 @@ def quadts(f, a, b, m=5):
         wj *= alpha
         wj = np.concatenate((wj, wj))
 
-        # This is needed for functions that behave badly at the endpoints
-        i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
-        xj = xj[i]
-        wj = wj[i]
+        # Temporarily comment this out so that it's easier to figure out which
+        # abscissae are closest to left and right endpoints for error estimate.
+        # # This is needed for functions that behave badly at the endpoints
+        # i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
+        # xj = xj[i]
+        # wj = wj[i]
 
+        # todo:
+        #  store fj * wj
+        #  add back endpoint protection
+        #  keep track of function evaluations
+        #  absolute and relative tolerance options
+        #  vectorize
         fj = f(xj)
-        s = s/2 + (fj @ wj) * h  # update integral estimate
+        Snm1 = 0 if not Sk else Sk[-1]
+        Sn = Snm1/2 + (fj @ wj) * h  # update integral estimate
 
-    return s
+        # Check error estimate (see "5. Error Estimation, page 11")
+        if n >= 2:
+            Snm2, Snm1 = Sk[-2:]
+            d1 = np.log10(abs(Sn - Snm1))
+            d2 = np.log10(abs(Sn - Snm2))
+            e1 = np.finfo(np.float64).eps
+            d3 = np.log10(e1 * np.max(np.abs(wj*fj)))
+            d4 = np.log10(np.max(np.reshape(np.abs(wj*fj), (2, -1))[:, -1]))
+            d = np.max([d1**2/d2, 2*d1, d3, d4])
+            if d < -15:
+                break
 
-m = 4
+        Sk.append(Sn)
+
+    return Sn
 
 test = TestTanhSinh()
 f = test.f1
 ref = f.ref
-res = quadts(f, 0, f.b, m=m)
+res = quadts(f, 0, f.b)
 
 # dist = stats.alpha(a=3.57)
 # a, b = -np.inf, 0.4
-# res = quadts(dist.pdf, 0.4, np.inf, m=m)
+# res = quadts(dist.pdf, 0.4, np.inf)
 # ref = dist.sf(0.4)
 
 print(np.log10(np.abs((res-ref)/ref)))
