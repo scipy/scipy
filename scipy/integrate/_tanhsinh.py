@@ -5,33 +5,37 @@ from mpmath import mp
 from scipy.integrate.tests.test_quadrature import TestTanhSinh
 
 def compute_pairs(k):
-    # Compute the abscissa-weight pairs for each level m
+    # Compute the abscissa-weight pairs for each level m. See [1] page 9.
+
+    "....each level k of abscissa-weight pairs uses h = 2 **-k"
     h = 1 / (2 ** k)
 
-    # empirically, this gives the maximum number of pairs with valid abscissae
-    # (magnitude strictly less than 1) and finite weight. The list can be
-    # generated like:
+    # "We find that roughly 3.6 * 2^k abscissa-weight pairs are generated at
+    # "level k." The actual number per level can be generated like:
     # for i in range(10):
     #     _, xjc, wj = compute_pairs(i)
+    #     # don't want want infinite weights or to evaluate f at endpoints
     #     valid = (xjc > 0) & (wj > 0) & np.isfinite(wj)
     #     print(np.sum(valid))
-    # 6.115 happens to be the magic number for 64-bit and k <= 10.
-    # I think this is comparable to "3.6*2**k" in the paper. If we were to
-    # generate more, they would cause the function to be evaluated at the
-    # endpoints of the interval or be given infinite weight. Neither of these
-    # is supposed to happen.
+    # Running this code, I'm finding that the maximum index value w/ 64-bit is:
     max = int(np.ceil(6.115 * 2**k))
-    # For iterations after the first, we only need
+    # This reproduces all the integers produced by the loop above for k <= 10.
+    # Note that the actual number of pairs is *half* of this (see below).
+
+    # For iterations after the first, "....the integrand function needs to be
+    # evaluated only at the odd-indexed abscissas at each level."
     j = np.arange(max) if k == 0 else np.arange(1, max, 2)
     jh = j * h
 
+    # "In this case... the weights wj = u1/cosh(u2)^2, where..."
     pi_2 = np.pi / 2
     u1 = pi_2*np.cosh(jh)
     u2 = pi_2*np.sinh(jh)
-
-    # See [1] page 9. "We actually store 1-xj = 1/(...)."
-    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
     wj = u1 / np.cosh(u2)**2
+
+    # "We actually store 1-xj = 1/(...)."
+    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
+
     # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
     # code, the function will be evaluated there twice; each gets half weight.
     wj[0] = wj[0] / 2 if k == 0 else wj[0]
@@ -54,26 +58,25 @@ def quadts(f, a, b, m=5):
             return f(1/x - 1 + a)*x**-2
         a, b = 0, 1
 
-    s = 0
+    s = 0  # initial estimate of integral
 
     for i in range(m+1):
-        s /= 2
         h, xjc, wj = compute_pairs(i)
 
+        # If we had stored xj instead of xjc, we would have
+        # xj = alpha * xj + beta, where beta = (a + b)/2
+        alpha = (b-a)/2
+        xj = np.concatenate((-alpha * xjc + b, alpha * xjc + a))
+        wj *= alpha
         wj = np.concatenate((wj, wj))
 
-        alpha = (b-a)/2
-        xj = np.concatenate((-alpha * xjc + b,
-                             alpha * xjc + a))
-        wj *= alpha
-
-        # This is needed for badly behaved functions
+        # This is needed for functions that behave badly at the endpoints
         i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
         xj = xj[i]
         wj = wj[i]
 
         fj = f(xj)
-        s += (fj @ wj) * h
+        s = s/2 + (fj @ wj) * h  # update integral estimate
 
     return s
 
