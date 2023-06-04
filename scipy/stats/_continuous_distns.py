@@ -8403,9 +8403,6 @@ class reciprocal_gen(rv_continuous):
     >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
     >>> plt.show()
 
-    Details related to the decision of not defining
-    the surival function for this distribution can be
-    found in the PR: https://github.com/scipy/scipy/pull/18614
     """
     def _argcheck(self, a, b):
         return (a > 0) & (b > a)
@@ -8453,6 +8450,10 @@ class reciprocal_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
+
+    # Details related to the decision of not defining
+    # the survival function for this distribution can be
+    # found in the PR: https://github.com/scipy/scipy/pull/18614
 
 
 loguniform = reciprocal_gen(name="loguniform")
