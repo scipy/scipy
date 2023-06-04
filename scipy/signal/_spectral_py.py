@@ -2198,8 +2198,12 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     if (noverlap is None) and (nperseg is None):
        nperseg = 256
        noverlap = nperseg // 4 * 3
+    elif noverlap is None:
+       noverlap = nperseg // 4 * 3
+    else:
+       raise ValueError('In case nperseg is defined, set noverlap')            
     
-    if noverlap < nperseg // 4 * 3:
+    if (noverlap < nperseg // 4 * 3):
         raise ValueError('To avoid leakge, overlap should be larger than 75%')
 
     if sym:
