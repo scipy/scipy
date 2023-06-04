@@ -111,14 +111,31 @@ py3.extension_module('_decomp_interpolative',
 )
 
 # _solve_toeplitz
-py3.extension_module('_solve_toeplitz',
-  linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
-  c_args: cython_c_args,
-  dependencies: np_dep,
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/linalg'
-)
+if use_pythran
+  _solve_toeplitz_cpp = custom_target('_solve_toeplitz',
+    output: ['_solve_toeplitz.cpp'],
+    input: '_solve_toeplitz.py',
+    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_solve_toeplitz.cpp']
+  )
+
+  py3.extension_module('_solve_toeplitz',
+    [_solve_toeplitz_cpp],
+    cpp_args: cpp_args_pythran + ['-UPYTHRAN_BLAS_NONE', '-DPYTHRAN_BLAS_SCIPY_OPENBLAS'],
+    dependencies: [pythran_dep, blas_dep, np_dep],
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+else
+  py3.extension_module('_solve_toeplitz',
+    linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
+    c_args: cython_c_args,
+    dependencies: np_dep,
+    link_args: version_link_args,
+    install: true,
+    subdir: 'scipy/linalg'
+  )
+endif
 
 # _matfuncs_sqrtm_triu:
 py3.extension_module('_matfuncs_sqrtm_triu',
