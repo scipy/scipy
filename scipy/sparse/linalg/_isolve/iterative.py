@@ -488,9 +488,12 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
     return postprocess(x), info
 
 
+_NoValue = object()
+
+
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
-          restrt=None, atol=None, callback_type=None):
+          restrt=_NoValue, atol=None, callback_type=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
@@ -558,7 +561,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
         .. deprecated:: 0.11.0
            `gmres` keyword argument `restrt` is deprecated infavour of
-           `restart` and will be removed in SciPy 1.12.0.
+           `restart` and will be removed in SciPy 1.14.0.
 
     See Also
     --------
@@ -591,7 +594,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     """
 
     # Change 'restrt' keyword to 'restart'
-    if restrt is None:
+    if restrt is _NoValue:
         restrt = restart
     elif restart is not None:
         raise ValueError("Cannot specify both restart and restrt keywords. "
