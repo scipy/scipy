@@ -4,17 +4,40 @@ import matplotlib.pyplot as plt
 from mpmath import mp
 from scipy.integrate.tests.test_quadrature import TestTanhSinh
 
-def quadts(f, a, b, m=5):
+def compute_pairs(k):
+    # Compute the abscissa-weight pairs for each level m
+    h = 1 / (2 ** k)
 
-    h = 1 / (2 ** m)
-    j = np.arange(-5000, 5000)
-    pi_2 = np.pi / 2
-
+    # empirically, this gives the maximum number of pairs with valid abscissae
+    # (magnitude strictly less than 1) and finite weight. The list can be
+    # generated like:
+    # for i in range(10):
+    #     _, xjc, wj = compute_pairs(i)
+    #     valid = (xjc > 0) & (wj > 0) & np.isfinite(wj)
+    #     print(np.sum(valid))
+    # 6.115 happens to be the magic number for 64-bit and k <= 10.
+    # I think this is comparable to "3.6*2**k" in the paper. If we were to
+    # generate more, they would cause the function to be evaluated at the
+    # endpoints of the interval or be given infinite weight. Neither of these
+    # is supposed to happen.
+    max = int(np.ceil(6.115 * 2**k))
+    j = np.arange(max)
     jh = j * h
+
+    pi_2 = np.pi / 2
     u1 = pi_2*np.cosh(jh)
     u2 = pi_2*np.sinh(jh)
-    xj = np.tanh(u2)
+
+    # See [1] page 9. "We actually store 1-xj = 1/(...)."
+    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
     wj = u1 / np.cosh(u2)**2
+
+    return h, xjc, wj
+
+def quadts(f, a, b, m=5):
+
+    h, xjc, wj = compute_pairs(m)
+    wj = np.concatenate((wj, wj[1:]))
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
@@ -32,31 +55,29 @@ def quadts(f, a, b, m=5):
         a, b = 0, 1
 
     alpha = (b-a)/2
-    beta = (a+b)/2
-
-    xj = alpha*xj + beta
+    xj = np.concatenate((-alpha * xjc + b,
+                         alpha*xjc[1:] + a))
     wj *= alpha
 
-    i = (xj > a) & (xj < b) & (wj > 1e-300) & (wj < 1e300)
+    i = (xj > a) & (xj < b) & (wj > 1e-100) & (wj < 1e100)
     xj = xj[i]
     wj = wj[i]
-    print(len(xj))
 
     fj = f(xj)
     s = (fj @ wj) * h
     return s
 
-m = 10
+m = 3
 
-# test = TestTanhSinh()
-# f = test.f14
-# ref = f.ref
-# res = quadts(f, 0, f.b, m=m)
+test = TestTanhSinh()
+f = test.f3
+ref = f.ref
+res = quadts(f, 0, f.b, m=m)
 
-dist = stats.alpha(a=3.57)
-a, b = -np.inf, 0.4
-res = quadts(dist.pdf, 0.4, np.inf, m=m)
-ref = dist.sf(0.4)
+# dist = stats.alpha(a=3.57)
+# a, b = -np.inf, 0.4
+# res = quadts(dist.pdf, 0.4, np.inf, m=m)
+# ref = dist.sf(0.4)
 
 print(np.log10(np.abs((res-ref)/ref)))
 
