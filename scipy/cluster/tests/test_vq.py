@@ -89,7 +89,11 @@ class TestWhiten:
                       [0.87545741, 0.00735733],
                       [0.85124403, 0.26499712],
                       [0.45067590, 0.45464607]])
-            assert_allclose(whiten(obs), desired, rtol=1e-5)
+            if "cupy" in xp.__name__:
+                import cupy as cp
+                cp.testing.assert_allclose(whiten(obs), desired, rtol=1e-5)
+            else:
+                assert_allclose(whiten(obs), desired, rtol=1e-5)
 
     @array_api_compatible
     def test_whiten_zero_std(self, xp):
@@ -103,7 +107,13 @@ class TestWhiten:
                       [0., 1., 0.96785929]])
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter('always')
-                assert_allclose(whiten(obs), desired, rtol=1e-5)
+
+                if "cupy" in xp.__name__:
+                    import cupy as cp
+                    cp.testing.assert_allclose(whiten(obs), desired, rtol=1e-5)
+                else:
+                    assert_allclose(whiten(obs), desired, rtol=1e-5)
+
                 assert_equal(len(w), 1)
                 assert_(issubclass(w[-1].category, RuntimeWarning))
 

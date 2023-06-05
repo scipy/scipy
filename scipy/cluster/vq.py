@@ -592,6 +592,12 @@ def _kpp(data, k, rng, xp):
     """
 
     dims = data.shape[1] if len(data.shape) > 1 else 1
+
+    # k should be an integer, NOT a NumPy
+    # scalar array thing...
+    if not isinstance(k, int):
+        k = k.item()
+
     init = xp.empty((k, dims))
 
     for i in range(k):
