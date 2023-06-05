@@ -2168,11 +2168,11 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> fs = 1e4
     >>> N = 1e5
     >>> freq_carrier = 1234.0
-    >>> half_freq_modulation = 28.0 # the modulation is expected to occur at a double frequency 28 * 2 = 56
+    >>> freq_modulation = 28.0
     >>> noise_power = 10
     >>> time = np.arange(N) / fs
     >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
-    >>> x += np.sin(2*np.pi*freq_carrier*time)*np.sin(2*np.pi*half_freq_modulation*time)
+    >>> x += np.sin(2*np.pi*freq_carrier*time)*(1 + np.sin(2*np.pi*freq_modulation*time))
     
     >>> freqs = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
     >>> alpha = np.arange(1, 100)
@@ -2184,9 +2184,10 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
     >>> freqs = freqs[freqs >= 0]
     
-    >>> plt.pcolormesh(alpha, freqs, np.abs(Sx_f_alpha))
-    >>> plt.xlabel('Carrier Frequency [Hz]')
+    >>> plt.ylabel('Carrier Frequency [Hz]')
     >>> plt.xlabel('Modulation Frequency [Hz]')
+    >>> plt.yticks([freq_carrier])
+    >>> plt.xticks([freq_modulation])
     >>> plt.show()
     """
 
