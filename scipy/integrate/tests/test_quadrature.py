@@ -638,6 +638,22 @@ class TestTanhSinh:
             assert logerr < last_logerr * 2
             last_logerr = logerr
 
+    def test_feval(self):
+        dist = stats.norm()
+        def f(x):
+            f.feval += len(x)
+            return dist.pdf(x)
+
+        f.feval = 0
+        res = _tanhsinh(f, 0, np.inf)
+        assert_allclose(res.integral, 0.5)
+        assert res.feval == f.feval
+
+        f.feval = 0
+        res = _tanhsinh(f, -np.inf, np.inf)
+        assert_allclose(res.integral, 1)
+        assert res.feval == f.feval
+
     def test_options_and_status(self):
         # demonstrate that options are behaving as advertised and status
         # messages are as intended
@@ -677,6 +693,45 @@ class TestTanhSinh:
         actual_error = self.log_error(res.integral, f.ref)
         assert actual_error < np.log10(atol)
         assert res.error < atol
+        # consequently, status indicates success
+        assert res.success == True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
+
+        # Essentially a copy of the above with maxfun and rtol
+        maxfun = 50
+        rtol = 1e-14
+        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
+        # integral is solved
+        assert_allclose(res.integral, f.ref)
+        # but not to the required tolerance
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error > np.log10(rtol * res.integral)
+        assert res.error > rtol * res.integral
+        # consequently, status indicates failure
+        assert res.success == False
+        assert res.status == 1
+        assert res.message.endswith("evaluation limit to be exceeded.")
+
+        # give it more function evaluations, and the tolerance is met
+        maxfun = 100
+        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error < np.log10(rtol * res.integral)
+        assert res.error < rtol * res.integral
+        # consequently, status indicates success
+        assert res.success == True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
+
+        # alternatively, loosen the tolerance
+        maxfun = 50
+        rtol = 1e-6
+        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
+        # now, with such a loose tolerance, error tolerance is met
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error < np.log10(rtol * res.integral)
+        assert res.error < rtol * res.integral
         # consequently, status indicates success
         assert res.success == True
         assert res.status == 0

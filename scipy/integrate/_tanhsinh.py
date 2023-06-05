@@ -2,10 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 
 # todo:
-#  profile code; add options for private function to skip checks and recover
-#    speed
-#  support singularities? interval subdivision? this feature will be added
-#    eventually, but do we adjust the interface now?
+#  cache pairs in a more sensible way
 #  test function evaluation count
 #  tests - test rtol, maxfun, and minweight
 #  respect data types
@@ -14,6 +11,8 @@ import numpy as np
 #  apply np.vectorize as needed?
 #  remove maxiter?
 #  accept args, kwargs?
+#  support singularities? interval subdivision? this feature will be added
+#    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight
 #  vectorize
 #  make public?
@@ -198,7 +197,7 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
             status = 1
             break
 
-        feval += len(xjc) * feval_factor  # function evals happen next
+        feval += 2 * len(xjc) * feval_factor  # function evals happen next
         fjwj, Sn = _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight)
 
         # Check for infinities
