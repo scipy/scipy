@@ -1672,8 +1672,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
 def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
               noverlap=None, nfft=None, detrend='constant',
-              return_onesided=True, scaling='density', axis=-1,
-              average='mean'):
+              scaling='density', axis=-1, average='mean'):
     r"""
     Estimate the cross cyclic spectral density, Pxy, using Welch's method.
 
@@ -1714,9 +1713,6 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
         function. If it is a function, it takes a segment and returns a
         detrended segment. If `detrend` is `False`, no detrending is
         done. Defaults to 'constant'.
-    return_onesided : bool, optional
-        If `True`, return a one-sided spectrum for real data. If
-        `False` return a two-sided spectrum.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross cyclic spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross cyclic
@@ -1756,7 +1752,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     noverlap = 2/3*nperseg with a Hann window, or noverlap = 1/2*nperseg with a
     half-sine window.
 
-    .. versionadded:: 1.9
+    .. versionadded:: 1.11
 
     References
     ----------
@@ -1827,7 +1823,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
 
     freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
-                     return_onesided=return_onesided, scaling=scaling,
+                     return_onesided=False, scaling=scaling,
                      axis=axis, average=average)
 
     return freqs, Pxy

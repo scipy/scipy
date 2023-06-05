@@ -11,7 +11,7 @@ from scipy import signal
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence,
-                          spectrogram, check_COLA, check_NOLA)
+                          cyclic_sd, spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
 from scipy.signal._spectral_py import _spectral_helper
 
@@ -916,6 +916,15 @@ class TestCoherence:
         assert_allclose(f, f1)
         assert_allclose(C, C1)
 
+class TestCyclicSd:
+    def test_identical_input(self):
+        x = np.random.randn(50)
+
+        fs, nperseg = 1, 15
+        f = fftfreq(nperseg, 1/fs)
+        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg)
+
+        assert_allclose(f, f1)
 
 class TestSpectrogram:
     def test_average_all_segments(self):
