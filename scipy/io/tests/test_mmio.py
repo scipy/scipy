@@ -810,8 +810,8 @@ def test_long_types():
 
     # Check whether numpy is built with longdouble and longcomplex > 64-bit.
     long_val = "1E310"  # Value out of range of a 64-bit float but in range of an 80-bit float.
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore')
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(message=".*verflow.*")
         d = np.array([long_val], dtype="double")
         ld = np.array([long_val], dtype="longdouble")
 
