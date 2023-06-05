@@ -114,12 +114,15 @@ cirrus_wheels_upload_task:
     if [[ $IS_PUSH == "true" ]] || [[ $IS_SCHEDULE_DISPATCH == "true" ]]; then
         apt-get update
         apt-get install -y curl wget
+
+        # install miniconda in the home directory. For some reason HOME isn't set by Cirrus
+        export HOME=$PWD
         
         # install miniconda for uploading to anaconda
         wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        bash miniconda.sh -b -p ~/miniconda3
-        ~/miniconda3/bin/conda init bash
-        source ~/miniconda3/bin/activate
+        bash miniconda.sh -b -p $HOME/miniconda3
+        $HOME/miniconda3/bin/conda init bash
+        source $HOME/miniconda3/bin/activate
         conda install -y anaconda-client
         
         # The name of the zip file is derived from the `wheels_artifact` line.
