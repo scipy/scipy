@@ -1670,7 +1670,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     return freqs, Cxy
 
 
-def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
+def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
               noverlap=None, nfft=None, detrend='constant',
               return_onesided=True, scaling='density', axis=-1,
               average='mean'):
@@ -1685,11 +1685,12 @@ def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
         Time series of measurement values
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults to 16.
-    fc : float, optional
-        Cyclic frequency of the `x` and `y` time series. Defaults to 4.
+    alpha : float, optional
+        Cyclic / modulation frequency of the `x` and `y` time series. Defaults
+        to 4.
     sym : bool, optional
-        Choice between the symmetric version: E{Y(f+fc/2)X*(f-fc/2)}, and the
-        asymmetric one: E{Y(f)X*(f-fc)}.
+        Choice between the symmetric version: E{Y(f+alpha/2)X*(f-alpha/2)}, and
+        the asymmetric one: E{Y(f)X*(f-alpha)}.
     window : str or tuple or array_like, optional
         Desired window to use. If `window` is a string or tuple, it is
         passed to `get_window` to generate the window values, which are
@@ -1769,19 +1770,60 @@ def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
     --------
     >>> from scipy.signal import cyclic_sd
     >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
 
-    TODO
+    Generate a signal resulting from amplitude modulation, using a carrier
+    frequency.
+
+    >>> n_times, fs = 1e5, 1e4
+    >>> f_carrier, f_sig = 1214, 28
+    >>> time = np.arange(n_times) / fs
+    >>> x = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.plot(time[:400], x[:400])
+    >>> plt.xlabel("Time (in s)")
+    >>> plt.ylabel("Signal amplitude")
+    >>> plt.show()
+
+    Add a noise.
+
+    >>> noise_power = 10
+    >>> x += rng.normal(scale=np.sqrt(noise_power), size=x.shape)
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.plot(time[:400], x[:400])
+    >>> plt.xlabel("Time (in s)")
+    >>> plt.ylabel("Signal+noise amplitude")
+    >>> plt.show()
+
+    >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
+    >>> alphas = np.arange(1, 100)
+    >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
+    >>> for i, alpha in enumerate(alphas):
+    >>>     scd[:, i] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha)[1]
+
+    The modulation is expected to occur twice the frequency f_sig, ie 56 Hz.
+
+    >>> foi = (freqs >= 0) & (freqs <= 2000)
+    >>> scd, freqs = scd[foi], freqs[foi]
+
+    >>> fig, ax = plt.subplots()
+    >>> plt.pcolormesh(alphas, freqs, np.abs(scd))
+    >>> plt.ylabel('Carrier frequency (in Hz)')
+    >>> plt.xlabel('Cyclic / modulation frequency (in Hz)')
+    >>> plt.show()
     """
 
-    if fc > fs / 2:
+    if alpha > fs / 2:
         raise ValueError('Cyclic frequency must be inferior to Nyquist '
-                         'frequency, got %s' % (fc,))
+                         'frequency, got %s' % (alpha,))
 
     if sym:
-        y = y * np.exp(-1j * np.pi * (fc / fs) * np.arange(y.shape[-1]))
-        x = x * np.exp(1j * np.pi * (fc / fs) * np.arange(x.shape[-1]))
+        y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[-1]))
+        x = x * np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
     else:
-        x = x * np.exp(2j * np.pi * (fc / fs) * np.arange(x.shape[-1]))
+        x = x * np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
 
     freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
