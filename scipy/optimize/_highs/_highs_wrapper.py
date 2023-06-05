@@ -2,7 +2,7 @@ from warnings import warn
 
 import numpy as np
 from scipy.optimize._highs import highs_bindings as hpy
-# from scipy.optimize._highs._highs_options import check_option
+from scipy.optimize._highs import _highs_options as hopt
 from scipy.optimize import OptimizeWarning
 
 
@@ -39,16 +39,43 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
     highs = hpy._Highs()
     highs_options = hpy.HighsOptions()
     for key, val in options.items():
-        # handle fake bools (require bool -> str conversions)
-        if key in ("parallel", "presolve"):
-            val = "on" if val else "off"
         # handle filtering of unsupported and default options
-        elif val is None or key in ("sense",):
+        if val is None or key in ("sense",):
             continue
-        elif not hasattr(highs_options, key):
-            warn(f"Unrecognized options detected: {{'{key}': '{val}'}}", OptimizeWarning)
+
+        # ask for the option type
+        opt_type = hopt.get_option_type(key)
+        if -1 == opt_type:
+            warn(f"Unrecognized options detected: {dict({key: val})}", OptimizeWarning)
             continue
-        setattr(highs_options, key, val)
+        else:
+            if key in ("presolve", "parallel"):
+                # handle fake bools (require bool -> str conversions)
+                if isinstance(val, bool):
+                    val = "on" if val else "off"
+                else:
+                    warn(f'Option f"{key}" is "{val}", but only True or False is allowed. Using default.', OptimizeWarning)
+                    continue
+            opt_type = hpy.HighsOptionType(opt_type)
+            status, msg = {
+                hpy.HighsOptionType.kBool: hopt.check_bool_option,
+                hpy.HighsOptionType.kInt: hopt.check_int_option,
+                hpy.HighsOptionType.kDouble: hopt.check_double_option,
+                hpy.HighsOptionType.kString: hopt.check_string_option,
+            }[opt_type](key, val)
+
+            # have to do bool checking here because HiGHS doesn't have API
+            if opt_type == hpy.HighsOptionType.kBool:
+                if not isinstance(val, bool):
+                    warn(f'Option f"{key}" is "{val}", but only True or False is allowed. Using default.', OptimizeWarning)
+                    continue
+
+            # warn or set option
+            if status != 0:
+                warn(msg, OptimizeWarning)
+            else:
+                setattr(highs_options, key, val)
+
     opt_status = highs.passOptions(highs_options)
     if opt_status == hpy.HighsStatus.kError:
         res.update({

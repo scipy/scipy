@@ -40,6 +40,24 @@ static HighsOptions& get_highs_options() {
     return highs_options;
 }
 
+template<typename OptionRecordType, typename T>
+struct CheckOptionAction {
+    OptionStatus operator()(const HighsLogOptions& highs_log_options,
+                              OptionRecordType& record,
+                              const T value) const {
+        return checkOptionValue(highs_log_options, record, value);
+    }
+};
+
+template<> struct CheckOptionAction<OptionRecordBool, bool> {
+    OptionStatus operator()(const HighsLogOptions& highs_log_options,
+                              OptionRecordBool& record,
+                              const bool value) const {
+        // no checking machinery in HiGHS -- defer to caller
+        return OptionStatus::kOk;
+    }
+};
+
 
 template<typename OptionRecordType, typename T>
 static PyObject *check_option(PyObject *self, PyObject *args, const char this_fmt) {
@@ -67,7 +85,8 @@ static PyObject *check_option(PyObject *self, PyObject *args, const char this_fm
     }
     if (0 == res) {
         OptionRecordType& record = static_cast<OptionRecordType&>(*highs_options.records.at(idx));
-        const OptionStatus check_status = checkOptionValue(highs_log_options, record, value);
+        // const OptionStatus check_status = checkOptionValue(highs_log_options, record, value);
+        const OptionStatus check_status = CheckOptionAction<OptionRecordType, T>()(highs_log_options, record, value);
         if (OptionStatus::kIllegalValue == check_status) {
             res = 2;  // not a valid value
         }
@@ -104,8 +123,7 @@ static PyObject *get_option_type(PyObject *self, PyObject *args) {
 }
 
 static PyObject *check_bool_option(PyObject *self, PyObject *args) {
-//    return check_option<OptionRecordBool, const char*>(self, args, 's');
-    return nullptr;
+    return check_option<OptionRecordBool, bool>(self, args, 'p');
 }
 
 static PyObject *check_int_option(PyObject *self, PyObject *args) {
