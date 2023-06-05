@@ -17,7 +17,7 @@ from .common_tests import (check_normalization, check_moment,
                            check_meth_dtype, check_ppf_dtype,
                            check_cmplx_deriv,
                            check_pickling, check_rvs_broadcast,
-                           check_freezing,)
+                           check_freezing, check_munp_expect,)
 from scipy.stats._distr_params import distcont
 from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
@@ -318,6 +318,8 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(IntegrationWarning,
                    "The maximum number of subdivisions.")
+        sup.filter(IntegrationWarning,
+                   "The algorithm does not converge.")
 
         if is_xfailing:
             sup.filter(IntegrationWarning)
@@ -333,6 +335,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                 check_skew_expect(distfn, arg, m, v, s, distname)
                 check_var_expect(distfn, arg, m, v, distname)
                 check_kurt_expect(distfn, arg, m, v, k, distname)
+                check_munp_expect(distfn, arg, distname)
 
         check_loc_scale(distfn, arg, m, v, distname)
 

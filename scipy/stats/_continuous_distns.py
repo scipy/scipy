@@ -964,7 +964,10 @@ class betaprime_gen(rv_continuous):
                               ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
                 fillvalue=np.inf)
         else:
-            raise NotImplementedError
+            return _lazywhere(b > n, (a, b),
+                              # sup=super() prevents late-binding issue
+                              lambda a, b, sup=super(): sup._munp(n, a, b),
+                              fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -9376,7 +9379,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):
