@@ -43,7 +43,9 @@ namespace fast_matrix_market {
 
         // Start computing tasks.
         for (int batch_i = 0; batch_i < inflight_count && formatter.has_next(); ++batch_i) {
-            futures.push(pool.submit(formatter.next_chunk(options)));
+            // Could push the chunk directly, but MSVC.
+            futures.push(pool.submit([](auto chunk){ return chunk(); }, formatter.next_chunk(options)));
+//            futures.push(pool.submit(formatter.next_chunk(options)));
         }
 
         // Write chunks in order as they become available.
@@ -53,7 +55,7 @@ namespace fast_matrix_market {
 
             // Next chunk is ready. Start another to replace it.
             if (formatter.has_next()) {
-                futures.push(pool.submit(formatter.next_chunk(options)));
+                futures.push(pool.submit([](auto chunk){ return chunk(); }, formatter.next_chunk(options)));
             }
 
             // Write this one out.
