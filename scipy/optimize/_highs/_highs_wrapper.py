@@ -2,7 +2,9 @@ from warnings import warn
 
 import numpy as np
 from scipy.optimize._highs import highs_bindings as hpy
+# from scipy.optimize._highs._highs_options import check_option
 from scipy.optimize import OptimizeWarning
+
 
 def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):
     numcol = c.size

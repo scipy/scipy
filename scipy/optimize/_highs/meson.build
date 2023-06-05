@@ -224,6 +224,33 @@ highs_bindings = py3.extension_module('highs_bindings',
   subdir: 'scipy/optimize/_highs'
 )
 
+_highs_options = py3.extension_module('_highs_options',
+  ['_highs_options.cpp'],
+  cpp_args: [highs_flags, highs_define_macros],
+  link_with: [highs_lib],
+  include_directories: [
+    'src',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/src/lp_data/'
+  ],
+  install: true,
+  subdir: 'scipy/optimize/_highs'
+)
+
+_highs_constants = py3.extension_module('_highs_constants',
+  ['_highs_constants.cpp'],
+  cpp_args: [highs_flags, highs_define_macros],
+  link_with: [highs_lib],
+  include_directories: [
+    'src',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/src/lp_data/',
+    '../../_lib/highs/src/simplex/'
+  ],
+  install: true,
+  subdir: 'scipy/optimize/_highs'
+)
+
 py3.install_sources([
     '__init__.py',
     '_highs_wrapper.py'

@@ -19,6 +19,7 @@ from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
 from scipy.optimize._highs import highs_bindings as hpy
 from scipy.optimize._highs._highs_wrapper import _highs_wrapper
+from scipy.optimize._highs import _highs_constants as hconst
 from scipy.sparse import csc_matrix, vstack, issparse
 
 
@@ -280,17 +281,16 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    "These will be passed to HiGHS verbatim.")
         warn(message, OptimizeWarning, stacklevel=3)
 
-    # FIXME: manually map enums until highspy exposes these (if they ever do)
-    # # Map options to HiGHS enum values
-    # simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
-    #     simplex_dual_edge_weight_strategy,
-    #     'simplex_dual_edge_weight_strategy',
-    #     choices={'dantzig': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
-    #              'devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
-    #              'steepest-devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
-    #              'steepest':
-    #              HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
-    #              None: None})
+    # Map options to HiGHS enum values
+    simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
+        simplex_dual_edge_weight_strategy,
+        'simplex_dual_edge_weight_strategy',
+        choices={'dantzig': hconst.kSimplexEdgeWeightStrategyDantzig,
+                 'devex': hconst.kSimplexEdgeWeightStrategyDevex,
+                 'steepest-devex': hconst.kSimplexEdgeWeightStrategyChoose,
+                 'steepest':
+                 hconst.kSimplexEdgeWeightStrategySteepestEdge,
+                 None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
@@ -314,17 +314,17 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'sense': hpy.ObjSense.kMinimize,
         'solver': solver,
         'time_limit': time_limit,
-        # 'highs_debug_level': MESSAGE_LEVEL_NONE,
+        'highs_debug_level': hconst.kHighsDebugLevelNone,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
         'mip_max_nodes': mip_max_nodes,
         'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        # 'simplex_dual_edge_weight_strategy':
-        #     simplex_dual_edge_weight_strategy_enum,
-        # 'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
-        # 'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+        'simplex_dual_edge_weight_strategy':
+            simplex_dual_edge_weight_strategy_enum,
+        'simplex_strategy': hconst.kSimplexStrategyDual,
+        'simplex_crash_strategy': hconst.kSimplexCrashStrategyOff,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
