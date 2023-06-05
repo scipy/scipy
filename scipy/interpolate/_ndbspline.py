@@ -31,11 +31,11 @@ class NdBSpline:
 
     Parameters
     ----------
-    c : ndarray, shape (n1, n2, ..., nN, ...)
-        b-spline coefficients
     t : tuple of 1D ndarrays
         knot vectors in directions 1, 2, ... N,
         ``len(t[i]) == n[i] + k + 1``
+    c : ndarray, shape (n1, n2, ..., nN, ...)
+        b-spline coefficients
     k : int or length-d tuple of integers
         spline degrees.
         A single integer is interpreted as having this degree for
@@ -123,7 +123,7 @@ class NdBSpline:
         self.c = np.ascontiguousarray(self.c, dtype=dt)
 
     def __call__(self, xi, nu=None, extrapolate=None):
-        """Evaluate the tensor product b-spline at `xi`.
+        """Evaluate the tensor product b-spline at ``xi``.
 
         Parameters
         ----------
@@ -139,8 +139,8 @@ class NdBSpline:
 
         Returns
         -------
-        values : ndarray, shape xi.shape[:-1] + self.c.shape[ndim:]
-            Interpolated values at xi
+        values : ndarray, shape ``xi.shape[:-1] + self.c.shape[ndim:]``
+            Interpolated values at ``xi``
         """
         ndim = len(self.t)
 
