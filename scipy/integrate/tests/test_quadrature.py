@@ -8,6 +8,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
+from scipy.integrate._tanhsinh import _tanhsinh
 from scipy import stats, special as sc
 
 
@@ -550,3 +551,133 @@ class TestTanhSinh:
 
     f15.ref = np.pi / 2
     f15.b = np.inf
+
+    def log_error(self, res, ref):
+        with np.errstate(divide='ignore'):
+            return np.log10(abs((res - ref) / abs(ref)))
+
+    def test_input_validation(self):
+        f = self.f1
+
+        message = '`f` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(42, 0, f.b)
+
+        message = '...must be reals.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 1+1j, f.b)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, np.nan)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, atol='ekki')
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, rtol=None)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, minweight=object())
+
+        message = '...must be positive and finite.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, rtol=0)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, minweight=np.inf)
+
+        message = '...must be non-negative and finite.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, atol=-1.0)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, atol=np.inf)
+
+        message = '...must be integers.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, maxiter=None)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, maxfun=1+1j)
+
+        message = '...must be positive.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, maxiter=-1)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, maxfun=0)
+
+    def test_integral_transforms(self):
+        dist = stats.norm()
+
+        # b infinite
+        res = _tanhsinh(dist.pdf, 0, np.inf)
+        assert_allclose(res.integral, 0.5)
+
+        # a infinite
+        res = _tanhsinh(dist.pdf, -np.inf, 0)
+        assert_allclose(res.integral, 0.5)
+
+        # a and b infinite
+        res = _tanhsinh(dist.pdf, -np.inf, np.inf)
+        assert_allclose(res.integral, 1)
+
+        # flipped limits
+        res = _tanhsinh(dist.pdf, np.inf, -np.inf)
+        assert_allclose(res.integral, -1)
+
+        res = _tanhsinh(dist.pdf, 1, -1)
+        assert_allclose(res.integral, dist.cdf(-1) - dist.cdf(1))
+
+    # 15 skipped intentionally; it's very difficult numerically
+    @pytest.mark.parametrize('f_number', range(1, 15))
+    def test_basic(self, f_number):
+        f = getattr(self, f"f{f_number}")
+        res = _tanhsinh(f, 0, f.b)
+        assert_allclose(res.integral, f.ref)
+
+    def test_convergence(self):
+        # demonstrate that number of accurate digits doubles each iteration
+        f = self.f1
+        last_logerr = 0
+        for i in range(1, 5):
+            res = _tanhsinh(f, 0, f.b, maxiter=i)
+            logerr = self.log_error(res.integral, f.ref)
+            assert logerr < last_logerr * 2
+            last_logerr = logerr
+
+    def test_options_and_status(self):
+        # demonstrate that options are behaving as advertised and status
+        # messages are as intended
+
+        f = self.f1
+
+        maxiter = 3
+        atol = 1e-15
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        # integral is solved
+        assert_allclose(res.integral, f.ref)
+        # but not to the required tolerance
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error > np.log10(atol)
+        assert res.error > atol
+        # consequently, status indicates failure
+        assert res.success == False
+        assert res.status == 2
+        assert res.message.endswith("iteration limit to be exceeded.")
+
+        # give it another iteration, and the tolerance is met
+        maxiter += 1
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error < np.log10(atol)
+        assert res.error < atol
+        # consequently, status indicates success
+        assert res.success == True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
+
+        # alternatively, loosen the tolerance
+        maxiter += 1
+        atol = 1e-6
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        # now, with such a loose tolerance, error tolerance is met
+        actual_error = self.log_error(res.integral, f.ref)
+        assert actual_error < np.log10(atol)
+        assert res.error < atol
+        # consequently, status indicates success
+        assert res.success == True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
