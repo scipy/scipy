@@ -2,15 +2,15 @@ from dataclasses import dataclass
 import numpy as np
 
 # todo:
+#  log integration
+#  callback
 #  cache pairs in a more sensible way
 #  test function evaluation count
-#  tests - test rtol, maxfun, and minweight
 #  respect data types
-#  callback
-#  log integration
 #  apply np.vectorize as needed?
 #  remove maxiter?
 #  accept args, kwargs?
+#  tests - test minweight
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight
@@ -293,9 +293,9 @@ def _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight):
     # Note: If we had stored xj instead of xjc, we would have
     # xj = alpha * xj + beta, where beta = (a + b)/2
     alpha = (b - a) / 2
-    xj = np.concatenate((-alpha * xjc + b, alpha * xjc + a))
-    wj *= alpha
-    wj = np.concatenate((wj, wj))
+    xj = np.concatenate((-alpha * xjc + b, alpha * xjc + a), axis=-1)
+    wj = wj*alpha  # these need to get broadcasted, so no *=
+    wj = np.concatenate((wj, wj), axis=-1)
 
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
         fj = f(xj)
@@ -309,7 +309,7 @@ def _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight):
     fjwj[invalid] = 0
 
     # update integral estimate
-    Sn = np.sum(fjwj) * h
+    Sn = np.sum(fjwj, axis=-1) * h
 
     return fjwj, Sn
 
