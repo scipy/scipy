@@ -223,3 +223,10 @@ highs_bindings = py3.extension_module('highs_bindings',
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
+
+py3.install_sources([
+    '__init__.py',
+    '_highs_wrapper.py'
+  ],
+  subdir: 'scipy/optimize/_highs'
+)

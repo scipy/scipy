@@ -310,7 +310,7 @@ def test_highs_status_message():
     A, b, c, numbers, M = magic_square(6)
     bounds = [(0, 1)] * len(c)
     integrality = [1] * len(c)
-    options = {"time_limit": 0.1}
+    options = {"time_limit": 0.0}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs',
                   options=options, integrality=integrality)
     msg = "Time limit reached. (HiGHS Status 13:"
