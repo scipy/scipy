@@ -196,13 +196,15 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
         if feval + len(xjc) * feval_factor > maxfun:
             status = 1
             break
-
         feval += 2 * len(xjc) * feval_factor  # function evals happen next
-        fjwj, Sn = _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight)
+
+        xj, wj = _transform_to_limits(a, b, xjc, wj)
+        fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight)
 
         # Check for infinities
         if not np.all(np.isfinite(fjwj)):
             status = 3
+            break
 
         # update integral estimate
         Snm1 = 0 if not Sk else Sk[-1]
@@ -287,7 +289,7 @@ def _get_pairs(k, inclusive=False):
     return h, xjc, wj
 
 
-def _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight):
+def _transform_to_limits(a, b, xjc, wj):
     # Transform integral according to user-specified limits. This is just
     # math that follows from the fact that the standard limits are (-1, 1).
     # Note: If we had stored xj instead of xjc, we would have
@@ -297,15 +299,29 @@ def _euler_maclaurin_sum(f, a, b, h, xjc, wj, minweight):
     wj = wj*alpha  # these need to get broadcasted, so no *=
     wj = np.concatenate((wj, wj), axis=-1)
 
+    # Points on the boundaries can be generated due to finite precision
+    # arithmetic. Ideally we wouldn't evaluate the function at these points
+    # or when weights are zero; however, it would be tricky to filter out
+    # points when this function is vectorized. Instead, zero the weights.
+    invalid = (xj <= a) | (xj >= b)
+    wj[invalid] = 0
+    return xj, wj
+
+
+def _euler_maclaurin_sum(f, h, xj, wj, minweight):
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+        # Warnings due to function evaluation at endpoints are not cause for
+        # concern; the resulting values will be given 0 weight.
         fj = f(xj)
-    fjwj = fj * wj  # I'd use @, but we'll need the individual products
+        # Zero weight multiplied by infinity results in NaN. These will be
+        # removed below.
+        fjwj = fj * wj  # I'd use @, but we'll need the individual products
 
     # Points on the boundaries can be generated due to finite precision
     # arithmetic. Ideally we wouldn't evaluate the function at these points
     # or when weights are zero; however, it would be tricky to filter out
     # points when this function is vectorized. Set the results to zero.
-    invalid = (xj <= a) | (xj >= b) | (wj <= minweight)
+    invalid = (wj <= minweight)
     fjwj[invalid] = 0
 
     # update integral estimate
