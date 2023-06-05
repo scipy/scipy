@@ -7804,7 +7804,8 @@ class TestQuantileTest():
         
         message = "`confidence_level` must be a number between 0 and 1."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,p,alternative=alternative).confidence_interval(1)
+            stats.quantile_test(x,q,p,alternative=alternative
+                                ).confidence_interval(1)
 
     def test_confint_naive(self):
         # Test the confidence intervals against a naive implementation
@@ -7833,8 +7834,8 @@ class TestQuantileTest():
                     if ppm[k] < confidence:
                         # lower-bound is the previous index
                         return k-1
-                # if we exit the loop, then the last index is the best possible
-                # bound
+                # if we exit the loop, then the last index is 
+                # the best possible bound
                 return N-1
 
         # Test for the one-sided case
@@ -7853,19 +7854,33 @@ class TestQuantileTest():
                 for i in range(m)]
         test_val = [(LB_val[i], UB_val[i]) for i in range(m)]
 
-        public = [(stats.quantile_test(x[i], 0, quantile_def[i], alternative='greater').confidence_interval(confidence[i]).low,
-        stats.quantile_test(x[i], 0, quantile_def[i], alternative='less').confidence_interval(confidence[i]).high)
+        public = [(
+            stats.quantile_test(x[i], 
+                                0, 
+                                quantile_def[i], 
+                                alternative='greater'
+                                ).confidence_interval(confidence[i]).low,
+            stats.quantile_test(x[i], 
+                                0, 
+                                quantile_def[i], 
+                                alternative='less'
+                                ).confidence_interval(confidence[i]).high)
             for i in range(m)]
         assert_equal(public, test_val)
 
-        # # Test for the two-sided case
-        # # .. Two-sided CI are built of two one-sided CIs with larger confidence
+        # Test for the two-sided case
+        # .. Two-sided CI are built of two one-sided CIs 
+        # with larger confidence
         confidence_two_sided = (1 + confidence)/2
-        tmp = [confint_naive(int(N[i]), quantile_def[i], confidence_two_sided[i])
+        tmp = [confint_naive(int(N[i]), 
+                             quantile_def[i], 
+                             confidence_two_sided[i])
             for i in range(m)]
         LB = [i if (not np.isnan(i)) else np.nan for i in tmp]
         # .. UB is (N-1-LB(1-q))
-        tmp = [confint_naive(int(N[i]), 1-quantile_def[i], confidence_two_sided[i])
+        tmp = [confint_naive(int(N[i]), 
+                             1-quantile_def[i], 
+                             confidence_two_sided[i])
             for i in range(m)]
         UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else np.nan
             for i in range(m)]
@@ -7875,7 +7890,12 @@ class TestQuantileTest():
                 for i in range(m)]
         test_val = [(LB_val[i], UB_val[i]) for i in range(m)]
         # .. Compare to the public function
-        tmp = [stats.quantile_test(x[i], 0, quantile_def[i], alternative='two-sided').confidence_interval(confidence[i])
+        tmp = [
+            stats.quantile_test(x[i], 
+                                0, 
+                                quantile_def[i], 
+                                alternative='two-sided'
+                                ).confidence_interval(confidence[i])
             for i in range(m)]
         public = [(tmp[i].low, tmp[i].high) for i in range(m)]
         assert_equal(public, test_val)
@@ -7886,11 +7906,19 @@ class TestQuantileTest():
 
         x = np.exp(np.arange(0, 1.01, 0.01))
 
-        lb, ub = stats.quantile_test(x, 0, 0.4, alternative='two-sided').confidence_interval(0.95)
+        lb, ub = stats.quantile_test(x, 
+                                     0, 
+                                     0.4, 
+                                     alternative='two-sided'
+                                     ).confidence_interval(0.95)
         expected = [1.349859, 1.648721]
         assert_almost_equal(expected, [lb,ub], decimal=5)
 
-        lb, ub = stats.quantile_test(x, 0, 0.5, alternative='two-sided').confidence_interval(0.9)
+        lb, ub = stats.quantile_test(x, 
+                                     0, 
+                                     0.5, 
+                                     alternative='two-sided'
+                                     ).confidence_interval(0.9)
         expected = [1.506818, 1.803988]
         assert_almost_equal(expected, [lb,ub], decimal=5)
 
@@ -7915,16 +7943,35 @@ class TestQuantileTest():
             lb, ub = res.confidence_interval()
             if not np.isnan(ub):
                 i = np.where(xi == ub)[0][0]
-                assert_equal(stats.quantile_test(xi, q=xi[i], alternative='less').pvalue <= 0.05, True)
-                assert_equal(stats.quantile_test(xi, q=xi[i-1], alternative='less').pvalue > 0.05, True)
-
+                assert_equal(
+                    stats.quantile_test(xi, 
+                                        q=xi[i], 
+                                        alternative='less'
+                                        ).pvalue <= 0.05, 
+                    True)
+                assert_equal(
+                    stats.quantile_test(xi, 
+                                        q=xi[i-1], 
+                                        alternative='less'
+                                        ).pvalue > 0.05, 
+                    True)
             # alternative='greater'
             res = stats.quantile_test(xi, alternative='greater')
             lb, ub = res.confidence_interval()  
             if not np.isnan(lb):
                 i = np.where(xi == lb)[0][0]
-                assert_equal(stats.quantile_test(xi, q=xi[i], alternative='greater').pvalue <= 0.05, True)
-                assert_equal(stats.quantile_test(xi, q=xi[i+1], alternative='greater').pvalue > 0.05, True)
+                assert_equal(
+                    stats.quantile_test(xi, 
+                                        q=xi[i], 
+                                        alternative='greater'
+                                        ).pvalue <= 0.05, 
+                    True)
+                assert_equal(
+                    stats.quantile_test(xi, 
+                                        q=xi[i+1], 
+                                        alternative='greater'
+                                        ).pvalue > 0.05, 
+                    True)
 
 
 class TestPageTrendTest:
