@@ -29,8 +29,8 @@ from tools.version_utils import IS_RELEASE_BRANCH
 import importlib
 
 
-if sys.version_info[:2] < (3, 8):
-    raise RuntimeError("Python version >= 3.8 required.")
+if sys.version_info[:2] < (3, 9):
+    raise RuntimeError("Python version >= 3.9 required.")
 
 import builtins
 
@@ -43,7 +43,6 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
 Programming Language :: Python :: 3.10
 Programming Language :: Python :: 3.11
@@ -426,7 +425,7 @@ def configuration(parent_package='', top_path=None):
                 "To build Scipy from sources, BLAS & LAPACK libraries "
                 "need to be installed.\n"
                 "See site.cfg.example in the Scipy source directory and\n"
-                "https://docs.scipy.org/doc/scipy/reference/building/index.html "
+                "https://docs.scipy.org/doc/scipy/dev/contributor/building.html "
                 "for details.")
         raise NotFoundError(msg)
 
@@ -450,10 +449,10 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.19.5'
+    np_minversion = '1.21.6'
     np_maxversion = '9.9.99'
-    python_minversion = '3.8'
-    python_maxversion = '3.10'
+    python_minversion = '3.9'
+    python_maxversion = '3.11'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
         req_py = '>={},<{}'.format(python_minversion, python_maxversion)

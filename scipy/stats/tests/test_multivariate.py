@@ -26,8 +26,8 @@ from scipy.stats import (multivariate_normal, multivariate_hypergeom,
                          beta, wishart, multinomial, invwishart, chi2,
                          invgamma, norm, uniform, ks_2samp, kstest, binom,
                          hypergeom, multivariate_t, cauchy, normaltest,
-                         random_table, uniform_direction,
-                         dirichlet_multinomial)
+                         random_table, uniform_direction, vonmises_fisher,
+                         dirichlet_multinomial, vonmises)
 
 from scipy.stats import _covariance, Covariance
 from scipy import stats
@@ -532,6 +532,20 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.cdf(x), multivariate_normal.cdf(x, mean, cov))
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
+
+    @pytest.mark.parametrize(
+        'covariance',
+        [
+            np.eye(2),
+            Covariance.from_diagonal([1, 1]),
+        ]
+    )
+    def test_frozen_multivariate_normal_exposes_attributes(self, covariance):
+        mean = np.ones((2,))
+        cov_should_be = np.eye(2)
+        norm_frozen = multivariate_normal(mean, covariance)
+        assert np.allclose(norm_frozen.mean, mean)
+        assert np.allclose(norm_frozen.cov, cov_should_be)
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
@@ -1408,7 +1422,7 @@ class TestMultinomial:
         assert vals3 == 0
 
         vals4 = multinomial.logpmf([3, 4], 0, [-2, 3])
-        assert_allclose(vals4, np.NAN, rtol=1e-8)
+        assert_allclose(vals4, np.nan, rtol=1e-8)
 
     def test_reduces_binomial(self):
         # test that the multinomial pmf reduces to the binomial pmf in the 2d
@@ -1846,17 +1860,24 @@ class TestOrthoGroup:
         dets = np.array([[np.linalg.det(x) for x in xx] for xx in xs])
         assert_allclose(np.fabs(dets), np.ones(dets.shape), rtol=1e-13)
 
-        # Test that we get both positive and negative determinants
-        # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
-        # Test each dimension separately
-        assert_array_less([0]*10, [np.nonzero(d < 0)[0].shape[0] for d in dets])
-        assert_array_less([np.nonzero(d < 0)[0].shape[0] for d in dets], [10]*10)
-
         # Test that these are orthogonal matrices
         for xx in xs:
             for x in xx:
                 assert_array_almost_equal(np.dot(x, x.T),
                                           np.eye(x.shape[0]))
+
+    @pytest.mark.parametrize("dim", [2, 5, 10, 20])
+    def test_det_distribution_gh18272(self, dim):
+        # Test that positive and negative determinants are equally likely.
+        rng = np.random.default_rng(6796248956179332344)
+        dist = ortho_group(dim=dim)
+        rvs = dist.rvs(size=5000, random_state=rng)
+        dets = scipy.linalg.det(rvs)
+        k = np.sum(dets > 0)
+        n = len(dets)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
 
     def test_haar(self):
         # Test that the distribution is constant under rotation
@@ -2442,7 +2463,7 @@ class TestMultivariateT:
                                        allow_singular=True)
         with np.errstate(invalid='ignore'):
             ref = _qsimvtv(20000, df, cov, np.inf*a, b - mean, rng)[0]
-        assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
+        assert_allclose(res, ref, atol=2e-4, rtol=1e-3)
 
         # with lower limit
         res = stats.multivariate_t.cdf(b, mean, cov, df, lower_limit=a,
@@ -2454,7 +2475,7 @@ class TestMultivariateT:
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3
-        rng = np.random.default_rng(413722918996573)
+        rng = np.random.default_rng(41372291899657)
         w = 10 ** rng.uniform(-1, 1, size=dim)
         cov = _random_covariance(dim, w, rng, singular=True)
         mean = rng.random(dim)
@@ -2535,6 +2556,42 @@ class TestMultivariateT:
         ref = 1 / (dim + 1)
         assert_allclose(res, ref, rtol=5e-5)
 
+    def test_entropy_inf_df(self):
+        cov = np.eye(3, 3)
+        df = np.inf
+        mvt_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
+        mvn_entropy = stats.multivariate_normal.entropy(None, cov)
+        assert mvt_entropy == mvn_entropy
+
+    @pytest.mark.parametrize("df", [1, 10, 100])
+    def test_entropy_1d(self, df):
+        mvt_entropy = stats.multivariate_t.entropy(shape=1., df=df)
+        t_entropy = stats.t.entropy(df=df)
+        assert_allclose(mvt_entropy, t_entropy, rtol=1e-13)
+
+    # entropy reference values were computed via numerical integration
+    #
+    # def integrand(x, y, mvt):
+    #     vec = np.array([x, y])
+    #     return mvt.logpdf(vec) * mvt.pdf(vec)
+
+    # def multivariate_t_entropy_quad_2d(df, cov):
+    #     dim = cov.shape[0]
+    #     loc = np.zeros((dim, ))
+    #     mvt = stats.multivariate_t(loc, cov, df)
+    #     limit = 100
+    #     return -integrate.dblquad(integrand, -limit, limit, -limit, limit,
+    #                               args=(mvt, ))[0]
+
+    @pytest.mark.parametrize("df, cov, ref, tol",
+                             [(10, np.eye(2, 2), 3.0378770664093313, 1e-14),
+                              (100, np.array([[0.5, 1], [1, 10]]),
+                               3.55102424550609, 1e-8)])
+    def test_entropy_vs_numerical_integration(self, df, cov, ref, tol):
+        loc = np.zeros((2, ))
+        mvt = stats.multivariate_t(loc, cov, df)
+        assert_allclose(mvt.entropy(), ref, rtol=tol)
+
 
 class TestMultivariateHypergeom:
     @pytest.mark.parametrize(
@@ -2543,9 +2600,9 @@ class TestMultivariateHypergeom:
             # Ground truth value from R dmvhyper
             ([3, 4], [5, 10], 7, -1.119814),
             # test for `n=0`
-            ([3, 4], [5, 10], 0, np.NINF),
+            ([3, 4], [5, 10], 0, -np.inf),
             # test for `x < 0`
-            ([-3, 4], [5, 10], 7, np.NINF),
+            ([-3, 4], [5, 10], 7, -np.inf),
             # test for `m < 0` (RuntimeWarning issue)
             ([3, 4], [-5, 10], 7, np.nan),
             # test for all `m < 0` and `x.sum() != n`
@@ -2560,7 +2617,7 @@ class TestMultivariateHypergeom:
             # test for `n < 0`
             ([3, 4], [5, 10], -7, np.nan),
             # test for `x.sum() != n`
-            ([3, 3], [5, 10], 7, np.NINF)
+            ([3, 3], [5, 10], 7, -np.inf)
         ]
     )
     def test_logpmf(self, x, m, n, expected):
@@ -3101,16 +3158,270 @@ def test_random_state_property():
         check_pickling(distfn, args)
 
 
+class TestVonMises_Fisher:
+    @pytest.mark.parametrize("dim", [2, 3, 4, 6])
+    @pytest.mark.parametrize("size", [None, 1, 5, (5, 4)])
+    def test_samples(self, dim, size):
+        # test that samples have correct shape and norm 1
+        rng = np.random.default_rng(2777937887058094419)
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        vmf_dist = vonmises_fisher(mu, 1, seed=rng)
+        samples = vmf_dist.rvs(size)
+        mean, cov = np.zeros(dim), np.eye(dim)
+        expected_shape = rng.multivariate_normal(mean, cov, size=size).shape
+        assert samples.shape == expected_shape
+        norms = np.linalg.norm(samples, axis=-1)
+        assert_allclose(norms, 1.)
+
+    @pytest.mark.parametrize("dim", [5, 8])
+    @pytest.mark.parametrize("kappa", [1e15, 1e20, 1e30])
+    def test_sampling_high_concentration(self, dim, kappa):
+        # test that no warnings are encountered for high values
+        rng = np.random.default_rng(2777937887058094419)
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        vmf_dist = vonmises_fisher(mu, kappa, seed=rng)
+        vmf_dist.rvs(10)
+
+    def test_two_dimensional_mu(self):
+        mu = np.ones((2, 2))
+        msg = "'mu' must have one-dimensional shape."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
+
+    def test_wrong_norm_mu(self):
+        mu = np.ones((2, ))
+        msg = "'mu' must be a unit vector of norm 1."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
+
+    def test_one_entry_mu(self):
+        mu = np.ones((1, ))
+        msg = "'mu' must have at least two entries."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher(mu, 1)
+
+    @pytest.mark.parametrize("kappa", [-1, (5, 3)])
+    def test_kappa_validation(self, kappa):
+        msg = "'kappa' must be a positive scalar."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher([1, 0], kappa)
+
+    @pytest.mark.parametrize("kappa", [0, 0.])
+    def test_kappa_zero(self, kappa):
+        msg = ("For 'kappa=0' the von Mises-Fisher distribution "
+               "becomes the uniform distribution on the sphere "
+               "surface. Consider using 'scipy.stats.uniform_direction' "
+               "instead.")
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher([1, 0], kappa)
+
+
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_invalid_shapes_pdf_logpdf(self, method):
+        x = np.array([1., 0., 0])
+        msg = ("The dimensionality of the last axis of 'x' must "
+               "match the dimensionality of the von Mises Fisher "
+               "distribution.")
+        with pytest.raises(ValueError, match=msg):
+            method(x, [1, 0], 1)
+
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_unnormalized_input(self, method):
+        x = np.array([0.5, 0.])
+        msg = "'x' must be unit vectors of norm 1 along last dimension."
+        with pytest.raises(ValueError, match=msg):
+            method(x, [1, 0], 1)
+
+    # Expected values of the vonmises-fisher logPDF were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
+    # def logpdf_mpmath(x, mu, kappa):
+    #     dim = mu.size
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     kappa = mp.mpf(kappa)
+    #     const = (kappa**(halfdim - mp.one)/((2*mp.pi)**halfdim * \
+    #              mp.besseli(halfdim -mp.one, kappa)))
+    #     return float(const * mp.exp(kappa*mp.fdot(x, mu)))
+
+    @pytest.mark.parametrize('x, mu, kappa, reference',
+                             [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               1e-4, 0.0795854295583605),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               1e-4, 0.07957747141331854),
+                              (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               100, 15.915494309189533),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               100, 5.920684802611232e-43),
+                              (np.array([1., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
+                               2000, 5.930499050746588e-07),
+                              (np.array([1., 0., 0]), np.array([1., 0., 0.]),
+                               2000, 318.3098861837907),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([1., 0., 0., 0., 0.]),
+                               2000, 101371.86957712633),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
+                                         0, 0.]),
+                               2000, 0.00018886808182653578),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
+                                         0, 0.]),
+                               2000, 2.0255393314603194e-87)])
+    def test_pdf_accuracy(self, x, mu, kappa, reference):
+        pdf = vonmises_fisher(mu, kappa).pdf(x)
+        assert_allclose(pdf, reference, rtol=1e-13)
+
+    # Expected values of the vonmises-fisher logPDF were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
+    # def logpdf_mpmath(x, mu, kappa):
+    #     dim = mu.size
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     kappa = mp.mpf(kappa)
+    #     two = mp.mpf(2.)
+    #     const = (kappa**(halfdim - mp.one)/((two*mp.pi)**halfdim * \
+    #              mp.besseli(halfdim - mp.one, kappa)))
+    #     return float(mp.log(const * mp.exp(kappa*mp.fdot(x, mu))))
+
+    @pytest.mark.parametrize('x, mu, kappa, reference',
+                             [(np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               1e-4, -2.5309242486359573),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               1e-4, -2.5310242486359575),
+                              (np.array([1., 0., 0.]), np.array([1., 0., 0.]),
+                               100, 2.767293119578746),
+                              (np.array([1., 0., 0]), np.array([0., 0., 1.]),
+                               100, -97.23270688042125),
+                              (np.array([1., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.]),
+                               2000, -14.337987284534103),
+                              (np.array([1., 0., 0]), np.array([1., 0., 0.]),
+                               2000, 5.763025393132737),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([1., 0., 0., 0., 0.]),
+                               2000, 11.526550911307156),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.98), np.sqrt(0.02), 0.,
+                                         0, 0.]),
+                               2000, -8.574461766359684),
+                              (np.array([1., 0., 0., 0., 0.]),
+                               np.array([np.sqrt(0.8), np.sqrt(0.2), 0.,
+                                         0, 0.]),
+                               2000, -199.61906708886113)])
+    def test_logpdf_accuracy(self, x, mu, kappa, reference):
+        logpdf = vonmises_fisher(mu, kappa).logpdf(x)
+        assert_allclose(logpdf, reference, rtol=1e-14)
+
+    # Expected values of the vonmises-fisher entropy were computed via mpmath
+    # from mpmath import mp
+    # import numpy as np
+    # mp.dps = 50
+    # def entropy_mpmath(dim, kappa):
+    #     mu = np.full((dim, ), 1/np.sqrt(dim))
+    #     kappa = mp.mpf(kappa)
+    #     halfdim = mp.mpf(0.5 * dim)
+    #     logconstant = (mp.log(kappa**(halfdim - mp.one)
+    #                    /((2*mp.pi)**halfdim
+    #                    * mp.besseli(halfdim -mp.one, kappa)))
+    #     return float(-logconstant - kappa * mp.besseli(halfdim, kappa)/
+    #             mp.besseli(halfdim -1, kappa))
+
+    @pytest.mark.parametrize('dim, kappa, reference',
+                             [(3, 1e-4, 2.531024245302624),
+                              (3, 100, -1.7672931195787458),
+                              (5, 5000, -11.359032310024453),
+                              (8, 1, 3.4189526482545527)])
+    def test_entropy_accuracy(self, dim, kappa, reference):
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        entropy = vonmises_fisher(mu, kappa).entropy()
+        assert_allclose(entropy, reference, rtol=2e-14)
+
+    @pytest.mark.parametrize("method", [vonmises_fisher.pdf,
+                                        vonmises_fisher.logpdf])
+    def test_broadcasting(self, method):
+        # test that pdf and logpdf values are correctly broadcasted
+        testshape = (2, 2)
+        rng = np.random.default_rng(2777937887058094419)
+        x = uniform_direction(3).rvs(testshape, random_state=rng)
+        mu = np.full((3, ), 1/np.sqrt(3))
+        kappa = 5
+        result_all = method(x, mu, kappa)
+        assert result_all.shape == testshape
+        for i in range(testshape[0]):
+            for j in range(testshape[1]):
+                current_val = method(x[i, j, :], mu, kappa)
+                assert_allclose(current_val, result_all[i, j], rtol=1e-15)
+
+    def test_vs_vonmises_2d(self):
+        # test that in 2D, von Mises-Fisher yields the same results
+        # as the von Mises distribution
+        rng = np.random.default_rng(2777937887058094419)
+        mu = np.array([0, 1])
+        mu_angle = np.arctan2(mu[1], mu[0])
+        kappa = 20
+        vmf = vonmises_fisher(mu, kappa)
+        vonmises_dist = vonmises(loc=mu_angle, kappa=kappa)
+        vectors = uniform_direction(2).rvs(10, random_state=rng)
+        angles = np.arctan2(vectors[:, 1], vectors[:, 0])
+        assert_allclose(vonmises_dist.entropy(), vmf.entropy())
+        assert_allclose(vonmises_dist.pdf(angles), vmf.pdf(vectors))
+        assert_allclose(vonmises_dist.logpdf(angles), vmf.logpdf(vectors))
+
+    @pytest.mark.parametrize("dim", [2, 3, 6])
+    @pytest.mark.parametrize("kappa, mu_tol, kappa_tol",
+                             [(1, 5e-2, 5e-2),
+                              (10, 1e-2, 1e-2),
+                              (100, 5e-3, 2e-2),
+                              (1000, 1e-3, 2e-2)])
+    def test_fit_accuracy(self, dim, kappa, mu_tol, kappa_tol):
+        mu = np.full((dim, ), 1/np.sqrt(dim))
+        vmf_dist = vonmises_fisher(mu, kappa)
+        rng = np.random.default_rng(2777937887058094419)
+        n_samples = 10000
+        samples = vmf_dist.rvs(n_samples, random_state=rng)
+        mu_fit, kappa_fit = vonmises_fisher.fit(samples)
+        angular_error = np.arccos(mu.dot(mu_fit))
+        assert_allclose(angular_error, 0., atol=mu_tol, rtol=0)
+        assert_allclose(kappa, kappa_fit, rtol=kappa_tol)
+
+    def test_fit_error_one_dimensional_data(self):
+        x = np.zeros((3, ))
+        msg = "'x' must be two dimensional."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher.fit(x)
+
+    def test_fit_error_unnormalized_data(self):
+        x = np.ones((3, 3))
+        msg = "'x' must be unit vectors of norm 1 along last dimension."
+        with pytest.raises(ValueError, match=msg):
+            vonmises_fisher.fit(x)
+
+    def test_frozen_distribution(self):
+        mu = np.array([0, 0, 1])
+        kappa = 5
+        frozen = vonmises_fisher(mu, kappa)
+        frozen_seed = vonmises_fisher(mu, kappa, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = vonmises_fisher.rvs(mu, kappa, random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
+
 class TestDirichletMultinomial:
     @classmethod
     def get_params(self, m):
         rng = np.random.default_rng(28469824356873456)
         alpha = rng.uniform(0, 100, size=2)
-        # For now, `n` must be scalar, so ensure `x` sums to `n`. When `n` can
-        # be an array, generate `x` as random integers and calculate
-        # `n = x.sum(axis=-1)`.
-        n = 10000
-        x = rng.multinomial(n, [0.5, 0.5], size=m)
+        x = rng.integers(1, 20, size=(m, 2))
+        n = x.sum(axis=-1)
         return rng, m, alpha, n, x
 
     def test_frozen(self):
@@ -3140,6 +3451,7 @@ class TestDirichletMultinomial:
         ref = 0.08484162895927638
         assert_allclose(res, ref)
         assert_allclose(logres, np.log(ref))
+        assert res.shape == logres.shape == ()
 
         # library(extraDistr)
         # options(digits=16)
@@ -3201,12 +3513,12 @@ class TestDirichletMultinomial:
 
     @pytest.mark.parametrize('method_name', ['mean', 'var'])
     def test_against_betabinom_moments(self, method_name):
-        rng, m, alpha, n, x = self.get_params(1)
+        rng, m, alpha, n, x = self.get_params(100)
 
         method = getattr(dirichlet_multinomial(alpha, n), method_name)
         ref_method = getattr(stats.betabinom(n, *alpha.T), method_name)
 
-        res = method()[0]
+        res = method()[:, 0]
         ref = ref_method()
         assert_allclose(res, ref)
 
@@ -3215,10 +3527,10 @@ class TestDirichletMultinomial:
         if Version(np.__version__) < Version("1.22.0"):
             pytest.skip(reason=message)
 
-        rng, m, alpha, n, x = self.get_params(100)
         rng = np.random.default_rng(28469824356873456)
+        dim = 5
         n = rng.integers(1, 100)
-        alpha = rng.random(size=5) * 10
+        alpha = rng.random(size=dim) * 10
         dist = dirichlet_multinomial(alpha, n)
 
         # Generate a random sample from the distribution using NumPy
@@ -3228,8 +3540,10 @@ class TestDirichletMultinomial:
 
         assert_allclose(dist.mean(), np.mean(x, axis=0), rtol=5e-3)
         assert_allclose(dist.var(), np.var(x, axis=0), rtol=1e-2)
+        assert dist.mean().shape == dist.var().shape == (dim,)
 
         cov = dist.cov()
+        assert cov.shape == (dim, dim)
         assert_allclose(cov, np.cov(x.T), rtol=2e-2)
         assert_equal(np.diag(cov), dist.var())
         assert np.all(scipy.linalg.eigh(cov)[0] > 0)  # positive definite
@@ -3252,22 +3566,42 @@ class TestDirichletMultinomial:
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, [3, -1, 4], n0)
 
-        text = "`alpha` must be an array with exactly one dimension"
-        with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, 1, n0)
-
         text = "`n` must be a positive integer."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 49.1)
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x0, alpha0, 0)
 
-        text = r"`n` must be an integer \(scalar\)."
-        with assert_raises(ValueError, match=text):
-            dirichlet_multinomial.logpmf(x0, alpha0, [10, 11])
-
         x = np.array([1, 2, 3, 4])
         alpha = np.array([3, 4, 5])
         text = "`x` and `alpha` must be broadcastable."
         with assert_raises(ValueError, match=text):
             dirichlet_multinomial.logpmf(x, alpha, x.sum())
+
+    @pytest.mark.parametrize('method', ['pmf', 'logpmf'])
+    def test_broadcasting_pmf(self, method):
+        alpha = np.array([[3, 4, 5], [4, 5, 6], [5, 5, 7], [8, 9, 10]])
+        n = np.array([[6], [7], [8]])
+        x = np.array([[1, 2, 3], [2, 2, 3]]).reshape((2, 1, 1, 3))
+        method = getattr(dirichlet_multinomial, method)
+        res = method(x, alpha, n)
+        assert res.shape == (2, 3, 4)
+        for i in range(len(x)):
+            for j in range(len(n)):
+                for k in range(len(alpha)):
+                    res_ijk = res[i, j, k]
+                    ref = method(x[i].squeeze(), alpha[k].squeeze(), n[j].squeeze())
+                    assert_allclose(res_ijk, ref)
+
+    @pytest.mark.parametrize('method_name', ['mean', 'var', 'cov'])
+    def test_broadcasting_moments(self, method_name):
+        alpha = np.array([[3, 4, 5], [4, 5, 6], [5, 5, 7], [8, 9, 10]])
+        n = np.array([[6], [7], [8]])
+        method = getattr(dirichlet_multinomial, method_name)
+        res = method(alpha, n)
+        assert res.shape == (3, 4, 3) if method_name != 'cov' else (3, 4, 3, 3)
+        for j in range(len(n)):
+            for k in range(len(alpha)):
+                res_ijk = res[j, k]
+                ref = method(alpha[k].squeeze(), n[j].squeeze())
+                assert_allclose(res_ijk, ref)

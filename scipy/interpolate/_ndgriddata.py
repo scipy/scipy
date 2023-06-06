@@ -30,9 +30,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    x : (Npoints, Ndims) ndarray of floats
+    x : (npoints, ndims) 2-D ndarray of floats
         Data point coordinates.
-    y : (Npoints,) ndarray of float or complex
+    y : (npoints, ) 1-D ndarray of float or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
@@ -45,10 +45,24 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         .. versionadded:: 0.17.0
 
+    See Also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     Notes
     -----
     Uses ``scipy.spatial.cKDTree``
+
+    .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
     --------
@@ -72,15 +86,6 @@ class NearestNDInterpolator(NDInterpolatorBase):
     >>> plt.colorbar()
     >>> plt.axis("equal")
     >>> plt.show()
-
-    See also
-    --------
-    griddata :
-        Interpolate unstructured D-D data.
-    LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
-    CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     """
 
@@ -168,12 +173,25 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     ndarray
         Array of interpolated values.
 
+    See Also
+    --------
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
+
     Notes
     -----
 
     .. versionadded:: 0.9
 
-    For data on a regular grid use `interpn` instead.
+    .. note:: For data on a regular grid use `interpn` instead.
 
     Examples
     --------
@@ -222,15 +240,6 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.title('Cubic')
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
-
-    See Also
-    --------
-    LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
-    NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
-    CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
     """
 

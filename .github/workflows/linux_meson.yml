@@ -1,13 +1,8 @@
 name: Linux Meson tests
 
-# This is a single job: Python 3.9, building with Meson, using -Werror to
-# ensure we remain at zero build warnings. Other Meson CI jobs are running
-# on https://github.com/rgommers/scipy/tree/meson
-
 on:
   push:
     branches:
-      - main
       - maintenance/**
   pull_request:
     branches:
@@ -33,12 +28,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.9', '3.11-dev']
+        python-version: ['3.10', '3.11']  # change to 3.12-dev when beta starts
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.11-dev'
+            python-version: '3.11'
 
     steps:
     - uses: actions/checkout@v3
@@ -59,12 +54,12 @@ jobs:
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
     - name: Install Python packages
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.11-dev'
+      if: matrix.python-version == '3.11'
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
@@ -91,14 +86,14 @@ jobs:
         path: ${{ steps.prep-ccache.outputs.dir }}
         # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
-        # This evaluates to `Linux Tests-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # This evaluates to `Linux Tests-3.10-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
         # need to be updated to be unique so that the cache is not restored from a different job altogether.
         restore-keys: |
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
 
     - name: Setup build and install scipy
       run: |
-        python dev.py build -j 2 --werror
+        python dev.py build --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -112,19 +107,21 @@ jobs:
         popd
 
     - name: Mypy
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
         # Packages that are only needed for their annotations
         python -m pip install -r mypy_requirements.txt
-        python -m pip install types-psutil pybind11 sphinx
+        python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
+
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py --no-build test -j 2 -- --durations 10 --timeout=60
+        python dev.py --no-build test -j2 -- --durations 10 --timeout=60
 
+  #################################################################################
   test_venv_install:
     name: Pip install into venv
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
@@ -158,3 +155,207 @@ jobs:
         python -c "import scipy.linalg"
         python -m pip install pytest
         python -c "from scipy import cluster; cluster.test()"
+
+    - name: Create venv inside source tree
+      # This is a regression test for gh-16312
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        # Install build dependencies. Use meson-python from its main branch,
+        # most convenient to test in this job because we're using pip without
+        # build isolation here.
+        python -m pip install numpy pybind11 pythran cython pytest ninja
+        python -m pip install git+https://github.com/mesonbuild/meson-python.git
+        # Non-isolated build, so we use dependencies installed inside the source tree
+        python -m pip install -U pip  # need pip >=23 for `--config-settings`
+        python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
+        
+        # Basic tests
+        cd ..
+        python -c "import scipy"
+        python -c "import scipy.linalg"
+        python -c "from scipy import cluster; cluster.test()"
+
+  #################################################################################
+  python_debug:
+    # also uses the vcs->sdist->wheel route.
+    name: Python-debug & ATLAS
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-22.04  # provides python3.10-dbg
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Configuring Test Environment
+        run: |
+          sudo apt-get update
+          sudo apt install python3-dbg python3-dev libatlas-base-dev liblapack-dev gfortran ccache libgmp-dev libmpfr-dev libmpc-dev
+          python3-dbg --version # just to check
+          python3-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
+      - name: Build SciPy
+        run: |
+          python3-dbg -m pip install build
+          python3-dbg -m build -Csetup-args=-Dbuildtype=debugoptimized -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3-dbg -m pip install dist/scipy*.whl
+      - name: Testing SciPy
+        run: |
+          cd doc
+          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
+          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
+
+  #################################################################################
+  gcc8:
+    # Purpose is to examine builds with oldest-supported gcc.
+    name: Build with gcc-8
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Setup OS
+        run: |
+          sudo apt-get -y update
+          sudo apt install -y g++-8 gcc-8 gfortran-8
+          sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
+            libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
+
+      - name: Setup Python deps
+        run: |
+          pip install "numpy==1.21.6" &&
+          # build deps
+          pip install build meson-python ninja pythran pybind11 cython wheel
+          # test deps
+          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
+
+      - name: Build wheel and install
+        run: |
+          set -euo pipefail
+          export PYTHONOPTIMIZE=2
+
+          # specify which compilers to use using environment variables
+          CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python -m pip install dist/scipy*.whl
+
+      - name: Run tests
+        run: |
+          # can't be in source directory
+          pushd $RUNNER_TEMP
+          export PYTHONOPTIMIZE=2
+          python -m pytest --pyargs scipy -n2 --durations=10
+          popd
+
+  #################################################################################
+  prerelease_deps_coverage_64bit_blas:
+    # TODO: re-enable ILP64 build.
+    name: Prerelease deps and 64-bit BLAS
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+
+        # Install OpenBLAS a la cibuildwheel.
+        chmod +x tools/wheels/cibw_before_build_linux.sh
+        sudo tools/wheels/cibw_before_build_linux.sh .        
+
+    - name: Caching Python dependencies
+      uses: actions/cache@v3
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-prerelease
+
+    - name: Install Python packages
+      run: |
+        python -m pip install "Cython>=3.0.0b3"
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
+        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
+        # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
+        NOW=$(date -u +"%F-%T")
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v3
+      id:    cache-ccache
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        # Restores ccache from either a previous build on this branch or on main
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-${{ steps.prep-ccache.outputs.timestamp }}
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-
+
+    - name: Build and install SciPy
+      run: |
+        python dev.py build --gcov
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
+
+    - name: Test SciPy
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+        export OPENBLAS_NUM_THREADS=1
+        python dev.py test -j2 --mode full -- --cov --cov-report term-missing 
+
+  #################################################################################
+  linux_32bit:
+    name: Linux - 32 bit
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-latest
+    # I tried running directly in a container:, using the image: and options:
+    # entries. Unfortunately at this time options: does not seem to listen to
+    # --platform linux/i386.
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: build + test
+      run: |
+        set -euo pipefail
+        docker pull quay.io/pypa/manylinux2014_i686
+        docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
+        uname -a && \
+        basedir=\$(python3.9 tools/openblas_support.py) && \
+        cp -r \$basedir/lib/* /usr/local/lib && \
+        cp \$basedir/include/* /usr/local/include && \
+        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig && \
+        python3.9 -m venv test && \
+        source test/bin/activate && \
+        python -m pip install doit click rich_click pydevtool meson ninja && \
+        python -m pip install numpy==1.21.6 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch meson && \
+        python dev.py build && \
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"

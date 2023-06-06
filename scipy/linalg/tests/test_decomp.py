@@ -1,13 +1,3 @@
-""" Test functions for linalg.decomp module
-
-"""
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
-
 import itertools
 import platform
 import sys
@@ -28,8 +18,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
                           eigh_tridiagonal, null_space, cdf2rdf, LinAlgError)
 
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
-                                 dsbevd, dsbevx, zhbevd, zhbevx,
-                                 get_lapack_funcs)
+                                 dsbevd, dsbevx, zhbevd, zhbevx)
 
 from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
@@ -46,6 +35,10 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -908,144 +901,6 @@ class TestEigh:
         w, v = eigh(a, subset_by_index=[0, 1])
         assert_allclose(w_dep, w)
         assert_allclose(v_dep, v)
-
-
-class TestLU:
-    def setup_method(self):
-        self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
-        self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
-        # Those matrices are more robust to detect problems in permutation
-        # matrices than the ones above
-        self.b = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        self.cb = array([[1j, 2j, 3j], [4j, 5j, 6j], [7j, 8j, 9j]])
-
-        # Reectangular matrices
-        self.hrect = array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 12, 12]])
-        self.chrect = 1.j * array([[1, 2, 3, 4],
-                                   [5, 6, 7, 8],
-                                   [9, 10, 12, 12]])
-
-        self.vrect = array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 12, 12]])
-        self.cvrect = 1.j * array([[1, 2, 3],
-                                   [4, 5, 6],
-                                   [7, 8, 9],
-                                   [10, 12, 12]])
-
-        # Medium sizes matrices
-        self.med = random((30, 40))
-        self.cmed = random((30, 40)) + 1.j * random((30, 40))
-
-    def _test_common(self, data):
-        p, l, u = lu(data)
-        assert_array_almost_equal(p @ l @ u, data)
-        pl, u = lu(data, permute_l=1)
-        assert_array_almost_equal(pl @ u, data)
-
-    def _test_common_lu_factor(self, data):
-        l_and_u1, piv1 = lu_factor(data)
-        (getrf,) = get_lapack_funcs(("getrf",), (data,))
-        l_and_u2, piv2, _ = getrf(data, overwrite_a=False)
-        assert_array_equal(l_and_u1, l_and_u2)
-        assert_array_equal(piv1, piv2)
-
-    # Simple tests.
-    # For lu_factor gives a LinAlgWarning because these matrices are singular
-    def test_simple(self):
-        self._test_common(self.a)
-
-    def test_simple_complex(self):
-        self._test_common(self.ca)
-
-    def test_simple2(self):
-        self._test_common(self.b)
-
-    def test_simple2_complex(self):
-        self._test_common(self.cb)
-
-    # rectangular matrices tests
-    def test_hrectangular(self):
-        self._test_common(self.hrect)
-        self._test_common_lu_factor(self.hrect)
-
-    def test_vrectangular(self):
-        self._test_common(self.vrect)
-        self._test_common_lu_factor(self.vrect)
-
-    def test_hrectangular_complex(self):
-        self._test_common(self.chrect)
-        self._test_common_lu_factor(self.chrect)
-
-    def test_vrectangular_complex(self):
-        self._test_common(self.cvrect)
-        self._test_common_lu_factor(self.cvrect)
-
-    # Bigger matrices
-    def test_medium1(self):
-        """Check lu decomposition on medium size, rectangular matrix."""
-        self._test_common(self.med)
-        self._test_common_lu_factor(self.med)
-
-    def test_medium1_complex(self):
-        """Check lu decomposition on medium size, rectangular matrix."""
-        self._test_common(self.cmed)
-        self._test_common_lu_factor(self.cmed)
-
-    def test_check_finite(self):
-        p, l, u = lu(self.a, check_finite=False)
-        assert_array_almost_equal(p @ l @ u, self.a)
-
-    def test_simple_known(self):
-        # Ticket #1458
-        for order in ['C', 'F']:
-            A = np.array([[2, 1], [0, 1.]], order=order)
-            LU, P = lu_factor(A)
-            assert_array_almost_equal(LU, np.array([[2, 1], [0, 1]]))
-            assert_array_equal(P, np.array([0, 1]))
-
-
-class TestLUSingle(TestLU):
-    """LU testers for single precision, real and double"""
-
-    def setup_method(self):
-        TestLU.setup_method(self)
-
-        self.a = self.a.astype(float32)
-        self.ca = self.ca.astype(complex64)
-        self.b = self.b.astype(float32)
-        self.cb = self.cb.astype(complex64)
-
-        self.hrect = self.hrect.astype(float32)
-        self.chrect = self.hrect.astype(complex64)
-
-        self.vrect = self.vrect.astype(float32)
-        self.cvrect = self.vrect.astype(complex64)
-
-        self.med = self.vrect.astype(float32)
-        self.cmed = self.vrect.astype(complex64)
-
-
-class TestLUSolve:
-    def setup_method(self):
-        seed(1234)
-
-    def test_lu(self):
-        a0 = random((10, 10))
-        b = random((10,))
-
-        for order in ['C', 'F']:
-            a = np.array(a0, order=order)
-            x1 = solve(a, b)
-            lu_a = lu_factor(a)
-            x2 = lu_solve(lu_a, b)
-            assert_array_almost_equal(x1, x2)
-
-    def test_check_finite(self):
-        a = random((10, 10))
-        b = random((10,))
-        x1 = solve(a, b)
-        lu_a = lu_factor(a, check_finite=False)
-        x2 = lu_solve(lu_a, b, check_finite=False)
-        assert_array_almost_equal(x1, x2)
 
 
 class TestSVD_GESDD:
@@ -2043,12 +1898,22 @@ class TestHessenberg:
         assert_array_almost_equal(h2, b)
 
 
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
+
+
 class TestQZ:
     def setup_method(self):
         seed(12345)
 
-    @pytest.mark.xfail(sys.platform == 'darwin',
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949")
+    @pytest.mark.xfail(
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < "0.3.21.dev",
+        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
+    )
     def test_qz_single(self):
         n = 5
         A = random([n, n]).astype(float32)

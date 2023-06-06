@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_allclose, assert_array_equal,
-                           assert_almost_equal)
+                           assert_almost_equal, suppress_warnings)
 import pytest
 from pytest import raises
 
@@ -11,51 +11,15 @@ from scipy import signal
 
 
 class TestBSplines:
-    """Test behaviors of B-splines. The values tested against were returned as of
-    SciPy 1.1.0 and are included for regression testing purposes"""
+    """Test behaviors of B-splines. Some of the values tested against were
+    returned as of SciPy 1.1.0 and are included for regression testing
+    purposes. Others (at integer points) are compared to theoretical
+    expressions (cf. Unser, Aldroubi, Eden, IEEE TSP 1993, Table 1)."""
 
     def test_spline_filter(self):
         np.random.seed(12457)
         # Test the type-error branch
         raises(TypeError, bsp.spline_filter, array([0]), 0)
-        # Test the complex branch
-        data_array_complex = np.random.rand(7, 7) + np.random.rand(7, 7)*1j
-        # make the magnitude exceed 1, and make some negative
-        data_array_complex = 10*(1+1j-2*data_array_complex)
-        result_array_complex = array(
-            [[-4.61489230e-01-1.92994022j, 8.33332443+6.25519943j,
-              6.96300745e-01-9.05576038j, 5.28294849+3.97541356j,
-              5.92165565+7.68240595j, 6.59493160-1.04542804j,
-              9.84503460-5.85946894j],
-             [-8.78262329-8.4295969j, 7.20675516+5.47528982j,
-              -8.17223072+2.06330729j, -4.38633347-8.65968037j,
-              9.89916801-8.91720295j, 2.67755103+8.8706522j,
-              6.24192142+3.76879835j],
-             [-3.15627527+2.56303072j, 9.87658501-0.82838702j,
-              -9.96930313+8.72288895j, 3.17193985+6.42474651j,
-              -4.50919819-6.84576082j, 5.75423431+9.94723988j,
-              9.65979767+6.90665293j],
-             [-8.28993416-6.61064005j, 9.71416473e-01-9.44907284j,
-              -2.38331890+9.25196648j, -7.08868170-0.77403212j,
-              4.89887714+7.05371094j, -1.37062311-2.73505688j,
-              7.70705748+2.5395329j],
-             [2.51528406-1.82964492j, 3.65885472+2.95454836j,
-              5.16786575-1.66362023j, -8.77737999e-03+5.72478867j,
-              4.10533333-3.10287571j, 9.04761887+1.54017115j,
-              -5.77960968e-01-7.87758923j],
-             [9.86398506-3.98528528j, -4.71444130-2.44316983j,
-              -1.68038976-1.12708664j, 2.84695053+1.01725709j,
-              1.14315915-8.89294529j, -3.17127085-5.42145538j,
-              1.91830420-6.16370344j],
-             [7.13875294+2.91851187j, -5.35737514+9.64132309j,
-              -9.66586399+0.70250005j, -9.87717438-2.0262239j,
-              9.93160629+1.5630846j, 4.71948051-2.22050714j,
-              9.49550819+7.8995142j]])
-        # FIXME: for complex types, the computations are done in
-        # single precision (reason unclear). When this is changed,
-        # this test needs updating.
-        assert_allclose(bsp.spline_filter(data_array_complex, 0),
-                        result_array_complex, rtol=1e-6)
         # Test the real branch
         np.random.seed(12457)
         data_array_real = np.random.rand(12, 12)
@@ -102,18 +66,25 @@ class TestBSplines:
                         result_array_real)
 
     def test_bspline(self):
-        np.random.seed(12458)
-        assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
-                        array([[0.73694695]]))
-        data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
-        data_array_complex = 0.1*data_array_complex
-        result_array_complex = array(
-            [[0.40882362, 0.41021151, 0.40886708, 0.40905103],
-             [0.40829477, 0.41021230, 0.40966097, 0.40939871],
-             [0.41036803, 0.40901724, 0.40965331, 0.40879513],
-             [0.41032862, 0.40925287, 0.41037754, 0.41027477]])
-        assert_allclose(bsp.bspline(data_array_complex, 10),
-                        result_array_complex)
+        # Verify with theoretical results at integer points up to order 5
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            assert_allclose(bsp.bspline([-1, 0, 1], 0),
+                            array([0, 1, 0]))
+            assert_allclose(bsp.bspline([-1, 0, 1], 1),
+                            array([0, 1, 0]))
+            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 2),
+                            array([0, 1, 6, 1, 0])/8.)
+            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 3),
+                            array([0, 1, 4, 1, 0])/6.)
+            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 4),
+                            array([0, 1, 76, 230, 76, 1, 0])/384.)
+            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 5),
+                            array([0, 1, 26, 66, 26, 1, 0]) / 120.)
+            # Compare with SciPy 1.1.0
+            np.random.seed(12458)
+            assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
+                            array([[0.73694695]]))
 
     def test_gauss_spline(self):
         np.random.seed(12459)
@@ -127,35 +98,20 @@ class TestBSplines:
                             array([0.15418033, 0.6909883, 0.15418033]))
 
     def test_cubic(self):
-        np.random.seed(12460)
-        assert_array_equal(bsp.cubic([0]), array([0]))
-        data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
-        data_array_complex = 1+1j-2*data_array_complex
-        # scaling the magnitude by 10 makes the results close enough to zero,
-        # that the assertion fails, so just make the elements have a mix of
-        # positive and negative imaginary components...
-        result_array_complex = array(
-            [[0.23056563, 0.38414406, 0.08342987, 0.06904847],
-             [0.17240848, 0.47055447, 0.63896278, 0.39756424],
-             [0.12672571, 0.65862632, 0.1116695, 0.09700386],
-             [0.3544116, 0.17856518, 0.1528841, 0.17285762]])
-        assert_allclose(bsp.cubic(data_array_complex), result_array_complex)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            np.random.seed(12460)
+            # Verify with theoretical results at integer points (see docstring)
+            assert_allclose(bsp.cubic([-2, -1, 0, 1, 2]),
+                            array([0, 1, 4, 1, 0])/6.)
 
     def test_quadratic(self):
         np.random.seed(12461)
-        assert_array_equal(bsp.quadratic([0]), array([0]))
-        data_array_complex = np.random.rand(4, 4) + np.random.rand(4, 4)*1j
-        # scaling the magnitude by 10 makes the results all zero,
-        # so just make the elements have a mix of positive and negative
-        # imaginary components...
-        data_array_complex = (1+1j-2*data_array_complex)
-        result_array_complex = array(
-            [[0.23062746, 0.06338176, 0.34902312, 0.31944105],
-             [0.14701256, 0.13277773, 0.29428615, 0.09814697],
-             [0.52873842, 0.06484157, 0.09517566, 0.46420389],
-             [0.09286829, 0.09371954, 0.1422526, 0.16007024]])
-        assert_allclose(bsp.quadratic(data_array_complex),
-                        result_array_complex)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning)
+            # Verify correct results at integer points
+            assert_allclose(bsp.quadratic([-2, -1, 0, 1, 2]),
+                            array([0, 1, 6, 1, 0])/8.)
 
     def test_cspline1d(self):
         np.random.seed(12462)

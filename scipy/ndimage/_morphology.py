@@ -1922,11 +1922,103 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
         Returned only when `return_indices` is True and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_cdt : Faster distance transform for taxicab and
+                             chessboard metrics
+    distance_transform_edt : Faster distance transform for euclidean metric
+
     Notes
     -----
     This function employs a slow brute force algorithm, see also the
-    function distance_transform_cdt for more efficient taxicab and
-    chessboard algorithms.
+    function `distance_transform_cdt` for more efficient taxicab [1]_ and
+    chessboard algorithms [2]_.
+
+    References
+    ----------
+    .. [1] Taxicab distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Taxicab_geometry
+    .. [2] Chessboard distance. Wikipedia, 2023.
+           https://en.wikipedia.org/wiki/Chebyshev_distance
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_bf
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(8, 8))  # set up the figure structure
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(2, 2), axes_pad=(0.4, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')  # remove axes from images
+
+    The top left image is the original binary image.
+
+    >>> binary_image = grid[0].imshow(image, cmap='gray')
+    >>> cbar_binary_image = grid.cbar_axes[0].colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> grid[0].set_title("Binary image: foreground in white")
+
+    The distance transform calculates the distance between foreground pixels
+    and the image background according to a distance metric. Available metrics
+    in `distance_transform_bf` are: ``euclidean`` (default), ``taxicab``
+    and ``chessboard``. The top right image contains the distance transform
+    based on the ``euclidean`` metric.
+
+    >>> distance_transform_euclidean = distance_transform_bf(image)
+    >>> euclidean_transform = grid[1].imshow(distance_transform_euclidean,
+    ...                                      cmap='gray')
+    >>> cbar_euclidean = grid.cbar_axes[1].colorbar(euclidean_transform)
+    >>> colorbar_ticks = [0, 10, 20]
+    >>> cbar_euclidean.set_ticks(colorbar_ticks)
+    >>> grid[1].set_title("Euclidean distance")
+
+    The lower left image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_transform_taxicab = distance_transform_bf(image,
+    ...                                                    metric='taxicab')
+    >>> taxicab_transformation = grid[2].imshow(distance_transform_taxicab,
+    ...                                         cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[2].colorbar(taxicab_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[2].set_title("Taxicab distance")
+
+    Finally, the lower right image contains the distance transform using the
+    ``chessboard`` metric.
+
+    >>> distance_transform_cb = distance_transform_bf(image,
+    ...                                               metric='chessboard')
+    >>> chessboard_transformation = grid[3].imshow(distance_transform_cb,
+    ...                                            cmap='gray')
+    >>> cbar_taxicab = grid.cbar_axes[3].colorbar(chessboard_transformation)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> grid[3].set_title("Chessboard distance")
+    >>> plt.show()
 
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
@@ -2014,6 +2106,10 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     """
     Distance transform for chamfer type of transforms.
 
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
+
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background
     element to each foreground element is returned in a separate array.
@@ -2021,13 +2117,13 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
     Parameters
     ----------
     input : array_like
-        Input
+        Input. Values of 0 are treated as background.
     metric : {'chessboard', 'taxicab'} or array_like, optional
         The `metric` determines the type of chamfering that is done. If the
         `metric` is equal to 'taxicab' a structure is generated using
-        generate_binary_structure with a squared distance equal to 1. If
+        `generate_binary_structure` with a squared distance equal to 1. If
         the `metric` is equal to 'chessboard', a `metric` is generated
-        using generate_binary_structure with a squared distance equal to
+        using `generate_binary_structure` with a squared distance equal to
         the dimensionality of the array. These choices correspond to the
         common interpretations of the 'taxicab' and the 'chessboard'
         distance metrics in two dimensions.
@@ -2065,6 +2161,77 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         Returned only when `return_indices` is True, and `indices` is not
         supplied.
 
+    See Also
+    --------
+    distance_transform_edt : Fast distance transform for euclidean metric
+    distance_transform_bf : Distance transform for different metrics using
+                            a slower brute force algorithm
+
+    Examples
+    --------
+    Import the necessary modules.
+
+    >>> import numpy as np
+    >>> from scipy.ndimage import distance_transform_cdt
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.axes_grid1 import ImageGrid
+
+    First, we create a toy binary image.
+
+    >>> def add_circle(center_x, center_y, radius, image, fillvalue=1):
+    ...     # fill circular area with 1
+    ...     xx, yy = np.mgrid[:image.shape[0], :image.shape[1]]
+    ...     circle = (xx - center_x) ** 2 + (yy - center_y) ** 2
+    ...     circle_shape = np.sqrt(circle) < radius
+    ...     image[circle_shape] = fillvalue
+    ...     return image
+    >>> image = np.zeros((100, 100), dtype=np.uint8)
+    >>> image[35:65, 20:80] = 1
+    >>> image = add_circle(28, 65, 10, image)
+    >>> image = add_circle(37, 30, 10, image)
+    >>> image = add_circle(70, 45, 20, image)
+    >>> image = add_circle(45, 80, 10, image)
+
+    Next, we set up the figure.
+
+    >>> fig = plt.figure(figsize=(5, 15))
+    >>> grid = ImageGrid(fig, 111, nrows_ncols=(3, 1), axes_pad=(0.5, 0.3),
+    ...                  label_mode="1", share_all=True,
+    ...                  cbar_location="right", cbar_mode="each",
+    ...                  cbar_size="7%", cbar_pad="2%")
+    >>> for ax in grid:
+    ...     ax.axis('off')
+    >>> top, middle, bottom = grid
+    >>> colorbar_ticks = [0, 10, 20]
+
+    The top image contains the original binary image.
+
+    >>> binary_image = top.imshow(image, cmap='gray')
+    >>> cbar_binary_image = top.cax.colorbar(binary_image)
+    >>> cbar_binary_image.set_ticks([0, 1])
+    >>> top.set_title("Binary image: foreground in white")
+
+    The middle image contains the distance transform using the ``taxicab``
+    metric.
+
+    >>> distance_taxicab = distance_transform_cdt(image, metric="taxicab")
+    >>> taxicab_transform = middle.imshow(distance_taxicab, cmap='gray')
+    >>> cbar_taxicab = middle.cax.colorbar(taxicab_transform)
+    >>> cbar_taxicab.set_ticks(colorbar_ticks)
+    >>> middle.set_title("Taxicab metric")
+
+    The bottom image contains the distance transform using the ``chessboard``
+    metric.
+
+    >>> distance_chessboard = distance_transform_cdt(image,
+    ...                                              metric="chessboard")
+    >>> chessboard_transform = bottom.imshow(distance_chessboard, cmap='gray')
+    >>> cbar_chessboard = bottom.cax.colorbar(chessboard_transform)
+    >>> cbar_chessboard.set_ticks(colorbar_ticks)
+    >>> bottom.set_title("Chessboard metric")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     ft_inplace = isinstance(indices, numpy.ndarray)
     dt_inplace = isinstance(distances, numpy.ndarray)
@@ -2072,28 +2239,31 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         dt_inplace, ft_inplace, return_distances, return_indices
     )
     input = numpy.asarray(input)
-    if metric in ['taxicab', 'cityblock', 'manhattan']:
-        rank = input.ndim
-        metric = generate_binary_structure(rank, 1)
-    elif metric == 'chessboard':
-        rank = input.ndim
-        metric = generate_binary_structure(rank, rank)
+    if isinstance(metric, str):
+        if metric in ['taxicab', 'cityblock', 'manhattan']:
+            rank = input.ndim
+            metric = generate_binary_structure(rank, 1)
+        elif metric == 'chessboard':
+            rank = input.ndim
+            metric = generate_binary_structure(rank, rank)
+        else:
+            raise ValueError('invalid metric provided')
     else:
         try:
             metric = numpy.asarray(metric)
         except Exception as e:
-            raise RuntimeError('invalid metric provided') from e
+            raise ValueError('invalid metric provided') from e
         for s in metric.shape:
             if s != 3:
-                raise RuntimeError('metric sizes must be equal to 3')
+                raise ValueError('metric sizes must be equal to 3')
 
     if not metric.flags.contiguous:
         metric = metric.copy()
     if dt_inplace:
         if distances.dtype.type != numpy.int32:
-            raise RuntimeError('distances must be of int32 type')
+            raise ValueError('distances must be of int32 type')
         if distances.shape != input.shape:
-            raise RuntimeError('distances has wrong shape')
+            raise ValueError('distances has wrong shape')
         dt = distances
         dt[...] = numpy.where(input, -1, 0).astype(numpy.int32)
     else:
@@ -2118,9 +2288,9 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
         ft = numpy.ravel(ft)
         if ft_inplace:
             if indices.dtype.type != numpy.int32:
-                raise RuntimeError('indices array must be int32')
+                raise ValueError('indices array must be int32')
             if indices.shape != (dt.ndim,) + dt.shape:
-                raise RuntimeError('indices array has wrong shape')
+                raise ValueError('indices array has wrong shape')
             tmp = indices
         else:
             tmp = numpy.indices(dt.shape, dtype=numpy.int32)
@@ -2149,6 +2319,10 @@ def distance_transform_edt(input, sampling=None, return_distances=True,
                            return_indices=False, distances=None, indices=None):
     """
     Exact Euclidean distance transform.
+
+    This function calculates the distance transform of the `input`, by
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background

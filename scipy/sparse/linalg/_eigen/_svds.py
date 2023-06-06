@@ -210,14 +210,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Construct a matrix `A` from singular values and vectors.
 
     >>> import numpy as np
-    >>> from scipy.stats import ortho_group
-    >>> from scipy.sparse.linalg import svds
-    >>> from scipy.sparse import csr_matrix
-    >>> rng = np.random.default_rng()
+    >>> from scipy import sparse, linalg, stats
+    >>> from scipy.sparse.linalg import svds, aslinearoperator, LinearOperator
 
     Construct a dense matrix `A` from singular values and vectors.
 
-    >>> orthogonal = ortho_group.rvs(10, random_state=rng)
+    >>> rng = np.random.default_rng(258265244568965474821194062361901728911)
+    >>> orthogonal = stats.ortho_group.rvs(10, random_state=rng)
     >>> s = [1e-3, 1, 2, 3, 4]  # non-zero singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
@@ -262,37 +261,36 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     subspace containing all such singular vectors is computed accurately
     as can be measured by angles between subspaces via 'subspace_angles'.
 
-    >>> from scipy.linalg import subspace_angles as s_a
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(178686584221410808734965903901790843963)
     >>> s = [1, 1 + 1e-6]  # non-zero singular values
     >>> u, _ = np.linalg.qr(rng.standard_normal((99, 2)))
     >>> v, _ = np.linalg.qr(rng.standard_normal((99, 2)))
     >>> vT = v.T
     >>> A = u @ np.diag(s) @ vT
     >>> A = A.astype(np.float32)
-    >>> u2, s2, vT2 = svds(A, k=2)
+    >>> u2, s2, vT2 = svds(A, k=2, random_state=rng)
     >>> np.allclose(s2, s)
     True
 
     The angles between the individual exact and computed singular vectors
-    are not so small.
+    may not be so small. To check use:
 
-    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:]) > 1e-3
-    True
-
-    >>> (s_a(vT2[:1, :].T, vT[:1, :].T) +
-    ...  s_a(vT2[1:, :].T, vT[1:, :].T)) > 1e-3
-    True
+    >>> (linalg.subspace_angles(u2[:, :1], u[:, :1]) +
+    ...  linalg.subspace_angles(u2[:, 1:], u[:, 1:]))
+    array([0.06562513])  # may vary
+    >>> (linalg.subspace_angles(vT2[:1, :].T, vT[:1, :].T) +
+    ...  linalg.subspace_angles(vT2[1:, :].T, vT[1:, :].T))
+    array([0.06562507])  # may vary
 
     As opposed to the angles between the 2-dimensional invariant subspaces
     that these vectors span, which are small for rights singular vectors
 
-    >>> s_a(u2, u).sum() < 1e-6
+    >>> linalg.subspace_angles(u2, u).sum() < 1e-6
     True
 
     as well as for left singular vectors.
 
-    >>> s_a(vT2.T, vT.T).sum() < 1e-6
+    >>> linalg.subspace_angles(vT2.T, vT.T).sum() < 1e-6
     True
 
     The next example follows that of 'sklearn.decomposition.TruncatedSVD'.
@@ -300,22 +298,19 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> rng = np.random.RandomState(0)
     >>> X_dense = rng.random(size=(100, 100))
     >>> X_dense[:, 2 * np.arange(50)] = 0
-    >>> X = csr_matrix(X_dense)
-    >>> _, singular_values, _ = svds(X, k=5)
+    >>> X = sparse.csr_matrix(X_dense)
+    >>> _, singular_values, _ = svds(X, k=5, random_state=rng)
     >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
     The function can be called without the transpose of the input matrix
     ever explicitly constructed.
 
-    >>> from scipy.linalg import svd
-    >>> from scipy.sparse import rand
-    >>> from scipy.sparse.linalg import aslinearoperator
-    >>> rng = np.random.RandomState(0)
-    >>> G = rand(8, 9, density=0.5, random_state=rng)
+    >>> rng = np.random.default_rng(102524723947864966825913730119128190974)
+    >>> G = sparse.rand(8, 9, density=0.5, random_state=rng)
     >>> Glo = aslinearoperator(G)
-    >>> _, singular_values_svds, _ = svds(Glo, k=5)
-    >>> _, singular_values_svd, _ = svd(G.toarray())
+    >>> _, singular_values_svds, _ = svds(Glo, k=5, random_state=rng)
+    >>> _, singular_values_svd, _ = linalg.svd(G.toarray())
     >>> np.allclose(singular_values_svds, singular_values_svd[-4::-1])
     True
 
@@ -325,7 +320,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     of 'LinearOperator' constructed from the numpy function 'np.diff' used
     column-wise to be consistent with 'LinearOperator' operating on columns.
 
-    >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
     >>> diff0 = lambda a: np.diff(a, axis=0)
 
     Let us create the matrix from 'diff0' to be used for validation only.
@@ -444,6 +438,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
     >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-6))
     True
+
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
