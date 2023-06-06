@@ -86,9 +86,11 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
 
     init_status = highs.passModel(lp)
     if init_status == hpy.HighsStatus.kError:
+        # if model fails to load, highs.getModelStatus() will be NOT_SET
+        err_model_status = hpy.HighsModelStatus.kModelError
         res.update({
-            "status": highs.getModelStatus(),
-            "message": highs.modelStatusToString(highs.getModelStatus()),
+            "status": err_model_status,
+            "message": highs.modelStatusToString(err_model_status),
         })
         return res
 
