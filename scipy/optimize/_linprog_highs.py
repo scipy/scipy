@@ -45,7 +45,7 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
         hpy.HighsModelStatus.kTimeLimit: (1, "Time limit reached. "),
         hpy.HighsModelStatus.kIterationLimit: (1, "Iteration limit reached. "),
         hpy.HighsModelStatus.kUnknown: (4, ""),
-        hpy.HighsModelStatus.kSolutionLimit: (4, ""),
+        hpy.HighsModelStatus.kSolutionLimit: (4, "Iteration limit reached. "),
     }
     unrecognized = (4, "The HiGHS status code was not recognized. ")
     scipy_status, scipy_message = (

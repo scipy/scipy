@@ -26,7 +26,6 @@ PyMODINIT_FUNC PyInit__highs_constants(void) {
     PyObject *mod = PyModule_Create(&_highs_constants_ext);
 
     // constants that should come from highs_bindings but currently don't
-    // FIXME: error handling
     PyModule_AddIntConstant(mod, "kHighsDebugLevelNone", HighsDebugLevel::kHighsDebugLevelNone);
     PyModule_AddIntConstant(mod, "kSimplexEdgeWeightStrategyDantzig", SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDantzig);
     PyModule_AddIntConstant(mod, "kSimplexEdgeWeightStrategyDevex", SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDevex);

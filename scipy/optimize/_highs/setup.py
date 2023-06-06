@@ -7,6 +7,29 @@ from os.path import join
 from scipy._lib._highs_utils import _highs_dir
 
 
+_highs_flags = [
+    '-Wno-class-memaccess',
+    '-Wno-format-truncation',
+    '-Wno-non-virtual-dtor',
+    '-Wno-sign-compare',
+    '-Wno-switch',
+    '-Wno-unused-but-set-variable',
+    '-Wno-unused-variable',
+]
+
+
+def highs_clib_hook_cxx_flags(build_clib, build_info):
+    from scipy._build_utils.compiler_helper import (set_cxx_flags_clib_hook,
+                                                    try_add_flag)
+    cc = build_clib.compiler
+    if cc.compiler_type != 'msvc':
+        if 'extra_compiler_args' not in build_info:
+            build_info['extra_compiler_args'] = []
+        for flag in _highs_flags:
+            try_add_flag(build_info['extra_compiler_args'], cc, flag)
+    set_cxx_flags_clib_hook(build_clib, build_info)
+
+
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import (set_cxx_flags_hook,
                                                     try_add_flag)
@@ -14,16 +37,7 @@ def pre_build_hook(build_ext, ext):
     args = ext.extra_compile_args
     set_cxx_flags_hook(build_ext, ext)
     if cc.compiler_type != 'msvc':
-        flags = [
-            '-Wno-class-memaccess',
-            '-Wno-format-truncation',
-            '-Wno-non-virtual-dtor',
-            '-Wno-sign-compare',
-            '-Wno-switch',
-            '-Wno-unused-but-set-variable',
-            '-Wno-unused-variable',
-        ]
-        for flag in flags:
+        for flag in _highs_flags:
             try_add_flag(args, cc, flag)
 
 
@@ -258,6 +272,39 @@ def configuration(parent_package='', top_path=None):
         _pre_build_hook=basiclu_pre_build_hook,
     )
 
+    config.add_library(
+        'ipx',
+        sources=ipx_sources,
+        libraries=['basiclu'],
+        include_dirs=[
+            'src',
+            join(root, 'extern'),
+            join(root, 'src'),
+            join(root, 'src', 'ipm', 'ipx'),
+        ],
+        language='c++',
+        macros=DEFINE_MACROS,
+        _pre_build_hook=highs_clib_hook_cxx_flags,
+    )
+
+    config.add_library(
+        'highs',
+        sources=highs_sources,
+        libraries=['ipx', 'basiclu'],
+        include_dirs=[
+            'src',
+            join(root, 'extern'),
+            join(root, 'src'),
+            join(root, 'src', 'io'),
+            join(root, 'src', 'ipm', 'ipx'),
+            join(root, 'src', 'lp_data'),
+            join(root, 'src', 'util'),
+        ],
+        language='c++',
+        macros=DEFINE_MACROS,
+        _pre_build_hook=highs_clib_hook_cxx_flags,
+    )
+
     highs_bindings_pybind_includes = [
         pybind11.get_include(True),
         pybind11.get_include(False),
@@ -265,7 +312,7 @@ def configuration(parent_package='', top_path=None):
     ]
     ext = config.add_extension(
         'highs_bindings',
-        sources= ipx_sources + highs_sources + [join(root, 'highspy', 'highs_bindings.cpp')],
+        sources=[join(root, 'highspy', 'highs_bindings.cpp')],
         define_macros=DEFINE_MACROS + numpy_nodepr_api['define_macros'],
         undef_macros=UNDEF_MACROS,
         include_dirs=[
@@ -277,7 +324,7 @@ def configuration(parent_package='', top_path=None):
             join(root, 'src', 'lp_data'),
             join(root, 'src', 'util'),
         ] + highs_bindings_pybind_includes,
-        libraries=['basiclu'],
+        libraries=['highs', 'ipx', 'basiclu'],
         language='c++',
     )
     ext._pre_build_hook = pre_build_hook
@@ -292,7 +339,7 @@ def configuration(parent_package='', top_path=None):
             join(root, 'src'),
             join(root, 'src', 'lp_data')
         ],
-        libraries=['basiclu'],
+        libraries=['highs'],
         language='c++',
     )
     ext._pre_build_hook = pre_build_hook
@@ -308,7 +355,7 @@ def configuration(parent_package='', top_path=None):
             join(root, 'src', 'lp_data'),
             join(root, 'src', 'simplex')
         ],
-        libraries=['basiclu'],
+        libraries=['highs'],
         language='c++',
     )
     ext._pre_build_hook = pre_build_hook

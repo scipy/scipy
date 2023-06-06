@@ -9,7 +9,7 @@ from scipy.optimize import OptimizeWarning
 def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, options):
     numcol = c.size
     numrow = rhs.size
-    isMip = integrality is not None and integrality.size > 0
+    isMip = integrality is not None and np.sum(integrality) > 0
 
     # default "null" return values
     res = {
@@ -122,9 +122,11 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         hpy.HighsModelStatus.kOptimal,
         hpy.HighsModelStatus.kTimeLimit,
         hpy.HighsModelStatus.kIterationLimit,
+        hpy.HighsModelStatus.kSolutionLimit,
     ) or (model_status in {
         hpy.HighsModelStatus.kTimeLimit,
         hpy.HighsModelStatus.kIterationLimit,
+        hpy.HighsModelStatus.kSolutionLimit,
     } and (info.objective_function_value == hpy.kHighsInf))
     lpFailCondition = model_status != hpy.HighsModelStatus.kOptimal
     if (isMip and mipFailCondition) or (not isMip and lpFailCondition):
