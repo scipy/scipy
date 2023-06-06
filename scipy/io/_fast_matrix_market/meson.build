@@ -8,7 +8,7 @@ else
 endif
 
 py3.extension_module('_core',
-  ['src/fast_matrix_market/_core.cpp'],
+  ['src/_core.cpp'],
   override_options: ['cpp_std=c++17'],
   cpp_args: [numpy_nodepr_api, '-DFMM_FROM_CHARS_INT_SUPPORTED', '-DFMM_TO_CHARS_INT_SUPPORTED', '-DFMM_USE_FAST_FLOAT', '-DFMM_USE_RYU'] + fmm_extra_args,
   include_directories: ['fast_matrix_market/include'],
@@ -19,7 +19,7 @@ py3.extension_module('_core',
 )
 
 py3.install_sources([
-    'src/fast_matrix_market/__init__.py'
+    '__init__.py'
   ],
   subdir: 'scipy/io/_fast_matrix_market'
 )
