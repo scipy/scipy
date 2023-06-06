@@ -52,8 +52,9 @@ class NdBSpline:
         Coefficients of the tensor-produce spline.
     k : tuple of integers
         Degrees for each dimension.
-    extrapolate : bool
+    extrapolate : bool, optional
         Whether to extrapolate or return nans for out-of-bounds inputs.
+        Defaults to true.
 
     Methods
     -------
@@ -65,7 +66,7 @@ class NdBSpline:
     NdPPoly : an N-dimensional piecewise tensor product polynomial
 
     """
-    def __init__(self, t, c, k, extrapolate=None):
+    def __init__(self, t, c, k, *, extrapolate=None):
         ndim = len(t)
 
         try:
@@ -122,7 +123,7 @@ class NdBSpline:
         dt = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dt)
 
-    def __call__(self, xi, nu=None, extrapolate=None):
+    def __call__(self, xi, *, nu=None, extrapolate=None):
         """Evaluate the tensor product b-spline at ``xi``.
 
         Parameters
@@ -132,7 +133,7 @@ class NdBSpline:
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
         nu : array_like, optional, shape (ndim,)
-            Orders of derivatives to evaluate. Each must be non-negative.
+            Orders of derivatives to evaluate. Each must be non-negative. Defaults to the zeroth derivivative.
         extrapolate : bool, optional
             Whether to exrapolate based on first and last intervals in each
             dimension, or return `nan`. Default is to ``self.extrapolate``.
