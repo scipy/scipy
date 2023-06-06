@@ -3,7 +3,6 @@ import os
 import io
 import shutil
 import textwrap
-import warnings
 
 import numpy as np
 from numpy import array, transpose, pi
