@@ -2,10 +2,9 @@ from dataclasses import dataclass
 import numpy as np
 
 # todo:
+#  fix tests broken by jumpstart
 #  log integration
 #  callback
-#  cache pairs in a more sensible way
-#  test function evaluation count
 #  respect data types
 #  apply np.vectorize as needed?
 #  remove maxiter?
@@ -189,9 +188,9 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
 
-    for n in range(maxiter):
-
-        h, xjc, wj = _get_pairs(n)
+    for n in range(3, maxiter):
+        h = 1 / 2**n
+        xjc, wj = _get_pairs(n, inclusive=(n==3))
 
         if feval + len(xjc) * feval_factor > maxfun:
             status = 1
@@ -207,11 +206,14 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
             break
 
         # update integral estimate
-        Snm1 = 0 if not Sk else Sk[-1]
-        Sn = Snm1 / 2 + np.sum(fjwj) * h
+        if Sk:
+            Snm1 = Sk[-1]
+            Sn = Snm1 / 2 + np.sum(fjwj) * h
+        else:
+            Sn = np.sum(fjwj) * h
 
         # Check error estimate (see "5. Error Estimation, page 11")
-        rerr, aerr = _error_estimate(Sn, Sk, fjwj)
+        rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj)
         if rerr < rtol or rerr*abs(Sn) < atol:
             status = 0
             break
@@ -225,7 +227,7 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
                             success=status==0, status=status, message=message)
 
 
-def _compute_pairs(k):
+def _compute_pair(k):
     # Compute the abscissa-weight pairs for each level m. See [1] page 9.
 
     # "....each level k of abscissa-weight pairs uses h = 2 **-k"
@@ -234,7 +236,7 @@ def _compute_pairs(k):
     # "We find that roughly 3.6 * 2^k abscissa-weight pairs are generated at
     # "level k." The actual number per level can be generated like:
     # for i in range(10):
-    #     _, xjc, wj = _compute_pairs(i)
+    #     _, xjc, wj = _compute_pair(i)
     #     # don't want infinite weights or to evaluate f at endpoints
     #     valid = (xjc > 0) & (wj > 0) & np.isfinite(wj)
     #     print(np.sum(valid))
@@ -261,32 +263,31 @@ def _compute_pairs(k):
     # code, the function will be evaluated there twice; each gets half weight.
     wj[0] = wj[0] / 2 if k == 0 else wj[0]
 
-    # cache and return the pairs
-    _compute_pairs.cache.append((h, xjc, wj))
+    return xjc, wj
 
 
-_compute_pairs.cache = []
+def _pair_cache(max_level):
+    pairs = [_compute_pair(k) for k in range(max_level + 1)]
+    lengths = [len(pair[0]) for pair in pairs]
+    _pair_cache.xjc, _pair_cache.wj = np.concatenate(pairs, axis=-1)
+    _pair_cache.indices = np.cumsum(lengths)
+_pair_cache.xjc = None
+_pair_cache.wj = None
+_pair_cache.indices = []
 
 
 def _get_pairs(k, inclusive=False):
+    indices = _pair_cache.indices
+    if len(indices) <= k:
+        _pair_cache(max(10, k))
+        indices = _pair_cache.indices
+    xjc = _pair_cache.xjc
+    wj = _pair_cache.wj
 
-    # compute pairs that haven't already been cached
-    for k in range(len(_compute_pairs.cache), k+1):
-        _compute_pairs(k)
+    start = 0 if (k == 0 or inclusive) else indices[k-1] - 1
+    end = indices[k]
 
-    # retrieve pre-computed pairs
-    ks = np.arange(k + 1) if inclusive else [k]
-
-    xjcs = []
-    wjs = []
-    for k in ks:
-        h, xjc, wj = _compute_pairs.cache[k]
-        xjcs.append(xjc)
-        wjs.append(wj)
-    xjc = np.hstack(xjcs)
-    wj = np.hstack(wjs)
-
-    return h, xjc, wj
+    return xjc[start:end].copy(), wj[start:end].copy()
 
 
 def _transform_to_limits(a, b, xjc, wj):
@@ -330,10 +331,22 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight):
     return fjwj, Sn
 
 
-def _error_estimate(Sn, Sk, fjwj):
-    if len(Sk) < 2:
+def _error_estimate(h, n, Sn, Sk, fjwj):
+    if n <= 2:
         return np.nan, np.nan
-    Snm2, Snm1 = Sk[-2:]
+
+    if len(Sk) < 2:
+        indices = _pair_cache.indices
+        hm1 = 2 * h
+        hm2 = 4 * h
+        z = fjwj.reshape(2, -1)
+        fjwjm1 = z[..., :indices[n-1]]
+        fjwjm2 = z[..., :indices[n-2]]
+        Snm1 = np.sum(fjwjm1) * hm1
+        Snm2 = np.sum(fjwjm2) * hm2
+    else:
+        Snm2, Snm1 = Sk[-2:]
+
     with np.errstate(divide='ignore'):  # when values are zero
         d1 = np.log10(abs(Sn - Snm1))
         d2 = np.log10(abs(Sn - Snm2))
