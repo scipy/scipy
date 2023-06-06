@@ -8,7 +8,15 @@ else
 endif
 
 py3.extension_module('_core',
-  ['src/_core.cpp'],
+  [
+    'src/_core.hpp',
+    'src/_core.cpp',
+    'src/_core_read_array.cpp',
+    'src/_core_read_coo.cpp',
+    'src/_core_write_array.cpp',
+    'src/_core_write_coo.cpp',
+    'src/_core_write_csc.cpp',
+  ],
   override_options: ['cpp_std=c++17'],
   cpp_args: [numpy_nodepr_api, '-DFMM_FROM_CHARS_INT_SUPPORTED', '-DFMM_TO_CHARS_INT_SUPPORTED', '-DFMM_USE_FAST_FLOAT', '-DFMM_USE_RYU'] + fmm_extra_args,
   include_directories: ['fast_matrix_market/include'],
