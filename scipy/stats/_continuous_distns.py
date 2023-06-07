@@ -8459,6 +8459,10 @@ class reciprocal_gen(rv_continuous):
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
 
+    # Details related to the decision of not defining
+    # the survival function for this distribution can be
+    # found in the PR: https://github.com/scipy/scipy/pull/18614
+
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
