@@ -9,8 +9,10 @@ from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
 
-__all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA']
+__all__ = [
+    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence', 'cyclic_sd',
+    'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA'
+]
 
 
 def lombscargle(x,
@@ -1756,11 +1758,12 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
 
     References
     ----------
-    .. [1] W. Gardner, "Measurement of spectral correlation", IEEE Trans
-           Acoust. vol. 34, pp. 1111-1123, 1986.
-
-    .. [2] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
-           Process. vol. 21, pp. 597-630, 2007.
+    .. [1] "Spectral correlation density", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Spectral_correlation_density
+    .. [2] W. Gardner, "Measurement of spectral correlation", IEEE Trans
+           Acoust. vol. 34, pp. 1111-1123, 1986
+    .. [3] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
+           Process. vol. 21, pp. 597-630, 2007
 
     Examples
     --------
