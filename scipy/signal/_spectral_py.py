@@ -2169,10 +2169,11 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> N = 1e5
     >>> freq_carrier = 1234.0
     >>> freq_modulation = 28.0
-    >>> noise_power = 10
+    >>> noise_power = 100
     >>> time = np.arange(N) / fs
-    >>> x = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
-    >>> x += np.sin(2*np.pi*freq_carrier*time)*(1 + np.sin(2*np.pi*freq_modulation*time))
+    >>> n = rng.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> s = np.sin(2*np.pi*freq_carrier*time)*(1 + np.sin(2*np.pi*freq_modulation*time))
+    >>> x = n + s
     
     >>> freqs = signal.cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
     >>> alpha = np.arange(1, 100)
@@ -2184,6 +2185,15 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
     >>> freqs = freqs[freqs >= 0]
     
+    >>> plt.figure()
+    >>> plt.plot(time, x)
+    >>> plt.plot(time, s)
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.xlim([0, 0.5])
+    >>> plt.legend(['singal + noise', 'signal'])
+    >>> plt.show()
+
+    >>> plt.figure()
     >>> plt.pcolormesh(alpha, freqs, np.abs(Sx_f_alpha))
     >>> plt.ylabel('Carrier Frequency [Hz]')
     >>> plt.xlabel('Modulation Frequency [Hz]')
