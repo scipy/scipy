@@ -10,7 +10,7 @@ extern "C" {
 #include "HighsOptions.h"
 
 std::mutex highs_options_mutex;
-char buf[256];
+static char buf[256];
 static bool log_to_console = false;
 static bool output_flag = true;
 static HighsLogOptions highs_log_options = {

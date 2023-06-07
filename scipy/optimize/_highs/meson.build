@@ -236,6 +236,7 @@ _highs_options = py3.extension_module('_highs_options',
     '../../_lib/highs/src/',
     '../../_lib/highs/src/lp_data/'
   ],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
@@ -250,6 +251,7 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
