@@ -49,25 +49,16 @@ struct CheckOptionAction {
     }
 };
 
-template<> struct CheckOptionAction<OptionRecordBool, bool> {
-    OptionStatus operator()(const HighsLogOptions& highs_log_options,
-                              OptionRecordBool& record,
-                              const bool value) const {
-        // no checking machinery in HiGHS -- defer to caller
-        return OptionStatus::kOk;
-    }
-};
-
 
 template<typename OptionRecordType, typename T>
 static PyObject *check_option(PyObject *self, PyObject *args, const char this_fmt) {
     int res = 0;
-
     const char* name = nullptr;
     T value = 0;
     char fmt[] = {
         's',       // name
-        this_fmt  // value
+        this_fmt,  // value
+        '\0'
     };
     if (!PyArg_ParseTuple(args, fmt, &name, &value)) {
         return nullptr;
@@ -85,7 +76,6 @@ static PyObject *check_option(PyObject *self, PyObject *args, const char this_fm
     }
     if (0 == res) {
         OptionRecordType& record = static_cast<OptionRecordType&>(*highs_options.records.at(idx));
-        // const OptionStatus check_status = checkOptionValue(highs_log_options, record, value);
         const OptionStatus check_status = CheckOptionAction<OptionRecordType, T>()(highs_log_options, record, value);
         if (OptionStatus::kIllegalValue == check_status) {
             res = 2;  // not a valid value
@@ -108,7 +98,7 @@ extern "C" {
 
 static PyObject *get_option_type(PyObject *self, PyObject *args) {
     const char* name = nullptr;
-    char fmt[] = {'s'};  // name
+    char fmt[] = {'s', '\0'};  // name
     if (!PyArg_ParseTuple(args, fmt, &name)) {
         return nullptr;
     }
@@ -120,10 +110,6 @@ static PyObject *get_option_type(PyObject *self, PyObject *args) {
         return Py_BuildValue("i", -1);
     }
     return Py_BuildValue("i", static_cast<int>(lookup->second));
-}
-
-static PyObject *check_bool_option(PyObject *self, PyObject *args) {
-    return check_option<OptionRecordBool, bool>(self, args, 'p');
 }
 
 static PyObject *check_int_option(PyObject *self, PyObject *args) {
@@ -141,7 +127,6 @@ static PyObject *check_string_option(PyObject *self, PyObject *args) {
 
 static PyMethodDef highsOptionsMethods[] = {
     {"get_option_type", get_option_type, METH_VARARGS, ""},
-    {"check_bool_option", check_bool_option, METH_VARARGS, ""},
     {"check_int_option", check_int_option, METH_VARARGS, ""},
     {"check_double_option", check_double_option, METH_VARARGS, ""},
     {"check_string_option", check_string_option, METH_VARARGS, ""},
