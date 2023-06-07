@@ -4482,7 +4482,7 @@ class invgamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
-                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+                 + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
@@ -5970,6 +5970,20 @@ class loggamma_gen(rv_continuous):
         skewness = sc.polygamma(2, c) / np.power(var, 1.5)
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
+
+    def _entropy(self, c):
+        def regular(c):
+            h = sc.gammaln(c) - c * sc.digamma(c) + c
+            return h
+
+        def asymptotic(c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            term = -0.5*np.log(c) + c**-1./6 - c**-3./90 + c**-5./210
+            h = norm._entropy() + term
+            return h
+
+        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
+        return h
 
 
 loggamma = loggamma_gen(name='loggamma')
@@ -8458,6 +8472,10 @@ class reciprocal_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
+
+    # Details related to the decision of not defining
+    # the survival function for this distribution can be
+    # found in the PR: https://github.com/scipy/scipy/pull/18614
 
 
 loguniform = reciprocal_gen(name="loguniform")
