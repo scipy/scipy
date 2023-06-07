@@ -160,7 +160,14 @@ if __name__ == "__main__":
     ret = 0
     path = Path("scipy").rglob("**/tests/**/test*.py")
 
+    # exclude files, directories from test name checks
+    exclude = (
+        Path("scipy/_lib/highs"),  # 3rd party tests
+    )
+
     for file in path:
+        if any(file.is_relative_to(ex) or file == ex for ex in exclude):
+            continue
         filename = os.path.basename(file)
         with open(file, encoding="utf-8") as fd:
             content = fd.read()

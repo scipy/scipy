@@ -4,8 +4,7 @@ line-length = 88
 select = ["E", "F"]
 ignore = ["E501", "E741"]
 exclude = [
-  "scipy/datasets/_registry.py",
-  "scipy/_lib/highs/**/*.py"
+  "scipy/datasets/_registry.py"
 ]
 
 # Allow unused variables when underscore-prefixed.
@@ -26,6 +25,7 @@ target-version = "py39"
 "scipy/optimize/_linprog.py" = ["F401"]
 "scipy/optimize/_linprog_ip.py" = ["F401"]
 "setup.py" = ["ALL"]
+"scipy/_lib/highs/**/*.py" = ["ALL"]
 
 [mccabe]
 # Unlike Flake8, default to a complexity level of 10.
