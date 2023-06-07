@@ -209,7 +209,7 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/util/',
   ],
   dependencies: thread_dep,
-  cpp_args: [cpp_highs_flags, highs_define_macros]
+  cpp_args: [cpp_highs_flags, highs_define_macros],
   c_args: [c_highs_flags, highs_define_macros]
 )
 
