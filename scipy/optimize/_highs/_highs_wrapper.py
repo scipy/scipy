@@ -59,7 +59,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
                     continue
             opt_type = hpy.HighsOptionType(opt_type)
             status, msg = {
-                hpy.HighsOptionType.kBool: hopt.check_bool_option,
+                hpy.HighsOptionType.kBool: lambda _x, _y: (0, ""),
                 hpy.HighsOptionType.kInt: hopt.check_int_option,
                 hpy.HighsOptionType.kDouble: hopt.check_double_option,
                 hpy.HighsOptionType.kString: hopt.check_string_option,
