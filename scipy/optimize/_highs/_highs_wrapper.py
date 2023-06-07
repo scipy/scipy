@@ -54,7 +54,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
                 if isinstance(val, bool):
                     val = "on" if val else "off"
                 else:
-                    warn(f'Option f"{key}" is "{val}", but only True or False is allowed. Using default.', OptimizeWarning)
+                    warn(f'Option f"{key}" is "{val}", but only True or False is '
+                         f'allowed. Using default.', OptimizeWarning)
                     continue
             opt_type = hpy.HighsOptionType(opt_type)
             status, msg = {
@@ -67,7 +68,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
             # have to do bool checking here because HiGHS doesn't have API
             if opt_type == hpy.HighsOptionType.kBool:
                 if not isinstance(val, bool):
-                    warn(f'Option f"{key}" is "{val}", but only True or False is allowed. Using default.', OptimizeWarning)
+                    warn(f'Option f"{key}" is "{val}", but only True or False is '
+                         f'allowed. Using default.', OptimizeWarning)
                     continue
 
             # warn or set option
@@ -106,8 +108,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
     # Extract what we need from the solution
     model_status = highs.getModelStatus()
 
-    # We might need an info object if we can look up the solution and a place to put solution
-    info = highs.getInfo()  # it should always be safe to get the info object
+    # it should always be safe to get the info object
+    info = highs.getInfo()
 
     # Failure modes:
     #     LP: if we have anything other than an Optimal status, it
@@ -133,7 +135,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         res.update({
             "status": model_status,
             "message": f"model_status is {highs.modelStatusToString(model_status)}; "
-                       f"primal_status is {highs.solutionStatusToString(info.primal_solution_status)}",
+                       f"primal_status is "
+                       f"{highs.solutionStatusToString(info.primal_solution_status)}",
             "simplex_nit": info.simplex_iteration_count,
             "ipm_nit": info.ipm_iteration_count,
             "crossover_nit": info.crossover_iteration_count,
