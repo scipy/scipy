@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack, issparse
-from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
+from ._highs._highs_wrapper import _highs_wrapper
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 from ._linprog_highs import _highs_to_scipy_status_message
