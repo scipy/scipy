@@ -2184,6 +2184,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> Sx_f_alpha = Sx_f_alpha[freqs >= 0, :]
     >>> freqs = freqs[freqs >= 0]
     
+    >>> plt.pcolormesh(alpha, freqs, np.abs(Sx_f_alpha))
     >>> plt.ylabel('Carrier Frequency [Hz]')
     >>> plt.xlabel('Modulation Frequency [Hz]')
     >>> plt.yticks([freq_carrier])
