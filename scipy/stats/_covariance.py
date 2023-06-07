@@ -548,7 +548,6 @@ class CovViaCholesky(Covariance):
     def _covariance(self):
         return self._factor @ self._factor.T
 
-
     def _whiten(self, x):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
         return res
