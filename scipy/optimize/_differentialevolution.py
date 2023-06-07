@@ -968,7 +968,7 @@ class DifferentialEvolutionSolver:
         if np.any(np.isinf(self.population_energies)):
             return np.inf
         return (np.std(self.population_energies) /
-                np.abs(np.mean(self.population_energies) + _MACHEPS))
+                (np.abs(np.mean(self.population_energies)) + _MACHEPS))
 
     def converged(self):
         """
@@ -1581,10 +1581,16 @@ class DifferentialEvolutionSolver:
         obtain random integers from range(self.num_population_members),
         without replacement. You can't have the original candidate either.
         """
-        idxs = list(range(self.num_population_members))
-        idxs.remove(candidate)
-        self.random_number_generator.shuffle(idxs)
-        idxs = idxs[:number_samples]
+        pool = np.arange(self.num_population_members)
+        self.random_number_generator.shuffle(pool)
+
+        idxs = []
+        while len(idxs) < number_samples and len(pool) > 0:
+            idx = pool[0]
+            pool = pool[1:]
+            if idx != candidate:
+                idxs.append(idx)
+        
         return idxs
 
 

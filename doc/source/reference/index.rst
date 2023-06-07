@@ -194,9 +194,7 @@ following, a *SciPy module* is defined as a Python package, say
 
 * Directory ``yyy/`` contains:
 
-  - A file ``setup.py`` that defines
-    ``configuration(parent_package='',top_path=None)`` function
-    for `numpy.distutils`.
+  - A file ``meson.build`` with build configuration for the submodule.
 
   - A directory ``tests/`` that contains files ``test_<name>.py``
     corresponding to modules ``yyy/<name>{.py,.so,/}``.
@@ -220,7 +218,5 @@ following, a *SciPy module* is defined as a Python package, say
   separate and put under ``doc/source/tutorial/``.
 
 See the existing SciPy submodules for guidance.
-
-For further details on NumPy distutils, see `NumPy Distutils - User's Guide <https://github.com/numpy/numpy/blob/main/doc/DISTUTILS.rst>`_.
 
 .. _NumPy documentation style: https://numpydoc.readthedocs.io/en/latest/format.html

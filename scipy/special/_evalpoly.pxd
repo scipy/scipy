@@ -18,7 +18,7 @@ from ._complexstuff cimport zabs
 
 
 cdef inline double complex cevalpoly(double *coeffs, int degree,
-                                     double complex z) nogil:
+                                     double complex z) noexcept nogil:
     """Evaluate a polynomial with real coefficients at a complex point.
 
     Uses equation (3) in section 4.6.4 of [1]. Note that it is more

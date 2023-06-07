@@ -32,45 +32,34 @@ by CI resources providers.
 
 GitHub Actions
 --------------
-* ``Windows Tests``: test suite runs for Windows (``x86_64``)
-* ``Linux Tests``: test suite runs for Linux (``x86_64``)
+* ``Lint``: PEP8 and code style
+* ``Windows Tests``: test suite runs for Windows
+* ``Linux Tests``: test suite runs for Linux
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
-* ``wheels``: builds wheels for SciPy releases as well as *nightly* builds.
+* ``Wheels builder``: builds wheels for SciPy releases as well as *nightly* builds.
 * ``Check the rendered docs here!``: live preview of the documentation
+* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
+  dependencies and check coverage
+* ``gcc-8``: build with minimal supported version of GCC, install the wheel,
+  then run the test suite with `python -OO`
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
 (lowest-supported to nightly builds), 32-bit vs. 64-bit, different compilers,
 and more - for details, see the ``.yml`` configuration files.
 
-Azure
------
-* ``Lint``: PEP8 and code style
-* ``Windows Python``: test suite runs for Windows
-* ``Linux_Python_xx_32bit_full``: 32-bit Linux
-* ``wheel_optimized_gcc``: install the wheel, then run the test suite with
-  `python -OO`
-* ``source_distribution``: install via ``sdist``, then run the test suite
-* ``refguide_asv_check``: doctests from examples and benchmarks
-* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
-  dependencies and check coverage
-
 CircleCI
 --------
 * ``build_docs``: build the documentation
 * ``build_scipy``
 * ``run_benchmarks``: verify how the changes impact performance
+* ``refguide_check``: doctests from examples and benchmarks
 
 CirrusCI
 --------
 * ``Tests``: test suite for specific architecture like
   ``musllinux, arm, aarch``
 * ``Wheels``: build and upload some wheels
-
-Codecov
--------
-* ``patch``: the impact on code coverage due to your changes
-* ``project``: the coverage of the whole project
 
 .. _skip-ci:
 
@@ -87,7 +76,6 @@ integration.
 
 Skipping CI can be achieved by adding a special text in the commit message:
 
-* ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
 * ``[skip circle]``: will skip CircleCI
 * ``[skip cirrus]``: will skip CirrusCI
@@ -101,13 +89,13 @@ GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.
 
-    [skip azp] [skip actions] [skip cirrus]
+    [skip actions] [skip cirrus]
 
 Wheel builds
 ============
 
 Wheels for SciPy releases and
-`*nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_ builds are built
+`*nightly* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_ builds are built
 using cibuildwheel in a
 `Github Action <https://github.com/scipy/scipy/blob/main/.github/workflows/wheels.yml>`_.
 The Action runs:
@@ -121,35 +109,10 @@ The action does not run on forks of the main SciPy repository. The wheels that
 are created are available as artifacts associated with a successful run of the
 Action. When the Action runs on a schedule, or is manually started, the wheels
 are uploaded to the
-`*scipy-wheels-nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_
+`*scientific-python-nightly-wheels* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_
 repository.
 
 It is not advised to use cibuildwheel to build scipy wheels on your own system
 as it will automatically install gfortran compilers and various other
 dependencies. Instead, one could use an isolated Docker container to build
 Linux wheels.
-
-Docker image builds
-===================
-
-Two Docker images are built in CI with GitHub Actions, and made available on
-Docker Hub under the ``scipy`` organisation:
-
-1. ``scipy/scipy-dev`` - contains all the dependencies needed for developing
-   SciPy. This image is only rebuilt when ``environment.yml`` in the root of
-   the repo is updated,
-2. ``scipy/scipy-gitpod`` - builds on top of ``scipy-dev`` and contains a built
-   development version of SciPy and the SciPy docs. It is the image pulled when
-   `a user opens Gitpod <quickstart_gitpod.html>`_.
-
-This diagram explains the CI setup, triggers, and flow of artifacts to Docker
-Hub and Gitpod:
-
-.. image:: ../../_static/gitpod/gitpod_ci_build_flow.png
-    :alt: Diagram of how Docker images are built for Docker Hub and Gitpod in CI
-
-.. warning::
-   These Docker images are intended for SciPy development *only*.
-   These should not be used "as-is" for any production-level applications (they
-   are not updated very frequently, and not audited for known security
-   vulnerabilities for example).

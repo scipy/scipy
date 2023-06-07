@@ -19,12 +19,15 @@ Result classes
    FitResult
    OddsRatioResult
    TtestResult
+   ECDFResult
+   EmpiricalDistributionFunction
 
 """
 
 __all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult',
            'PearsonRResult', 'FitResult', 'OddsRatioResult',
-           'TtestResult', 'DunnettResult']
+           'TtestResult', 'DunnettResult', 'ECDFResult',
+           'EmpiricalDistributionFunction']
 
 
 from ._binomtest import BinomTestResult
@@ -34,3 +37,4 @@ from ._hypotests import TukeyHSDResult
 from ._multicomp import DunnettResult
 from ._stats_py import PearsonRResult, TtestResult
 from ._fit import FitResult
+from ._survival import ECDFResult, EmpiricalDistributionFunction
