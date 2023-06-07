@@ -15,15 +15,18 @@ highs_define_macros = [
   '-DNDEBUG'
 ]
 
-highs_flags = [
+cpp_highs_flags = [
   _cpp_Wno_class_memaccess,
   _cpp_Wno_format_truncation,
   _cpp_Wno_non_virtual_dtor,
   _cpp_Wno_sign_compare,
   _cpp_Wno_switch,
   _cpp_Wno_unused_but_set_variable,
-  _cpp_Wno_unused_variable,
-  Wno_unused_variable,
+  _cpp_Wno_unused_variable
+]
+
+c_highs_flags = [
+  Wno_unused_variable
 ]
 
 basiclu_sources = [
@@ -206,12 +209,13 @@ highs_lib = static_library('highs',
     '../../_lib/highs/src/util/',
   ],
   dependencies: thread_dep,
-  cpp_args: [highs_flags, highs_define_macros]
+  cpp_args: [cpp_highs_flags, highs_define_macros]
+  c_args: [c_highs_flags, highs_define_macros]
 )
 
 highs_bindings = py3.extension_module('highs_bindings',
   ['../../_lib/highs/highspy/highs_bindings.cpp'],
-  cpp_args: [highs_flags, highs_define_macros, numpy_nodepr_api],
+  cpp_args: [cpp_highs_flags, highs_define_macros, numpy_nodepr_api],
   include_directories: [
     'src',
     '../../_lib/highs/src/',
@@ -225,7 +229,7 @@ highs_bindings = py3.extension_module('highs_bindings',
 
 _highs_options = py3.extension_module('_highs_options',
   ['_highs_options.cpp'],
-  cpp_args: [highs_flags, highs_define_macros],
+  cpp_args: [cpp_highs_flags, highs_define_macros],
   link_with: [highs_lib],
   include_directories: [
     'src',
@@ -238,7 +242,7 @@ _highs_options = py3.extension_module('_highs_options',
 
 _highs_constants = py3.extension_module('_highs_constants',
   ['_highs_constants.cpp'],
-  cpp_args: [highs_flags, highs_define_macros],
+  cpp_args: [cpp_highs_flags, highs_define_macros],
   link_with: [highs_lib],
   include_directories: [
     'src',

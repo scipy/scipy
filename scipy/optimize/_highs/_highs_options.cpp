@@ -14,10 +14,11 @@ char buf[256];
 static bool log_to_console = false;
 static bool output_flag = true;
 static HighsLogOptions highs_log_options = {
-    .log_stream = nullptr,
-    .output_flag = &output_flag,
-    .log_to_console = &log_to_console,
-    .log_dev_level = nullptr
+    // MSVC can't handle designated initializers
+    /* .log_stream = */ nullptr,
+    /* .output_flag = */ &output_flag,
+    /* .log_to_console = */ &log_to_console,
+    /* .log_dev_level = */ nullptr
 };
 
 struct cmp_str {
