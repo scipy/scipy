@@ -886,11 +886,9 @@ def _cumulative_simpson_unequal_intervals(
     return res.swapaxes(0, axis)
 
 
-def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
+def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
-    If x is None, spacing of dx is assumed.
-
     The integral of the samples at every point is calculated by assuming a quadratic
     relationship between each point and the two adjacent points.
 
@@ -939,7 +937,7 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     Notes
     -----
 
-    .. versionadded:: 1.11.0
+    .. versionadded:: 1.12.0
 
     For samples that are equally spaced the result is exact if the function
     is a polynomial of order 3 or less. If the samples are not equally spaced,
@@ -954,6 +952,9 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     References
     ----------
     .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
+    .. [2] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+           MS Excel and Irregularly-spaced Data. Journal of Mathematical
+           Sciences and Mathematics Education. 12 (2): 1-9
 
     Examples
     --------
@@ -968,7 +969,6 @@ def cumulative_simpson(y, x=None, dx=1.0, axis=-1, initial=None):
     >>> plt.show()
 
     """
-
     y = np.asarray(y)
 
     # validate y and axis

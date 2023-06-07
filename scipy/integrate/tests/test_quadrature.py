@@ -485,7 +485,7 @@ class TestCumulativeSimpson:
             int_y = int_y[1:]
 
         assert_equal(
-            cumulative_simpson(y, input_x, dx, initial=initial),
+            cumulative_simpson(y, x=input_x, dx=dx, initial=initial),
             int_y,
         )
 
@@ -539,7 +539,7 @@ class TestCumulativeSimpson:
             int_y = int_y[tuple(y_shape)]
 
         assert_almost_equal(
-            cumulative_simpson(y, x, axis=axis, initial=initial),
+            cumulative_simpson(y, x=x, axis=axis, initial=initial),
             int_y,
         )
 
@@ -641,7 +641,7 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        ("y_func", "x", "dx", "initial", "axis", "int_y_func"),
+        ("y_func", "x", "dx", "initial", "axis", "int_y_func", "match"),
         [
             (
                 # Non-unique values in x
@@ -651,6 +651,7 @@ class TestCumulativeSimpson:
                 8 / 3,
                 -1,
                 lambda y: y**3 / 3,
+                "Input x must be monotonically increasing"
             ),
             (
                 # Multi dimensional, non-unique values in x
@@ -660,6 +661,7 @@ class TestCumulativeSimpson:
                 np.array([[1 / 3], [0], [8 / 3]]),
                 -1,
                 lambda y: y**3 / 3,
+                "Input x must be monotonically increasing"
             ),
             (
                 # Multi dimensional, non-unique values in x in non-default axis
@@ -669,6 +671,7 @@ class TestCumulativeSimpson:
                 None,
                 0,
                 lambda y: y**3 / 3,
+                "Input x must be monotonically increasing"
             ),
             (
                 # Less than 3 points along axis of integration
@@ -678,10 +681,13 @@ class TestCumulativeSimpson:
                 None,
                 -1,
                 lambda y: y**3 / 3,
+                "At least 3 points"
             ),
         ],
     )
-    def test_simpson_exceptions(self, y_func, x, dx, initial, axis, int_y_func):
+    def test_simpson_exceptions(
+        self, y_func, x, dx, initial, axis, int_y_func, match
+    ):
         input_x = x
         if x is None:
             x = dx * np.arange(17)
@@ -692,5 +698,5 @@ class TestCumulativeSimpson:
             y_shape[axis] = slice(1, None)
             int_y = int_y[tuple(y_shape)]
 
-        with pytest.raises(ValueError):
-            cumulative_simpson(y, input_x, dx, axis=axis, initial=initial)
+        with pytest.raises(ValueError, match=match):
+            cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)
