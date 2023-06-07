@@ -5839,9 +5839,8 @@ class loggamma_gen(rv_continuous):
 
         def asymptotic(c):
             # using asymptotic expansions for gammaln and psi (see gh-18093)
-            term_1 = -0.5 * np.log(c) + (1 / 6) * c ** -1.
-            term_2 = -(1 / 90) * c ** -3. + (1 / 210) * c ** -5.
-            h = norm._entropy() + term_1 + term_2
+            term = -0.5*np.log(c) + c**-1./6 - c**-3./90 + c**-5./210
+            h = norm._entropy() + term
             return h
 
         h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
