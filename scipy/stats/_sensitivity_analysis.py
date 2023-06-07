@@ -156,8 +156,8 @@ def saltelli_2010(
 
 @dataclass
 class BootstrapSobolResult:
-    first_order: BootstrapResult  # type: ignore[valid-type]
-    total_order: BootstrapResult  # type: ignore[valid-type]
+    first_order: BootstrapResult
+    total_order: BootstrapResult
 
 
 @dataclass
@@ -171,13 +171,13 @@ class SobolResult:
     _A: np.ndarray | None = None
     _B: np.ndarray | None = None
     _AB: np.ndarray | None = None
-    _bootstrap_result: BootstrapResult = None  # type: ignore[valid-type]
+    _bootstrap_result: BootstrapResult | None = None
 
     def bootstrap(
         self,
         confidence_level: DecimalNumber = 0.95,
         n_resamples: IntNumber = 999
-    ) -> BootstrapResult:  # type: ignore[valid-type]
+    ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
         Parameters
@@ -467,9 +467,9 @@ def sobol_indices(
     ...     random_state=rng
     ... )
     >>> indices.first_order
-    array([3.14996175e-01, 4.40110556e-01, 2.17329918e-04])
+    array([0.31637954, 0.43781162, 0.00318825])
     >>> indices.total_order
-    array([0.55508078, 0.43995732, 0.23803014])
+    array([0.56122127, 0.44287857, 0.24229595])
 
     Confidence interval can be obtained using bootstrapping.
 

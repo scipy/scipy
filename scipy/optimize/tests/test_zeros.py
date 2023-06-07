@@ -1,6 +1,5 @@
 import pytest
 
-from math import sqrt, exp, sin, cos
 from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
@@ -9,7 +8,7 @@ from numpy.testing import (assert_warns, assert_,
                            assert_array_equal,
                            suppress_warnings)
 import numpy as np
-from numpy import finfo, power, nan, isclose
+from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
 
 from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
@@ -439,10 +438,13 @@ class TestNewton(TestScalarRootFinders):
         # `newton` uses the secant method when `x1` and `x2` are specified
         res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
-        # all three foun a root
+        # all three found a root
         assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert res_newton_default.root.shape == tuple()
         assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert res_secant_default.root.shape == tuple()
         assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        assert res_secant.root.shape == tuple()
 
         # Defaults are correct
         assert (res_secant_default.root
@@ -764,19 +766,33 @@ def test_gh9551_raise_error_if_disp_true():
 
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
-@pytest.mark.parametrize('rs_interface', [True, False])
-def test_gh3089_8394(solver_name, rs_interface):
+def test_gh3089_8394(solver_name):
     # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
     # results when they encountered NaNs. Check that this is resolved.
-    solver = ((lambda f, a, b: root_scalar(f, bracket=(a, b))) if rs_interface
-              else getattr(zeros, solver_name))
-
     def f(x):
         return np.nan
 
-    message = "The function value at x..."
-    with pytest.raises(ValueError, match=message):
+    solver = getattr(zeros, solver_name)
+    with pytest.raises(ValueError, match="The function value at x..."):
         solver(f, 0, 1)
+
+
+@pytest.mark.parametrize('method',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+def test_gh18171(method):
+    # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
+    # results when they encountered NaNs. Check that `root_scalar` returns
+    # normally but indicates that convergence was unsuccessful. See gh-18171.
+    def f(x):
+        f._count += 1
+        return np.nan
+    f._count = 0
+
+    res = root_scalar(f, bracket=(0, 1), method=method)
+    assert res.converged is False
+    assert res.flag.startswith("The function value at x")
+    assert res.function_calls == f._count
+    assert str(res.root) in res.flag
 
 
 @pytest.mark.parametrize('solver_name',

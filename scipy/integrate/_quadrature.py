@@ -522,7 +522,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
+def simps(y, x=None, dx=1.0, axis=-1, even=None):
     """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
@@ -531,7 +531,7 @@ def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
+def simpson(y, x=None, dx=1.0, axis=-1, even=None):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -551,16 +551,37 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : str {'avg', 'first', 'last'}, optional
-        'avg' : Average two results:1) use the first N-2 intervals with
-                  a trapezoidal rule on the last interval and 2) use the last
-                  N-2 intervals with a trapezoidal rule on the first interval.
+    even : {None, 'simpson', 'avg', 'first', 'last'}, optional
+        'avg' : Average two results:
+            1) use the first N-2 intervals with
+               a trapezoidal rule on the last interval and
+            2) use the last
+               N-2 intervals with a trapezoidal rule on the first interval.
 
         'first' : Use Simpson's rule for the first N-2 intervals with
                 a trapezoidal rule on the last interval.
 
         'last' : Use Simpson's rule for the last N-2 intervals with a
                trapezoidal rule on the first interval.
+
+        None : equivalent to 'simpson' (default)
+
+        'simpson' : Use Simpson's rule for the first N-2 intervals with the
+                  addition of a 3-point parabolic segment for the last
+                  interval using equations outlined by Cartwright [1]_.
+                  If the axis to be integrated over only has two points then
+                  the integration falls back to a trapezoidal integration.
+
+                  .. versionadded:: 1.11.0
+
+        .. versionchanged:: 1.11.0
+            The newly added 'simpson' option is now the default as it is more
+            accurate in most situations.
+
+        .. deprecated:: 1.11.0
+            Parameter `even` is deprecated and will be removed in SciPy
+            1.13.0. After this time the behaviour for an even number of
+            points will follow that of `even='simpson'`.
 
     Returns
     -------
@@ -587,6 +608,12 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     the samples are not equally spaced, then the result is exact only
     if the function is a polynomial of order 2 or less.
 
+    References
+    ----------
+    .. [1] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+           MS Excel and Irregularly-spaced Data. Journal of Mathematical
+           Sciences and Mathematics Education. 12 (2): 1-9
+
     Examples
     --------
     >>> from scipy import integrate
@@ -599,7 +626,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
 
     >>> y = np.power(x, 3)
     >>> integrate.simpson(y, x)
-    1642.5
+    1640.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
 
@@ -627,26 +654,115 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
         if x.shape[axis] != N:
             raise ValueError("If given, length of x along axis must be the "
                              "same as y.")
+
+    # even keyword parameter is deprecated
+    if even is not None:
+        warnings.warn(
+            "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
+            "removed in SciPy 1.13.0",
+            DeprecationWarning, stacklevel=2
+        )
+
     if N % 2 == 0:
         val = 0.0
         result = 0.0
-        slice1 = (slice(None),)*nd
-        slice2 = (slice(None),)*nd
-        if even not in ['avg', 'last', 'first']:
-            raise ValueError("Parameter 'even' must be "
-                             "'avg', 'last', or 'first'.")
+        slice_all = (slice(None),) * nd
+
+        # default is 'simpson'
+        even = even if even is not None else "simpson"
+
+        if even not in ['avg', 'last', 'first', 'simpson']:
+            raise ValueError(
+                "Parameter 'even' must be 'simpson', "
+                "'avg', 'last', or 'first'."
+            )
+
+        if N == 2:
+            # need at least 3 points in integration axis to form parabolic
+            # segment. If there are two points then any of 'avg', 'first',
+            # 'last' should give the same result.
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
+            if x is not None:
+                last_dx = x[slice1] - x[slice2]
+            val += 0.5 * last_dx * (y[slice1] + y[slice2])
+
+            # calculation is finished. Set `even` to None to skip other
+            # scenarios
+            even = None
+
+        if even == 'simpson':
+            # use Simpson's rule on first intervals
+            result = _basic_simpson(y, 0, N-3, x, dx, axis)
+
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
+            slice3 = tupleset(slice_all, axis, -3)
+
+            h = np.asfarray([dx, dx])
+            if x is not None:
+                # grab the last two spacings from the appropriate axis
+                hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
+                hm1 = tupleset(slice_all, axis, slice(-1, None, 1))
+
+                diffs = np.float64(np.diff(x, axis=axis))
+                h = [np.squeeze(diffs[hm2], axis=axis),
+                     np.squeeze(diffs[hm1], axis=axis)]
+
+            # This is the correction for the last interval according to
+            # Cartwright.
+            # However, I used the equations given at
+            # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
+            # A footnote on Wikipedia says:
+            # Cartwright 2017, Equation 8. The equation in Cartwright is
+            # calculating the first interval whereas the equations in the
+            # Wikipedia article are adjusting for the last integral. If the
+            # proper algebraic substitutions are made, the equation results in
+            # the values shown.
+            num = 2 * h[1] ** 2 + 3 * h[0] * h[1]
+            den = 6 * (h[1] + h[0])
+            alpha = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            num = h[1] ** 2 + 3.0 * h[0] * h[1]
+            den = 6 * h[0]
+            beta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            num = 1 * h[1] ** 3
+            den = 6 * h[0] * (h[0] + h[1])
+            eta = np.true_divide(
+                num,
+                den,
+                out=np.zeros_like(den),
+                where=den != 0
+            )
+
+            result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
+
+        # The following code (down to result=result+val) can be removed
+        # once the 'even' keyword is removed.
+
         # Compute using Simpson's rule on first intervals
         if even in ['avg', 'first']:
-            slice1 = tupleset(slice1, axis, -1)
-            slice2 = tupleset(slice2, axis, -2)
+            slice1 = tupleset(slice_all, axis, -1)
+            slice2 = tupleset(slice_all, axis, -2)
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5*last_dx*(y[slice1]+y[slice2])
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
         # Compute using Simpson's rule on last set of intervals
         if even in ['avg', 'last']:
-            slice1 = tupleset(slice1, axis, 0)
-            slice2 = tupleset(slice2, axis, 1)
+            slice1 = tupleset(slice_all, axis, 0)
+            slice2 = tupleset(slice_all, axis, 1)
             if x is not None:
                 first_dx = x[tuple(slice2)] - x[tuple(slice1)]
             val += 0.5*first_dx*(y[slice2]+y[slice1])
@@ -1304,7 +1420,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> n_estimates = 8
     >>> res = qmc_quad(func, a, b, n_estimates=n_estimates, qrng=qrng)
     >>> res.integral, res.standard_error
-    (0.00018443143881633162, 4.709434153066518e-08)
+    (0.00018429555666024108, 1.0389431116001344e-07)
 
     A two-sided, 99% confidence interval for the integral may be estimated
     as:
@@ -1312,7 +1428,7 @@ def qmc_quad(func, a, b, *, n_estimates=8, n_points=1024, qrng=None,
     >>> t = stats.t(df=n_estimates-1, loc=res.integral,
     ...             scale=res.standard_error)
     >>> t.interval(0.99)
-    (0.00018426663295474533, 0.0001845962446779179)
+    (0.0001839319802536469, 0.00018465913306683527)
 
     Indeed, the value reported by `scipy.stats.multivariate_normal` is
     within this range.
