@@ -57,7 +57,7 @@ struct write_cursor {
      * Open a file
      * @param filename path
      */
-    write_cursor(const std::string& filename): stream_ptr(std::make_unique<std::ofstream>(filename)) {}
+    write_cursor(const std::string& filename): stream_ptr(std::make_unique<std::ofstream>(filename, std::ios_base::out | std::ios_base::binary)) {}
 
     /**
      * Use a Python stream. Needs to be a shared_ptr because this stream object needs to stay alive for the lifetime

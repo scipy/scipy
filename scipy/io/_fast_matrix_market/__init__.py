@@ -135,7 +135,7 @@ def _get_read_cursor(source, parallelism=None):
         path = str(source)
         if path.endswith('.gz'):
             import gzip
-            source = gzip.open(path, 'r')
+            source = gzip.GzipFile(path, 'r')
         elif path.endswith('.bz2'):
             import bz2
             source = bz2.BZ2File(path, 'rb')
@@ -176,6 +176,8 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
 
     if hasattr(target, "write"):
         # Stream object.
+        if isinstance(target, io.TextIOBase):
+            raise TypeError("target stream must be open in binary mode.")
         return _core.open_write_stream(target, h, parallelism, precision)
     else:
         raise TypeError("Unknown source object")
