@@ -29,21 +29,30 @@ def _bws_input_validation(x, y, alternative, method):
     return x, y, alternative, method
 
 
-def _bws_statistic(x, y, alternative):
+def _bws_statistic(x, y, alternative, axis):
     '''Compute the BWS test statistic for two independent samples'''
-    Ri, Hj = np.sort(x, axis=-1), np.sort(y, axis=-1)
-    n, m = Ri.shape[-1], Hj.shape[-1]
+    # Public function currently does not accept `axis`, but `permutation_test`
+    # uses `axis` to make vectorized call.
+
+    Ri, Hj = np.sort(x, axis=axis), np.sort(y, axis=axis)
+    n, m = Ri.shape[axis], Hj.shape[axis]
     i, j = np.arange(1, n+1), np.arange(1, m+1)
 
-    Bx_num = (Ri - (m + n)/n * i)
-    Bx_num *= Bx_num if alternative == 'two-sided' else np.abs(Bx_num)
-    Bx_den = i/(n+1) * (1 - i/(n+1)) * m*(m+n)/n
-    Bx = 1/n * np.sum(Bx_num/Bx_den, axis=-1)
+    Bx_num = Ri - (m + n)/n * i
+    By_num = Hj - (m + n)/m * j
 
-    By_num = (Hj - (m + n)/m * j)
-    By_num *= By_num if alternative == 'two-sided' else np.abs(By_num)
+    if alternative == 'two-sided':
+        Bx_num *= Bx_num
+        By_num *= By_num
+    else:
+        Bx_num *= np.abs(Bx_num)
+        By_num *= np.abs(By_num)
+
+    Bx_den = i/(n+1) * (1 - i/(n+1)) * m*(m+n)/n
     By_den = j/(m+1) * (1 - j/(m+1)) * n*(m+n)/m
-    By = 1/m * np.sum(By_num/By_den, axis=-1)
+
+    Bx = 1/n * np.sum(Bx_num/Bx_den, axis=axis)
+    By = 1/m * np.sum(By_num/By_den, axis=axis)
 
     B = (Bx + By) / 2 if alternative == 'two-sided' else (Bx - By) / 2
 
@@ -58,8 +67,8 @@ def bws_test(x, y, *, alternative="two-sided", method=None):
     is the same as the distribution underlying sample `y`. Unlike 
     the Kolmogorov-Smirnov, Wilcoxon, and Cramer-Von Mises tests, 
     the BWS test weights the integral by the variance of the difference
-    in CDFs, emphasizing the tails of the distributions, which increases
-    the power of the test in many applications.
+    in cumulative distribution functions (CDFs), emphasizing the tails of the
+    distributions, which increases the power of the test in many applications.
 
     Parameters
     ----------
@@ -91,9 +100,9 @@ def bws_test(x, y, *, alternative="two-sided", method=None):
     res : PermutationTestResult
     An object with attributes:
 
-    statistic : float or ndarray
+    statistic : float
         The observed test statistic of the data.
-    pvalue : float or ndarray
+    pvalue : float
         The p-value for the given alternative.
     null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
@@ -151,7 +160,7 @@ def bws_test(x, y, *, alternative="two-sided", method=None):
     >>> print(res.pvalue)
     0.002913752913752914
 
-    Because the p-value is below our threshold of 5%, we take this as evidence
+    Because the p-value is below our threshold of 1%, we take this as evidence
     against the null hypothesis in favor of the alternative that there is a
     difference in performance between the two groups.
     '''
