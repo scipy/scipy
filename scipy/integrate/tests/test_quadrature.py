@@ -563,6 +563,10 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(42, 0, f.b)
 
+        message = '...must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, log=2)
+
         message = '...must be reals.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 1+1j, f.b)
@@ -571,21 +575,25 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, atol='ekki')
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, rtol=None)
+            _tanhsinh(f, 0, f.b, rtol=pytest)
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, minweight=object())
 
         message = '...must be positive and finite.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, rtol=0)
-        with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, minweight=np.inf)
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, atol=-1.0)
+            _tanhsinh(f, 0, f.b, rtol=-1)
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, atol=np.inf)
+
+        message = '...may not be positive infinity.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, rtol=np.inf, log=True)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, atol=np.inf, log=True)
 
         message = '...must be integers.'
         with pytest.raises(ValueError, match=message):
@@ -736,3 +744,13 @@ class TestTanhSinh:
         assert res.success == True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
+
+    @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
+    def test_log(self, rtol):
+        # Test equivalence of log-integration and regular integration
+        dist = stats.norm()
+        res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
+        ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
+        assert_allclose(np.exp(res.integral), ref.integral)
+        assert_allclose(np.exp(res.error), ref.error)
+        assert res.feval == ref.feval

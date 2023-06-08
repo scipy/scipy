@@ -3,7 +3,7 @@ import numpy as np
 from scipy import special
 
 # todo:
-#  fix log with negative values, add tests, add iv, avoid warnings
+#  fix log with negative values
 #  fix tests broken by jumpstart
 #  callback
 #  respect data types
@@ -42,7 +42,7 @@ _status_messages = {-1: "Iteration in progress.",
                     }
 
 
-def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
+def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
               minweight=1e-100, log=False):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
@@ -76,12 +76,14 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
         The function will terminate with nonzero exit status before *either* of
         these limits is reached. For an increase of one of these parameters to
         have an effect, *both* of these values must be increased.
-    atol, rtol : float
+    atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
-        tolerance (default: 1e-15), respectively. The error estimate is as
+        tolerance (default: 1e-14), respectively. The error estimate is as
         described in [1]_ Section 5; while not theoretically rigorous or
-        conservative, it is said to work well in practice.
-    minweight : float
+        conservative, it is said to work well in practice. Must be non-negative
+        and finite if `log` is False, and must be expressed as the log of a
+        non-negative and finite number if `log` is True.
+    minweight : float, default: 1e-100
         The minimum nonzero weight to be used in the Euler-Maclaurin Summation
         formula as described in [1]_ Section 4. When evaluating an integral
         with a singularity at an endpoint, values of the integrand will not be
@@ -91,9 +93,11 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
         integrals with an endpoint singularity, a larger value will protect
         against overflows of the integrand, but potentially at the expense of
         integral and error estimate accuracy.
-    log : bool
-        When set to True, func returns the log of the integrand, and the result
-        object contains the log of the integral and error.
+    log : bool, default: True
+        When set to True, func returns the log of the integrand, `atol` and
+        `rtol` must be expressed as the logs of the absolute and relative
+        errors, and the result object contains the log of the integral and
+        error.
 
     Returns
     -------
@@ -219,7 +223,7 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
 
         # Check error estimate (see "5. Error Estimation, page 11")
         rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj, log)
-        success = (rerr < np.log(rtol) or (rerr + Sn < np.log(atol)) if log
+        success = (rerr < rtol or (rerr + Sn < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
         if success:
             status = 0
@@ -386,18 +390,34 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
     if not callable(f):
         raise ValueError(message)
 
+    message = '`log` must be True or False.'
+    if log not in {True, False}:
+        raise ValueError(message)
+    log = bool(log)
+
+    if atol is None:
+        atol = -np.inf if log else 0
+
+    if rtol is None:
+        rtol = np.log(1e-14) if log else 1e-14
+
     message = ('Integration limits `a` and `b`, tolerances `atol` and '
                '`rtol`, and `minweight` must be reals.')
     params = np.asarray([a, b, atol, rtol, minweight])
     if not np.issubdtype(params.dtype, np.floating) or np.any(np.isnan(params)):
         raise ValueError(message)
-    message = '`rtol` and `minweight` must be positive and finite.'
-    if np.any(params[-2:] <= 0) or  np.any(np.isinf(params[-2:])):
+    if log:
+        message = '`atol` and `rtol` may not be positive infinity.'
+        if np.any(np.isposinf(params[-3:-1])):
+            raise ValueError(message)
+    else:
+        message = '`atol` and `rtol` must be non-negative and finite.'
+        if np.any(params[-3:-1] < 0) or np.any(np.isinf(params[-3:-1])):
+            raise ValueError(message)
+    message = '`minweight` must be positive and finite.'
+    if np.any(params[-1] <= 0) or np.any(np.isinf(params[-1])):
         raise ValueError(message)
     a, b, atol, rtol, minweight = params
-    message = '`atol` must be non-negative and finite.'
-    if atol < 0 or np.isinf(atol):
-        raise ValueError(message)
 
     message = '`maxfun` and `maxiter` must be integers.'
     params = np.asarray([maxfun, maxiter])
