@@ -4,6 +4,7 @@ from scipy import special
 
 # todo:
 #  fix log with negative values
+#  test log more thoroughly with negative values and with transformations
 #  fix tests broken by jumpstart
 #  callback
 #  respect data types
@@ -365,22 +366,20 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
     e1 = np.finfo(np.float64).eps
 
     if log:
-        d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))/np.log(10)
-        d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))/np.log(10)
-        d3 = (np.log(e1) + np.max(fjwj))/np.log(10)
-        d4 = (np.max(np.reshape(fjwj, (2, -1))[:, -1]))/np.log(10)
-        d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
-        rerr = d * np.log(10)
-        aerr = max(np.log(e1), rerr) + Sn
+        log_e1 = np.log(e1)
+        d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))
+        d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))
+        d3 = log_e1 + np.max(fjwj)
+        d4 = np.max(np.reshape(fjwj, (2, -1))[:, -1])
+        rerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
+        aerr = max(log_e1, rerr) + Sn
     else:
-        with np.errstate(divide='ignore'):  # when values are zero
-            d1 = np.log10(abs(Sn - Snm1))
-            d2 = np.log10(abs(Sn - Snm2))
-            d3 = np.log10(e1 * np.max(np.abs(fjwj)))
-            d4 = np.log10(np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1]))
-        d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
-        rerr = 10 ** d
-        aerr = max(e1, rerr) * abs(Sn)
+        d1 = np.abs(Sn - Snm1)
+        d2 = np.abs(Sn - Snm2)
+        d3 = e1 * np.max(np.abs(fjwj))
+        d4 = np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1])
+        rerr = np.max([d1**((np.log(d1)/np.log(d2))), d1**2, d3, d4])
+        aerr = max(e1, rerr) * np.abs(Sn)
     return rerr, aerr
 
 
