@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 import numpy as np
+from scipy import special
 
 # todo:
+#  fix log with infinite limits of integration, negative values, add tests, add iv
 #  fix tests broken by jumpstart
 #  log integration
 #  callback
@@ -42,7 +44,7 @@ _status_messages = {-1: "Iteration in progress.",
 
 
 def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
-              minweight=1e-100):
+              minweight=1e-100, log=False):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
     In practice, tanh-sinh quadrature achieves quadratic convergence for
@@ -90,6 +92,9 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
         integrals with an endpoint singularity, a larger value will protect
         against overflows of the integrand, but potentially at the expense of
         integral and error estimate accuracy.
+    log : bool
+        When set to True, func returns the log of the integrand, and the result
+        object contains the log of the integral and error.
 
     Returns
     -------
@@ -179,8 +184,8 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
     """
 
     # Input validation and standardization
-    res = _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight)
-    f, a, b, maxfun, maxiter, atol, rtol, minweight, feval_factor = res
+    res = _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log)
+    f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor = res
 
     # Initialization
     Sk = []  # sequence of integral estimates for error estimation
@@ -188,9 +193,9 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
 
-    for n in range(3, maxiter):
+    for n in range(0, maxiter):
         h = 1 / 2**n
-        xjc, wj = _get_pairs(n, inclusive=(n==3))
+        xjc, wj = _get_pairs(n, inclusive=(n==0))
 
         if feval + len(xjc) * feval_factor > maxfun:
             status = 1
@@ -198,23 +203,26 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=0, rtol=1e-14,
         feval += 2 * len(xjc) * feval_factor  # function evals happen next
 
         xj, wj = _transform_to_limits(a, b, xjc, wj)
-        fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight)
+        fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
 
-        # Check for infinities
-        if not np.all(np.isfinite(fjwj)):
+        # Check for infinities / NaNs
+        not_finite = ((log and np.any(np.isposinf(fjwj) | np.isnan(fjwj))) or
+                      (not log and not np.all(np.isfinite(fjwj))))
+        if not_finite:
             status = 3
             break
 
         # update integral estimate
         if Sk:
             Snm1 = Sk[-1]
-            Sn = Snm1 / 2 + np.sum(fjwj) * h
-        else:
-            Sn = np.sum(fjwj) * h
+            Sn = (special.logsumexp([Snm1 - np.log(2), Sn]) if log
+                  else Snm1 / 2 + Sn)
 
         # Check error estimate (see "5. Error Estimation, page 11")
-        rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj)
-        if rerr < rtol or rerr*abs(Sn) < atol:
+        rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj, log)
+        success = (rerr < np.log(rtol) or (rerr + Sn < np.log(atol)) if log
+                   else rerr < rtol or rerr*abs(Sn) < atol)
+        if success:
             status = 0
             break
 
@@ -309,29 +317,31 @@ def _transform_to_limits(a, b, xjc, wj):
     return xj, wj
 
 
-def _euler_maclaurin_sum(f, h, xj, wj, minweight):
+def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
         # Warnings due to function evaluation at endpoints are not cause for
         # concern; the resulting values will be given 0 weight.
         fj = f(xj)
         # Zero weight multiplied by infinity results in NaN. These will be
         # removed below.
-        fjwj = fj * wj  # I'd use @, but we'll need the individual products
+        fjwj = fj + np.log(wj) if log else fj * wj
 
     # Points on the boundaries can be generated due to finite precision
     # arithmetic. Ideally we wouldn't evaluate the function at these points
     # or when weights are zero; however, it would be tricky to filter out
     # points when this function is vectorized. Set the results to zero.
     invalid = (wj <= minweight)
-    fjwj[invalid] = 0
+    replacement = -np.inf if log else 0
+    fjwj[invalid] = replacement
 
     # update integral estimate
-    Sn = np.sum(fjwj, axis=-1) * h
+    Sn = (special.logsumexp(fjwj + np.log(h), axis=-1) if log
+          else np.sum(fjwj, axis=-1) * h)
 
     return fjwj, Sn
 
 
-def _error_estimate(h, n, Sn, Sk, fjwj):
+def _error_estimate(h, n, Sn, Sk, fjwj, log):
     if n <= 2:
         return np.nan, np.nan
 
@@ -342,24 +352,36 @@ def _error_estimate(h, n, Sn, Sk, fjwj):
         z = fjwj.reshape(2, -1)
         fjwjm1 = z[..., :indices[n-1]]
         fjwjm2 = z[..., :indices[n-2]]
-        Snm1 = np.sum(fjwjm1) * hm1
-        Snm2 = np.sum(fjwjm2) * hm2
+        Snm1 = (special.logsumexp(fjwjm1 + np.log(hm1)) if log
+                else np.sum(fjwjm1) * hm1)
+        Snm2 = (special.logsumexp(fjwjm2 + np.log(hm2)) if log
+                else np.sum(fjwjm2) * hm2)
     else:
         Snm2, Snm1 = Sk[-2:]
 
-    with np.errstate(divide='ignore'):  # when values are zero
+    e1 = np.finfo(np.float64).eps
+
+    if log:
+        d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))/np.log(10)
+        d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))/np.log(10)
+        d3 = (np.log(e1) + np.max(fjwj))/np.log(10)
+        d4 = (np.max(np.reshape(fjwj, (2, -1))[:, -1]))/np.log(10)
+        d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
+        rerr = d * np.log(10)
+        aerr = max(np.log(e1), rerr) + Sn
+    else:
+        # with np.errstate(divide='ignore'):  # when values are zero
         d1 = np.log10(abs(Sn - Snm1))
         d2 = np.log10(abs(Sn - Snm2))
-        e1 = np.finfo(np.float64).eps
         d3 = np.log10(e1 * np.max(np.abs(fjwj)))
         d4 = np.log10(np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1]))
-    d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
-    rerr = 10 ** d
-    aerr = max(np.finfo(np.float64).eps, rerr) * abs(Sn)
+        d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
+        rerr = 10 ** d
+        aerr = max(e1, rerr) * abs(Sn)
     return rerr, aerr
 
 
-def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight):
+def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
 
     message = '`f` must be callable.'
     if not callable(f):
@@ -397,7 +419,7 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight):
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
-            return f(x) + f(-x)
+            return special.logsumexp([f(x), f(-x)]) if log else f(x) + f(-x)
         a, b = 0, np.inf
         feval_factor = 2  # user function evaluated twice each call
     elif np.isinf(a):
@@ -410,7 +432,7 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight):
 
     if np.isinf(b):
         def f(x, f=f, a=a):
-            return f(1/x - 1 + a)*x**-2
+            return f(1/x - 1 + a) - 2*np.log(np.abs(x)) if log else f(1/x - 1 + a)*x**-2
         a, b = 0, 1
 
-    return f, a, b, maxfun, maxiter, atol, rtol, minweight, feval_factor
+    return f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor
