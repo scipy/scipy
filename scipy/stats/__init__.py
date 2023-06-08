@@ -609,7 +609,7 @@ from ._binned_statistic import *
 from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
-# from ._multivariate import *
+from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData  # noqa
@@ -621,7 +621,7 @@ from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit, goodness_of_fit
-# from ._covariance import Covariance
+from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
 
