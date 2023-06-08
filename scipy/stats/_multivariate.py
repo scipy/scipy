@@ -4589,6 +4589,7 @@ class multivariate_t_gen(multi_rv_generic):
                 + shape_term
             )[()]
 
+        # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
         return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
 
