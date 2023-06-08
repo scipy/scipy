@@ -24,7 +24,7 @@ namespace fast_matrix_market {
     // Keep in sync with python/pyproject.toml
 #define FAST_MATRIX_MARKET_VERSION_MAJOR 1
 #define FAST_MATRIX_MARKET_VERSION_MINOR 6
-#define FAST_MATRIX_MARKET_VERSION_PATCH 0
+#define FAST_MATRIX_MARKET_VERSION_PATCH 1
 
     constexpr std::string_view kSpace = " ";
     constexpr std::string_view kNewline = "\n";
@@ -83,6 +83,14 @@ namespace fast_matrix_market {
     class complex_incompatible : public invalid_argument {
     public:
         explicit complex_incompatible(std::string msg): invalid_argument(std::move(msg)) {}
+    };
+
+    /**
+     * Matrix Market file is a `vector` type, but vector support is disabled in this build.
+     */
+    class no_vector_support : public invalid_argument {
+    public:
+        explicit no_vector_support(std::string msg): invalid_argument(std::move(msg)) {}
     };
 
     /**

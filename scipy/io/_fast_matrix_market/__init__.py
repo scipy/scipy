@@ -33,12 +33,6 @@ _field_to_dtype = {
     "real": "float64",
     "complex": "complex",
     "pattern": "float64",
-
-    "long-integer": "int64",
-    "long-unsigned-integer": "uint64",
-    "long-real": "longdouble",
-    "long-complex": "longcomplex",
-    "long-pattern": "longdouble",
 }
 
 
@@ -76,18 +70,18 @@ class _TextToBytesWrapper(io.BufferedReader):
         return self._encoding_call('peek', size)
 
 
-def _read_body_array(cursor, long_type):
+def _read_body_array(cursor):
     """
     Read MatrixMarket array body
     """
     from . import _core
 
-    vals = np.zeros(cursor.header.shape, dtype=_field_to_dtype.get(("long-" if long_type else "")+cursor.header.field))
+    vals = np.zeros(cursor.header.shape, dtype=_field_to_dtype.get(cursor.header.field))
     _core.read_body_array(cursor, vals)
     return vals
 
 
-def _read_body_coo(cursor, long_type, generalize_symmetry=True):
+def _read_body_coo(cursor, generalize_symmetry=True):
     """
     Read MatrixMarket coordinate body
     """
@@ -100,7 +94,7 @@ def _read_body_coo(cursor, long_type, generalize_symmetry=True):
 
     i = np.zeros(cursor.header.nnz, dtype=index_dtype)
     j = np.zeros(cursor.header.nnz, dtype=index_dtype)
-    data = np.zeros(cursor.header.nnz, dtype=_field_to_dtype.get(("long-" if long_type else "")+cursor.header.field))
+    data = np.zeros(cursor.header.nnz, dtype=_field_to_dtype.get(cursor.header.field))
 
     _core.read_body_coo(cursor, i, j, data)
 
@@ -243,7 +237,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, parallelism=None, long_type=False):
+def mmread(source, parallelism=None):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -254,12 +248,6 @@ def mmread(source, parallelism=None, long_type=False):
         or open file-like object.
     parallelism : int, optional
         Number of threads to use. Default is the number of CPUs in the system.
-
-        .. versionadded:: 1.12.0
-
-    long_type : bool, optional
-        Whether to use 'longdouble' and 'longcomplex' extended-precision floating-point number types.
-        Default is False.
 
         .. versionadded:: 1.12.0
 
@@ -307,10 +295,10 @@ def mmread(source, parallelism=None, long_type=False):
     cursor = _get_read_cursor(source, parallelism)
 
     if cursor.header.format == "array":
-        return _read_body_array(cursor, long_type=long_type)
+        return _read_body_array(cursor)
     else:
         from scipy.sparse import coo_matrix
-        triplet, shape = _read_body_coo(cursor, long_type=long_type, generalize_symmetry=True)
+        triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
         return coo_matrix(triplet, shape=shape)
 
 
@@ -454,38 +442,25 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         # Write dense numpy arrays
         a = _apply_field(a, field, no_pattern=True)
         _core.write_array(cursor, a)
-        return
 
-    if scipy.sparse.isspmatrix(a):
+    elif scipy.sparse.isspmatrix(a):
         # Write sparse scipy matrices
+        a = a.tocoo()
+
         if symmetry is not None and symmetry != "general":
             # A symmetric matrix only specifies the elements below the diagonal.
             # Ensure that the matrix satisfies this requirement.
             from scipy.sparse import coo_matrix
-            a = a.tocoo()
             lower_triangle_mask = a.row >= a.col
             a = coo_matrix((a.data[lower_triangle_mask],
                             (a.row[lower_triangle_mask],
                              a.col[lower_triangle_mask])), shape=a.shape)
 
-        # CSC and CSR have specialized writers.
-        is_compressed = (isinstance(a, scipy.sparse.csc_matrix) or isinstance(a, scipy.sparse.csr_matrix))
-
-        if not is_compressed:
-            # convert everything except CSC/CSR to coo
-            a = a.tocoo()
-
         data = _apply_field(a.data, field)
+        _core.write_coo(cursor, a.shape, a.row, a.col, data)
 
-        if is_compressed:
-            # CSC and CSR can be written directly
-            is_csr = isinstance(a, scipy.sparse.csr_matrix)
-            _core.write_csc(cursor, a.shape, a.indptr, a.indices, data, is_csr)
-        else:
-            _core.write_coo(cursor, a.shape, a.row, a.col, data)
-        return
-
-    raise ValueError("unknown matrix type: %s" % type(a))
+    else:
+        raise ValueError("unknown matrix type: %s" % type(a))
 
 
 def mminfo(source):

@@ -111,9 +111,13 @@ namespace fast_matrix_market {
                     read_chunk_matrix_coordinate(lcr.chunk, header, lc, chunk_handler, options);
                 }));
             } else {
+#ifdef FMM_NO_VECTOR
+                throw no_vector_support("Vector Matrix Market files not supported.");
+#else
                 parse_futures.push(pool.submit([=]() mutable {
                     read_chunk_vector_coordinate(lcr.chunk, header, lc, chunk_handler, options);
                 }));
+#endif
             }
 
             // Advance counts for next chunk

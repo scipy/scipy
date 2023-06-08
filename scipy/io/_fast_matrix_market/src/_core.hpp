@@ -4,6 +4,10 @@
 
 #pragma once
 
+#ifdef FMM_SCIPY_PRUNE
+#define FMM_NO_VECTOR
+#endif
+
 #include <fstream>
 
 #include <pybind11/pybind11.h>

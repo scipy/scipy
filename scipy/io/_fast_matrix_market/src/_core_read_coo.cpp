@@ -24,18 +24,23 @@ void read_body_coo(read_cursor& cursor, py::array_t<IT>& row, py::array_t<IT>& c
 void init_read_coo(py::module_ &m) {
     m.def("read_body_coo", &read_body_coo<int32_t, int64_t>);
     m.def("read_body_coo", &read_body_coo<int32_t, uint64_t>);
-    m.def("read_body_coo", &read_body_coo<int32_t, float>);
     m.def("read_body_coo", &read_body_coo<int32_t, double>);
-    m.def("read_body_coo", &read_body_coo<int32_t, long double>);
     m.def("read_body_coo", &read_body_coo<int32_t, std::complex<double>>);
-    m.def("read_body_coo", &read_body_coo<int32_t, std::complex<long double>>);
 
     m.def("read_body_coo", &read_body_coo<int64_t, int64_t>);
     m.def("read_body_coo", &read_body_coo<int64_t, uint64_t>);
-    m.def("read_body_coo", &read_body_coo<int64_t, float>);
     m.def("read_body_coo", &read_body_coo<int64_t, double>);
+    m.def("read_body_coo", &read_body_coo<int64_t, std::complex<double>>);
+
+#ifndef FMM_SCIPY_PRUNE
+    m.def("read_body_coo", &read_body_coo<int32_t, float>);
+    m.def("read_body_coo", &read_body_coo<int32_t, long double>);
+    m.def("read_body_coo", &read_body_coo<int32_t, std::complex<float>>);
+    m.def("read_body_coo", &read_body_coo<int32_t, std::complex<long double>>);
+
+    m.def("read_body_coo", &read_body_coo<int64_t, float>);
     m.def("read_body_coo", &read_body_coo<int64_t, long double>);
     m.def("read_body_coo", &read_body_coo<int64_t, std::complex<float>>);
-    m.def("read_body_coo", &read_body_coo<int64_t, std::complex<double>>);
     m.def("read_body_coo", &read_body_coo<int64_t, std::complex<long double>>);
+#endif
 }

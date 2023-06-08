@@ -180,6 +180,8 @@ PYBIND11_MODULE(_core, m) {
             }
         } catch (const fmm::out_of_range &e) {
             PyErr_SetString(PyExc_OverflowError, e.what());
+        } catch (const fmm::no_vector_support& e) {
+            PyErr_SetString(PyExc_ValueError, e.what());
         } catch (const fmm::fmm_error &e) {
             // Everything else we throw maps best to ValueError
             PyErr_SetString(PyExc_ValueError, e.what());
@@ -228,7 +230,10 @@ PYBIND11_MODULE(_core, m) {
 
     init_write_array(m);
     init_write_coo(m);
+
+#ifndef FMM_SCIPY_PRUNE
     init_write_csc(m);
+#endif
 
     // Module version
 #ifdef VERSION_INFO

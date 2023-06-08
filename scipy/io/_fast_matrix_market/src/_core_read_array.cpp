@@ -22,10 +22,13 @@ void read_body_array(read_cursor& cursor, py::array_t<T>& array) {
 void init_read_array(py::module_ &m) {
     m.def("read_body_array", &read_body_array<int64_t>);
     m.def("read_body_array", &read_body_array<uint64_t>);
-    m.def("read_body_array", &read_body_array<float>);
     m.def("read_body_array", &read_body_array<double>);
+    m.def("read_body_array", &read_body_array<std::complex<double>>);
+
+#ifndef FMM_SCIPY_PRUNE
+    m.def("read_body_array", &read_body_array<float>);
     m.def("read_body_array", &read_body_array<long double>);
     m.def("read_body_array", &read_body_array<std::complex<float>>);
-    m.def("read_body_array", &read_body_array<std::complex<double>>);
     m.def("read_body_array", &read_body_array<std::complex<long double>>);
+#endif
 }

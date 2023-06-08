@@ -9,6 +9,7 @@ def configuration(parent_package='', top_path=None):
     config = Configuration('_fast_matrix_market', parent_package, top_path)
 
     define_macros = [
+        ('FMM_SCIPY_PRUNE', 1),
         ('FMM_FROM_CHARS_INT_SUPPORTED', 1),
         ('FMM_TO_CHARS_INT_SUPPORTED', 1)
     ]
@@ -29,7 +30,6 @@ def configuration(parent_package='', top_path=None):
                                 '_core_read_coo.cpp',
                                 '_core_write_array.cpp',
                                 '_core_write_coo.cpp',
-                                '_core_write_csc.cpp',
                             )],
                             language='c++',
                             cxx_std=17,

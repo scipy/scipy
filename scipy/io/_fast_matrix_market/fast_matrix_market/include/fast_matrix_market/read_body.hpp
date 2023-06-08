@@ -172,6 +172,7 @@ namespace fast_matrix_market {
         return line;
     }
 
+#ifndef FMM_NO_VECTOR
     template<typename HANDLER>
     line_counts read_chunk_vector_coordinate(const std::string &chunk, const matrix_market_header &header,
                                              line_counts line, HANDLER &handler, const read_options &options) {
@@ -213,6 +214,7 @@ namespace fast_matrix_market {
         }
         return line;
     }
+#endif
 
     template<typename HANDLER>
     line_counts read_chunk_array(const std::string &chunk, const matrix_market_header &header, line_counts line,
@@ -323,7 +325,11 @@ namespace fast_matrix_market {
             if (header.object == matrix) {
                 lc = read_chunk_matrix_coordinate(chunk, header, lc, handler, options);
             } else {
+#ifdef FMM_NO_VECTOR
+                throw no_vector_support("Vector Matrix Market files not supported.");
+#else
                 lc = read_chunk_vector_coordinate(chunk, header, lc, handler, options);
+#endif
             }
         }
 
@@ -356,6 +362,12 @@ namespace fast_matrix_market {
     template <typename HANDLER>
     void read_matrix_market_body_no_adapters(std::istream& instream, const matrix_market_header& header,
                                              HANDLER& handler, const read_options& options = {}) {
+#ifdef FMM_NO_VECTOR
+        if (header.object == vector) {
+            throw no_vector_support("Vector Matrix Market files not supported.");
+        }
+#endif
+
         // Verify generalize symmetry is compatible with this file.
         if (header.symmetry != general && options.generalize_symmetry) {
             if (header.object != matrix) {
