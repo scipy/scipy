@@ -4181,6 +4181,32 @@ class TestBeta:
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
 
+    @pytest.mark.parametrize(
+        "a, b, ref, tol",
+        [
+            (1, 10, -1.4025850929940458, 1e-14),
+            (10, 20, -1.0567887388936708, 1e-13),
+            (4e6, 4e6+20, -7.221686009678741, 1e-9),
+            (5e6, 5e6+10, -7.333257022834638, 1e-8),
+            (1e10, 1e10+20, -11.133707703130474, 1e-11),
+            (1e50, 1e50+20, -57.185409562486385, 1e-15),
+        ]
+    )
+    def test_extreme_entropy(self, a, b, ref, tol):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def beta_entropy_mpmath(a, b):
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     entropy = (
+        #       mp.log(mp.beta(a, b)) - (a - 1) * mp.digamma(a)
+        #       - (b - 1) * mp.digamma(b) + (a + b - 2) * mp.digamma(a + b)
+        #     )
+        #     return float(entropy)
+        assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
+
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
