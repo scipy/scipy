@@ -2618,17 +2618,47 @@ class TestMultivariateT:
         # def mul_t_mpmath_entropy(dim, df=1):
         #     dim = mp.mpf(dim)
         #     df = mp.mpf(df)
-        #     halfsum = 0.5 * (dim + df)
-        #     half_df = 0.5 * df
+        #     halfsum = (dim + df)/2
+        #     half_df = df/2
         #
         #     return float(
         #         -mp.loggamma(halfsum) + mp.loggamma(half_df)
-        #         + 0.5 * dim * mp.log(df * mp.pi)
+        #         + dim / 2 * mp.log(df * mp.pi)
         #         + halfsum * (mp.digamma(halfsum) - mp.digamma(half_df))
         #         + 0.0
         #     )
         mvt = stats.multivariate_t(shape=np.eye(dim), df=df)
         assert_allclose(mvt.entropy(), ref, rtol=tol)
+
+    def test_entropy_with_covariance(self):
+        # Generated using np.randn(5, 5) and then rounding
+        # to two decimal places
+        _A = np.array([
+            [1.42, 0.09, -0.49, 0.17, 0.74],
+            [-1.13, -0.01,  0.71, 0.4, -0.56],
+            [1.07, 0.44, -0.28, -0.44, 0.29],
+            [-1.5, -0.94, -0.67, 0.73, -1.1],
+            [0.17, -0.08, 1.46, -0.32, 1.36]
+        ])
+        # Set cov to be a symmetric positive semi-definite matrix
+        cov = _A @ _A.T
+
+        # Test the asymptotic case. For large degrees of freedom
+        # the entropy approaches the multivariate normal entropy
+        df = 1e20
+        mul_t_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
+        mul_norm_entropy = multivariate_normal(None, cov=cov).entropy()
+        assert_allclose(mul_t_entropy, mul_norm_entropy, rtol=1e-15)
+
+        # Test the regular case. For a dim of 5 the threshold comes out
+        # to be approximately 1177.1838201355579. So using slightly
+        # different dfs on each site of the threshold, the entropies
+        # are being compared.
+        df1 = 1176
+        df2 = 1178
+        _entropy1 = stats.multivariate_t.entropy(shape=cov, df=df1)
+        _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
+        assert_allclose(_entropy1, _entropy2, rtol=1e-5)
 
 
 class TestMultivariateHypergeom:

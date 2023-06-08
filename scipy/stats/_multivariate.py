@@ -4586,7 +4586,7 @@ class multivariate_t_gen(multi_rv_generic):
                 + dim**2 * (dim - 2) * df**-3.0 / 6
                 + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
                 + shape_term
-            )
+            )[()]
 
         threshold = dim * 100 * 4 / (np.log10(dim) + 1)
         return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
