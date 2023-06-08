@@ -14,10 +14,6 @@ import os
 import numpy as np
 import scipy.sparse
 
-from . import _core  # type: ignore
-
-__version__ = _core.__version__
-header = _core.header
 
 PARALLELISM = 0
 """
@@ -44,6 +40,11 @@ _field_to_dtype = {
     "long-complex": "longcomplex",
     "long-pattern": "longdouble",
 }
+
+
+def _fmm_version():
+    from . import _core  # type: ignore
+    return _core.__version__
 
 
 class _TextToBytesWrapper(io.BufferedReader):
@@ -79,6 +80,8 @@ def _read_body_array(cursor, long_type):
     """
     Read MatrixMarket array body
     """
+    from . import _core  # type: ignore
+
     vals = np.zeros(cursor.header.shape, dtype=_field_to_dtype.get(("long-" if long_type else "")+cursor.header.field))
     _core.read_body_array(cursor, vals)
     return vals
@@ -88,6 +91,8 @@ def _read_body_coo(cursor, long_type, generalize_symmetry=True):
     """
     Read MatrixMarket coordinate body
     """
+    from . import _core  # type: ignore
+
     index_dtype = "int32"
     if cursor.header.nrows >= 2**31 or cursor.header.ncols >= 2**31:
         # Dimensions are too large to fit in int32
@@ -121,6 +126,8 @@ def _get_read_cursor(source, parallelism=None):
     """
     Open file for reading.
     """
+    from . import _core  # type: ignore
+
     if parallelism is None:
         parallelism = PARALLELISM
 
@@ -155,6 +162,8 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
     """
     Open file for writing.
     """
+    from . import _core  # type: ignore
+
     if parallelism is None:
         parallelism = PARALLELISM
     if comment is None:
@@ -165,7 +174,7 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
         precision = -1
 
     if not h:
-        h = header(comment=comment, symmetry=symmetry)
+        h = _core.header(comment=comment, symmetry=symmetry)
 
     try:
         target = os.fspath(target)
@@ -424,6 +433,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     2.50e+00 0.00e+00
 
     """
+    from . import _core  # type: ignore
 
     if isinstance(a, list) or isinstance(a, tuple) or hasattr(a, "__array__"):
         a = np.asarray(a)
