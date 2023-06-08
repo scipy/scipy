@@ -23,7 +23,7 @@ def configuration(parent_package='', top_path=None):
         # Performance will suffer. Use the meson build instead.
 
     ext = Pybind11Extension('_core',
-                            sources=[os.path.join(config.package_path, "src", s) for s in (
+                            sources=[os.path.join(config.package_path, s) for s in (
                                 '_core.cpp',
                                 '_core_read_array.cpp',
                                 '_core_read_coo.cpp',

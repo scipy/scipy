@@ -16,9 +16,9 @@ License: 2-clause BSD
   For details, see scipy/io/_fast_matrix_market/LICENSE.txt
 
 Name: pystreambuf
-Files: scipy/io/_fast_matrix_market/src/pystreambuf.h
+Files: scipy/io/_fast_matrix_market/pystreambuf.h
 License: 3-clause BSD
-  For details, see the header inside scipy/io/_fast_matrix_market/src/pystreambuf.h
+  For details, see the header inside scipy/io/_fast_matrix_market/pystreambuf.h
 
 Name: fast_float
 Files: scipy/io/_fast_matrix_market/fast_matrix_market/dependencies/fast_float/*
