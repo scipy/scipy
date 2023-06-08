@@ -2651,11 +2651,11 @@ class TestMultivariateT:
         assert_allclose(mul_t_entropy, mul_norm_entropy, rtol=1e-15)
 
         # Test the regular case. For a dim of 5 the threshold comes out
-        # to be 1000. So using slightly different dfs on each site of
-        # the threshold, the entropies are being compared to see that
-        # they are close
-        df1 = 999
-        df2 = 1000
+        # to be approximately 766.45. So using slightly
+        # different dfs on each site of the threshold, the entropies
+        # are being compared.
+        df1 = 765
+        df2 = 768
         _entropy1 = stats.multivariate_t.entropy(shape=cov, df=df1)
         _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
         assert_allclose(_entropy1, _entropy2, rtol=1e-5)
