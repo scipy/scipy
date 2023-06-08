@@ -33,8 +33,9 @@ def __dir__():
 def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
-            "`scipy.stats.morestats` is deprecated and has no attribute "
-            f"`{name}`.")
+            f"`scipy.stats.morestats` has no attribute `{name}`; furthermore, "
+            "`scipy.stats.morestats` is deprecated and will be removed in "
+            "SciPy 2.0.0.")
 
     attr = getattr(scipy.stats, name, None)
 
@@ -44,8 +45,9 @@ def __getattr__(name):
                    "will be removed in SciPy 2.0.0.")
     else:
         message = (f"`scipy.stats.morestats.{name}` is deprecated along with "
-                   "the `scipy.stats.morestats` namespace and will be removed "
-                   "in SciPy 1.13.")
+                   "the `scipy.stats.morestats` namespace. "
+                   f"`scipy.stats.morestats.{name}` will be removed in SciPy 1.13.0, and "
+                   "the `scipy.stats.morestats` namespace will be removed in SciPy 2.0.0.")
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=2)
 
