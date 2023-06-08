@@ -839,15 +839,12 @@ class beta_gen(rv_continuous):
         def asymptotic_ab_large(a, b):
             sum_ab = a + b
             log_term = 0.5 * (
-                np.log(2 * np.pi) + np.log(a) + np.log(b) - 3 * np.log(sum_ab) + 1
+                np.log(2*np.pi) + np.log(a) + np.log(b) - 3*np.log(sum_ab) + 1
             )
-            t1 = (
-                (110 * sum_ab**3 + 20 * sum_ab**2 + sum_ab - 2)
-                * sum_ab**-4.0 / 120
-            )
-            t2 = (1 - 50 * a**3 - 10 * a**2 - a) * a**-4.0 / 120
-            t3 = (1 - 50 * b**3 - 10 * b**2 - b) * b**-4.0 / 120
-            return log_term + t1 + t2 + t3
+            t1 = 100/sum_ab + 20*sum_ab**-2.0 + sum_ab**-3.0 - 2*sum_ab**-4.0
+            t2 = -50/a - 10*a**-2.0 - a**-3.0 + a**-4.0
+            t3 = -50/b - 10*b**-2.0 - b**-3.0 + b**-4.0
+            return log_term + (t1 + t2 + t3) / 120
 
         if a >= 4.96e6 and b >= 4.96e6:
             return asymptotic_ab_large(a, b)
