@@ -963,9 +963,11 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     >>> import matplotlib.pyplot as plt
 
     >>> x = np.linspace(-2, 2, num=20)
-    >>> y = x
-    >>> y_int = integrate.cumulative_simpson(y, x, initial=0)
-    >>> plt.plot(x, y_int, 'ro', x, y[0] + 0.5 * x**2, 'b-')
+    >>> y = x**2
+    >>> y_int = integrate.cumulative_simpson(y, x=x, initial=0)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (-2)**3/3, 'b-')
+    >>> ax.grid()
     >>> plt.show()
 
     """
