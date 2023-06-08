@@ -43,7 +43,7 @@ _field_to_dtype = {
 
 
 def _fmm_version():
-    from . import _core  # type: ignore
+    from . import _core
     return _core.__version__
 
 
@@ -80,7 +80,7 @@ def _read_body_array(cursor, long_type):
     """
     Read MatrixMarket array body
     """
-    from . import _core  # type: ignore
+    from . import _core
 
     vals = np.zeros(cursor.header.shape, dtype=_field_to_dtype.get(("long-" if long_type else "")+cursor.header.field))
     _core.read_body_array(cursor, vals)
@@ -91,7 +91,7 @@ def _read_body_coo(cursor, long_type, generalize_symmetry=True):
     """
     Read MatrixMarket coordinate body
     """
-    from . import _core  # type: ignore
+    from . import _core
 
     index_dtype = "int32"
     if cursor.header.nrows >= 2**31 or cursor.header.ncols >= 2**31:
@@ -126,7 +126,7 @@ def _get_read_cursor(source, parallelism=None):
     """
     Open file for reading.
     """
-    from . import _core  # type: ignore
+    from . import _core
 
     if parallelism is None:
         parallelism = PARALLELISM
@@ -162,7 +162,7 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
     """
     Open file for writing.
     """
-    from . import _core  # type: ignore
+    from . import _core
 
     if parallelism is None:
         parallelism = PARALLELISM
@@ -433,7 +433,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     2.50e+00 0.00e+00
 
     """
-    from . import _core  # type: ignore
+    from . import _core
 
     if isinstance(a, list) or isinstance(a, tuple) or hasattr(a, "__array__"):
         a = np.asarray(a)
