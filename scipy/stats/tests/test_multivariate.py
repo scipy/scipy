@@ -2644,18 +2644,18 @@ class TestMultivariateT:
         cov = _A @ _A.T
 
         # Test the asymptotic case. For large degrees of freedom
-        # the entropy approaches the multivariate normal entropy
+        # the entropy approaches the multivariate normal entropy.
         df = 1e20
         mul_t_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
         mul_norm_entropy = multivariate_normal(None, cov=cov).entropy()
         assert_allclose(mul_t_entropy, mul_norm_entropy, rtol=1e-15)
 
         # Test the regular case. For a dim of 5 the threshold comes out
-        # to be approximately 1177.1838201355579. So using slightly
-        # different dfs on each site of the threshold, the entropies
-        # are being compared.
-        df1 = 1176
-        df2 = 1178
+        # to be 1000. So using slightly different dfs on each site of
+        # the threshold, the entropies are being compared to see that
+        # they are close
+        df1 = 999
+        df2 = 1000
         _entropy1 = stats.multivariate_t.entropy(shape=cov, df=df1)
         _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
         assert_allclose(_entropy1, _entropy2, rtol=1e-5)

@@ -4585,10 +4585,11 @@ class multivariate_t_gen(multi_rv_generic):
                 - dim * (dim - 2) * df**-2.0 / 4
                 + dim**2 * (dim - 2) * df**-3.0 / 6
                 + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
+                + dim**2 * (3 * dim**3 - 10 * dim**2 + 16) * df**-5.0 / 30
                 + shape_term
             )[()]
 
-        threshold = dim * 100 * 4 / (np.log10(dim) + 1)
+        threshold = 200 * dim
         return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
 
     def entropy(self, loc=None, shape=1, df=1):
