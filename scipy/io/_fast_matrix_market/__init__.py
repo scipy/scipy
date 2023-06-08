@@ -236,7 +236,7 @@ def _validate_symmetry(symmetry):
 
 def mmread(source, parallelism=None, long_type=False):
     """
-    Reads the contents of a Matrix Market file-like 'source' into a matrix (C++ implementation).
+    Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
     Parameters
     ----------
@@ -262,12 +262,14 @@ def mmread(source, parallelism=None, long_type=False):
 
     Notes
     -----
+    C++ implementation.
+
     .. versionadded:: 1.12.0
 
     Examples
     --------
     >>> from io import StringIO
-    >>> from scipy.io._fast_matrix_market import mmread
+    >>> from scipy.io import mmread
 
     >>> text = '''%%MatrixMarket matrix coordinate real general
     ...  5 5 7
@@ -305,7 +307,7 @@ def mmread(source, parallelism=None, long_type=False):
 
 def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO", parallelism=None):
     r"""
-    Writes the sparse or dense array `a` to Matrix Market file-like `target` (C++ implementation).
+    Writes the sparse or dense array `a` to Matrix Market file-like `target`.
 
     Parameters
     ----------
@@ -335,6 +337,8 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
 
     Notes
     -----
+    C++ implementation.
+
     .. versionadded:: 1.12.0
 
     Examples
@@ -342,7 +346,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     >>> from io import BytesIO
     >>> import numpy as np
     >>> from scipy.sparse import coo_matrix
-    >>> from scipy.io._fast_matrix_market import mmwrite
+    >>> from scipy.io import mmwrite
 
     Write a small NumPy array to a matrix market file.  The file will be
     written in the ``'array'`` format.
@@ -478,8 +482,6 @@ def mminfo(source):
     """
     Return size and storage parameters from Matrix Market file-like 'source'.
 
-    A C++ implementation of :ref:`scipy.io.mminfo <scipy.io.mminfo>`.
-
     Parameters
     ----------
     source : str or file-like
@@ -501,10 +503,16 @@ def mminfo(source):
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
 
+    Notes
+    -----
+    C++ implementation.
+
+    .. versionadded:: 1.12.0
+
     Examples
     --------
     >>> from io import StringIO
-    >>> from scipy.io._fast_matrix_market import mminfo
+    >>> from scipy.io import mminfo
 
     >>> text = '''%%MatrixMarket matrix coordinate real general
     ...  5 5 7

@@ -38,9 +38,7 @@ Matrix Market files
 
    mminfo - Query matrix info from Matrix Market formatted file
    mmread - Read matrix from Matrix Market formatted file
-   _fast_matrix_market.mmread - Read matrix from Matrix Market formatted file (C++ version)
    mmwrite - Write matrix to Matrix Market formatted file
-   _fast_matrix_market.mmwrite - Write matrix to Matrix Market formatted file (C++ version)
 
 Unformatted Fortran files
 ===============================
@@ -104,7 +102,7 @@ from ._netcdf import netcdf_file, netcdf_variable
 # Fortran file support
 from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 
-from ._mmio import mminfo, mmread, mmwrite
+from ._fast_matrix_market import mminfo, mmread, mmwrite
 from ._idl import readsav
 from ._harwell_boeing import hb_read, hb_write
 
