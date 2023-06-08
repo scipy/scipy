@@ -3,8 +3,6 @@ import numpy as np
 from scipy import special
 
 # todo:
-#  fix log with negative values
-#  test log more thoroughly with negative values and with transformations
 #  fix tests broken by jumpstart
 #  callback
 #  respect data types
@@ -12,6 +10,9 @@ from scipy import special
 #  remove maxiter?
 #  accept args, kwargs?
 #  tests - test minweight
+#  decide when output of log-integration is complex vs real
+#  debug inflated error estimate with log-integration when complex part is nonzero
+#  support complex integration
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight
@@ -210,7 +211,7 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
         fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
 
         # Check for infinities / NaNs
-        not_finite = ((log and np.any(np.isposinf(fjwj) | np.isnan(fjwj))) or
+        not_finite = ((log and np.any(np.isposinf(np.real(fjwj)) | np.isnan(fjwj))) or
                       (not log and not np.all(np.isfinite(fjwj))))
         if not_finite:
             status = 3
@@ -367,12 +368,16 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
 
     if log:
         log_e1 = np.log(e1)
+        # Currently, only real integrals are supported. All complex values
+        # have imaginary part in increments of pi*j, which just carries sign
+        # information. Use of `np.real` here is equivalent to absolute value
+        # in real scale.
         d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))
         d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))
-        d3 = log_e1 + np.max(fjwj)
-        d4 = np.max(np.reshape(fjwj, (2, -1))[:, -1])
+        d3 = log_e1 + np.max(np.real(fjwj))
+        d4 = np.max(np.real(np.reshape(fjwj, (2, -1))[:, -1]))
         rerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
-        aerr = max(log_e1, rerr) + Sn
+        aerr = max(log_e1, rerr) + np.real(Sn)
     else:
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
@@ -432,12 +437,14 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
     # overhead, but let's stick with the simplest for now.
     if b < a:
         def f(x, f=f):
-            return f(x) + np.pi*1j if log else -f(x)
+            return (f(x) + np.pi*1j if log
+                    else -f(x))
         a, b = b, a
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
-            return special.logsumexp([f(x), f(-x)], axis=0) if log else f(x) + f(-x)
+            return (special.logsumexp([f(x), f(-x)], axis=0) if log
+                    else f(x) + f(-x))
         a, b = 0, np.inf
         feval_factor = 2  # user function evaluated twice each call
     elif np.isinf(a):
@@ -450,7 +457,8 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
 
     if np.isinf(b):
         def f(x, f=f, a=a):
-            return f(1/x - 1 + a) - 2*np.log(np.abs(x)) if log else f(1/x - 1 + a)*x**-2
+            return (f(1/x - 1 + a) - 2*np.log(x+0j) if log
+                    else f(1/x - 1 + a)*x**-2)
         a, b = 0, 1
 
     return f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor

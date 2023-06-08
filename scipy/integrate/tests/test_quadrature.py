@@ -607,27 +607,23 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, maxfun=0)
 
-    def test_integral_transforms(self):
+    @pytest.mark.parametrize("limits, val", [
+        [(0, np.inf), 0.5],  # b infinite
+        [(-np.inf, 0), 0.5],  # a infinite
+        [(-np.inf, np.inf), 1],  # a and b infinite
+        [(np.inf, -np.inf), -1],  # flipped limits
+        [(1, -1), stats.norm.cdf(-1) -  stats.norm.cdf(1)],  # flipped limits
+    ])
+    def test_integral_transforms(self, limits, val):
         dist = stats.norm()
 
-        # b infinite
-        res = _tanhsinh(dist.pdf, 0, np.inf)
-        assert_allclose(res.integral, 0.5)
+        res = _tanhsinh(dist.pdf, *limits)
+        assert_allclose(res.integral, val)
 
-        # a infinite
-        res = _tanhsinh(dist.pdf, -np.inf, 0)
-        assert_allclose(res.integral, 0.5)
+        logres = _tanhsinh(dist.logpdf, *limits, log=True)
+        assert_allclose(np.exp(logres.integral), val)
 
-        # a and b infinite
-        res = _tanhsinh(dist.pdf, -np.inf, np.inf)
-        assert_allclose(res.integral, 1)
-
-        # flipped limits
-        res = _tanhsinh(dist.pdf, np.inf, -np.inf)
-        assert_allclose(res.integral, -1)
-
-        res = _tanhsinh(dist.pdf, 1, -1)
-        assert_allclose(res.integral, dist.cdf(-1) - dist.cdf(1))
+        assert_allclose(np.exp(logres.error), res.error, atol=1e-16)
 
     # 15 skipped intentionally; it's very difficult numerically
     @pytest.mark.parametrize('f_number', range(1, 15))
@@ -749,8 +745,21 @@ class TestTanhSinh:
     def test_log(self, rtol):
         # Test equivalence of log-integration and regular integration
         dist = stats.norm()
+
         res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
         ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
+        assert_allclose(np.exp(res.integral), ref.integral)
+        assert_allclose(np.exp(res.error), ref.error)
+        assert res.feval == ref.feval
+
+        def f(x):
+            return -dist.logpdf(x)*dist.pdf(x)
+
+        def logf(x):
+            return np.log(dist.logpdf(x) + 0j) + dist.logpdf(x) + np.pi * 1j
+
+        res = _tanhsinh(logf, -np.inf, np.inf, log=True)
+        ref = _tanhsinh(f, -np.inf, np.inf)
         assert_allclose(np.exp(res.integral), ref.integral)
         assert_allclose(np.exp(res.error), ref.error)
         assert res.feval == ref.feval
