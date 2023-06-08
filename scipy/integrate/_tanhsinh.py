@@ -3,9 +3,8 @@ import numpy as np
 from scipy import special
 
 # todo:
-#  fix log with infinite limits of integration, negative values, add tests, add iv
+#  fix log with negative values, add tests, add iv, avoid warnings
 #  fix tests broken by jumpstart
-#  log integration
 #  callback
 #  respect data types
 #  apply np.vectorize as needed?
@@ -342,7 +341,7 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
 
 
 def _error_estimate(h, n, Sn, Sk, fjwj, log):
-    if n <= 2:
+    if n <= 1:
         return np.nan, np.nan
 
     if len(Sk) < 2:
@@ -370,11 +369,11 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
         rerr = d * np.log(10)
         aerr = max(np.log(e1), rerr) + Sn
     else:
-        # with np.errstate(divide='ignore'):  # when values are zero
-        d1 = np.log10(abs(Sn - Snm1))
-        d2 = np.log10(abs(Sn - Snm2))
-        d3 = np.log10(e1 * np.max(np.abs(fjwj)))
-        d4 = np.log10(np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1]))
+        with np.errstate(divide='ignore'):  # when values are zero
+            d1 = np.log10(abs(Sn - Snm1))
+            d2 = np.log10(abs(Sn - Snm2))
+            d3 = np.log10(e1 * np.max(np.abs(fjwj)))
+            d4 = np.log10(np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1]))
         d = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
         rerr = 10 ** d
         aerr = max(e1, rerr) * abs(Sn)
@@ -414,12 +413,12 @@ def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
     # overhead, but let's stick with the simplest for now.
     if b < a:
         def f(x, f=f):
-            return -f(x)
+            return f(x) + np.pi*1j if log else -f(x)
         a, b = b, a
 
     if np.isinf(a) and np.isinf(b):
         def f(x, f=f):
-            return special.logsumexp([f(x), f(-x)]) if log else f(x) + f(-x)
+            return special.logsumexp([f(x), f(-x)], axis=0) if log else f(x) + f(-x)
         a, b = 0, np.inf
         feval_factor = 2  # user function evaluated twice each call
     elif np.isinf(a):
