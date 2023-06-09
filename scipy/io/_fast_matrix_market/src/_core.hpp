@@ -124,8 +124,91 @@ private:
     int64_t index;
 };
 
+
+/**
+ * Write Python triplets to MatrixMarket.
+ */
+template <typename IT, typename VT>
+void write_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
+               py::array_t<IT>& rows, py::array_t<IT>& cols, py::array_t<VT>& data) {
+    if (rows.size() != cols.size()) {
+        throw std::invalid_argument("len(row) must equal len(col).");
+    }
+    if (rows.size() != data.size() && data.size() != 0) {
+        throw std::invalid_argument("len(row) must equal len(data).");
+    }
+
+    cursor.header.nrows = std::get<0>(shape);
+    cursor.header.ncols = std::get<1>(shape);
+    cursor.header.nnz = rows.size();
+
+    cursor.header.object = fmm::matrix;
+    cursor.header.field = (data.size() == 0 ? (cursor.header.nnz == 0 ? fmm::real : fmm::pattern) : fmm::get_field_type((const VT*)nullptr));
+    cursor.header.format = fmm::coordinate;
+
+    fmm::write_header(cursor.stream(), cursor.header);
+
+    auto rows_unchecked = rows.unchecked();
+    auto cols_unchecked = cols.unchecked();
+    auto data_unchecked = data.unchecked();
+
+    fmm::line_formatter<IT, VT> lf(cursor.header, cursor.options);
+    auto formatter = fmm::triplet_formatter(lf,
+                                            py_array_iterator<decltype(rows_unchecked), IT>(rows_unchecked),
+                                            py_array_iterator<decltype(rows_unchecked), IT>(rows_unchecked, rows_unchecked.size()),
+                                            py_array_iterator<decltype(cols_unchecked), IT>(cols_unchecked),
+                                            py_array_iterator<decltype(cols_unchecked), IT>(cols_unchecked, cols_unchecked.size()),
+                                            py_array_iterator<decltype(data_unchecked), VT>(data_unchecked),
+                                            py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()));
+    fmm::write_body(cursor.stream(), formatter, cursor.options);
+}
+
+/**
+ * Write Python CSC/CSR to MatrixMarket.
+ */
+template <typename IT, typename VT>
+void write_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
+               py::array_t<IT>& indptr, py::array_t<IT>& indices, py::array_t<VT>& data, bool is_csr) {
+    if (indices.size() != data.size() && data.size() != 0) {
+        throw std::invalid_argument("len(indices) must equal len(data).");
+    }
+
+    cursor.header.nrows = std::get<0>(shape);
+    cursor.header.ncols = std::get<1>(shape);
+    cursor.header.nnz = indices.size();
+
+    if ((is_csr && indptr.size() != cursor.header.nrows + 1) ||
+        (!is_csr && indptr.size() != cursor.header.ncols + 1)) {
+        throw std::invalid_argument("indptr length does not match matrix shape.");
+    }
+
+    cursor.header.object = fmm::matrix;
+    cursor.header.field = (data.size() == 0 ? (cursor.header.nnz == 0 ? fmm::real : fmm::pattern) : fmm::get_field_type((const VT*)nullptr));
+    cursor.header.format = fmm::coordinate;
+    cursor.header.symmetry = fmm::general;
+
+    fmm::write_header(cursor.stream(), cursor.header);
+
+    auto indptr_unchecked = indptr.unchecked();
+    auto indices_unchecked = indices.unchecked();
+    auto data_unchecked = data.unchecked();
+
+    fmm::line_formatter<IT, VT> lf(cursor.header, cursor.options);
+    auto formatter = fmm::csc_formatter(lf,
+                                        py_array_iterator<decltype(indptr_unchecked), IT>(indptr_unchecked),
+                                        py_array_iterator<decltype(indptr_unchecked), IT>(indptr_unchecked, indptr_unchecked.size() - 1),
+                                        py_array_iterator<decltype(indices_unchecked), IT>(indices_unchecked),
+                                        py_array_iterator<decltype(indices_unchecked), IT>(indices_unchecked, indices_unchecked.size()),
+                                        py_array_iterator<decltype(data_unchecked), VT>(data_unchecked),
+                                        py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()),
+                                        is_csr);
+    fmm::write_body(cursor.stream(), formatter, cursor.options);
+}
+
 void init_read_array(py::module_ &);
 void init_write_array(py::module_ &);
 void init_read_coo(py::module_ &);
-void init_write_coo(py::module_ &);
-void init_write_csc(py::module_ &);
+void init_write_coo_32(py::module_ &);
+void init_write_coo_64(py::module_ &);
+void init_write_csc_32(py::module_ &);
+void init_write_csc_64(py::module_ &);

@@ -229,10 +229,12 @@ PYBIND11_MODULE(_core, m) {
     m.def("open_write_stream", &open_write_stream);
 
     init_write_array(m);
-    init_write_coo(m);
+    init_write_coo_32(m);
+    init_write_coo_64(m);
 
 #ifndef FMM_SCIPY_PRUNE
-    init_write_csc(m);
+    init_write_csc_32(m);
+    init_write_csc_64(m);
 #endif
 
     // Module version
