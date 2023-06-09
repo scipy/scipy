@@ -50,9 +50,11 @@ namespace fast_matrix_market {
     /**
      * A handler wrapper so that real/integer files can be read into std::complex matrices by setting all
      * imaginary parts to zero.
+     *
+     * @deprecated as this adaptation is now done in the inner loops, negating the need for this.
      */
     template<typename COMPLEX_HANDLER>
-    class complex_parse_adapter {
+    class [[deprecated]] [[maybe_unused]] complex_parse_adapter {
     public:
         using coordinate_type = typename COMPLEX_HANDLER::coordinate_type;
         using complex_type = typename COMPLEX_HANDLER::value_type;
@@ -138,10 +140,10 @@ namespace fast_matrix_market {
 
     template<typename HANDLER, typename IT, typename VT>
     void generalize_symmetry_array(HANDLER& handler,
-                                        const matrix_market_header &header,
-                                        const IT& row,
-                                        const IT& col,
-                                        const VT& value) {
+                                   const matrix_market_header &header,
+                                   const IT& row,
+                                   const IT& col,
+                                   const VT& value) {
         switch (header.symmetry) {
             case symmetric:
                 handler.handle(col, row, value);
@@ -158,6 +160,29 @@ namespace fast_matrix_market {
                 break;
             case general:
                 break;
+        }
+    }
+
+    /**
+     * Read a value, adapting real matrix values to complex datastructures.
+     */
+    template <typename value_type>
+    void read_real_or_complex(value_type& value,
+                              const char*& pos,
+                              const char* end,
+                              const matrix_market_header &header,
+                              const read_options &options) {
+        if constexpr (is_complex<value_type>::value) {
+            if (header.field == complex) {
+                pos = read_value(pos, end, value, options);
+            } else {
+                typename value_type::value_type real;
+                pos = read_value(pos, end, real, options);
+                value.real(real);
+                value.imag(0);
+            }
+        } else {
+            pos = read_value(pos, end, value, options);
         }
     }
 
@@ -186,7 +211,7 @@ namespace fast_matrix_market {
                 pos = read_int(pos, end, col);
                 if (header.field != pattern) {
                     pos = skip_spaces(pos);
-                    pos = read_value(pos, end, value, options);
+                    read_real_or_complex(value, pos, end, header, options);
                 }
                 pos = bump_to_next_line(pos, end);
 
@@ -251,7 +276,7 @@ namespace fast_matrix_market {
                 pos = read_int(pos, end, row);
                 if (header.field != pattern) {
                     pos = skip_spaces(pos);
-                    pos = read_value(pos, end, value, options);
+                    read_real_or_complex(value, pos, end, header, options);
                 }
                 pos = bump_to_next_line(pos, end);
 
@@ -311,7 +336,7 @@ namespace fast_matrix_market {
                     throw invalid_mm("Too many values in array (file too long)");
                 }
 
-                pos = read_value(pos, end, value, options);
+                read_real_or_complex(value, pos, end, header, options);
                 pos = bump_to_next_line(pos, end);
 
                 handler.handle(row, col, value);
@@ -463,9 +488,11 @@ namespace fast_matrix_market {
 
     /**
      * Read the body by adapting real files to complex HANDLER.
+     *
+     * @deprecated Use read_matrix_market_body_no_adapters() directly. It now handles the adaptation that this method does.
      */
     template <typename HANDLER, typename std::enable_if<is_complex<typename HANDLER::value_type>::value, int>::type = 0>
-    void read_matrix_market_body_no_pattern(std::istream& instream, const matrix_market_header& header,
+    [[deprecated]] [[maybe_unused]] void read_matrix_market_body_no_pattern(std::istream& instream, const matrix_market_header& header,
                                             HANDLER& handler, const read_options& options = {}) {
         if (header.field == complex) {
             read_matrix_market_body_no_adapters(instream, header, handler, options);
@@ -479,9 +506,11 @@ namespace fast_matrix_market {
 
     /**
      * Read the body by adapting real files to complex HANDLER.
+     *
+     * @deprecated Use read_matrix_market_body_no_adapters() directly. It now handles the adaptation that this method does.
      */
     template <typename HANDLER, typename std::enable_if<!is_complex<typename HANDLER::value_type>::value, int>::type = 0>
-    void read_matrix_market_body_no_pattern(std::istream& instream, const matrix_market_header& header,
+    [[deprecated]] [[maybe_unused]] void read_matrix_market_body_no_pattern(std::istream& instream, const matrix_market_header& header,
                                             HANDLER& handler, const read_options& options = {}) {
         if (header.field != complex) {
             read_matrix_market_body_no_adapters(instream, header, handler, options);
@@ -503,7 +532,12 @@ namespace fast_matrix_market {
                                  HANDLER& handler,
                                  typename HANDLER::value_type pattern_value,
                                  const read_options& options = {}) {
+        if (header.field == complex && !is_complex<typename HANDLER::value_type>::value) {
+            // the file is complex but the values are not
+            throw complex_incompatible("Matrix Market file has complex fields but passed data structure cannot handle complex values.");
+        }
+
         auto fwd_handler = pattern_parse_adapter<HANDLER>(handler, pattern_value);
-        read_matrix_market_body_no_pattern(instream, header, fwd_handler, options);
+        read_matrix_market_body_no_adapters(instream, header, fwd_handler, options);
     }
 }
