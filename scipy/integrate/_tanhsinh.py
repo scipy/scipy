@@ -6,17 +6,16 @@ from scipy import special
 #  fix tests broken by jumpstart
 #  return lower-level integral estimates for testing?
 #  callback
-#  respect data types
 #  apply np.vectorize as needed?
 #  remove maxiter?
 #  accept args, kwargs?
-#  tests - test minweight
 #  decide when output of log-integration is complex vs real
 #  debug inflated error estimate with log-integration when complex part is nonzero
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight
 #  vectorize
+#  respect data types
 #  special case for equal limits of integration?
 #  make public?
 

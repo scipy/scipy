@@ -668,6 +668,7 @@ class TestTanhSinh:
 
         f = self.f1
 
+        # test `maxiter`, `atol`, and status 2
         maxiter = 3
         atol = 1e-15
         res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
@@ -706,7 +707,7 @@ class TestTanhSinh:
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
-        # Essentially a copy of the above with maxfun and rtol
+        # Test `maxfun`, `rtol`, and status 1
         maxfun = 50
         rtol = 1e-14
         res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
@@ -744,6 +745,19 @@ class TestTanhSinh:
         assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
+
+        # Test `minweight` and status 3
+        f = self.f11
+        # The transformed integrand produces a NaN when evaluated close to zero
+        # The weight is very small here, so with normal options, the NaN is
+        # replaced with zero. However, if we set `minweight` too small, we get
+        # status 3.
+        res = _tanhsinh(f, 0, f.b, minweight=1e-300)
+        assert res.success is False
+        assert res.status == 3
+        assert res.message.startswith("An invalid value")
+        assert np.isnan(res.integral)
+        assert np.isnan(res.error)
 
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol):
