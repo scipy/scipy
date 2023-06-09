@@ -12,7 +12,7 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-import scipy.io
+import scipy.io._mmio
 import scipy.io._fast_matrix_market as fmm
 
 
@@ -21,7 +21,7 @@ parametrize_args = [('integer', 'int'),
 
 
 # Run the entire test suite on both _mmio and _fast_matrix_market implementations
-@pytest.fixture(scope='module', params=(scipy.io, fmm), autouse=True)
+@pytest.fixture(scope='module', params=(scipy.io._mmio, fmm), autouse=True)
 def implementations(request):
     global mminfo
     global mmread
