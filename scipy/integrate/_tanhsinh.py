@@ -4,6 +4,7 @@ from scipy import special
 
 # todo:
 #  fix tests broken by jumpstart
+#  return lower-level integral estimates for testing?
 #  callback
 #  respect data types
 #  apply np.vectorize as needed?
@@ -187,9 +188,8 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
     1.7724538509055163
 
     """
-
     # Input validation and standardization
-    res = _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log)
+    res = _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log)
     f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor = res
 
     # Initialization
@@ -198,42 +198,52 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
 
-    for n in range(0, maxiter):
-        h = 1 / 2**n
+    for n in range(0, maxiter):  # for each "level"
+        h = 1 / 2**n  # step size
+
+        # retrieve abscissa-weight pairs from cache
         xjc, wj = _get_pairs(n, inclusive=(n==0))
 
+        # Determine whether evaluating the function at the abscissae will
+        # cause the function evaluation limit to be exceeded. If so, break.
+        # Otherwise, increment the function eval counter.
         if feval + len(xjc) * feval_factor > maxfun:
             status = 1
             break
-        feval += 2 * len(xjc) * feval_factor  # function evals happen next
 
+        # Transform the abscissae as required by the limits of integration
         xj, wj = _transform_to_limits(a, b, xjc, wj)
+
+        # Perform the Euler-Maclaurin sum
+        feval += 2 * len(xjc) * feval_factor  # function evals happen next
         fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
 
-        # Check for infinities / NaNs
+        # Check for infinities / NaNs. If encountered, break.
         not_finite = ((log and np.any(np.isposinf(np.real(fjwj)) | np.isnan(fjwj))) or
                       (not log and not np.all(np.isfinite(fjwj))))
         if not_finite:
-            status = 3
+            status = 3  # function evaluation limit
             break
 
-        # update integral estimate
+        # If we have integral estimates from a lower level, update it.
         if Sk:
             Snm1 = Sk[-1]
             Sn = (special.logsumexp([Snm1 - np.log(2), Sn]) if log
                   else Snm1 / 2 + Sn)
+        # Otherwise, the integral estimate is just Sn.
 
-        # Check error estimate (see "5. Error Estimation, page 11")
+        # Check error estimate (see [1] 5. Error Estimation, page 11)
         rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj, log)
         success = (rerr < rtol or (rerr + Sn < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
         if success:
-            status = 0
+            status = 0  # Success
             break
 
+        # Store integral estimate.
         Sk.append(Sn)
     else:
-        status = 2
+        status = 2  # Iteration limit
 
     message = _status_messages[status]
     return QuadratureResult(integral=Sn, error=aerr, feval=feval,
@@ -280,6 +290,9 @@ def _compute_pair(k):
 
 
 def _pair_cache(max_level):
+    # Cache the ascissa-weight pairs up to a specified level
+    # All abscissae (weights) are stored concatenated in a 1D array;
+    # `index` notes the last index of each level.
     pairs = [_compute_pair(k) for k in range(max_level + 1)]
     lengths = [len(pair[0]) for pair in pairs]
     _pair_cache.xjc, _pair_cache.wj = np.concatenate(pairs, axis=-1)
@@ -290,6 +303,8 @@ _pair_cache.indices = []
 
 
 def _get_pairs(k, inclusive=False):
+    # Retrieve the specified abscissa-weight pairs from the cache
+    # If `inclusive`, return all up to and including the specified level
     indices = _pair_cache.indices
     if len(indices) <= k:
         _pair_cache(max(10, k))
@@ -313,7 +328,7 @@ def _transform_to_limits(a, b, xjc, wj):
     wj = wj*alpha  # these need to get broadcasted, so no *=
     wj = np.concatenate((wj, wj), axis=-1)
 
-    # Points on the boundaries can be generated due to finite precision
+    # Points at the boundaries can be generated due to finite precision
     # arithmetic. Ideally we wouldn't evaluate the function at these points
     # or when weights are zero; however, it would be tricky to filter out
     # points when this function is vectorized. Instead, zero the weights.
@@ -323,6 +338,7 @@ def _transform_to_limits(a, b, xjc, wj):
 
 
 def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
+    # Perform the Euler-Maclaurin Sum, [1] Section 4
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
         # Warnings due to function evaluation at endpoints are not cause for
         # concern; the resulting values will be given 0 weight.
@@ -347,9 +363,18 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
 
 
 def _error_estimate(h, n, Sn, Sk, fjwj, log):
+    # Estimate the error according to [1] Section 5
+
+    # The paper says error 1 for n<=2, but I disagree. We start at level 0, so
+    # there is no reason not to compute the error beginning in level 2. Before
+    # then, the error cannot be calculated, so use NaN, not 1.
     if n <= 1:
         return np.nan, np.nan
 
+    # With a jump start (starting at level higher than 0), we haven't
+    # explicitly calculated the integral estimate at lower levels. But we have
+    # all the function value-weight products, so we can compute the
+    # lower-level estimates.
     if len(Sk) < 2:
         indices = _pair_cache.indices
         hm1 = 2 * h
@@ -379,6 +404,7 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
         rerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
         aerr = max(log_e1, rerr) + np.real(Sn)
     else:
+        # Note: explicit computation of log10 of each of these is unnecessary.
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
         d3 = e1 * np.max(np.abs(fjwj))
@@ -388,7 +414,8 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
     return rerr, aerr
 
 
-def _quadts_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
+def _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
+    # Input validation and standardization
 
     message = '`f` must be callable.'
     if not callable(f):

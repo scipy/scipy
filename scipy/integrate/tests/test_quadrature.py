@@ -461,6 +461,7 @@ class TestQMCQuad:
 
 
 class TestTanhSinh:
+    # Test problems from [1] Section 6
     def f1(self, t):
         return t * np.log(1 + t)
 
@@ -615,6 +616,8 @@ class TestTanhSinh:
         [(1, -1), stats.norm.cdf(-1) -  stats.norm.cdf(1)],  # flipped limits
     ])
     def test_integral_transforms(self, limits, val):
+        # Check that the integral transforms are behaving for both log and
+        # normal integration
         dist = stats.norm()
 
         res = _tanhsinh(dist.pdf, *limits)
@@ -643,6 +646,7 @@ class TestTanhSinh:
             last_logerr = logerr
 
     def test_feval(self):
+        # Test function evaluation count
         dist = stats.norm()
         def f(x):
             f.feval += len(x)
