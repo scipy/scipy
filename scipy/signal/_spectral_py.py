@@ -1731,7 +1731,8 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     f : ndarray
         Array of sample frequencies.
     Pxy : ndarray
-        Cross cyclic spectral density or cross cyclic power spectrum of x,y.
+        Cross cyclic spectral density or cross cyclic power spectrum of x,y,
+        two-sided.
 
     See Also
     --------
@@ -1762,7 +1763,10 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
            https://en.wikipedia.org/wiki/Spectral_correlation_density
     .. [2] W. Gardner, "Measurement of spectral correlation", IEEE Trans
            Acoust. vol. 34, pp. 1111-1123, 1986
-    .. [3] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
+    .. [3] R. Boustany and J. Antoni, "Cyclic spectral analysis from the
+           averaged cyclic periodogram", IFAC Proceedings Volumes. vol. 38,
+           pp. 597-630, 2005
+    .. [4] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
            Process. vol. 21, pp. 597-630, 2007
 
     Examples
@@ -1777,23 +1781,19 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> n_times, fs = 1e5, 1e4
     >>> f_carrier, f_sig = 1214, 28
     >>> time = np.arange(n_times) / fs
-    >>> x = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
-
-    >>> fig, ax = plt.subplots()
-    >>> plt.plot(time[:400], x[:400])
-    >>> plt.xlabel("Time (in s)")
-    >>> plt.ylabel("Signal amplitude")
-    >>> plt.show()
+    >>> sig = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
 
     Add a noise.
 
     >>> noise_power = 10
-    >>> x += rng.normal(scale=np.sqrt(noise_power), size=x.shape)
+    >>> x = sig + rng.normal(scale=np.sqrt(noise_power), size=sig.shape)
 
     >>> fig, ax = plt.subplots()
-    >>> plt.plot(time[:400], x[:400])
-    >>> plt.xlabel("Time (in s)")
-    >>> plt.ylabel("Signal+noise amplitude")
+    >>> ax.plot(time, x, label='signal+noise')
+    >>> ax.plot(time, sig, label='signal')
+    >>> ax.set_xlim([0, 0.05])
+    >>> ax.set(xlabel="Time (in s)", ylabel="Amplitude")
+    >>> ax.legend()
     >>> plt.show()
 
     >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
@@ -1817,6 +1817,18 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     if alpha > fs / 2:
         raise ValueError('Cyclic frequency must be inferior to Nyquist '
                          'frequency, got %s' % (alpha,))
+
+    # to avoid leakage, noverlap >= nperseg//4*3, cf Boustany2005
+    if (noverlap is None) and (nperseg is None):
+        nperseg = 256
+        noverlap = nperseg // 4 * 3
+    elif noverlap is None:
+        noverlap = nperseg // 4 * 3
+    else:
+        raise ValueError('If nperseg is defined, noverlap must be defined too')
+
+    if (noverlap < nperseg // 4 * 3):
+        warnings.warn('To avoid leakage, overlap should be larger than 75%')
 
     if sym:
         y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[-1]))
