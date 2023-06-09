@@ -89,6 +89,15 @@ namespace fast_matrix_market {
             ++values;
         }
 
+        void handle(const coordinate_type row, const coordinate_type col, [[maybe_unused]] const pattern_placeholder_type& pat) {
+            *rows = row;
+            *cols = col;
+
+            ++rows;
+            ++cols;
+            ++values;
+        }
+
         triplet_parse_handler<IT_ITER, VT_ITER> get_chunk_handler(int64_t offset_from_begin) {
             return triplet_parse_handler(begin_rows + offset_from_begin,
                                          begin_cols + offset_from_begin,

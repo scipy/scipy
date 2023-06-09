@@ -24,14 +24,18 @@ namespace fast_matrix_market {
     class pattern_parse_adapter {
     public:
         using coordinate_type = typename FWD_HANDLER::coordinate_type;
-        using value_type = pattern_placeholder_type;
+        using value_type = typename FWD_HANDLER::value_type;
         static constexpr int flags = FWD_HANDLER::flags;
 
         explicit pattern_parse_adapter(const FWD_HANDLER &handler, typename FWD_HANDLER::value_type fwd_value) : handler(
                 handler), fwd_value(fwd_value) {}
 
-        void handle(const coordinate_type row, const coordinate_type col, [[maybe_unused]] const value_type ignored) {
+        void handle(const coordinate_type row, const coordinate_type col, [[maybe_unused]] const pattern_placeholder_type ignored) {
             handler.handle(row, col, fwd_value);
+        }
+
+        void handle(const coordinate_type row, const coordinate_type col, const value_type val) {
+            handler.handle(row, col, val);
         }
 
         pattern_parse_adapter<FWD_HANDLER> get_chunk_handler(int64_t offset_from_start) {
@@ -56,6 +60,10 @@ namespace fast_matrix_market {
         static constexpr int flags = COMPLEX_HANDLER::flags;
 
         explicit complex_parse_adapter(const COMPLEX_HANDLER &handler) : handler(handler) {}
+
+        void handle(const coordinate_type row, const coordinate_type col, const pattern_placeholder_type& pat) {
+            handler.handle(row, col, pat);
+        }
 
         void handle(const coordinate_type row, const coordinate_type col, const value_type real) {
             handler.handle(row, col, complex_type(real, 0));
@@ -90,6 +98,69 @@ namespace fast_matrix_market {
     // Chunks
     ///////////////////////////////////////////////////////////////////
 
+    template<typename HANDLER, typename IT, typename VT>
+    void generalize_symmetry_coordinate(HANDLER& handler,
+                                        const matrix_market_header &header,
+                                        const read_options &options,
+                                        const IT& row,
+                                        const IT& col,
+                                        const VT& value) {
+        if (col != row) {
+            switch (header.symmetry) {
+                case symmetric:
+                    handler.handle(col, row, value);
+                    break;
+                case skew_symmetric:
+                    if constexpr (!std::is_unsigned_v<typename HANDLER::value_type>) {
+                        handler.handle(col, row, negate(value));
+                    } else {
+                        throw invalid_argument("Cannot load skew-symmetric matrix into unsigned value type.");
+                    }
+                    break;
+                case hermitian:
+                    handler.handle(col, row, complex_conjugate(value));
+                    break;
+                case general: break;
+            }
+        } else {
+            if (!test_flag(HANDLER::flags, kAppending)) {
+                switch (options.generalize_coordinate_diagnonal_values) {
+                    case read_options::ExtraZeroElement:
+                        handler.handle(row, col, get_zero<typename HANDLER::value_type>());
+                        break;
+                    case read_options::DuplicateElement:
+                        handler.handle(row, col, value);
+                        break;
+                }
+            }
+        }
+    }
+
+    template<typename HANDLER, typename IT, typename VT>
+    void generalize_symmetry_array(HANDLER& handler,
+                                        const matrix_market_header &header,
+                                        const IT& row,
+                                        const IT& col,
+                                        const VT& value) {
+        switch (header.symmetry) {
+            case symmetric:
+                handler.handle(col, row, value);
+                break;
+            case skew_symmetric:
+                if constexpr (!std::is_unsigned_v<typename HANDLER::value_type>) {
+                    handler.handle(col, row, negate(value));
+                } else {
+                    throw invalid_argument("Cannot load skew-symmetric matrix into unsigned value type.");
+                }
+                break;
+            case hermitian:
+                handler.handle(col, row, complex_conjugate(value));
+                break;
+            case general:
+                break;
+        }
+    }
+
     template<typename HANDLER>
     line_counts read_chunk_matrix_coordinate(const std::string &chunk, const matrix_market_header &header,
                                              line_counts line, HANDLER &handler, const read_options &options) {
@@ -113,8 +184,10 @@ namespace fast_matrix_market {
                 pos = read_int(pos, end, row);
                 pos = skip_spaces(pos);
                 pos = read_int(pos, end, col);
-                pos = skip_spaces(pos);
-                pos = read_value(pos, end, value, options);
+                if (header.field != pattern) {
+                    pos = skip_spaces(pos);
+                    pos = read_value(pos, end, value, options);
+                }
                 pos = bump_to_next_line(pos, end);
 
                 // validate
@@ -125,42 +198,25 @@ namespace fast_matrix_market {
                     throw invalid_mm("Column index out of bounds");
                 }
 
+                // Matrix Market is one-based
+                row = row - 1;
+                col = col - 1;
+
                 // Generalize symmetry
                 // This appears before the regular handler call for ExtraZeroElement handling.
                 if (header.symmetry != general && options.generalize_symmetry) {
-                    if (col != row) {
-                        switch (header.symmetry) {
-                            case symmetric:
-                                handler.handle(col - 1, row - 1, value);
-                                break;
-                            case skew_symmetric:
-                                if constexpr (!std::is_unsigned_v<typename HANDLER::value_type>) {
-                                    handler.handle(col - 1, row - 1, negate(value));
-                                } else {
-                                    throw invalid_argument("Cannot load skew-symmetric matrix into unsigned value type.");
-                                }
-                                break;
-                            case hermitian:
-                                handler.handle(col - 1, row - 1, complex_conjugate(value));
-                                break;
-                            case general: break;
-                        }
+                    if (header.field != pattern) {
+                        generalize_symmetry_coordinate(handler, header, options, row, col, value);
                     } else {
-                        if (!test_flag(HANDLER::flags, kAppending)) {
-                            switch (options.generalize_coordinate_diagnonal_values) {
-                                case read_options::ExtraZeroElement:
-                                    handler.handle(row - 1, col - 1, get_zero<typename HANDLER::value_type>());
-                                    break;
-                                case read_options::DuplicateElement:
-                                    handler.handle(row - 1, col - 1, value);
-                                    break;
-                            }
-                        }
+                        generalize_symmetry_coordinate(handler, header, options, row, col, pattern_placeholder_type());
                     }
                 }
 
-                // Matrix Market is one-based
-                handler.handle(row - 1, col - 1, value);
+                if (header.field != pattern) {
+                    handler.handle(row, col, value);
+                } else {
+                    handler.handle(row, col, pattern_placeholder_type());
+                }
 
                 ++line.file_line;
                 ++line.element_num;
@@ -193,8 +249,10 @@ namespace fast_matrix_market {
                     throw invalid_mm("Too many lines in file (file too long)");
                 }
                 pos = read_int(pos, end, row);
-                pos = skip_spaces(pos);
-                pos = read_value(pos, end, value, options);
+                if (header.field != pattern) {
+                    pos = skip_spaces(pos);
+                    pos = read_value(pos, end, value, options);
+                }
                 pos = bump_to_next_line(pos, end);
 
                 // validate
@@ -203,7 +261,13 @@ namespace fast_matrix_market {
                 }
 
                 // Matrix Market is one-based
-                handler.handle(row - 1, 0, value);
+                row = row - 1;
+
+                if (header.field != pattern) {
+                    handler.handle(row, 0, value);
+                } else {
+                    handler.handle(row, 0, pattern_placeholder_type());
+                }
 
                 ++line.file_line;
                 ++line.element_num;
@@ -253,23 +317,7 @@ namespace fast_matrix_market {
                 handler.handle(row, col, value);
 
                 if (row != col && options.generalize_symmetry) {
-                    switch (header.symmetry) {
-                        case symmetric:
-                            handler.handle(col, row, value);
-                            break;
-                        case skew_symmetric:
-                            if constexpr (!std::is_unsigned_v<typename HANDLER::value_type>) {
-                                handler.handle(col, row, negate(value));
-                            } else {
-                                throw invalid_argument("Cannot load skew-symmetric matrix into unsigned value type.");
-                            }
-                            break;
-                        case hermitian:
-                            handler.handle(col, row, complex_conjugate(value));
-                            break;
-                        case general:
-                            break;
-                    }
+                    generalize_symmetry_array(handler, header, row, col, value);
                 }
 
                 // Matrix Market is column-major, advance down the column
@@ -375,6 +423,10 @@ namespace fast_matrix_market {
             }
         }
 
+        if (header.format == array && header.field == pattern) {
+            throw invalid_mm("Array matrices may not be pattern.");
+        }
+
         line_counts lc;
         bool threads = options.parallel_ok && options.num_threads != 1 && test_flag(HANDLER::flags, kParallelOk);
 
@@ -451,11 +503,7 @@ namespace fast_matrix_market {
                                  HANDLER& handler,
                                  typename HANDLER::value_type pattern_value,
                                  const read_options& options = {}) {
-        if (header.field == pattern) {
-            auto fwd_handler = pattern_parse_adapter<HANDLER>(handler, pattern_value);
-            read_matrix_market_body_no_pattern(instream, header, fwd_handler, options);
-        } else {
-            read_matrix_market_body_no_pattern(instream, header, handler, options);
-        }
+        auto fwd_handler = pattern_parse_adapter<HANDLER>(handler, pattern_value);
+        read_matrix_market_body_no_pattern(instream, header, fwd_handler, options);
     }
 }
