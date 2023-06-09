@@ -887,7 +887,7 @@ def _cumulative_simpson_unequal_intervals(
 
 
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
-    """
+    r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
     The integral of the samples at every point is calculated by assuming a quadratic
     relationship between each point and the two adjacent points.
@@ -939,34 +939,61 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     .. versionadded:: 1.12.0
 
+    The composite Simpson's 1/3 method can be used to approximate the definite integral of a sampled
+    input function :math:`y(x)` [1]_. The method assumes a quadratic relationship over the interval
+    containing any 3 consecutive sampled points. The integral is estimated separately for each interval
+    and then cumulatively summed to obtain the final result.
+
+    | Consider three consecutive points: :math:`(x_{1}, y_{1}), (x_{2}, y_{2}), (x_{3}, y_{3})`.
+    | To estimate the integral, the points are redefined as: :math:`(0, y_{1}), (h_{1}, y_{2}), (h_{1}+h_{2}, y_{3})`.
+    | where the widths of the 2 subintervals are:
+    | :math:`h_{1} = x_{2} - x_{1}` and :math:`h_{2} = x_{3} - x_{2}`
+
+    Assuming a quadratic relationship over the 3 points, the following integrals for the subintervals
+    are derived (see [2]_ for derivation method):
+
+    .. math::
+        \int_{x_{1}}^{x_{2}} y(x) dx\ = \int_{0}^{h_{1}} y(x) dx\
+            = \frac{h_{1}(2h_{1}+3h_{2})}{6(h_{1}+h_{2})} y_{1}
+            + \frac{h_{1}(h_{1}+3h_{2})}{6h_{2}} y_{2}
+            - \frac{h_{1}^{3}}{6h_{2}(h_{1}+h_{2})} y_{3}
+
+    .. math::
+        \int_{x_{2}}^{x_{3}} y(x) dx\ = \int_{h_{1}}^{h_{1}+h_{2}} y(x) dx\
+            = - \frac{h_{2}^{3}}{6h_{1}(h_{1}+h_{2})} y_{1}
+            + \frac{h_{2}(3h_{1}+h_{2})}{6h_{1}} y_{2}
+            + \frac{h_{2}(3h_{1}+2h_{2})}{6(h_{1}+h_{2})} y_{3}
+
+    .. math::
+        \int_{x_{1}}^{x_{3}} y(x) dx\ = \int_{0}^{h_{1}+h_{2}} y(x) dx\
+            = \frac{(h_{1}+h_{2})(2h_{1}-h_{2})}{6h_{1}} y_{1}
+            + \frac{(h_{1}+h_{2})^{3}}{6h_{1}h_{2}} y_{2}
+            - \frac{(h_{1}-2h_{2})(h_{1}+h_{2})}{6h_{2}} y_{3}
+
+    Note that the integral formulae in [1]_ and [2]_ use different variables.
+
     For samples that are equally spaced the result is exact if the function
-    is a polynomial of order 3 or less. If the samples are not equally spaced,
+    is a polynomial of order 3 or less [1]_. If the samples are not equally spaced,
     then the result is exact only if the function is a polynomial of order 2
     or less.
-
-    The composite Simpson's 1/3 method is outlined in [1]. A quadratic relationship
-    is assumed between any 3 adjacent points (2 subintervals, :math:`h_{1}` and
-    :math:`h_{2}`). The integral is estimated over each subinterval and cumulatively
-    summed.
 
     References
     ----------
     .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
     .. [2] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
-           MS Excel and Irregularly-spaced Data. Journal of Mathematical
-           Sciences and Mathematics Education. 12 (2): 1-9
+            MS Excel and Irregularly-spaced Data. Journal of Mathematical
+            Sciences and Mathematics Education. 12 (2): 1-9
 
     Examples
     --------
     >>> from scipy import integrate
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-
     >>> x = np.linspace(-2, 2, num=20)
     >>> y = x**2
     >>> y_int = integrate.cumulative_simpson(y, x=x, initial=0)
     >>> fig, ax = plt.subplots()
-    >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (-2)**3/3, 'b-')
+    >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (x[0])**3/3, 'b-')
     >>> ax.grid()
     >>> plt.show()
 
