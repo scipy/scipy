@@ -17,6 +17,7 @@ from scipy import special
 #    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight
 #  vectorize
+#  special case for equal limits of integration?
 #  make public?
 
 @dataclass

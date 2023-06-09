@@ -678,7 +678,7 @@ class TestTanhSinh:
         assert actual_error > np.log10(atol)
         assert res.error > atol
         # consequently, status indicates failure
-        assert res.success == False
+        assert res.success is False
         assert res.status == 2
         assert res.message.endswith("iteration limit to be exceeded.")
 
@@ -689,7 +689,7 @@ class TestTanhSinh:
         assert actual_error < np.log10(atol)
         assert res.error < atol
         # consequently, status indicates success
-        assert res.success == True
+        assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -702,7 +702,7 @@ class TestTanhSinh:
         assert actual_error < np.log10(atol)
         assert res.error < atol
         # consequently, status indicates success
-        assert res.success == True
+        assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -717,7 +717,7 @@ class TestTanhSinh:
         assert actual_error > np.log10(rtol * res.integral)
         assert res.error > rtol * res.integral
         # consequently, status indicates failure
-        assert res.success == False
+        assert res.success is False
         assert res.status == 1
         assert res.message.endswith("evaluation limit to be exceeded.")
 
@@ -728,7 +728,7 @@ class TestTanhSinh:
         assert actual_error < np.log10(rtol * res.integral)
         assert res.error < rtol * res.integral
         # consequently, status indicates success
-        assert res.success == True
+        assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -741,7 +741,7 @@ class TestTanhSinh:
         assert actual_error < np.log10(rtol * res.integral)
         assert res.error < rtol * res.integral
         # consequently, status indicates success
-        assert res.success == True
+        assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
