@@ -25,7 +25,7 @@ namespace fast_matrix_market {
         return lcr;
     }
 
-    template <typename HANDLER>
+    template <typename HANDLER, compile_format FORMAT = compile_all>
     line_counts read_body_threads(std::istream& instream, const matrix_market_header& header,
                                   HANDLER& handler, const read_options& options = {}) {
         /*
@@ -99,17 +99,25 @@ namespace fast_matrix_market {
             }
             auto chunk_handler = handler.get_chunk_handler(lc.element_num * generalizing_symmetry_factor);
             if (header.format == array) {
-                // compute the starting row/column for this array chunk
-                typename HANDLER::coordinate_type row = lc.element_num % header.nrows;
-                typename HANDLER::coordinate_type col = lc.element_num / header.nrows;
+                if constexpr ((FORMAT & compile_array_only) == compile_array_only) {
+                    // compute the starting row/column for this array chunk
+                    typename HANDLER::coordinate_type row = lc.element_num % header.nrows;
+                    typename HANDLER::coordinate_type col = lc.element_num / header.nrows;
 
-                parse_futures.push(pool.submit([=]() mutable {
-                    read_chunk_array(lcr.chunk, header, lc, chunk_handler, options, row, col);
-                }));
+                    parse_futures.push(pool.submit([=]() mutable {
+                        read_chunk_array(lcr.chunk, header, lc, chunk_handler, options, row, col);
+                    }));
+                } else {
+                    throw support_not_selected("Matrix is array but reading array files not enabled for this method.");
+                }
             } else if (header.object == matrix) {
-                parse_futures.push(pool.submit([=]() mutable {
-                    read_chunk_matrix_coordinate(lcr.chunk, header, lc, chunk_handler, options);
-                }));
+                if constexpr ((FORMAT & compile_coordinate_only) == compile_coordinate_only) {
+                    parse_futures.push(pool.submit([=]() mutable {
+                        read_chunk_matrix_coordinate(lcr.chunk, header, lc, chunk_handler, options);
+                    }));
+                } else {
+                    throw support_not_selected("Matrix is coordinate but reading coordinate files not enabled for this method.");
+                }
             } else {
 #ifdef FMM_NO_VECTOR
                 throw no_vector_support("Vector Matrix Market files not supported.");

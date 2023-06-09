@@ -86,11 +86,19 @@ namespace fast_matrix_market {
     };
 
     /**
+     * A Matrix Market file requires a feature that has been disabled via compilation flags.
+     */
+    class support_not_selected : public invalid_argument {
+    public:
+        explicit support_not_selected(std::string msg): invalid_argument(std::move(msg)) {}
+    };
+
+    /**
      * Matrix Market file is a `vector` type, but vector support is disabled in this build.
      */
-    class no_vector_support : public invalid_argument {
+    class no_vector_support : public support_not_selected {
     public:
-        explicit no_vector_support(std::string msg): invalid_argument(std::move(msg)) {}
+        explicit no_vector_support(std::string msg): support_not_selected(std::move(msg)) {}
     };
 
     /**

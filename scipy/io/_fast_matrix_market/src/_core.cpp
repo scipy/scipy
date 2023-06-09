@@ -180,7 +180,7 @@ PYBIND11_MODULE(_core, m) {
             }
         } catch (const fmm::out_of_range &e) {
             PyErr_SetString(PyExc_OverflowError, e.what());
-        } catch (const fmm::no_vector_support& e) {
+        } catch (const fmm::support_not_selected& e) {
             PyErr_SetString(PyExc_ValueError, e.what());
         } catch (const fmm::fmm_error &e) {
             // Everything else we throw maps best to ValueError

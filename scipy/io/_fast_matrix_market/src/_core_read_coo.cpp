@@ -17,7 +17,14 @@ void read_body_coo(read_cursor& cursor, py::array_t<IT>& row, py::array_t<IT>& c
     auto data_unchecked = data.mutable_unchecked();
     auto handler = fmm::triplet_calling_parse_handler<IT, VT, decltype(row_unchecked), decltype(data_unchecked)>(
         row_unchecked, col_unchecked, data_unchecked);
-    fmm::read_matrix_market_body(cursor.stream(), cursor.header, handler, 1, cursor.options);
+
+    // The mmread() will only call this method if the matrix is a coordinate. Disable the code paths for reading
+    // array matrices here to reduce final library size and compilation time.
+#ifdef FMM_SCIPY_PRUNE
+    fmm::read_matrix_market_body<decltype(handler), fmm::compile_coordinate_only>(cursor.stream(), cursor.header, handler, 1, cursor.options);
+#else
+    fmm::read_matrix_market_body<decltype(handler), fmm::compile_all>(cursor.stream(), cursor.header, handler, 1, cursor.options);
+#endif
 }
 
 

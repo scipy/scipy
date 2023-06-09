@@ -16,6 +16,8 @@ namespace fast_matrix_market {
         int64_t element_num = 0;
     };
 
+    enum compile_format {compile_array_only = 1, compile_coordinate_only = 2, compile_all = 3};
+
     /**
      * A handler wrapper for easily handling pattern matrices. This forwards a fixed value. For example, write 1.0 to
      * double matrices. Avoid using zero.
@@ -432,7 +434,7 @@ namespace fast_matrix_market {
     /**
      * Read the body with no automatic adaptations.
      */
-    template <typename HANDLER>
+    template <typename HANDLER, compile_format FORMAT = compile_all>
     void read_matrix_market_body_no_adapters(std::istream& instream, const matrix_market_header& header,
                                              HANDLER& handler, const read_options& options = {}) {
 #ifdef FMM_NO_VECTOR
@@ -468,12 +470,20 @@ namespace fast_matrix_market {
         }
 
         if (threads) {
-            lc = read_body_threads(instream, header, handler, options);
+            lc = read_body_threads<HANDLER, FORMAT>(instream, header, handler, options);
         } else {
             if (header.format == coordinate) {
-                lc = read_coordinate_body_sequential(instream, header, handler, options);
+                if constexpr ((FORMAT & compile_coordinate_only) == compile_coordinate_only) {
+                    lc = read_coordinate_body_sequential(instream, header, handler, options);
+                } else {
+                    throw support_not_selected("Matrix is coordinate but reading coordinate files not enabled for this method.");
+                }
             } else {
-                lc = read_array_body_sequential(instream, header, handler, options);
+                if constexpr ((FORMAT & compile_array_only) == compile_array_only) {
+                    lc = read_array_body_sequential(instream, header, handler, options);
+                } else {
+                    throw support_not_selected("Matrix is array but reading array files not enabled for this method.");
+                }
             }
         }
 
@@ -527,7 +537,7 @@ namespace fast_matrix_market {
      *  - If the file is a pattern file, the pattern_value will be substituted for each element
      *  - If the HANDLER expects std::complex values but the file is not complex then imag=0 is provided for each value.
      */
-    template <typename HANDLER>
+    template <typename HANDLER, compile_format FORMAT = compile_all>
     void read_matrix_market_body(std::istream& instream, const matrix_market_header& header,
                                  HANDLER& handler,
                                  typename HANDLER::value_type pattern_value,
@@ -538,6 +548,6 @@ namespace fast_matrix_market {
         }
 
         auto fwd_handler = pattern_parse_adapter<HANDLER>(handler, pattern_value);
-        read_matrix_market_body_no_adapters(instream, header, fwd_handler, options);
+        read_matrix_market_body_no_adapters<decltype(fwd_handler), FORMAT>(instream, header, fwd_handler, options);
     }
 }
