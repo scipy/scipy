@@ -13,7 +13,6 @@ from scipy import special
 #  tests - test minweight
 #  decide when output of log-integration is complex vs real
 #  debug inflated error estimate with log-integration when complex part is nonzero
-#  support complex integration
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
 #  warn (somehow) when invalid function values & weight < minweight

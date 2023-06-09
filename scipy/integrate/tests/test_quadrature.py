@@ -767,3 +767,21 @@ class TestTanhSinh:
         assert_allclose(np.exp(res.integral), ref.integral)
         assert_allclose(np.exp(res.error), ref.error)
         assert res.feval == ref.feval
+
+    def test_complex(self):
+        # Test case with finite limits
+        def f(x):
+            return np.exp(1j * x)
+
+        a, b = 0, np.pi/4
+        res = _tanhsinh(f, a, b)
+        ref = np.sqrt(2)/2 + (1-np.sqrt(2)/2)*1j
+        assert_allclose(res.integral, ref)
+
+        # Test case involving a few transformations
+        dist1 = stats.norm(scale=1)
+        dist2 = stats.norm(scale=2)
+        def f(x):
+            return dist1.pdf(x) + 1j*dist2.pdf(x)
+        res = _tanhsinh(f, np.inf, -np.inf)
+        assert_allclose(res.integral, -(1+1j))
