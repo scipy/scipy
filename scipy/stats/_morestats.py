@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array,
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
@@ -22,13 +22,12 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
-from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
+           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
@@ -3189,106 +3188,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     W = numer / denom
     pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
     return LeveneResult(W, pval)
-
-
-@_deprecated("'binom_test' is deprecated in favour of"
-             " 'binomtest' from version 1.7.0 and will"
-             " be removed in Scipy 1.12.0.")
-def binom_test(x, n=None, p=0.5, alternative='two-sided'):
-    """Perform a test that the probability of success is p.
-
-    This is an exact, two-sided test of the null hypothesis
-    that the probability of success in a Bernoulli experiment
-    is `p`.
-
-    .. deprecated:: 1.10.0
-        `binom_test` is deprecated in favour of `binomtest` and will
-        be removed in Scipy 1.12.0.
-
-    Parameters
-    ----------
-    x : int or array_like
-        The number of successes, or if x has length 2, it is the
-        number of successes and the number of failures.
-    n : int
-        The number of trials.  This is ignored if x gives both the
-        number of successes and failures.
-    p : float, optional
-        The hypothesized probability of success.  ``0 <= p <= 1``. The
-        default value is ``p = 0.5``.
-    alternative : {'two-sided', 'greater', 'less'}, optional
-        Indicates the alternative hypothesis. The default value is
-        'two-sided'.
-
-    Returns
-    -------
-    p-value : float
-        The p-value of the hypothesis test.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Binomial_test
-
-    Examples
-    --------
-    >>> from scipy import stats
-
-    A car manufacturer claims that no more than 10% of their cars are unsafe.
-    15 cars are inspected for safety, 3 were found to be unsafe. Test the
-    manufacturer's claim:
-
-    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
-    0.18406106910639114
-
-    The null hypothesis cannot be rejected at the 5% level of significance
-    because the returned p-value is greater than the critical value of 5%.
-
-    """
-    x = atleast_1d(x).astype(np.int_)
-    if len(x) == 2:
-        n = x[1] + x[0]
-        x = x[0]
-    elif len(x) == 1:
-        x = x[0]
-        if n is None or n < x:
-            raise ValueError("n must be >= x")
-        n = np.int_(n)
-    else:
-        raise ValueError("Incorrect length for x.")
-
-    if (p > 1.0) or (p < 0.0):
-        raise ValueError("p must be in range [0,1]")
-
-    if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized\n"
-                         "should be 'two-sided', 'less' or 'greater'")
-
-    if alternative == 'less':
-        pval = distributions.binom.cdf(x, n, p)
-        return pval
-
-    if alternative == 'greater':
-        pval = distributions.binom.sf(x-1, n, p)
-        return pval
-
-    # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
-    d = distributions.binom.pmf(x, n, p)
-    rerr = 1 + 1e-7
-    if x == p * n:
-        # special case as shortcut, would also be handled by `else` below
-        pval = 1.
-    elif x < p * n:
-        i = np.arange(np.ceil(p * n), n+1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(x, n, p) +
-                distributions.binom.sf(n - y, n, p))
-    else:
-        i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(y-1, n, p) +
-                distributions.binom.sf(x-1, n, p))
-
-    return min(1.0, pval)
 
 
 def _apply_func(x, g, func):
