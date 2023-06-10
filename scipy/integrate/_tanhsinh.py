@@ -1,21 +1,21 @@
+# mypy: disable-error-code="attr-defined"
 from dataclasses import dataclass
 import numpy as np
 from scipy import special
 
 # todo:
-#  return lower-level integral estimates for testing?
-#  callback
-#  apply np.vectorize as needed?
-#  ~~remove maxiter?~~ make maxiter and maxfeval None, default -> maxiter=10
+#  warn (somehow) when invalid function values & weight < minweight
+#  special case for equal limits of integration?
+#  callback - test results at lower levels with higher maxlevel against
+#             final results at lower maxlevel
 #  accept args, kwargs?
-#  decide when output of log-integration is complex vs real
-#  debug inflated error estimate with log-integration when complex part is nonzero
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
-#  warn (somehow) when invalid function values & weight < minweight
-#  vectorize
-#  respect data types
-#  special case for equal limits of integration?
+#  vectorize, respecting data type
+#  When doing log-integration, should the tolerances control the error of the
+#    log-integral or the error of the integral?  The trouble is that `log`
+#    inherently looses some precision so it may not be possible to refine
+#    the integral further. Example: 7th moment of stats.f(15, 20)
 #  make public?
 
 @dataclass
@@ -32,18 +32,18 @@ _status_messages = {-1: "Iteration in progress.",
                     0: ("The algorithm completed successfully, and the error "
                         "estimate meets the requested tolerance."),
                     1: ("The error estimate does not meet the specified "
-                        "tolerance, but performing additional iterations "
-                        "cause the function evaluation limit to be exceeded."),
+                        "tolerance, but performing an additional iteration "
+                        "would cause the maximum level to be exceeded."),
                     2: ("The error estimate does not meet the specified "
-                        "tolerance, but performing additional iterations "
-                        "would cause the iteration limit to be exceeded."),
+                        "tolerance, but performing an additional iteration "
+                        "cause the function evaluation limit to be exceeded."),
                     3: ("An invalid value (e.g. overflow, NaN) was "
                         "encountered within the integration interval. See "
                         "documentation notes for more information.")
                     }
 
 
-def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
+def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
               atol=None, rtol=None, minweight=1e-100):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
@@ -71,20 +71,28 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
         and relative errors. In this case, the result object will contain the
         log of the integral and error. This is useful for integrands for which
         numerical underflow or overflow would lead to inaccuracies.
-    maxfun, maxlevel : int, optional
-        The maximum acceptable number of function evaluations (default: 5000)
-        and algorithm level (default: 10), respectively. Note that the number
-        of function evaluations is counted as the number of elements at which
-        `f` is evaluated; not the number of calls of `f`.
+    maxfun, maxlevel : int or np.inf, optional
+        The maximum acceptable number of function evaluations and refinement
+        level, respectively. Note that the number of function evaluations is
+        counted as the number of elements at which `f` is evaluated; not the
+        number of calls of `f`.
+
         At the zeroth level, `f` is called once (twice for doubly-infinite
         integrals), performing 14 (28) function evaluations. The number of
-        function at each subsequent level is approximately double the
-        number of the previous level. For many integrands, each successive
+        function evaluations at each subsequent level is approximately double
+        the number of the previous level. For many integrands, each successive
         level will double the number of accurate digits in the calculation
-        up to the limits of floating point precision.
-        The function will terminate with nonzero exit status before *either* of
-        these limits is reached. For an increase of one of these parameters to
-        have an effect, *both* of these values must be increased.
+        (up to the limits of floating point precision).
+
+        - (default) If neither `maxfun` nor `maxlevel` is provided, the
+          algorithm will terminate after completing refinement level 10.
+        - If only `maxfun` (`maxlevel`) is provided, the function will terminate
+          with exit status ``1`` (``2``) if proceeding to the next refinement
+          level would cause the specified limit to be exceeded.
+        - If both `maxfun` and `maxlevel` are provided, the function will
+          terminate with nonzero exit status before *either* of these limits is
+          reached.
+
     minlevel : int, optional
         The level at which to begin iteration (default: 0). This does not
         change the total number of function evaluations or the points at
@@ -95,7 +103,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
         vectorized callables.
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
-        tolerance (default: 1e-14), respectively. The error estimate is as
+        tolerance (default: 1e-12), respectively. The error estimate is as
         described in [1]_ Section 5; while not theoretically rigorous or
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
@@ -218,15 +226,15 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
         # Determine whether evaluating the function at the abscissae will
         # cause the function evaluation limit to be exceeded. If so, break.
         # Otherwise, increment the function eval counter.
-        if feval + len(xjc) * feval_factor > maxfun:
-            status = 1
+        if feval + 2*len(xjc) * feval_factor > maxfun:
+            status = 2
             break
 
         # Transform the abscissae as required by the limits of integration
         xj, wj = _transform_to_limits(a, b, xjc, wj)
 
         # Perform the Euler-Maclaurin sum
-        feval += 2 * len(xjc) * feval_factor  # function evals happen next
+        feval += len(xj) * feval_factor  # function evals happen next
         fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
 
         # Check for infinities / NaNs. If encountered, break.
@@ -244,7 +252,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
         # Otherwise, the integral estimate is just Sn.
 
         # Check error estimate (see [1] 5. Error Estimation, page 11)
-        rerr, aerr = _error_estimate(h, n, Sn, Sk, fjwj, log)
+        rerr, aerr = _estimate_error(h, n, Sn, Sk, xj, fjwj, log)
         success = (rerr < rtol or (rerr + Sn < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
         if success:
@@ -254,7 +262,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
         # Store integral estimate.
         Sk.append(Sn)
     else:
-        status = 2  # Iteration limit
+        status = 1  # Iteration limit
 
     message = _status_messages[status]
     return QuadratureResult(integral=Sn, error=aerr, feval=feval,
@@ -270,8 +278,8 @@ def _compute_pair(k):
     # "We find that roughly 3.6 * 2^k abscissa-weight pairs are generated at
     # "level k." The actual number per level can be generated like:
     # for i in range(10):
-    #     _, xjc, wj = _compute_pair(i)
-    #     # don't want infinite weights or to evaluate f at endpoints
+    #     xjc, wj = _compute_pair(i)
+    #     # don't want zero weights or to evaluate f at endpoints
     #     valid = (xjc > 0) & (wj > 0) & np.isfinite(wj)
     #     print(np.sum(valid))
     # Running this code, I'm finding that the maximum index value w/ 64-bit is:
@@ -288,10 +296,11 @@ def _compute_pair(k):
     pi_2 = np.pi / 2
     u1 = pi_2*np.cosh(jh)
     u2 = pi_2*np.sinh(jh)
-    wj = u1 / np.cosh(u2)**2
-
-    # "We actually store 1-xj = 1/(...)."
-    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
+    # Denominators get big here. Overflow then underflow doesn't need warning.
+    with np.errstate(under='ignore', over='ignore'):
+        wj = u1 / np.cosh(u2)**2
+        # "We actually store 1-xj = 1/(...)."
+        xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
 
     # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
     # code, the function will be evaluated there twice; each gets half weight.
@@ -373,7 +382,7 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
     return fjwj, Sn
 
 
-def _error_estimate(h, n, Sn, Sk, fjwj, log):
+def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
     # Estimate the error according to [1] Section 5
 
     # The paper says error 1 for n<=2, but I disagree. We start at level 0, so
@@ -404,22 +413,30 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
 
     if log:
         log_e1 = np.log(e1)
-        # Currently, only real integrals are supported. All complex values
-        # have imaginary part in increments of pi*j, which just carries sign
-        # information. Use of `np.real` here is equivalent to absolute value
-        # in real scale.
+        # Currently, only real integrals are supported in log-scale. All
+        # complex values have imaginary part in increments of pi*j, which just
+        # carries sign information of the original integral, so use of
+        # `np.real` here is equivalent to absolute value in real scale.
+        fjwj = np.real(fjwj)
         d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))
         d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))
-        d3 = log_e1 + np.max(np.real(fjwj))
-        d4 = np.max(np.real(np.reshape(fjwj, (2, -1))[:, -1]))
+        d3 = log_e1 + np.max(fjwj)
+        i = fjwj > -np.inf
+        xj, fjwj = xj[i], fjwj[i]  # eliminate points excluded from EM sum
+        il, ir = np.argmin(xj), np.argmax(xj)
+        d4 = np.maximum(fjwj[il], fjwj[ir])
         rerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
         aerr = max(log_e1, rerr) + np.real(Sn)
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
+        fjwj = np.abs(fjwj)
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
-        d3 = e1 * np.max(np.abs(fjwj))
-        d4 = np.max(np.reshape(np.abs(fjwj), (2, -1))[:, -1])
+        d3 = e1 * np.max(fjwj)
+        i = fjwj > 0
+        xj, fjwj = xj[i], fjwj[i]  # eliminate points excluded from EM sum
+        il, ir = np.argmin(xj), np.argmax(xj)
+        d4 = np.maximum(fjwj[il], fjwj[ir])
         rerr = np.max([d1**((np.log(d1)/np.log(d2))), d1**2, d3, d4])
         aerr = max(e1, rerr) * np.abs(Sn)
     return rerr, aerr
@@ -442,7 +459,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
         atol = -np.inf if log else 0
 
     if rtol is None:
-        rtol = np.log(1e-14) if log else 1e-14
+        rtol = np.log(1e-12) if log else 1e-12
 
     message = ('Integration limits `a` and `b`, tolerances `atol` and '
                '`rtol`, and `minweight` must be reals.')
@@ -461,6 +478,14 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
     if np.any(params[-1] <= 0) or np.any(np.isinf(params[-1])):
         raise ValueError(message)
     a, b, atol, rtol, minweight = params
+
+    BIGINT = int(2**63-2)  # avoid overflow when this is incremented
+    if maxfun is None and maxlevel is None:
+        maxlevel = 10
+    # `np.isposinf` errors for objects other than numbers. This seems to work
+    # for any common representation of infinity.
+    maxfun = BIGINT if (maxfun is None or maxfun == np.inf) else maxfun
+    maxlevel = BIGINT if (maxlevel is None or maxlevel == np.inf) else maxlevel
 
     message = '`maxfun`, `maxlevel`, and `minlevel` must be integers.'
     params = np.asarray([maxfun, maxlevel, minlevel])
@@ -496,7 +521,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
 
     if np.isinf(b):
         def f(x, f=f, a=a):
-            return (f(1/x - 1 + a) - 2*np.log(x+0j) if log
+            return (f(1/x - 1 + a) - 2*np.log(abs(x)) if log
                     else f(1/x - 1 + a)*x**-2)
         a, b = 0, 1
 

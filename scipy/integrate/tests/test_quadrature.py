@@ -1,3 +1,4 @@
+# mypy: disable-error-code="attr-defined"
 import pytest
 import numpy as np
 from numpy import cos, sin, pi
@@ -553,9 +554,14 @@ class TestTanhSinh:
     f15.ref = np.pi / 2
     f15.b = np.inf
 
-    def log_error(self, res, ref):
+    def error(self, res, ref, log=False):
+        err = abs(res - ref)
+
+        if not log:
+            return err
+
         with np.errstate(divide='ignore'):
-            return np.log10(abs((res - ref) / abs(ref)))
+            return np.log10(err)
 
     def test_input_validation(self):
         f = self.f1
@@ -598,7 +604,7 @@ class TestTanhSinh:
 
         message = '...must be integers.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, maxlevel=None)
+            _tanhsinh(f, 0, f.b, maxlevel=object())
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, maxfun=1+1j)
         with pytest.raises(ValueError, match=message):
@@ -629,6 +635,9 @@ class TestTanhSinh:
 
         logres = _tanhsinh(dist.logpdf, *limits, log=True)
         assert_allclose(np.exp(logres.integral), val)
+        # Transformation should not make the result complex unnecessarily
+        assert (np.isreal(logres.integral) if val > 0
+                else np.iscomplex(logres.integral))
 
         assert_allclose(np.exp(logres.error), res.error, atol=1e-16)
 
@@ -645,8 +654,8 @@ class TestTanhSinh:
         last_logerr = 0
         for i in range(4):
             res = _tanhsinh(f, 0, f.b, maxlevel=i)
-            logerr = self.log_error(res.integral, f.ref)
-            assert logerr < last_logerr * 2
+            logerr = self.error(res.integral, f.ref, log=True)
+            assert (logerr < last_logerr * 2 or logerr < -15.5)
             last_logerr = logerr
 
     def test_feval(self):
@@ -666,86 +675,114 @@ class TestTanhSinh:
         assert_allclose(res.integral, 1)
         assert res.feval == f.feval
 
-    def test_options_and_status(self):
+    def test_options_and_result_attributes(self):
         # demonstrate that options are behaving as advertised and status
         # messages are as intended
+        def f(x):
+            f.calls += 1
+            f.feval += len(x)
+            return self.f1(x)
+        f.ref = self.f1.ref
+        f.b = self.f1.b
+        default_rtol = 1e-12
+        default_atol = f.ref * default_rtol  # effective default absolute tol
 
-        f = self.f1
+        # Test default options
+        f.feval, f.calls = 0, 0
+        ref = _tanhsinh(f, 0, f.b)
+        assert self.error(ref.integral, f.ref) < ref.error < default_atol
+        assert ref.feval == f.feval
+        ref.calls = f.calls  # reference number of function calls
+        assert ref.success is True
+        assert ref.status == 0
+        assert ref.message.startswith("The algorithm completed successfully")
 
-        # test `maxlevel`, `atol`, and status 2
-        maxlevel = 2
-        atol = 1e-15
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
-        # integral is solved
-        assert_allclose(res.integral, f.ref)
-        # but not to the required tolerance
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error > np.log10(atol)
-        assert res.error > atol
-        # consequently, status indicates failure
-        assert res.success is False
-        assert res.status == 2
-        assert res.message.endswith("iteration limit to be exceeded.")
+        # Test `maxlevel` equal to required number of function evaluations
+        # We should get all the same results
+        f.feval, f.calls = 0, 0
+        maxlevel = ref.calls - 1
+        res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
+        assert res == ref
 
-        # give it another iteration, and the tolerance is met
-        maxlevel += 1
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error < np.log10(atol)
-        assert res.error < atol
-        # consequently, status indicates success
-        assert res.success is True
-        assert res.status == 0
-        assert res.message.startswith("The algorithm completed successfully")
-
-        # alternatively, loosen the tolerance
+        # Now reduce the maximum level. We won't meet tolerances.
+        f.feval, f.calls = 0, 0
         maxlevel -= 1
-        atol = 1e-6
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
-        # now, with such a loose tolerance, error tolerance is met
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error < np.log10(atol)
-        assert res.error < atol
-        # consequently, status indicates success
-        assert res.success is True
-        assert res.status == 0
-        assert res.message.startswith("The algorithm completed successfully")
-
-        # Test `maxfun`, `rtol`, and status 1
-        maxfun = 50
-        rtol = 1e-14
-        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
-        # integral is solved
-        assert_allclose(res.integral, f.ref)
-        # but not to the required tolerance
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error > np.log10(rtol * res.integral)
-        assert res.error > rtol * res.integral
-        # consequently, status indicates failure
+        res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
+        assert self.error(res.integral, f.ref) < res.error > default_atol
+        assert res.feval == f.feval < ref.feval
+        assert f.calls == ref.calls - 1
         assert res.success is False
         assert res.status == 1
+        assert res.message.endswith("maximum level to be exceeded.")
+
+        # Test `maxfun` equal to required number of function evaluations
+        # We should get all the same results
+        f.feval, f.calls = 0, 0
+        maxfun = ref.feval
+        res = _tanhsinh(f, 0, f.b, maxfun = maxfun)
+        assert res == ref
+
+        # Now reduce `maxfun`. We won't meet tolerances.
+        f.feval, f.calls = 0, 0
+        maxfun -= 1
+        res = _tanhsinh(f, 0, f.b, maxfun=maxfun)
+        assert self.error(res.integral, f.ref) < res.error > default_atol
+        assert res.feval == f.feval < ref.feval
+        assert f.calls == ref.calls - 1
+        assert res.success is False
+        assert res.status == 2
         assert res.message.endswith("evaluation limit to be exceeded.")
 
-        # give it more function evaluations, and the tolerance is met
-        maxfun = 100
-        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error < np.log10(rtol * res.integral)
-        assert res.error < rtol * res.integral
-        # consequently, status indicates success
+        # Take this result to be the new reference
+        ref = res
+        ref.calls = f.calls
+
+        # Test `atol`
+        f.feval, f.calls = 0, 0
+        # With this tolerance, we should get the exact same result as ref
+        atol = np.nextafter(ref.error, np.inf)
+        res = _tanhsinh(f, 0, f.b, atol=atol)
+        assert res.integral == ref.integral
+        assert res.error == ref.error
+        assert res.feval == f.feval == ref.feval
+        assert f.calls == ref.calls
+        # Except the result is considered to be successful
         assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
-        # alternatively, loosen the tolerance
-        maxfun = 50
-        rtol = 1e-6
-        res = _tanhsinh(f, 0, f.b, rtol=rtol, maxfun=maxfun)
-        # now, with such a loose tolerance, error tolerance is met
-        actual_error = self.log_error(res.integral, f.ref)
-        assert actual_error < np.log10(rtol * res.integral)
-        assert res.error < rtol * res.integral
-        # consequently, status indicates success
+        f.feval, f.calls = 0, 0
+        # With a tighter tolerance, we should get a more accurate result
+        atol = np.nextafter(ref.error, -np.inf)
+        res = _tanhsinh(f, 0, f.b, atol=atol)
+        assert self.error(res.integral, f.ref) < res.error < atol
+        assert res.feval == f.feval > ref.feval
+        assert f.calls > ref.calls
+        assert res.success is True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
+
+        # Test `rtol`
+        f.feval, f.calls = 0, 0
+        # With this tolerance, we should get the exact same result as ref
+        rtol = np.nextafter(ref.error/ref.integral, np.inf)
+        res = _tanhsinh(f, 0, f.b, rtol=rtol)
+        assert res.integral == ref.integral
+        assert res.error == ref.error
+        assert res.feval == f.feval == ref.feval
+        assert f.calls == ref.calls
+        # Except the result is considered to be successful
+        assert res.success is True
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
+
+        f.feval, f.calls = 0, 0
+        # With a tighter tolerance, we should get a more accurate result
+        rtol = np.nextafter(ref.error/ref.integral, -np.inf)
+        res = _tanhsinh(f, 0, f.b, rtol=rtol)
+        assert self.error(res.integral, f.ref)/f.ref < res.error/res.integral < rtol
+        assert res.feval == f.feval > ref.feval
+        assert f.calls > ref.calls
         assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
@@ -768,12 +805,14 @@ class TestTanhSinh:
         # Test equivalence of log-integration and regular integration
         dist = stats.norm()
 
+        # Problem with positive integrand/real log-integrand)
         res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
         ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
         assert_allclose(np.exp(res.integral), ref.integral)
         assert_allclose(np.exp(res.error), ref.error)
         assert res.feval == ref.feval
 
+        # Problem with real integrand/complex log-integrand
         def f(x):
             return -dist.logpdf(x)*dist.pdf(x)
 
@@ -823,8 +862,10 @@ class TestTanhSinh:
             f.feval, f.calls, f.x = 0, 0, np.array([])
             options = dict(minlevel=minlevel, maxlevel=maxlevel)
             res = _tanhsinh(f, 0, self.f1.b, **options)
-            assert_allclose(res.integral, ref.integral, rtol=2e-16)
-            # assert_allclose(res.error, ref.error, rtol=2e-16)
+            # Should be very close; all that has changed is the order of values
+            assert_allclose(res.integral, ref.integral, rtol=4e-16)
+            # Difference in absolute errors << magnitude of integral
+            assert_allclose(res.error, ref.error, atol=4e-16 * ref.integral)
             assert res.feval == f.feval == len(f.x)
             assert f.calls == maxlevel - minlevel + 1
             assert res.status == ref.status
