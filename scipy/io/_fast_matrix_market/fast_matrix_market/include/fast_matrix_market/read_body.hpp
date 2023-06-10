@@ -49,6 +49,7 @@ namespace fast_matrix_market {
         typename FWD_HANDLER::value_type fwd_value;
     };
 
+#ifndef FMM_SCIPY_PRUNE
     /**
      * A handler wrapper so that real/integer files can be read into std::complex matrices by setting all
      * imaginary parts to zero.
@@ -80,6 +81,7 @@ namespace fast_matrix_market {
     protected:
         COMPLEX_HANDLER handler;
     };
+#endif
 
     ///////////////////////////////////////////////////////////////////
     // Limit bool parallelism
