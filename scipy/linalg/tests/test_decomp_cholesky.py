@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
+=======
+import numpy as np
+from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
+>>>>>>> ENH: linalg: empty array support in many linalg functions
 from pytest import raises as assert_raises
 
 import numpy as np
@@ -81,6 +86,11 @@ class TestCholesky:
                              [-1, 1, 0, 5]])
 
        cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = cholesky(a)
+        assert_allclose(a_empty, a)
 
 
 class TestCholeskyBanded:

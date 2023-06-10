@@ -926,6 +926,10 @@ class TestInv:
         a_inv = inv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = inv(a)
+        assert_allclose(a_empty, a)
 
 class TestDet:
     def setup_method(self):
@@ -1064,6 +1068,11 @@ class TestDet:
         a = [[1, 2], [3, np.inf]]
         with assert_raises(ValueError, match='array must not contain'):
             det(a)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = det(a)
+        assert_allclose(a_empty, 1)
 
 
 def direct_lstsq(a, b, cmplx=0):
@@ -1456,6 +1465,11 @@ class TestPinv:
     def test_positional_deprecation(self):
         with pytest.deprecated_call(match="use keyword arguments"):
             pinv(np.ones((2,2)), 0., 1e-10)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = pinv(a)
+        assert_allclose(a_empty, a)
 
 
 class TestPinvSymmetric:
