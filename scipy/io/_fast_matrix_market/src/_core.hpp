@@ -163,6 +163,7 @@ void write_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
     fmm::write_body(cursor.stream(), formatter, cursor.options);
 }
 
+#ifndef FMM_SCIPY_PRUNE
 /**
  * Write Python CSC/CSR to MatrixMarket.
  */
@@ -204,6 +205,7 @@ void write_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
                                         is_csr);
     fmm::write_body(cursor.stream(), formatter, cursor.options);
 }
+#endif
 
 void init_read_array(py::module_ &);
 void init_write_array(py::module_ &);

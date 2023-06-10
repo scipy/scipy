@@ -71,6 +71,7 @@ fmm::matrix_market_header create_header(const std::tuple<int64_t, int64_t>& shap
     return header;
 }
 
+#ifndef FMM_SCIPY_PRUNE
 py::dict header_to_dict(fmm::matrix_market_header& header) {
     py::dict dict;
     dict["shape"] = py::make_tuple(header.nrows, header.ncols);
@@ -97,6 +98,7 @@ std::string header_repr(const fmm::matrix_market_header& header) {
     oss << ")";
     return oss.str();
 }
+#endif
 
 ////////////////////////////////////////////////
 //// Read cursor - open files/streams for reading
@@ -157,9 +159,11 @@ write_cursor open_write_stream(std::shared_ptr<pystream::ostream>& stream, fmm::
     return cursor;
 }
 
+#ifndef FMM_SCIPY_PRUNE
 void write_header_only(write_cursor& cursor) {
     fmm::write_header(cursor.stream(), cursor.header);
 }
+#endif
 
 ////////////////////////////////////////////////
 //// pybind11 module definition
@@ -189,9 +193,11 @@ PYBIND11_MODULE(_core, m) {
     });
 
     py::class_<fmm::matrix_market_header>(m, "header")
+#ifndef FMM_SCIPY_PRUNE
     .def(py::init<>())
     .def(py::init<int64_t, int64_t>())
     .def(py::init([](std::tuple<int64_t, int64_t> shape) { return fmm::matrix_market_header{std::get<0>(shape), std::get<1>(shape)}; }))
+#endif
     .def(py::init(&create_header), py::arg("shape")=std::make_tuple(0, 0), "nnz"_a=0, "comment"_a=std::string(), "object"_a="matrix", "format"_a="coordinate", "field"_a="real", "symmetry"_a="general")
     .def_readwrite("nrows", &fmm::matrix_market_header::nrows)
     .def_readwrite("ncols", &fmm::matrix_market_header::ncols)
@@ -202,13 +208,17 @@ PYBIND11_MODULE(_core, m) {
     .def_property("format", &get_header_format, &set_header_format)
     .def_property("field", &get_header_field, &set_header_field)
     .def_property("symmetry", &get_header_symmetry, &set_header_symmetry)
+#ifndef FMM_SCIPY_PRUNE
     .def("to_dict", &header_to_dict, R"pbdoc(
         Return the values in the header as a dict.
     )pbdoc")
-    .def("__repr__", [](const fmm::matrix_market_header& header) { return header_repr(header); });
+    .def("__repr__", [](const fmm::matrix_market_header& header) { return header_repr(header); })
+#endif
+    ;
 
+#ifndef FMM_SCIPY_PRUNE
     m.def("write_header_only", &write_header_only);
-
+#endif
     ///////////////////////////////
     // Read methods
     py::class_<read_cursor>(m, "_read_cursor")
@@ -223,7 +233,10 @@ PYBIND11_MODULE(_core, m) {
     ///////////////////////////////
     // Write methods
     py::class_<write_cursor>(m, "_write_cursor")
-    .def_readwrite("header", &write_cursor::header);
+#ifndef FMM_SCIPY_PRUNE
+    .def_readwrite("header", &write_cursor::header)
+#endif
+    ;
 
     m.def("open_write_file", &open_write_file);
     m.def("open_write_stream", &open_write_stream);
