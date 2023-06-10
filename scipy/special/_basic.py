@@ -3168,6 +3168,17 @@ def softplus(x, **kwargs):
 
     **kwargs :
         Additional keyword arguments to be passed to `np.logaddexp`.
+        out: Specify the output array.
+        where: Boolean array to control ufunc calculation at each position.
+        axes: List of tuples specifying indices of axes for generalized ufuncs.
+        axis: Single axis over which a generalized ufunc should operate.
+        keepdims: If True, keep reduced axes as dimensions with size one.
+        casting: Policy for permitted casting.
+        order: Iteration order/memory layout of the output array.
+        dtype: Override the output array's dtype.
+        subok: If False, the output will always be a strict array.
+        signature: Dtype(s), tuple of DTypes, or special signature string indicating input/output types of a ufunc.
+        extobj: List of length 3 specifying ufunc buffer-size, error mode integer, and error callback function.
 
     Returns
     -------
