@@ -3167,7 +3167,6 @@ def softplus(x, **kwargs):
         Input array-like object.
 
     **kwargs :
-        Additional keyword arguments to be passed to `np.logaddexp`.
         out: Specify the output array.
         where: Boolean array to control ufunc calculation at each position.
         axes: List of tuples specifying indices of axes for generalized ufuncs.
