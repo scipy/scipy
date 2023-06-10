@@ -496,6 +496,7 @@ namespace fast_matrix_market {
         }
     }
 
+#ifndef FMM_SCIPY_PRUNE
     /**
      * Read the body by adapting real files to complex HANDLER.
      *
@@ -529,6 +530,7 @@ namespace fast_matrix_market {
             throw complex_incompatible("Matrix Market file has complex fields but passed data structure cannot handle complex values.");
         }
     }
+#endif
 
     /**
      * Main body reader entry point.
