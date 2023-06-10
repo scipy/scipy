@@ -3,11 +3,10 @@ import numpy as np
 from scipy import special
 
 # todo:
-#  fix tests broken by jumpstart
 #  return lower-level integral estimates for testing?
 #  callback
 #  apply np.vectorize as needed?
-#  remove maxiter?
+#  ~~remove maxiter?~~ make maxiter and maxfeval None, default -> maxiter=10
 #  accept args, kwargs?
 #  decide when output of log-integration is complex vs real
 #  debug inflated error estimate with log-integration when complex part is nonzero
@@ -44,8 +43,8 @@ _status_messages = {-1: "Iteration in progress.",
                     }
 
 
-def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
-              minweight=1e-100, log=False):
+def _tanhsinh(f, a, b, *, log=False, maxfun=5000, maxlevel=10, minlevel=0,
+              atol=None, rtol=None, minweight=1e-100):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
     In practice, tanh-sinh quadrature achieves quadratic convergence for
@@ -66,18 +65,34 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
         as input and evaluate the integrand elementwise.
     a, b : float
         Lower and upper limits of integration.
-    maxfun, maxiter: int, default=5000
+    log : bool, default: False
+        Setting to True indicates that `func` returns the log of the integrand
+        and that `atol` and `rtol` are expressed as the logs of the absolute
+        and relative errors. In this case, the result object will contain the
+        log of the integral and error. This is useful for integrands for which
+        numerical underflow or overflow would lead to inaccuracies.
+    maxfun, maxlevel : int, optional
         The maximum acceptable number of function evaluations (default: 5000)
-        and iterations (default: 10), respectively. Note that the number of
-        function evaluations is counted as the number of elements at which `f`
-        is evaluated; not the number of calls of `f`.
-        In the first iteration, `f` is called once (twice for doubly-infinite
+        and algorithm level (default: 10), respectively. Note that the number
+        of function evaluations is counted as the number of elements at which
+        `f` is evaluated; not the number of calls of `f`.
+        At the zeroth level, `f` is called once (twice for doubly-infinite
         integrals), performing 14 (28) function evaluations. The number of
-        function in each subsequent iteration is approximately double the
-        number in the previous iteration.
+        function at each subsequent level is approximately double the
+        number of the previous level. For many integrands, each successive
+        level will double the number of accurate digits in the calculation
+        up to the limits of floating point precision.
         The function will terminate with nonzero exit status before *either* of
         these limits is reached. For an increase of one of these parameters to
         have an effect, *both* of these values must be increased.
+    minlevel : int, optional
+        The level at which to begin iteration (default: 0). This does not
+        change the total number of function evaluations or the points at
+        which the function is evaluated; it changes only the *number of times*
+        `f` is called. If ``minlevel=k``, then the integrand is evaluated at
+        all points from levels ``0`` through ``k`` in the first call.
+        Increasing ``minlevel`` may reduce execution time for efficiently
+        vectorized callables.
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: 1e-14), respectively. The error estimate is as
@@ -95,11 +110,6 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
         integrals with an endpoint singularity, a larger value will protect
         against overflows of the integrand, but potentially at the expense of
         integral and error estimate accuracy.
-    log : bool, default: True
-        When set to True, func returns the log of the integrand, `atol` and
-        `rtol` must be expressed as the logs of the absolute and relative
-        errors, and the result object contains the log of the integral and
-        error.
 
     Returns
     -------
@@ -188,8 +198,10 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
 
     """
     # Input validation and standardization
-    res = _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log)
-    f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor = res
+    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
+                       minlevel, atol, rtol, minweight)
+    (f, a, b, log, maxfun, maxlevel, minlevel,
+     atol, rtol, minweight, feval_factor) = res
 
     # Initialization
     Sk = []  # sequence of integral estimates for error estimation
@@ -197,11 +209,11 @@ def _tanhsinh(f, a, b, *, maxfun=5000, maxiter=10, atol=None, rtol=None,
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
 
-    for n in range(0, maxiter):  # for each "level"
+    for n in range(minlevel, maxlevel+1):  # for each "level"
         h = 1 / 2**n  # step size
 
         # retrieve abscissa-weight pairs from cache
-        xjc, wj = _get_pairs(n, inclusive=(n==0))
+        xjc, wj = _get_pairs(n, inclusive=(n==minlevel))
 
         # Determine whether evaluating the function at the abscissae will
         # cause the function evaluation limit to be exceeded. If so, break.
@@ -311,7 +323,7 @@ def _get_pairs(k, inclusive=False):
     xjc = _pair_cache.xjc
     wj = _pair_cache.wj
 
-    start = 0 if (k == 0 or inclusive) else indices[k-1] - 1
+    start = 0 if (k == 0 or inclusive) else indices[k-1]
     end = indices[k]
 
     return xjc[start:end].copy(), wj[start:end].copy()
@@ -413,7 +425,8 @@ def _error_estimate(h, n, Sn, Sk, fjwj, log):
     return rerr, aerr
 
 
-def _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
+def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
+                 minlevel, atol, rtol, minweight):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -449,14 +462,14 @@ def _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
         raise ValueError(message)
     a, b, atol, rtol, minweight = params
 
-    message = '`maxfun` and `maxiter` must be integers.'
-    params = np.asarray([maxfun, maxiter])
+    message = '`maxfun`, `maxlevel`, and `minlevel` must be integers.'
+    params = np.asarray([maxfun, maxlevel, minlevel])
     if not np.issubdtype(params.dtype, np.integer):
         raise ValueError(message)
-    message = '`maxfun` and `maxiter` must be positive.'
-    if np.any(params <= 0):
+    message = '`maxfun`, `maxlevel`, and `minlevel` must be non-negative.'
+    if np.any(params < 0):
         raise ValueError(message)
-    maxfun, maxiter = params
+    maxfun, maxlevel, minlevel = params
 
     # Transform integrals as needed for infinite limits
     # There are more efficient ways of doing this to avoid function call
@@ -487,4 +500,5 @@ def _tanhsinh_iv(f, a, b, maxfun, maxiter, atol, rtol, minweight, log):
                     else f(1/x - 1 + a)*x**-2)
         a, b = 0, 1
 
-    return f, a, b, maxfun, maxiter, atol, rtol, minweight, log, feval_factor
+    return (f, a, b, log, maxfun, maxlevel, minlevel,
+            atol, rtol, minweight, feval_factor)

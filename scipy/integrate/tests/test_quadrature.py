@@ -598,15 +598,19 @@ class TestTanhSinh:
 
         message = '...must be integers.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, maxiter=None)
+            _tanhsinh(f, 0, f.b, maxlevel=None)
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, maxfun=1+1j)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, minlevel="migratory coconut")
 
-        message = '...must be positive.'
+        message = '...must be non-negative.'
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, maxiter=-1)
+            _tanhsinh(f, 0, f.b, maxlevel=-1)
         with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, maxfun=0)
+            _tanhsinh(f, 0, f.b, maxfun=-1)
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, minlevel=-1)
 
     @pytest.mark.parametrize("limits, val", [
         [(0, np.inf), 0.5],  # b infinite
@@ -639,8 +643,8 @@ class TestTanhSinh:
         # demonstrate that number of accurate digits doubles each iteration
         f = self.f1
         last_logerr = 0
-        for i in range(1, 5):
-            res = _tanhsinh(f, 0, f.b, maxiter=i)
+        for i in range(4):
+            res = _tanhsinh(f, 0, f.b, maxlevel=i)
             logerr = self.log_error(res.integral, f.ref)
             assert logerr < last_logerr * 2
             last_logerr = logerr
@@ -668,10 +672,10 @@ class TestTanhSinh:
 
         f = self.f1
 
-        # test `maxiter`, `atol`, and status 2
-        maxiter = 3
+        # test `maxlevel`, `atol`, and status 2
+        maxlevel = 2
         atol = 1e-15
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
         # integral is solved
         assert_allclose(res.integral, f.ref)
         # but not to the required tolerance
@@ -684,8 +688,8 @@ class TestTanhSinh:
         assert res.message.endswith("iteration limit to be exceeded.")
 
         # give it another iteration, and the tolerance is met
-        maxiter += 1
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        maxlevel += 1
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
         actual_error = self.log_error(res.integral, f.ref)
         assert actual_error < np.log10(atol)
         assert res.error < atol
@@ -695,9 +699,9 @@ class TestTanhSinh:
         assert res.message.startswith("The algorithm completed successfully")
 
         # alternatively, loosen the tolerance
-        maxiter += 1
+        maxlevel -= 1
         atol = 1e-6
-        res = _tanhsinh(f, 0, f.b, atol=atol, maxiter=maxiter)
+        res = _tanhsinh(f, 0, f.b, atol=atol, maxlevel=maxlevel)
         # now, with such a loose tolerance, error tolerance is met
         actual_error = self.log_error(res.integral, f.ref)
         assert actual_error < np.log10(atol)
@@ -799,3 +803,29 @@ class TestTanhSinh:
             return dist1.pdf(x) + 1j*dist2.pdf(x)
         res = _tanhsinh(f, np.inf, -np.inf)
         assert_allclose(res.integral, -(1+1j))
+
+    @pytest.mark.parametrize("maxlevel", range(4))
+    def test_minlevel(self, maxlevel):
+        # Verify that minlevel does not change the values at which the
+        # integrand is evaluated or the integral/error estimates, only the
+        # number of function calls
+        def f(x):
+            f.calls += 1
+            f.feval += len(x)
+            f.x = np.concatenate((f.x, x))
+            return self.f1(x)
+        f.feval, f.calls, f.x = 0, 0, np.array([])
+
+        ref = _tanhsinh(f, 0, self.f1.b, maxlevel=maxlevel)
+        ref_x = np.sort(f.x)
+
+        for minlevel in range(0, maxlevel + 1):
+            f.feval, f.calls, f.x = 0, 0, np.array([])
+            options = dict(minlevel=minlevel, maxlevel=maxlevel)
+            res = _tanhsinh(f, 0, self.f1.b, **options)
+            assert_allclose(res.integral, ref.integral, rtol=2e-16)
+            # assert_allclose(res.error, ref.error, rtol=2e-16)
+            assert res.feval == f.feval == len(f.x)
+            assert f.calls == maxlevel - minlevel + 1
+            assert res.status == ref.status
+            assert_equal(ref_x, np.sort(f.x))
