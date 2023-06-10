@@ -3,6 +3,7 @@ import platform
 import sys
 
 import numpy as np
+
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_, assert_allclose)
@@ -132,6 +133,12 @@ class TestEigVals:
         w = eigvals(a, check_finite=False)
         exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
         assert_array_almost_equal(w, exact_w)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        b = np.array([])
+        a_empty = eigvals(a)
+        assert_equal(a_empty, (b,a))
 
 
 class TestEig:
@@ -350,6 +357,12 @@ class TestEig:
         B = np.arange(9.0).reshape(3, 3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        b = np.array([])
+        a_empty = eig(a)
+        assert_equal(a_empty, (b,a))
 
 
 class TestEigBanded:
@@ -900,6 +913,14 @@ class TestEigh:
         assert_allclose(w_dep, w)
         assert_allclose(v_dep, v)
 
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        b = np.array([])
+        goal = (b,a)
+        a_empty = eigh(a)
+        for i in range(len(a_empty)):
+            assert_allclose(a_empty[i], goal[i])
+
 
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
@@ -1048,6 +1069,15 @@ class TestSVD_GESDD:
         u, s, vh = svd(A, full_matrices=False)
         assert_allclose(s[0], 1.0)
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
+
+    def test_empty(self):
+        a = np.array([]).reshape((0,0))
+        b = np.array([])
+        goal = (a,b,a)
+        a_empty = svd(a)
+        for i in range(len(a_empty)):
+            assert_allclose(a_empty[i], goal[i])
+
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -1670,6 +1700,11 @@ class TestQR:
         # Test against invalid lwork
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
+
+    def test_empty_matrix(self):
+        a = np.array([]).reshape((0,0))
+        a_empty = qr(a)
+        assert_allclose(a_empty, (a,a))
 
 
 class TestRQ:

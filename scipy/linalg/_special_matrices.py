@@ -477,6 +477,11 @@ def kron(a, b):
            [3, 3, 3, 4, 4, 4]])
 
     """
+    # accommodate empty arrays
+    if a.size == 0:
+        return a.copy()
+    if b.size == 0:
+        return a.copy()
     if not a.flags['CONTIGUOUS']:
         a = np.reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:
