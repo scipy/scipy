@@ -866,6 +866,8 @@ class TestTanhSinh:
             assert_allclose(res.integral, ref.integral, rtol=4e-16)
             # Difference in absolute errors << magnitude of integral
             assert_allclose(res.error, ref.error, atol=4e-16 * ref.integral)
+            # Note: previous line is not satisfied for all problems. See note
+            # corresponding with `d4` in `_tanhsinh._estimate_error`.
             assert res.feval == f.feval == len(f.x)
             assert f.calls == maxlevel - minlevel + 1
             assert res.status == ref.status

@@ -4,8 +4,9 @@ import numpy as np
 from scipy import special
 
 # todo:
-#  warn (somehow) when invalid function values & weight < minweight
+#  in `_estimate_error`, keep track of incumbent `fjwj` term
 #  special case for equal limits of integration?
+#  warn (somehow) when invalid function values & weight < minweight?
 #  callback - test results at lower levels with higher maxlevel against
 #             final results at lower maxlevel
 #  accept args, kwargs?
@@ -78,11 +79,11 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
         number of calls of `f`.
 
         At the zeroth level, `f` is called once (twice for doubly-infinite
-        integrals), performing 14 (28) function evaluations. The number of
-        function evaluations at each subsequent level is approximately double
-        the number of the previous level. For many integrands, each successive
-        level will double the number of accurate digits in the calculation
-        (up to the limits of floating point precision).
+        integrals), performing 14 (28) function evaluations. Each subsequent
+        level approximately doubles the number of function evaluations
+        performed. Accordingly, for many integrands, each successive level will
+        double the number of accurate digits in the result (up to the limits of
+        floating point precision).
 
         - (default) If neither `maxfun` nor `maxlevel` is provided, the
           algorithm will terminate after completing refinement level 10.
@@ -252,7 +253,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
         # Otherwise, the integral estimate is just Sn.
 
         # Check error estimate (see [1] 5. Error Estimation, page 11)
-        rerr, aerr = _estimate_error(h, n, Sn, Sk, xj, fjwj, log)
+        rerr, aerr, Sk = _estimate_error(h, n, Sn, Sk, xj, fjwj, log)
         success = (rerr < rtol or (rerr + Sn < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
         if success:
@@ -385,29 +386,39 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
 def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
     # Estimate the error according to [1] Section 5
 
-    # The paper says error 1 for n<=2, but I disagree. We start at level 0, so
-    # there is no reason not to compute the error beginning in level 2. Before
-    # then, the error cannot be calculated, so use NaN, not 1.
-    if n <= 1:
-        return np.nan, np.nan
+    if n == 0:
+        # The paper says to use "one" as the error before it can be calculated.
+        # NaN seems to be more appropriate.
+        return np.nan, np.nan, Sk
+
+    indices = _pair_cache.indices
+    z = fjwj.reshape(2, -1)
 
     # With a jump start (starting at level higher than 0), we haven't
     # explicitly calculated the integral estimate at lower levels. But we have
     # all the function value-weight products, so we can compute the
     # lower-level estimates.
-    if len(Sk) < 2:
-        indices = _pair_cache.indices
+    if len(Sk) == 0:
         hm1 = 2 * h
-        hm2 = 4 * h
-        z = fjwj.reshape(2, -1)
         fjwjm1 = z[..., :indices[n-1]]
-        fjwjm2 = z[..., :indices[n-2]]
         Snm1 = (special.logsumexp(fjwjm1 + np.log(hm1)) if log
                 else np.sum(fjwjm1) * hm1)
+        Sk.append(Snm1)
+
+    if n == 1:
+        return np.nan, np.nan, Sk
+
+    # The paper says not to calculate the error for n<=2, but it's not clear
+    # about whether it starts at level 0 or level 1. We start at level 0, so
+    # why not compute the error beginning in level 2?
+    if len(Sk) < 2:
+        hm2 = 4 * h
+        fjwjm2 = z[..., :indices[n-2]]
         Snm2 = (special.logsumexp(fjwjm2 + np.log(hm2)) if log
                 else np.sum(fjwjm2) * hm2)
-    else:
-        Snm2, Snm1 = Sk[-2:]
+        Sk.insert(0, Snm2)
+
+    Snm2, Snm1 = Sk[-2:]
 
     e1 = np.finfo(np.float64).eps
 
@@ -421,6 +432,7 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
         d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))
         d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))
         d3 = log_e1 + np.max(fjwj)
+        # See note before d4 below.
         i = fjwj > -np.inf
         xj, fjwj = xj[i], fjwj[i]  # eliminate points excluded from EM sum
         il, ir = np.argmin(xj), np.argmax(xj)
@@ -433,13 +445,35 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
         d3 = e1 * np.max(fjwj)
+        # Ideally, we find the leftmost and rightmost of all abscissae included
+        # in the EM sum. We do our best with the information that we have
+        # stored. Note two shortcomings.
+        # 1. In the next two lines, we filter out points where `fjwj` is 0. The
+        # purpose is to exclude points that are not included in the sum, either
+        # because the `wj` falls below `minweight` or `xj` is at an integration
+        # limit due to roundoff. However, it also may exclude terms that *were*
+        # included in the sum where `fj` is numerically zero or `fjwj`
+        # underflowed. This would mean that `d4` should be zero, so we have the
+        # possibility of overestimating the error. I don't think this is
+        # important enough to specifically keep track of which points were
+        # included in the sum.
         i = fjwj > 0
         xj, fjwj = xj[i], fjwj[i]  # eliminate points excluded from EM sum
+        # 2. We are considering the leftmost and rightmost points of the
+        # xj that are currently available. Ideally, each successive level would
+        # only get closer to the limits of integration, but due to roundoff
+        # error, new abscissae can be *at* the limits of integration, so we
+        # exclude the corresponding `fjwj` terms from the sum. Therefore, it is
+        # possible that `xj` terms from previous levels are more extreme, but
+        # have not kept track of them. If (e.g.) there is an endpoint
+        # singularity, the forgotten `fjwj` may have been greater in magnitude,
+        # so we may be underestimating the error here. Perhaps it is worth
+        # remembering the incumbent `fjwj` from previous iterations.
         il, ir = np.argmin(xj), np.argmax(xj)
         d4 = np.maximum(fjwj[il], fjwj[ir])
         rerr = np.max([d1**((np.log(d1)/np.log(d2))), d1**2, d3, d4])
         aerr = max(e1, rerr) * np.abs(Sn)
-    return rerr, aerr
+    return rerr, aerr, Sk
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
