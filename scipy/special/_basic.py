@@ -3037,7 +3037,11 @@ def stirling2(N, K, exact=True):
             while not it.finished:
                 it[2] = snsk_vals[(int(it[0]), int(it[1]))]
                 it.iternext()
-            return it.operands[2]
+            output = it.operands[2]
+            # If output is 0d array, convert to scalar.
+            if not output.ndim:
+                output = output.take(0)
+            return output
     else:
         raise NotImplementedError()
 
