@@ -400,8 +400,9 @@ def sobol_indices(
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    First order indices sum to 1, while the sum of total order indices will be
-    greater than 1 if there are interactions.
+    First order indices sum to at most 1, while total order indices sum to at least 1.
+    If there are no interactions, then first and total order indices are equal, and both
+    first and total order indices sum to 1.
 
     .. warning::
 
@@ -412,10 +413,6 @@ def sobol_indices(
         the dimensionality of the problem. e.g. for a 3 dimension problem,
         consider at minima ``n >= 2**12``. The more complex the model is,
         the more samples will be needed.
-
-        If the parameters are not independent, the first-order indices would
-        not sum to 1.
-        Numerical noise can also contribute to this.
 
     References
     ----------
