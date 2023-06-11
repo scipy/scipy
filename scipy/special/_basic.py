@@ -2961,7 +2961,7 @@ def stirling2(N, K, exact=True):
 
         Stirling numbers of the second kind count the number
         of non-empty subsets that can be formed by N elements
-        into K non-emptuy subsets.
+        into K non-empty subsets.
 
         This is often expressed as "N subset K".
 
