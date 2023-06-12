@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, as_xparray, isdtype
+from scipy._lib._array_api import array_namespace, as_xparray
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -4166,7 +4166,7 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = as_xparray(Z, order='c', xp=xp)
     T = as_xparray(T, order='c', xp=xp)
-    if not isdtype(T.dtype, kind='signed integer', xp=xp):
+    if T.dtype != xp.int64:
         raise TypeError('T must be a one-dimensional array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
