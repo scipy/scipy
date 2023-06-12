@@ -1032,6 +1032,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
                          'matrix looks suspiciously like an uncondensed '
                          'distance matrix')
         y = distance.pdist(y, metric)
+        y = xp.asarray(y)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
@@ -1347,9 +1348,11 @@ def cut_tree(Z, n_clusters=None, height=None):
     elif height is None and n_clusters is None:  # return the full cut tree
         cols_idx = xp.arange(nobs)
     elif height is not None:
+        height = xp.asarray(height)
         heights = xp.asarray([x.dist for x in nodes])
         cols_idx = xp.searchsorted(heights, height)
     else:
+        n_clusters = xp.asarray(n_clusters)
         cols_idx = nobs - xp.searchsorted(xp.arange(nobs), n_clusters)
 
     try:
@@ -1365,7 +1368,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = last_group.copy()
+        this_group = as_xparray(last_group, copy=True, xp=xp)
         this_group[idx] = last_group[idx].min()
         this_group[this_group > last_group[idx].max()] -= 1
         if i + 1 in cols_idx:
@@ -1530,14 +1533,17 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
                          'matrix looks suspiciously like an uncondensed '
                          'distance matrix')
         y = distance.pdist(y, metric)
+        y = xp.asarray(y)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
-    if not np.all(np.isfinite(y)):
+    if not xp.all(xp.isfinite(y)):
         raise ValueError("The condensed distance matrix must contain only "
                          "finite values.")
 
-    return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
+    Z = np.asarray(Z)
+    y = np.asarray(y)
+    return xp.asarray(_optimal_leaf_ordering.optimal_leaf_ordering(Z, y))
 
 
 def _convert_to_bool(X, xp):
@@ -1763,7 +1769,7 @@ def inconsistent(Z, d=2):
     n = Zs[0] + 1
     R = np.zeros((n - 1, 4), dtype=np.double)
 
-    Z = xp.asarray(Z)
+    Z = np.asarray(Z)
     _hierarchy.inconsistent(Z, R, int(n), int(d))
     R = xp.asarray(R)
     return R
@@ -1845,16 +1851,16 @@ def from_mlab_linkage(Z):
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return Z.copy()
+        return as_xparray(Z, copy=True, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return Z.copy()
+        return as_xparray(Z, copy=True, xp=xp)
 
-    Zpart = Z.copy()
+    Zpart = as_xparray(Z, copy=True, xp=xp)
     if Zpart[:, 0:2].min() != 1.0 and Zpart[:, 0:2].max() != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
 
@@ -1941,13 +1947,14 @@ def to_mlab_linkage(Z):
     the original linkage matrix has been dropped.
 
     """
-    Z = as_xparray(Z, order='c', dtype=np.double)
+    xp = array_namespace(Z)
+    Z = as_xparray(Z, order='c', dtype=xp.float64)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return Z.copy()
+        return as_xparray(Z, copy=True, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    ZP = Z[:, 0:3].copy()
+    ZP = as_xparray(Z[:, 0:3], copy=True, xp=xp)
     ZP[:, 0:2] += 1.0
 
     return ZP
@@ -2571,6 +2578,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     [Z] = _copy_arrays_if_base_present([Z])
 
     Z = np.asarray(Z)
+    monocrit = np.asarray(monocrit)
     if criterion == 'inconsistent':
         if R is None:
             R = inconsistent(Z, depth)
@@ -2689,6 +2697,7 @@ def fclusterdata(X, t, criterion='inconsistent',
                         'array.')
 
     Y = distance.pdist(X, metric=metric)
+    Y = xp.asarray(Y)
     Z = linkage(Y, method=method)
     if R is None:
         R = inconsistent(Z, d=depth)
@@ -3742,9 +3751,8 @@ def is_isomorphic(T1, T2):
     True
 
     """
-    xp = array_namespace(T1, T2)
-    T1 = as_xparray(T1, order='c', xp=xp)
-    T2 = as_xparray(T2, order='c', xp=xp)
+    T1 = np.asarray(T1, order='c')
+    T2 = np.asarray(T2, order='c')
 
     T1S = T1.shape
     T2S = T2.shape
@@ -4158,7 +4166,7 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = as_xparray(Z, order='c', xp=xp)
     T = as_xparray(T, order='c', xp=xp)
-    if T.dtype != 'i':
+    if not isdtype(T.dtype, kind='signed integer', xp=xp):
         raise TypeError('T must be a one-dimensional array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
@@ -4171,7 +4179,7 @@ def leaders(Z, T):
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     Z = np.asarray(Z)
-    T = np.asarray(T)
+    T = np.asarray(T, dtype='i')
     s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '

@@ -15,7 +15,7 @@ import array_api_compat
 from array_api_compat import size
 import array_api_compat.numpy
 
-__all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
+__all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace', 'isdtype']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
