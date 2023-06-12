@@ -286,8 +286,8 @@ def sobol_indices(
     dists : list(distributions), optional
         List of each parameter's distribution. The distribution of parameters
         depends on the application and should be carefully chosen.
-        Parameters are assumed to be independently distributed, meaning there is
-        no constraint nor relationship between their values.
+        Parameters are assumed to be independently distributed, meaning there
+        is no constraint nor relationship between their values.
 
         Distributions must be an instance of a class with a ``ppf``
         method.
