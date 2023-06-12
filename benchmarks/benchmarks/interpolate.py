@@ -367,3 +367,68 @@ class RegularGridInterpolatorSubclass(Benchmark):
 
     def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
         self.interp(self.values)
+
+
+class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
+    def __init__(self, points, xi, tol, max_iter, **kwargs):
+        interpolate.CloughTocher2DInterpolator.__init__(self, points, None, tol=tol, max_iter=max_iter)
+        self.xi = xi
+        self.simplices, self.c = interpolate.CloughTocher2DInterpolator._find_simplices(xi)
+
+    def _find_simplicies(self, xi):
+        return self.simplices, self.c
+
+    def __call__(self, values):
+        self._set_values(values)
+        return super().__call__(self.xi)
+
+
+class CloughTocherInterpolatorSubclass(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="linear".
+    """
+    param_names = ['max_coord_size', 'n_samples', 'flipped', 'tol', 'max_iter']
+    params = [
+        [10, 40, 200],
+        [10, 100, 1000, 10000],
+        [1, -1],
+        [1e-3, 1e-6, 1e-8],
+        [1, 10, 100, 400]
+    ]
+
+    def setup(self, max_coord_size, n_samples, flipped, tol, max_iter):
+        rng = np.random.default_rng(314159)
+
+        # coordinates halve in size over the dimensions
+        coord_sizes = [max_coord_size // 2**i for i in range(2)]
+        self.points = [np.sort(rng.random(size=s))[::flipped]
+                       for s in coord_sizes]
+        self.values = rng.random(size=coord_sizes)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.tol = tol
+        self.max_iter = max_iter
+
+        self.interp = CloughTocherInterpolatorValues(
+            self.points,
+            self.xi,
+            self.tol,
+            self.max_iter
+        )
+
+    def time_rgi_setup_interpolator(self, max_coord_size,
+                                    n_samples, flipped, tol, max_iter):
+        self.interp = CloughTocherInterpolatorValues(
+            self.points,
+            self.xi,
+            self.tol,
+            self.max_iter
+        )
+
+    def time_rgi(self, max_coord_size, n_samples, flipped, tol, max_iter):
+        self.interp(self.values)
