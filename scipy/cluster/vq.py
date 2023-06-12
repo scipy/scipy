@@ -514,7 +514,7 @@ def _kpoints(data, k, rng, xp):
         A 'k' by 'N' containing the initial centroids
 
     """
-    idx = rng.choice(data.shape[0], size=k, replace=False)
+    idx = rng.choice(data.shape[0], size=int(k), replace=False)
     return data[idx]
 
 
@@ -546,20 +546,29 @@ def _krandinit(data, k, rng, xp):
     if data.ndim == 1:
         cov = xp.cov(data)
         x = rng.standard_normal(size=k)
+        x = xp.asarray(x)
         x *= xp.sqrt(cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
         x = rng.standard_normal(size=(k, size(s)))
-        sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - 1)
-        x = x.dot(sVh)
+        x = xp.asarray(x)
+        sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1))
+        if xp.__name__ in {"array_api_compat.torch", "torch"}:
+            x = x.matmul(sVh)
+        else:
+            x = x.dot(sVh)
     else:
-        cov = np.atleast_2d(xp.cov(data, rowvar=False))
+        cov = xp.atleast_2d(xp.cov(data.T))
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, size(mu)))
-        x = x.dot(xp.linalg.cholesky(cov).T)
+        x = xp.asarray(x)
+        if xp.__name__ in {"array_api_compat.torch", "torch"}:
+            x = x.matmul(xp.linalg.cholesky(cov).T)
+        else:
+            x = x.dot(xp.linalg.cholesky(cov).T)
 
     x += mu
     return x

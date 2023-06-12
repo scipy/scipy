@@ -15,7 +15,7 @@ from scipy.conftest import (
     skip_if_array_api, skip_if_array_api_gpu, array_api_compatible
 )
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import SCIPY_ARRAY_API
+from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
 
 
 TESTDATA_2D = np.array([
@@ -148,30 +148,38 @@ class TestVq:
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
 
-    def test_vq_1d(self):
+    @array_api_compatible
+    def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
         data = X[:, 0]
         initc = data[:3]
         a, b = _vq.vq(data, initc)
+        data = xp.asarray(data)
+        initc = xp.asarray(initc)
         ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
         assert_array_equal(a, ta)
         assert_array_equal(b, tb)
 
+    @skip_if_array_api
     def test__vq_sametype(self):
         a = np.array([1.0, 2.0], dtype=np.float64)
         b = a.astype(np.float32)
         assert_raises(TypeError, _vq.vq, a, b)
 
+    @skip_if_array_api
     def test__vq_invalid_type(self):
         a = np.array([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
-    def test_vq_large_nfeat(self):
+    @array_api_compatible
+    def test_vq_large_nfeat(self, xp):
         X = np.random.rand(20, 20)
         code_book = np.random.rand(3, 20)
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(X, code_book)
+        codes1, dis1 = py_vq(
+            xp.asarray(X), xp.asarray(code_book)
+        )
         assert_allclose(dis0, dis1, 1e-5)
         assert_array_equal(codes0, codes1)
 
@@ -179,22 +187,28 @@ class TestVq:
         code_book = code_book.astype(np.float32)
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(X, code_book)
+        codes1, dis1 = py_vq(
+            xp.asarray(X), xp.asarray(code_book)
+        )
         assert_allclose(dis0, dis1, 1e-5)
         assert_array_equal(codes0, codes1)
 
-    def test_vq_large_features(self):
+    @array_api_compatible
+    def test_vq_large_features(self, xp):
         X = np.random.rand(10, 5) * 1000000
         code_book = np.random.rand(2, 5) * 1000000
 
         codes0, dis0 = _vq.vq(X, code_book)
-        codes1, dis1 = py_vq(X, code_book)
+        codes1, dis1 = py_vq(
+            xp.asarray(X), xp.asarray(code_book)
+        )
         assert_allclose(dis0, dis1, 1e-5)
         assert_array_equal(codes0, codes1)
 
 
 class TestKMean:
-    def test_large_features(self):
+    @array_api_compatible
+    def test_large_features(self, xp):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
         d = 300
@@ -209,7 +223,7 @@ class TestKMean:
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
-        kmeans(data, np.asarray(2))
+        kmeans(xp.asarray(data), xp.asarray(2))
 
     @array_api_compatible
     def test_kmeans_simple(self, xp):
@@ -220,12 +234,13 @@ class TestKMean:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
-    def test_kmeans_lost_cluster(self):
+    @array_api_compatible
+    def test_kmeans_lost_cluster(self, xp):
         # This will cause kmeans to have a cluster with no points.
-        data = TESTDATA_2D
-        initk = np.array([[-1.8127404, -0.67128041],
-                         [2.04621601, 0.07401111],
-                         [-2.31149087, -0.05160469]])
+        data = xp.asarray(TESTDATA_2D)
+        initk = xp.asarray([[-1.8127404, -0.67128041],
+                            [2.04621601, 0.07401111],
+                            [-2.31149087, -0.05160469]])
 
         kmeans(data, initk)
         with suppress_warnings() as sup:
@@ -248,31 +263,35 @@ class TestKMean:
             assert_array_almost_equal(code1, CODET1)
             assert_array_almost_equal(code2, CODET2)
 
-    def test_kmeans2_rank1(self):
-        data = TESTDATA_2D
+    @array_api_compatible
+    def test_kmeans2_rank1(self, xp):
+        data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
 
         initc = data1[:3]
-        code = initc.copy()
+        code = as_xparray(initc, copy=True, xp=xp)
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
-    def test_kmeans2_rank1_2(self):
-        data = TESTDATA_2D
+    @array_api_compatible
+    def test_kmeans2_rank1_2(self, xp):
+        data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
-        kmeans2(data1, np.asarray(2), iter=1)
+        kmeans2(data1, xp.asarray(2), iter=1)
 
-    def test_kmeans2_high_dim(self):
+    @array_api_compatible
+    def test_kmeans2_high_dim(self, xp):
         # test kmeans2 when the number of dimensions exceeds the number
         # of input points
-        data = TESTDATA_2D
+        data = xp.asarray(TESTDATA_2D)
         data = data.reshape((20, 20))[:10]
-        kmeans2(data, np.asarray(2))
+        kmeans2(data, xp.asarray(2))
 
-    def test_kmeans2_init(self):
+    @array_api_compatible
+    def test_kmeans2_init(self, xp):
         np.random.seed(12345)
-        data = TESTDATA_2D
-        k = np.asarray(3)
+        data = xp.asarray(TESTDATA_2D)
+        k = xp.asarray(3)
 
         kmeans2(data, k, minit='points')
         kmeans2(data[:, :1], k, minit='points')  # special case (1-D)
@@ -286,10 +305,11 @@ class TestKMean:
             kmeans2(data, k, minit='random')
             kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
 
+    @array_api_compatible
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
-    def test_krandinit(self):
-        data = TESTDATA_2D
+    def test_krandinit(self, xp):
+        data = xp.asarray(TESTDATA_2D)
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
         k = int(1e6)
         for data in datas:
@@ -299,14 +319,15 @@ class TestKMean:
             else:
                 rng = np.random.RandomState(1234)
 
-            init = _krandinit(data, k, rng, np)
-            orig_cov = np.cov(data, rowvar=0)
-            init_cov = np.cov(init, rowvar=0)
+            init = _krandinit(data, k, rng, xp)
+            orig_cov = xp.cov(data.T)
+            init_cov = xp.cov(init.T)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
 
-    def test_kmeans2_empty(self):
+    @array_api_compatible
+    def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.
-        assert_raises(ValueError, kmeans2, np.asarray([]), np.asarray(2))
+        assert_raises(ValueError, kmeans2, xp.asarray([]), xp.asarray(2))
 
     @skip_if_array_api
     def test_kmeans_0k(self):
@@ -323,12 +344,13 @@ class TestKMean:
         assert_allclose(res[0], xp.asarray([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
-    def test_kmeans2_kpp_low_dim(self):
+    @array_api_compatible
+    def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
-        prev_res = np.array([[-1.95266667, 0.898],
-                             [-3.153375, 3.3945]])
+        prev_res = xp.asarray([[-1.95266667, 0.898],
+                               [-3.153375, 3.3945]])
         np.random.seed(42)
-        res, _ = kmeans2(TESTDATA_2D, np.asarray(2), minit='++')
+        res, _ = kmeans2(xp.asarray(TESTDATA_2D), xp.asarray(2), minit='++')
         assert_allclose(res, prev_res)
 
     @skip_if_array_api_gpu
