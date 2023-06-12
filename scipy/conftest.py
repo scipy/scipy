@@ -130,7 +130,7 @@ if SCIPY_ARRAY_API:
             # only select a subset of backend by filtering out the dict
             try:
                 xp_available_backends = {
-                    'backend': xp_available_backends[backend]
+                    backend: xp_available_backends[backend]
                     for backend in SCIPY_ARRAY_API
                 }
             except KeyError:
