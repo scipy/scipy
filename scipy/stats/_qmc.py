@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     )
 
 import scipy.stats as stats
-from scipy._lib._util import rng_integers
+from scipy._lib._util import rng_integers, _rng_spawn
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -748,8 +748,16 @@ class QMCEngine(ABC):
             raise ValueError('d must be a non-negative integer value')
 
         self.d = d
-        self.rng = check_random_state(seed)
-        self.rng_seed = copy.deepcopy(seed)
+
+        if isinstance(seed, np.random.Generator):
+            # Spawn a Generator that we can own and reset.
+            self.rng = _rng_spawn(seed, 1)[0]
+        else:
+            # Create our instance of Generator, does not need spawning
+            # Also catch RandomState which cannot be spawned
+            self.rng = check_random_state(seed)
+        self.rng_seed = copy.deepcopy(self.rng)
+
         self.num_generated = 0
 
         config = {
@@ -1083,15 +1091,6 @@ class LatinHypercube(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
-    centered : bool, optional
-        Center samples within cells of a multi-dimensional grid.
-        Default is False.
-
-        .. deprecated:: 1.10.0
-            `centered` is deprecated as of SciPy 1.10.0 and will be removed in
-            1.12.0. Use `scramble` instead. ``centered=True`` corresponds to
-            ``scramble=False``.
-
     scramble : bool, optional
         When False, center samples within cells of a multi-dimensional grid.
         Otherwise, samples are randomly placed within cells of the grid.
@@ -1265,21 +1264,12 @@ class LatinHypercube(QMCEngine):
     """
 
     def __init__(
-        self, d: IntNumber, *, centered: bool = False,
+        self, d: IntNumber, *,
         scramble: bool = True,
         strength: int = 1,
         optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
-        if centered:
-            scramble = False
-            warnings.warn(
-                "'centered' is deprecated and will be removed in SciPy 1.12."
-                " Please use 'scramble' instead. 'centered=True' corresponds"
-                " to 'scramble=False'.",
-                stacklevel=2
-            )
-
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'strength': strength,
                            'optimization': optimization}
@@ -2316,7 +2306,7 @@ def _random_cd(
     Create a base LHS and do random permutations of coordinates to
     lower the centered discrepancy.
     Because it starts with a normal LHS, it also works with the
-    `centered` keyword argument.
+    `scramble` keyword argument.
 
     Two stopping criterion are used to stop the algorithm: at most,
     `n_iters` iterations are performed; or if there is no improvement

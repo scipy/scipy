@@ -438,10 +438,13 @@ class TestNewton(TestScalarRootFinders):
         # `newton` uses the secant method when `x1` and `x2` are specified
         res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
-        # all three foun a root
+        # all three found a root
         assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert res_newton_default.root.shape == tuple()
         assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert res_secant_default.root.shape == tuple()
         assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        assert res_secant.root.shape == tuple()
 
         # Defaults are correct
         assert (res_secant_default.root
