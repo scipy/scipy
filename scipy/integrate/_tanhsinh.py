@@ -4,6 +4,7 @@ import numpy as np
 from scipy import special
 
 # todo:
+#  implement improvements of https://arxiv.org/abs/2007.15057
 #  in `_estimate_error`, keep track of incumbent `fjwj` term
 #  special case for equal limits of integration?
 #  warn (somehow) when invalid function values & weight < minweight?
@@ -151,8 +152,8 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
     Notes
     -----
     Implements the algorithm as described in [1]_ with minor adaptations for
-    fixed-precision arithmetic. The tanh-sinh scheme was originally introduced
-    in [2]_.
+    fixed-precision arithmetic, including some described by [2]_. The tanh-sinh
+    scheme was originally introduced in [3]_.
 
     Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval, but the value returned will be ignored.
@@ -168,7 +169,10 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
     [1] Bailey, David H., Karthik Jeyabalan, and Xiaoye S. Li. "A comparison of
         three high-precision quadrature schemes." Experimental Mathematics 14.3
         (2005): 317-329.
-    [2] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
+    [2] Vanherck, Joren, Bart Sorée, and Wim Magnus. "Tanh-sinh quadrature for
+        single and multiple integration using floating-point arithmetic."
+        arXiv preprint arXiv:2007.15057 (2020).
+    [3] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
         numerical integration." Publications of the Research Institute for
         Mathematical Sciences 9.3 (1974): 721-741.
 
@@ -217,12 +221,13 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
     Sn = aerr = np.nan  # integral and error are NaN until determined otherwise
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
+    h0 = _get_step()
 
     for n in range(minlevel, maxlevel+1):  # for each "level"
-        h = 1 / 2**n  # step size
+        h = h0 / 2**n  # step size
 
         # retrieve abscissa-weight pairs from cache
-        xjc, wj = _get_pairs(n, inclusive=(n==minlevel))
+        xjc, wj = _get_pairs(n, h0, inclusive=(n==minlevel))
 
         # Determine whether evaluating the function at the abscissae will
         # cause the function evaluation limit to be exceeded. If so, break.
@@ -270,27 +275,41 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
                             success=status==0, status=status, message=message)
 
 
-def _compute_pair(k):
-    # Compute the abscissa-weight pairs for each level m. See [1] page 9.
+def _get_step(dtype=np.float64):
+    # Compute the base step length for the provided dtype. Theoretically, the
+    # Euler-Maclaurin sum is infinite, but it gets cut off when either the
+    # weights underflow or the abscissae cannot be distinguished from the
+    # limits of integration. The latter happens to occur first for float32 and
+    # float64, and it occurs which the standard `xjc` (abscissa complement)
+    # in `_compute_pair` underflows. We can solve for the argument at which
+    # it will underflow `tmax` using [2] Eq. 13.
+    fmin = np.finfo(dtype).tiny*4  # stay a little away from the limit
+    tmax = np.arcsinh(np.log(2/fmin - 1)/np.pi)
+
+    # Based on this, we can choose a base step size `h` for level 0.
+    # The number of function evaluations will be `2 + m*2^(k+1)`, where `k` is
+    # the level and `m` is an integer we get to choose. I choose `8` somewhat
+    # arbitrarily, but a power of 2 might make arithmetic more predictable, and
+    # because it doesn't change the performance much from the original step
+    # size I was using before I found [2] and these ideas settled.
+    h0 = tmax / _N_BASE_STEPS
+    return h0
+
+
+_N_BASE_STEPS = 8
+
+
+def _compute_pair(k, h0):
+    # Compute the abscissa-weight pairs for each level k. See [1] page 9.
 
     # "....each level k of abscissa-weight pairs uses h = 2 **-k"
-    h = 1 / (2 ** k)
-
-    # "We find that roughly 3.6 * 2^k abscissa-weight pairs are generated at
-    # "level k." The actual number per level can be generated like:
-    # for i in range(10):
-    #     xjc, wj = _compute_pair(i)
-    #     # don't want zero weights or to evaluate f at endpoints
-    #     valid = (xjc > 0) & (wj > 0) & np.isfinite(wj)
-    #     print(np.sum(valid))
-    # Running this code, I'm finding that the maximum index value w/ 64-bit is:
-    max = int(np.ceil(6.115 * 2**k))
-    # This reproduces all the integers produced by the loop above for k <= 10.
-    # Note that the actual number of pairs is *half* of this (see below).
+    # We adapt to floating point arithmetic using ideas of [2].
+    h = h0 / 2**k
+    max = _N_BASE_STEPS * 2**k
 
     # For iterations after the first, "....the integrand function needs to be
     # evaluated only at the odd-indexed abscissas at each level."
-    j = np.arange(max) if k == 0 else np.arange(1, max, 2)
+    j = np.arange(max+1) if k == 0 else np.arange(1, max+1, 2)
     jh = j * h
 
     # "In this case... the weights wj = u1/cosh(u2)^2, where..."
@@ -310,11 +329,11 @@ def _compute_pair(k):
     return xjc, wj
 
 
-def _pair_cache(max_level):
+def _pair_cache(max_level, h0):
     # Cache the ascissa-weight pairs up to a specified level
     # All abscissae (weights) are stored concatenated in a 1D array;
     # `index` notes the last index of each level.
-    pairs = [_compute_pair(k) for k in range(max_level + 1)]
+    pairs = [_compute_pair(k, h0) for k in range(max_level + 1)]
     lengths = [len(pair[0]) for pair in pairs]
     _pair_cache.xjc, _pair_cache.wj = np.concatenate(pairs, axis=-1)
     _pair_cache.indices = np.cumsum(lengths)
@@ -323,12 +342,12 @@ _pair_cache.wj = None
 _pair_cache.indices = []
 
 
-def _get_pairs(k, inclusive=False):
+def _get_pairs(k, h0, inclusive=False):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
     indices = _pair_cache.indices
     if len(indices) <= k:
-        _pair_cache(max(10, k))
+        _pair_cache(max(10, k), h0)
         indices = _pair_cache.indices
     xjc = _pair_cache.xjc
     wj = _pair_cache.wj
