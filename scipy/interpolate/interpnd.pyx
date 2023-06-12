@@ -73,7 +73,6 @@ class NDInterpolatorBase:
         else:
             self.tri = None
 
-        self.ndim = ndim
         points = _ndim_coords_from_arrays(points)
 
         if need_contiguous:
@@ -93,16 +92,16 @@ class NDInterpolatorBase:
         self._calculate_triangulation(self.points)
         
         if need_values or values is not None:
-            self._set_values(values, fill_value, need_contiguous)
+            self._set_values(values, fill_value, need_contiguous, ndim)
         else:
             self.values = None
 
     def _calculate_triangulation(self, points):
         pass
 
-    def _set_values(self, values, fill_value=np.nan, need_contiguous=True):
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True, ndim=None):
         values = np.asarray(values)
-        _check_init_shape(self.points, values, ndim=self.ndim)
+        _check_init_shape(self.points, values, ndim=ndim)
 
         self.values_shape = values.shape[1:]
         if values.ndim == 1:
@@ -864,8 +863,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         Rescale points to unit cube before performing interpolation.
         This is useful if some of the input dimensions have
         incommensurable units and differ by many orders of magnitude.
-    xi : tuple of ndarrays, optional
-        The coordinates of the points to be interpolated.
 
     Notes
     -----
@@ -879,9 +876,6 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     of the interpolating surface is approximatively minimized. The
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
-
-    Since most of the algorithm depeneds only on the triangulation of
-    the input 
 
     .. note:: For data on a regular grid use `interpn` instead.
 
@@ -952,7 +946,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                                     fill_value=fill_value, rescale=rescale,
                                     need_values=False)
     
-    def _set_values(self, values, fill_value=np.nan, need_contiguous=True):
+    def _set_values(self, values, fill_value=np.nan, need_contiguous=True, ndim=None):
         """
         Sets the values of the interpolation points.
 
@@ -961,7 +955,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         values : ndarray of float or complex, shape (npoints, ...)
             Data values.
         """
-        NDInterpolatorBase._set_values(self, values, fill_value=fill_value, need_contiguous=need_contiguous)
+        NDInterpolatorBase._set_values(self, values, fill_value=fill_value, need_contiguous=need_contiguous, ndim=ndim)
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
                                                     tol=self.tol, maxiter=self.maxiter)
