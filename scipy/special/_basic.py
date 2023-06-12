@@ -3032,7 +3032,12 @@ def stirling2(N, K, exact=True):
                 snsk_vals[(n,k)] = n_row[k]
             n_old, n_row = n, n_row
         # for each pair in the map, fetch the value, and populate the array
-        it = np.nditer([N, K, None], [], [['readonly'], ['readonly'], ['writeonly','allocate']])
+        it = np.nditer(
+            [N, K, None],
+            ['buffered'],
+            [['readonly'], ['readonly'], ['writeonly', 'allocate']],
+            op_dtypes=[object, object, object],
+        )
         with it:
             while not it.finished:
                 it[2] = snsk_vals[(int(it[0]), int(it[1]))]

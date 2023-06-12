@@ -3698,13 +3698,20 @@ class TestStirling2:
 
     def test_mixed_values(self):
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
-        n = [-1, 0,3,5,8,10,10]
-        k = [-2, 0,2,3,5,7,3]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
         assert array_equal(stirling2(n, k), ans)
 
-    def test_correct_modulus(self):
-        n, k = 30, 20
-        assert int(stirling2(n, k)) % 2 == math.comb(n - (k//2) - 1, n - k) % 2
+    def test_correct_parity(self):
+        """Test parity follows well known identity.
+
+        en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Parity
+        """
+        n, K = 100, np.arange(101)
+        assert_equal(
+            stirling2(n, K) % 2,
+            [math.comb(n - (k//2) - 1, n - k) % 2 for k in K],
+        )
 
     def test_big_numbers(self):
         # via mpmath
