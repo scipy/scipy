@@ -3664,26 +3664,30 @@ def test_runtime_warning():
 class TestStirling2:
     table = [
         [1],
-        [0,1],
-        [0,1,1],
-        [0,1,3,1],
-        [0,1,7,6,1],
-        [0,1,15,25,10,1],
-        [0,1,31,90,65,15,1],
-        [0,1,63,301,350,140,21,1],
-        [0,1,127,966,1701,1050,266,28,1],
-        [0,1,255,3025,7770,6951,2646,462,36,1],
-        [0,1,511,9330,34105,42525,22827,5880,750,45,1],
+        [0, 1],
+        [0, 1, 1],
+        [0, 1, 3, 1],
+        [0, 1, 7, 6, 1],
+        [0, 1, 15, 25, 10, 1],
+        [0, 1, 31, 90, 65, 15, 1],
+        [0, 1, 63, 301, 350, 140, 21, 1],
+        [0, 1, 127, 966, 1701, 1050, 266, 28, 1],
+        [0, 1, 255, 3025, 7770, 6951, 2646, 462, 36, 1],
+        [0, 1, 511, 9330, 34105, 42525, 22827, 5880, 750, 45, 1],
     ]
 
     def test_table_cases(self):
         for n in range(len(self.table)):
             for k in range(len(self.table[n])):
-                assert_equal(self.table[n][k], stirling2(n,k))
+                assert_equal(self.table[n][k], stirling2(n, k))
 
     def test_valid_single_integer(self):
         assert_equal(stirling2(0, 0), self.table[0][0])
         assert_equal(stirling2(4, 2), self.table[4][2])
+        # a single 2-tuple of integers as arguments must return an int and not
+        # an array whereas arrays of single values should return array
+        assert stirling2(5, 3) == 25
+        assert array_equal(stirling2([5], [3]), [25])
 
     def test_negative_integer(self):
         assert_equal(stirling2(-1, -1), 0)
@@ -3692,14 +3696,16 @@ class TestStirling2:
 
     def test_array_inputs(self):
         ans = [self.table[10][3], self.table[10][4]]
-        assert array_equal(stirling2(asarray([10,10]), asarray([3, 4])), ans)
-        assert array_equal(stirling2([10,10], asarray([3, 4])), ans)
-        assert array_equal(stirling2(asarray([10,10]), [3, 4]), ans)
+        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
+        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
+        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
 
     def test_mixed_values(self):
+        # negative values-of either n or k-should return 0 for the entry
+        # if there are float inputs these are *truncated*
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
-        n = [-1, 0, 3, 5, 8, 10, 10]
-        k = [-2, 0, 2, 3, 5, 7, 3]
+        n = [-1, 0, 3, 5, 8, 10.7, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3.3]
         assert array_equal(stirling2(n, k), ans)
 
     def test_correct_parity(self):
@@ -3710,12 +3716,18 @@ class TestStirling2:
         n, K = 100, np.arange(101)
         assert_equal(
             stirling2(n, K) % 2,
-            [math.comb(n - (k//2) - 1, n - k) % 2 for k in K],
+            [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
         )
 
     def test_big_numbers(self):
-        # via mpmath
+        # via mpmath (bigger than 32bit)
         ans = asarray([48063331393110, 48004081105038305])
         n = [25, 30]
         k = [17, 4]
+        assert array_equal(stirling2(n, k), ans)
+        # bigger than 64 bit
+        ans = asarray([2801934359500572414253157841233849412,
+                       14245032222277144547280648984426251])
+        n = [42, 43]
+        k = [17, 23]
         assert array_equal(stirling2(n, k), ans)

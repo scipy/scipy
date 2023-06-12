@@ -2973,42 +2973,42 @@ def stirling2(N, K, exact=True):
             Number of non-empty subsets taken.
         exact : bool, optional
             For integers, if `exact` is False, then floating point precision is
-            used, otherwise the result is computed exactly. For non-integers, if
-            `exact` is True, is truncated. Defaults to True.
+            used, otherwise the result is computed exactly. For non-integers,
+            if `exact` is True, is truncated. Defaults to True.
 
         Returns
         -------
         val : int, float, ndarray
-            The total number of combinations.
+            The number of partitions.
 
         See Also
         --------
-        binom : Binomial coefficient considered as a function of two real
-                variables.
+        comb : The number of combinations of N things taken k at a time.
 
         Notes
         -----
         - If N < 0, or K < 0, then 0 is returned.
         - If K > N, then 0 is returned.
+        The output type of the ndarray is always `object`.
 
         Examples
         --------
         >>> import numpy as np
         >>> from scipy.special import stirling2
-        >>> k = np.array([3, -1])
-        >>> n = np.array([10, 10])
+        >>> k = np.array([3, -1, 3.3])
+        >>> n = np.array([10, 10, 9.7])
         >>> stirling2(n, k)
-        array([9330,   0])
+        array([9330, 0, 3025], dtype=object)
 
     """
     if exact:
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
-        nk_pairs = list(set([(int(n), int(k)) for n, k in np.nditer([N,K])]))
+        nk_pairs = list(set([(int(n), int(k)) for n, k in np.nditer([N, K])]))
         heapify(nk_pairs)
         # base mapping for small values
         snsk_vals = defaultdict(int)
-        for pair in [(0,0),(1,1),(2,1),(2,2)]:
+        for pair in [(0, 0), (1, 1), (2, 1), (2, 2)]:
             snsk_vals[pair] = 1
         n_old, n_row = 2, [0, 1, 1]
         # for each pair in the min-heap, calculate the value, store for later
@@ -3017,7 +3017,7 @@ def stirling2(N, K, exact=True):
             if n < 2 or k > n or k <= 0:
                 continue
             elif k == n or k == 1:
-                snsk_vals[(n,k)] = 1
+                snsk_vals[(n, k)] = 1
                 continue
             elif n != n_old:
                 num_iters = n - n_old
@@ -3026,10 +3026,10 @@ def stirling2(N, K, exact=True):
                     for j in range(len(n_row)-2, 1, -1):
                         n_row[j] = n_row[j]*j + n_row[j-1]
                     num_iters -= 1
-                snsk_vals[(n,k)] = n_row[k]
+                snsk_vals[(n, k)] = n_row[k]
             else:
                 # value is in the same row as prev
-                snsk_vals[(n,k)] = n_row[k]
+                snsk_vals[(n, k)] = n_row[k]
             n_old, n_row = n, n_row
         # for each pair in the map, fetch the value, and populate the array
         it = np.nditer(
@@ -3047,7 +3047,7 @@ def stirling2(N, K, exact=True):
             if not output.ndim:
                 output = output.take(0)
             return output
-    else:
+    else:  # this branch will house future Temme approx
         raise NotImplementedError()
 
 
