@@ -1781,7 +1781,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> n_times, fs = 1e5, 1e4
     >>> f_carrier, f_sig = 1214, 28
     >>> time = np.arange(n_times) / fs
-    >>> sig = np.sin(2*np.pi*f_carrier*time) * np.sin(2*np.pi*f_sig*time)
+    >>> sig = np.sin(2*np.pi*f_carrier*time) * (1 + np.sin(2*np.pi*f_sig*time))
 
     Add a noise.
 
@@ -1792,6 +1792,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> ax.plot(time, x, label='signal+noise')
     >>> ax.plot(time, sig, label='signal')
     >>> ax.set_xlim([0, 0.05])
+    >>> ax.set_ylim([-10, 10])
     >>> ax.set(xlabel="Time (in s)", ylabel="Amplitude")
     >>> ax.legend()
     >>> plt.show()
