@@ -93,20 +93,12 @@ def sample_A_B(
 def sample_AB(A: np.ndarray, B: np.ndarray) -> np.ndarray:
     """AB matrix.
 
-    AB: rows of B into A. Shape (d, d, n). See sec. 3 from [1]_.
+    AB: rows of B into A. Shape (d, d, n).
     - Copy A into d "pages"
     - In the first page, replace 1st rows of A with 1st row of B.
     ...
     - In the dth page, replace dth row of A with dth row of B.
     - return the stack of pages
-
-    References
-    ----------
-    .. [1] Saltelli, A., P. Annoni, I. Azzini, F. Campolongo, M. Ratto, and
-       S. Tarantola. "Variance based sensitivity analysis of model
-       output. Design and estimator for the total sensitivity index."
-       Computer Physics Communications, 181(2):259-270,
-       :doi:`10.1016/j.cpc.2009.09.018`, 2010.
     """
     d, n = A.shape
     AB = np.tile(A, (d, 1, 1))
@@ -286,15 +278,16 @@ def sobol_indices(
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
         ``f_A`` and ``f_B`` should have a shape ``(s, n)`` and ``f_AB``
         should have a shape ``(d, s, n)``.
-        This is an advanced feature and misuse can lead to incorrect analysis.
+        This is an advanced feature and misuse can lead to wrong analysis.
     n : int
         Number of samples used to generate the matrices ``A`` and ``B``.
         Must be a power of 2. The total number of points at which `func` is
         evaluated will be ``n*(d+2)``.
     dists : list(distributions), optional
-        List of each parameter's distribution.
+        List of each parameter's distribution. The distribution of parameters
+        depends on the application and should be carefully chosen.
         Parameters are assumed to be independently distributed, meaning there is
-        no constraint or relationship between them.
+        no constraint nor relationship between their values.
 
         Distributions must be an instance of a class with a ``ppf``
         method.
@@ -308,12 +301,13 @@ def sobol_indices(
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
 
-        with ``f_A, f_B`` of shape ``(s, n)`` and ``f_AB`` of shape ``(d, s, n)``.
+        with ``f_A, f_B`` of shape ``(s, n)`` and ``f_AB`` of shape
+        ``(d, s, n)``.
         These arrays contain the function evaluations from three different sets
         of samples.
         The output is a tuple of the first and total indices with
         shape ``(s, d)``.
-        This is an advanced feature and misuse can lead to incorrect analysis.
+        This is an advanced feature and misuse can lead to wrong analysis.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
         created using ``np.random.default_rng(random_state)``.
@@ -344,7 +338,7 @@ def sobol_indices(
 
     Notes
     -----
-    The Sobol' method [1]_, [2]_ is a variance-based sensitivity analysis which
+    The Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
     obtains the contribution of each parameter to the variance of the
     quantities of interest (QoIs; i.e., the outputs of `func`).
     Respective contributions can be used to rank the parameters and
@@ -385,15 +379,14 @@ def sobol_indices(
 
     :math:`S_{i}` corresponds to the first-order term which apprises the
     contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
-    second-order term which captures the contribution of interactions between the
+    second-order term which informs about the contribution of interactions between the
     i-th and the j-th parameters. These equations can be generalized to compute
     higher order terms; however, they are expensive to compute and their
     interpretation is complex.
     This is why only first order indices are provided.
 
-    Total order indices represent the total contribution to the variance of the QoI
-    of each parameter (including all its interactions, of any order, with other parameters),
-    and are defined as:
+    Total order indices represent the global contribution of the parameters to the
+    variance of the QoI and are defined as:
 
     .. math::
 
