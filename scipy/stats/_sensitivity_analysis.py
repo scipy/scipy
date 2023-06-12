@@ -379,23 +379,23 @@ def sobol_indices(
 
     :math:`S_{i}` corresponds to the first-order term which apprises the
     contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
-    second-order term which informs about the contribution of interactions between the
-    i-th and the j-th parameters. These equations can be generalized to compute
-    higher order terms; however, they are expensive to compute and their
-    interpretation is complex.
+    second-order term which informs about the contribution of interactions
+    between the i-th and the j-th parameters. These equations can be
+    generalized to compute higher order terms; however, they are expensive to
+    compute and their interpretation is complex.
     This is why only first order indices are provided.
 
-    Total order indices represent the global contribution of the parameters to the
-    variance of the QoI and are defined as:
+    Total order indices represent the global contribution of the parameters
+    to the variance of the QoI and are defined as:
 
     .. math::
 
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    First order indices sum to at most 1, while total order indices sum to at least 1.
-    If there are no interactions, then first and total order indices are equal, and both
-    first and total order indices sum to 1.
+    First order indices sum to at most 1, while total order indices sum to at
+    least 1. If there are no interactions, then first and total order indices
+    are equal, and both first and total order indices sum to 1.
 
     .. warning::
 
