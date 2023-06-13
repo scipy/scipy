@@ -1119,6 +1119,8 @@ class TestDirichlet:
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_mean_var_cov(self):
+        # Reference values calculated by hand and confirmed with Mathematica, e.g.
+        # `Covariance[DirichletDistribution[{ 1, 0.8, 0.2, 10^-300}]]`
         alpha = np.array([1., 0.8, 0.2])
         d = dirichlet(alpha)
 
