@@ -681,9 +681,9 @@ class TestTanhSinh:
         def f(x):
             f.calls += 1
             f.feval += len(x)
-            return self.f1(x)
-        f.ref = self.f1.ref
-        f.b = self.f1.b
+            return self.f2(x)
+        f.ref = self.f2.ref
+        f.b = self.f2.b
         default_rtol = 1e-12
         default_atol = f.ref * default_rtol  # effective default absolute tol
 
@@ -707,6 +707,7 @@ class TestTanhSinh:
         # Now reduce the maximum level. We won't meet tolerances.
         f.feval, f.calls = 0, 0
         maxlevel -= 1
+        assert maxlevel >= 2  # can't compare errors otherwise
         res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
         assert self.error(res.integral, f.ref) < res.error > default_atol
         assert res.feval == f.feval < ref.feval
@@ -852,16 +853,16 @@ class TestTanhSinh:
             f.calls += 1
             f.feval += len(x)
             f.x = np.concatenate((f.x, x))
-            return self.f1(x)
+            return self.f2(x)
         f.feval, f.calls, f.x = 0, 0, np.array([])
 
-        ref = _tanhsinh(f, 0, self.f1.b, maxlevel=maxlevel)
+        ref = _tanhsinh(f, 0, self.f2.b, maxlevel=maxlevel)
         ref_x = np.sort(f.x)
 
         for minlevel in range(0, maxlevel + 1):
             f.feval, f.calls, f.x = 0, 0, np.array([])
             options = dict(minlevel=minlevel, maxlevel=maxlevel)
-            res = _tanhsinh(f, 0, self.f1.b, **options)
+            res = _tanhsinh(f, 0, self.f2.b, **options)
             # Should be very close; all that has changed is the order of values
             assert_allclose(res.integral, ref.integral, rtol=4e-16)
             # Difference in absolute errors << magnitude of integral
