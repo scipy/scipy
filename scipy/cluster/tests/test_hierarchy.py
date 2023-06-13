@@ -47,7 +47,9 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import skip_if_array_api, array_api_compatible
+from scipy.conftest import (
+    skip_if_array_api, array_api_compatible, skip_if_array_api_gpu
+)
 
 from . import hierarchy_test_data
 
@@ -399,6 +401,7 @@ class TestIsValidLinkage:
         assert_(is_valid_linkage(Z) is False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_valid_linkage_empty(self, xp):
         # Tests is_valid_linkage(Z) with empty linkage.
@@ -489,6 +492,7 @@ class TestIsValidInconsistent:
         if not valid:
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_valid_im_empty(self, xp):
         # Tests is_valid_im(R) with empty inconsistency matrix.
@@ -513,6 +517,7 @@ class TestIsValidInconsistent:
         # (step size 3) with negative link height means.
         for i in range(4, 15, 3):
             y = np.random.rand(i*(i-1)//2)
+            y = xp.asarray(y)
             Z = linkage(y)
             R = inconsistent(Z)
             R[i//2,0] = -2.0
@@ -547,6 +552,7 @@ class TestIsValidInconsistent:
 
 
 class TestNumObsLinkage:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_num_obs_linkage_empty(self, xp):
         # Tests num_obs_linkage(Z) with empty linkage.
@@ -617,6 +623,7 @@ class TestLeavesList:
 
 
 class TestCorrespond:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_correspond_empty(self, xp):
         # Tests correspond(Z, y) with empty linkage and condensed distance matrix.
@@ -681,6 +688,7 @@ class TestCorrespond:
 
 
 class TestIsMonotonic:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_monotonic_empty(self, xp):
         # Tests is_monotonic(Z) on an empty linkage.
@@ -764,12 +772,14 @@ class TestIsMonotonic:
 
 
 class TestMaxDists:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxdists_empty_linkage(self, xp):
         # Tests maxdists(Z) on empty linkage. Expecting exception.
         Z = xp.zeros((0, 4), dtype=xp.float64)
         assert_raises(ValueError, maxdists, Z)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxdists_one_cluster_linkage(self, xp):
         # Tests maxdists(Z) on linkage with one cluster.
@@ -778,6 +788,7 @@ class TestMaxDists:
         expectedMD = calculate_maximum_distances(Z, xp)
         assert_allclose(MD, expectedMD, atol=1e-15)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxdists_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
@@ -793,6 +804,7 @@ class TestMaxDists:
 
 
 class TestMaxInconsts:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxinconsts_empty_linkage(self, xp):
         # Tests maxinconsts(Z, R) on empty linkage. Expecting exception.
@@ -809,6 +821,7 @@ class TestMaxInconsts:
         R = xp.asarray(R)
         assert_raises(ValueError, maxinconsts, Z, R)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
@@ -818,6 +831,7 @@ class TestMaxInconsts:
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
         assert_allclose(MD, expectedMD, atol=1e-15)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
@@ -848,6 +862,7 @@ class TestMaxRStat:
         else:
             assert_raises(TypeError, maxRstat, Z, R, i)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxRstat_empty_linkage(self, xp):
         for i in range(4):
@@ -872,6 +887,7 @@ class TestMaxRStat:
         R = xp.asarray(R)
         assert_raises(ValueError, maxRstat, Z, R, i)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
@@ -1164,6 +1180,7 @@ def test_node_compare(xp):
     assert_(tree.get_right() != tree.get_left())
 
 
+@skip_if_array_api_gpu
 @array_api_compatible
 def test_cut_tree(xp):
     np.random.seed(23)

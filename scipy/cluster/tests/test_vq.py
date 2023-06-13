@@ -148,6 +148,7 @@ class TestVq:
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
@@ -171,6 +172,7 @@ class TestVq:
         a = np.array([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_vq_large_nfeat(self, xp):
         X = np.random.rand(20, 20)
@@ -193,6 +195,7 @@ class TestVq:
         assert_allclose(dis0, dis1, 1e-5)
         assert_array_equal(codes0, codes1)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_vq_large_features(self, xp):
         X = np.random.rand(10, 5) * 1000000
@@ -287,6 +290,7 @@ class TestKMean:
         data = data.reshape((20, 20))[:10]
         kmeans2(data, xp.asarray(2))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_init(self, xp):
         np.random.seed(12345)
@@ -344,6 +348,7 @@ class TestKMean:
         assert_allclose(res[0], xp.asarray([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_kpp_low_dim(self, xp):
         # Regression test for gh-11462
