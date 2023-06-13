@@ -554,10 +554,7 @@ def _krandinit(data, k, rng, xp):
         x = rng.standard_normal(size=(k, size(s)))
         x = xp.asarray(x)
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1))
-        if xp.__name__ in {"array_api_compat.torch", "torch"}:
-            x = x.matmul(sVh)
-        else:
-            x = x.dot(sVh)
+        x = xp.matmul(x, sVh)
     else:
         cov = xp.atleast_2d(xp.cov(data.T))
 
@@ -565,10 +562,7 @@ def _krandinit(data, k, rng, xp):
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, size(mu)))
         x = xp.asarray(x)
-        if xp.__name__ in {"array_api_compat.torch", "torch"}:
-            x = x.matmul(xp.linalg.cholesky(cov).T)
-        else:
-            x = x.dot(xp.linalg.cholesky(cov).T)
+        x = xp.matmul(x, xp.linalg.cholesky(cov).T)
 
     x += mu
     return x
