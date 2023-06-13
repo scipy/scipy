@@ -3954,8 +3954,8 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
-    ord = int(ceil(arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) /
-                   arccosh(nat)))
+    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(ceil(v_pass_stop / np.arccosh(nat)))
 
     # Natural frequencies are just the passband edges
     wn = _postprocess_wn(passb, analog, fs)
@@ -4048,13 +4048,13 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
-    ord = int(ceil(arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) /
-                   arccosh(nat)))
+    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(ceil(v_pass_stop / arccosh(nat)))
 
     # Find frequency where analog response is -gpass dB.
     # Then convert back from low-pass prototype to the original filter.
 
-    new_freq = cosh(1.0 / ord * arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))))
+    new_freq = cosh(1.0 / ord * v_pass_stop)
     new_freq = 1.0 / new_freq
 
     if filter_type == 1:
