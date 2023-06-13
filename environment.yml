@@ -8,20 +8,19 @@ channels:
   - conda-forge
 dependencies:
   - python
-  - setuptools<60.0
   - cython
   - compilers
-  - meson>=0.64.0
+  - meson
   - meson-python
   - ninja
   - numpy
   - openblas
-  - pkg-config  # note: not available on Windows
+  - pkg-config
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
   # scipy.datasets dependency
   - pooch
-  - pythran>=0.11.0
+  - pythran
   # For testing and benchmarking
   - pytest
   - pytest-cov
