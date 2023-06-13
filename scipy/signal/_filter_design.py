@@ -3696,6 +3696,22 @@ def _pre_warp(wp, ws, analog):
     return passb, stopb
 
 
+def _validate_wp_ws(wp, ws, fs, analog):
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2*wp/fs
+        ws = 2*ws/fs
+
+    filter_type = 2 * (len(wp) - 1) + 1
+    if wp[0] >= ws[0]:
+        filter_type += 1
+
+    return wp, ws, filter_type
+
+
 def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
@@ -3776,20 +3792,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """
 
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
-    if wp[0] >= ws[0]:
-        filter_type += 1
-
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:            # low
@@ -3943,21 +3946,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """
 
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
-        filter_type += 1
-    else:
-        filter_type += 2
-
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
@@ -4081,21 +4070,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     """
 
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
-        filter_type += 1
-    else:
-        filter_type += 2
-
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
@@ -4247,20 +4222,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """
 
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
-    if wp[0] >= ws[0]:
-        filter_type += 1
-
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
