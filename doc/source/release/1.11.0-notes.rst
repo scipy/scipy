@@ -325,11 +325,12 @@ Authors
 
 * h-vetinari (69)
 * Oriol Abril-Pla (1) +
+* Tom Adamczewski (1) +
 * Anton Akhmerov (13)
 * Andrey Akinshin (1) +
 * alice (1) +
 * Oren Amsalem (1)
-* Ross Barnowski (11)
+* Ross Barnowski (13)
 * Christoph Baumgarten (2)
 * Dawson Beatty (1) +
 * Doron Behar (1) +
@@ -339,13 +340,14 @@ Authors
 * Jack Borchanian (1) +
 * Matt Borland (3) +
 * Jake Bowhay (40)
+* Larry Bradley (1) +
 * Sienna Brent (1) +
 * Matthew Brett (1)
 * Evgeni Burovski (38)
 * Matthias Bussonnier (2)
 * Maria Cann (1) +
 * Alfredo Carella (1) +
-* CJ Carey (18)
+* CJ Carey (34)
 * Hood Chatham (2)
 * Anirudh Dagar (3)
 * Alberto Defendi (1) +
@@ -364,45 +366,46 @@ Authors
 * Stefano Frazzetto (1) +
 * Neil Girdhar (1)
 * Caden Gobat (1) +
-* Ralf Gommers (146)
+* Ralf Gommers (149)
 * GonVas (1) +
 * Marco Gorelli (1)
 * Brett Graham (2) +
-* Matt Haberland (385)
+* Matt Haberland (388)
 * harshvardhan2707 (1) +
 * Alex Herbert (1) +
 * Guillaume Horel (1)
 * Geert-Jan Huizing (1) +
 * Jakob Jakobson (2)
-* Julien Jerphanion (5)
+* Julien Jerphanion (10)
 * jyuv (2)
 * Rajarshi Karmakar (1) +
 * Ganesh Kathiresan (3) +
 * Robert Kern (4)
-* Andrew Knyazev (3)
+* Andrew Knyazev (4)
 * Sergey Koposov (1)
 * Rishi Kulkarni (2) +
 * Eric Larson (1)
 * Zoufiné Lauer-Bare (2) +
 * Antony Lee (3)
 * Gregory R. Lee (8)
-* Guillaume Lemaitre (1) +
+* Guillaume Lemaitre (2) +
 * lilinjie (2) +
 * Yannis Linardos (1) +
 * Christian Lorentzen (5)
 * Loïc Estève (1)
+* Adam Lugowski (1) +
 * Charlie Marsh (2) +
 * Boris Martin (1) +
 * Nicholas McKibben (10)
-* Melissa Weber Mendonça (57)
+* Melissa Weber Mendonça (58)
 * Michał Górny (1) +
-* Jarrod Millman (2)
+* Jarrod Millman (5)
 * Stefanie Molin (2) +
 * Mark W. Mueller (1) +
 * mustafacevik (1) +
 * Takumasa N (1) +
 * nboudrie (1)
-* Andrew Nelson (111)
+* Andrew Nelson (112)
 * Nico Schlömer (4)
 * Lysandros Nikolaou (2) +
 * Kyle Oman (1)
@@ -415,9 +418,9 @@ Authors
 * Ilhan Polat (32)
 * Quentin Barthélemy (1)
 * Matteo Raso (12) +
-* Tyler Reddy (97)
+* Tyler Reddy (115)
 * Lucas Roberts (1)
-* Pamphile Roy (224)
+* Pamphile Roy (225)
 * Jordan Rupprecht (1) +
 * Atsushi Sakai (11)
 * Omar Salman (7) +
@@ -426,10 +429,10 @@ Authors
 * Saumya (1) +
 * Daniel Schmitz (79)
 * Henry Schreiner (2) +
-* Dan Schult (3) +
+* Dan Schult (8) +
 * Eli Schwartz (6)
 * Tomer Sery (2) +
-* Scott Shambaugh (4) +
+* Scott Shambaugh (10) +
 * Gagandeep Singh (1)
 * Ethan Steinberg (6) +
 * stepeos (2) +
@@ -440,10 +443,10 @@ Authors
 * Tartopohm (2)
 * Logan Thomas (2) +
 * Jacopo Tissino (1) +
-* Matus Valo (10) +
+* Matus Valo (12) +
 * Jacob Vanderplas (2)
 * Christian Veenhuis (1) +
-* Isaac Virshup (1)
+* Isaac Virshup (3)
 * Stefan van der Walt (14)
 * Warren Weckesser (63)
 * windows-server-2003 (1)
@@ -455,7 +458,7 @@ Authors
 * Zaikun ZHANG (1) +
 * Alex Zverianskii (1) +
 
-A total of 131 people contributed to this release.
+A total of 134 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -649,7 +652,12 @@ Issues closed for 1.11.0
 * `#18497 <https://github.com/scipy/scipy/issues/18497>`__: MAINT, BUG: guard against non-finite kd-tree queries
 * `#18498 <https://github.com/scipy/scipy/issues/18498>`__: TST: interpolate overflow xslow tests (low priority)
 * `#18525 <https://github.com/scipy/scipy/issues/18525>`__: DOC: sparse doc build warning causing failure (including in CI)
+* `#18535 <https://github.com/scipy/scipy/issues/18535>`__: DOC: Dev branch docs render Dev TOC while viewing API Reference
 * `#18547 <https://github.com/scipy/scipy/issues/18547>`__: CI: occasionally failing test \`test_minimize_callback_copies_array[fmin]\`
+* `#18597 <https://github.com/scipy/scipy/issues/18597>`__: CI, BUG: Cirrus wheel upload fails on maintenance branch
+* `#18632 <https://github.com/scipy/scipy/issues/18632>`__: 1.11.0rc1: remaining test failures in conda-forge
+* `#18634 <https://github.com/scipy/scipy/issues/18634>`__: BUG: stats.truncnorm.moments yields error for moment order greater...
+* `#18654 <https://github.com/scipy/scipy/issues/18654>`__: BUG: ci/circleci: build_scipy broken
 
 ************************
 Pull requests for 1.11.0
@@ -1146,5 +1154,17 @@ Pull requests for 1.11.0
 * `#18551 <https://github.com/scipy/scipy/pull/18551>`__: Replace sparse __getattr__ with properties
 * `#18553 <https://github.com/scipy/scipy/pull/18553>`__: BENCH: sparse: Add a benchmark for sparse matrix power
 * `#18554 <https://github.com/scipy/scipy/pull/18554>`__: BUG: sparse: Fix DIA.tocoo canonical format setting
+* `#18556 <https://github.com/scipy/scipy/pull/18556>`__: MAINT: io: replace isspmatrix with issparse in mmio module
 * `#18560 <https://github.com/scipy/scipy/pull/18560>`__: MAINT: integrate: revert\`full_output\` deprecation / result...
 * `#18562 <https://github.com/scipy/scipy/pull/18562>`__: fix doc strings for csr_array and friends
+* `#18563 <https://github.com/scipy/scipy/pull/18563>`__: DOC: SciPy 1.11.0 release notes
+* `#18591 <https://github.com/scipy/scipy/pull/18591>`__: MAINT: version bounds for 1.11.0rc1
+* `#18596 <https://github.com/scipy/scipy/pull/18596>`__: DOC: Fix sidebar for API reference pages
+* `#18598 <https://github.com/scipy/scipy/pull/18598>`__: CI: fix wheel upload to anaconda [wheel build]
+* `#18599 <https://github.com/scipy/scipy/pull/18599>`__: Revert "ENH: sparse: Add _array version of \`diags\` creation...
+* `#18608 <https://github.com/scipy/scipy/pull/18608>`__: Fix typo of module name in deprecation warning
+* `#18629 <https://github.com/scipy/scipy/pull/18629>`__: Mark \`void\` functions as \`noexcept\` in _rotation.pyx
+* `#18636 <https://github.com/scipy/scipy/pull/18636>`__: MAINT: stats.truncnorm/stats.betaprime: fix _munp for higher...
+* `#18657 <https://github.com/scipy/scipy/pull/18657>`__: MAINT: fix 'no such option' error in build_scipy CI
+* `#18658 <https://github.com/scipy/scipy/pull/18658>`__: TST: fix two test failures that showed up on conda-forge
+* `#18659 <https://github.com/scipy/scipy/pull/18659>`__: DOC: \`scipy._sensitivity_analysis\`: correct statement about...
