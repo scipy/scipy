@@ -3702,14 +3702,40 @@ def _validate_wp_ws(wp, ws, fs, analog):
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
+        wp = 2 * wp / fs
+        ws = 2 * ws / fs
 
     filter_type = 2 * (len(wp) - 1) + 1
     if wp[0] >= ws[0]:
         filter_type += 1
 
     return wp, ws, filter_type
+
+
+def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
+    if filter_type == 1:            # low
+        nat = stopb / passb
+    elif filter_type == 2:          # high
+        nat = passb / stopb
+    elif filter_type == 3:          # stop
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
+                                 args=(0, passb, stopb, gpass, gstop,
+                                       'butter'),
+                                 disp=0)
+        passb[0] = wp0
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
+                                 args=(1, passb, stopb, gpass, gstop,
+                                       'butter'),
+                                 disp=0)
+        passb[1] = wp1
+        nat = ((stopb * (passb[0] - passb[1])) /
+               (stopb ** 2 - passb[0] * passb[1]))
+    elif filter_type == 4:          # pass
+        nat = ((stopb ** 2 - passb[0] * passb[1]) /
+               (stopb * (passb[0] - passb[1])))
+
+    nat = min(abs(nat))
+    return nat, passb
 
 
 def _postprocess_wn(WN, analog, fs):
@@ -3799,33 +3825,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
-
-    if filter_type == 1:            # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:          # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop,
-                                       'butter'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop,
-                                       'butter'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:          # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
@@ -3944,31 +3947,10 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
@@ -4059,31 +4041,10 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
@@ -4206,34 +4167,13 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'ellip'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'ellip'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'ellip')
 
     arg1_sq = _pow10m1(0.1 * gpass) / _pow10m1(0.1 * gstop)
     arg0 = 1.0 / nat
     d0 = special.ellipk(arg0 ** 2), special.ellipkm1(arg0 ** 2)
     d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
     ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
-
 
     wn = _postprocess_wn(passb, analog, fs)
 
