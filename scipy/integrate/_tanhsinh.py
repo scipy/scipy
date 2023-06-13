@@ -482,8 +482,8 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
         xj, fjwj = xj[i], fjwj[i]  # eliminate points excluded from EM sum
         il, ir = np.argmin(xj), np.argmax(xj)
         d4 = np.maximum(fjwj[il], fjwj[ir])
-        rerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
-        aerr = max(log_e1, rerr) + np.real(Sn)
+        aerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
+        rerr = max(log_e1, aerr - np.real(Sn))
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
         fjwj = np.abs(fjwj)
@@ -516,8 +516,8 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, log):
         # remembering the incumbent `fjwj` from previous iterations.
         il, ir = np.argmin(xj), np.argmax(xj)
         d4 = np.maximum(fjwj[il], fjwj[ir])
-        rerr = np.max([d1**((np.log(d1)/np.log(d2))), d1**2, d3, d4])
-        aerr = max(e1, rerr) * np.abs(Sn)
+        aerr = np.max([d1**((np.log(d1)/np.log(d2))), d1**2, d3, d4])
+        rerr = max(e1, aerr/np.abs(Sn))
     return rerr, aerr, Sk
 
 
