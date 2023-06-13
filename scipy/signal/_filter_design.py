@@ -3712,6 +3712,15 @@ def _validate_wp_ws(wp, ws, fs, analog):
     return wp, ws, filter_type
 
 
+def _postprocess_wn(WN, analog, fs):
+    wn = WN if analog else np.arctan(WN) * 2.0 / pi
+    if len(wn) == 1:
+        wn = wn[0]
+    if fs is not None:
+        wn = wn * fs / 2
+    return wn
+
+
 def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
@@ -3854,16 +3863,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     else:
         raise ValueError("Bad type: %s" % filter_type)
 
-    if not analog:
-        wn = (2.0 / pi) * arctan(WN)
-    else:
-        wn = WN
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(WN, analog, fs)
 
     return ord, wn
 
@@ -3976,16 +3976,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
                    arccosh(nat)))
 
     # Natural frequencies are just the passband edges
-    if not analog:
-        wn = (2.0 / pi) * arctan(passb)
-    else:
-        wn = passb
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(passb, analog, fs)
 
     return ord, wn
 
@@ -4122,16 +4113,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
                        passb[1] * passb[0]))
         nat[1] = passb[0] * passb[1] / nat[0]
 
-    if not analog:
-        wn = (2.0 / pi) * arctan(nat)
-    else:
-        wn = nat
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(nat, analog, fs)
 
     return ord, wn
 
@@ -4252,16 +4234,8 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
     ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
 
-    if not analog:
-        wn = arctan(passb) * 2.0 / pi
-    else:
-        wn = passb
 
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(passb, analog, fs)
 
     return ord, wn
 
