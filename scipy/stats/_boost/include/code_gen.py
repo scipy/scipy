@@ -53,7 +53,6 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
     boost_hdr_name = boost_dist.split('_distribution')[0]
     unique_num_inputs = set({m.num_inputs for m in methods})
     has_NPY_FLOAT16 = 'NPY_FLOAT16' in types
-    has_NPY_LONGDOUBLE = 'NPY_LONGDOUBLE' in types
     line_joiner = ',\n    ' + ' '*12
     num_types = len(types)
     loop_fun = 'PyUFunc_T'
@@ -103,9 +102,6 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
             import_ufunc()
             '''))
 
-        if has_NPY_LONGDOUBLE:
-            warn('Boost stats NPY_LONGDOUBLE ufunc generation not '
-                 'currently not supported!')
         if has_NPY_FLOAT16:
             warn('Boost stats NPY_FLOAT16 ufunc generation not '
                  'currently not supported!')
@@ -120,7 +116,6 @@ def _ufunc_gen(scipy_dist: str, types: list, ctor_args: tuple,
 
             for jj, T in enumerate(types):
                 ctype = {
-                    'NPY_LONGDOUBLE': 'longdouble',
                     'NPY_DOUBLE': 'double',
                     'NPY_FLOAT': 'float',
                     'NPY_FLOAT16': 'npy_half',
