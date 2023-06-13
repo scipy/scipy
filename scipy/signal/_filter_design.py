@@ -3685,6 +3685,17 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     return n
 
 
+def _pre_warp(wp, ws, analog):
+    # Pre-warp frequencies for digital filter design
+    if not analog:
+        passb = np.tan(pi * wp / 2.0)
+        stopb = np.tan(pi * ws / 2.0)
+    else:
+        passb = wp * 1.0
+        stopb = ws * 1.0
+    return passb, stopb
+
+
 def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
@@ -3779,13 +3790,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     if wp[0] >= ws[0]:
         filter_type += 1
 
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
+    passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:            # low
         nat = stopb / passb
@@ -3953,13 +3958,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     else:
         filter_type += 2
 
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
+    passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
         nat = stopb / passb
@@ -4097,13 +4096,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     else:
         filter_type += 2
 
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
+    passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
         nat = stopb / passb
@@ -4268,13 +4261,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     if wp[0] >= ws[0]:
         filter_type += 1
 
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
+    passb, stopb = _pre_warp(wp, ws, analog)
 
     if filter_type == 1:           # low
         nat = stopb / passb
