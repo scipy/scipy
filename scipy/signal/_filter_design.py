@@ -3733,6 +3733,8 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
     elif filter_type == 4:          # pass
         nat = ((stopb ** 2 - passb[0] * passb[1]) /
                (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError(f"should not happen: {filter_type =}.")
 
     nat = min(abs(nat))
     return nat, passb
