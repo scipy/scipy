@@ -7,7 +7,7 @@ import numpy
 import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, sqrt, tan, log10,
-                   arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
+                   arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
