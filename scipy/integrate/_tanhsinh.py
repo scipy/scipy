@@ -152,8 +152,8 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
     Notes
     -----
     Implements the algorithm as described in [1]_ with minor adaptations for
-    fixed-precision arithmetic, including some described by [2]_. The tanh-sinh
-    scheme was originally introduced in [3]_.
+    fixed-precision arithmetic, including some described by [2]_ and [3]_. The
+    tanh-sinh scheme was originally introduced in [4]_.
 
     Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval, but the value returned will be ignored.
@@ -172,7 +172,10 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
     [2] Vanherck, Joren, Bart Sorée, and Wim Magnus. "Tanh-sinh quadrature for
         single and multiple integration using floating-point arithmetic."
         arXiv preprint arXiv:2007.15057 (2020).
-    [3] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
+    [3] van Engelen, Robert A.  "Improving the Double Exponential Quadrature
+        Tanh-Sinh, Sinh-Sinh and Exp-Sinh Formulas."
+        https://www.genivia.com/files/qthsh.pdf
+    [4] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
         numerical integration." Publications of the Research Institute for
         Mathematical Sciences 9.3 (1974): 721-741.
 
@@ -244,8 +247,8 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
         fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
 
         # Check for infinities / NaNs. If encountered, break.
-        not_finite = ((log and np.any(np.isposinf(np.real(fjwj)) | np.isnan(fjwj))) or
-                      (not log and not np.all(np.isfinite(fjwj))))
+        not_finite = ((log and (np.isposinf(np.real(Sn)) or np.isnan(Sn))) or
+                      (not log and not np.isfinite(Sn)))
         if not_finite:
             status = 3  # function evaluation limit
             break
@@ -383,6 +386,29 @@ def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
         # Warnings due to function evaluation at endpoints are not cause for
         # concern; the resulting values will be given 0 weight.
         fj = f(xj)
+
+        # This is an alternate way of dealing with points close to the
+        # boundaries. The other way is to replace the values with zero (below).
+        # I haven't observed much difference, and [3] pg. 22 seems to agree.
+        # The problem with replacing values with a valid function value from
+        # another point is that we wouldn't want to go back and update the
+        # sums from previous levels when a more appropriate function value
+        # (evaluated at an abscissae closer to the one that was replaced)
+        # becomes available.
+        # ---
+        # # We can run into singularities close to the boundaries or when points
+        # # are generated at the boundaries due to roundoff error. Replace the
+        # # function values with the finite function values at the most extreme
+        # # abscissae.
+        # invalid = ~np.isfinite(fj)
+        # temp = xj[invalid]
+        # xj[invalid] = np.nan
+        # imin, imax = np.nanargmin(xj), np.nanargmax(xj)
+        # xj[invalid] = temp
+        # fjl, fjr = fj[imin], fj[imax]
+        # fj[xj < xj[imin]] = fjl
+        # fj[xj > xj[imax]] = fjr
+
         # Zero weight multiplied by infinity results in NaN. These will be
         # removed below.
         fjwj = fj + np.log(wj) if log else fj * wj
