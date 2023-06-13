@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csc
+from scipy.sparse import csr_matrix, issparse
 from ._tools import csgraph_to_dense, csgraph_from_dense,\
     csgraph_masked_from_dense, csgraph_from_masked
 
@@ -17,10 +17,10 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
 
     # if undirected and csc storage, then transposing in-place
     # is quicker than later converting to csr.
-    if (not directed) and isspmatrix_csc(csgraph):
+    if (not directed) and issparse(csgraph) and csgraph.format == "csc":
         csgraph = csgraph.T
 
-    if isspmatrix(csgraph):
+    if issparse(csgraph):
         if csr_output:
             csgraph = csr_matrix(csgraph, dtype=DTYPE, copy=copy_if_sparse)
         else:

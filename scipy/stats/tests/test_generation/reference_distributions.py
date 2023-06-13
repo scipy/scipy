@@ -92,15 +92,21 @@ class ReferenceDistribution:
         if ((self._cdf.__func__ is ReferenceDistribution._cdf)
                 and (self._sf.__func__ is not ReferenceDistribution._sf)):
             return mp.one - self._sf(x, **kwargs)
-        a, _ = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+        res = res if res < 0.5 else mp.one - self._sf(x, **kwargs)
+        return res
 
     def _sf(self, x, **kwargs):
         if ((self._sf.__func__ is ReferenceDistribution._sf)
                 and (self._cdf.__func__ is not ReferenceDistribution._cdf)):
             return mp.one - self._cdf(x, **kwargs)
-        _, b = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+        res = res if res < 0.5 else mp.one - self._cdf(x, **kwargs)
+        return res
 
     def _ppf(self, p, guess=0, **kwargs):
         if ((self._ppf.__func__ is ReferenceDistribution._ppf)
@@ -296,6 +302,39 @@ class SkewNormal(ReferenceDistribution):
     # that there is no *mistake* in the implementation (e.g. wrong formula).
 
 
+class BetaPrime(ReferenceDistribution):
+
+    def __init__(self, *, a, b):
+        super().__init__(a=a, b=b)
+
+    def _support(self, **kwargs):
+        return mp.zero, mp.inf
+
+    def _logpdf(self, x, a, b):
+        return (a - mp.one)*mp.log(x) - (a + b)*mp.log1p(x) - mp.log(mp.beta(a, b))
+
+    def _pdf(self, x, a, b):
+        return mp.exp(self._logpdf(x=x, a=a, b=b))
+
+    def _sf(self, x, a, b):
+        return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
+
+
+class LogLaplace(ReferenceDistribution):
+
+    def __init__(self, *, c):
+        super().__init__(c=c)
+
+    def _support(self, c):
+        return 0, mp.inf
+
+    def _pdf(self, x, c):
+        if x < mp.one:
+            return c / 2 * x**(c - mp.one)
+        else:
+            return c / 2 * x**(-c - mp.one)
+
+
 class Normal(ReferenceDistribution):
 
     def _pdf(self, x):
@@ -313,6 +352,18 @@ class NormInvGauss(ReferenceDistribution):
         q = mp.sqrt(1 + x**2)
         a = mp.pi**-1 * alpha * mp.exp(mp.sqrt(alpha**2 - beta**2))
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
+
+
+class Pearson3(ReferenceDistribution):
+    def __init__(self, *, skew):
+        super().__init__(skew=skew)
+
+    def _pdf(self, x, skew):
+        b = 2 / skew
+        a = b**2
+        c = -b
+        res = abs(b)/mp.gamma(a) * (b*(x-c))**(a-1) * mp.exp(-b*(x-c))
+        return res if abs(res.real) == res else 0
 
 
 class StudentT(ReferenceDistribution):

@@ -29,7 +29,7 @@ import warnings
 import sys
 import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt, Inf, asfarray)
+                   asarray, sqrt, Inf)
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
@@ -211,8 +211,9 @@ class OptimizeResult(dict):
 
     Notes
     -----
-    `OptimizeResult` may have additional attributes not listed here depending
-    on the specific solver being used. Since this class is essentially a
+    Depending on the specific solver being used, `OptimizeResult` may
+    not have all attributes listed here, and they may have additional
+    attributes not listed here. Since this class is essentially a
     subclass of dict with attribute accessors, one can see which
     attributes are available using the `OptimizeResult.keys` method.
     """
@@ -814,7 +815,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     maxfun = maxfev
     retall = return_all
 
-    x0 = asfarray(x0).flatten()
+    x0 = np.atleast_1d(x0).flatten()
+    x0 = np.asfarray(x0, x0.dtype)
 
     if adaptive:
         dim = float(len(x0))
@@ -856,7 +858,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
                 y[k] = zdelt
             sim[k + 1] = y
     else:
-        sim = np.asfarray(initial_simplex).copy()
+        sim = np.atleast_2d(initial_simplex).copy()
+        sim = np.asfarray(sim, sim.dtype)
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
         if len(x0) != sim.shape[1]:

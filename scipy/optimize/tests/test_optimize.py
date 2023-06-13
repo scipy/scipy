@@ -599,6 +599,16 @@ def test_neldermead_iteration_num():
     assert res.nit <= 339
 
 
+def test_neldermead_respect_fp():
+    # Nelder-Mead should respect the fp type of the input + function
+    x0 = np.array([5.0, 4.0]).astype(np.float32)
+    def rosen_(x):
+        assert x.dtype == np.float32
+        return optimize.rosen(x)
+
+    optimize.minimize(rosen_, x0, method='Nelder-Mead')
+
+
 def test_neldermead_xatol_fatol():
     # gh4484
     # test we can call with fatol, xatol specified
@@ -1159,6 +1169,7 @@ class TestOptimizeSimple(CheckOptimize):
             assert func(sol1.x) < func(sol2.x), f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
                               'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',

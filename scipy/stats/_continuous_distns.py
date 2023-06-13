@@ -832,8 +832,24 @@ class beta_gen(rv_continuous):
         return a, b, floc, fscale
 
     def _entropy(self, a, b):
-        return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
-                (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+        def regular(a, b):
+            return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
+                    (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+
+        def asymptotic_ab_large(a, b):
+            sum_ab = a + b
+            log_term = 0.5 * (
+                np.log(2*np.pi) + np.log(a) + np.log(b) - 3*np.log(sum_ab) + 1
+            )
+            t1 = 110/sum_ab + 20*sum_ab**-2.0 + sum_ab**-3.0 - 2*sum_ab**-4.0
+            t2 = -50/a - 10*a**-2.0 - a**-3.0 + a**-4.0
+            t3 = -50/b - 10*b**-2.0 - b**-3.0 + b**-4.0
+            return log_term + (t1 + t2 + t3) / 120
+
+        if a >= 4.96e6 and b >= 4.96e6:
+            return asymptotic_ab_large(a, b)
+        else:
+            return regular(a, b)
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
@@ -919,6 +935,13 @@ class betaprime_gen(rv_continuous):
             lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
+    def _sf(self, x, a, b):
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: beta._cdf(1/(1+x_), b_, a_),
+            f2=lambda x_, a_, b_: beta._sf(x_/(1+x_), a_, b_)
+        )
+
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
         # by default, compute compute the ppf by solving the following:
@@ -934,30 +957,10 @@ class betaprime_gen(rv_continuous):
         return out
 
     def _munp(self, n, a, b):
-        if n == 1.0:
-            return _lazywhere(
-                b > 1, (a, b),
-                lambda a, b: a/(b-1.0),
-                fillvalue=np.inf)
-        elif n == 2.0:
-            return _lazywhere(
-                b > 2, (a, b),
-                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
-                fillvalue=np.inf)
-        elif n == 3.0:
-            return _lazywhere(
-                b > 3, (a, b),
-                lambda a, b: (a*(a+1.0)*(a+2.0)
-                              / ((b-3.0)*(b-2.0)*(b-1.0))),
-                fillvalue=np.inf)
-        elif n == 4.0:
-            return _lazywhere(
-                b > 4, (a, b),
-                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                fillvalue=np.inf)
-        else:
-            raise NotImplementedError
+        return _lazywhere(
+            b > n, (a, b),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -4475,7 +4478,7 @@ class invgamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
-                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+                 + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
@@ -5416,6 +5419,11 @@ class laplace_asymmetric_gen(rv_continuous):
 
     %(after_notes)s
 
+    Note that the scale parameter of some references is the reciprocal of
+    SciPy's ``scale``. For example, :math:`\lambda = 1/2` in the
+    parameterization of [1]_ is equivalent to ``scale = 2`` with
+    `laplace_asymmetric`.
+
     References
     ----------
     .. [1] "Asymmetric Laplace distribution", Wikipedia
@@ -5959,6 +5967,20 @@ class loggamma_gen(rv_continuous):
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
 
+    def _entropy(self, c):
+        def regular(c):
+            h = sc.gammaln(c) - c * sc.digamma(c) + c
+            return h
+
+        def asymptotic(c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            term = -0.5*np.log(c) + c**-1./6 - c**-3./90 + c**-5./210
+            h = norm._entropy() + term
+            return h
+
+        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
+        return h
+
 
 loggamma = loggamma_gen(name='loggamma')
 
@@ -6004,6 +6026,9 @@ class loglaplace_gen(rv_continuous):
 
     def _cdf(self, x, c):
         return np.where(x < 1, 0.5*x**c, 1-0.5*x**(-c))
+
+    def _sf(self, x, c):
+        return np.where(x < 1, 1 - 0.5*x**c, 0.5*x**(-c))
 
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
@@ -7706,6 +7731,23 @@ class pearson3_gen(rv_continuous):
 
         return ans
 
+    def _sf(self, x, skew):
+        ans, x, transx, mask, invmask, _, alpha, _ = (
+            self._preprocess(x, skew))
+
+        ans[mask] = _norm_sf(x[mask])
+
+        skew = np.broadcast_to(skew, invmask.shape)
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        ans[invmask1a] = gamma.sf(transx[invmask1b], alpha[invmask1b])
+
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        ans[invmask2a] = gamma.cdf(transx[invmask2b], alpha[invmask2b])
+
+        return ans
+
     def _rvs(self, skew, size=None, random_state=None):
         skew = np.broadcast_to(skew, size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
@@ -8188,6 +8230,9 @@ class rdist_gen(rv_continuous):
     def _cdf(self, x, c):
         return beta._cdf((x + 1)/2, c/2, c/2)
 
+    def _sf(self, x, c):
+        return beta._sf((x + 1)/2, c/2, c/2)
+
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
@@ -8423,6 +8468,10 @@ class reciprocal_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
+
+    # Details related to the decision of not defining
+    # the survival function for this distribution can be
+    # found in the PR: https://github.com/scipy/scipy/pull/18614
 
 
 loguniform = reciprocal_gen(name="loguniform")
@@ -9382,7 +9431,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):

@@ -13,7 +13,7 @@ __all__ = ['expm', 'inv']
 import numpy as np
 from scipy.linalg._basic import solve, solve_triangular
 
-from scipy.sparse._base import isspmatrix
+from scipy.sparse._base import issparse
 from scipy.sparse.linalg import spsolve
 from scipy.sparse._sputils import is_pydata_spmatrix
 
@@ -67,7 +67,7 @@ def inv(A):
 
     """
     # Check input
-    if not (scipy.sparse.isspmatrix(A) or is_pydata_spmatrix(A)):
+    if not (scipy.sparse.issparse(A) or is_pydata_spmatrix(A)):
         raise TypeError('Input must be a sparse matrix')
 
     # Use sparse direct solver to solve "AX = I" accurately
@@ -111,7 +111,7 @@ def _onenorm_matrix_power_nnm(A, p):
 
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
-    if isspmatrix(A):
+    if issparse(A):
         lower_part = scipy.sparse.tril(A, -1)
         # Check structural upper triangularity,
         # then coincidental upper triangularity if needed.
@@ -152,7 +152,7 @@ def _smart_matrix_product(A, B, alpha=None, structure=None):
         raise ValueError('expected B to be a rectangular matrix')
     f = None
     if structure == UPPER_TRIANGULAR:
-        if (not isspmatrix(A) and not isspmatrix(B)
+        if (not issparse(A) and not issparse(B)
                 and not is_pydata_spmatrix(A) and not is_pydata_spmatrix(B)):
             f, = scipy.linalg.get_blas_funcs(('trmm',), (A, B))
     if f is not None:
@@ -604,7 +604,7 @@ def _expm(A, use_exact_onenorm):
     # carefully handling sparse scenario
     if A.shape == (0, 0):
         out = np.zeros([0, 0], dtype=A.dtype)
-        if isspmatrix(A) or is_pydata_spmatrix(A):
+        if issparse(A) or is_pydata_spmatrix(A):
             return A.__class__(out)
         return out
 
@@ -614,13 +614,13 @@ def _expm(A, use_exact_onenorm):
 
         # Avoid indiscriminate casting to ndarray to
         # allow for sparse or other strange arrays
-        if isspmatrix(A) or is_pydata_spmatrix(A):
+        if issparse(A) or is_pydata_spmatrix(A):
             return A.__class__(out)
 
         return np.array(out)
 
     # Ensure input is of float type, to avoid integer overflows etc.
-    if ((isinstance(A, np.ndarray) or isspmatrix(A) or is_pydata_spmatrix(A))
+    if ((isinstance(A, np.ndarray) or issparse(A) or is_pydata_spmatrix(A))
             and not np.issubdtype(A.dtype, np.inexact)):
         A = A.astype(float)
 
@@ -702,7 +702,7 @@ def _solve_P_Q(U, V, structure=None):
     """
     P = U + V
     Q = -U + V
-    if isspmatrix(U) or is_pydata_spmatrix(U):
+    if issparse(U) or is_pydata_spmatrix(U):
         return spsolve(Q, P)
     elif structure is None:
         return solve(Q, P)

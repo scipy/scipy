@@ -6,6 +6,8 @@ Routines for evaluating and manipulating B-splines.
 import numpy as np
 cimport numpy as cnp
 
+from numpy cimport npy_intp
+
 cimport cython
 from libc.math cimport NAN
 
@@ -425,7 +427,7 @@ def _make_design_matrix(const double[::1] x,
 
     Note that only indices is passed, but not indptr because indptr is already
     precomputed in the calling Python function design_matrix.
-    
+
     Parameters
     ----------
     x : array_like, shape (n,)
@@ -445,7 +447,7 @@ def _make_design_matrix(const double[::1] x,
         The data array of a CSR array of the b-spline design matrix.
         In each row all the basis elements are evaluated at the certain point
         (first row - x[0], ..., last row - x[-1]).
-    
+
     indices
         The indices array of a CSR array of the b-spline design matrix.
     """
@@ -473,3 +475,194 @@ def _make_design_matrix(const double[::1] x,
             indices[m] = ind - k + j
 
     return np.asarray(data), np.asarray(indices)
+
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+def evaluate_ndbspline(const double[:, ::1] xi,
+                       const double[:, ::1] t,
+                       long[::1] k,
+                       int[::1] nu,
+                       bint extrapolate,
+                       const double_or_complex[::1] c1r,
+                       npy_intp num_c_tr,
+                       const npy_intp[::1] strides_c1,
+                       const npy_intp[:, ::] indices_k1d,
+                       double_or_complex[:, ::1] out,
+                      ):
+        """Evaluate an N-dim tensor product spline or its derivative.
+
+        Parameters
+        ----------
+        xi : ndarray, shape(npoints, ndim)
+            ``npoints`` values to evaluate the spline at, each value is
+            a point in an ``ndim``-dimensional space.
+        t : tuple, len(ndim)
+            Tuple of knots for each dimension.
+        k : tuple of ints, len(ndim)
+            Spline degrees in each dimension.
+        nu : ndarray of ints, shape(ndim,)
+            Orders of derivatives to compute, per dimension.
+        extrapolate : int
+            Whether to extrapolate out of bounds or return nans.
+        c1r: ndarray, one-dimensional
+            Flattened array of coefficients.
+            The original N-dimensional coefficient array ``c`` has shape
+            ``(n1, ..., nd, ...)`` where each ``ni == len(t[d]) - k[d] - 1``,
+            and the second "..." represents trailing dimensions of ``c``.
+            In code, given the C-ordered array ``c``, ``c1r`` is
+            ``c1 = c.reshape(c.shape[:ndim] + (-1,)); c1r = c1.ravel()``
+        num_c_tr : int
+            The number of elements of ``c1r``, which correspond to the trailing
+            dimensions of ``c``. In code, this is
+            ``c1 = c.reshape(c.shape[:ndim] + (-1,)); num_c_tr = c1.shape[-1]``.
+        strides_c1 : ndarray, one-dimensional
+            Pre-computed strides of the ``c1`` array.
+            Note: These are *data* strides, not numpy-style byte strides.
+            This array is equivalent to
+            ``[stride // s1.dtype.itemsize for stride in s1.strides]``.
+        indices_k1d : ndarray, shape((k+1)**ndim, ndim)
+            Pre-computed mapping between indices for iterating over a flattened
+            array of shape ``[k[d] + 1) for d in range(ndim)`` and
+            ndim-dimensional indices of the ``(k+1,)*ndim`` dimensional array.
+            This is essentially a transposed version of
+            ``np.unravel_index(np.arange((k+1)**ndim), (k+1,)*ndim)``.
+        out : ndarray, shape (npoints, num_c_tr)
+            Output values of the b-spline at given ``xi`` points.
+
+        Notes
+        -----
+
+        This function is essentially equivalent to the following: given an
+        N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the
+        dimensions, form linear combinations of products,
+        B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero
+        at ``x``. 
+
+        Since b-splines are localized, the sum has (k+1)**N non-zero elements.
+
+        If ``i = (i1, i2, ..., iN)`` is a vector if intervals of the knot
+        vectors, ``t[d, id] <= xd < t[d, id+1]``, for ``d=1, 2, ..., N``, then
+        the core loop of this function is nothing but
+
+        ```
+        result = 0
+        iters = [range(i[d] - self.k[d], i[d] + 1) for d in range(ndim)]
+        for idx in itertools.product(*iters):
+            term = self.c[idx] * np.prod([B(x[d], self.k[d], idx[d], self.t[d])
+                                          for d in range(ndim)])
+            result += term
+        ```
+
+        For efficiency reasons, we iterate over the flattened versions of the
+        arrays.
+
+        """
+        cdef:
+            npy_intp ndim = len(t)
+
+            # 'intervals': indices for a point in xi into the knot arrays t
+            npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
+
+            # container for non-zero b-splines at each point in xi
+            double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
+
+            const double[::1] xv     # an ndim-dimensional input point
+            double xd               # d-th component of x
+
+            const double[::1] td    # knots in dimension d
+
+            npy_intp kd             # d-th component of k
+
+            npy_intp i_c      # index to loop over range(num_c_tr)
+            npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+            npy_intp volume   # the number of non-zero terms
+            const npy_intp[:] idx_b   # ndim-dimensional index corresponding to iflat
+
+            int out_of_bounds
+            npy_intp idx_cflat_base, idx
+            double factor
+            double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
+
+        if xi.shape[1] != ndim:
+            raise ValueError(f"Expacted data points in {ndim}-D space, got"
+                             f" {xi.shape[1]}-D points.")
+
+        if out.shape[0] != xi.shape[0]:
+            raise ValueError(f"out and xi are inconsistent: expected"
+                             f" {xi.shape[0]} output values, got"
+                             f" {out.shape[0]}.")
+        if out.shape[1] != num_c_tr:
+            raise ValueError(f"out and c are inconsistent: num_c={num_c_tr} "
+                             f" and out.shape[1] = {out.shape[1]}.")
+
+
+        with nogil:
+            # the number of non-zero terms for each point in ``xi``.
+            volume = 1
+            for d in range(ndim):
+                volume *= k[d] + 1
+
+            ### Iterate over the data points
+            for j in range(xi.shape[0]):
+                xv = xi[j, :]
+
+                # For each point, iterate over the dimensions
+                out_of_bounds = 0
+                for d in range(ndim):
+                    td = t[d]
+                    xd = xv[d]
+                    kd = k[d]
+
+                    # get the location of x[d] in t[d]
+                    i[d] = find_interval(td, kd, xd, kd, extrapolate)
+
+                    if i[d] < 0:
+                        out_of_bounds = 1
+                        break
+
+                    # compute non-zero b-splines at this value of xd in dimension d
+                    _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+                    b[d, :kd+1] = wrk[:kd+1]
+
+                if out_of_bounds:
+                    # xd was nan or extrapolate=False: Fill the output array
+                    # *for this xv value*, and continue to the next xv in xi.
+                    for i_c in range(num_c_tr):
+                        out[j, i_c] = NAN
+                    continue
+
+                for i_c in range(num_c_tr):
+                    out[j, i_c] = 0.0
+
+                # iterate over the direct products of non-zero b-splines
+                for iflat in range(volume):
+                    idx_b = indices_k1d[iflat, :]
+                    # The line above is equivalent to 
+                    # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
+                    
+                    # From the indices in ``idx_b``, we prepare to index into
+                    # c1.ravel() : for each dimension d, need to shift the index
+                    # by ``i[d] - k[d]`` (see the docstring above).
+                    #
+                    # Since the strides of `c1` are pre-computed, and the array
+                    # is already raveled and is guaranteed to be C-ordered, we only
+                    # need to compute the base index for iterating over ``num_c_tr``
+                    # elements which represent the trailing dimensions of ``c``.
+                    #
+                    # This all is essentially equivalent to iterating over
+                    # idx_cflat = np.ravel_multi_index(tuple(idx_c) + (i_c,),
+                    #                                  c1.shape)
+                    idx_cflat_base = 0
+                    factor = 1.0
+                    for d in range(ndim):
+                        factor *= b[d, idx_b[d]]
+                        idx = idx_b[d] + i[d] - k[d]
+                        idx_cflat_base += idx * strides_c1[d]
+
+                    ### collect linear combinations of coef * factor
+                    for i_c in range(num_c_tr):
+                        out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
+

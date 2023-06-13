@@ -1494,6 +1494,15 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
         assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
 
+    def test_moments_gh18634(self):
+        # gh-18634 reported that moments 5 and higher didn't work; check that
+        # this is resolved
+        res = stats.truncnorm(-2, 3).moment(5)
+        # From Mathematica:
+        # Moment[TruncatedDistribution[{-2, 3}, NormalDistribution[]], 5]
+        ref = 1.645309620208361
+        assert_allclose(res, ref)
+
 
 class TestGenLogistic:
 
@@ -1699,6 +1708,28 @@ class TestHypergeom:
         expected = np.full(3, -7.565148879229e-23)  # filled from R result
         assert_almost_equal(result, expected, decimal=15)
 
+    def test_mean_gh18511(self):
+        # gh-18511 reported that the `mean` was incorrect for large arguments;
+        # check that this is resolved
+        M = 390_000
+        n = 370_000
+        N = 12_000
+
+        hm = stats.hypergeom.mean(M, n, N)
+        rm = n / M * N
+        assert_allclose(hm, rm)
+
+    def test_sf_gh18506(self):
+        # gh-18506 reported that `sf` was incorrect for large population;
+        # check that this is resolved
+        n = 10
+        N = 10**5
+        i = np.arange(5, 15)
+        population_size = 10.**i
+        p = stats.hypergeom.sf(n - 1, population_size, N, n)
+        assert np.all(p > 0)
+        assert np.all(np.diff(p) < 0)
+
 
 class TestLoggamma:
 
@@ -1772,6 +1803,23 @@ class TestLoggamma:
         btest = stats.binomtest(np.count_nonzero(x < med), len(x))
         ci = btest.proportion_ci(confidence_level=0.999)
         assert ci.low < 0.5 < ci.high
+
+    @pytest.mark.parametrize("c, ref",
+                             [(1e-8, 19.420680753952364),
+                              (1, 1.5772156649015328),
+                              (1e4, -3.186214986116763),
+                              (1e10, -10.093986931748889),
+                              (1e100, -113.71031611649761)])
+    def test_entropy(self, c, ref):
+    
+        # Reference values were calculated with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # def loggamma_entropy_mpmath(c):
+        #     c = mp.mpf(c)
+        #     return float(mp.log(mp.gamma(c)) + c * (mp.one - mp.digamma(c)))
+        
+        assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
 
 class TestJohnsonsu:
@@ -2328,6 +2376,17 @@ class TestPearson3:
                         stats.pearson3.sf(-x, -skew))
         assert_allclose(stats.pearson3.ppf(x, skew),
                         -stats.pearson3.isf(x, -skew))
+
+    def test_sf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 50; Pearson3(skew=skew).sf(x). Check positive, negative,
+        # and zero skew due to branching.
+        skew = [0.1, 0.5, 1.0, -0.1]
+        x = [5.0, 10.0, 50.0, 8.0]
+        ref = [1.64721926440872e-06, 8.271911573556123e-11,
+               1.3149506021756343e-40, 2.763057937820296e-21]
+        assert_allclose(stats.pearson3.sf(x, skew), ref, rtol=2e-14)
+        assert_allclose(stats.pearson3.sf(x, 0), stats.norm.sf(x), rtol=2e-14)
 
 
 class TestKappa4:
@@ -2891,6 +2950,17 @@ class TestLaplace:
         p = 1e-25
         x = stats.laplace.isf(p)
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
+
+class TestLogLaplace:
+
+    def test_sf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100; LogLaplace(c=c).sf(x).
+        c = np.array([2.0, 3.0, 5.0])
+        x = np.array([1e-5, 1e10, 1e15])
+        ref = [0.99999999995, 5e-31, 5e-76]
+        assert_allclose(stats.loglaplace.sf(x, c), ref, rtol=1e-15)
 
 
 class TestPowerlaw:
@@ -4120,6 +4190,32 @@ class TestBeta:
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
 
+    @pytest.mark.parametrize(
+        "a, b, ref, tol",
+        [
+            (1, 10, -1.4025850929940458, 1e-14),
+            (10, 20, -1.0567887388936708, 1e-13),
+            (4e6, 4e6+20, -7.221686009678741, 1e-9),
+            (5e6, 5e6+10, -7.333257022834638, 1e-8),
+            (1e10, 1e10+20, -11.133707703130474, 1e-11),
+            (1e50, 1e50+20, -57.185409562486385, 1e-15),
+        ]
+    )
+    def test_extreme_entropy(self, a, b, ref, tol):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def beta_entropy_mpmath(a, b):
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     entropy = (
+        #       mp.log(mp.beta(a, b)) - (a - 1) * mp.digamma(a)
+        #       - (b - 1) * mp.digamma(b) + (a + b - 2) * mp.digamma(a + b)
+        #     )
+        #     return float(entropy)
+        assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
+
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
@@ -4226,12 +4322,44 @@ class TestBetaPrime:
         assert y < 1.0
         assert_allclose(y, expected, rtol=2e-5)
 
+    def test_sf(self):
+        # reference values were computed via the reference distribution,
+        # e.g.
+        # mp.dps = 50
+        # a, b = 5, 3
+        # x = 1e10
+        # BetaPrime(a=a, b=b).sf(x); returns 3.4999999979e-29
+        a = [5, 4, 2, 0.05, 0.05, 0.05, 0.05, 100.0, 100.0, 0.05, 0.05,
+             0.05, 1.5, 1.5]
+        b = [3, 2, 1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05, 100.0, 100.0,
+             100.0, 1.5, 1.5]
+        x = [1e10, 1e20, 1e30, 1e22, 1e-10, 1e-22, 1e-100, 1e22, 1e10,
+             1e-10, 1e-22, 1e-100, 1e10, 1e-10]
+        ref = [3.4999999979e-29, 9.999999999994357e-40, 1.9999999999999998e-30,
+               0.0021188533947081017, 0.78761154572905, 0.9466504323507127,
+               0.9999932836873578, 0.10269725645728331, 0.40884514172337383,
+               0.5911548582766262, 0.8973027435427167, 0.9999870711814124,
+               1.6976527260079727e-15, 0.9999999999999983]
+        sf_values = stats.betaprime.sf(x, a, b)
+        assert_allclose(sf_values, ref, rtol=1e-12)
+
     def test_fit_stats_gh18274(self):
         # gh-18274 reported spurious warning emitted when fitting `betaprime`
         # to data. Some of these were emitted by stats, too. Check that the
         # warnings are no longer emitted.
         stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
         stats.betaprime(a=1, b=1).stats('mvsk')
+
+    def test_moment_gh18634(self):
+        # Testing for gh-18634 revealed that `betaprime` raised a
+        # NotImplementedError for higher moments. Check that this is
+        # resolved. Parameters are arbitrary but lie on either side of the
+        # moment order (5) to test both branches of `_lazywhere`. Reference
+        # values produced with Mathematica, e.g.
+        # `Moment[BetaPrimeDistribution[2,7],5]`
+        ref = [np.inf, 0.867096912929055]
+        res = stats.betaprime(2, [4.2, 7.1]).moment(5)
+        assert_allclose(res, ref)
 
 
 class TestGamma:
@@ -4484,6 +4612,14 @@ class TestGumbelR:
 
 
 class TestLevyStable:
+    @pytest.fixture(autouse=True)
+    def reset_levy_stable_params(self):
+        """Setup default parameters for levy_stable generator"""
+        stats.levy_stable.parameterization = "S1"
+        stats.levy_stable.cdf_default_method = "piecewise"
+        stats.levy_stable.pdf_default_method = "piecewise"
+        stats.levy_stable.quad_eps = stats._levy_stable._QUAD_EPS
+
     @pytest.fixture
     def nolan_pdf_sample_data(self):
         """Sample data points for pdf computed with Nolan's stablec
@@ -5194,6 +5330,98 @@ class TestLevyStable:
             np.full(len(points), expected)
         )
 
+    @pytest.mark.parametrize(
+        'x,alpha,beta,expected',
+        # Reference values from Matlab
+        # format long
+        # alphas = [1.7720732804618808, 1.9217001522410235, 1.5654806051633634,
+        #           1.7420803447784388, 1.5748002527689913];
+        # betas = [0.5059373136902996, -0.8779442746685926, -0.4016220341911392,
+        #          -0.38180029468259247, -0.25200194914153684];
+        # x0s = [0, 1e-4, -1e-4];
+        # for x0 = x0s
+        #     disp("x0 = " + x0)
+        #     for ii = 1:5
+        #         alpha = alphas(ii);
+        #         beta = betas(ii);
+        #         pd = makedist('Stable','alpha',alpha,'beta',beta,'gam',1,'delta',0);
+        #         % we need to adjust x. It is the same as x = 0 In scipy.
+        #         x = x0 - beta * tan(pi * alpha / 2);
+        #         disp(pd.pdf(x))
+        #     end
+        # end
+        [
+            (0, 1.7720732804618808, 0.5059373136902996, 0.278932636798268),
+            (0, 1.9217001522410235, -0.8779442746685926, 0.281054757202316),
+            (0, 1.5654806051633634, -0.4016220341911392, 0.271282133194204),
+            (0, 1.7420803447784388, -0.38180029468259247, 0.280202199244247),
+            (0, 1.5748002527689913, -0.25200194914153684, 0.280136576218665),
+        ]
+    )
+    def test_x_equal_zeta(
+            self, x, alpha, beta, expected
+    ):
+        """Test pdf for x equal to zeta.
+
+        With S1 parametrization: x0 = x + zeta if alpha != 1 So, for x = 0, x0
+        will be close to zeta.
+
+        When case "x equal zeta" is not handled properly and quad_eps is not
+        low enough: - pdf may be less than 0 - logpdf is nan
+
+        The points from the parametrize block are found randomly so that PDF is
+        less than 0.
+
+        Reference values taken from MATLAB
+        https://www.mathworks.com/help/stats/stable-distribution.html
+        """
+        stats.levy_stable.quad_eps = 1.2e-11
+
+        assert_almost_equal(
+            stats.levy_stable.pdf(x, alpha=alpha, beta=beta),
+            expected,
+        )
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize(
+        # See comment for test_x_equal_zeta for script for reference values
+        'x,alpha,beta,expected',
+        [
+            (1e-4, 1.7720732804618808, 0.5059373136902996, 0.278929165340670),
+            (1e-4, 1.9217001522410235, -0.8779442746685926, 0.281056564327953),
+            (1e-4, 1.5654806051633634, -0.4016220341911392, 0.271252432161167),
+            (1e-4, 1.7420803447784388, -0.38180029468259247, 0.280205311264134),
+            (1e-4, 1.5748002527689913, -0.25200194914153684, 0.280140965235426),
+            (-1e-4, 1.7720732804618808, 0.5059373136902996, 0.278936106741754),
+            (-1e-4, 1.9217001522410235, -0.8779442746685926, 0.281052948629429),
+            (-1e-4, 1.5654806051633634, -0.4016220341911392, 0.271275394392385),
+            (-1e-4, 1.7420803447784388, -0.38180029468259247, 0.280199085645099),
+            (-1e-4, 1.5748002527689913, -0.25200194914153684, 0.280132185432842),
+        ]
+    )
+    def test_x_near_zeta(
+            self, x, alpha, beta, expected
+    ):
+        """Test pdf for x near zeta.
+
+        With S1 parametrization: x0 = x + zeta if alpha != 1 So, for x = 0, x0
+        will be close to zeta.
+
+        When case "x near zeta" is not handled properly and quad_eps is not
+        low enough: - pdf may be less than 0 - logpdf is nan
+
+        The points from the parametrize block are found randomly so that PDF is
+        less than 0.
+
+        Reference values taken from MATLAB
+        https://www.mathworks.com/help/stats/stable-distribution.html
+        """
+        stats.levy_stable.quad_eps = 1.2e-11
+
+        assert_almost_equal(
+            stats.levy_stable.pdf(x, alpha=alpha, beta=beta),
+            expected,
+        )
 
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
@@ -6610,6 +6838,25 @@ class TestRdist:
         c = 2.7
         assert_almost_equal(0.5*stats.beta(c/2, c/2).pdf((x + 1)/2),
                             stats.rdist(c).pdf(x))
+
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 200
+    # def rdist_sf_mpmath(x, c):
+    #     x = mp.mpf(x)
+    #     c = mp.mpf(c)
+    #     return float(mp.betainc(c/2, c/2, (x+1)/2, mp.one, regularized=True))
+    @pytest.mark.parametrize(
+        "x, c, ref",
+        [
+            (0.0001, 541, 0.49907251345565845),
+            (0.1, 241, 0.06000788166249205),
+            (0.5, 441, 1.0655898106047832e-29),
+            (0.8, 341, 6.025478373732215e-78),
+        ]
+    )
+    def test_rdist_sf(self, x, c, ref):
+        assert_allclose(stats.rdist.sf(x, c), ref, rtol=5e-14)
 
 
 class TestTrapezoid:
