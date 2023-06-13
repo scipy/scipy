@@ -9891,12 +9891,24 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
 
     Notes
     -----
-    The implementation of the test follows Conover [1]_. The two-sided test,
-    for example, is performed as::
+    This test and its method for computing confidence intervals are
+    non-parametric. They are valid if and only if the observations are i.i.d.
 
-        k = (x <= q).sum()
-        n = len(x)
-        stats.binomtest(k, n, p)
+    The implementation of the test follows Conover [1]_. The p-value of this
+    test derives from the binomial distribution but, different from the binomial
+    test, there are two different test statistics::
+
+        k1 = (x <= q).sum()
+        k2 = (x < q).sum()
+    
+    The p-value is given by::
+
+        if alternative == 'less':
+            pvalue = bd.sf(k2)
+        elif alternative == 'greater':
+            pvalue = bd.cdf(k1-1)  # -1 because of the step-like CDF
+        elif alternative == 'two-sided':
+            pvalue = min(bd.cdf(k1-1), bd.sf(k2))
 
     The approach for confidence intervals is attributed to Thompson [2]_ and
     later proven to be applicable to any set of i.i.d. samples [3]_. The
@@ -9909,18 +9921,20 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
         \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k}
         q^k(1-q)^{N-k}
 
-    The confidence intervals are valid if and only if the observations are
-    i.i.d.
-
-    Both one-sided and two-sided confidence intervals can be obtained (default
-    is two-sided). The one-sided confidence interval corresponding with
-    ``alternative='lower'`` has
+    By default, confidence intervals are computed for a 95% confidence level.
+    A common interpretation of a 95% confidence intervals is that if i.i.d.
+    samples are drawn repeatedly from the same population and confidence
+    intervals are formed each time, the confidence interval will contain the
+    true value of the specified quantile in approximately 95% of trials.
 
     A similar function is available in the QuantileNPCI R package [4]_. The
     foundation is the same, but it computes the confidence interval bounds by
     doing interpolations between the sample values, whereas this function uses
     only sample values as bounds. Thus, ``quantile_test.confidence_interval``
     returns more conservative intervals (i.e., larger).
+
+    The same computation of confidence intervals for quantiles is included in
+    the confintr package [5]_.
 
     Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
     there may exist a tighter interval that may contain the quantile of
@@ -9943,6 +9957,8 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
        Confidence Intervals for Quantiles," R package,
        https://cran.r-project.org/package=QuantileNPCI
+    .. [5] M. Mayer, "confintr: Confidence Intervals," R package,
+       https://cran.r-project.org/package=confintr
 
 
     Examples
