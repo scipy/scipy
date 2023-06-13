@@ -9,7 +9,7 @@ channels:
 dependencies:
   - python
   - cython
-  - compilers
+  - compilers # Currently unavailable for Windows. Comment out this line and download Rtools and add <path>\ucrt64\bin\ to your path: https://cran.r-project.org/bin/windows/Rtools/rtools40.html
   - meson
   - meson-python
   - ninja
