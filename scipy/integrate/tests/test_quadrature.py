@@ -583,12 +583,6 @@ class TestTanhSinh:
             _tanhsinh(f, 0, f.b, atol='ekki')
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, rtol=pytest)
-        with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, minweight=object())
-
-        message = '...must be positive and finite.'
-        with pytest.raises(ValueError, match=message):
-            _tanhsinh(f, 0, f.b, minweight=np.inf)
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):
@@ -787,19 +781,6 @@ class TestTanhSinh:
         assert res.success is True
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
-
-        # # Test `minweight` and status 3
-        # f = self.f11
-        # # The transformed integrand produces a NaN when evaluated close to zero
-        # # The weight is very small here, so with normal options, the NaN is
-        # # replaced with zero. However, if we set `minweight` too small, we get
-        # # status 3.
-        # res = _tanhsinh(f, 0, f.b, minweight=1e-300)
-        # assert res.success is False
-        # assert res.status == 3
-        # assert res.message.startswith("An invalid value")
-        # assert np.isnan(res.integral)
-        # assert np.isnan(res.error)
 
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol):

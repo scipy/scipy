@@ -4,9 +4,10 @@ import numpy as np
 from scipy import special
 
 # todo:
+#  without `minweight`, we are also suppressing infinities within the interval.
+#    Is that OK? If so, we can probably get rid of `status=3`.
 #  Add heuristic to stop when improvement is too slow
 #  special case for equal limits of integration?
-#  warn (somehow) when invalid function values & weight < minweight?
 #  callback - test results at lower levels with higher maxlevel against
 #             final results at lower maxlevel
 #  accept args, kwargs?
@@ -45,7 +46,7 @@ _status_messages = {-1: "Iteration in progress.",
 
 
 def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
-              atol=None, rtol=None, minweight=1e-100):
+              atol=None, rtol=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
     In practice, tanh-sinh quadrature achieves quadratic convergence for
@@ -107,16 +108,6 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
-    minweight : float, default: 1e-100
-        The minimum nonzero weight to be used in the Euler-Maclaurin Summation
-        formula as described in [1]_ Section 4. When evaluating an integral
-        with a singularity at an endpoint, values of the integrand will not be
-        considered if the weight prescribed by the tanh-sinh quadrature scheme
-        falls below this threshold. The default value is 1e-100. For integrals
-        without endpoint singularities, smaller values are acceptable. For
-        integrals with an endpoint singularity, a larger value will protect
-        against overflows of the integrand, but potentially at the expense of
-        integral and error estimate accuracy.
 
     Returns
     -------
@@ -213,9 +204,9 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
     """
     # Input validation and standardization
     res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
-                       minlevel, atol, rtol, minweight)
+                       minlevel, atol, rtol)
     (f, a, b, log, maxfun, maxlevel, minlevel,
-     atol, rtol, minweight, feval_factor) = res
+     atol, rtol, feval_factor) = res
 
     # Initialization
     Sk = []  # sequence of integral estimates for error estimation
@@ -507,7 +498,7 @@ def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
-                 minlevel, atol, rtol, minweight):
+                 minlevel, atol, rtol):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -525,9 +516,9 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
     if rtol is None:
         rtol = np.log(1e-12) if log else 1e-12
 
-    message = ('Integration limits `a` and `b`, tolerances `atol` and '
-               '`rtol`, and `minweight` must be reals.')
-    params = np.asarray([a, b, atol, rtol, minweight])
+    message = ('Integration limits `a` and `b` and tolerances `atol` and '
+               '`rtol` must be reals.')
+    params = np.asarray([a, b, atol, rtol, 0.])
     if not np.issubdtype(params.dtype, np.floating) or np.any(np.isnan(params)):
         raise ValueError(message)
     if log:
@@ -538,10 +529,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
         message = '`atol` and `rtol` must be non-negative and finite.'
         if np.any(params[-3:-1] < 0) or np.any(np.isinf(params[-3:-1])):
             raise ValueError(message)
-    message = '`minweight` must be positive and finite.'
-    if np.any(params[-1] <= 0) or np.any(np.isinf(params[-1])):
-        raise ValueError(message)
-    a, b, atol, rtol, minweight = params
+    a, b, atol, rtol, _ = params
 
     BIGINT = int(2**63-2)  # avoid overflow when this is incremented
     if maxfun is None and maxlevel is None:
@@ -590,4 +578,4 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
         a, b = 0, 1
 
     return (f, a, b, log, maxfun, maxlevel, minlevel,
-            atol, rtol, minweight, feval_factor)
+            atol, rtol, feval_factor)
