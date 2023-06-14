@@ -3718,14 +3718,17 @@ def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
     elif filter_type == 2:          # high
         nat = passb / stopb
     elif filter_type == 3:          # stop
+
+       ### breakpoint()
+
         wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
                                  args=(0, passb, stopb, gpass, gstop,
-                                       'butter'),
+                                       filter_kind),
                                  disp=0)
         passb[0] = wp0
         wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
                                  args=(1, passb, stopb, gpass, gstop,
-                                       'butter'),
+                                       filter_kind),
                                  disp=0)
         passb[1] = wp1
         nat = ((stopb * (passb[0] - passb[1])) /
