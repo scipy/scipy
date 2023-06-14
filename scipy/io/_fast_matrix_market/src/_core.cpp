@@ -162,6 +162,7 @@ write_cursor open_write_stream(std::shared_ptr<pystream::ostream>& stream, fmm::
 #ifndef FMM_SCIPY_PRUNE
 void write_header_only(write_cursor& cursor) {
     fmm::write_header(cursor.stream(), cursor.header);
+    cursor.stream().flush();
 }
 #endif
 

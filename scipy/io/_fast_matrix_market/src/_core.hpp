@@ -161,6 +161,7 @@ void write_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
                                             py_array_iterator<decltype(data_unchecked), VT>(data_unchecked),
                                             py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()));
     fmm::write_body(cursor.stream(), formatter, cursor.options);
+    cursor.stream().flush();
 }
 
 #ifndef FMM_SCIPY_PRUNE
@@ -204,6 +205,7 @@ void write_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
                                         py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()),
                                         is_csr);
     fmm::write_body(cursor.stream(), formatter, cursor.options);
+    cursor.stream().flush();
 }
 #endif
 
