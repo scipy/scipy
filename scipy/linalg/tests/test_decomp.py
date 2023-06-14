@@ -135,10 +135,11 @@ class TestEigVals:
         assert_array_almost_equal(w, exact_w)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        a_empty = eigvals(a)
-        assert_equal(a_empty, (b,a))
+        a = np.empty((0, 0))
+        w = eigvals(a)
+        assert_allclose(w, np.empty((0,)))
+        w = eigvals(a, homogeneous_eigvals=True)
+        assert_allclose(w, np.empty((2, 0)))
 
 
 class TestEig:
@@ -359,10 +360,13 @@ class TestEig:
         assert_raises(ValueError, eig, B, A)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        a_empty = eig(a)
-        assert_equal(a_empty, (b,a))
+        a = np.empty((0, 0))
+        w, vr = eig(a)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(vr, np.empty((0, 0)))
+        w, vr = eig(a, homogeneous_eigvals=True)
+        assert_allclose(w, np.empty((2, 0)))
+        assert_allclose(vr, np.empty((0, 0)))
 
 
 class TestEigBanded:
@@ -914,12 +918,12 @@ class TestEigh:
         assert_allclose(v_dep, v)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        goal = (b,a)
-        a_empty = eigh(a)
-        for i in range(len(a_empty)):
-            assert_allclose(a_empty[i], goal[i])
+        a = np.empty((0, 0))
+        w, v = eigh(a)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(v, np.empty((0, 0)))
+        w = eigh(a, eigvals_only=True)
+        assert_allclose(w, np.empty((0,)))
 
 
 class TestSVD_GESDD:
@@ -1071,13 +1075,16 @@ class TestSVD_GESDD:
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        goal = (a,b,a)
-        a_empty = svd(a)
-        for i in range(len(a_empty)):
-            assert_allclose(a_empty[i], goal[i])
-
+        for m, n in zip([0, 2, 0], [0, 0, 2]):
+            a = np.empty((m, n))
+            u, s, v = svd(a)
+            assert_allclose(u, np.identity(m))
+            assert_allclose(s, np.empty((0,)))
+            assert_allclose(v, np.identity(n))
+            u, s, v = svd(a, full_matrices=False)
+            assert_allclose(u, np.empty((m, 0)))
+            assert_allclose(s, np.empty((0,)))
+            assert_allclose(v, np.empty((0, n)))
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -1701,11 +1708,6 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
-    def test_empty_matrix(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = qr(a)
-        assert_allclose(a_empty, (a,a))
-
 
 class TestRQ:
     def test_simple(self):
@@ -1866,6 +1868,16 @@ class TestSchur:
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
         t, z = schur(a, check_finite=False)
         assert_array_almost_equal(z @ t @ z.conj().T, a)
+
+    def test_empty(self):
+        a = np.empty((0, 0))
+        t, z = schur(a)
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+        t, z, sdim = schur(a, sort='lhp')
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+        assert_equal(sdim, 0)
 
 
 class TestHessenberg:

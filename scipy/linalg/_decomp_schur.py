@@ -1,5 +1,6 @@
 """Schur decomposition functions."""
 import numpy
+import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
@@ -122,14 +123,21 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray(a)
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
+
     typ = a1.dtype.char
     if output in ['complex', 'c'] and typ not in ['F', 'D']:
         if typ in _double_precision:
             a1 = a1.astype('D')
-            typ = 'D'
         else:
             a1 = a1.astype('F')
-            typ = 'F'
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        if sort is None:
+            return np.empty_like(a1), np.empty_like(a1)
+        else:
+            return np.empty_like(a1), np.empty_like(a1), 0
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))
     if lwork is None or lwork == -1:
@@ -175,7 +183,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     elif info > 0:
         raise LinAlgError("Schur form not found. Possibly ill-conditioned.")
 
-    if sort_t == 0:
+    if sort is None:
         return result[0], result[-3]
     else:
         return result[0], result[-3], result[1]

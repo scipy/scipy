@@ -163,7 +163,7 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     # accommodate empty arrays
     if b1.size == 0:
-        return np.asfortranarray(b1.copy())
+        return np.empty_like(b1)
 
     # regularize 1-D b arrays to 2D
     if b1.ndim == 1:
@@ -943,6 +943,11 @@ def inv(a, overwrite_a=False, check_finite=True):
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accommodate empty square matrices
+    if a1.size == 0:
+        return np.empty_like(a1)
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
     # XXX: I found no advantage or disadvantage of using finv.
 #     finv, = get_flinalg_funcs(('inv',),(a1,))
@@ -1426,7 +1431,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     a = _asarray_validated(a, check_finite=check_finite)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
-    maxS = np.max(s)
+    maxS = np.max(s, initial=0.)
 
     if rcond or cond:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
@@ -1528,7 +1533,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = _decomp.eigh(a, lower=lower, check_finite=False)
     t = u.dtype.char.lower()
-    maxS = np.max(np.abs(s))
+    maxS = np.max(np.abs(s), initial=0.)
 
     atol = 0. if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol

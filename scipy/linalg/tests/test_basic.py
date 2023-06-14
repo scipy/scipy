@@ -820,6 +820,12 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
+    def test_empty(self):
+        a = np.empty((0, 0))
+        b = np.empty((0,))
+        x = solve(a, b)
+        assert_allclose(x, np.empty((0,)))
+
 
 class TestSolveTriangular:
 
@@ -926,9 +932,10 @@ class TestInv:
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = inv(a)
-        assert_allclose(a_empty, a)
+        a = np.empty((0, 0))
+        a_inv = inv(a)
+        assert_allclose(a_inv, a)
+
 
 class TestDet:
     def setup_method(self):
@@ -1052,9 +1059,8 @@ class TestDet:
             det(a)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = det(a)
-        assert_allclose(a_empty, 1)
+        a = np.empty((0, 0))
+        assert_allclose(det(a), 1.)
 
 
 def direct_lstsq(a, b, cmplx=0):
@@ -1434,9 +1440,9 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = pinv(a)
-        assert_allclose(a_empty, a)
+        a = np.empty((0, 0))
+        a_pinv = pinv(a)
+        assert_allclose(a_pinv, a)
 
 
 class TestPinvSymmetric:
@@ -1500,6 +1506,11 @@ class TestPinvSymmetric:
         # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
+
+    def test_empty(self):
+        a = np.empty((0, 0))
+        a_pinv = pinvh(a)
+        assert_allclose(a_pinv, a)
 
 
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))

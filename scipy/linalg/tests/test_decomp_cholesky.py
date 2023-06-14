@@ -67,9 +67,9 @@ class TestCholesky:
             assert_array_almost_equal(cholesky(a, lower=1), c)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = cholesky(a)
-        assert_allclose(a_empty, a)
+        a = np.empty((0, 0))
+        c = cholesky(a)
+        assert_allclose(c, np.empty((0, 0)))
 
 
 class TestCholeskyBanded:

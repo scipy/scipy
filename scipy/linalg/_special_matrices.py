@@ -478,10 +478,11 @@ def kron(a, b):
 
     """
     # accommodate empty arrays
-    if a.size == 0:
-        return a.copy()
-    if b.size == 0:
-        return a.copy()
+    if a.size == 0 or b.size == 0:
+        m = a.shape[0] * b.shape[0]
+        n = a.shape[1] * b.shape[1]
+        return np.empty_like(a, shape=(m, n))
+
     if not a.flags['CONTIGUOUS']:
         a = np.reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:

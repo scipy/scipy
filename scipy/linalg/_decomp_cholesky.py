@@ -1,6 +1,6 @@
 """Cholesky decomposition functions."""
 
-from numpy import asarray_chkfinite, asarray, atleast_2d
+from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
 from ._misc import LinAlgError, _datacopied
@@ -28,7 +28,7 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     # Quick return for square empty array
     if a1.size == 0:
-        return a1.copy(), lower
+        return empty_like(a1), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     potrf, = get_lapack_funcs(('potrf',), (a1,))
