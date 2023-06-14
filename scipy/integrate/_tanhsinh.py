@@ -44,7 +44,6 @@ _status_messages = {-1: "Iteration in progress.",
                         "documentation notes for more information.")
                     }
 
-
 def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
               atol=None, rtol=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
@@ -203,10 +202,14 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
 
     """
     # Input validation and standardization
-    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
-                       minlevel, atol, rtol)
-    (f, a, b, log, maxfun, maxlevel, minlevel,
-     atol, rtol, feval_factor) = res
+    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol)
+    (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol) = res
+
+    return _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol)
+
+def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
+    # Transform improper integrals
+    f, a, b, feval_factor = _transform_integrals(f, a, b, log)
 
     # Initialization
     Sk = []  # sequence of integral estimates for error estimation
@@ -496,9 +499,7 @@ def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
         rerr = max(e1, aerr/np.abs(Sn))
     return rerr, aerr, Sk, last_terms
 
-
-def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
-                 minlevel, atol, rtol):
+def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -548,6 +549,9 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
         raise ValueError(message)
     maxfun, maxlevel, minlevel = params
 
+    return (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol)
+
+def _transform_integrals(f, a, b, log):
     # Transform integrals as needed for infinite limits
     # There are more efficient ways of doing this to avoid function call
     # overhead, but let's stick with the simplest for now.
@@ -577,5 +581,4 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel,
                     else f(1/x - 1 + a)*x**-2)
         a, b = 0, 1
 
-    return (f, a, b, log, maxfun, maxlevel, minlevel,
-            atol, rtol, feval_factor)
+    return f, a, b, feval_factor
