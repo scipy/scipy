@@ -543,6 +543,16 @@ class TestCumulativeSimpson:
             int_y,
         )
 
+    def test_simpson_multid_w_1d_x(self):
+        input_x = [0, 2, 3, 4]
+        x = np.array([input_x]*3)
+        y = x**2
+        int_y = x**3 / 3
+        assert_almost_equal(
+            cumulative_simpson(y, x=input_x, initial=0),
+            int_y,
+        )
+
     @pytest.mark.parametrize(
         ("y", "dx", "initial", "axis", "int_y"),
         [
@@ -641,62 +651,95 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        ("y_func", "x", "dx", "initial", "axis", "int_y_func", "match"),
+        ("y_func", "y", "x", "dx", "initial", "axis", "match"),
         [
             (
                 # Non-unique values in x
                 lambda y: y**2,
+                None,
                 np.array([2, 2, 4, 8]),
                 None,
                 8 / 3,
                 -1,
-                lambda y: y**3 / 3,
                 "Input x must be monotonically increasing"
+            ),
+            (
+                # Invalid axis
+                lambda y: y**2,
+                None,
+                np.array([1, 2, 4, 8]),
+                None,
+                8 / 3,
+                4,
+                "`axis` must exist in the shape of `y`"
+            ),
+            (
+                # Invalid x
+                None,
+                np.array([1, 4, 16, 64, 81]),
+                np.array([1, 2, 4, 8]),
+                None,
+                8 / 3,
+                -1,
+                "shape of `x` must be the same as `y` or 1-D"
             ),
             (
                 # Multi dimensional, non-unique values in x
                 lambda y: y**2,
+                None,
                 np.array([[1, 2, 3, 4], [0, 2, 4, 8], [2, 2, 4, 8]]),
                 None,
                 np.array([[1 / 3], [0], [8 / 3]]),
                 -1,
-                lambda y: y**3 / 3,
                 "Input x must be monotonically increasing"
             ),
             (
                 # Multi dimensional, non-unique values in x in non-default axis
                 lambda y: y**2,
+                None,
                 np.array([[1, 2, 3, 4], [1, 2, 4, 8], [1, 2, 4, 8]]),
                 None,
                 None,
                 0,
-                lambda y: y**3 / 3,
                 "Input x must be monotonically increasing"
             ),
             (
                 # Less than 3 points along axis of integration
                 lambda y: y**2,
+                None,
                 np.array([[1, 2], [1, 2], [1, 2]]),
                 None,
                 None,
                 -1,
-                lambda y: y**3 / 3,
                 "At least 3 points"
+            ),
+            (
+                # Invalid input for initial
+                lambda y: y**2,
+                None,
+                np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
+                None,
+                np.array([1 / 3, 0, 8 / 3]),
+                -1,
+                "`initial` must either be numeric or have the same"
+            ),
+            (
+                # Invalid input for dx
+                lambda y: y**2,
+                None,
+                np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
+                [[1], [2], [1], [1]],
+                None,
+                -1,
+                "`dx` must either be numeric or"
             ),
         ],
     )
     def test_simpson_exceptions(
-        self, y_func, x, dx, initial, axis, int_y_func, match
+        self, y_func, y, x, dx, initial, axis, match
     ):
-        input_x = x
-        if x is None:
-            x = dx * np.arange(17)
-        y = y_func(x)
-        int_y = int_y_func(x)
-        if initial is None:
-            y_shape = [slice(None)] * y.ndim
-            y_shape[axis] = slice(1, None)
-            int_y = int_y[tuple(y_shape)]
-
+        if y is None:
+            y = y_func(x)
+        input_x = x if dx is None else None
         with pytest.raises(ValueError, match=match):
             cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)

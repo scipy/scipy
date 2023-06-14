@@ -1002,23 +1002,25 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     # validate y and axis
     if axis < -1 or axis >= y.ndim:
-        raise ValueError("If given, axis must exist in the shape of y.")
+        raise ValueError("If given, `axis` must exist in the shape of `y`.")
 
     if y.shape[axis] < 3:
         raise ValueError(
             "At least 3 points are required along the axis of integration "
-            "to use the compsite Simpson's method."
+            "to use the composite Simpson's method."
         )
 
     if x is not None:
         x = np.asarray(x)
-        if x.ndim == 1:
+        if x.ndim == 1 and y.shape[axis] == x.shape[0]:
             x_shape = [1] * y.ndim
             x_shape[axis] = -1
             x = x.reshape(tuple(x_shape))
         elif x.shape != y.shape:
             raise ValueError(
-                "If given, shape of x must be 1-D or the same as y.")
+                "If given, shape of `x` must be the same as `y` or 1-D with "
+                "the same length as `y` along `axis`."
+            )
         res = _cumulative_simpson_unequal_intervals(y, x, axis=axis)
 
     else:
@@ -1032,8 +1034,8 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
             dx = np.repeat(dx, y.shape[axis] - 1, axis=axis)
         else:
             raise ValueError(
-                "dx must either be numeric or have the same shape as y but with "
-                "only 1 point along `axis`."
+                "`dx` must either be numeric or have the same shape as `y` "
+                "but with only 1 point along `axis`."
             )
         res = _cumulative_simpson_equal_intervals(y, dx, axis=axis)
 
