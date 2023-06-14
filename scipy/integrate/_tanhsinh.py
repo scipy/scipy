@@ -219,8 +219,9 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
 
     # Initialization
     Sk = []  # sequence of integral estimates for error estimation
-    # most extreme abscissae and corresponding `fjwj`s in Euler-Maclaurin Sum
-    last_terms = (np.inf, np.nan, -np.inf, np.nan)
+    # Most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
+    # sum. These are dummy values that will be replaced in the first iteration.
+    last_terms = (np.inf, np.nan, 0, -np.inf, np.nan, 0, 0)
     Sn = aerr = np.nan  # integral and error are NaN until determined otherwise
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
@@ -244,7 +245,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
 
         # Perform the Euler-Maclaurin sum
         feval += len(xj) * feval_factor  # function evals happen next
-        fjwj, Sn = _euler_maclaurin_sum(f, h, xj, wj, minweight, log)
+        fjwj, Sn, last_terms = _euler_maclaurin_sum(f, h, xj, wj, last_terms, log)
 
         # Check for infinities / NaNs. If encountered, break.
         not_finite = ((log and (np.isposinf(np.real(Sn)) or np.isnan(Sn))) or
@@ -261,7 +262,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
         # Otherwise, the integral estimate is just Sn.
 
         # Check error estimate (see [1] 5. Error Estimation, page 11)
-        rerr, aerr, Sk, last_terms = _estimate_error(h, n, Sn, Sk, xj, fjwj,
+        rerr, aerr, Sk, last_terms = _estimate_error(h, n, Sn, Sk, fjwj,
                                                      last_terms, log)
         success = (rerr < rtol or (rerr + Sn < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
@@ -373,89 +374,75 @@ def _transform_to_limits(a, b, xjc, wj):
     wj = np.concatenate((wj, wj), axis=-1)
 
     # Points at the boundaries can be generated due to finite precision
-    # arithmetic. Ideally we wouldn't evaluate the function at these points
-    # or when weights are zero; however, it would be tricky to filter out
-    # points when this function is vectorized. Instead, zero the weights.
+    # arithmetic, but these function values aren't supposed to be included in
+    # the Euler-Maclaurin sum. Ideally we wouldn't evaluate the function at
+    # these points; however, we can't easily filter out points when this
+    # function is vectorized. Instead, zero the weights.
     invalid = (xj <= a) | (xj >= b)
     wj[invalid] = 0
     return xj, wj
 
 
-def _euler_maclaurin_sum(f, h, xj, wj, minweight, log):
+def _euler_maclaurin_sum(f, h, xj, wj, last_terms, log):
     # Perform the Euler-Maclaurin Sum, [1] Section 4
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
         # Warnings due to function evaluation at endpoints are not cause for
         # concern; the resulting values will be given 0 weight.
         fj = f(xj)
 
-        # This is an alternate way of dealing with points close to the
-        # boundaries. The other way is to replace the values with zero (below).
-        # I haven't observed much difference, and [3] pg. 22 seems to agree.
-        # The problem with replacing values with a valid function value from
-        # another point is that we wouldn't want to go back and update the
-        # sums from previous levels when a more appropriate function value
-        # (evaluated at an abscissae closer to the one that was replaced)
-        # becomes available.
-        # ---
-        # # We can run into singularities close to the boundaries or when points
-        # # are generated at the boundaries due to roundoff error. Replace the
-        # # function values with the finite function values at the most extreme
-        # # abscissae.
-        # invalid = ~np.isfinite(fj)
-        # temp = xj[invalid]
-        # xj[invalid] = np.nan
-        # imin, imax = np.nanargmin(xj), np.nanargmax(xj)
-        # xj[invalid] = temp
-        # fjl, fjr = fj[imin], fj[imax]
-        # fj[xj < xj[imin]] = fjl
-        # fj[xj > xj[imax]] = fjr
+    # The error estimate needs to know the magnitude of the last term
+    # omitted from the Euler-Maclaurin sum. This is a bit involved because
+    # it may have been computed at a previous level. I sure hope it's worth
+    # all the trouble.
+    xl0, fl0, wr0, xr0, fr0, wl0, d4 = last_terms  # incumbent last terms
 
-        # Zero weight multiplied by infinity results in NaN. These will be
-        # removed below.
+    # Find the most extreme abscissae corresponding with terms that are
+    # included in the sum in this level.
+    invalid = ~np.isfinite(fj) | (wj == 0)  # these terms aren't in the sum
+    invalid_r, invalid_l = invalid.reshape(2, -1)
+    xr, xl = xj.reshape(2, -1).copy()  # this gets modified
+    xr[invalid_r], xl[invalid_l] = -np.inf, np.inf
+    ir, il = np.argmax(xr), np.argmin(xl)
+
+    # Determine whether the most extreme abscissae were from this level or
+    # a previous level. Update the record of the corresponding weights and
+    # function values.
+    fr, fl = fj.reshape(2, -1)
+    wr, wl = wj.reshape(2, -1)
+    xr0, fr0, wr0 = ((xr[ir], fr[ir], wr[ir]) if xr[ir] > xr0
+                     else (xr0, fr0, wr0))
+    xl0, fl0, wl0 = ((xl[il], fl[il], wl[il]) if xl[il] < xl0
+                     else (xl0, fl0, wl0))
+
+    # Compute the error estimate - the magnitude of the leftmost term or the
+    # rightmost term, whichever is greater.
+    flwl0 = fl0 + np.log(wl0) if log else fl0 * wl0  # leftmost term
+    frwr0 = fr0 + np.log(wr0) if log else fr0 * wr0  # rightmost term
+    magnitude = np.real if log else np.abs
+    d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
+    last_terms = xl0, fl0, wl0, xr0, fr0, wr0, d4
+
+    # There are two approaches to dealing with function values that are
+    # numerically infinite due to approaching a singularity - zero them, or
+    # replace them with the function value at the nearest non-infinite point.
+    # [3] pg. 22 suggests the latter, so let's do that given that we have the
+    # information.
+    fr[invalid_r] = fr0
+    fl[invalid_l] = fl0
+
+    # When wj is zero, log emits a warning
+    with np.errstate(divide='ignore'):
         fjwj = fj + np.log(wj) if log else fj * wj
-
-    # Points on the boundaries can be generated due to finite precision
-    # arithmetic. Ideally we wouldn't evaluate the function at these points
-    # or when weights are zero; however, it would be tricky to filter out
-    # points when this function is vectorized. Set the results to zero.
-    invalid = (wj <= minweight)
-    replacement = -np.inf if log else 0
-    fjwj[invalid] = replacement
 
     # update integral estimate
     Sn = (special.logsumexp(fjwj + np.log(h), axis=-1) if log
           else np.sum(fjwj, axis=-1) * h)
 
-    return fjwj, Sn
+    return fjwj, Sn, last_terms
 
 
-def _estimate_error(h, n, Sn, Sk, xj, fjwj, last_terms, log):
+def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
     # Estimate the error according to [1] Section 5
-
-    # The `d4` error estimate is the `fjwj` values at either the leftmost or
-    # rightmost abscissa that was included in the Euler-Maclaurin sum.
-    # Here, we assume that points where `fjwj` is 0 were not included in the
-    # sum, either because the `wj` falls below `minweight` or `xj` is at an
-    # integration limit due to roundoff. However, it is also possible that
-    # `fjwj` terms are zero because `fj` is numerically zero or `fjwj`
-    # underflowed. This would mean that `d4` should be zero, so we have
-    # the possibility of overestimating the error. I don't think this is
-    # important enough to specifically keep track of which points were
-    # included in the sum.
-    # This logic is a mess and should be refactored.
-    fjwj2 = np.real(fjwj) if log else np.abs(fjwj)
-    i = np.isneginf(fjwj2) if log else (fjwj2 == 0)
-    xj[i] = np.nan  # eliminate points excluded from EM sum
-    il, ir = np.nanargmin(xj), np.nanargmax(xj)
-    xjl, xjr = xj[il], xj[ir]
-    fjwjl, fjwjr = fjwj2[il], fjwj2[ir]
-    xjl0, fjwjl0, xjr0, fjwjr0 = last_terms
-    if xjl < xjl0:
-        xjl0, fjwjl0 = xjl, fjwjl
-    if xjr > xjr0:
-        xjr0, fjwjr0 = xjr, fjwjr
-    last_terms = xjl0, fjwjl0, xjr0, fjwjr0
-    d4 = np.maximum(fjwjl0, fjwjr0)
 
     if n == 0:
         # The paper says to use "one" as the error before it can be calculated.
@@ -503,6 +490,7 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, last_terms, log):
         d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j]))
         d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j]))
         d3 = log_e1 + np.max(fjwj)
+        d4 = last_terms[-1]
         aerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4])
         rerr = max(log_e1, aerr - np.real(Sn))
     else:
@@ -511,7 +499,7 @@ def _estimate_error(h, n, Sn, Sk, xj, fjwj, last_terms, log):
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
         d3 = e1 * np.max(fjwj)
-        term1 = d1**(np.log(d1)/np.log(d2)) if (d1 > 0 and d2 > 0) else 0
+        d4 = last_terms[-1]
         with np.errstate(divide='ignore'):
             aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4])
         rerr = max(e1, aerr/np.abs(Sn))
