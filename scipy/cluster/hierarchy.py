@@ -1694,7 +1694,7 @@ def cophenet(Z, Y=None):
     numerator = (Yy * Zz)
     denomA = Yy**2
     denomB = Zz**2
-    c = numerator.sum() / xp.sqrt(denomA.sum() * denomB.sum())
+    c = xp.sum(numerator) / xp.sqrt(xp.sum(denomA) * xp.sum(denomB))
     return (c, zz)
 
 
@@ -2588,7 +2588,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
             [R] = _copy_arrays_if_base_present([R])
-        R = np.asarray(R)
+            R = np.asarray(R)
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
@@ -4166,7 +4166,7 @@ def leaders(Z, T):
     xp = array_namespace(Z, T)
     Z = as_xparray(Z, order='c', xp=xp)
     T = as_xparray(T, order='c', xp=xp)
-    if T.dtype != xp.int64:
+    if T.dtype != xp.int32:
         raise TypeError('T must be a one-dimensional array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
     if len(T) != Z.shape[0] + 1:
@@ -4174,12 +4174,12 @@ def leaders(Z, T):
 
     Cl = np.unique(T)
     kk = len(Cl)
-    L = np.zeros((kk,), dtype='i')
-    M = np.zeros((kk,), dtype='i')
+    L = np.zeros((kk,), dtype=np.int32)
+    M = np.zeros((kk,), dtype=np.int32)
     n = Z.shape[0] + 1
     [Z, T] = _copy_arrays_if_base_present([Z, T])
     Z = np.asarray(Z)
-    T = np.asarray(T, dtype='i')
+    T = np.asarray(T, dtype=np.int32)
     s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '

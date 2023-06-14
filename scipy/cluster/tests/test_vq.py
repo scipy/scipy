@@ -343,7 +343,7 @@ class TestKMean:
     @array_api_compatible
     def test_kmeans_large_thres(self, xp):
         # Regression test for gh-1774
-        x = xp.asarray([1, 2, 3, 4, 10], dtype=float)
+        x = xp.asarray([1, 2, 3, 4, 10], dtype=xp.float64)
         res = kmeans(x, xp.asarray(1), thresh=1e16)
         assert_allclose(res[0], xp.asarray([4.]))
         assert_allclose(res[1], 2.3999999999999999)

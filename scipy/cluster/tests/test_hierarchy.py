@@ -204,8 +204,8 @@ class TestMLabLinkageConversion:
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
         Zm = xp.asarray([[1, 2, 3]])
-        assert_allclose(from_mlab_linkage(Zm), Z)
-        assert_allclose(to_mlab_linkage(Z), Zm)
+        assert_allclose(from_mlab_linkage(Zm), Z, rtol=1e-15)
+        assert_allclose(to_mlab_linkage(Z), Zm, rtol=1e-15)
 
     @array_api_compatible
     def test_mlab_linkage_conversion_multiple_rows(self, xp):
@@ -218,8 +218,8 @@ class TestMLabLinkageConversion:
                         [1., 8., 268., 4.],
                         [6., 9., 295., 6.]],
                        dtype=xp.float64)
-        assert_allclose(from_mlab_linkage(Zm), Z)
-        assert_allclose(to_mlab_linkage(Z), Zm)
+        assert_allclose(from_mlab_linkage(Zm), Z, rtol=1e-15)
+        assert_allclose(to_mlab_linkage(Z), Zm, rtol=1e-15)
 
 
 class TestFcluster:
@@ -287,9 +287,9 @@ class TestLeaders:
         Z = linkage(Y)
         T = fcluster(Z, criterion='maxclust', t=3)
         Lright = (xp.asarray([53, 55, 56]), xp.asarray([2, 3, 1]))
-        T = xp.asarray(T, dtype=xp.int64)
+        T = xp.asarray(T, dtype=xp.int32)
         L = leaders(Z, T)
-        assert_allclose(xp.concatenate(L), xp.concatenate(Lright))
+        assert_allclose(xp.concatenate(L), xp.concatenate(Lright), rtol=1e-15)
 
 
 class TestIsIsomorphic:
@@ -589,7 +589,7 @@ class TestLeavesList:
         # Tests leaves_list(Z) on a 1x4 linkage.
         Z = xp.asarray([[0, 1, 3.0, 2]], dtype=xp.float64)
         to_tree(Z)
-        assert_allclose(leaves_list(Z), [0, 1])
+        assert_allclose(leaves_list(Z), [0, 1], rtol=1e-15)
 
     @array_api_compatible
     def test_leaves_list_2x4(self, xp):
@@ -597,7 +597,7 @@ class TestLeavesList:
         Z = xp.asarray([[0, 1, 3.0, 2],
                         [3, 2, 4.0, 3]], dtype=xp.float64)
         to_tree(Z)
-        assert_allclose(leaves_list(Z), [0, 1, 2])
+        assert_allclose(leaves_list(Z), [0, 1, 2], rtol=1e-15)
 
     @array_api_compatible
     def test_leaves_list_Q(self, xp):
@@ -610,7 +610,7 @@ class TestLeavesList:
         X = xp.asarray(hierarchy_test_data.Q_X)
         Z = linkage(X, method)
         node = to_tree(Z)
-        assert_allclose(node.pre_order(), leaves_list(Z))
+        assert_allclose(node.pre_order(), leaves_list(Z), rtol=1e-15)
 
     @array_api_compatible
     def test_Q_subtree_pre_order(self, xp):
@@ -619,7 +619,8 @@ class TestLeavesList:
         Z = linkage(X, 'single')
         node = to_tree(Z)
         assert_allclose(node.pre_order(), (node.get_left().pre_order()
-                                        + node.get_right().pre_order()))
+                                           + node.get_right().pre_order()),
+                        rtol=1e-15)
 
 
 class TestCorrespond:
@@ -1003,8 +1004,8 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_rotation(), 90)
-        assert_allclose(testlabel.get_size(), 20)
+        assert_allclose(testlabel.get_rotation(), 90, rtol=1e-15)
+        assert_allclose(testlabel.get_size(), 20, rtol=1e-15)
         dendrogram(Z, ax=ax, orientation=orientation,
                    leaf_rotation=90)
         testlabel = (
@@ -1012,7 +1013,7 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_rotation(), 90)
+        assert_allclose(testlabel.get_rotation(), 90, rtol=1e-15)
         dendrogram(Z, ax=ax, orientation=orientation,
                    leaf_font_size=20)
         testlabel = (
@@ -1020,7 +1021,7 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_size(), 20)
+        assert_allclose(testlabel.get_size(), 20, rtol=1e-15)
         plt.close()
 
         # test plotting to gca (will import pylab)
@@ -1163,7 +1164,7 @@ def test_euclidean_linkage_value_error(xp):
 def test_2x2_linkage(xp):
     Z1 = linkage(xp.asarray([1]), method='single', metric='euclidean')
     Z2 = linkage(xp.asarray([[0, 1], [0, 0]]), method='single', metric='euclidean')
-    assert_allclose(Z1, Z2)
+    assert_allclose(Z1, Z2, rtol=1e-15)
 
 
 @array_api_compatible
@@ -1190,23 +1191,23 @@ def test_cut_tree(xp):
     Z = scipy.cluster.hierarchy.ward(X)
     cutree = cut_tree(Z)
 
-    assert_allclose(cutree[:, 0], xp.arange(nobs))
-    assert_allclose(cutree[:, -1], xp.zeros(nobs))
+    assert_allclose(cutree[:, 0], xp.arange(nobs), rtol=1e-15)
+    assert_allclose(cutree[:, -1], xp.zeros(nobs), rtol=1e-15)
     assert_equal(np.asarray(cutree).max(0), np.arange(nobs - 1, -1, -1))
 
-    assert_allclose(cutree[:, [-5]], cut_tree(Z, n_clusters=5))
-    assert_allclose(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]))
-    assert_allclose(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]))
+    assert_allclose(cutree[:, [-5]], cut_tree(Z, n_clusters=5), rtol=1e-15)
+    assert_allclose(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]), rtol=1e-15)
+    assert_allclose(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]), rtol=1e-15)
 
     nodes = _order_cluster_tree(Z)
     heights = xp.asarray([node.dist for node in nodes])
 
     assert_allclose(cutree[:, np.searchsorted(heights, [5])],
-                    cut_tree(Z, height=5))
+                    cut_tree(Z, height=5), rtol=1e-15)
     assert_allclose(cutree[:, np.searchsorted(heights, [5, 10])],
-                    cut_tree(Z, height=[5, 10]))
+                    cut_tree(Z, height=[5, 10]), rtol=1e-15)
     assert_allclose(cutree[:, np.searchsorted(heights, [10, 5])],
-                    cut_tree(Z, height=[10, 5]))
+                    cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
 @array_api_compatible
