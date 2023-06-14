@@ -1794,16 +1794,16 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> ax.set_xlim([0, 0.05])
     >>> ax.set_ylim([-10, 10])
     >>> ax.set(xlabel="Time (in s)", ylabel="Amplitude")
-    >>> ax.legend()
+    >>> ax.legend(loc='upper right')
     >>> plt.show()
 
     >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
-    >>> alphas = np.arange(1, 100)
+    >>> alphas = np.arange(1, 70)
     >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
     >>> for i, alpha in enumerate(alphas):
     >>>     scd[:, i] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha)[1]
 
-    The modulation is expected to occur twice the frequency f_sig, ie 56 Hz.
+    The modulation is expected to occur at frequency f_sig.
 
     >>> foi = (freqs >= 0) & (freqs <= 2000)
     >>> scd, freqs = scd[foi], freqs[foi]
