@@ -264,8 +264,17 @@ class streambuf : public std::basic_streambuf<char>
       }
       farthest_pptr = (std::max)(farthest_pptr, pptr());
       off_type n_written = (off_type)(farthest_pptr - pbase());
-      py::bytes chunk(pbase(), n_written);
-      py_write(chunk);
+
+      // Write all outstanding bytes. Write in chunks to support 32-bit systems.
+      // The py::bytes constructor insists that sizeof(second argument) <= sizeof(ssize_t)
+      // This is an issue on 32-bit systems where off_type may be long long but ssize_t is an int.
+      for (off_type offset = 0; offset < n_written; ) {
+        off_type chunk_len = std::min((n_written - offset), (off_type)(1 << 25));
+        py::bytes chunk(pbase() + offset, (int)chunk_len);
+        py_write(chunk);
+        offset += chunk_len;
+      }
+
       if (!traits_type::eq_int_type(c, traits_type::eof())) {
         char cs = traits_type::to_char_type(c);
         py_write(py::bytes(&cs, 1));
