@@ -44,7 +44,7 @@ _status_messages = {-1: "Iteration in progress.",
                     }
 
 
-def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
+def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
               atol=None, rtol=None, minweight=1e-100):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
@@ -100,8 +100,6 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
         which the function is evaluated; it changes only the *number of times*
         `f` is called. If ``minlevel=k``, then the integrand is evaluated at
         all points from levels ``0`` through ``k`` in the first call.
-        Increasing ``minlevel`` may reduce execution time for efficiently
-        vectorized callables.
     atol, rtol : float, optional
         Absolute termination tolerance (default: 0) and relative termination
         tolerance (default: 1e-12), respectively. The error estimate is as
@@ -128,7 +126,8 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=0,
         integral : float
             An estimate of the integral
         error : float
-            An estimate of the error.
+            An estimate of the error. Only available if level two or higher
+            has been evaluated; otherwise NaN.
         feval : int
             The number of function evaluations, i.e., the number of
             points at which the integrand was evaluated.

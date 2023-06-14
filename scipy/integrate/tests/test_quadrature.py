@@ -653,7 +653,7 @@ class TestTanhSinh:
         f = self.f1
         last_logerr = 0
         for i in range(4):
-            res = _tanhsinh(f, 0, f.b, maxlevel=i)
+            res = _tanhsinh(f, 0, f.b, minlevel=0, maxlevel=i)
             logerr = self.error(res.integral, f.ref, log=True)
             assert (logerr < last_logerr * 2 or logerr < -15.5)
             last_logerr = logerr
@@ -700,7 +700,7 @@ class TestTanhSinh:
         # Test `maxlevel` equal to required number of function evaluations
         # We should get all the same results
         f.feval, f.calls = 0, 0
-        maxlevel = ref.calls - 1
+        maxlevel = ref.calls + 1  # default is first call goes up to level 2
         res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
         assert res == ref
 
@@ -856,7 +856,7 @@ class TestTanhSinh:
             return self.f2(x)
         f.feval, f.calls, f.x = 0, 0, np.array([])
 
-        ref = _tanhsinh(f, 0, self.f2.b, maxlevel=maxlevel)
+        ref = _tanhsinh(f, 0, self.f2.b, minlevel=0, maxlevel=maxlevel)
         ref_x = np.sort(f.x)
 
         for minlevel in range(0, maxlevel + 1):
