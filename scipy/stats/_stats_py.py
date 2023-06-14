@@ -9900,7 +9900,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
 
         k1 = (x <= q).sum()
         k2 = (x < q).sum()
-    
+
     The p-value is given by::
 
         if alternative == 'less':
@@ -9964,23 +9964,104 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     Examples
     --------
 
+    Suppose we wish to test the null hypothesis that the median of a population
+    is equal to 0.5. We choose a confidence level of 95%; that is, we will
+    reject the null hypothesis in favor of the alternative if the p-value is
+    less than 0.05.
+    
+    When testing random variates from the standard uniform distribution, which
+    has a median of 0.5, we expect the data to be consistent with the null
+    hypothesis most of the time.
+    
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng()
+    >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5)
+    QuantileTestResult(statistic1=46, statistic2=46, pvalue=0.18410080866334788)
+    
+    As expected, the p-value of 0.018 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
+    
+    When testing data from the standard *normal* distribution, which has a 
+    median of 0, we would expect the null hypothesis to be rejected.
+    
+    >>> rvs = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5)
+    QuantileTestResult(statistic1=62, statistic2=62, pvalue=0.0060164878626817395)
+    
+    Indeed, the p-value is lower than our threshold of 0.01, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the median
+    of the population is *not* equal to 0.5.
+
+    However, suppose we were to test the null hypothesis against the
+    one-sided alternative that the median of the population is *greater* than
+    0.5. Since the median of the standard normal is less than 0.5, we would not
+    expect the null hypothesis to be rejected.
+    
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5, alternative='greater')
+    QuantileTestResult(statistic1=82, statistic2=82, pvalue=0.9895106321610742)
+    
+    Unsurprisingly, with a p-value greater than our threshold, we would not
+    reject the null hypothesis.
+    
+    The quantile test can be used for any quantile, not only the median. For
+    example, we can test whether the third quartile of uniform distribution is
+    larger than 0.6.
+    
+    >>> rng = np.random.default_rng()
+    >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.6, p=0.75, alternative='greater')
+    QuantileTestResult(statistic1=62, statistic2=62, pvalue=0.0013999563882494282)
+    
+    The p-value is lower than the threshold. We reject the null hypothesis in
+    favor of the alternative: the third quartile of the uniform distribution is
+    larger than 0.6.
+    
+    `quantile_test` can also compute confidence intervals for any quantile.
+    
+    >>> rvs = stats.norm.rvs(size=100, random_state=rng)
+    >>> res = stats.quantile_test(rvs, q=0.6, p=0.75)
+    >>> ci = res.confidence_interval(confidence_level=0.95)
+    >>> ci
+    ConfidenceInterval(low=0.5249276563559903, high=1.0293550203941795)
+    
+    When testing a one-sided alternative, the bounds of the 95% confidence
+    interval are the minimum and maximum values of the parameter `q` for which
+    the p-value of the test would less than 0.05. For example:
+    
+    >>> rvs.sort()
+    >>> res = stats.quantile_test(rvs, q=0.6, p=0.75, alternative='less')
+    >>> ci = res.confidence_interval(confidence_level=0.95)
+    >>> i = np.where(rvs == ci.high)[0][0]
+    >>> stats.quantile_test(rvs, q=rvs[i], p=0.75, alternative='less').pvalue
+    0.037626263701184604
+    >>> stats.quantile_test(rvs, q=rvs[i-1], p=0.75, alternative='less').pvalue
+    0.06301141726259021    
+    
+    Note that when working with a confidence level of 95%, the confidence
+    intervals will contain the true quantile value with a frequency close to the
+    confidence level value.
+    
+    >>> dist = stats.rayleigh() # our "unknown" distribution
+    >>> quantile = 0.2
+    >>> true_stat = dist.ppf(quantile) # the true value of the statistic
+    >>> n_trials = 1000
+    >>> quantile_ci_contains_true_stat = 0
+    >>> rng = np.random.default_rng()
+    >>> for i in range(n_trials):
+    >>>     data = dist.rvs(size=100, random_state=rng)
+    >>>     res = stats.quantile_test(data, 0, quantile)
+    >>>     ci = res.confidence_interval(0.95)
+    >>>     if ci[0] < true_stat < ci[1]:
+    >>>         quantile_ci_contains_true_stat += 1
+    >>> quantile_ci_contains_true_stat
+    966
+    
+    This works with any distribution and any quantile, as long as the samples
+    are i.i.d.
 
     """
-    # TODO: Add examples
-    # TODO: update Notes part of the docstring
-    # TODO: review the whole docstring
-    # X DONE: IV tests
-    # X DONE: Fix existing unit tests
-    # NOPE: Compare the confidence intervals against those generated by scipy.
-    # stats.bootstrap (with coarse tolerances)
-    # HALF-DONE: Compare the p-value to that of binomtest (non-edge cases, of
-    # course)
-    # -> does it mean, for the "lower" alternative only?
-    # DONE: Double check the p-val for the two-sided case
-    # DONE: Test against reference results from the literature (especially
-    # edge cases).
-    # DONE: Test the tests :-)
-    # DONE: PEP8 pass
 
     args = quantile_test_iv(x, q, p, alternative)
     x, q, p, alternative = args
