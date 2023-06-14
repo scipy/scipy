@@ -216,9 +216,19 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
 
-    # accommodate square empty matrix
+    # accommodate square empty matrices
     if a1.size == 0:
-        return (numpy.array([]), a1.copy())
+        w = numpy.empty_like(a1, shape=(0,))
+        w = _make_eigvals(w, None, homogeneous_eigvals)
+        vl = numpy.empty_like(a1, shape=(0, 0))
+        vr = numpy.empty_like(a1, shape=(0, 0))
+        if not (left or right):
+            return w
+        if left:
+            if right:
+                return w, vl, vr
+            return w, vl
+        return w, vr
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
@@ -249,7 +259,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
@@ -470,9 +479,14 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
 
-    # accommodate square empty matrix
+    # accommodate square empty matrices
     if a1.size == 0:
-        return (numpy.array([]), a1.copy())
+        w = numpy.empty_like(a1, shape=(0,))
+        v = numpy.empty_like(a1, shape=(0, 0))
+        if eigvals_only:
+            return w
+        else:
+            return w, v
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     cplx = True if iscomplexobj(a1) else False
@@ -786,8 +800,19 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected a 2-D array')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w = numpy.empty_like(a1, shape=(0,))
+        v = numpy.empty_like(a1, shape=(0, 0))
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
+
     del select_range
     if select == 0:
         if a1.dtype.char in 'GFD':

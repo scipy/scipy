@@ -3,7 +3,6 @@ import platform
 import sys
 
 import numpy as np
-
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_, assert_allclose)
@@ -135,10 +134,12 @@ class TestEigVals:
         assert_array_almost_equal(w, exact_w)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        a_empty = eigvals(a)
-        assert_equal(a_empty, (b,a))
+        a = np.empty((0, 0))
+        w = eigvals(a)
+        assert_allclose(w, np.empty((0,)))
+
+        w = eigvals(a, homogeneous_eigvals=True)
+        assert_allclose(w, np.empty((2, 0)))
 
 
 class TestEig:
@@ -386,10 +387,14 @@ class TestEig:
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        a_empty = eig(a)
-        assert_equal(a_empty, (b,a))
+        a = np.empty((0, 0))
+        w, vr = eig(a)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(vr, np.empty((0, 0)))
+
+        w, vr = eig(a, homogeneous_eigvals=True)
+        assert_allclose(w, np.empty((2, 0)))
+        assert_allclose(vr, np.empty((0, 0)))
 
 
 class TestEigBanded:
@@ -670,6 +675,15 @@ class TestEigBanded:
 
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
+
+    def test_empty(self):
+        a_band = np.empty((0, 0))
+        w, v = eig_banded(a_band)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(v, np.empty((0, 0)))
+
+        w = eig_banded(a_band, eigvals_only=True)
+        assert_allclose(w, np.empty((0,)))
 
 
 class TestEigTridiagonal:
@@ -959,12 +973,12 @@ class TestEigh:
         assert_allclose(v_dep, v)
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        goal = (b,a)
-        a_empty = eigh(a)
-        for i in range(len(a_empty)):
-            assert_allclose(a_empty[i], goal[i])
+        a = np.empty((0, 0))
+        w, v = eigh(a)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(v, np.empty((0, 0)))
+        w = eigh(a, eigvals_only=True)
+        assert_allclose(w, np.empty((0,)))
 
 
 class TestSVD_GESDD:
@@ -1115,14 +1129,50 @@ class TestSVD_GESDD:
         assert_allclose(s[0], 1.0)
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
-    def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        b = np.array([])
-        goal = (a,b,a)
-        a_empty = svd(a)
-        for i in range(len(a_empty)):
-            assert_allclose(a_empty[i], goal[i])
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, dtype):
+        a = np.zeros((m, n), dtype=dtype)
+        k = min(m, n)
+        dchar = a.dtype.char
+        real_dchar = dchar.lower() if dchar in 'FD' else dchar
 
+        u, s, v = svd(a)
+        assert_equal(u.shape, (m, m))
+        assert_equal(u.dtype, dtype)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+        assert_equal(v.shape, (n, n))
+        assert_equal(v.dtype, dtype)
+
+        u, s, v = svd(a, full_matrices=False)
+        assert_equal(u.shape, (m, k))
+        assert_equal(u.dtype, dtype)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+        assert_equal(v.shape, (k, n))
+        assert_equal(v.dtype, dtype)
+
+        s = svd(a, compute_uv=False)
+        assert_equal(s.shape, (k,))
+        assert_equal(s.dtype, np.dtype(real_dchar))
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        a = np.empty((m, n))
+        u, s, v = svd(a)
+        assert_allclose(u, np.identity(m))
+        assert_allclose(s, np.empty((0,)))
+        assert_allclose(v, np.identity(n))
+
+        u, s, v = svd(a, full_matrices=False)
+        assert_allclose(u, np.empty((m, 0)))
+        assert_allclose(s, np.empty((0,)))
+        assert_allclose(v, np.empty((0, n)))
+
+        s = svd(a, compute_uv=False)
+        assert_allclose(s, np.empty((0,)))
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
@@ -1746,10 +1796,99 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
-    def test_empty_matrix(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = qr(a)
-        assert_allclose(a_empty, (a,a))
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize("pivoting", [False, True])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, pivoting, dtype):
+        k = min(m, n)
+
+        a = np.zeros((m, n), dtype=dtype)
+        q, r, *other = qr(a, pivoting=pivoting)
+        assert_equal(q.shape, (m, m))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        r, *other = qr(a, mode='r', pivoting=pivoting)
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        q, r, *other = qr(a, mode='economic', pivoting=pivoting)
+        assert_equal(q.shape, (m, k))
+        assert_equal(q.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+        (raw, tau), r, *other = qr(a, mode='raw', pivoting=pivoting)
+        assert_equal(raw.shape, (m, n))
+        assert_equal(raw.dtype, dtype)
+        assert_equal(tau.shape, (k,))
+        assert_equal(tau.dtype, dtype)
+        assert_equal(r.shape, (k, n))
+        assert_equal(r.dtype, dtype)
+        assert len(other) == (1 if pivoting else 0)
+        if pivoting:
+            p, = other
+            assert_equal(p.shape, (n,))
+            assert_equal(p.dtype, np.int32)
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        k = min(m, n)
+
+        a = np.empty((m, n))
+        q, r = qr(a)
+        assert_allclose(q, np.identity(m))
+        assert_allclose(r, np.empty((m, n)))
+
+        q, r, p = qr(a, pivoting=True)
+        assert_allclose(q, np.identity(m))
+        assert_allclose(r, np.empty((m, n)))
+        assert_allclose(p, np.arange(n))
+
+        r, = qr(a, mode='r')
+        assert_allclose(r, np.empty((m, n)))
+
+        q, r = qr(a, mode='economic')
+        assert_allclose(q, np.empty((m, k)))
+        assert_allclose(r, np.empty((k, n)))
+
+        (raw, tau), r = qr(a, mode='raw')
+        assert_allclose(raw, np.empty((m, n)))
+        assert_allclose(tau, np.empty((k,)))
+        assert_allclose(r, np.empty((k, n)))
+
+    def test_multiply_empty(self):
+        a = np.empty((0, 0))
+        c = np.empty((0, 0))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((0, 0)))
+
+        a = np.empty((0, 2))
+        c = np.empty((2, 0))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((2, 0)))
+
+        a = np.empty((2, 0))
+        c = np.empty((0, 2))
+        cq, r = qr_multiply(a, c)
+        assert_allclose(cq, np.empty((0, 2)))
 
 
 class TestRQ:
@@ -1857,6 +1996,45 @@ class TestRQ:
         assert_array_almost_equal(q @ q.T, eye(3))
         assert_array_almost_equal(r @ q, a)
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n, dtype):
+        k = min(m, n)
+
+        a = np.zeros((m, n), dtype=dtype)
+        r, q = rq(a)
+        assert_equal(q.shape, (n, n))
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+        assert_equal(q.dtype, dtype)
+
+        r = rq(a, mode='r')
+        assert_equal(r.shape, (m, n))
+        assert_equal(r.dtype, dtype)
+
+        r, q = rq(a, mode='economic')
+        assert_equal(r.shape, (m, k))
+        assert_equal(r.dtype, dtype)
+        assert_equal(q.shape, (k, n))
+        assert_equal(q.dtype, dtype)
+
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        k = min(m, n)
+
+        a = np.empty((m, n))
+        r, q = rq(a)
+        assert_allclose(r, np.empty((m, n)))
+        assert_allclose(q, np.identity(n))
+
+        r = rq(a, mode='r')
+        assert_allclose(r, np.empty((m, n)))
+
+        r, q = rq(a, mode='economic')
+        assert_allclose(r, np.empty((m, k)))
+        assert_allclose(q, np.empty((k, n)))
+
 
 class TestSchur:
 
@@ -1911,6 +2089,17 @@ class TestSchur:
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
         t, z = schur(a, check_finite=False)
         assert_array_almost_equal(z @ t @ z.conj().T, a)
+
+    def test_empty(self):
+        a = np.empty((0, 0))
+        t, z = schur(a)
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+
+        t, z, sdim = schur(a, sort='lhp')
+        assert_allclose(t, np.empty((0, 0)))
+        assert_allclose(z, np.empty((0, 0)))
+        assert_equal(sdim, 0)
 
 
 class TestHessenberg:
@@ -2734,6 +2923,17 @@ def test_subspace_angles():
     b = [[1 - 1j, 0], [0, 1]]
     assert_allclose(subspace_angles(a, b), 0., atol=1e-14)
     assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
+
+    # Empty
+    a = np.empty((0, 0))
+    b = np.empty((0, 0))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    a = np.empty((2, 0))
+    b = np.empty((2, 0))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
+    a = np.empty((0, 2))
+    b = np.empty((0, 3))
+    assert_allclose(subspace_angles(a, b), np.empty((0,)))
 
 
 class TestCDF2RDF:

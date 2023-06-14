@@ -163,7 +163,7 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     # accommodate empty arrays
     if b1.size == 0:
-        return np.asfortranarray(b1.copy())
+        return np.empty_like(b1)
 
     # regularize 1-D b arrays to 2D
     if b1.ndim == 1:
@@ -332,10 +332,17 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
+
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
     if a1.shape[0] != b1.shape[0]:
         raise ValueError(f'shapes of a {a1.shape} and b {b1.shape} are incompatible')
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
+
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
@@ -429,14 +436,20 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+
     (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper "
                          "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
                          "(%d)" % (nlower + nupper + 1, ab.shape[0]))
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
@@ -570,9 +583,14 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
     a1 = _asarray_validated(ab, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
+
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     overwrite_ab = overwrite_ab or _datacopied(a1, ab)
@@ -673,6 +691,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         c_or_cr, b, check_finite, keep_b_shape=True)
+
+    # accommodate empty arrays
+    if b.size == 0:
+        return np.empty_like(b)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
@@ -855,6 +877,10 @@ def solve_circulant(c, b, singular='raise', tol=None,
     if nc != nb:
         raise ValueError(f'Shapes of c {c.shape} and b {b.shape} are incompatible')
 
+    # accommodate empty arrays
+    if b.size == 0:
+        return np.empty_like(b)
+
     fc = np.fft.fft(np.moveaxis(c, caxis, -1), axis=-1)
     abs_fc = np.abs(fc)
     if tol is None:
@@ -940,6 +966,11 @@ def inv(a, overwrite_a=False, check_finite=True):
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accommodate empty square matrices
+    if a1.size == 0:
+        return np.empty_like(a1)
+
     overwrite_a = overwrite_a or _datacopied(a1, a)
     getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
                                                   'getri_lwork'),
@@ -1422,7 +1453,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     a = _asarray_validated(a, check_finite=check_finite)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()
-    maxS = np.max(s)
+    maxS = np.max(s, initial=0.)
 
     if rcond is not _NoValue or cond is not _NoValue:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
@@ -1525,7 +1556,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     a = _asarray_validated(a, check_finite=check_finite)
     s, u = _decomp.eigh(a, lower=lower, check_finite=False)
     t = u.dtype.char.lower()
-    maxS = np.max(np.abs(s))
+    maxS = np.max(np.abs(s), initial=0.)
 
     atol = 0. if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
@@ -1651,6 +1682,15 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
 
+    # accommodate empty arrays
+    if A.size == 0:
+        B = np.empty_like(A)
+        if separate:
+            scaling = np.ones_like(A, shape=len(A))
+            perm = np.arange(len(A))
+            return B, (scaling, perm)
+        return B, np.empty_like(A)
+
     gebal = get_lapack_funcs(('gebal'), (A,))
     B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute,
                                 overwrite_a=overwrite_a)
@@ -1760,7 +1800,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
-        b = b.reshape(b.shape[0], -1)
+        b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
     return r, c, b, dtype, b_shape
 
@@ -1898,6 +1938,11 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     T_nrows = len(c)
     T_ncols = len(r)
     p = T_nrows + T_ncols - 1  # equivalent to len(embedded_col)
+    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
+
+    # accommodate empty arrays
+    if x.size == 0:
+        return np.empty_like(x, shape=return_shape)
 
     embedded_col = np.concatenate((c, r[-1:0:-1]))
 
@@ -1915,5 +1960,4 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
         mat_times_x = irfft(fft_mat*fft_x, axis=0,
                             workers=workers, n=p)[:T_nrows, :]
 
-    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
     return mat_times_x.reshape(*return_shape)

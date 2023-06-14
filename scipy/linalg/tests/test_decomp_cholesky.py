@@ -1,17 +1,13 @@
-<<<<<<< HEAD
 import pytest
-from numpy.testing import assert_array_almost_equal, assert_array_equal
-=======
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
->>>>>>> ENH: linalg: empty array support in many linalg functions
 from pytest import raises as assert_raises
 
 import numpy as np
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
-from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
-     cho_factor, cho_solve
+from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
+     cho_factor, cho_solve)
 
 from scipy.linalg._testutils import assert_no_overwrite
 
@@ -88,9 +84,26 @@ class TestCholesky:
        cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
 
     def test_empty(self):
-        a = np.array([]).reshape((0,0))
-        a_empty = cholesky(a)
-        assert_allclose(a_empty, a)
+        a = empty((0, 0))
+
+        c = cholesky(a)
+        assert_array_equal(c, empty((0, 0)))
+
+        c_and_lower = (c, True)
+        b = []
+        x = cho_solve(c_and_lower, b)
+        assert_allclose(x, [])
+
+        b = empty((0, 0))
+        x = cho_solve(c_and_lower, b)
+        assert_allclose(x, empty((0, 0)))
+
+        a1 = array([])
+        a2 = array([[]])
+        a3 = []
+        a4 = [[]]
+        for x in ([a1, a2, a3, a4]):
+            assert_raises(ValueError, cholesky, x)
 
 
 class TestCholeskyBanded:
@@ -191,6 +204,21 @@ class TestCholeskyBanded:
         x = cho_solve_banded((c, True), b)
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
 
+    def test_empty(self):
+        ab = empty((0, 0))
+
+        cb = cholesky_banded(ab)
+        assert_array_equal(cb, empty((0, 0)))
+
+        cb_and_lower = (cb, True)
+        b = []
+        x = cho_solve_banded(cb_and_lower, b)
+        assert_allclose(x, [])
+
+        b = empty((0, 0))
+        x = cho_solve_banded(cb_and_lower, b)
+        assert_allclose(x, empty((0, 0)))
+
 
 class TestOverwrite:
     def test_cholesky(self):
@@ -212,18 +240,3 @@ class TestOverwrite:
         xcho = cholesky_banded(x)
         assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
                             [(3,)])
-
-
-class TestEmptyArray:
-    def test_cho_factor_empty_square(self):
-        a = empty((0, 0))
-        b = array([])
-        c = array([[]])
-        d = []
-        e = [[]]
-
-        x, _ = cho_factor(a)
-        assert_array_equal(x, a)
-
-        for x in ([b, c, d, e]):
-            assert_raises(ValueError, cho_factor, x)
