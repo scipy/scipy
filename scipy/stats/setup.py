@@ -27,6 +27,10 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_mvn',
                          sources=['mvn.pyf', 'mvndst.f'])
 
+    # add ansari-bradley and shapiro-wilk module _AB_SW.pyx
+    config.add_extension('_AB_SW',
+                         sources=['_AB_SW.c'])
+
     # add _sobol module
     config.add_extension('_sobol',
                          sources=['_sobol.c'])

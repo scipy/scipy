@@ -6,7 +6,6 @@
 # cython: cdivision=True
 # cython: cpow=True
 
-import cython
 from libc.math cimport exp, sqrt, abs, log, asin
 import numpy as np
 cimport numpy as cnp
@@ -37,7 +36,6 @@ def gscale(int test, int other):
 
     cdef bint symm = True if (m+n) % 2 == 0 else False
     cdef bint odd = n % 2
-    cdef float two = 2
 
     if m < 0:
         return 0, np.array([], dtype=np.float32), 2
@@ -362,8 +360,8 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
 
 
 cdef double _alnorm(double x, bint upper) nogil noexcept:
-    cdef double A0, A1, A2, A3, A4, A5, A6
-    cdef double B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11
+    cdef double A1, A2, A3, A4, A5, A6, A7
+    cdef double B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12
     cdef double ltone = 7., utzero = 38., con = 1.28
     cdef double y, z, temp
     A1 = 0.398942280444
@@ -408,7 +406,7 @@ cdef double _ppnd(double p) noexcept:
     """
     cdef double A0, A1, A2, A3, B1, B2, B3, B4, C0, C1, C2, C3, D1, D2
     cdef double q, r, split = 0.42, temp
-    cdef int ifault = 0
+    # cdef int ifault = 0
     A0 = 2.50662823884
     A1 = -18.61500062529
     A2 = 41.39119773534

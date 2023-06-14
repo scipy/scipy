@@ -215,7 +215,6 @@ py3.install_sources([
     'mvn.py',
     'qmc.py',
     'sampling.py',
-    'statlib.py',
     'stats.py'
   ],
   subdir: 'scipy/stats'
