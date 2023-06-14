@@ -626,7 +626,7 @@ from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
 )
 
 

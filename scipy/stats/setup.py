@@ -19,16 +19,6 @@ def configuration(parent_package='', top_path=None):
 
     config.add_data_dir('tests')
 
-    statlib_src = [join('statlib', '*.f')]
-    config.add_library('statlib', sources=statlib_src)
-
-    # add _statlib module
-    config.add_extension('_statlib',
-                         sources=['statlib.pyf'],
-                         f2py_options=['--no-wrap-functions'],
-                         libraries=['statlib'],
-                         depends=statlib_src)
-
     # add _stats module
     config.add_extension('_stats',
                          sources=['_stats.c'])

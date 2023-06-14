@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
-from . import _statlib
+from ._AB_SW import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
@@ -1861,7 +1861,7 @@ def shapiro(x):
       and false negatives (failure to reject a false null hypothesis).
 
     """
-    x = np.ravel(x)
+    x = np.ravel(x).astype(np.float64)
 
     N = len(x)
     if N < 3:
@@ -1869,11 +1869,11 @@ def shapiro(x):
 
     x = x - np.median(x)
 
-    a = zeros(N, 'f')
+    a = zeros(N//2, dtype=np.float64)
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
+    w, pw, ifault = swilk(y, a, init)
     if ifault not in [0, 2]:
         warnings.warn("Input data for shapiro has range zero. The results "
                       "may not be accurate.")
@@ -2469,7 +2469,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = _statlib.gscale(n, m)
+            astart, a1, _ = gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
