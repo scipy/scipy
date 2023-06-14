@@ -23,7 +23,7 @@ concurrency:
 jobs:
   pytorch_cpu:
     name: Linux PyTorch CPU
-    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -54,7 +54,7 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
         # Packages for Array API testing
         python -m pip install array-api-compat
-        python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+        python -m pip install torch<2.1 --index-url https://download.pytorch.org/whl/cpu
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -82,6 +82,6 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        # remove -s cluster for the real PR probably
+        # expand as new modules are added
         python dev.py --no-build test --array-api-backend pytorch --array-api-backend numpy -s cluster -- --durations 10 --timeout=60
         python dev.py --no-build test --array-api-backend all --tests scipy/_lib/tests/test_array_api.py
