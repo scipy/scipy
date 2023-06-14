@@ -26,11 +26,12 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- Several `scipy.sparse` array API improvements, including a new public base
-  class distinct from the older matrix class, proper 64-bit index support,
-  and numerous deprecations paving the way to a modern sparse array experience.
-- Added three new statistical distributions, and wide-ranging performance and
-  precision improvements to several other statistical distributions.
+- Several `scipy.sparse` array API improvements, including `sparse.sparray`, a new
+  public base class distinct from the older `sparse.spmatrix` class,
+  proper 64-bit index support, and numerous deprecations paving the way to a
+  modern sparse array experience.
+- `scipy.stats` added tools for survival analysis, multiple hypothesis testing,
+  sensitivity analysis, and working with censored data.
 - A new function was added for quasi-Monte Carlo integration, and linear
   algebra functions ``det`` and ``lu`` now accept nD-arrays.
 - An ``axes`` argument was added broadly to ``ndimage`` functions, facilitating
@@ -106,23 +107,20 @@ New features
 
 `scipy.sparse` improvements
 ===========================
-- `scipy.sparse` array (not matrix) classes now return a sparse array instead
-  of a dense array when divided by a dense array.
-- A new public base class `scipy.sparse.sparray` was introduced, allowing
+- A new public base class `scipy.sparse.sparray` was introduced, allowing further
+  extension of the sparse array API (such as the support for 1-dimensional
+  sparse arrays) without breaking backwards compatibility.
   `isinstance(x, scipy.sparse.sparray)` to select the new sparse array classes,
   while `isinstance(x, scipy.sparse.spmatrix)` selects only the old sparse
-  matrix types.
-- The behavior of `scipy.sparse.isspmatrix()` was updated to return True for
-  only the sparse matrix types. If you want to check for either sparse arrays
-  or sparse matrices, use `scipy.sparse.issparse()` instead. (Previously,
-  these had identical behavior.)
-- Sparse arrays constructed with 64-bit indices will no longer automatically
-  downcast to 32-bit.
-- A new `scipy.sparse.diags_array` function was added, which behaves like the
-  existing `scipy.sparse.diags` function except that it returns a sparse
-  array instead of a sparse matrix.
-- ``argmin`` and ``argmax`` methods now return the correct result when no
-  implicit zeros are present.
+  matrix classes.
+- Division of sparse arrays by a dense array now returns sparse arrays.
+- `scipy.sparse.isspmatrix` now only returns `True` for the sparse matrices instances.
+  `scipy.sparse.issparse` now has to be used instead to check for instances of sparse
+  arrays or instances of sparse matrices.
+- Sparse arrays constructed with int64 indices will no longer automatically
+  downcast to int32.
+- The ``argmin`` and ``argmax`` methods now return the correct result when explicit
+  zeros are present.
 
 `scipy.sparse.linalg` improvements
 ==================================
@@ -159,7 +157,7 @@ New Features
   experimental groups against the mean of a control group.
 - `scipy.stats.ecdf` for computing the empirical CDF and complementary
   CDF (survival function / SF) from uncensored or right-censored data. This
-  function is also useful for survival analysis / Kaplain-Meier estimation.
+  function is also useful for survival analysis / Kaplan-Meier estimation.
 - `scipy.stats.logrank` to compare survival functions underlying samples.
 - `scipy.stats.false_discovery_control` for adjusting p-values to control the
   false discovery rate of multiple hypothesis tests using the
@@ -170,7 +168,7 @@ New Features
 - Filliben's goodness of fit test as ``method='Filliben'`` of
   `scipy.stats.goodness_of_fit`.
 - `scipy.stats.ttest_ind` has a new method, ``confidence_interval`` for
-  computing confidence intervals.
+  computing a confidence interval of the difference between means.
 - `scipy.stats.MonteCarloMethod`, `scipy.stats.PermutationMethod`, and
   `scipy.stats.BootstrapMethod` are new classes to configure resampling and/or
   Monte Carlo versions of hypothesis tests. They can currently be used with
@@ -366,17 +364,17 @@ Authors
 * Stefano Frazzetto (1) +
 * Neil Girdhar (1)
 * Caden Gobat (1) +
-* Ralf Gommers (149)
+* Ralf Gommers (152)
 * GonVas (1) +
 * Marco Gorelli (1)
 * Brett Graham (2) +
-* Matt Haberland (388)
+* Matt Haberland (390)
 * harshvardhan2707 (1) +
 * Alex Herbert (1) +
 * Guillaume Horel (1)
 * Geert-Jan Huizing (1) +
 * Jakob Jakobson (2)
-* Julien Jerphanion (10)
+* Julien Jerphanion (14)
 * jyuv (2)
 * Rajarshi Karmakar (1) +
 * Ganesh Kathiresan (3) +
@@ -396,7 +394,7 @@ Authors
 * Adam Lugowski (1) +
 * Charlie Marsh (2) +
 * Boris Martin (1) +
-* Nicholas McKibben (10)
+* Nicholas McKibben (11)
 * Melissa Weber Mendonça (58)
 * Michał Górny (1) +
 * Jarrod Millman (5)
@@ -418,7 +416,7 @@ Authors
 * Ilhan Polat (32)
 * Quentin Barthélemy (1)
 * Matteo Raso (12) +
-* Tyler Reddy (115)
+* Tyler Reddy (128)
 * Lucas Roberts (1)
 * Pamphile Roy (225)
 * Jordan Rupprecht (1) +
@@ -654,10 +652,13 @@ Issues closed for 1.11.0
 * `#18525 <https://github.com/scipy/scipy/issues/18525>`__: DOC: sparse doc build warning causing failure (including in CI)
 * `#18535 <https://github.com/scipy/scipy/issues/18535>`__: DOC: Dev branch docs render Dev TOC while viewing API Reference
 * `#18547 <https://github.com/scipy/scipy/issues/18547>`__: CI: occasionally failing test \`test_minimize_callback_copies_array[fmin]\`
+* `#18595 <https://github.com/scipy/scipy/issues/18595>`__: BUG: dev.py notes needs a small shim
 * `#18597 <https://github.com/scipy/scipy/issues/18597>`__: CI, BUG: Cirrus wheel upload fails on maintenance branch
+* `#18600 <https://github.com/scipy/scipy/issues/18600>`__: BUG: SciPy 1.11.0rc1 not buildable on PPC due to boost submodule
 * `#18632 <https://github.com/scipy/scipy/issues/18632>`__: 1.11.0rc1: remaining test failures in conda-forge
 * `#18634 <https://github.com/scipy/scipy/issues/18634>`__: BUG: stats.truncnorm.moments yields error for moment order greater...
 * `#18654 <https://github.com/scipy/scipy/issues/18654>`__: BUG: ci/circleci: build_scipy broken
+* `#18675 <https://github.com/scipy/scipy/issues/18675>`__: BUG: \`signal.detrend\` on main no longer accepts a sequence...
 
 ************************
 Pull requests for 1.11.0
@@ -1164,7 +1165,10 @@ Pull requests for 1.11.0
 * `#18599 <https://github.com/scipy/scipy/pull/18599>`__: Revert "ENH: sparse: Add _array version of \`diags\` creation...
 * `#18608 <https://github.com/scipy/scipy/pull/18608>`__: Fix typo of module name in deprecation warning
 * `#18629 <https://github.com/scipy/scipy/pull/18629>`__: Mark \`void\` functions as \`noexcept\` in _rotation.pyx
+* `#18630 <https://github.com/scipy/scipy/pull/18630>`__: MAINT: stats: remove long double support for all boost ufuncs
 * `#18636 <https://github.com/scipy/scipy/pull/18636>`__: MAINT: stats.truncnorm/stats.betaprime: fix _munp for higher...
 * `#18657 <https://github.com/scipy/scipy/pull/18657>`__: MAINT: fix 'no such option' error in build_scipy CI
 * `#18658 <https://github.com/scipy/scipy/pull/18658>`__: TST: fix two test failures that showed up on conda-forge
 * `#18659 <https://github.com/scipy/scipy/pull/18659>`__: DOC: \`scipy._sensitivity_analysis\`: correct statement about...
+* `#18672 <https://github.com/scipy/scipy/pull/18672>`__: BUG: small shim for release process
+* `#18676 <https://github.com/scipy/scipy/pull/18676>`__: BUG: signal: fix detrend with array-like bp
