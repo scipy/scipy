@@ -940,8 +940,8 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     def __init__(self, points, values, fill_value=np.nan,
                  tol=1e-6, maxiter=400, rescale=False):
-        self.tol = tol
-        self.maxiter = maxiter
+        self._tol = tol
+        self._maxiter = maxiter
         NDInterpolatorBase.__init__(self, points, values, ndim=2,
                                     fill_value=fill_value, rescale=rescale,
                                     need_values=False)
@@ -958,7 +958,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         NDInterpolatorBase._set_values(self, values, fill_value=fill_value, need_contiguous=need_contiguous, ndim=ndim)
         if self.values is not None:
             self.grad = estimate_gradients_2d_global(self.tri, self.values,
-                                                    tol=self.tol, maxiter=self.maxiter)
+                                                    tol=self._tol, maxiter=self._maxiter)
     
     def _calculate_triangulation(self, points):
         self.tri = qhull.Delaunay(points)
