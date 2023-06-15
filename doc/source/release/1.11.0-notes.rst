@@ -341,7 +341,7 @@ Authors
 * Larry Bradley (1) +
 * Sienna Brent (1) +
 * Matthew Brett (1)
-* Evgeni Burovski (38)
+* Evgeni Burovski (39)
 * Matthias Bussonnier (2)
 * Maria Cann (1) +
 * Alfredo Carella (1) +
@@ -416,7 +416,7 @@ Authors
 * Ilhan Polat (32)
 * Quentin Barthélemy (1)
 * Matteo Raso (12) +
-* Tyler Reddy (128)
+* Tyler Reddy (131)
 * Lucas Roberts (1)
 * Pamphile Roy (225)
 * Jordan Rupprecht (1) +
