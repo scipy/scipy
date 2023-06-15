@@ -2990,13 +2990,15 @@ def stirling2(N, K, exact=True):
         - If N < 0, or K < 0, then 0 is returned.
         - If K > N, then 0 is returned.
         The output type of the ndarray is always `object`.
+        The input type of the ndarrays must both be integer otherwise a
+        TypeError is raised.
 
         Examples
         --------
         >>> import numpy as np
         >>> from scipy.special import stirling2
-        >>> k = np.array([3, -1, 3.3])
-        >>> n = np.array([10, 10, 9.7])
+        >>> k = np.array([3, -1, 3])
+        >>> n = np.array([10, 10, 9])
         >>> stirling2(n, k)
         array([9330, 0, 3025], dtype=object)
 
@@ -3005,10 +3007,11 @@ def stirling2(N, K, exact=True):
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
         if N.dtype.kind not in np.typecodes['AllInteger']:
-            raise TypeError(f"Argument `N` contains non-integer types")
+            raise TypeError("Argument `N` contains non-integer type(s)")
         if K.dtype.kind not in np.typecodes['AllInteger']:
-            raise TypeError(f"Argument `K` contains non-integer types")
-        nk_pairs = list(set([(n, k) for n, k in np.nditer([N, K])]))
+            raise TypeError("Argument `K` contains non-integer type(s)")
+        nk_pairs = list(set([(n.take(0), k.take(0))
+                             for n, k in np.nditer([N, K])]))
         heapify(nk_pairs)
         # base mapping for small values
         snsk_vals = defaultdict(int)

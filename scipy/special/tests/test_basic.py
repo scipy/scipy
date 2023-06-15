@@ -3739,4 +3739,4 @@ class TestStirling2:
         # object, float, string, complex are not supported and raise TypeError
         # when exact=True
         with pytest.raises(TypeError):
-            result = special.stirling2(N, K, exact=True)
+            special.stirling2(N, K, exact=True)
