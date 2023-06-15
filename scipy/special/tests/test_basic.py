@@ -3690,6 +3690,7 @@ class TestStirling2:
         assert array_equal(stirling2([5], [3]), [25])
 
     def test_negative_integer(self):
+        # negative integers for n or k arguments return 0
         assert_equal(stirling2(-1, -1), 0)
         assert_equal(stirling2(-1, 2), 0)
         assert_equal(stirling2(2, -1), 0)
@@ -3704,8 +3705,8 @@ class TestStirling2:
         # negative values-of either n or k-should return 0 for the entry
         # if there are float inputs these are *truncated*
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
-        n = [-1, 0, 3, 5, 8, 10.7, 10]
-        k = [-2, 0, 2, 3, 5, 7, 3.3]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
         assert array_equal(stirling2(n, k), ans)
 
     def test_correct_parity(self):
@@ -3731,3 +3732,11 @@ class TestStirling2:
         n = [42, 43]
         k = [17, 23]
         assert array_equal(stirling2(n, k), ans)
+
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
+    def test_unsupported_input_types(self, N, K):
+        # object, float, string, complex are not supported and raise TypeError
+        # when exact=True
+        with pytest.raises(TypeError):
+            result = special.stirling2(N, K, exact=True)
