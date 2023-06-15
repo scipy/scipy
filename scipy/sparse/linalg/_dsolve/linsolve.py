@@ -404,6 +404,12 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
+    # check for safe downcasting
+    ii = np.iinfo(np.int32)
+    # check indices because they should be larger than indptr
+    if np.any(A.indices > ii.max || A.indices < ii.min):
+        raise ValueError("index values too large for SuperLU")
+
     indices = A.indices.astype(np.intc, copy=False)
     indptr = A.indptr.astype(np.intc, copy=False)
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
@@ -498,6 +504,12 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     M, N = A.shape
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
+
+    # check for safe downcasting
+    ii = np.iinfo(np.int32)
+    # check indices because they should be larger than indptr
+    if np.any(A.indices > ii.max || A.indices < ii.min):
+        raise ValueError("index values too large for SuperLU")
 
     indices = A.indices.astype(np.intc, copy=False)
     indptr = A.indptr.astype(np.intc, copy=False)
