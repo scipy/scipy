@@ -57,7 +57,7 @@ namespace fast_matrix_market {
      * @deprecated as this adaptation is now done in the inner loops, negating the need for this.
      */
     template<typename COMPLEX_HANDLER>
-    class [[deprecated]] [[maybe_unused]] complex_parse_adapter {
+    class [[maybe_unused]] complex_parse_adapter {
     public:
         using coordinate_type = typename COMPLEX_HANDLER::coordinate_type;
         using complex_type = typename COMPLEX_HANDLER::value_type;
