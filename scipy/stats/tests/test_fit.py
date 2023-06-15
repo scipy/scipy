@@ -269,7 +269,7 @@ def cases_test_fit_mse():
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
-                      'argus', 'tukeylambda',  # close, but doesn't meet tolerance
+                      'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises'}  # can have negative CDF; doesn't play nice
 
     # Please keep this list in alphabetical order...
