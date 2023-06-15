@@ -853,6 +853,19 @@ class TestCurveFit:
                 assert_allclose(popt1, popt2, rtol=1.2e-7, atol=1e-14)
                 assert_allclose(pcov1, pcov2, rtol=1.2e-7, atol=1e-14)
 
+    def test_curvefit_scalar_sigma(self):
+        def func(x, a, b):
+            return a * x + b
+
+        x, y = self.x, self.y
+        for absolute_sigma in [False, True]:
+            _, pcov1 = curve_fit(func, x, y, sigma=2, absolute_sigma=absolute_sigma)
+            # Explicitly building the sigma 1D array
+            _, pcov2 = curve_fit(
+                func, x, y, sigma=np.full_like(y, 2), absolute_sigma=absolute_sigma
+            )
+            assert np.all(pcov1 == pcov2)
+
     def test_dtypes(self):
         # regression test for gh-9581: curve_fit fails if x and y dtypes differ
         x = np.arange(-3, 5)
