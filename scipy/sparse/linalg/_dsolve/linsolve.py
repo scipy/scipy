@@ -269,8 +269,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             else:
                 flag = 0  # CSR format
 
-            indices = A.indices.astype(np.intc, casting='safe', copy=False)
-            indptr = A.indptr.astype(np.intc, casting='safe', copy=False)
+            indices = A.indices.astype(np.intc, copy=False)
+            indptr = A.indptr.astype(np.intc, copy=False)
             options = dict(ColPerm=permc_spec)
             x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
@@ -404,8 +404,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices = A.indices.astype(np.intc, casting='safe', copy=False)
-    indptr = A.indptr.astype(np.intc, casting='safe', copy=False)
+    indices = A.indices.astype(np.intc, copy=False)
+    indptr = A.indptr.astype(np.intc, copy=False)
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
@@ -499,8 +499,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    indices = A.indices.astype(np.intc, casting='safe', copy=False)
-    indptr = A.indptr.astype(np.intc, casting='safe', copy=False)
+    indices = A.indices.astype(np.intc, copy=False)
+    indptr = A.indptr.astype(np.intc, copy=False)
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
                     DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
