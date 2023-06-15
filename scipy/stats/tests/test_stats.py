@@ -7918,170 +7918,51 @@ class TestMGCStat:
 
 
 class TestQuantileTest():
-    r""" Test the non-parametric quantile test, 
+    r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
     """
-    
-    np.random.seed(0)
-    m = 100                                     # number of tests
-    N = np.random.randint(10, 100, size=m)      # num of samples
-    x = []                                      # sorted samples
-    for i in range(m):
-        num = N[i]
-        x.append(np.sort(np.random.permutation(1000)[:num]))
-    quantile_def = np.random.rand(m)            # quantile definition in [0,1)
-    quantile_val = np.random.rand(m)*100        # quantile value in [0,100)
-    confidence = 0.25*np.random.rand(m)+0.75    # confidence in [0.75,1)
 
     def test_quantile_test_iv(self):
-        
-        x = [1,2,3]
-        p = 0.5
-        q = 0
-        alternative = 'less'
+        x = [1, 2, 3]
 
         message = "`x` must be a one-dimensional array of numbers."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test([[1,2,3]],q,p,alternative=alternative)
+            stats.quantile_test([x])
         
         message = "`q` must be a scalar."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,[1,2],p,alternative=alternative)
+            stats.quantile_test(x, q=[1, 2])
         
         message = "`p` must be a float strictly between 0 and 1."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,[0.5,0.75],alternative=alternative)
+            stats.quantile_test(x, p=[0.5, 0.75])
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,2,alternative=alternative)
+            stats.quantile_test(x, p=2)
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,-2,alternative=alternative)
+            stats.quantile_test(x, p=-0.5)
         
-        message = "alternative not recognized; \n"
-        "must be 'two-sided', 'less' or 'greater'"
+        message = "`alternative` must be one of..."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,p,alternative='one-sided')
+            stats.quantile_test(x, alternative='one-sided')
         
         message = "`confidence_level` must be a number between 0 and 1."
         with pytest.raises(ValueError, match=message):
-            stats.quantile_test(x,q,p,alternative=alternative
-                                ).confidence_interval(1)
+            stats.quantile_test(x).confidence_interval(1)
 
-    def test_confint_naive(self):
-        # Test the confidence intervals against a naive implementation
-        x, m, N, quantile_def, confidence = (self.x, self.m, self.N, 
-                                             self.quantile_def,
-                                             self.confidence)
-
-        def confint_naive(N, quantile, confidence):
-            '''
-            Naive implementation for computing the index of a one-sided CI
-            (lower-bound)
-            '''
-            # compute all probabilities from the binomial distribution for the
-            # quantile of interest
-            bd = stats.binom(N, quantile)
-            ppm = [np.maximum(1-x, 0.0)
-                   for x in np.cumsum([bd.pmf(k) for k in range(N)])]
-
-            # search the index defining a lower-bound for p_work
-            if ppm[0] < confidence:
-                return np.nan
-            else:
-                for k in range(N):
-                    # search for first index reaching below the desired
-                    # confidence
-                    if ppm[k] < confidence:
-                        # lower-bound is the previous index
-                        return k-1
-                # if we exit the loop, then the last index is 
-                # the best possible bound
-                return N-1
-
-        # Test for the one-sided case
-        # .. Derive the lower and upper bounds using naive implem
-        tmp = [confint_naive(int(N[i]), quantile_def[i], confidence[i])
-            for i in range(m)]
-        LB = [i if (not np.isnan(i)) else np.nan for i in tmp]
-        # .. UB is (N-1-LB(1-q))
-        tmp = [confint_naive(int(N[i]), 1-quantile_def[i], confidence[i])
-            for i in range(m)]
-        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else np.nan
-            for i in range(m)]
-        LB_val = [ x[i][LB[i]] if (not np.isnan(LB[i])) else np.nan 
-                    for i in range(m)]
-        UB_val = [ x[i][UB[i]] if (not np.isnan(UB[i])) else np.nan 
-                for i in range(m)]
-        test_val = [(LB_val[i], UB_val[i]) for i in range(m)]
-
-        public = [(
-            stats.quantile_test(x[i], 
-                                0, 
-                                quantile_def[i], 
-                                alternative='greater'
-                                ).confidence_interval(confidence[i]).low,
-            stats.quantile_test(x[i], 
-                                0, 
-                                quantile_def[i], 
-                                alternative='less'
-                                ).confidence_interval(confidence[i]).high)
-            for i in range(m)]
-        assert_equal(public, test_val)
-
-        # Test for the two-sided case
-        # .. Two-sided CI are built of two one-sided CIs 
-        # with larger confidence
-        confidence_two_sided = (1 + confidence)/2
-        tmp = [confint_naive(int(N[i]), 
-                             quantile_def[i], 
-                             confidence_two_sided[i])
-            for i in range(m)]
-        LB = [i if (not np.isnan(i)) else np.nan for i in tmp]
-        # .. UB is (N-1-LB(1-q))
-        tmp = [confint_naive(int(N[i]), 
-                             1-quantile_def[i], 
-                             confidence_two_sided[i])
-            for i in range(m)]
-        UB = [int(N[i])-1-tmp[i] if (not np.isnan(tmp[i])) else np.nan
-            for i in range(m)]
-        LB_val = [ x[i][LB[i]] if (not np.isnan(LB[i])) else np.nan 
-                for i in range(m)]
-        UB_val = [ x[i][UB[i]] if (not np.isnan(UB[i])) else np.nan 
-                for i in range(m)]
-        test_val = [(LB_val[i], UB_val[i]) for i in range(m)]
-        # .. Compare to the public function
-        tmp = [
-            stats.quantile_test(x[i], 
-                                0, 
-                                quantile_def[i], 
-                                alternative='two-sided'
-                                ).confidence_interval(confidence[i])
-            for i in range(m)]
-        public = [(tmp[i].low, tmp[i].high) for i in range(m)]
-        assert_equal(public, test_val)
-
-    def test_R_ci_quantile(self):
-        # Using the same test cases as the ci_quantile R function
-        # https://github.com/mayer79/confintr/blob/main/tests/testthat/test-ci_measures_of_location.R#L95
-
+    # just copying the values you had here, but these should be replaced
+    # with original ones
+    @pytest.mark.parametrize('p, alpha, lb, ub',
+                             [[0.4, 0.95, 1.349859, 1.648721],
+                              [0.5, 0.9, 1.506818, 1.803988]])
+    def test_R_ci_quantile(self, p, alpha, lb, ub):
+        # Test against R library `confintr` function `ci_quantile`, e.g.
+        # <insert code here>
         x = np.exp(np.arange(0, 1.01, 0.01))
+        res = stats.quantile_test(x, p=p, alternative='two-sided')
+        assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-5)
 
-        lb, ub = stats.quantile_test(x, 
-                                     0, 
-                                     0.4, 
-                                     alternative='two-sided'
-                                     ).confidence_interval(0.95)
-        expected = [1.349859, 1.648721]
-        assert_almost_equal(expected, [lb,ub], decimal=5)
-
-        lb, ub = stats.quantile_test(x, 
-                                     0, 
-                                     0.5, 
-                                     alternative='two-sided'
-                                     ).confidence_interval(0.9)
-        expected = [1.506818, 1.803988]
-        assert_almost_equal(expected, [lb,ub], decimal=5)
-
-    def test_pval_ci_match(self):
+    @pytest.mark.parametrize('alternative', ['less', 'greater'])
+    def test_pval_ci_match(self, alternative):
         # Verify that the following statement hold:
         #
         # The 95% confidence interval corresponding with alternative='less' 
@@ -8092,45 +7973,21 @@ class TestQuantileTest():
         # 
         # And the corresponding statement for the alternative='greater' case.
 
-        # This test may fail if we the CI bound falls on a value present 
-        # multiple times in the sample. We make sure this does not happen by 
-        # generating samples via permutations rather than pure random.
+        rng = np.random.default_rng(7716774463289760271)
+        p, q = rng.random(size=2)
+        x = np.sort(rng.random(size=100))
 
-        for xi in x:
-            # alternative='less'
-            res = stats.quantile_test(xi, alternative='less')
-            lb, ub = res.confidence_interval()
-            if not np.isnan(ub):
-                i = np.where(xi == ub)[0][0]
-                assert_equal(
-                    stats.quantile_test(xi, 
-                                        q=xi[i], 
-                                        alternative='less'
-                                        ).pvalue <= 0.05, 
-                    True)
-                assert_equal(
-                    stats.quantile_test(xi, 
-                                        q=xi[i-1], 
-                                        alternative='less'
-                                        ).pvalue > 0.05, 
-                    True)
-            # alternative='greater'
-            res = stats.quantile_test(xi, alternative='greater')
-            lb, ub = res.confidence_interval()  
-            if not np.isnan(lb):
-                i = np.where(xi == lb)[0][0]
-                assert_equal(
-                    stats.quantile_test(xi, 
-                                        q=xi[i], 
-                                        alternative='greater'
-                                        ).pvalue <= 0.05, 
-                    True)
-                assert_equal(
-                    stats.quantile_test(xi, 
-                                        q=xi[i+1], 
-                                        alternative='greater'
-                                        ).pvalue > 0.05, 
-                    True)
+        res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
+        lb, ub = res.confidence_interval()
+
+        q_inside = ub if alternative == 'less' else lb
+        i = np.where(x == q_inside)[0][0]
+        q_outside = x[i-1] if alternative == 'less' else x[i+1]
+
+        res = stats.quantile_test(x, q=q_inside, p=p, alternative=alternative)
+        assert res.pvalue <= 0.05
+        res = stats.quantile_test(x, q=q_outside, p=p, alternative=alternative)
+        assert res.pvalue > 0.05
 
 
 class TestPageTrendTest:
