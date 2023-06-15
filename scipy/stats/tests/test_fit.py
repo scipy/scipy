@@ -246,7 +246,7 @@ def cases_test_fit_mle():
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
                        'skellam', 'trapezoid', 'triang', 'truncnorm',
-                       'tukeylambda', 'zipfian'}
+                       'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
