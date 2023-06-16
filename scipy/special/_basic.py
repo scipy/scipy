@@ -3009,8 +3009,10 @@ def stirling2(N, K, exact=True):
             raise TypeError("Argument `N` contains non-integer type(s)")
         if K.dtype.kind not in np.typecodes['AllInteger']:
             raise TypeError("Argument `K` contains non-integer type(s)")
-        nk_pairs = list(set([(n.take(0), k.take(0))
-                             for n, k in np.nditer([N, K])]))
+        nk_pairs = list(
+            set([(n.take(0), k.take(0))
+                 for n, k in np.nditer([N, K], ['refs_ok'])])
+        )
         heapify(nk_pairs)
         # base mapping for small values
         snsk_vals = defaultdict(int)
