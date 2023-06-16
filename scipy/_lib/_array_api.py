@@ -174,6 +174,15 @@ def as_xparray_namespace(*arrays):
     return *arrays, xp
 
 
+def atleast_nd(x, *, ndim, xp):
+    """Recursively expand the dimension to have at least `ndim`."""
+    x = xp.asarray(x)
+    if x.ndim < ndim:
+        x = xp.expand_dims(x, axis=0)
+        x = atleast_nd(x, ndim=ndim, xp=xp)
+    return x
+
+
 def to_numpy(array, xp):
     """Convert `array` into a NumPy ndarray on the CPU.
 

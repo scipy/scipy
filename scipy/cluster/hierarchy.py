@@ -1369,6 +1369,7 @@ def cut_tree(Z, n_clusters=None, height=None):
     for i, node in enumerate(nodes):
         idx = node.pre_order()
         this_group = as_xparray(last_group, copy=True, xp=xp)
+        # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
         if i + 1 in cols_idx:

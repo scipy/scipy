@@ -67,7 +67,9 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import as_xparray, array_namespace, size, isdtype
+from scipy._lib._array_api import (
+    as_xparray, array_namespace, size, isdtype, atleast_nd
+)
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
@@ -556,7 +558,8 @@ def _krandinit(data, k, rng, xp):
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = xp.matmul(x, sVh)
     else:
-        cov = xp.atleast_2d(xp.cov(data.T))
+        # TODO ARRAY_API cov not supported
+        cov = atleast_nd(xp.cov(data.T), ndim=2, xp=xp)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
