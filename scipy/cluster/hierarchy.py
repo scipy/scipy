@@ -1027,7 +1027,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
             raise ValueError("Method '{}' requires the distance metric "
                              "to be Euclidean".format(method))
         if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
-            if xp.all(y >= 0) and xp.allclose(y, y.T):
+            if xp.all(y >= 0) and np.allclose(y, y.T):
                 _warning('The symmetric non-negative hollow observation '
                          'matrix looks suspiciously like an uncondensed '
                          'distance matrix')
@@ -1361,7 +1361,7 @@ def cut_tree(Z, n_clusters=None, height=None):
         n_cols = 1
         cols_idx = xp.asarray([cols_idx])
 
-    groups = xp.zeros((n_cols, nobs), dtype=int)
+    groups = xp.zeros((n_cols, nobs), dtype=xp.int64)
     last_group = xp.arange(nobs)
     if 0 in cols_idx:
         groups[0] = last_group
@@ -1369,8 +1369,8 @@ def cut_tree(Z, n_clusters=None, height=None):
     for i, node in enumerate(nodes):
         idx = node.pre_order()
         this_group = as_xparray(last_group, copy=True, xp=xp)
-        this_group[idx] = last_group[idx].min()
-        this_group[this_group > last_group[idx].max()] -= 1
+        this_group[idx] = xp.min(last_group[idx])
+        this_group[this_group > xp.max(last_group[idx])] -= 1
         if i + 1 in cols_idx:
             groups[np.nonzero(i + 1 == cols_idx)[0]] = this_group
         last_group = this_group
@@ -1438,7 +1438,8 @@ def to_tree(Z, rd=False):
     9
 
     """
-    Z = as_xparray(Z, order='c')
+    xp = array_namespace(Z)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # Number of original objects is equal to the number of rows plus 1.
@@ -1453,9 +1454,11 @@ def to_tree(Z, rd=False):
 
     nd = None
 
-    for i, row in enumerate(Z):
-        fi = int(row[0])
-        fj = int(row[1])
+    for i in range(Z.shape[0]):
+        row = Z[i, :]
+
+        fi = xp.astype(row[0], xp.int64)
+        fj = xp.astype(row[1], xp.int64)
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
@@ -1687,8 +1690,8 @@ def cophenet(Z, Y=None):
     Y = as_xparray(Y, order='c', xp=xp)
     distance.is_valid_y(Y, throw=True, name='Y')
 
-    z = zz.mean()
-    y = Y.mean()
+    z = xp.mean(zz)
+    y = xp.mean(Y)
     Yy = Y - y
     Zz = zz - z
     numerator = (Yy * Zz)
@@ -1861,7 +1864,7 @@ def from_mlab_linkage(Z):
         return as_xparray(Z, copy=True, xp=xp)
 
     Zpart = as_xparray(Z, copy=True, xp=xp)
-    if Zpart[:, 0:2].min() != 1.0 and Zpart[:, 0:2].max() != 2 * Zs[0]:
+    if xp.min(Zpart[:, 0:2]) != 1.0 and xp.max(Zpart[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
 
     Zpart[:, 0:2] -= 1.0
@@ -2038,11 +2041,12 @@ def is_monotonic(Z):
     increasing order.
 
     """
-    Z = as_xparray(Z, order='c')
+    xp = array_namespace(Z)
+    Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     # We expect the i'th value to be greater than its successor.
-    return (Z[1:, 2] >= Z[:-1, 2]).all()
+    return xp.all(Z[1:, 2] >= Z[:-1, 2])
 
 
 def is_valid_im(R, warning=False, throw=False, name=None):
@@ -2149,13 +2153,13 @@ def is_valid_im(R, warning=False, throw=False, name=None):
         if R.shape[0] < 1:
             raise ValueError('Inconsistency matrix %smust have at least one '
                              'row.' % name_str)
-        if (R[:, 0] < 0).any():
+        if xp.any(R[:, 0] < 0):
             raise ValueError('Inconsistency matrix %scontains negative link '
                              'height means.' % name_str)
-        if (R[:, 1] < 0).any():
+        if xp.any(R[:, 1] < 0):
             raise ValueError('Inconsistency matrix %scontains negative link '
                              'height standard deviations.' % name_str)
-        if (R[:, 2] < 0).any():
+        if xp.any(R[:, 2] < 0):
             raise ValueError('Inconsistency matrix %scontains negative link '
                              'counts.' % name_str)
     except Exception as e:
@@ -2266,13 +2270,13 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
                              'observations.')
         n = Z.shape[0]
         if n > 1:
-            if ((Z[:, 0] < 0).any() or (Z[:, 1] < 0).any()):
+            if (xp.any(Z[:, 0] < 0) or xp.any(Z[:, 1] < 0)):
                 raise ValueError('Linkage %scontains negative indices.' %
                                  name_str)
-            if (Z[:, 2] < 0).any():
+            if xp.any(Z[:, 2] < 0):
                 raise ValueError('Linkage %scontains negative distances.' %
                                  name_str)
-            if (Z[:, 3] < 0).any():
+            if xp.any(Z[:, 3] < 0):
                 raise ValueError('Linkage %scontains negative counts.' %
                                  name_str)
         if _check_hierarchy_uses_cluster_before_formed(Z):
@@ -2303,10 +2307,10 @@ def _check_hierarchy_uses_cluster_more_than_once(Z):
     n = Z.shape[0] + 1
     chosen = set()
     for i in range(0, n - 1):
-        if (Z[i, 0] in chosen) or (Z[i, 1] in chosen) or Z[i, 0] == Z[i, 1]:
+        if (float(Z[i, 0]) in chosen) or (float(Z[i, 1]) in chosen) or Z[i, 0] == Z[i, 1]:
             return True
-        chosen.add(Z[i, 0])
-        chosen.add(Z[i, 1])
+        chosen.add(float(Z[i, 0]))
+        chosen.add(float(Z[i, 1]))
     return False
 
 
@@ -2570,6 +2574,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
+    t = xp.asarray(t)
+
     n = Z.shape[0] + 1
     T = np.zeros((n,), dtype='i')
 
@@ -2593,13 +2599,15 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
     elif criterion == 'maxclust':
-        _hierarchy.cluster_maxclust_dist(Z, T, int(n), int(t))
+        t_ = xp.astype(t, xp.int64)
+        _hierarchy.cluster_maxclust_dist(Z, T, int(n), t_)
     elif criterion == 'monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
         _hierarchy.cluster_monocrit(Z, monocrit, T, float(t), int(n))
     elif criterion == 'maxclust_monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
-        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
+        t_ = xp.astype(t, xp.int64)
+        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), t_)
     else:
         raise ValueError('Invalid cluster formation criterion: %s'
                          % str(criterion))
@@ -3299,8 +3307,13 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise ValueError("orientation must be one of 'top', 'left', "
                          "'bottom', or 'right'")
 
-    if labels is not None and Z.shape[0] + 1 != len(labels):
-        raise ValueError("Dimensions of Z and labels must be consistent.")
+    if labels is not None:
+        try:
+            len_labels = len(labels)
+        except (TypeError, AttributeError):
+            len_labels = labels.shape[0]
+        if Z.shape[0] + 1 != len_labels:
+            raise ValueError("Dimensions of Z and labels must be consistent.")
 
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
@@ -3432,7 +3445,7 @@ def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
-                                   i, labels, show_leaf_counts):
+                                   i, labels, show_leaf_counts, xp):
     # If the leaf id structure is not None and is a list then the caller
     # to dendrogram has indicated that cluster id's corresponding to the
     # leaf nodes should be recorded.
@@ -3444,21 +3457,21 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
             ivl.append(leaf_label_func(int(i)))
         else:
             if show_leaf_counts:
-                ivl.append("(" + str(int(Z[i - n, 3])) + ")")
+                ivl.append("(" + str(xp.astype(Z[i - n, 3], xp.int64)) + ")")
             else:
                 ivl.append("")
 
 
-def _append_contraction_marks(Z, iv, i, n, contraction_marks):
-    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
-    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
+def _append_contraction_marks(Z, iv, i, n, contraction_marks, xp):
+    _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 0], xp.int64), n, contraction_marks, xp)
+    _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 1], xp.int64), n, contraction_marks, xp)
 
 
-def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks):
+def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks, xp):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks)
-        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks)
+        _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 0], xp.int64), n, contraction_marks, xp)
+        _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 1], xp.int64), n, contraction_marks, xp)
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode,
@@ -3510,6 +3523,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
           the target node.
 
     """
+    xp = array_namespace(Z)
     if n == 0:
         raise ValueError("Invalid singleton cluster count n.")
 
@@ -3524,9 +3538,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
-                                           show_leaf_counts)
+                                           show_leaf_counts, xp)
             if contraction_marks is not None:
-                _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks)
+                _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks, xp)
             return (iv + 5.0, 10.0, 0.0, d)
         elif i < n:
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
@@ -3537,9 +3551,9 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
-                                           show_leaf_counts)
+                                           show_leaf_counts, xp)
             if contraction_marks is not None:
-                _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks)
+                _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks, xp)
             return (iv + 5.0, 10.0, 0.0, d)
         elif i < n:
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
@@ -3557,8 +3571,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = int(Z[i - n, 0])
-    ab = int(Z[i - n, 1])
+    aa = xp.astype(Z[i - n, 0], xp.int64)
+    ab = xp.astype(Z[i - n, 1], xp.int64)
     if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
@@ -4169,7 +4183,7 @@ def leaders(Z, T):
     if T.dtype != xp.int32:
         raise TypeError('T must be a one-dimensional array of integers.')
     is_valid_linkage(Z, throw=True, name='Z')
-    if len(T) != Z.shape[0] + 1:
+    if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
     Cl = np.unique(T)

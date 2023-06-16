@@ -289,7 +289,7 @@ class TestLeaders:
         Lright = (xp.asarray([53, 55, 56]), xp.asarray([2, 3, 1]))
         T = xp.asarray(T, dtype=xp.int32)
         L = leaders(Z, T)
-        assert_allclose(xp.concatenate(L), xp.concatenate(Lright), rtol=1e-15)
+        assert_allclose(np.concatenate(L), np.concatenate(Lright), rtol=1e-15)
 
 
 class TestIsIsomorphic:
@@ -397,7 +397,7 @@ class TestIsValidLinkage:
     def test_is_valid_linkage_int_type(self, xp):
         # Tests is_valid_linkage(Z) with integer type.
         Z = xp.asarray([[0, 1, 3.0, 2],
-                        [3, 2, 4.0, 3]], dtype=int)
+                        [3, 2, 4.0, 3]], dtype=xp.int64)
         assert_(is_valid_linkage(Z) is False)
         assert_raises(TypeError, is_valid_linkage, Z, throw=True)
 
@@ -473,7 +473,7 @@ class TestIsValidInconsistent:
     def test_is_valid_im_int_type(self, xp):
         # Tests is_valid_im(R) with integer type.
         R = xp.asarray([[0, 1, 3.0, 2],
-                        [3, 2, 4.0, 3]], dtype=int)
+                        [3, 2, 4.0, 3]], dtype=xp.int64)
         assert_(is_valid_im(R) is False)
         assert_raises(TypeError, is_valid_im, R, throw=True)
 
@@ -938,7 +938,7 @@ class TestDendrogram:
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         labels = xp.asarray([1, 3, 2, 6, 4, 5])
         result1 = dendrogram(Z, labels=labels, no_plot=True)
-        result2 = dendrogram(Z, labels=labels.tolist(), no_plot=True)
+        result2 = dendrogram(Z, labels=list(labels), no_plot=True)
         assert result1 == result2
 
     @array_api_compatible
@@ -1122,11 +1122,11 @@ def calculate_maximum_distances(Z, xp):
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[int(left) - n]
+            q[0] = B[xp.astype(left, xp.int64) - n]
         if right >= n:
-            q[1] = B[int(right) - n]
+            q[1] = B[xp.astype(right, xp.int64) - n]
         q[2] = Z[i, 2]
-        B[i] = q.max()
+        B[i] = xp.max(q)
     return B
 
 
@@ -1140,11 +1140,11 @@ def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[int(left) - n]
+            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
         if right >= n:
-            q[1] = B[int(right) - n]
+            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
         q[2] = R[i, k]
-        B[i] = q.max()
+        B[i] = xp.max(q)
     return B
 
 

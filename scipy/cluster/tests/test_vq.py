@@ -287,7 +287,7 @@ class TestKMean:
         # test kmeans2 when the number of dimensions exceeds the number
         # of input points
         data = xp.asarray(TESTDATA_2D)
-        data = data.reshape((20, 20))[:10]
+        data = xp.reshape(data, (20, 20))[:10, :]
         kmeans2(data, xp.asarray(2))
 
     @skip_if_array_api_gpu
@@ -314,7 +314,7 @@ class TestKMean:
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
         data = xp.asarray(TESTDATA_2D)
-        datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
+        datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
             # check that np.random.Generator can be used (numpy >= 1.17)

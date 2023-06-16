@@ -133,7 +133,7 @@ def whiten(obs, check_finite=True):
     obs = as_xparray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
-    if zero_std_mask.any():
+    if xp.any(zero_std_mask):
         std_dev[zero_std_mask] = 1.0
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
@@ -308,7 +308,7 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
     while diff > thresh:
         # compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book, check_finite=False)
-        prev_avg_dists.append(distort.mean(axis=-1))
+        prev_avg_dists.append(xp.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         obs = np.asarray(obs)
         obs_code = np.asarray(obs_code)
@@ -319,7 +319,7 @@ def _kmeans(obs, guess, thresh=1e-5, xp=None):
         code_book = xp.asarray(code_book)
         has_members = xp.asarray(has_members)
         code_book = code_book[has_members]
-        diff = xp.absolute(prev_avg_dists[0] - prev_avg_dists[1])
+        diff = xp.abs(prev_avg_dists[0] - prev_avg_dists[1])
 
     return code_book, prev_avg_dists[1]
 
@@ -515,7 +515,7 @@ def _kpoints(data, k, rng, xp):
 
     """
     idx = rng.choice(data.shape[0], size=int(k), replace=False)
-    return data[idx]
+    return data[idx, ...]
 
 
 def _krandinit(data, k, rng, xp):
@@ -541,7 +541,7 @@ def _krandinit(data, k, rng, xp):
         A 'k' by 'N' containing the initial centroids
 
     """
-    mu = data.mean(axis=0)
+    mu = xp.mean(data, axis=0)
 
     if data.ndim == 1:
         cov = xp.cov(data)
@@ -553,7 +553,7 @@ def _krandinit(data, k, rng, xp):
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
         x = rng.standard_normal(size=(k, size(s)))
         x = xp.asarray(x)
-        sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1))
+        sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = xp.matmul(x, sVh)
     else:
         cov = xp.atleast_2d(xp.cov(data.T))
@@ -599,13 +599,13 @@ def _kpp(data, k, rng, xp):
     # k should be an integer, NOT a NumPy
     # scalar array thing...
     if not isinstance(k, int):
-        k = k.item()
+        k = xp.astype(k, xp.int64)
 
     init = xp.empty((k, dims))
 
     for i in range(k):
         if i == 0:
-            init[i, :] = data[rng_integers(rng, data.shape[0])]
+            init[i, :] = data[rng_integers(rng, data.shape[0]), :]
 
         else:
             D2 = cdist(init[:i,:], data, metric='sqeuclidean').min(axis=0)
@@ -613,7 +613,7 @@ def _kpp(data, k, rng, xp):
             cumprobs = probs.cumsum()
             r = rng.uniform()
             cumprobs = np.asarray(cumprobs)
-            init[i, :] = data[np.searchsorted(cumprobs, r)]
+            init[i, :] = data[np.searchsorted(cumprobs, r), :]
 
     return init
 
@@ -786,7 +786,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     if minit == 'matrix' or size(code_book) > 1:
         if data.ndim != code_book.ndim:
             raise ValueError("k array doesn't match data rank")
-        nc = len(code_book)
+        nc = code_book.shape[0]
         if data.ndim > 1 and code_book.shape[1] != d:
             raise ValueError("k array doesn't match data dimension")
     else:
