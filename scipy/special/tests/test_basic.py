@@ -3740,3 +3740,31 @@ class TestStirling2:
         # when exact=True
         with pytest.raises(TypeError):
             special.stirling2(N, K, exact=True)
+
+    def test_numpy_array_int_object_dtype(self):
+        # python integers with arbitrary precision are allowed as
+        # object type in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=object)
+        k = asarray([1, 2, 3, 4], dtype=object)
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_numpy_array_unsigned_int_dtype(self):
+        # numpy unsigned integers are allowed as dtype in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=np.uint)
+        k = asarray([1, 2, 3, 4], dtype=np.uint)
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_broadcasting_arrays_correctly(self):
+        # broadcasting is handled by stirling2
+        # test leading 1s are replicated
+        ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
+        n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])
+        k = asarray([1, 2, 3, 4])
+        assert array_equal(stirling2(n, k), ans)
+        # test that dims both mismatch broadcase correctly (5,1) & (1,6)
+        n = asarray([[4], [4], [4], [4], [4]]])
+        k = asarray([0, 1, 2, 3, 4, 5])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)]])
+        assert array_equal(stirling2(n, k), ans)

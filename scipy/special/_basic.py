@@ -2962,7 +2962,9 @@ def stirling2(N, K, exact=True):
         Stirling numbers of the second kind count the number of ways to
         partition a set with N elements into K non-empty subsets.
 
-        This is often expressed as "N subset K".
+        The values this function returns are calculated using a dynamic
+        program which avoids redundant computation across the subproblems
+        in the solution.
 
         Parameters
         ----------
@@ -3043,12 +3045,12 @@ def stirling2(N, K, exact=True):
                 num_iters = n - n_old
                 while num_iters > 0:
                     n_row.append(1)
+                    # traverse from back to remove second row
                     for j in range(len(n_row)-2, 1, -1):
                         n_row[j] = n_row[j]*j + n_row[j-1]
                     num_iters -= 1
                 snsk_vals[(n, k)] = n_row[k]
             else:
-                # value is in the same row as prev
                 snsk_vals[(n, k)] = n_row[k]
             n_old, n_row = n, n_row
         # for each pair in the map, fetch the value, and populate the array
