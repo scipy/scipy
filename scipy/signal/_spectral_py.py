@@ -1672,8 +1672,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     return freqs, Cxy
 
 
-def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
-              noverlap=None, nfft=None, detrend='constant',
+def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
+              nperseg=None, noverlap=None, nfft=None, detrend='constant',
               scaling='density', axis=-1, average='mean'):
     r"""
     Estimate the cross cyclic spectral density, Pxy, using Welch's method.
@@ -1755,7 +1755,7 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     noverlap = 2/3*nperseg with a Hann window, or noverlap = 1/2*nperseg with a
     half-sine window.
 
-    .. versionadded:: 1.11
+    .. versionadded:: 1.12
 
     References
     ----------
@@ -1797,11 +1797,11 @@ def cyclic_sd(x, y, *, fs=16., alpha=4., sym=True, window='hann', nperseg=None,
     >>> ax.legend(loc='upper right')
     >>> plt.show()
 
-    >>> freqs = cyclic_sd(x=x, y=x, fs=fs, alpha=0)[0]
+    >>> freqs = cyclic_sd(x, x, fs=fs, alpha=0)[0]
     >>> alphas = np.arange(1, 70)
     >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
     >>> for i, alpha in enumerate(alphas):
-    >>>     scd[:, i] = cyclic_sd(x=x, y=x, fs=fs, alpha=alpha)[1]
+    >>>     scd[:, i] = cyclic_sd(x, x, fs=fs, alpha=alpha)[1]
 
     The modulation is expected to occur at frequency f_sig.
 
