@@ -3766,5 +3766,5 @@ class TestStirling2:
         # test that dims both mismatch broadcase correctly (5,1) & (6,)
         n = asarray([[4], [4], [4], [4], [4]])
         k = asarray([0, 1, 2, 3, 4, 5])
-        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)]])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
         assert array_equal(stirling2(n, k), ans)
