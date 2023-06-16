@@ -539,6 +539,9 @@ struct istream : private streambuf_capsule, streambuf::istream
 };
 
 namespace pybind11 { namespace detail {
+    // Wrapping the stream objects with std::shared_ptr so that the streams can be used between API calls.
+    // This enables one API call to open the stream and a follow-up call to read/write to it, with the stream
+    // reference kept in C++.
     template <> struct type_caster<std::shared_ptr<pystream::istream>> {
     public:
         bool load(handle src, bool) {

@@ -454,7 +454,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     if isinstance(a, np.ndarray):
         # Write dense numpy arrays
         a = _apply_field(a, field, no_pattern=True)
-        _core.write_array(cursor, a)
+        _core.write_body_array(cursor, a)
 
     elif scipy.sparse.isspmatrix(a):
         # Write sparse scipy matrices
@@ -470,7 +470,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
                              a.col[lower_triangle_mask])), shape=a.shape)
 
         data = _apply_field(a.data, field)
-        _core.write_coo(cursor, a.shape, a.row, a.col, data)
+        _core.write_body_coo(cursor, a.shape, a.row, a.col, data)
 
     else:
         raise ValueError("unknown matrix type: %s" % type(a))

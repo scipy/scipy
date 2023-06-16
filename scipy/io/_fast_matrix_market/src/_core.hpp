@@ -129,8 +129,8 @@ private:
  * Write Python triplets to MatrixMarket.
  */
 template <typename IT, typename VT>
-void write_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
-               py::array_t<IT>& rows, py::array_t<IT>& cols, py::array_t<VT>& data) {
+void write_body_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
+                    py::array_t<IT>& rows, py::array_t<IT>& cols, py::array_t<VT>& data) {
     if (rows.size() != cols.size()) {
         throw std::invalid_argument("len(row) must equal len(col).");
     }
@@ -169,8 +169,8 @@ void write_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
  * Write Python CSC/CSR to MatrixMarket.
  */
 template <typename IT, typename VT>
-void write_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
-               py::array_t<IT>& indptr, py::array_t<IT>& indices, py::array_t<VT>& data, bool is_csr) {
+void write_body_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& shape,
+                    py::array_t<IT>& indptr, py::array_t<IT>& indices, py::array_t<VT>& data, bool is_csr) {
     if (indices.size() != data.size() && data.size() != 0) {
         throw std::invalid_argument("len(indices) must equal len(data).");
     }

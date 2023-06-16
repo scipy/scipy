@@ -8,7 +8,7 @@
  * Write numpy array to MatrixMarket file
  */
 template <typename T>
-void write_array(write_cursor& cursor, py::array_t<T>& array) {
+void write_body_array(write_cursor& cursor, py::array_t<T>& array) {
     if (array.ndim() != 2) {
         throw std::invalid_argument("Only 2D arrays supported.");
     }
@@ -32,14 +32,14 @@ void write_array(write_cursor& cursor, py::array_t<T>& array) {
 
 
 void init_write_array(py::module_ &m) {
-    m.def("write_array", &write_array<int32_t>);
-    m.def("write_array", &write_array<uint32_t>);
-    m.def("write_array", &write_array<int64_t>);
-    m.def("write_array", &write_array<uint64_t>);
-    m.def("write_array", &write_array<float>);
-    m.def("write_array", &write_array<double>);
-    m.def("write_array", &write_array<long double>);
-    m.def("write_array", &write_array<std::complex<float>>);
-    m.def("write_array", &write_array<std::complex<double>>);
-    m.def("write_array", &write_array<std::complex<long double>>);
+    m.def("write_body_array", &write_body_array<int32_t>);
+    m.def("write_body_array", &write_body_array<uint32_t>);
+    m.def("write_body_array", &write_body_array<int64_t>);
+    m.def("write_body_array", &write_body_array<uint64_t>);
+    m.def("write_body_array", &write_body_array<float>);
+    m.def("write_body_array", &write_body_array<double>);
+    m.def("write_body_array", &write_body_array<long double>);
+    m.def("write_body_array", &write_body_array<std::complex<float>>);
+    m.def("write_body_array", &write_body_array<std::complex<double>>);
+    m.def("write_body_array", &write_body_array<std::complex<long double>>);
 }
