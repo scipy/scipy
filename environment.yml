@@ -15,6 +15,7 @@ dependencies:
   - meson-python
   - ninja
   - numpy
+  - array-api-compat
   - openblas
   - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
