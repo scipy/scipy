@@ -2766,11 +2766,21 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for real :math:`x` and :math:`c > 0`.
+    for real :math:`x` and :math:`c > 0`. In literature, different
+    generalizations of the logistic distribution can be found. This is the type 1
+    generalized logistic distribution according to [1]_. It is also referred to
+    as the skew-logistic distribution [2]_.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson et al. "Continuous Univariate Distributions", Volume 2,
+           Wiley. 1995.
+    .. [2] "Generalized Logistic Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_logistic_distribution
 
     %(example)s
 
