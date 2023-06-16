@@ -10055,7 +10055,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     >>>     ci = res.confidence_interval(0.95)
     >>>     if ci[0] < true_stat < ci[1]:
     >>>         quantile_ci_contains_true_stat += 1
-    >>> quantile_ci_contains_true_stat
+    >>> quantile_ci_contains_true_stat  # approximately 95%
     966
     
     This works with any distribution and any quantile, as long as the samples
