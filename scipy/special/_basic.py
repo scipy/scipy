@@ -3040,7 +3040,7 @@ def stirling2(N, K, exact=True):
         # for each pair in the map, fetch the value, and populate the array
         it = np.nditer(
             [N, K, None],
-            ['buffered'],
+            ['buffered', 'refs_ok'],
             [['readonly'], ['readonly'], ['writeonly', 'allocate']],
             op_dtypes=[object, object, object],
         )
