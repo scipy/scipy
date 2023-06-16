@@ -7956,8 +7956,7 @@ class TestQuantileTest():
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x,q,-2,alternative=alternative)
         
-        message = "alternative not recognized; \n"
-        "must be 'two-sided', 'less' or 'greater'"
+        message = "alternative not recognized"
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x,q,p,alternative='one-sided')
         
