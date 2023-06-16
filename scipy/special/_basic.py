@@ -2966,6 +2966,9 @@ def stirling2(N, K, exact=True):
         program which avoids redundant computation across the subproblems
         in the solution.
 
+        The numbers are sometimes denoted :math: `{n \brace x}`.
+        This is often expressed-verbally-as "N subset K".
+
         Parameters
         ----------
         N : int, ndarray
@@ -2993,6 +2996,12 @@ def stirling2(N, K, exact=True):
         The output type will always be `int` or ndarray of `object`.
         The input must contain either numpy or python integers otherwise a
         TypeError is raised.
+
+        References
+        ----------
+         .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, “Concrete
+        Mathematics: A Foundation for Computer Science,” Addison-Wesley
+        Publishing Company, Boston, 1989. Chapter 6, page 258.
 
         Examples
         --------
