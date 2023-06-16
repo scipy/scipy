@@ -2779,6 +2779,8 @@ class genlogistic_gen(rv_continuous):
     ----------
     .. [1] Johnson et al. "Continuous Univariate Distributions", Volume 2,
            Wiley. 1995.
+    .. [2] "Generalized Logistic Distribution", Wikipedia
+           https://en.wikipedia.org/wiki/Generalized_logistic_distribution
 
     %(example)s
 
