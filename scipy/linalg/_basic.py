@@ -333,11 +333,18 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
+
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
     if a1.shape[0] != b1.shape[0]:
         raise ValueError('shapes of a {} and b {} are incompatible'
                          .format(a1.shape, b1.shape))
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
+
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
@@ -431,14 +438,20 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
+
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+
     (nlower, nupper) = l_and_u
     if nlower + nupper + 1 != a1.shape[0]:
         raise ValueError("invalid values for the number of lower and upper "
                          "diagonals: l+u+1 (%d) does not equal ab.shape[0] "
                          "(%d)" % (nlower + nupper + 1, ab.shape[0]))
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
@@ -572,9 +585,14 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     """
     a1 = _asarray_validated(ab, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
+
     # Validate shapes.
     if a1.shape[-1] != b1.shape[0]:
         raise ValueError("shapes of ab and b are not compatible.")
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     overwrite_ab = overwrite_ab or _datacopied(a1, ab)
@@ -675,6 +693,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
 
     r, c, b, dtype, b_shape = _validate_args_for_toeplitz_ops(
         c_or_cr, b, check_finite, keep_b_shape=True)
+
+    # accommodate empty arrays
+    if b.size == 0:
+        return np.empty_like(b)
 
     # Form a 1-D array of values to be used in the matrix, containing a
     # reversed copy of r[1:], followed by c.
@@ -857,6 +879,10 @@ def solve_circulant(c, b, singular='raise', tol=None,
     if nc != nb:
         raise ValueError('Shapes of c {} and b {} are incompatible'
                          .format(c.shape, b.shape))
+
+    # accommodate empty arrays
+    if b.size == 0:
+        return np.empty_like(b)
 
     fc = np.fft.fft(np.moveaxis(c, caxis, -1), axis=-1)
     abs_fc = np.abs(fc)
@@ -1769,7 +1795,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
     if b.ndim == 1 and not keep_b_shape:
         b = b.reshape(-1, 1)
     elif b.ndim != 1:
-        b = b.reshape(b.shape[0], -1)
+        b = b.reshape(b.shape[0], -1 if b.size > 0 else 0)
 
     return r, c, b, dtype, b_shape
 
@@ -1907,6 +1933,11 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
     T_nrows = len(c)
     T_ncols = len(r)
     p = T_nrows + T_ncols - 1  # equivalent to len(embedded_col)
+    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
+
+    # accommodate empty arrays
+    if x.size == 0:
+        return np.empty_like(x, shape=return_shape)
 
     embedded_col = np.concatenate((c, r[-1:0:-1]))
 
@@ -1924,5 +1955,4 @@ def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
         mat_times_x = irfft(fft_mat*fft_x, axis=0,
                             workers=workers, n=p)[:T_nrows, :]
 
-    return_shape = (T_nrows,) if len(x_shape) == 1 else (T_nrows, m)
     return mat_times_x.reshape(*return_shape)

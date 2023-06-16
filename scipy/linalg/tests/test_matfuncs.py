@@ -972,3 +972,14 @@ class TestKhatriRao:
                           for k in range(b.shape[1])]).T
 
         assert_array_equal(res1, res2)
+
+    def test_empty(self):
+        a = np.empty((0, 2))
+        b = np.empty((3, 2))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((0, 2)))
+
+        a = np.empty((3, 0))
+        b = np.empty((5, 0))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((15, 0)))

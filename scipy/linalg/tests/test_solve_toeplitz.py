@@ -119,3 +119,14 @@ def test_unstable():
 
     assert_allclose(solution1, solution2)
 
+
+def test_empty():
+    c = []
+    r = []
+    b = []
+    x = solve_toeplitz((c, r), b)
+    assert_allclose(x, [])
+
+    b = np.empty((0, 0))
+    x = solve_toeplitz((c, r), b)
+    assert_allclose(x, np.empty((0, 0)))

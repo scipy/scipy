@@ -174,6 +174,17 @@ class TestSolveBanded:
         x = solve_banded((l, u), ab, b)
         assert_array_almost_equal(dot(a, x), b)
 
+    def test_empty(self):
+        # ab contains one empty row corresponding to the diagonal
+        ab = [[]]
+        b = []
+        x = solve_banded((0, 0), ab, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = solve_banded((0, 0), ab, b)
+        assert_allclose(x, np.empty((0, 0)))
+
 
 class TestSolveHBanded:
 
@@ -488,6 +499,17 @@ class TestSolveHBanded:
         b = [1.0, 4.0, 1.0, 2.0]
         x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
+
+    def test_empty(self):
+        # ab contains one empty row corresponding to the diagonal
+        ab = [[]]
+        b = []
+        x = solveh_banded(ab, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = solveh_banded(ab, b)
+        assert_allclose(x, np.empty((0, 0)))
 
 
 class TestSolve:
@@ -822,9 +844,13 @@ class TestSolve:
 
     def test_empty(self):
         a = np.empty((0, 0))
-        b = np.empty((0,))
+        b = []
         x = solve(a, b)
-        assert_allclose(x, np.empty((0,)))
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = solve(a, b)
+        assert_allclose(x, np.empty((0, 0)))
 
 
 class TestSolveTriangular:
@@ -887,6 +913,16 @@ class TestSolveTriangular:
         b = [1, 1]
         sol = solve_triangular(A, b, lower=True, check_finite=False)
         assert_array_almost_equal(sol, [1, 0])
+
+    def test_empty(self):
+        a = np.empty((0, 0))
+        b = []
+        x = solve_triangular(a, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = solve_triangular(a, b)
+        assert_allclose(x, np.empty((0, 0)))
 
 
 class TestInv:
@@ -1345,7 +1381,7 @@ class TestLstsq:
                             atol=25 * _eps_cast(a.dtype),
                             err_msg="driver: %s" % lapack_driver)
 
-    def test_zero_size(self):
+    def test_empty(self):
         for a_shape, b_shape in (((0, 2), (0,)),
                                  ((0, 4), (0, 2)),
                                  ((4, 0), (4,)),
@@ -1628,6 +1664,17 @@ class TestMatrixNorms:
         assert_allclose(b, c)
         assert_(b.shape == c.shape)
 
+    def test_empty(self):
+        a = np.empty((0, 0))
+        assert_allclose(norm(a), 0.)
+        assert_allclose(norm(a, axis=0), np.zeros((0,)))
+        assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
+        a = np.empty((0, 3))
+        assert_allclose(norm(a), 0.)
+        assert_allclose(norm(a, axis=0), np.zeros((3,)))
+        assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
 
 class TestOverwrite:
     def test_solve(self):
@@ -1742,6 +1789,16 @@ class TestSolveCirculant:
         x = solve_circulant(c, b)
         y = solve(circulant(c), b)
         assert_allclose(x, y)
+
+    def test_empty(self):
+        c = []
+        b = []
+        x = solve_circulant(c, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = solve_circulant(c, b)
+        assert_allclose(x, np.empty((0, 0)))
 
 
 class TestMatrix_Balance:

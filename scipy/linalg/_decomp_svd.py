@@ -115,8 +115,10 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         s = np.empty_like(a1, shape=(0,))
         m, n = a1.shape
         if full_matrices:
-            u = np.identity(m, dtype=a1.dtype)
-            v = np.identity(n, dtype=a1.dtype)
+            u = np.empty_like(a1, shape=(m, m))
+            u[...] = np.identity(m)
+            v = np.empty_like(a1, shape=(n, n))
+            v[...] = np.identity(n)
         else:
             u = np.empty_like(a1, shape=(m, 0))
             v = np.empty_like(a1, shape=(0, n))
