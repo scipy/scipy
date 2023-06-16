@@ -1122,9 +1122,9 @@ def calculate_maximum_distances(Z, xp):
         left = Z[i, 0]
         right = Z[i, 1]
         if left >= n:
-            q[0] = B[xp.astype(left, xp.int64) - n]
+            q[0] = B[xp.asarray(left, dtype=xp.int64) - n]
         if right >= n:
-            q[1] = B[xp.astype(right, xp.int64) - n]
+            q[1] = B[xp.asarray(right, dtype=xp.int64) - n]
         q[2] = Z[i, 2]
         B[i] = xp.max(q)
     return B
