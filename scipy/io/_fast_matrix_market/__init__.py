@@ -69,6 +69,19 @@ class _TextToBytesWrapper(io.BufferedReader):
     def peek(self, size=-1):
         return self._encoding_call('peek', size)
 
+    def seek(self, offset, whence=0):
+        # Random seeks are not allowed because of non-trivial conversion between byte and character offsets,
+        # with the possibility of a byte offset landing within a character.
+        if offset == 0 and whence == 0 or \
+           offset == 0 and whence == 2:
+            # seek to start or end is ok
+            super(_TextToBytesWrapper, self).seek(offset, whence)
+        else:
+            # Drop any other seek
+            # In this application this may happen when pystreambuf seeks during sync(), which can happen when closing
+            # a partially-read stream. Ex. when mminfo() only reads the header then exits.
+            pass
+
 
 def _read_body_array(cursor):
     """
