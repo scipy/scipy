@@ -3560,7 +3560,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = np.sort(np.unique([0, bp, N]))
+        bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")

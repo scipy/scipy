@@ -941,30 +941,10 @@ class betaprime_gen(rv_continuous):
         return out
 
     def _munp(self, n, a, b):
-        if n == 1.0:
-            return _lazywhere(
-                b > 1, (a, b),
-                lambda a, b: a/(b-1.0),
-                fillvalue=np.inf)
-        elif n == 2.0:
-            return _lazywhere(
-                b > 2, (a, b),
-                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
-                fillvalue=np.inf)
-        elif n == 3.0:
-            return _lazywhere(
-                b > 3, (a, b),
-                lambda a, b: (a*(a+1.0)*(a+2.0)
-                              / ((b-3.0)*(b-2.0)*(b-1.0))),
-                fillvalue=np.inf)
-        elif n == 4.0:
-            return _lazywhere(
-                b > 4, (a, b),
-                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                fillvalue=np.inf)
-        else:
-            raise NotImplementedError
+        return _lazywhere(
+            b > n, (a, b),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -9344,7 +9324,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):
