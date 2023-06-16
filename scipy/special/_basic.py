@@ -3005,9 +3005,21 @@ def stirling2(N, K, exact=True):
     if exact:
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
-        if N.dtype.kind not in np.typecodes['AllInteger']:
+        if not (
+                np.issubdtype(N.dtype, np.integer)
+                or all(
+                    isinstance(n.take(0), int)
+                    for n in np.nditer(N, ['refs_ok'])
+                )
+        ):
             raise TypeError("Argument `N` contains non-integer type(s)")
-        if K.dtype.kind not in np.typecodes['AllInteger']:
+         if not (
+                np.issubdtype(K.dtype, np.integer)
+                or all(
+                    isinstance(k.take(0), int)
+                    for k in np.nditer(K, ['refs_ok'])
+                )
+        ):
             raise TypeError("Argument `K` contains non-integer type(s)")
         nk_pairs = list(
             set([(n.take(0), k.take(0))
