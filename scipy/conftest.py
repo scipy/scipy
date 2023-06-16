@@ -102,12 +102,12 @@ def check_fpu_mode(request):
 # Array API backend handling
 xp_available_backends = {'numpy': np}
 
-if SCIPY_ARRAY_API:
+if SCIPY_ARRAY_API != "":
     # fill the dict of backends with available libraries
     xp_available_backends.update({'numpy.array_api': numpy.array_api})
 
     try:
-        import torch
+        import torch  # type: ignore[import]
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
@@ -115,7 +115,7 @@ if SCIPY_ARRAY_API:
         pass
 
     try:
-        import cupy
+        import cupy  # type: ignore[import]
         xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass

@@ -10,15 +10,15 @@ import os
 
 import numpy as np
 # probably want to vendor it (submodule)
-import array_api_compat
+import array_api_compat  # type: ignore[import]
 from array_api_compat import size
-import array_api_compat.numpy
+import array_api_compat.numpy  # type: ignore[import]
 
 __all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace', 'isdtype']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
-array_api_dispatch = os.environ.get("array_api_dispatch", False)
+array_api_dispatch = os.environ.get("array_api_dispatch", "")
 SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
 SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
