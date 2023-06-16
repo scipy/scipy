@@ -10003,7 +10003,7 @@ def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
     QuantileTestResult(statistic1=82, statistic2=82, pvalue=0.9895106321610742)
     
     Unsurprisingly, with a p-value greater than our threshold, we would not
-    reject the null hypothesis.
+    reject the null hypothesis in favor of the chosen alternative.
     
     The quantile test can be used for any quantile, not only the median. For
     example, we can test whether the third quartile of uniform distribution is
