@@ -2,38 +2,39 @@
 
 __docformat__ = "restructuredtext en"
 
-__all__ = ['csr_matrix', 'isspmatrix_csr']
+__all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from ._base import spmatrix
+from ._matrix import spmatrix, _array_doc_to_matrix
+from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
-from ._sputils import upcast, get_index_dtype
+from ._sputils import upcast
 
 from ._compressed import _cs_matrix
 
 
-class csr_matrix(_cs_matrix):
+class _csr_base(_cs_matrix):
     """
     Compressed Sparse Row matrix
 
     This can be instantiated in several ways:
-        csr_matrix(D)
+        csr_array(D)
             with a dense matrix or rank-2 ndarray D
 
-        csr_matrix(S)
+        csr_array(S)
             with another sparse matrix S (equivalent to S.tocsr())
 
-        csr_matrix((M, N), [dtype])
+        csr_array((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        csr_matrix((data, (row_ind, col_ind)), [shape=(M, N)])
+        csr_array((data, (row_ind, col_ind)), [shape=(M, N)])
             where ``data``, ``row_ind`` and ``col_ind`` satisfy the
             relationship ``a[row_ind[k], col_ind[k]] = data[k]``.
 
-        csr_matrix((data, indices, indptr), [shape=(M, N)])
+        csr_array((data, indices, indptr), [shape=(M, N)])
             is the standard CSR representation where the column indices for
             row i are stored in ``indices[indptr[i]:indptr[i+1]]`` and their
             corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
@@ -74,12 +75,16 @@ class csr_matrix(_cs_matrix):
       - slow column slicing operations (consider CSC)
       - changes to the sparsity structure are expensive (consider LIL or DOK)
 
+    Canonical Format
+        - Within each row, indices are sorted by column.
+        - There are no duplicate entries.
+
     Examples
     --------
 
     >>> import numpy as np
-    >>> from scipy.sparse import csr_matrix
-    >>> csr_matrix((3, 4), dtype=np.int8).toarray()
+    >>> from scipy.sparse import csr_array
+    >>> csr_array((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
@@ -87,7 +92,7 @@ class csr_matrix(_cs_matrix):
     >>> row = np.array([0, 0, 1, 2, 2, 2])
     >>> col = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -95,7 +100,7 @@ class csr_matrix(_cs_matrix):
     >>> indptr = np.array([0, 2, 3, 6])
     >>> indices = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_matrix((data, indices, indptr), shape=(3, 3)).toarray()
+    >>> csr_array((data, indices, indptr), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -105,7 +110,7 @@ class csr_matrix(_cs_matrix):
     >>> row = np.array([0, 1, 2, 0])
     >>> col = np.array([0, 1, 1, 0])
     >>> data = np.array([1, 2, 4, 8])
-    >>> csr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
     array([[9, 0, 0],
            [0, 2, 0],
            [0, 4, 0]])
@@ -125,12 +130,12 @@ class csr_matrix(_cs_matrix):
     ...         data.append(1)
     ...     indptr.append(len(indices))
     ...
-    >>> csr_matrix((data, indices, indptr), dtype=int).toarray()
+    >>> csr_array((data, indices, indptr), dtype=int).toarray()
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
     """
-    format = 'csr'
+    _format = 'csr'
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -142,7 +147,7 @@ class csr_matrix(_cs_matrix):
         return self._csc_container((self.data, self.indices,
                                     self.indptr), shape=(N, M), copy=copy)
 
-    transpose.__doc__ = spmatrix.transpose.__doc__
+    transpose.__doc__ = _spbase.transpose.__doc__
 
     def tolil(self, copy=False):
         lil = self._lil_container(self.shape, dtype=self.dtype)
@@ -159,7 +164,7 @@ class csr_matrix(_cs_matrix):
 
         return lil
 
-    tolil.__doc__ = spmatrix.tolil.__doc__
+    tolil.__doc__ = _spbase.tolil.__doc__
 
     def tocsr(self, copy=False):
         if copy:
@@ -167,10 +172,10 @@ class csr_matrix(_cs_matrix):
         else:
             return self
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, self.shape[0]))
         indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
@@ -188,7 +193,7 @@ class csr_matrix(_cs_matrix):
         A.has_sorted_indices = True
         return A
 
-    tocsc.__doc__ = spmatrix.tocsc.__doc__
+    tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
         if blocksize is None:
@@ -208,7 +213,7 @@ class csr_matrix(_cs_matrix):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            idx_dtype = get_index_dtype((self.indptr, self.indices),
+            idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                         maxval=max(N//C, blks))
             indptr = np.empty(M//R+1, dtype=idx_dtype)
             indices = np.empty(blks, dtype=idx_dtype)
@@ -224,10 +229,10 @@ class csr_matrix(_cs_matrix):
                 (data, indices, indptr), shape=self.shape
             )
 
-    tobsr.__doc__ = spmatrix.tobsr.__doc__
+    tobsr.__doc__ = _spbase.tobsr.__doc__
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redundancy between csc_matrix and csr_matrix
+    # to remove redundancy between csc_matrix and csr_array
     def _swap(self, x):
         """swap the members of x if this is a column-oriented matrix
         """
@@ -246,7 +251,7 @@ class csr_matrix(_cs_matrix):
             )
             i0 = i1
 
-    def getrow(self, i):
+    def _getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
@@ -261,7 +266,7 @@ class csr_matrix(_cs_matrix):
         return self.__class__((data, indices, indptr), shape=(1, N),
                               dtype=self.dtype, copy=False)
 
-    def getcol(self, i):
+    def _getcol(self, i):
         """Returns a copy of column i of the matrix, as a (m x 1)
         CSR matrix (column vector).
         """
@@ -277,13 +282,13 @@ class csr_matrix(_cs_matrix):
                               dtype=self.dtype, copy=False)
 
     def _get_intXarray(self, row, col):
-        return self.getrow(row)._minor_index_fancy(col)
+        return self._getrow(row)._minor_index_fancy(col)
 
     def _get_intXslice(self, row, col):
         if col.step in (1, None):
             return self._get_submatrix(row, col, copy=True)
         # TODO: uncomment this once it's faster:
-        # return self.getrow(row)._minor_slice(col)
+        # return self._getrow(row)._minor_slice(col)
 
         M, N = self.shape
         start, stop, stride = col.indices(N)
@@ -331,7 +336,7 @@ class csr_matrix(_cs_matrix):
 
 
 def isspmatrix_csr(x):
-    """Is x of csr_matrix type?
+    """Is `x` of csr_matrix type?
 
     Parameters
     ----------
@@ -341,17 +346,28 @@ def isspmatrix_csr(x):
     Returns
     -------
     bool
-        True if x is a csr matrix, False otherwise
+        True if `x` is a csr matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import csr_matrix, isspmatrix_csr
+    >>> from scipy.sparse import csr_array, csr_matrix, coo_matrix, isspmatrix_csr
     >>> isspmatrix_csr(csr_matrix([[5]]))
     True
-
-    >>> from scipy.sparse import csc_matrix, csr_matrix, isspmatrix_csc
-    >>> isspmatrix_csr(csc_matrix([[5]]))
+    >>> isspmatrix_csr(csr_array([[5]]))
+    False
+    >>> isspmatrix_csr(coo_matrix([[5]]))
     False
     """
-    from ._arrays import csr_array
-    return isinstance(x, csr_matrix) or isinstance(x, csr_array)
+    return isinstance(x, csr_matrix)
+
+
+# This namespace class separates array from matrix with isinstance
+class csr_array(_csr_base, sparray):
+    pass
+
+csr_array.__doc__ = _csr_base.__doc__
+
+class csr_matrix(spmatrix, _csr_base):
+    pass
+
+csr_matrix.__doc__ = _array_doc_to_matrix(_csr_base.__doc__)

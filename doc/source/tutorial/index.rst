@@ -61,6 +61,7 @@ Below, you can find the complete user guide organized by subpackages.
    fft
    signal
    linalg
+   sparse
    arpack
    csgraph
    spatial

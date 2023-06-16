@@ -204,7 +204,7 @@ html_theme_options = {
 }
 
 if 'dev' in version:
-    html_theme_options["switcher"]["version_match"] = "dev"
+    html_theme_options["switcher"]["version_match"] = "development"
 
 if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.
@@ -316,7 +316,12 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
+        'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
+        'step2 is deprecated',  # Deprecation of scipy.signal.step2
+        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
+        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'kurtosistest only valid',  # intentionally "bad" excample in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

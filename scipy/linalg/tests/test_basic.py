@@ -1,4 +1,3 @@
-import platform
 import itertools
 import warnings
 
@@ -13,14 +12,13 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy._lib import _pep440
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, qr, LinAlgWarning)
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy._lib._testutils import check_free_memory
+from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
@@ -1060,11 +1058,7 @@ def direct_lstsq(a, b, cmplx=0):
 
 
 class TestLstsq:
-
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
-
-    def setup_method(self):
-        np.random.seed(1234)
 
     def test_simple_exact(self):
         for dtype in REAL_DTYPES:
@@ -1176,15 +1170,16 @@ class TestLstsq:
                                     err_msg="driver: %s" % lapack_driver)
 
     def test_random_exact(self):
+        rng = np.random.RandomState(1234)
         for dtype in REAL_DTYPES:
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n, n]), dtype=dtype)
+                        a = np.asarray(rng.random([n, n]), dtype=dtype)
                         for i in range(n):
                             a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(4):
-                            b = np.asarray(random([n, 3]), dtype=dtype)
+                            b = np.asarray(rng.random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
@@ -1209,22 +1204,19 @@ class TestLstsq:
                                           atol=1000 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
+    @pytest.mark.skipif(IS_MUSL, reason="may segfault on Alpine, see gh-17630")
     def test_random_complex_exact(self):
-        if platform.system() != "Windows":
-            if _pep440.parse(np.__version__) >= _pep440.Version("1.24.0"):
-                libc_flavor = platform.libc_ver()[0]
-                if libc_flavor != "glibc":
-                    pytest.skip("segfault observed on alpine per gh-17630")
+        rng = np.random.RandomState(1234)
         for dtype in COMPLEX_DTYPES:
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n, n]) + 1j*random([n, n]),
+                        a = np.asarray(rng.random([n, n]) + 1j*rng.random([n, n]),
                                        dtype=dtype)
                         for i in range(n):
                             a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(2):
-                            b = np.asarray(random([n, 3]), dtype=dtype)
+                            b = np.asarray(rng.random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
@@ -1249,15 +1241,16 @@ class TestLstsq:
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_overdet(self):
+        rng = np.random.RandomState(1234)
         for dtype in REAL_DTYPES:
             for (n, m) in ((20, 15), (200, 2)):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n, m]), dtype=dtype)
+                        a = np.asarray(rng.random([n, m]), dtype=dtype)
                         for i in range(m):
                             a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(4):
-                            b = np.asarray(random([n, 3]), dtype=dtype)
+                            b = np.asarray(rng.random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
@@ -1276,16 +1269,17 @@ class TestLstsq:
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_overdet(self):
+        rng = np.random.RandomState(1234)
         for dtype in COMPLEX_DTYPES:
             for (n, m) in ((20, 15), (200, 2)):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n, m]) + 1j*random([n, m]),
+                        a = np.asarray(rng.random([n, m]) + 1j*rng.random([n, m]),
                                        dtype=dtype)
                         for i in range(m):
                             a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(2):
-                            b = np.asarray(random([n, 3]), dtype=dtype)
+                            b = np.asarray(rng.random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten
                             # later
                             a1 = a.copy()

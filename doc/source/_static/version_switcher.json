@@ -1,7 +1,7 @@
 [
     {
-        "name": "dev",
-        "version": "dev",
+        "name": "development",
+        "version": "development",
         "url": "https://scipy.github.io/devdocs/"
     },
     {

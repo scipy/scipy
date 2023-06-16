@@ -22,8 +22,7 @@ import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
 from scipy.sparse.linalg import LinearOperator
-from scipy.sparse import isspmatrix
-from numpy import block as bmat
+from scipy.sparse import issparse
 
 __all__ = ["lobpcg"]
 
@@ -67,20 +66,48 @@ def _makeMatMat(m):
         return lambda v: m @ v
 
 
+def _matmul_inplace(x, y, verbosityLevel=0):
+    """Perform 'np.matmul' in-place if possible.
+
+    If some sufficient conditions for inplace matmul are met, do so.
+    Otherwise try inplace update and fall back to overwrite if that fails.
+    """
+    if x.flags["CARRAY"] and x.shape[1] == y.shape[1] and x.dtype == y.dtype:
+        # conditions where we can guarantee that inplace updates will work;
+        # i.e. x is not a view/slice, x & y have compatible dtypes, and the
+        # shape of the result of x @ y matches the shape of x.
+        np.matmul(x, y, out=x)
+    else:
+        # ideally, we'd have an exhaustive list of conditions above when
+        # inplace updates are possible; since we don't, we opportunistically
+        # try if it works, and fall back to overwriting if necessary
+        try:
+            np.matmul(x, y, out=x)
+        except Exception:
+            if verbosityLevel:
+                warnings.warn(
+                    "Inplace update of x = x @ y failed, "
+                    "x needs to be overwritten.",
+                    UserWarning, stacklevel=3
+                )
+            x = x @ y
+    return x
+
+
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
-    """Changes blockVectorV in place."""
-    YBV = np.dot(blockVectorBY.T.conj(), blockVectorV)
+    """Changes blockVectorV in-place."""
+    YBV = blockVectorBY.T.conj() @ blockVectorV
     tmp = cho_solve(factYBY, YBV)
-    blockVectorV -= np.dot(blockVectorY, tmp)
+    blockVectorV -= blockVectorY @ tmp
 
 
 def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
     """in-place B-orthonormalize the given block vector using Cholesky."""
-    normalization = blockVectorV.max(axis=0) + np.finfo(blockVectorV.dtype).eps
-    blockVectorV = blockVectorV / normalization
     if blockVectorBV is None:
-        if B is not None:
+        if B is None:
+            blockVectorBV = blockVectorV
+        else:
             try:
                 blockVectorBV = B(blockVectorV)
             except Exception as e:
@@ -90,7 +117,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                         f"{e}\n",
                         UserWarning, stacklevel=3
                     )
-                    return None, None, None, normalization
+                    return None, None, None
             if blockVectorBV.shape != blockVectorV.shape:
                 raise ValueError(
                     f"The shape {blockVectorV.shape} "
@@ -98,28 +125,29 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                     f"and changed to {blockVectorBV.shape} "
                     f"after multiplying by the secondary matrix.\n"
                 )
-        else:
-            blockVectorBV = blockVectorV  # Shared data!!!
-    else:
-        blockVectorBV = blockVectorBV / normalization
+
     VBV = blockVectorV.T.conj() @ blockVectorBV
     try:
         # VBV is a Cholesky factor from now on...
         VBV = cholesky(VBV, overwrite_a=True)
         VBV = inv(VBV, overwrite_a=True)
-        blockVectorV = blockVectorV @ VBV
-        # blockVectorV = (cho_solve((VBV.T, True), blockVectorV.T)).T
+        blockVectorV = _matmul_inplace(
+            blockVectorV, VBV,
+            verbosityLevel=verbosityLevel
+        )
         if B is not None:
-            blockVectorBV = blockVectorBV @ VBV
-            # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
-        return blockVectorV, blockVectorBV, VBV, normalization
+            blockVectorBV = _matmul_inplace(
+                blockVectorBV, VBV,
+                verbosityLevel=verbosityLevel
+            )
+        return blockVectorV, blockVectorBV, VBV
     except LinAlgError:
         if verbosityLevel:
             warnings.warn(
                 "Cholesky has failed.",
                 UserWarning, stacklevel=3
             )
-        return None, None, None, normalization
+        return None, None, None
 
 
 def _get_indx(_lambda, num, largest):
@@ -493,7 +521,7 @@ def lobpcg(
                         f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
                     )
-            elif isspmatrix(A):
+            elif issparse(A):
                 A = A.toarray()
             else:
                 A = np.asarray(A)
@@ -513,7 +541,7 @@ def lobpcg(
                             f"The shape {B.shape} of the secondary matrix\n"
                             f"defined by a callable object is wrong.\n"
                         )
-                elif isspmatrix(B):
+                elif issparse(B):
                     B = B.toarray()
                 else:
                     B = np.asarray(B)
@@ -562,10 +590,10 @@ def lobpcg(
             blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
-        gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
+        gramYBY = blockVectorY.T.conj() @ blockVectorBY
         try:
             # gramYBY is a Cholesky factor from now on...
-            gramYBY = cho_factor(gramYBY)
+            gramYBY = cho_factor(gramYBY, overwrite_a=True)
         except LinAlgError as e:
             raise ValueError("Linearly dependent constraints") from e
 
@@ -573,7 +601,7 @@ def lobpcg(
 
     ##
     # B-orthonormalize X.
-    blockVectorX, blockVectorBX, _, _ = _b_orthonormalize(
+    blockVectorX, blockVectorBX, _ = _b_orthonormalize(
         B, blockVectorX, verbosityLevel=verbosityLevel)
     if blockVectorX is None:
         raise ValueError("Linearly dependent initial approximations")
@@ -589,7 +617,7 @@ def lobpcg(
             f"after multiplying by the primary matrix.\n"
         )
 
-    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
+    gramXAX = blockVectorX.T.conj() @ blockVectorAX
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
@@ -598,10 +626,19 @@ def lobpcg(
         lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
-    blockVectorX = np.dot(blockVectorX, eigBlockVector)
-    blockVectorAX = np.dot(blockVectorAX, eigBlockVector)
+    blockVectorX = _matmul_inplace(
+        blockVectorX, eigBlockVector,
+        verbosityLevel=verbosityLevel
+    )
+    blockVectorAX = _matmul_inplace(
+        blockVectorAX, eigBlockVector,
+        verbosityLevel=verbosityLevel
+    )
     if B is not None:
-        blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
+        blockVectorBX = _matmul_inplace(
+            blockVectorBX, eigBlockVector,
+            verbosityLevel=verbosityLevel
+        )
 
     ##
     # Active index set.
@@ -710,7 +747,7 @@ def lobpcg(
         # B-orthonormalize the preconditioned residuals.
         aux = _b_orthonormalize(
             B, activeBlockVectorR, verbosityLevel=verbosityLevel)
-        activeBlockVectorR, activeBlockVectorBR, _, _ = aux
+        activeBlockVectorR, activeBlockVectorBR, _ = aux
 
         if activeBlockVectorR is None:
             warnings.warn(
@@ -728,15 +765,17 @@ def lobpcg(
                     B, activeBlockVectorP, activeBlockVectorBP,
                     verbosityLevel=verbosityLevel
                 )
-                activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
+                activeBlockVectorP, activeBlockVectorBP, invR = aux
             else:
                 aux = _b_orthonormalize(B, activeBlockVectorP,
                                         verbosityLevel=verbosityLevel)
-                activeBlockVectorP, _, invR, normal = aux
+                activeBlockVectorP, _, invR = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
-                activeBlockVectorAP = activeBlockVectorAP / normal
-                activeBlockVectorAP = np.dot(activeBlockVectorAP, invR)
+                activeBlockVectorAP = _matmul_inplace(
+                    activeBlockVectorAP, invR,
+                    verbosityLevel=verbosityLevel
+                )
                 restart = forcedRestart
             else:
                 restart = True
@@ -794,14 +833,14 @@ def lobpcg(
             else:
                 gramPBP = np.eye(currentBlockSize, dtype=gramDtype)
 
-            gramA = bmat(
+            gramA = np.block(
                 [
                     [gramXAX, gramXAR, gramXAP],
                     [gramXAR.T.conj(), gramRAR, gramRAP],
                     [gramXAP.T.conj(), gramRAP.T.conj(), gramPAP],
                 ]
             )
-            gramB = bmat(
+            gramB = np.block(
                 [
                     [gramXBX, gramXBR, gramXBP],
                     [gramXBR.T.conj(), gramRBR, gramRBP],
@@ -827,8 +866,8 @@ def lobpcg(
                 restart = True
 
         if restart:
-            gramA = bmat([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
-            gramB = bmat([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
+            gramA = np.block([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
+            gramB = np.block([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
 
             _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
 

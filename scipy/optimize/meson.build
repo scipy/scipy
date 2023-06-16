@@ -178,28 +178,6 @@ _slsqp = py3.extension_module('_slsqp',
   subdir: 'scipy/optimize'
 )
 
-__nnls_module = custom_target('__nnls_module',
-  output: ['__nnlsmodule.c'],
-  input: '__nnls/nnls.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.install_sources(
-  ['__nnls.pyi'],
-  subdir: 'scipy/optimize'
-)
-
-__nnls = py3.extension_module('__nnls',
-  ['__nnls/nnls.f', __nnls_module],
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
-  link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/optimize'
-)
-
 _pava_pybind = py3.extension_module('_pava_pybind',
   ['_pava/pava_pybind.cpp'],
   cpp_args: [numpy_nodepr_api],

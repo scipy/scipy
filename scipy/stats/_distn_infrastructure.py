@@ -3098,14 +3098,17 @@ class rv_discrete(rv_generic):
     This class is similar to `rv_continuous`. Whether a shape parameter is
     valid is decided by an ``_argcheck`` method (which defaults to checking
     that its arguments are strictly positive.)
-    The main differences are:
+    The main differences are as follows.
 
-    - the support of the distribution is a set of integers
-    - instead of the probability density function, ``pdf`` (and the
+    - The support of the distribution is a set of integers.
+    - Instead of the probability density function, ``pdf`` (and the
       corresponding private ``_pdf``), this class defines the
       *probability mass function*, `pmf` (and the corresponding
       private ``_pmf``.)
-    - scale parameter is not defined.
+    - There is no ``scale`` parameter.
+    - The default implementations of methods (e.g. ``_cdf``) are not designed
+      for distributions with support that is unbounded below (i.e.
+      ``a=-np.inf``), so they must be overridden.
 
     To create a new discrete distribution, we would do the following:
 
