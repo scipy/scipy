@@ -8081,7 +8081,7 @@ class TestQuantileTest():
         assert_almost_equal(expected, [lb,ub], decimal=5)
 
     def test_pval_ci_match(self):
-        # Verify that the following statement hold:
+        # Verify that the following statement holds:
         #
         # The 95% confidence interval corresponding with alternative='less' 
         # has -inf as its lower bound, and if xu is the upper bound, then xu 
