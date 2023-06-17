@@ -123,6 +123,21 @@ def _get_umf_family(A):
 
     return family, A_new
 
+def _safe_downcast_indices(A):
+    # check for safe downcasting
+    int32max = np.iinfo(np.int32).max
+
+    if indptr[-1] > int32max:  # indptr[-1] is max b/c indptr always sorted
+        raise ValueError("indptr values too large for SuperLU")
+
+    if max(*shape) > int32max:  # only check large enough arrays
+        if np.any(A.indices > int32max):
+            raise ValueError("indices values too large for SuperLU")
+
+    indices = A.indices.astype(np.intc, copy=False)
+    indptr = A.indptr.astype(np.intc, copy=False)
+    return indices, indptr
+
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
@@ -404,14 +419,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    # check for safe downcasting
-    ii = np.iinfo(np.int32)
-    # check indices because they should be larger than indptr
-    if np.any(A.indices > ii.max || A.indices < ii.min):
-        raise ValueError("index values too large for SuperLU")
+    indices, indptr = _safe_downcast_indices(A)
 
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
@@ -505,14 +514,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
-    # check for safe downcasting
-    ii = np.iinfo(np.int32)
-    # check indices because they should be larger than indptr
-    if np.any(A.indices > ii.max || A.indices < ii.min):
-        raise ValueError("index values too large for SuperLU")
+    indices, indptr = _safe_downcast_indices(A)
 
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
                     DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
