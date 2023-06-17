@@ -2964,7 +2964,9 @@ def stirling2(N, K, exact=True):
 
         The values this function returns are calculated using a dynamic
         program which avoids redundant computation across the subproblems
-        in the solution.
+        in the solution. For array-like input, this implementation also 
+        avoids redundant computation across the different Stirling number
+        calculations.
 
         The numbers are sometimes denoted
         .. math::
