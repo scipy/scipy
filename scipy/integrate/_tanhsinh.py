@@ -219,7 +219,7 @@ def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
     Sn = aerr = np.nan  # integral and error are NaN until determined otherwise
     status = -1  # "Iteration in progress." for callback
     feval = 0  # function evaluation counter
-    h0 = _get_step()
+    h0 = _get_base_step()
 
     for n in range(minlevel, maxlevel+1):  # for each "level"
         h = h0 / 2**n  # step size
@@ -229,26 +229,28 @@ def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
 
         # Determine whether evaluating the function at the abscissae will
         # cause the function evaluation limit to be exceeded. If so, break.
-        # Otherwise, increment the function eval counter.
+        # Otherwise, increment the function eval counter. `feval_factor` is
+        # needed for doubly-infinite integrals (see `_transform_integral`).
         if feval + 2*len(xjc) * feval_factor > maxfun:
-            status = 2
+            status = 2  # function evaluation limit
             break
 
         # Transform the abscissae as required by the limits of integration
-        xj, wj = _transform_to_limits(a, b, xjc, wj)
+        xj, wj = _transform_to_limits(xjc, wj, a, b)
 
         # Perform the Euler-Maclaurin sum
         feval += len(xj) * feval_factor  # function evals happen next
-        fjwj, Sn, last_terms = _euler_maclaurin_sum(f, h, xj, wj, last_terms, log)
+        fjwj, Sn, last_terms = _euler_maclaurin_sum(f, xj, wj, h, last_terms, log)
 
         # Check for infinities / NaNs. If encountered, break.
         not_finite = ((log and (np.isposinf(np.real(Sn)) or np.isnan(Sn))) or
                       (not log and not np.isfinite(Sn)))
         if not_finite:
-            status = 3  # function evaluation limit
+            status = 3  # invalid value encountered
             break
 
-        # If we have integral estimates from a lower level, update it.
+        # If we have an integral estimate from a lower level, `Sn` calculated
+        # by _euler_maclaurin_sum is an update.
         if Sk:
             Snm1 = Sk[-1]
             Sn = (special.logsumexp([Snm1 - np.log(2), Sn]) if log
@@ -256,9 +258,9 @@ def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
         # Otherwise, the integral estimate is just Sn.
 
         # Check error estimate (see [1] 5. Error Estimation, page 11)
-        rerr, aerr, Sk, last_terms = _estimate_error(h, n, Sn, Sk, fjwj,
-                                                     last_terms, log)
-        success = (rerr < rtol or (rerr + Sn < atol) if log
+        rerr, aerr, Sk = _estimate_error(n, Sn, Sk, fjwj, h,
+                                         last_terms, log)
+        success = (rerr < rtol or (rerr + np.real(Sn) < atol) if log
                    else rerr < rtol or rerr*abs(Sn) < atol)
         if success:
             status = 0  # Success
@@ -274,12 +276,14 @@ def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
                             success=status==0, status=status, message=message)
 
 
-def _get_step(dtype=np.float64):
+# argument `dtype` currently unused, but will be used
+# when I vectorize and respect dtypes.
+def _get_base_step(dtype=np.float64):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
     # weights underflow or the abscissae cannot be distinguished from the
     # limits of integration. The latter happens to occur first for float32 and
-    # float64, and it occurs which the standard `xjc` (abscissa complement)
+    # float64, and it occurs when`xjc` (the abscissa complement)
     # in `_compute_pair` underflows. We can solve for the argument at which
     # it will underflow `tmax` using [2] Eq. 13.
     fmin = np.finfo(dtype).tiny*4  # stay a little away from the limit
@@ -288,9 +292,10 @@ def _get_step(dtype=np.float64):
     # Based on this, we can choose a base step size `h` for level 0.
     # The number of function evaluations will be `2 + m*2^(k+1)`, where `k` is
     # the level and `m` is an integer we get to choose. I choose `8` somewhat
-    # arbitrarily, but a power of 2 might make arithmetic more predictable, and
-    # because it doesn't change the performance much from the original step
-    # size I was using before I found [2] and these ideas settled.
+    # arbitrarily, but a rationale is that a power of 2 makes floating point
+    # arithmetic more predictable. It also results in a base step size close
+    # to `1`, which is what [1] uses (and I used here until I found [2] and
+    # these ideas settled).
     h0 = tmax / _N_BASE_STEPS
     return h0
 
@@ -331,10 +336,10 @@ def _compute_pair(k, h0):
 def _pair_cache(max_level, h0):
     # Cache the ascissa-weight pairs up to a specified level
     # All abscissae (weights) are stored concatenated in a 1D array;
-    # `index` notes the last index of each level.
+    # `index` records the first index of each level after level 0.
     pairs = [_compute_pair(k, h0) for k in range(max_level + 1)]
-    lengths = [len(pair[0]) for pair in pairs]
     _pair_cache.xjc, _pair_cache.wj = np.concatenate(pairs, axis=-1)
+    lengths = [len(pair[0]) for pair in pairs]
     _pair_cache.indices = np.cumsum(lengths)
 _pair_cache.xjc = None
 _pair_cache.wj = None
@@ -346,6 +351,7 @@ def _get_pairs(k, h0, inclusive=False):
     # If `inclusive`, return all up to and including the specified level
     indices = _pair_cache.indices
     if len(indices) <= k:
+         # rarely are more than 6 levels needed; 10 is plenty to start with
         _pair_cache(max(10, k), h0)
         indices = _pair_cache.indices
     xjc = _pair_cache.xjc
@@ -354,10 +360,10 @@ def _get_pairs(k, h0, inclusive=False):
     start = 0 if (k == 0 or inclusive) else indices[k-1]
     end = indices[k]
 
-    return xjc[start:end].copy(), wj[start:end].copy()
+    return xjc[start:end], wj[start:end]
 
 
-def _transform_to_limits(a, b, xjc, wj):
+def _transform_to_limits(xjc, wj, a, b):
     # Transform integral according to user-specified limits. This is just
     # math that follows from the fact that the standard limits are (-1, 1).
     # Note: If we had stored xj instead of xjc, we would have
@@ -377,11 +383,11 @@ def _transform_to_limits(a, b, xjc, wj):
     return xj, wj
 
 
-def _euler_maclaurin_sum(f, h, xj, wj, last_terms, log):
+def _euler_maclaurin_sum(f, xj, wj, h, last_terms, log):
     # Perform the Euler-Maclaurin Sum, [1] Section 4
     with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
-        # Warnings due to function evaluation at endpoints are not cause for
-        # concern; the resulting values will be given 0 weight.
+        # Warnings due to any endpoints singularities are not cause for
+        # concern; the resulting values will be replaced.
         fj = f(xj)
 
     # The error estimate needs to know the magnitude of the last term
@@ -398,7 +404,7 @@ def _euler_maclaurin_sum(f, h, xj, wj, last_terms, log):
     xr[invalid_r], xl[invalid_l] = -np.inf, np.inf
     ir, il = np.argmax(xr), np.argmin(xl)
 
-    # Determine whether the most extreme abscissae were from this level or
+    # Determine whether the most extreme abscissae are from this level or
     # a previous level. Update the record of the corresponding weights and
     # function values.
     fr, fl = fj.reshape(2, -1)
@@ -408,7 +414,7 @@ def _euler_maclaurin_sum(f, h, xj, wj, last_terms, log):
     xl0, fl0, wl0 = ((xl[il], fl[il], wl[il]) if xl[il] < xl0
                      else (xl0, fl0, wl0))
 
-    # Compute the error estimate - the magnitude of the leftmost term or the
+    # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
     flwl0 = fl0 + np.log(wl0) if log else fl0 * wl0  # leftmost term
     frwr0 = fr0 + np.log(wr0) if log else fr0 * wr0  # rightmost term
@@ -435,13 +441,13 @@ def _euler_maclaurin_sum(f, h, xj, wj, last_terms, log):
     return fjwj, Sn, last_terms
 
 
-def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
+def _estimate_error(n, Sn, Sk, fjwj, h, last_terms, log):
     # Estimate the error according to [1] Section 5
 
     if n == 0:
         # The paper says to use "one" as the error before it can be calculated.
         # NaN seems to be more appropriate.
-        return np.nan, np.nan, Sk, last_terms
+        return np.nan, np.nan, Sk
 
     indices = _pair_cache.indices
     z = fjwj.reshape(2, -1)
@@ -452,22 +458,22 @@ def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
     # lower-level estimates.
     if len(Sk) == 0:
         hm1 = 2 * h
-        fjwjm1 = z[..., :indices[n-1]]
-        Snm1 = (special.logsumexp(fjwjm1 + np.log(hm1)) if log
-                else np.sum(fjwjm1) * hm1)
+        fjwjm1_rl = fjwj_rl[:, :indices[n-1]]
+        Snm1 = (special.logsumexp(fjwjm1_rl + np.log(hm1)) if log
+                else np.sum(fjwjm1_rl) * hm1)
         Sk.append(Snm1)
 
     if n == 1:
-        return np.nan, np.nan, Sk, last_terms
+        return np.nan, np.nan, Sk
 
     # The paper says not to calculate the error for n<=2, but it's not clear
     # about whether it starts at level 0 or level 1. We start at level 0, so
     # why not compute the error beginning in level 2?
     if len(Sk) < 2:
         hm2 = 4 * h
-        fjwjm2 = z[..., :indices[n-2]]
-        Snm2 = (special.logsumexp(fjwjm2 + np.log(hm2)) if log
-                else np.sum(fjwjm2) * hm2)
+        fjwjm2_rl = fjwj_rl[:, :indices[n-2]]
+        Snm2 = (special.logsumexp(fjwjm2_rl + np.log(hm2)) if log
+                else np.sum(fjwjm2_rl) * hm2)
         Sk.insert(0, Snm2)
 
     Snm2, Snm1 = Sk[-2:]
@@ -494,10 +500,11 @@ def _estimate_error(h, n, Sn, Sk, fjwj, last_terms, log):
         d2 = np.abs(Sn - Snm2)
         d3 = e1 * np.max(fjwj)
         d4 = last_terms[-1]
+        # If `d1` is 0, no need to warn. This does the right thing.
         with np.errstate(divide='ignore'):
             aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4])
         rerr = max(e1, aerr/np.abs(Sn))
-    return rerr, aerr, Sk, last_terms
+    return rerr, aerr, Sk
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
     # Input validation and standardization
