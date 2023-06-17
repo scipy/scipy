@@ -3004,8 +3004,8 @@ def stirling2(N, K, exact=True):
 
         References
         ----------
-         .. [GKP] R. L. Graham, D. E. Knuth and O. Patashnik, “Concrete
-        Mathematics: A Foundation for Computer Science,” Addison-Wesley
+         .. [GKP] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
+        Mathematics: A Foundation for Computer Science," Addison-Wesley
         Publishing Company, Boston, 1989. Chapter 6, page 258.
 
         Examples
