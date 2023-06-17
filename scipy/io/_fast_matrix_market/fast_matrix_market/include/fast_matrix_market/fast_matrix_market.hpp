@@ -187,6 +187,24 @@ namespace fast_matrix_market {
 
         return s;
     }
+
+    /**
+     * Replace all instances of `from` with `to` in `str`.
+     */
+    inline std::string replace_all(const std::string& str, const std::string& from, const std::string& to) {
+        std::string ret(str);
+
+        if (from.empty())
+            return ret;
+
+        std::string::size_type start_pos = 0;
+        while ((start_pos = ret.find(from, start_pos)) != std::string::npos) {
+            ret.replace(start_pos, from.length(), to);
+            start_pos += to.length();
+        }
+
+        return ret;
+    }
 }
 
 #include "field_conv.hpp"

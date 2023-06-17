@@ -384,6 +384,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     %%MatrixMarket matrix array real general
     %
     % Some test data.
+    %
     2 4
     1.00e+00
     0.00e+00

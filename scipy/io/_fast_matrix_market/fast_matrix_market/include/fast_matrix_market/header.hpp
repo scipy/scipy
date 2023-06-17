@@ -128,10 +128,7 @@ namespace fast_matrix_market {
         ++pos;
 
         // Line is a comment. Save it to the header.
-        if (!header.comment.empty()) {
-            header.comment += "\n";
-        }
-        header.comment += line.substr(pos);
+        header.comment += line.substr(pos) + "\n";
         return true;
     }
 
@@ -198,6 +195,11 @@ namespace fast_matrix_market {
                 throw invalid_mm("Invalid MatrixMarket header: Premature EOF", lines_read);
             }
         } while (read_comment(header, line));
+
+        // trim off final comment newline
+        if (ends_with(header.comment, "\n")) {
+            header.comment.resize(header.comment.size() - 1);
+        }
 
         // parse the dimension line
         {
@@ -274,12 +276,10 @@ namespace fast_matrix_market {
         os << symmetry_map.at(header.symmetry) << kNewline;
 
         // Write the comment
-        {
-            std::istringstream iss(header.comment);
-            std::string line;
-            while (std::getline(iss, line)) {
-                os << "%" << line << kNewline;
-            }
+        if (!header.comment.empty()) {
+            std::string write_comment = replace_all(header.comment, "\n", "\n%");
+
+            os << "%" << write_comment << kNewline;
         }
 
         // Write dimension line
