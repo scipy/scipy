@@ -67,9 +67,26 @@ class TestCholesky:
             assert_array_almost_equal(cholesky(a, lower=1), c)
 
     def test_empty(self):
-        a = np.empty((0, 0))
+        a = empty((0, 0))
+
         c = cholesky(a)
-        assert_allclose(c, np.empty((0, 0)))
+        assert_array_equal(c, empty((0, 0)))
+
+        c_and_lower = (c, True)
+        b = []
+        x = cho_solve(c_and_lower, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = cho_solve(c_and_lower, b)
+        assert_allclose(x, np.empty((0, 0)))
+
+        a1 = array([])
+        a2 = array([[]])
+        a3 = []
+        a4 = [[]]
+        for x in ([a1, a2, a3, a4]):
+            assert_raises(ValueError, cholesky, x)
 
 
 class TestCholeskyBanded:
@@ -170,6 +187,21 @@ class TestCholeskyBanded:
         x = cho_solve_banded((c, True), b)
         assert_array_almost_equal(x, [0.0, 0.0, 1.0j, 1.0])
 
+    def test_empty(self):
+        ab = empty((0, 0))
+
+        cb = cholesky_banded(ab)
+        assert_array_equal(cb, empty((0, 0)))
+
+        cb_and_lower = (cb, True)
+        b = []
+        x = cho_solve_banded(cb_and_lower, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = cho_solve_banded(cb_and_lower, b)
+        assert_allclose(x, np.empty((0, 0)))
+
 
 class TestOverwrite:
     def test_cholesky(self):
@@ -191,18 +223,3 @@ class TestOverwrite:
         xcho = cholesky_banded(x)
         assert_no_overwrite(lambda b: cho_solve_banded((xcho, False), b),
                             [(3,)])
-
-
-class TestEmptyArray:
-    def test_cho_factor_empty_square(self):
-        a = empty((0, 0))
-        b = array([])
-        c = array([[]])
-        d = []
-        e = [[]]
-
-        x, _ = cho_factor(a)
-        assert_array_equal(x, a)
-
-        for x in ([b, c, d, e]):
-            assert_raises(ValueError, cho_factor, x)

@@ -648,6 +648,14 @@ class TestEigBanded:
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
 
+    def test_empty(self):
+        a_band = np.empty((0, 0))
+        w, v = eig_banded(a_band)
+        assert_allclose(w, np.empty((0,)))
+        assert_allclose(v, np.empty((0, 0)))
+        w = eig_banded(a_band, eigvals_only=True)
+        assert_allclose(w, np.empty((0,)))
+
 
 class TestEigTridiagonal:
     def setup_method(self):

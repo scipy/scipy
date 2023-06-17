@@ -242,6 +242,16 @@ class TestLUFactor:
             assert_allclose(LU, np.array([[2, 1], [0, 1]]))
             assert_array_equal(P, np.array([0, 1]))
 
+    def test_empty(self):
+        a = np.empty((0, 0))
+        lu, p = lu_factor(a)
+        assert_allclose(lu, np.empty((0, 0)))
+        assert_allclose(p, np.empty((0,)))
+        a = np.empty((3, 0))
+        lu, p = lu_factor(a)
+        assert_allclose(lu, np.empty((3, 0)))
+        assert_allclose(p, np.arange(3))
+
 
 class TestLUSolve:
     def setup_method(self):
@@ -265,3 +275,13 @@ class TestLUSolve:
         lu_a = lu_factor(a, check_finite=False)
         x2 = lu_solve(lu_a, b, check_finite=False)
         assert_allclose(x1, x2)
+
+    def test_empty(self):
+        lu_and_piv = (np.empty((0, 0)), np.array([]))
+        b = []
+        x = lu_solve(lu_and_piv, b)
+        assert_allclose(x, [])
+
+        b = np.empty((0, 0))
+        x = lu_solve(lu_and_piv, b)
+        assert_allclose(x, np.empty((0, 0)))

@@ -199,11 +199,16 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     else:
         b1 = asarray(b)
         c = asarray(c)
+
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
         raise ValueError("incompatible dimensions ({} and {})"
                          .format(c.shape, b1.shape))
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return empty_like(b1)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
@@ -280,6 +285,10 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     else:
         ab = asarray(ab)
 
+    # accommodate square empty matrices
+    if ab.size == 0:
+        return empty_like(ab)
+
     pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
     if info > 0:
@@ -347,6 +356,10 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     # Validate shapes.
     if cb.shape[-1] != b.shape[0]:
         raise ValueError("shapes of cb and b are not compatible.")
+
+    # accommodate empty arrays
+    if b.size == 0:
+        return empty_like(b)
 
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)

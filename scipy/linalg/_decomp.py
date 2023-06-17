@@ -799,8 +799,19 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected a 2-D array')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w = numpy.empty_like(a1, shape=(0,))
+        v = numpy.empty_like(a1, shape=(0, 0))
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
+
     del select_range
     if select == 0:
         if a1.dtype.char in 'GFD':

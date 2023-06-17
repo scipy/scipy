@@ -105,7 +105,15 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
+
+    # accommodate empty arrays
+    if a1.size == 0:
+        lu = np.empty_like(a1)
+        piv = np.arange(lu.shape[0])
+        return lu, piv
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+
     getrf, = get_lapack_funcs(('getrf',), (a1,))
     lu, piv, info = getrf(a1, overwrite_a=overwrite_a)
     if info < 0:
@@ -170,10 +178,16 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         b1 = asarray_chkfinite(b)
     else:
         b1 = asarray(b)
+
     overwrite_b = overwrite_b or _datacopied(b1, b)
+
     if lu.shape[0] != b1.shape[0]:
         raise ValueError("Shapes of lu {} and b {} are incompatible"
                          .format(lu.shape, b1.shape))
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        return np.empty_like(b1)
 
     getrs, = get_lapack_funcs(('getrs',), (lu, b1))
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
