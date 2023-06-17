@@ -4,6 +4,8 @@ import numpy as np
 from scipy import special
 
 # todo:
+#  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
+#  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
 #  Add heuristic to stop when improvement is too slow
@@ -333,32 +335,40 @@ def _compute_pair(k, h0):
     return xjc, wj
 
 
-def _pair_cache(max_level, h0):
-    # Cache the ascissa-weight pairs up to a specified level
-    # All abscissae (weights) are stored concatenated in a 1D array;
-    # `index` records the first index of each level after level 0.
-    pairs = [_compute_pair(k, h0) for k in range(max_level + 1)]
-    _pair_cache.xjc, _pair_cache.wj = np.concatenate(pairs, axis=-1)
-    lengths = [len(pair[0]) for pair in pairs]
-    _pair_cache.indices = np.cumsum(lengths)
-_pair_cache.xjc = None
-_pair_cache.wj = None
-_pair_cache.indices = []
+def _pair_cache(k, h0):
+    # Cache the ascissa-weight pairs up to a specified level.
+    # Abscissae and weights of consecutive levels are concatenated in separate
+    # 1D arrays. `index` records the indices that correspond with each level;
+    # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
+    xjcs = [_pair_cache.xjc]
+    wjs = [_pair_cache.wj]
+
+    for i in range(len(_pair_cache.indices)-1, k + 1):
+        xjc, wj = _compute_pair(i, h0)
+        xjcs.append(xjc)
+        wjs.append(wj)
+        _pair_cache.indices.append(_pair_cache.indices[-1] + len(xjc))
+
+    _pair_cache.xjc = np.concatenate(xjcs)
+    _pair_cache.wj = np.concatenate(wjs)
+
+_pair_cache.xjc = np.empty(0)
+_pair_cache.wj = np.empty(0)
+_pair_cache.indices = [0]
 
 
 def _get_pairs(k, h0, inclusive=False):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
-    indices = _pair_cache.indices
-    if len(indices) <= k:
-         # rarely are more than 6 levels needed; 10 is plenty to start with
-        _pair_cache(max(10, k), h0)
-        indices = _pair_cache.indices
+    if len(_pair_cache.indices) <= k+2:
+        _pair_cache(k, h0)
+
     xjc = _pair_cache.xjc
     wj = _pair_cache.wj
+    indices = _pair_cache.indices
 
-    start = 0 if (k == 0 or inclusive) else indices[k-1]
-    end = indices[k]
+    start = 0 if inclusive else indices[k]
+    end = indices[k+1]
 
     return xjc[start:end], wj[start:end]
 
@@ -458,7 +468,7 @@ def _estimate_error(n, Sn, Sk, fjwj, h, last_terms, log):
     # lower-level estimates.
     if len(Sk) == 0:
         hm1 = 2 * h
-        fjwjm1_rl = fjwj_rl[:, :indices[n-1]]
+        fjwjm1_rl = fjwj_rl[:, :indices[n]]
         Snm1 = (special.logsumexp(fjwjm1_rl + np.log(hm1)) if log
                 else np.sum(fjwjm1_rl) * hm1)
         Sk.append(Snm1)
@@ -471,7 +481,7 @@ def _estimate_error(n, Sn, Sk, fjwj, h, last_terms, log):
     # why not compute the error beginning in level 2?
     if len(Sk) < 2:
         hm2 = 4 * h
-        fjwjm2_rl = fjwj_rl[:, :indices[n-2]]
+        fjwjm2_rl = fjwj_rl[:, :indices[n-1]]
         Snm2 = (special.logsumexp(fjwjm2_rl + np.log(hm2)) if log
                 else np.sum(fjwjm2_rl) * hm2)
         Sk.insert(0, Snm2)
