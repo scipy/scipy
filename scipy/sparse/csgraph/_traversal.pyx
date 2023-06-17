@@ -184,8 +184,8 @@ def breadth_first_tree(csgraph, i_start, directed=True):
     Note that the resulting graph is a Directed Acyclic Graph which spans
     the graph.  A breadth-first tree from a given node is unique.
     """
-    node_list, predecessors = breadth_first_order(csgraph, i_start,
-                                                  directed, True)
+    _node_list, predecessors = breadth_first_order(csgraph, i_start,
+                                                   directed, True)
     return reconstruct_path(csgraph, predecessors, directed)
 
 
@@ -258,8 +258,8 @@ def depth_first_tree(csgraph, i_start, directed=True):
     had begun with the edge connecting nodes 0 and 3, the result would have
     been different.
     """
-    node_list, predecessors = depth_first_order(csgraph, i_start,
-                                                directed, True)
+    _node_list, predecessors = depth_first_order(csgraph, i_start,
+                                                 directed, True)
     return reconstruct_path(csgraph, predecessors, directed)
 
 
