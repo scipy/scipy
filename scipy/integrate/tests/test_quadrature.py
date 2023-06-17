@@ -612,25 +612,25 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, minlevel=-1)
 
-    @pytest.mark.parametrize("limits, val", [
+    @pytest.mark.parametrize("limits, ref", [
         [(0, np.inf), 0.5],  # b infinite
         [(-np.inf, 0), 0.5],  # a infinite
         [(-np.inf, np.inf), 1],  # a and b infinite
         [(np.inf, -np.inf), -1],  # flipped limits
         [(1, -1), stats.norm.cdf(-1) -  stats.norm.cdf(1)],  # flipped limits
     ])
-    def test_integral_transforms(self, limits, val):
+    def test_integral_transforms(self, limits, ref):
         # Check that the integral transforms are behaving for both log and
         # normal integration
         dist = stats.norm()
 
         res = _tanhsinh(dist.pdf, *limits)
-        assert_allclose(res.integral, val)
+        assert_allclose(res.integral, ref)
 
         logres = _tanhsinh(dist.logpdf, *limits, log=True)
-        assert_allclose(np.exp(logres.integral), val)
+        assert_allclose(np.exp(logres.integral), ref)
         # Transformation should not make the result complex unnecessarily
-        assert (np.isreal(logres.integral) if val > 0
+        assert (np.isreal(logres.integral) if ref > 0
                 else np.iscomplex(logres.integral))
 
         assert_allclose(np.exp(logres.error), res.error, atol=1e-16)
@@ -812,8 +812,7 @@ class TestTanhSinh:
         def f(x):
             return np.exp(1j * x)
 
-        a, b = 0, np.pi/4
-        res = _tanhsinh(f, a, b)
+        res = _tanhsinh(f, 0, np.pi/4)
         ref = np.sqrt(2)/2 + (1-np.sqrt(2)/2)*1j
         assert_allclose(res.integral, ref)
 
@@ -822,6 +821,7 @@ class TestTanhSinh:
         dist2 = stats.norm(scale=2)
         def f(x):
             return dist1.pdf(x) + 1j*dist2.pdf(x)
+
         res = _tanhsinh(f, np.inf, -np.inf)
         assert_allclose(res.integral, -(1+1j))
 
@@ -848,8 +848,6 @@ class TestTanhSinh:
             assert_allclose(res.integral, ref.integral, rtol=4e-16)
             # Difference in absolute errors << magnitude of integral
             assert_allclose(res.error, ref.error, atol=4e-16 * ref.integral)
-            # Note: previous line is not satisfied for all problems. See note
-            # corresponding with `d4` in `_tanhsinh._estimate_error`.
             assert res.feval == f.feval == len(f.x)
             assert f.calls == maxlevel - minlevel + 1
             assert res.status == ref.status
