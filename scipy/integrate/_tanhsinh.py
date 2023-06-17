@@ -450,7 +450,7 @@ def _estimate_error(n, Sn, Sk, fjwj, h, last_terms, log):
         return np.nan, np.nan, Sk
 
     indices = _pair_cache.indices
-    z = fjwj.reshape(2, -1)
+    fjwj_rl = fjwj.reshape(2, -1)
 
     # With a jump start (starting at level higher than 0), we haven't
     # explicitly calculated the integral estimate at lower levels. But we have

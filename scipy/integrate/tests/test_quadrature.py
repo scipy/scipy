@@ -639,8 +639,19 @@ class TestTanhSinh:
     @pytest.mark.parametrize('f_number', range(1, 15))
     def test_basic(self, f_number):
         f = getattr(self, f"f{f_number}")
-        res = _tanhsinh(f, 0, f.b)
-        assert_allclose(res.integral, f.ref)
+        rtol = 2e-8
+        res = _tanhsinh(f, 0, f.b, rtol = rtol)
+        assert_allclose(res.integral, f.ref, rtol=rtol)
+        if f_number not in {12, 14}:  # mildly underestimates error here
+            true_error = abs(self.error(res.integral, f.ref)/res.integral)
+            assert true_error < res.error
+
+        if f_number in {7, 10}:  # succeeds, but doesn't know it
+            return
+
+        assert res.success
+        assert res.status == 0
+        assert res.message.startswith("The algorithm completed successfully")
 
     def test_convergence(self):
         # demonstrate that number of accurate digits doubles each iteration
@@ -687,7 +698,7 @@ class TestTanhSinh:
         assert self.error(ref.integral, f.ref) < ref.error < default_atol
         assert ref.feval == f.feval
         ref.calls = f.calls  # reference number of function calls
-        assert ref.success is True
+        assert ref.success
         assert ref.status == 0
         assert ref.message.startswith("The algorithm completed successfully")
 
@@ -742,7 +753,7 @@ class TestTanhSinh:
         assert res.feval == f.feval == ref.feval
         assert f.calls == ref.calls
         # Except the result is considered to be successful
-        assert res.success is True
+        assert res.success
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -753,7 +764,7 @@ class TestTanhSinh:
         assert self.error(res.integral, f.ref) < res.error < atol
         assert res.feval == f.feval > ref.feval
         assert f.calls > ref.calls
-        assert res.success is True
+        assert res.success
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -767,7 +778,7 @@ class TestTanhSinh:
         assert res.feval == f.feval == ref.feval
         assert f.calls == ref.calls
         # Except the result is considered to be successful
-        assert res.success is True
+        assert res.success
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
@@ -778,7 +789,7 @@ class TestTanhSinh:
         assert self.error(res.integral, f.ref)/f.ref < res.error/res.integral < rtol
         assert res.feval == f.feval > ref.feval
         assert f.calls > ref.calls
-        assert res.success is True
+        assert res.success
         assert res.status == 0
         assert res.message.startswith("The algorithm completed successfully")
 
