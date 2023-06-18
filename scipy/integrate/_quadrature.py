@@ -670,7 +670,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
         slice_all = (slice(None),) * nd
 
         # default is 'simpson'
-        even = even if even is not _NoValue else "simpson"
+        even = even if even not in (_NoValue, None) else "simpson"
 
         if even not in ['avg', 'last', 'first', 'simpson']:
             raise ValueError(
