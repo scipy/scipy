@@ -14,21 +14,27 @@ something from the public API:
 
 #. Propose to deprecate the functionality on the scipy-dev mailing list and get
    agreement that that's OK.
+#. When changing a function signature (e.g. deprecating a keyword argument), this
+   opportunity should be used to convert that function to keyword-only usage,
+   see `GH-14714<https://github.com/scipy/scipy/issues/14714>`_.
 #. Add a ``DeprecationWarning`` that is triggered by using the deprecated API.
    The ``stacklevel`` must be set correctly so that the warning refers
    to the function’s caller, rather than the ``warnings.warn()`` call itself.
    For Cython APIs, see
    :ref:`deprecating-public-cython-api` for the practical steps.
+#. For behavior changes (rather than outright removals), it must be possible for
+   the user to silence the warning without doing manual filtering or warnings.
+   In other words, a replacement API needs to be ready, and the warning should
+   contain clear instructions what needs to be done to avoid the warning.
 #. Use the ``.. deprecated::`` directive to document the deprecation. The rest
    of the documentation should be left until the function is removed and the
    function should be left in the toctree. Deprecation warnings causing the doc
    build to fail can be resolved by adding an entry to the
-   `conf.py <https://github.com/scipy/scipy/blob/main/doc/source/conf.py#L318>`_
+   `conf.py <https://github.com/scipy/scipy/blob/main/doc/source/conf.py>`_
    file.
 #. Ensure that both these warning messages contain the following information:
 
    #. What has been deprecated?
-   #. What version it was deprecated in?
    #. What version the deprecation will be executed?
    #. What the user should use instead?
 
