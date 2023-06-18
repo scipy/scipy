@@ -253,10 +253,11 @@ class TestQuadrature:
         # Basic coverage test for the alias
         y = np.arange(5)
         x = 2**y
-        assert_allclose(
-            simpson(y, x=x, dx=0.5),
-            simps(y, x=x, dx=0.5)
-        )
+        with pytest.deprecated_call(match="simpson"):
+            assert_allclose(
+                simpson(y, x=x, dx=0.5),
+                simps(y, x=x, dx=0.5)
+            )
 
 
 class TestCumulative_trapezoid:
@@ -338,9 +339,10 @@ class TestCumulative_trapezoid:
         # Basic coverage test for the alias
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
-                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
-                        rtol=1e-14)
+        with pytest.deprecated_call(match="cumulative_trapezoid"):
+            assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
+                            cumtrapz(y, x, dx=0.5, axis=0, initial=0),
+                            rtol=1e-14)
 
 
 class TestTrapezoid:
@@ -360,8 +362,9 @@ class TestTrapezoid:
         # Basic coverage test for the alias
         y = np.arange(4)
         x = 2**y
-        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
-                     trapz(y, x=x, dx=0.5, axis=0))
+        with pytest.deprecated_call(match="trapezoid"):
+            assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                        trapz(y, x=x, dx=0.5, axis=0))
 
 
 class TestQMCQuad:
