@@ -613,8 +613,8 @@ class TestCumulativeSimpson:
                 ),
             ),
             (
-                # Multi dimensional values for initial and dx with non-default axis,
-                # and mixture of int and float inputs
+                # Multi dimensional values for initial and dx with non-default
+                # axis, and mixture of int and float inputs
                 np.array([[1, 4, 9, 16], [1, 4, 9, 16], [1, 4, 9, 16]]),
                 [[1.0, 2.0, 1.0, 5.0]],
                 [[0, 0, 0, 1]],
@@ -651,11 +651,10 @@ class TestCumulativeSimpson:
         )
 
     @pytest.mark.parametrize(
-        ("y_func", "y", "x", "dx", "initial", "axis", "match"),
+        ("y", "x", "dx", "initial", "axis", "match"),
         [
             (
                 # Non-unique values in x
-                lambda y: y**2,
                 None,
                 np.array([2, 2, 4, 8]),
                 None,
@@ -665,7 +664,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Invalid axis
-                lambda y: y**2,
                 None,
                 np.array([1, 2, 4, 8]),
                 None,
@@ -675,7 +673,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Invalid x
-                None,
                 np.array([1, 4, 16, 64, 81]),
                 np.array([1, 2, 4, 8]),
                 None,
@@ -685,7 +682,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Multi dimensional, non-unique values in x
-                lambda y: y**2,
                 None,
                 np.array([[1, 2, 3, 4], [0, 2, 4, 8], [2, 2, 4, 8]]),
                 None,
@@ -695,7 +691,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Multi dimensional, non-unique values in x in non-default axis
-                lambda y: y**2,
                 None,
                 np.array([[1, 2, 3, 4], [1, 2, 4, 8], [1, 2, 4, 8]]),
                 None,
@@ -705,7 +700,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Less than 3 points along axis of integration
-                lambda y: y**2,
                 None,
                 np.array([[1, 2], [1, 2], [1, 2]]),
                 None,
@@ -715,7 +709,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Invalid input for initial
-                lambda y: y**2,
                 None,
                 np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
                 None,
@@ -725,7 +718,6 @@ class TestCumulativeSimpson:
             ),
             (
                 # Invalid input for dx
-                lambda y: y**2,
                 None,
                 np.array([[1, 2, 3, 4], [0, 2, 4, 8], [1, 2, 4, 8]]),
                 [[1], [2], [1], [1]],
@@ -736,10 +728,10 @@ class TestCumulativeSimpson:
         ],
     )
     def test_simpson_exceptions(
-        self, y_func, y, x, dx, initial, axis, match
+        self, y, x, dx, initial, axis, match
     ):
         if y is None:
-            y = y_func(x)
+            y = x**2
         input_x = x if dx is None else None
         with pytest.raises(ValueError, match=match):
             cumulative_simpson(y, x=input_x, dx=dx, axis=axis, initial=initial)

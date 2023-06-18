@@ -796,12 +796,14 @@ def _cumulatively_sum_simpson_subintegrals(
     sub_integrals_h2[1:-1:2] = 0.0
     sub_integrals = np.concatenate(
         [
-            # Integral over first subinterval can only be calculated from formula for h1
+            # Integral over first subinterval can only be calculated from 
+            # formula for h1
             sub_integrals_h1[0:1],
             # Combine sub_integral arrays (at every index, i, either
             # sub_integrals_h1[i] = 0 or sub_integrals_h2[i] = 0)
             (sub_integrals_h1[1:] + sub_integrals_h2[:-1]),
-            # Integral over last subinterval can only be calculated from formula for h2
+            # Integral over last subinterval can only be calculated from 
+            # formula for h2
             sub_integrals_h2[-1:],
         ],
         axis=0,
@@ -876,7 +878,8 @@ def _cumulative_simpson_unequal_intervals(
         + y3 * (3.0 * h1 + 2.0 * h2) / (h1 + h2) * h2 / 6.0
     )
 
-    # Addition of above formulae gives Simpson's 1/3 rule for unequal intervals, see
+    # Addition of above formulae gives Simpson's 1/3 rule for unequal 
+    # intervals, see
     # https://en.wikipedia.org/wiki/Simpson%27s_rule#Composite_Simpson's_rule_for_irregularly_spaced_data
 
     res = _cumulatively_sum_simpson_subintegrals(
@@ -889,8 +892,8 @@ def _cumulative_simpson_unequal_intervals(
 def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     r"""
     Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
-    The integral of the samples at every point is calculated by assuming a quadratic
-    relationship between each point and the two adjacent points.
+    The integral of the samples at every point is calculated by assuming a 
+    quadratic relationship between each point and the two adjacent points.
 
     Parameters
     ----------
@@ -898,10 +901,12 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
         Values to integrate.
     x : array_like, optional
         The coordinate to integrate along. Must be monotonically increasing.
-        If None (default), use spacing `dx` between consecutive elements in `y`.
+        If None (default), use spacing `dx` between consecutive elements in 
+        `y`.
     dx : scalar | array_like, optional
-        Spacing between elements of `y`. Only used if `x` is None. Can either be
-        a float, or an array with the same shape as `y`, but size 1 along `axis`.
+        Spacing between elements of `y`. Only used if `x` is None. Can either 
+        be a float, or an array with the same shape as `y`, but size 1 along 
+        `axis`.
     axis : int, optional
         Specifies the axis to integrate along. Default is -1 (last axis).
     initial : scalar | array_like, optional
@@ -922,7 +927,8 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
-    cumulative_trapezoid : cumulative integration using the composite trapezoidal rule
+    cumulative_trapezoid : cumulative integration using the composite 
+        trapezoidal rule
     simpson : integrator for sampled data using the Composite Simpson's Rule
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
@@ -939,18 +945,22 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
 
     .. versionadded:: 1.12.0
 
-    The composite Simpson's 1/3 method can be used to approximate the definite integral of a sampled
-    input function :math:`y(x)` [1]_. The method assumes a quadratic relationship over the interval
-    containing any 3 consecutive sampled points. The integral is estimated separately for each interval
+    The composite Simpson's 1/3 method can be used to approximate the definite 
+    integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
+    a quadratic relationship over the interval containing any 3 consecutive 
+    sampled points. The integral is estimated separately for each interval
     and then cumulatively summed to obtain the final result.
 
-    | Consider three consecutive points: :math:`(x_{1}, y_{1}), (x_{2}, y_{2}), (x_{3}, y_{3})`.
-    | To estimate the integral, the points are redefined as: :math:`(0, y_{1}), (h_{1}, y_{2}), (h_{1}+h_{2}, y_{3})`.
-    | where the widths of the 2 subintervals are:
-    | :math:`h_{1} = x_{2} - x_{1}` and :math:`h_{2} = x_{3} - x_{2}`
+    Consider three consecutive points: 
+    :math:`(x_{1}, y_{1}), (x_{2}, y_{2}), (x_{3}, y_{3})`.
+    To estimate the integral, the points are redefined as: 
+    :math:`(0, y_{1}), (h_{1}, y_{2}), (h_{1}+h_{2}, y_{3})`,
+    where the widths of the 2 subintervals are:
+    :math:`h_{1} = x_{2} - x_{1}` and :math:`h_{2} = x_{3} - x_{2}`
 
-    Assuming a quadratic relationship over the 3 points, the following integrals for the subintervals
-    are derived (see [2]_ for derivation method):
+    Assuming a quadratic relationship over the 3 points, the following 
+    integrals for the subintervals are derived (see [2]_ for derivation 
+    method):
 
     .. math::
         \int_{x_{1}}^{x_{2}} y(x) dx\ = \int_{0}^{h_{1}} y(x) dx\
@@ -973,9 +983,9 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
     Note that the integral formulae in [1]_ and [2]_ use different variables.
 
     For samples that are equally spaced the result is exact if the function
-    is a polynomial of order 3 or less [1]_. If the samples are not equally spaced,
-    then the result is exact only if the function is a polynomial of order 2
-    or less.
+    is a polynomial of order 3 or less [1]_. If the samples are not equally 
+    spaced, then the result is exact only if the function is a polynomial of 
+    order 2 or less.
 
     References
     ----------
@@ -1048,8 +1058,8 @@ def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
             initial = np.repeat(initial, y.shape[axis], axis=axis)
         else:
             raise ValueError(
-                "`initial` must either be numeric or have the same shape as `y` but with "
-                "only 1 point along `axis`."
+                "`initial` must either be numeric or have the same shape as "
+                "`y` but with only 1 point along `axis`."
             )
 
         slice1 = tupleset((slice(None),) * y.ndim, axis, slice(1, None))
