@@ -4200,6 +4200,11 @@ class halflogistic_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+    Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+
     %(example)s
 
     """
@@ -4241,6 +4246,41 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        if floc is not None or fscale is not None:
+            return super().fit(data, *args, **kwds)
+        else:
+            # location is the minumum sample
+            floc = np.min(data)
+
+            # scale is solution to a fix point problem
+            # first, precompute shifted data and constants
+            mean_val = np.mean(data)
+            shifted_data = data - floc
+            mean_minus_min = mean_val - floc
+            n_samples = data.shape[0]
+
+            # heuristically found promising starting point
+            scale = (np.max(data) - floc)/10
+            rtol = 1
+
+            # find fix point by repeated application of eq. (2.6)
+            # simplify as
+            # exp(-a / x) / (1 + exp(-a / x)) = a / (1 + exp(a / x))
+            # =                                 a * expit(-a / x))
+            while rtol > 1e-8:
+                sum_term = shifted_data * sc.expit(-shifted_data/scale)
+                scale_new = mean_minus_min - 2/n_samples * sum_term.sum()
+                rtol = abs((scale - scale_new)/scale)
+                scale = scale_new
+            return floc, scale
 
 
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
