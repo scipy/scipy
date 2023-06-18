@@ -107,7 +107,7 @@ jobs:
       - name: win_amd64 - install rtools
         run: |
           # mingw-w64
-          choco install rtools --no-progress
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
 
@@ -176,7 +176,7 @@ jobs:
           # For cron jobs (restricted to main branch) or "Run workflow" trigger
           # an upload to:
           #
-          # https://anaconda.org/scipy-wheels-nightly/scipy
+          # https://anaconda.org/scientific-python-nightly-wheels/scipy
           # 
           # Pushes to a maintenance branch that contain '[wheel build]' will
           # cause wheels to be built and uploaded to:

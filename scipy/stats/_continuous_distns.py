@@ -678,7 +678,8 @@ class beta_gen(rv_continuous):
         #                     gamma(a+b) * x**(a-1) * (1-x)**(b-1)
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
-        return _boost._beta_pdf(x, a, b)
+        with np.errstate(over='ignore'):
+            return _boost._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -697,8 +698,6 @@ class beta_gen(rv_continuous):
 
     def _ppf(self, q, a, b):
         with np.errstate(over='ignore'):  # see gh-17432
-            message = "overflow encountered in _beta_ppf"
-            warnings.filterwarnings('ignore', message=message)
             return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
@@ -833,8 +832,24 @@ class beta_gen(rv_continuous):
         return a, b, floc, fscale
 
     def _entropy(self, a, b):
-        return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
-                (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+        def regular(a, b):
+            return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
+                    (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+
+        def asymptotic_ab_large(a, b):
+            sum_ab = a + b
+            log_term = 0.5 * (
+                np.log(2*np.pi) + np.log(a) + np.log(b) - 3*np.log(sum_ab) + 1
+            )
+            t1 = 110/sum_ab + 20*sum_ab**-2.0 + sum_ab**-3.0 - 2*sum_ab**-4.0
+            t2 = -50/a - 10*a**-2.0 - a**-3.0 + a**-4.0
+            t3 = -50/b - 10*b**-2.0 - b**-3.0 + b**-4.0
+            return log_term + (t1 + t2 + t3) / 120
+
+        if a >= 4.96e6 and b >= 4.96e6:
+            return asymptotic_ab_large(a, b)
+        else:
+            return regular(a, b)
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
@@ -920,6 +935,13 @@ class betaprime_gen(rv_continuous):
             lambda x_, a_, b_: beta._sf(1/(1+x_), b_, a_),
             f2=lambda x_, a_, b_: beta._cdf(x_/(1+x_), a_, b_))
 
+    def _sf(self, x, a, b):
+        return _lazywhere(
+            x > 1, [x, a, b],
+            lambda x_, a_, b_: beta._cdf(1/(1+x_), b_, a_),
+            f2=lambda x_, a_, b_: beta._sf(x_/(1+x_), a_, b_)
+        )
+
     def _ppf(self, p, a, b):
         p, a, b = np.broadcast_arrays(p, a, b)
         # by default, compute compute the ppf by solving the following:
@@ -935,30 +957,10 @@ class betaprime_gen(rv_continuous):
         return out
 
     def _munp(self, n, a, b):
-        if n == 1.0:
-            return _lazywhere(
-                b > 1, (a, b),
-                lambda a, b: a/(b-1.0),
-                fillvalue=np.inf)
-        elif n == 2.0:
-            return _lazywhere(
-                b > 2, (a, b),
-                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
-                fillvalue=np.inf)
-        elif n == 3.0:
-            return _lazywhere(
-                b > 3, (a, b),
-                lambda a, b: (a*(a+1.0)*(a+2.0)
-                              / ((b-3.0)*(b-2.0)*(b-1.0))),
-                fillvalue=np.inf)
-        elif n == 4.0:
-            return _lazywhere(
-                b > 4, (a, b),
-                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                fillvalue=np.inf)
-        else:
-            raise NotImplementedError
+        return _lazywhere(
+            b > n, (a, b),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -1658,18 +1660,7 @@ class dgamma_gen(rv_continuous):
                         0.5 + 0.5*sc.gammainc(a, -x))
 
     def _entropy(self, a):
-        a = np.asarray([a])
-
-        def h1(a):
-            h1 = a + np.log(2) + sc.gammaln(a) + (1 - a) * sc.digamma(a)
-            return h1
-
-        def h2(a):
-            h2 = np.log(2) + 0.5 * (1 + np.log(a) + np.log(2 * np.pi))
-            return h2
-
-        h = _lazywhere(a > 1e8, (a), f=h2, f2=h1)
-        return h
+        return stats.gamma._entropy(a) - np.log(0.5)
 
     def _ppf(self, q, a):
         return np.where(q > 0.5,
@@ -2775,11 +2766,21 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for real :math:`x` and :math:`c > 0`.
+    for real :math:`x` and :math:`c > 0`. In literature, different
+    generalizations of the logistic distribution can be found. This is the type 1
+    generalized logistic distribution according to [1]_. It is also referred to
+    as the skew-logistic distribution [2]_.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson et al. "Continuous Univariate Distributions", Volume 2,
+           Wiley. 1995.
+    .. [2] "Generalized Logistic Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_logistic_distribution
 
     %(example)s
 
@@ -4487,7 +4488,7 @@ class invgamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
-                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+                 + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
@@ -5428,6 +5429,11 @@ class laplace_asymmetric_gen(rv_continuous):
 
     %(after_notes)s
 
+    Note that the scale parameter of some references is the reciprocal of
+    SciPy's ``scale``. For example, :math:`\lambda = 1/2` in the
+    parameterization of [1]_ is equivalent to ``scale = 2`` with
+    `laplace_asymmetric`.
+
     References
     ----------
     .. [1] "Asymmetric Laplace distribution", Wikipedia
@@ -5971,6 +5977,20 @@ class loggamma_gen(rv_continuous):
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
 
+    def _entropy(self, c):
+        def regular(c):
+            h = sc.gammaln(c) - c * sc.digamma(c) + c
+            return h
+
+        def asymptotic(c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            term = -0.5*np.log(c) + c**-1./6 - c**-3./90 + c**-5./210
+            h = norm._entropy() + term
+            return h
+
+        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
+        return h
+
 
 loggamma = loggamma_gen(name='loggamma')
 
@@ -6016,6 +6036,9 @@ class loglaplace_gen(rv_continuous):
 
     def _cdf(self, x, c):
         return np.where(x < 1, 0.5*x**c, 1-0.5*x**(-c))
+
+    def _sf(self, x, c):
+        return np.where(x < 1, 1 - 0.5*x**c, 0.5*x**(-c))
 
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
@@ -7183,20 +7206,34 @@ class t_gen(rv_continuous):
             df == np.inf, (x, df),
             f=lambda x, df: norm._pdf(x),
             f2=lambda x, df: (
-                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
-                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+                np.exp(self._logpdf(x, df))
             )
         )
 
     def _logpdf(self, x, df):
-        return _lazywhere(
-            df == np.inf, (x, df),
-            f=lambda x, df: norm._logpdf(x),
-            f2=lambda x, df: (
-                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
-                - (0.5*np.log(df*np.pi)
-                   + (df+1)/2*np.log(1+(x**2)/df))
-            )
+
+        def regular_formula(x, df):
+            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
+                    - (0.5 * np.log(df*np.pi))
+                    - (df + 1)/2*np.log1p(x * x/df))
+
+        def asymptotic_formula(x, df):
+            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
+                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
+                    - 1/6 * df**-1. + 1/45*df**-3.
+                    - (df + 1)/2 * np.log1p(x*x/df))
+
+        def norm_logpdf(x, df):
+            return norm._logpdf(x)
+
+        return _lazyselect(
+            ((df == np.inf),
+             (df >= 200) & np.isfinite(df),
+             (df < 200)),
+            (norm_logpdf,
+             asymptotic_formula,
+             regular_formula),
+            (x, df, )
         )
 
     def _cdf(self, x, df):
@@ -7704,6 +7741,23 @@ class pearson3_gen(rv_continuous):
 
         return ans
 
+    def _sf(self, x, skew):
+        ans, x, transx, mask, invmask, _, alpha, _ = (
+            self._preprocess(x, skew))
+
+        ans[mask] = _norm_sf(x[mask])
+
+        skew = np.broadcast_to(skew, invmask.shape)
+        invmask1a = np.logical_and(invmask, skew > 0)
+        invmask1b = skew[invmask] > 0
+        ans[invmask1a] = gamma.sf(transx[invmask1b], alpha[invmask1b])
+
+        invmask2a = np.logical_and(invmask, skew < 0)
+        invmask2b = skew[invmask] < 0
+        ans[invmask2a] = gamma.cdf(transx[invmask2b], alpha[invmask2b])
+
+        return ans
+
     def _rvs(self, skew, size=None, random_state=None):
         skew = np.broadcast_to(skew, size)
         ans, _, _, mask, invmask, beta, alpha, zeta = (
@@ -8186,6 +8240,9 @@ class rdist_gen(rv_continuous):
     def _cdf(self, x, c):
         return beta._cdf((x + 1)/2, c/2, c/2)
 
+    def _sf(self, x, c):
+        return beta._sf((x + 1)/2, c/2, c/2)
+
     def _ppf(self, q, c):
         return 2*beta._ppf(q, c/2, c/2) - 1
 
@@ -8421,6 +8478,10 @@ class reciprocal_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         fscale = kwds.pop('fscale', 1)
         return super().fit(data, *args, fscale=fscale, **kwds)
+
+    # Details related to the decision of not defining
+    # the survival function for this distribution can be
+    # found in the PR: https://github.com/scipy/scipy/pull/18614
 
 
 loguniform = reciprocal_gen(name="loguniform")
@@ -9123,6 +9184,12 @@ class truncexpon_gen(rv_continuous):
     def _ppf(self, q, b):
         return -sc.log1p(q*sc.expm1(-b))
 
+    def _sf(self, x, b):
+        return (np.exp(-b) - np.exp(-x))/sc.expm1(-b)
+
+    def _isf(self, q, b):
+        return -np.log(np.exp(-b) - q * sc.expm1(-b))
+
     def _munp(self, n, b):
         # wrong answer with formula, same as in continuous.pdf
         # return sc.gamman+1)-sc.gammainc1+n, b)
@@ -9132,8 +9199,7 @@ class truncexpon_gen(rv_continuous):
             return 2*(1-0.5*(b*b+2*b+2)*np.exp(-b))/(-sc.expm1(-b))
         else:
             # return generic for higher moments
-            # return rv_continuous._mom1_sc(self, n, b)
-            return self._mom1_sc(n, b)
+            return super()._munp(n, b)
 
     def _entropy(self, b):
         eB = np.exp(b)
@@ -9155,7 +9221,6 @@ def _log_diff(log_p, log_q):
 
 def _log_gauss_mass(a, b):
     """Log of Gaussian probability mass within an interval"""
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
     a, b = np.broadcast_arrays(a, b)
 
     # Calculations in right tail are inaccurate, so we'll exploit the
@@ -9242,7 +9307,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logcdf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logcdf = _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
+        logcdf = np.asarray(_log_gauss_mass(a, x) - _log_gauss_mass(a, b))
         i = logcdf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logcdf[i] = np.log1p(-np.exp(self._logsf(x[i], a[i], b[i])))
@@ -9253,7 +9318,7 @@ class truncnorm_gen(rv_continuous):
 
     def _logsf(self, x, a, b):
         x, a, b = np.broadcast_arrays(x, a, b)
-        logsf = _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
+        logsf = np.asarray(_log_gauss_mass(x, b) - _log_gauss_mass(a, b))
         i = logsf > -0.1  # avoid catastrophic cancellation
         if np.any(i):
             logsf[i] = np.log1p(-np.exp(self._logcdf(x[i], a[i], b[i])))
@@ -9331,7 +9396,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):
@@ -9765,8 +9830,8 @@ class FitUniformFixedScaleDataError(FitDataError):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood estimation with "
             "the uniform distribution and fixed scale requires that "
-            "data.ptp() <= fscale, but data.ptp() = %r and fscale = %r." %
-            (ptp, fscale),
+            f"data.ptp() <= fscale, but data.ptp() = {ptp} and "
+            f"fscale = {fscale}."
         )
 
 
@@ -9961,6 +10026,11 @@ class vonmises_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    scipy.stats.vonmises_fisher : Von-Mises Fisher distribution on a
+                                  hypersphere
+
     Notes
     -----
     The probability density function for `vonmises` and `vonmises_line` is:
@@ -9974,17 +10044,77 @@ class vonmises_gen(rv_continuous):
 
     `vonmises` is a circular distribution which does not restrict the
     distribution to a fixed interval. Currently, there is no circular
-    distribution framework in scipy. The ``cdf`` is implemented such that
+    distribution framework in SciPy. The ``cdf`` is implemented such that
     ``cdf(x + 2*np.pi) == cdf(x) + 1``.
 
     `vonmises_line` is the same distribution, defined on :math:`[-\pi, \pi]`
     on the real line. This is a regular (i.e. non-circular) distribution.
 
-    `vonmises` and `vonmises_line` take ``kappa`` as a shape parameter.
+    Note about distribution parameters: `vonmises` and `vonmises_line` take
+    ``kappa`` as a shape parameter (concentration) and ``loc`` as the location
+    (circular mean). A ``scale`` parameter is accepted but does not have any
+    effect.
 
-    %(after_notes)s
+    Examples
+    --------
+    Import the necessary modules.
 
-    %(example)s
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy.stats import vonmises
+
+    Define distribution parameters.
+
+    >>> loc = 0.5 * np.pi  # circular mean
+    >>> kappa = 1  # concentration
+
+    Compute the probability density at ``x=0`` via the ``pdf`` method.
+
+    >>> vonmises.pdf(loc, kappa, 0)
+    0.12570826359722018
+
+    Verify that the percentile function ``ppf`` inverts the cumulative
+    distribution function ``cdf`` up to floating point accuracy.
+
+    >>> x = 1
+    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
+    >>> x, cdf_value, ppf_value
+    (1, 0.31489339900904967, 1.0000000000000004)
+
+    Draw 1000 random variates by calling the ``rvs`` method.
+
+    >>> number_of_samples = 1000
+    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+
+    Plot the von Mises density on a Cartesian and polar grid to emphasize
+    that is is a circular distribution.
+
+    >>> fig = plt.figure(figsize=(12, 6))
+    >>> left = plt.subplot(121)
+    >>> right = plt.subplot(122, projection='polar')
+    >>> x = np.linspace(-np.pi, np.pi, 500)
+    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> ticks = [0, 0.15, 0.3]
+
+    The left image contains the Cartesian plot.
+
+    >>> left.plot(x, vonmises_pdf)
+    >>> left.set_yticks(ticks)
+    >>> number_of_bins = int(np.sqrt(number_of_samples))
+    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> left.set_title("Cartesian plot")
+    >>> left.set_xlim(-np.pi, np.pi)
+    >>> left.grid(True)
+
+    The right image contains the polar plot.
+
+    >>> right.plot(x, vonmises_pdf, label="PDF")
+    >>> right.set_yticks(ticks)
+    >>> right.hist(samples, density=True, bins=number_of_bins,
+    ...            label="Histogram")
+    >>> right.set_title("Polar plot")
+    >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
@@ -10080,7 +10210,7 @@ class vonmises_gen(rv_continuous):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                    bracket=(1e-8, 1e12))
+                                       bracket=(np.finfo(float).tiny, 1e16))
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,

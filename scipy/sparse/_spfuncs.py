@@ -3,8 +3,8 @@
 
 __all__ = ['count_blocks','estimate_blocksize']
 
-from ._csr import isspmatrix_csr, csr_matrix
-from ._csc import isspmatrix_csc
+from ._base import issparse
+from ._csr import csr_array
 from ._sparsetools import csr_count_blocks
 
 
@@ -14,8 +14,8 @@ def estimate_blocksize(A,efficiency=0.7):
     Returns a blocksize=(r,c) such that
         - A.nnz / A.tobsr( (r,c) ).nnz > efficiency
     """
-    if not (isspmatrix_csr(A) or isspmatrix_csc(A)):
-        A = csr_matrix(A)
+    if not (issparse(A) and A.format in ("csc", "csr")):
+        A = csr_array(A)
 
     if A.nnz == 0:
         return (1,1)
@@ -67,10 +67,10 @@ def count_blocks(A,blocksize):
     if r < 1 or c < 1:
         raise ValueError('r and c must be positive')
 
-    if isspmatrix_csr(A):
-        M,N = A.shape
-        return csr_count_blocks(M,N,r,c,A.indptr,A.indices)
-    elif isspmatrix_csc(A):
-        return count_blocks(A.T,(c,r))
-    else:
-        return count_blocks(csr_matrix(A),blocksize)
+    if issparse(A):
+        if A.format == "csr":
+            M,N = A.shape
+            return csr_count_blocks(M,N,r,c,A.indptr,A.indices)
+        elif A.format == "csc":
+            return count_blocks(A.T,(c,r))
+    return count_blocks(csr_array(A),blocksize)

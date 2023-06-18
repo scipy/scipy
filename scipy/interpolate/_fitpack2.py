@@ -527,7 +527,9 @@ class UnivariateSpline:
         """
         k = self._data[5]
         if k == 3:
-            return _fitpack_impl.sproot(self._eval_args)
+            t = self._eval_args[0]
+            mest = 3 * (len(t) - 7)
+            return _fitpack_impl.sproot(self._eval_args, mest=mest)
         raise NotImplementedError('finding roots unsupported for '
                                   'non-cubic splines')
 

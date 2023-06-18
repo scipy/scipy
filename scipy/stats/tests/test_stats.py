@@ -492,6 +492,45 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
+    def test_resampling_pvalue(self, method, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        size = 100 if method == 'permutation' else 1000
+        x = rng.normal(size=size)
+        y = rng.normal(size=size)
+        methods = {'permutation': stats.PermutationMethod(random_state=rng),
+                   'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
+        method = methods[method]
+        res = stats.pearsonr(x, y, alternative=alternative, method=method)
+        ref = stats.pearsonr(x, y, alternative=alternative)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
+    def test_bootstrap_ci(self, alternative):
+        rng = np.random.default_rng(24623935790378923)
+        x = rng.normal(size=100)
+        y = rng.normal(size=100)
+        res = stats.pearsonr(x, y, alternative=alternative)
+
+        method = stats.BootstrapMethod(random_state=rng)
+        res_ci = res.confidence_interval(method=method)
+        ref_ci = res.confidence_interval()
+
+        assert_allclose(res_ci, ref_ci, atol=1e-2)
+
+    def test_invalid_method(self):
+        message = "`method` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+        res = stats.pearsonr([1, 2], [3, 4])
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(method="exact")
+
 
 class TestFisherExact:
     """Some tests to show that fisher_exact() works correctly.
@@ -2364,14 +2403,22 @@ class TestMode:
         assert_equal(res.count.ravel(), ref.count.ravel())
         assert res.count.shape == (1, 1)
 
-    def test_gh16952(self):
-        # Check that bug reported in gh-16952 is resolved
+    @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
+    def test_gh16955(self, nan_policy):
+        # Check that bug reported in gh-16955 is resolved
         shape = (4, 3)
         data = np.ones(shape)
         data[0, 0] = np.nan
-        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy="omit")
+        res = stats.mode(a=data, axis=1, keepdims=False, nan_policy=nan_policy)
         assert_array_equal(res.mode, [1, 1, 1, 1])
         assert_array_equal(res.count, [2, 3, 3, 3])
+
+        # Test with input from gh-16595. Support for non-numeric input
+        # was deprecated, so check for the appropriate error.
+        my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
+        test = np.zeros(10, dtype=my_dtype)
+        with pytest.raises(TypeError, match="Argument `a` is not..."):
+            stats.mode(test, nan_policy=nan_policy)
 
     def test_gh9955(self):
         # The behavior of mode with empty slices (whether the input was empty
@@ -2977,12 +3024,6 @@ class TestIQR:
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
 
-        with pytest.warns(
-            DeprecationWarning,
-            match="The use of 'scale=\"raw\"'"
-        ):
-            stats.iqr([1], scale='raw')
-
 
 class TestMoments:
     """
@@ -3008,6 +3049,26 @@ class TestMoments:
         if dtype is None:
             dtype = expect.dtype
         assert actual.dtype == dtype
+
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
+    def test_moment_center_scalar_moment(self, size, m, c):
+        rng = np.random.default_rng(6581432544381372042)
+        x = rng.random(size=size)
+        res = stats.moment(x, m, center=c)
+        c = np.mean(x, axis=0) if c is None else c
+        ref = np.sum((x - c)**m, axis=0)/len(x)
+        assert_allclose(res, ref, atol=1e-16)
+
+    @pytest.mark.parametrize('size', [10, (10, 2)])
+    @pytest.mark.parametrize('c', (None, 0, 1))
+    def test_moment_center_array_moment(self, size, c):
+        rng = np.random.default_rng(1706828300224046506)
+        x = rng.random(size=size)
+        m = [0, 1, 2, 3]
+        res = stats.moment(x, m, center=c)
+        ref = [stats.moment(x, i, center=c) for i in m]
+        assert_equal(res, ref)
 
     def test_moment(self):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
@@ -3668,12 +3729,16 @@ def test_gh_chisquare_12282():
 
 
 @pytest.mark.parametrize("n, dtype", [(200, np.uint8), (1000000, np.int32)])
-def test_chiquare_data_types(n, dtype):
-    # Regression test for gh-10159.
+def test_chiquare_data_types_attributes(n, dtype):
+    # Regression test for gh-10159 and gh-18368
     obs = np.array([n, 0], dtype=dtype)
     exp = np.array([n // 2, n // 2], dtype=dtype)
-    stat, p = stats.chisquare(obs, exp)
+    res = stats.chisquare(obs, exp)
+    stat, p = res
     assert_allclose(stat, n, rtol=1e-13)
+    # check that attributes are identical to unpacked outputs - see gh-18368
+    assert_equal(res.statistic, stat)
+    assert_equal(res.pvalue, p)
 
 
 def test_chisquare_masked_arrays():
@@ -6329,22 +6394,6 @@ class TestGeometricStandardDeviation:
         mask = [[0, 0, 0], [0, 1, 1]]
         assert_allclose(gstd_actual, gstd_desired)
         assert_equal(gstd_actual.mask, mask)
-
-
-@pytest.mark.parametrize('alternative', ['two-sided', 'greater', 'less'])
-def test_binom_test_deprecation(alternative):
-    deprecation_msg = ("'binom_test' is deprecated in favour of"
-                       " 'binomtest' from version 1.7.0 and will"
-                       " be removed in Scipy 1.12.0.")
-    num = 10
-    rng = np.random.default_rng(156114182869662948677852568516310985853)
-    X = rng.integers(10, 100, (num,))
-    N = X + rng.integers(0, 100, (num,))
-    P = rng.uniform(0, 1, (num,))
-    for x, n, p in zip(X, N, P):
-        with pytest.warns(DeprecationWarning, match=deprecation_msg):
-            res = stats.binom_test(x, n, p, alternative=alternative)
-        assert res == stats.binomtest(x, n, p, alternative=alternative).pvalue
 
 
 def test_binomtest():

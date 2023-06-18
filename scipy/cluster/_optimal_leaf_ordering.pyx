@@ -38,7 +38,7 @@ np.import_array()
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline void dual_swap(float* darr, int* iarr,
-                           int i1, int i2):
+                           int i1, int i2) noexcept:
     """
     [Taken from Scikit-learn.]
 
@@ -121,7 +121,7 @@ cdef int _simultaneous_sort(float* dist, int* idx,
 
 cdef inline void _sort_M_slice(float[:, ::1] M,
                                float* vals, int* idx,
-                               int dim1_min, int dim1_max, int dim2_val):
+                               int dim1_min, int dim1_max, int dim2_val) noexcept:
     """
     Simultaneously sort indices and values of M[{m}, u] using
     `_simultaneous_sort`
@@ -144,7 +144,7 @@ cdef inline void _sort_M_slice(float[:, ::1] M,
 @cython.wraparound(False)
 cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                            double[:, ::1] sorted_D,
-                           int[:, ::1] cluster_ranges):
+                           int[:, ::1] cluster_ranges) noexcept:
     """
     Implements the Optimal Leaf Ordering algorithm described in
     "Fast Optimal leaf ordering for hierarchical clustering"
