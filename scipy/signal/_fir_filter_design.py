@@ -29,7 +29,10 @@ def _get_fs(fs, nyq):
         msg = ("Keyword argument 'nyq' is deprecated in favour of 'fs' and "
                "will be removed in SciPy 1.14.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
-        fs = 2*nyq
+        if nyq is None:
+            fs = 2
+        else:
+            fs = 2*nyq
     return fs
 
 
