@@ -900,7 +900,7 @@ class levy_stable_gen(rv_continuous):
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in), 1))
 
-        pdf_default_method_name = levy_stable_gen.pdf_default_method
+        pdf_default_method_name = self.pdf_default_method
         if pdf_default_method_name in ("piecewise", "best", "zolotarev"):
             pdf_single_value_method = _pdf_single_value_piecewise
         elif pdf_default_method_name in ("dni", "quadrature"):
