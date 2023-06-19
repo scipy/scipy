@@ -134,6 +134,9 @@ def trapz(y, x=None, dx=1.0, axis=-1):
     `trapz` is kept for backwards compatibility. For new code, prefer
     `trapezoid` instead.
     """
+    msg = ("'scipy.integrate.trapz' is deprecated in favour of "
+           "'scipy.integrate.trapezoid' and will be removed in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return trapezoid(y, x=x, dx=dx, axis=axis)
 
 
@@ -387,6 +390,10 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     `cumtrapz` is kept for backwards compatibility. For new code, prefer
     `cumulative_trapezoid` instead.
     """
+    msg = ("'scipy.integrate.cumtrapz' is deprecated in favour of "
+           "'scipy.integrate.cumulative_trapezoid' and will be removed "
+           "in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
 
 
@@ -528,6 +535,9 @@ def simps(y, x=None, dx=1.0, axis=-1, even=None):
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
     """
+    msg = ("'scipy.integrate.simps' is deprecated in favour of "
+           "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
