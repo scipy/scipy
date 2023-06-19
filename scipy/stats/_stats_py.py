@@ -9829,15 +9829,15 @@ def quantile_test_iv(x, q, p, alternative):
     if p.ndim != 0 or p >= 1 or p <= 0:
         raise ValueError(message)
 
-    message = "alternative not recognized; \n"
-    "must be 'two-sided', 'less' or 'greater'"
-    if alternative not in ('two-sided', 'less', 'greater'):
+    alternatives = {'two-sided', 'less', 'greater'}
+    message = f"`alternative` must be one of {alternatives}"
+    if alternative not in alternatives:
         raise ValueError(message)
 
     return x, q, p, alternative
 
 
-def quantile_test(x, q=0, p=0.5, *, alternative='two-sided'):
+def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     r"""
     Perform a quantile test and compute a confidence interval of the quantile.
 
