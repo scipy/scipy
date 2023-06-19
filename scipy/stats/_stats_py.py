@@ -10063,27 +10063,45 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 
     """
 
-    args = quantile_test_iv(x, q, p, alternative)
-    x, q, p, alternative = args
+    # Implementation carefully follows [1] 3.2
+    # "H0: the p*th quantile of X is x*"
+    # To facilitate comparison with [1], we'll use variable names that
+    # best match Conover's notation
+    X, x_star, p_star, H1 = quantile_test_iv(x, k, p, alternative)
 
-    k1 = (x <= q).sum()
-    k2 = (x < q).sum()
+    # "We will use two test statistics in this test. Let T1 equal "
+    # "the number of observations less than or equal to x*, and "
+    # "let T2 equal the number of observations less than x*."
+    T1 = (X <= x_star).sum()
+    T2 = (X < x_star).sum()
 
-    n = len(x)
-    bd = stats.binom(n, p)
+    # "The null distribution of the test statistics T1 and T2 is "
+    # "the binomial distribution, with parameters n = sample size, and "
+    # "p = p* as given in the null hypothesis.... Y has the binomial "
+    # "distribution with parameters n and p*."
+    n = len(X)
+    Y = stats.binom(n=n, p=p_star)
 
-    if alternative == 'less':
-        # pvalue = P(Y>=T2)
-        pvalue = bd.sf(k2)
-    elif alternative == 'greater':
-        # pvalue = P(Y<=T1)
-        pvalue = bd.cdf(k1-1)  # -1 because of the step-like CDF
+    # "H1: the p* population quantile is less than x*"
+    if H1 == 'less':
+        # "The p-value is the probability that a binomial random variable Y "
+        # "is greater than *or equal to* the observed value of T2...using p=p*"
+        pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
+    # "H1: the p* population quantile is greater than x*"
+    elif H1 == 'greater':
+        # "The p-value is the probability that a binomial random variable Y "
+        # "is less than or equal to the observed value of T1... using p = p*"
+        pvalue = Y.cdf(T1)
+    "H1: x* is not the p*th population quantile"
     elif alternative == 'two-sided':
-        # pvalue = min(P(Y<=T1),P(Y>=T2))
-        pvalue = min(bd.cdf(k1-1), bd.sf(k2))
+        # "The p-value is twice the smaller of the probabilities that a binomial "
+        # "random variable Y is less than or equal to the observed value of T1 "
+        # "or greater than or equal to the observed value of T2...using p=p*."
+        # Note: both one-sided p-values can exceed 0.5 for the same data, so `clip`
+        pvalue = np.clip(2*min(Y.cdf(T1), Y.sf(T2-1)), 0, 1)
 
-    return QuantileTestResult(statistic1=k1, statistic2=k2, pvalue=pvalue,
-                              alternative=alternative, x=x, p=p)
+    return QuantileTestResult(statistic1=T1, statistic2=T2, pvalue=pvalue,
+                              alternative=H1, x=X, p=p_star)
 
 
 #####################################
