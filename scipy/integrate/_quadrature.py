@@ -405,7 +405,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         Spacing between elements of `y`. Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate. Default is -1 (last axis).
-    initial : scalar, optional       
+    initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
         Typically this value should be 0. Default is None, which means no
         value at ``x[0]`` is returned and `res` has one element less than `y`
@@ -413,7 +413,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         .. deprecated:: 1.12.0
             The option for non-zero inputs for `initial` will be deprecated in
-            SciPy 1.14.0. After this time, a ValueError will be raised if 
+            SciPy 1.14.0. After this time, a ValueError will be raised if
             `initial` is not None or 0.
 
     Returns
