@@ -44,9 +44,10 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     lu : (M, N) ndarray
         Matrix containing U in its upper triangle, and L in its lower triangle.
         The unit diagonal elements of L are not stored.
-    piv : (N,) ndarray
+    piv : (K,) ndarray
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
+        Of shape ``(K,)``, with ``K = min(M, N)``.
 
     See Also
     --------
