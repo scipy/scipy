@@ -109,7 +109,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     # accommodate empty arrays
     if a1.size == 0:
         lu = np.empty_like(a1)
-        piv = np.arange(lu.shape[0])
+        piv = np.arange(lu.shape[0], dtype=np.int32)
         return lu, piv
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))

@@ -1,4 +1,3 @@
-import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
 from pytest import raises as assert_raises
 
@@ -77,9 +76,9 @@ class TestCholesky:
         x = cho_solve(c_and_lower, b)
         assert_allclose(x, [])
 
-        b = np.empty((0, 0))
+        b = empty((0, 0))
         x = cho_solve(c_and_lower, b)
-        assert_allclose(x, np.empty((0, 0)))
+        assert_allclose(x, empty((0, 0)))
 
         a1 = array([])
         a2 = array([[]])
@@ -198,9 +197,9 @@ class TestCholeskyBanded:
         x = cho_solve_banded(cb_and_lower, b)
         assert_allclose(x, [])
 
-        b = np.empty((0, 0))
+        b = empty((0, 0))
         x = cho_solve_banded(cb_and_lower, b)
-        assert_allclose(x, np.empty((0, 0)))
+        assert_allclose(x, empty((0, 0)))
 
 
 class TestOverwrite:

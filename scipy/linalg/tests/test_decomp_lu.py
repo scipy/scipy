@@ -242,15 +242,12 @@ class TestLUFactor:
             assert_allclose(LU, np.array([[2, 1], [0, 1]]))
             assert_array_equal(P, np.array([0, 1]))
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
+    def test_empty(self, m, n):
+        a = np.zeros((m, n))
         lu, p = lu_factor(a)
-        assert_allclose(lu, np.empty((0, 0)))
-        assert_allclose(p, np.empty((0,)))
-        a = np.empty((3, 0))
-        lu, p = lu_factor(a)
-        assert_allclose(lu, np.empty((3, 0)))
-        assert_allclose(p, np.arange(3))
+        assert_allclose(lu, np.empty((m, n)))
+        assert_allclose(p, np.arange(m))
 
 
 class TestLUSolve:

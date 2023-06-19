@@ -1685,6 +1685,15 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
 
+    # accommodate empty arrays
+    if A.size == 0:
+        B = np.empty_like(A)
+        if separate:
+            scaling = np.ones_like(A, shape=len(A))
+            perm = np.arange(len(A))
+            return B, (scaling, perm)
+        return B, np.empty_like(A)
+
     gebal = get_lapack_funcs(('gebal'), (A,))
     B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute,
                                 overwrite_a=overwrite_a)

@@ -1,6 +1,5 @@
 """SVD decomposition functions."""
 import numpy
-import numpy as np
 from numpy import zeros, r_, diag, dot, arccos, arcsin, where, clip
 
 # Local imports.
@@ -112,16 +111,18 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # accommodate empty matrix
     if a1.size == 0:
-        s = np.empty_like(a1, shape=(0,))
+        dchar = a1.dtype.char
+        real_dchar = dchar.lower() if dchar in 'FD' else dchar
+        s = numpy.empty_like(a1, shape=(0,), dtype=real_dchar)
         m, n = a1.shape
         if full_matrices:
-            u = np.empty_like(a1, shape=(m, m))
-            u[...] = np.identity(m)
-            v = np.empty_like(a1, shape=(n, n))
-            v[...] = np.identity(n)
+            u = numpy.empty_like(a1, shape=(m, m))
+            u[...] = numpy.identity(m)
+            v = numpy.empty_like(a1, shape=(n, n))
+            v[...] = numpy.identity(n)
         else:
-            u = np.empty_like(a1, shape=(m, 0))
-            v = np.empty_like(a1, shape=(0, n))
+            u = numpy.empty_like(a1, shape=(m, 0))
+            v = numpy.empty_like(a1, shape=(0, n))
         if compute_uv:
             return u, s, v
         else:

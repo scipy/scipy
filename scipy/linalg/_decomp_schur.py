@@ -1,6 +1,5 @@
 """Schur decomposition functions."""
 import numpy
-import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
@@ -134,9 +133,9 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     # accommodate empty matrix
     if a1.size == 0:
         if sort is None:
-            return np.empty_like(a1), np.empty_like(a1)
+            return numpy.empty_like(a1), numpy.empty_like(a1)
         else:
-            return np.empty_like(a1), np.empty_like(a1), 0
+            return numpy.empty_like(a1), numpy.empty_like(a1), 0
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))

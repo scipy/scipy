@@ -1094,10 +1094,6 @@ class TestDet:
         with assert_raises(ValueError, match='array must not contain'):
             det(a)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
-        assert_allclose(det(a), 1.)
-
 
 def direct_lstsq(a, b, cmplx=0):
     at = transpose(a)
@@ -1864,3 +1860,14 @@ class TestMatrix_Balance:
             ip[p] = np.arange(A.shape[0])
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
+
+    def test_empty(self):
+        a = np.empty((0, 0))
+        b, t = matrix_balance(a)
+        assert_allclose(b, np.empty((0, 0)))
+        assert_allclose(t, np.empty((0, 0)))
+
+        b, (scale, perm) = matrix_balance(a, separate=True)
+        assert_allclose(b, np.empty((0, 0)))
+        assert_allclose(scale, np.empty((0,)))
+        assert_allclose(perm, np.arange(0))
