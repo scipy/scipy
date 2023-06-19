@@ -74,6 +74,9 @@ def arg_casts(argname, argtype, index):
         # 1. Create a union with two members: one ptr to native complex number and a ptr to npy_complex64/128
         # 2. We assign the native argument to the corresponding union field
         # 3. Pass the npy_complex to the wrapped Fortran subroutine
+        # Note that the native compex types (float complex, double complex etc.) and
+        # npy_complex64/128 have the same memory layout, but Cython does not allow casts between
+        # them and C compilers warn against it, hence the usage of unions.
         complex_union = textwrap.indent(
             pyx_complex_union_template.format(name=argname, type=argtype, index=index),
             INDENTATION,
@@ -103,6 +106,9 @@ def setup_return(ret_type):
     # 1. Create a union with two members: one native complex number and an npy_complex64/128
     # 2. We pass the npy_complex to the wrapped Fortran subroutine
     # 3. Assign the native complex number to 'out' and return that
+    # Note that the native compex types (float complex, double complex etc.) and
+    # npy_complex64/128 have the same memory layout, but Cython does not allow casts between
+    # them and C compilers warn against it, hence the usage of unions.
     wrp_ret_type = npy_types[ret_type]
     complex_out_union = f"\n{INDENTATION}cdef native_{wrp_ret_type} complex_out"
     assign_to_out = f"\n{INDENTATION}out = complex_out.native"
