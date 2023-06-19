@@ -21,7 +21,7 @@ class TestNdimageFourier:
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], shape[0], 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.irfft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a), 1, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a), 1, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec',
@@ -34,7 +34,7 @@ class TestNdimageFourier:
         a = ndimage.fourier_gaussian(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.ifft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a.real), 1.0, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15), (1, 10)])
     @pytest.mark.parametrize('dtype, dec',
@@ -47,7 +47,7 @@ class TestNdimageFourier:
         a = ndimage.fourier_uniform(a, [5.0, 2.5], shape[0], 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.irfft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a), 1.0, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec',
@@ -60,7 +60,7 @@ class TestNdimageFourier:
         a = ndimage.fourier_uniform(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.ifft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a.real), 1.0, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec',
@@ -106,7 +106,7 @@ class TestNdimageFourier:
                                       shape[0], 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.irfft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a), 1.0, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a), 1.0, decimal=dec)
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec',
@@ -119,7 +119,7 @@ class TestNdimageFourier:
         a = ndimage.fourier_ellipsoid(a, [5.0, 2.5], -1, 0)
         a = fft.ifft(a, shape[1], 1)
         a = fft.ifft(a, shape[0], 0)
-        assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
+        assert_almost_equal(ndimage.sum_labels(a.real), 1.0, decimal=dec)
 
     def test_fourier_ellipsoid_unimplemented_ndim(self):
         # arrays with ndim > 3 raise NotImplementedError

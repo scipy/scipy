@@ -28,6 +28,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import warnings
+
 import numpy
 import numpy as np
 from . import _ni_support
@@ -693,6 +695,10 @@ def _stats(input, labels=None, index=None, centered=False):
 
 def sum(input, labels=None, index=None):
     """
+    .. deprecated:: 1.12.0
+        `scipy.ndimage.sum` is deprecated in favour of
+        `scipy.ndimage.sum_labels` and will be removed in SciPy 1.14.0.
+
     Calculate the sum of the values of the array.
 
     Notes
@@ -702,6 +708,9 @@ def sum(input, labels=None, index=None):
     docstring for more details.
 
     """
+    msg = ("'scipy.ndimage.sum' is deprecated in favour of "
+           "'scipy.ndimage.sum_labels' and will be removed in SciPy 1.14.0.")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return sum_labels(input, labels, index)
 
 
@@ -1529,10 +1538,10 @@ def center_of_mass(input, labels=None, index=None):
     >>> ndimage.center_of_mass(d)
     (inf,)
     """
-    normalizer = sum(input, labels, index)
+    normalizer = sum_labels(input, labels, index)
     grids = numpy.ogrid[[slice(0, i) for i in input.shape]]
 
-    results = [sum(input * grids[dir].astype(float), labels, index) / normalizer
+    results = [sum_labels(input * grids[dir].astype(float), labels, index) / normalizer
                for dir in range(input.ndim)]
 
     if numpy.isscalar(results[0]):
