@@ -7949,8 +7949,6 @@ class TestQuantileTest():
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x).confidence_interval(1)
 
-    # just copying the values you had here, but these should be replaced
-    # with original ones
     @pytest.mark.parametrize('p, alpha, lb, ub, alternative',
                              [[0.3, 0.95, 1.221403, 1.476981, 'two-sided'],
                               [0.5, 0.9, 1.506818, 1.803988,'two-sided'],
@@ -7995,6 +7993,37 @@ class TestQuantileTest():
         assert res.pvalue <= 0.05
         res = stats.quantile_test(x, q=q_outside, p=p, alternative=alternative)
         assert res.pvalue > 0.05
+
+    def test_match_conover_examples(self):
+        # Test against the examples in Conover Practical Nonparametric 
+        # Statistics Third Edition pg 139
+
+        # Example 1
+        # Data is [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
+        # 174, 166, 248]
+        # Two-sided test of whether the upper quartile (p=0.75) equals 193
+        # (q=193). Conover shows that 7 of the observations are less than or
+        # equal to 193, and "for the binomial random variable Y, P(Y<=7) = 
+        # 0.0173", so the two-sided p-value is twice that, 0.0346.
+        x = [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193, 
+             174, 166, 248]
+        pvalue_expected = 0.0346
+        res = stats.quantile_test(x, q=193, p=0.75, alternative='two-sided')
+        assert_allclose(res.pvalue, pvalue_expected, rtol=1e-5)
+
+        # Example 2
+        # Conover doesn't give explicit data, just that 8 out of 112
+        # observations are 60 or less. The test is whether the median time is
+        # equal to 60 against the alternative that the median is greater than
+        # 60. The p-value is calculated as P(Y<=8), where Y is again a binomial
+        # distributed random variable, now with p=0.5 and n=112. Conover uses a
+        # normal approximation, but we can calculate the CDF of the binomial
+        # distribution at k=8 to compare with a generous tolerance.
+        x = [59]*8 + [61]*(112-8)
+        pvalue_expected = stats.binom(p=0.5, n=112).pmf(k=8)
+        res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
+        assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
+
 
 
 class TestPageTrendTest:

@@ -9716,13 +9716,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     return SignificanceResult(statistic, pval)
 
-
-# QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
-#                                            ['statistic1',
-#                                             'statistic2',
-#                                             'pvalue'], [])
-
-
 @dataclass
 class QuantileTestResult:
     r"""
@@ -9740,12 +9733,6 @@ class QuantileTestResult:
         The p-value of the hypothesis test.
 
     """
-
-    # def __init__(self, statistic1, statistic2, pvalue, alternative, x, p):
-        # super().__init__(statistic1, statistic2, pvalue)
-        # self._alternative = alternative
-        # self._x = np.sort(x)
-        # self._p = p
 
     statistic1: float
     statistic2: float
