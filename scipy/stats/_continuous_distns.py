@@ -9265,7 +9265,7 @@ class truncnorm_gen(rv_continuous):
     .. note::
         If ``a_trunc`` and ``b_trunc`` are the abscissae at which we wish
         to truncate the distribution (as opposed to the number of standard
-        deviations from `loc`), then we can calculate the distribution
+        deviations from ``loc``), then we can calculate the distribution
         parameters ``a`` and ``b`` as follows::
 
             a, b = (a_trunc - loc) / scale, (b_trunc - loc) / scale
@@ -9276,7 +9276,7 @@ class truncnorm_gen(rv_continuous):
     %(example)s
 
     In the examples above, ``loc=0`` and ``scale=1``, so the plot is truncated
-    at `a` on the left and `b` on the right. However, suppose we were to
+    at ``a`` on the left and ``b`` on the right. However, suppose we were to
     produce the same histogram with ``loc = 1`` and ``scale=0.5``.
 
     >>> loc, scale = 1, 0.5
@@ -9293,7 +9293,7 @@ class truncnorm_gen(rv_continuous):
     >>> plt.show()
 
     Note that the distribution is no longer appears to be truncated at
-    abscissae``a`` and ``b``. That is because the *standard* normal
+    abscissae ``a`` and ``b``. That is because the *standard* normal
     distribution is first truncated at ``a`` and ``b``, *then* the resulting
     distribution is scaled by ``scale`` and shifted by ``loc``. If we instead
     want the shifted and scaled distribution to be truncated at ``a`` and
