@@ -9980,7 +9980,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     >>> stats.quantile_test(rvs, q=0.5, p=0.5)
     QuantileTestResult(statistic1=46, statistic2=46, pvalue=0.18410080866334788)
     
-    As expected, the p-value of 0.018 is not below our threshold of 0.05, so
+    As expected, the p-value of 0.18 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
     
     When testing data from the standard *normal* distribution, which has a 
@@ -10003,7 +10003,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     QuantileTestResult(statistic1=82, statistic2=82, pvalue=0.9895106321610742)
     
     Unsurprisingly, with a p-value greater than our threshold, we would not
-    reject the null hypothesis.
+    reject the null hypothesis in favor of the chosen alternative.
     
     The quantile test can be used for any quantile, not only the median. For
     example, we can test whether the third quartile of uniform distribution is
@@ -10055,7 +10055,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     >>>     ci = res.confidence_interval(0.95)
     >>>     if ci[0] < true_stat < ci[1]:
     >>>         quantile_ci_contains_true_stat += 1
-    >>> quantile_ci_contains_true_stat
+    >>> quantile_ci_contains_true_stat  # approximately 95%
     966
     
     This works with any distribution and any quantile, as long as the samples
