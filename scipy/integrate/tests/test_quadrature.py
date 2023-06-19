@@ -335,13 +335,14 @@ class TestCumulative_trapezoid:
         assert_allclose(y_int, y_expected)
 
     @pytest.mark.parametrize(
-        "initial", [1, 0.5, np.array([1])]
+        "initial", [1, 0.5]
     )
-    def test_initial_exception(self, initial):
+    def test_initial_warning(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
         y = np.linspace(0, 10, num=10)
-        with pytest.raises(ValueError):
-            cumulative_trapezoid(y, initial=initial)
+        with pytest.deprecated_call():
+            res = cumulative_trapezoid(y, initial=initial)
+        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2]) 
 
     def test_cumtrapz(self):
         # Basic coverage test for the alias
