@@ -365,7 +365,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     Returns
     -------
     w : (N,) ndarray
-        The N (N<=M) selected eigenvalues, in ascending order, each
+        The N (1<=N<=M) selected eigenvalues, in ascending order, each
         repeated according to its multiplicity.
     v : (M, N) ndarray
         (if ``eigvals_only == False``)

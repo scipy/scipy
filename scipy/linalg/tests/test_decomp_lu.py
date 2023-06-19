@@ -3,7 +3,12 @@ from pytest import raises as assert_raises
 
 import numpy as np
 from scipy.linalg import lu, lu_factor, lu_solve, get_lapack_funcs, solve
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_allclose, assert_array_equal, assert_equal
+
+
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 class TestLU:
@@ -242,12 +247,25 @@ class TestLUFactor:
             assert_allclose(LU, np.array([[2, 1], [0, 1]]))
             assert_array_equal(P, np.array([0, 1]))
 
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
+    @pytest.mark.parametrize('dtype', DTYPES)
+    def test_shape_dtype(self, m, n,  dtype):
+        k = min(m, n)
+
+        a = np.eye(m, n, dtype=dtype)
+        lu, p = lu_factor(a)
+        assert_equal(lu.shape, (m, n))
+        assert_equal(lu.dtype, dtype)
+        assert_equal(p.shape, (k,))
+        assert_equal(p.dtype, np.int32)
+
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
         a = np.zeros((m, n))
         lu, p = lu_factor(a)
         assert_allclose(lu, np.empty((m, n)))
-        assert_allclose(p, np.arange(m))
+        assert_allclose(p, np.arange(0))
 
 
 class TestLUSolve:

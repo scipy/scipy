@@ -1084,8 +1084,8 @@ class TestSVD_GESDD:
         assert_allclose(s[0], 1.0)
         assert_allclose(u[0, 0] * vh[0, -1], 1.0)
 
-    @pytest.mark.parametrize("m", [0, 2])
-    @pytest.mark.parametrize("n", [0, 2])
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_shape_dtype(self, m, n, dtype):
         a = np.zeros((m, n), dtype=dtype)
@@ -1751,8 +1751,8 @@ class TestQR:
         assert_raises(Exception, qr, (a,), {'lwork': 0})
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
-    @pytest.mark.parametrize("m", [0, 2])
-    @pytest.mark.parametrize("n", [0, 2])
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
     @pytest.mark.parametrize("pivoting", [False, True])
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_shape_dtype(self, m, n, pivoting, dtype):
@@ -1951,28 +1951,28 @@ class TestRQ:
         assert_array_almost_equal(q @ q.T, eye(3))
         assert_array_almost_equal(r @ q, a)
 
-    @pytest.mark.parametrize("m", [0, 2])
-    @pytest.mark.parametrize("n", [0, 2])
+    @pytest.mark.parametrize("m", [0, 1, 2])
+    @pytest.mark.parametrize("n", [0, 1, 2])
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_shape_dtype(self, m, n, dtype):
         k = min(m, n)
 
         a = np.zeros((m, n), dtype=dtype)
         r, q = rq(a)
-        assert_equal(q.shape, (m, m))
-        assert_equal(q.dtype, dtype)
+        assert_equal(q.shape, (n, n))
         assert_equal(r.shape, (m, n))
         assert_equal(r.dtype, dtype)
+        assert_equal(q.dtype, dtype)
 
         r = rq(a, mode='r')
         assert_equal(r.shape, (m, n))
         assert_equal(r.dtype, dtype)
 
         r, q = rq(a, mode='economic')
-        assert_equal(q.shape, (m, k))
-        assert_equal(q.dtype, dtype)
-        assert_equal(r.shape, (k, n))
+        assert_equal(r.shape, (m, k))
         assert_equal(r.dtype, dtype)
+        assert_equal(q.shape, (k, n))
+        assert_equal(q.dtype, dtype)
 
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n):
@@ -1980,15 +1980,15 @@ class TestRQ:
 
         a = np.empty((m, n))
         r, q = rq(a)
-        assert_allclose(q, np.identity(m))
         assert_allclose(r, np.empty((m, n)))
+        assert_allclose(q, np.identity(n))
 
         r = rq(a, mode='r')
         assert_allclose(r, np.empty((m, n)))
 
         r, q = rq(a, mode='economic')
-        assert_allclose(q, np.empty((m, k)))
-        assert_allclose(r, np.empty((k, n)))
+        assert_allclose(r, np.empty((m, k)))
+        assert_allclose(q, np.empty((k, n)))
 
 
 class TestSchur:

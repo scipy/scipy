@@ -437,12 +437,12 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
         K = min(M, N)
 
         if not mode == 'economic':
-            Q = numpy.empty_like(a1, shape=(M, M))
-            Q[...] = numpy.identity(M)
             R = numpy.empty_like(a1)
+            Q = numpy.empty_like(a1, shape=(N, N))
+            Q[...] = numpy.identity(N)
         else:
-            Q = numpy.empty_like(a1, shape=(M, K))
-            R = numpy.empty_like(a1, shape=(K, N))
+            R = numpy.empty_like(a1, shape=(M, K))
+            Q = numpy.empty_like(a1, shape=(K, N))
 
         if mode == 'r':
             return R
