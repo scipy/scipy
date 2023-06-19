@@ -9,7 +9,7 @@ from bisect import bisect_left
 
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _base_doc_to_array, _base_doc_to_matrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
@@ -18,36 +18,36 @@ from . import _csparsetools
 
 
 class _lil_base(_spbase, IndexMixin):
-    """Row-based LIst of Lists sparse matrix
+    """Row-based LIst of Lists sparse {array|matrix}
 
-    This is a structure for constructing sparse matrices incrementally.
+    This is a structure for constructing sparse {arrays|matrices} incrementally.
     Note that inserting a single item can take linear time in the worst case;
-    to construct a matrix efficiently, make sure the items are pre-sorted by
+    to construct the {array|matrix} efficiently, make sure the items are pre-sorted by
     index, per row.
 
     This can be instantiated in several ways:
-        lil_array(D)
-            with a dense matrix or rank-2 ndarray D
+        lil_{array|matrix}(D)
+            where D is a dense matrix or 2-D ndarray
 
-        lil_array(S)
-            with another sparse matrix S (equivalent to S.tolil())
+        lil_{array|matrix}(S)
+            with another sparse array or matrix S (equivalent to S.tolil())
 
-        lil_array((M, N), [dtype])
-            to construct an empty matrix with shape (M, N)
+        lil_{array|matrix}((M, N), [dtype])
+            to construct an empty {array|matrix} with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
     Attributes
     ----------
     dtype : dtype
-        Data type of the matrix
+        Data type of the {array|matrix}
     shape : 2-tuple
-        Shape of the matrix
+        Shape of the {array|matrix}
     ndim : int
         Number of dimensions (this is always 2)
     nnz
     size
     data
-        LIL format data array of the matrix
+        LIL format data array of the {array|matrix}
     rows
         LIL format row index array of the matrix
     T
@@ -55,12 +55,12 @@ class _lil_base(_spbase, IndexMixin):
 
     Notes
     -----
-    Sparse matrices can be used in arithmetic operations: they support
+    Sparse {arrays|matrices} can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
     Advantages of the LIL format
         - supports flexible slicing
-        - changes to the matrix sparsity structure are efficient
+        - changes to the {array|matrix} sparsity structure are efficient
 
     Disadvantages of the LIL format
         - arithmetic operations LIL + LIL are slow (consider CSR or CSC)
@@ -68,17 +68,16 @@ class _lil_base(_spbase, IndexMixin):
         - slow matrix vector products (consider CSR or CSC)
 
     Intended Usage
-        - LIL is a convenient format for constructing sparse matrices
-        - once a matrix has been constructed, convert to CSR or
+        - LIL is a convenient format for constructing sparse {arrays|matrices}
+        - once {an|a} {array|matrix} has been constructed, convert to CSR or
           CSC format for fast arithmetic and matrix vector operations
-        - consider using the COO format when constructing large matrices
+        - consider using the COO format when constructing large {arrays|matrices}
 
     Data Structure
         - An array (``self.rows``) of rows, each of which is a sorted
           list of column indices of non-zero elements.
         - The corresponding nonzero values are stored in similar
           fashion in ``self.data``.
-
 
     """
     _format = 'lil'
@@ -553,9 +552,9 @@ def isspmatrix_lil(x):
 class lil_array(_lil_base, sparray):
     pass
 
-lil_array.__doc__ = _lil_base.__doc__
+lil_array.__doc__ = _base_doc_to_array(_lil_base.__doc__)
 
 class lil_matrix(spmatrix, _lil_base):
     pass
 
-lil_matrix.__doc__ = _array_doc_to_matrix(_lil_base.__doc__)
+lil_matrix.__doc__ = _base_doc_to_matrix(_lil_base.__doc__)

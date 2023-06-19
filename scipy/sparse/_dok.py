@@ -7,7 +7,7 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _base_doc_to_array, _base_doc_to_matrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -16,28 +16,28 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 
 class _dok_base(_spbase, IndexMixin):
     """
-    Dictionary Of Keys based sparse matrix.
+    Dictionary Of Keys based sparse {array|matrix}.
 
     This is an efficient structure for constructing sparse
-    matrices incrementally.
+    {arrays|matrices} incrementally.
 
     This can be instantiated in several ways:
-        dok_array(D)
-            with a dense matrix, D
+        dok_{array|matrix}(D)
+            where D is a dense matrix or 2-D ndarray
 
-        dok_array(S)
-            with a sparse matrix, S
+        dok_{array|matrix}(S)
+            with another sparse array or matrix S (equivalent to S.todok())
 
-        dok_array((M,N), [dtype])
-            create the matrix with initial shape (M,N)
+        dok_{array|matrix}((M,N), [dtype])
+            create the {array|matrix} with initial shape (M,N)
             dtype is optional, defaulting to dtype='d'
 
     Attributes
     ----------
     dtype : dtype
-        Data type of the matrix
+        Data type of the {array|matrix}
     shape : 2-tuple
-        Shape of the matrix
+        Shape of the {array|matrix}
     ndim : int
         Number of dimensions (this is always 2)
     nnz
@@ -49,18 +49,18 @@ class _dok_base(_spbase, IndexMixin):
     Notes
     -----
 
-    Sparse matrices can be used in arithmetic operations: they support
+    Sparse {arrays|matrices} can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
-    Allows for efficient O(1) access of individual elements.
-    Duplicates are not allowed.
-    Can be efficiently converted to a coo_matrix once constructed.
+    - Allows for efficient O(1) access of individual elements.
+    - Duplicates are not allowed.
+    - Can be efficiently converted to a coo_{array|matrix} once constructed.
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse import dok_array
-    >>> S = dok_array((5, 5), dtype=np.float32)
+    >>> from scipy.sparse import dok_{array|matrix}
+    >>> S = dok_{array|matrix}((5, 5), dtype=np.float32)
     >>> for i in range(5):
     ...     for j in range(5):
     ...         S[i, j] = i + j    # Update element
@@ -467,7 +467,7 @@ def isspmatrix_dok(x):
 class dok_array(_dok_base, sparray):
     pass
 
-dok_array.__doc__ = _dok_base.__doc__
+dok_array.__doc__ = _base_doc_to_array(_dok_base.__doc__)
 
 class dok_matrix(spmatrix, _dok_base, dict):
     def set_shape(self, shape):
@@ -481,4 +481,4 @@ class dok_matrix(spmatrix, _dok_base, dict):
     shape = property(fget=get_shape, fset=set_shape)
 
 
-dok_matrix.__doc__ = _array_doc_to_matrix(_dok_base.__doc__)
+dok_matrix.__doc__ = _base_doc_to_matrix(_dok_base.__doc__)

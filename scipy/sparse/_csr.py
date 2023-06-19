@@ -6,7 +6,7 @@ __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _base_doc_to_array,_base_doc_to_matrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
@@ -17,42 +17,42 @@ from ._compressed import _cs_matrix
 
 class _csr_base(_cs_matrix):
     """
-    Compressed Sparse Row matrix
+    Compressed Sparse Row {array|matrix}
 
     This can be instantiated in several ways:
-        csr_array(D)
-            with a dense matrix or rank-2 ndarray D
+        csr_{array|matrix}(D)
+            where D is a dense matrix or 2-D ndarray
 
-        csr_array(S)
-            with another sparse matrix S (equivalent to S.tocsr())
+        csr_{array|matrix}(S)
+            with another sparse array or matrix S (equivalent to S.tocsr())
 
-        csr_array((M, N), [dtype])
-            to construct an empty matrix with shape (M, N)
+        csr_{array|matrix}((M, N), [dtype])
+            to construct an empty {array|matrix} with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
 
-        csr_array((data, (row_ind, col_ind)), [shape=(M, N)])
+        csr_{array|matrix}((data, (row_ind, col_ind)), [shape=(M, N)])
             where ``data``, ``row_ind`` and ``col_ind`` satisfy the
             relationship ``a[row_ind[k], col_ind[k]] = data[k]``.
 
-        csr_array((data, indices, indptr), [shape=(M, N)])
+        csr_{array|matrix}((data, indices, indptr), [shape=(M, N)])
             is the standard CSR representation where the column indices for
             row i are stored in ``indices[indptr[i]:indptr[i+1]]`` and their
             corresponding values are stored in ``data[indptr[i]:indptr[i+1]]``.
-            If the shape parameter is not supplied, the matrix dimensions
+            If the shape parameter is not supplied, the {array|matrix} dimensions
             are inferred from the index arrays.
 
     Attributes
     ----------
     dtype : dtype
-        Data type of the matrix
+        Data type of the {array|matrix}
     shape : 2-tuple
-        Shape of the matrix
+        Shape of the {array|matrix}
     ndim : int
         Number of dimensions (this is always 2)
     nnz
     size
     data
-        Data array of the matrix
+        Data array of the {array|matrix}
     indices
         CSR format index array
     indptr
@@ -65,7 +65,7 @@ class _csr_base(_cs_matrix):
     Notes
     -----
 
-    Sparse matrices can be used in arithmetic operations: they support
+    Sparse {arrays|matrices} can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
     Advantages of the CSR format
@@ -85,8 +85,8 @@ class _csr_base(_cs_matrix):
     --------
 
     >>> import numpy as np
-    >>> from scipy.sparse import csr_array
-    >>> csr_array((3, 4), dtype=np.int8).toarray()
+    >>> from scipy.sparse import csr_{array|matrix}
+    >>> csr_{array|matrix}((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
@@ -94,7 +94,7 @@ class _csr_base(_cs_matrix):
     >>> row = np.array([0, 0, 1, 2, 2, 2])
     >>> col = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_{array|matrix}((data, (row, col)), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -102,7 +102,7 @@ class _csr_base(_cs_matrix):
     >>> indptr = np.array([0, 2, 3, 6])
     >>> indices = np.array([0, 2, 2, 0, 1, 2])
     >>> data = np.array([1, 2, 3, 4, 5, 6])
-    >>> csr_array((data, indices, indptr), shape=(3, 3)).toarray()
+    >>> csr_{array|matrix}((data, indices, indptr), shape=(3, 3)).toarray()
     array([[1, 0, 2],
            [0, 0, 3],
            [4, 5, 6]])
@@ -112,13 +112,13 @@ class _csr_base(_cs_matrix):
     >>> row = np.array([0, 1, 2, 0])
     >>> col = np.array([0, 1, 1, 0])
     >>> data = np.array([1, 2, 4, 8])
-    >>> csr_array((data, (row, col)), shape=(3, 3)).toarray()
+    >>> csr_{array|matrix}((data, (row, col)), shape=(3, 3)).toarray()
     array([[9, 0, 0],
            [0, 2, 0],
            [0, 4, 0]])
 
-    As an example of how to construct a CSR matrix incrementally,
-    the following snippet builds a term-document matrix from texts:
+    As an example of how to construct a CSR {array|matrix} incrementally,
+    the following snippet builds a term-document {array|matrix} from texts:
 
     >>> docs = [["hello", "world", "hello"], ["goodbye", "cruel", "world"]]
     >>> indptr = [0]
@@ -132,7 +132,7 @@ class _csr_base(_cs_matrix):
     ...         data.append(1)
     ...     indptr.append(len(indices))
     ...
-    >>> csr_array((data, indices, indptr), dtype=int).toarray()
+    >>> csr_{array|matrix}((data, indices, indptr), dtype=int).toarray()
     array([[2, 1, 0, 0],
            [0, 1, 1, 1]])
 
@@ -367,9 +367,9 @@ def isspmatrix_csr(x):
 class csr_array(_csr_base, sparray):
     pass
 
-csr_array.__doc__ = _csr_base.__doc__
+csr_array.__doc__ = _base_doc_to_array(_csr_base.__doc__)
 
 class csr_matrix(spmatrix, _csr_base):
     pass
 
-csr_matrix.__doc__ = _array_doc_to_matrix(_csr_base.__doc__)
+csr_matrix.__doc__ = _base_doc_to_matrix(_csr_base.__doc__)

@@ -113,11 +113,23 @@ class spmatrix:
         return self._getrow(i)
 
 
-def _array_doc_to_matrix(docstr):
-    # For opimized builds with stripped docstrings
+def _base_doc_to_array(docstr):
+    # For optimized builds with stripped docstrings
     if docstr is None:
         return None
     return (
-        docstr.replace('sparse arrays', 'sparse matrices')
-              .replace('sparse array', 'sparse matrix')
+        docstr.replace('{array|matrix}', 'array')
+              .replace('{arrays|matrices}', 'arrays')
+              .replace('{an|a}', 'an')
+    )
+
+
+def _base_doc_to_matrix(docstr):
+    # For optimized builds with stripped docstrings
+    if docstr is None:
+        return None
+    return (
+        docstr.replace('{array|matrix}', 'matrix')
+              .replace('{arrays|matrices}', 'matrices')
+              .replace('{an|a}', 'a')
     )

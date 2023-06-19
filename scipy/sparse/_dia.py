@@ -6,7 +6,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix, _base_doc_to_array, _base_doc_to_matrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
 from ._sputils import (isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape)
@@ -14,35 +14,35 @@ from ._sparsetools import dia_matvec
 
 
 class _dia_base(_data_matrix):
-    """Sparse matrix with DIAgonal storage
+    """Sparse {array|matrix} with DIAgonal storage
 
     This can be instantiated in several ways:
-        dia_array(D)
-            with a dense matrix
+        dia_{array|matrix}(D)
+            where D is a dense matrix or 2-D ndarray
 
-        dia_array(S)
-            with another sparse matrix S (equivalent to S.todia())
+        dia_{array|matrix}(S)
+            with another sparse array or matrix S (equivalent to S.todia())
 
-        dia_array((M, N), [dtype])
-            to construct an empty matrix with shape (M, N),
+        dia_{array|matrix}((M, N), [dtype])
+            to construct an empty {array|matrix} with shape (M, N),
             dtype is optional, defaulting to dtype='d'.
 
-        dia_array((data, offsets), shape=(M, N))
+        dia_{array|matrix}((data, offsets), shape=(M, N))
             where the ``data[k,:]`` stores the diagonal entries for
             diagonal ``offsets[k]`` (See example below)
 
     Attributes
     ----------
     dtype : dtype
-        Data type of the matrix
+        Data type of the {array|matrix}
     shape : 2-tuple
-        Shape of the matrix
+        Shape of the {array|matrix}
     ndim : int
         Number of dimensions (this is always 2)
     nnz
     size
     data
-        DIA format data array of the matrix
+        DIA format data array of the {array|matrix}
     offsets
         DIA format offset array of the matrix
     T
@@ -51,33 +51,33 @@ class _dia_base(_data_matrix):
     Notes
     -----
 
-    Sparse matrices can be used in arithmetic operations: they support
+    Sparse {arrays|matrices} can be used in arithmetic operations: they support
     addition, subtraction, multiplication, division, and matrix power.
 
     Examples
     --------
 
     >>> import numpy as np
-    >>> from scipy.sparse import dia_array
-    >>> dia_array((3, 4), dtype=np.int8).toarray()
+    >>> from scipy.sparse import dia_{array|matrix}
+    >>> dia_{array|matrix}((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
 
     >>> data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
     >>> offsets = np.array([0, -1, 2])
-    >>> dia_array((data, offsets), shape=(4, 4)).toarray()
+    >>> dia_{array|matrix}((data, offsets), shape=(4, 4)).toarray()
     array([[1, 0, 3, 0],
            [1, 2, 0, 4],
            [0, 2, 3, 0],
            [0, 0, 3, 4]])
 
-    >>> from scipy.sparse import dia_array
+    >>> from scipy.sparse import dia_{array|matrix}
     >>> n = 10
     >>> ex = np.ones(n)
     >>> data = np.array([ex, 2 * ex, ex])
     >>> offsets = np.array([-1, 0, 1])
-    >>> dia_array((data, offsets), shape=(n, n)).toarray()
+    >>> dia_{array|matrix}((data, offsets), shape=(n, n)).toarray()
     array([[2., 1., 0., ..., 0., 0., 0.],
            [1., 2., 1., ..., 0., 0., 0.],
            [0., 1., 2., ..., 0., 0., 0.],
@@ -475,9 +475,9 @@ def isspmatrix_dia(x):
 class dia_array(_dia_base, sparray):
     pass
 
-dia_array.__doc__ = _dia_base.__doc__
+dia_array.__doc__ = _base_doc_to_array(_dia_base.__doc__)
 
 class dia_matrix(spmatrix, _dia_base):
     pass
 
-dia_matrix.__doc__ = _array_doc_to_matrix(_dia_base.__doc__)
+dia_matrix.__doc__ = _base_doc_to_matrix(_dia_base.__doc__)
