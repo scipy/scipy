@@ -405,11 +405,11 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         Spacing between elements of `y`. Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate. Default is -1 (last axis).
-    initial : scalar, optional
-        `initial` can be 0 or None. If `initial` = 0, insert 0 at the beginning
-        of the returned result. Default is None, which means no value at ``x[0]``
-        is returned and `res` has one element less than `y` along the axis of
-        integration.
+    initial : scalar, optional       
+        If given, insert this value at the beginning of the returned result.
+        Typically this value should be 0. Default is None, which means no
+        value at ``x[0]`` is returned and `res` has one element less than `y`
+        along the axis of integration.
 
         .. deprecated:: 1.12.0
             The option for non-zero inputs for `initial` will be deprecated in
@@ -484,6 +484,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
                 "1.14.0.",
                 DeprecationWarning, stacklevel=2
             )
+        if not np.isscalar(initial):
+            raise ValueError("`initial` parameter should be a scalar.")
 
         shape = list(res.shape)
         shape[axis] = 1
