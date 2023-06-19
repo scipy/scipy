@@ -364,7 +364,7 @@ class TestTrapezoid:
         x = 2**y
         with pytest.deprecated_call(match="trapezoid"):
             assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
-                        trapz(y, x=x, dx=0.5, axis=0))
+                         trapz(y, x=x, dx=0.5, axis=0))
 
 
 class TestQMCQuad:
