@@ -9267,16 +9267,61 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     This distribution is the normal distribution centered on ``loc`` (default
-    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
-    ``b`` standard deviations to the left, right (respectively) from ``loc``.
-    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
-    opposed to the number of standard deviations) then they can be converted
-    to the required form according to::
+    0), with standard deviation ``scale`` (default 1), and truncated at ``a``
+    and ``b`` *standard deviations* from ``loc``. For arbitrary ``loc`` and
+    ``scale``, ``a`` and ``b`` are *not* the abscissae at which the shifted
+    and scaled distribution is truncated.
 
-        a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
+    .. note::
+        If ``a_trunc`` and ``b_trunc`` are the abscissae at which we wish
+        to truncate the distribution (as opposed to the number of standard
+        deviations from ``loc``), then we can calculate the distribution
+        parameters ``a`` and ``b`` as follows::
+
+            a, b = (a_trunc - loc) / scale, (b_trunc - loc) / scale
+
+        This is a common point of confusion. For additional clarification,
+        please see the example below.
 
     %(example)s
 
+    In the examples above, ``loc=0`` and ``scale=1``, so the plot is truncated
+    at ``a`` on the left and ``b`` on the right. However, suppose we were to
+    produce the same histogram with ``loc = 1`` and ``scale=0.5``.
+
+    >>> loc, scale = 1, 0.5
+    >>> rv = truncnorm(a, b, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=1000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a, b)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Note that the distribution is no longer appears to be truncated at
+    abscissae ``a`` and ``b``. That is because the *standard* normal
+    distribution is first truncated at ``a`` and ``b``, *then* the resulting
+    distribution is scaled by ``scale`` and shifted by ``loc``. If we instead
+    want the shifted and scaled distribution to be truncated at ``a`` and
+    ``b``, we need to transform these values before passing them as the
+    distribution parameters.
+
+    >>> a_transformed, b_transformed = (a - loc) / scale, (b - loc) / scale
+    >>> rv = truncnorm(a_transformed, b_transformed, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=10000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a-0.1, b+0.1)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
     """
 
     def _argcheck(self, a, b):
