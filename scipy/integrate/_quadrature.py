@@ -411,8 +411,10 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         is returned and `res` has one element less than `y` along the axis of
         integration.
 
-        .. versionchanged:: 1.11.0
-            A ValueError is raised if `initial` is not None or 0.
+        .. deprecated:: 1.12.0
+            The option for non-zero inputs for `initial` will be deprecated in
+            SciPy 1.14.0. After this time, a ValueError will be raised if 
+            `initial` is not None or 0.
 
     Returns
     -------
@@ -476,7 +478,12 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     if initial is not None:
         if initial != 0:
-            raise ValueError("`initial` parameter can only be None or 0.")
+            warnings.warn(
+                "The option for values for `initial` other than None or 0 is "
+                "deprecated as of SciPy 1.12.0 and will be removed in SciPy "
+                "1.14.0.",
+                DeprecationWarning, stacklevel=2
+            )
 
         shape = list(res.shape)
         shape[axis] = 1
