@@ -10067,7 +10067,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     # "H0: the p*th quantile of X is x*"
     # To facilitate comparison with [1], we'll use variable names that
     # best match Conover's notation
-    X, x_star, p_star, H1 = quantile_test_iv(x, k, p, alternative)
+    X, x_star, p_star, H1 = quantile_test_iv(x, q, p, alternative)
 
     # "We will use two test statistics in this test. Let T1 equal "
     # "the number of observations less than or equal to x*, and "
@@ -10092,8 +10092,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
-    "H1: x* is not the p*th population quantile"
-    elif alternative == 'two-sided':
+    # "H1: x* is not the p*th population quantile"
+    elif H1 == 'two-sided':
         # "The p-value is twice the smaller of the probabilities that a binomial "
         # "random variable Y is less than or equal to the observed value of T1 "
         # "or greater than or equal to the observed value of T2...using p=p*."

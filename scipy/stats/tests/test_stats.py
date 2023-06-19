@@ -7951,14 +7951,21 @@ class TestQuantileTest():
 
     # just copying the values you had here, but these should be replaced
     # with original ones
-    @pytest.mark.parametrize('p, alpha, lb, ub',
-                             [[0.4, 0.95, 1.349859, 1.648721],
-                              [0.5, 0.9, 1.506818, 1.803988]])
-    def test_R_ci_quantile(self, p, alpha, lb, ub):
+    @pytest.mark.parametrize('p, alpha, lb, ub, alternative',
+                             [[0.3, 0.95, 1.221403, 1.476981, 'two-sided'],
+                              [0.5, 0.9, 1.506818, 1.803988,'two-sided'],
+                              [0.25, 0.95, -np.inf, 1.390968, 'less'],
+                              [0.8, 0.9, 2.117, np.inf, 'greater']])
+    def test_R_ci_quantile(self, p, alpha, lb, ub, alternative):
         # Test against R library `confintr` function `ci_quantile`, e.g.
-        # <insert code here>
+        # library(confintr)
+        # x <- exp(seq(0, 1, by = 0.01))
+        # ci_quantile(x, q = 0.3)$interval
+        # ci_quantile(x, q = 0.5, probs = c(0.05, 0.95))$interval
+        # ci_quantile(x, q = 0.25, probs = c(0, 0.95))$interval
+        # ci_quantile(x, q = 0.8, probs = c(0.1, 1))$interval
         x = np.exp(np.arange(0, 1.01, 0.01))
-        res = stats.quantile_test(x, p=p, alternative='two-sided')
+        res = stats.quantile_test(x, p=p, alternative=alternative)
         assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-5)
 
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
