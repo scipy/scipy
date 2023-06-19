@@ -9717,13 +9717,14 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     return SignificanceResult(statistic, pval)
 
 
-QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
-                                           ['statistic1',
-                                            'statistic2',
-                                            'pvalue'], [])
+# QuantileTestResultBase = _make_tuple_bunch('QuantileTestResultBase',
+#                                            ['statistic1',
+#                                             'statistic2',
+#                                             'pvalue'], [])
 
 
-class QuantileTestResult(QuantileTestResultBase):
+@dataclass
+class QuantileTestResult:
     r"""
     Result of `scipy.stats.quantile_test`.
 
@@ -9740,11 +9741,18 @@ class QuantileTestResult(QuantileTestResultBase):
 
     """
 
-    def __init__(self, statistic1, statistic2, pvalue, alternative, x, p):
-        super().__init__(statistic1, statistic2, pvalue)
-        self._alternative = alternative
-        self._x = np.sort(x)
-        self._p = p
+    # def __init__(self, statistic1, statistic2, pvalue, alternative, x, p):
+        # super().__init__(statistic1, statistic2, pvalue)
+        # self._alternative = alternative
+        # self._x = np.sort(x)
+        # self._p = p
+
+    statistic1: float
+    statistic2: float
+    pvalue: float
+    alternative: list['two-sided', 'less', 'greater']
+    x : np.ndarray
+    p : float
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -9779,9 +9787,9 @@ class QuantileTestResult(QuantileTestResultBase):
         (1.9542373206359396, 2.293318740264183)
         """
 
-        alternative = self._alternative
-        p = self._p
-        x = np.sort(self._x)
+        alternative = self.alternative
+        p = self.p
+        x = np.sort(self.x)
         n = len(x)
         bd = stats.binom(n, p)
 
