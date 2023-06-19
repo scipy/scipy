@@ -3891,10 +3891,10 @@ class TestExponNorm:
 
 class TestGenExpon:
     def test_pdf_unity_area(self):
-        from scipy.integrate import simps
+        from scipy.integrate import simpson
         # PDF should integrate to one
         p = stats.genexpon.pdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
-        assert_almost_equal(simps(p, dx=0.01), 1, 1)
+        assert_almost_equal(simpson(p, dx=0.01), 1, 1)
 
     def test_cdf_bounds(self):
         # CDF should always be positive
