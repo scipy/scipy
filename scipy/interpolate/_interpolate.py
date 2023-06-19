@@ -92,7 +92,7 @@ def lagrange(x, w):
 
 
 dep_mesg = """\
-`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0.
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.13.0.
 
 For legacy code, nearly bug-for-bug compatible replacements are
 `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -103,7 +103,7 @@ For scattered data, prefer `LinearNDInterpolator` or
 `CloughTocher2DInterpolator`.
 
 For more details see
-`https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+`https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html`
 """
 
 class interp2d:
@@ -114,7 +114,7 @@ class interp2d:
     .. deprecated:: 1.10.0
 
         `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy
-        1.12.0.
+        1.13.0.
 
         For legacy code, nearly bug-for-bug compatible replacements are
         `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -125,8 +125,8 @@ class interp2d:
         `CloughTocher2DInterpolator`.
 
         For more details see
-        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff
-        <https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff>`_
+        `https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html
+        <https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html>`_
 
 
     Interpolate over a 2-D grid.
