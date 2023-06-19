@@ -4202,8 +4202,8 @@ class halflogistic_gen(rv_continuous):
 
     References
     ----------
-    Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
-    Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+    .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
 
     %(example)s
 
@@ -4259,15 +4259,15 @@ class halflogistic_gen(rv_continuous):
         if floc is not None or fscale is not None:
             return super().fit(data, *args, **kwds)
         else:
-            # location is the minumum sample
-            floc = np.min(data)
+            # location is the minimum of the sample ([1] Equation 2.3)
+            loc = np.min(data)
 
-            # scale is solution to a fix point problem
+            # scale is solution to a fix point problem ([1] 2.6)
             # first, precompute shifted data and constants
             mean_val = np.mean(data)
             shifted_data = data - floc
             mean_minus_min = mean_val - floc
-            n_samples = data.shape[0]
+            n_observations = data.shape[0]
 
             # heuristically found promising starting point
             scale = (np.max(data) - floc)/10
@@ -4275,8 +4275,8 @@ class halflogistic_gen(rv_continuous):
 
             # find fix point by repeated application of eq. (2.6)
             # simplify as
-            # exp(-a / x) / (1 + exp(-a / x)) = a / (1 + exp(a / x))
-            # =                                 a * expit(-a / x))
+            # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+            #                         = expit(-x))
             while rtol > 1e-8:
                 sum_term = shifted_data * sc.expit(-shifted_data/scale)
                 scale_new = mean_minus_min - 2/n_samples * sum_term.sum()

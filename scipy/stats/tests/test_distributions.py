@@ -1183,8 +1183,7 @@ class TestHalfLogistic:
         data = stats.halflogistic.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
                                       random_state=rng)
 
-        _assert_less_or_close_loglike(stats.halflogistic, data,
-                                      stats.halflogistic.nnlf)
+        _assert_less_or_close_loglike(stats.halflogistic, data)
 
 
 class TestHalfgennorm:
