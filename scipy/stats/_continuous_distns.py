@@ -4264,23 +4264,23 @@ class halflogistic_gen(rv_continuous):
 
             # scale is solution to a fix point problem ([1] 2.6)
             # first, precompute shifted data and constants
-            mean_val = np.mean(data)
             shifted_data = data - loc
-            mean_minus_min = mean_val - loc
+            mean_minus_min = shifted_data.mean()
             n_observations = data.shape[0]
 
             # heuristically found promising starting point
             scale = (np.max(data) - loc)/10
-            rtol = 1
+            rtol = 1e-8
+            relative_residual = 1
 
             # find fix point by repeated application of eq. (2.6)
             # simplify as
             # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
             #                         = expit(-x))
-            while rtol > 1e-8:
+            while relative_residual > rtol:
                 sum_term = shifted_data * sc.expit(-shifted_data/scale)
                 scale_new = mean_minus_min - 2/n_observations * sum_term.sum()
-                rtol = abs((scale - scale_new)/scale)
+                relative_residual = abs((scale - scale_new)/scale)
                 scale = scale_new
             return loc, scale
 
