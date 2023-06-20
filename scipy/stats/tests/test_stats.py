@@ -7949,14 +7949,17 @@ class TestQuantileTest():
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x).confidence_interval(1)
 
-    @pytest.mark.parametrize('p, alpha, lb, ub, alternative',
-                             [[0.3, 0.95, 1.221403, 1.476981, 'two-sided'],
-                              [0.5, 0.9, 1.506818, 1.803988,'two-sided'],
-                              [0.25, 0.95, -np.inf, 1.390968, 'less'],
-                              [0.8, 0.9, 2.117, np.inf, 'greater']])
+    @pytest.mark.parametrize(
+        'p, alpha, lb, ub, alternative',
+        [[0.3, 0.95, 1.221402758160170, 1.476980793882643, 'two-sided'],
+         [0.5, 0.9, 1.506817785112854, 1.803988415397857,'two-sided'],
+         [0.25, 0.95, -np.inf, 1.39096812846378, 'less'],
+         [0.8, 0.9, 2.117000016612675, np.inf, 'greater']]
+    )
     def test_R_ci_quantile(self, p, alpha, lb, ub, alternative):
         # Test against R library `confintr` function `ci_quantile`, e.g.
         # library(confintr)
+        # options(digits=16)
         # x <- exp(seq(0, 1, by = 0.01))
         # ci_quantile(x, q = 0.3)$interval
         # ci_quantile(x, q = 0.5, probs = c(0.05, 0.95))$interval
@@ -7964,17 +7967,33 @@ class TestQuantileTest():
         # ci_quantile(x, q = 0.8, probs = c(0.1, 1))$interval
         x = np.exp(np.arange(0, 1.01, 0.01))
         res = stats.quantile_test(x, p=p, alternative=alternative)
-        assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-5)
+        assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-15)
+
+    @pytest.mark.parametrize(
+        'q, p, alternative, ref',
+        [[1.2, 0.3, 'two-sided', 0.01515567517648],
+         [1.8, 0.5, 'two-sided', 0.1109183496606]]
+    )
+    def test_R_pvalue(self, q, p, alternative, ref):
+        # Test against R library `snpar` function `quant.test`, e.g.
+        # library(snpar)
+        # options(digits=16)
+        # x < - exp(seq(0, 1, by=0.01))
+        # quant.test(x, q=1.2, p=0.3, exact=TRUE, alternative='t')
+        x = np.exp(np.arange(0, 1.01, 0.01))
+        res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
+        assert_allclose(res.pvalue, ref, rtol=1e-12)
 
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
-    def test_pval_ci_match(self, alternative):
-        # Verify that the following statement hold:
+    @pytest.mark.parametrize('alpha', [0.9, 0.95])
+    def test_pval_ci_match(self, alternative, alpha):
+        # Verify that the following statement holds:
         #
         # The 95% confidence interval corresponding with alternative='less' 
-        # has -inf as its lower bound, and if xu is the upper bound, then xu 
-        # is the smallest element from the sample x such that:
+        # has -inf as its lower bound, and the upper bound `xu` is the greatest
+        # element from the sample `x` such that:
         # `stats.quantile_test(x, q=xu, p=p, alternative='less').pvalue``
-        # will be less than 5%.
+        # will be greater than 5%.
         # 
         # And the corresponding statement for the alternative='greater' case.
 
@@ -7983,20 +8002,27 @@ class TestQuantileTest():
         x = np.sort(rng.random(size=100))
 
         res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
-        lb, ub = res.confidence_interval()
+        lb, ub = res.confidence_interval(confidence_level=alpha)
 
+        # Interpretation for `alternative='less'`: the upper bound is the
+        # largest element from the sample that is still *inside* the CI.
         q_inside = ub if alternative == 'less' else lb
         i = np.where(x == q_inside)[0][0]
-        q_outside = x[i-1] if alternative == 'less' else x[i+1]
+        # The next element from the sample that is greater is *outside* the CI.
+        q_outside = x[i+1] if alternative == 'less' else x[i-1]
 
+        # The p-value for elements inside the sample will be greater than
+        # 1-confidence_level.
         res = stats.quantile_test(x, q=q_inside, p=p, alternative=alternative)
-        assert res.pvalue <= 0.05
+        assert res.pvalue > 1-alpha
+        # The p-value for elements outside the sample will be less than
+        # 1-confidence_level.
         res = stats.quantile_test(x, q=q_outside, p=p, alternative=alternative)
-        assert res.pvalue > 0.05
+        assert res.pvalue <= 1-alpha
 
     def test_match_conover_examples(self):
-        # Test against the examples in Conover Practical Nonparametric 
-        # Statistics Third Edition pg 139
+        # Test against the examples in [1] (Conover Practical Nonparametric
+        # Statistics Third Edition) pg 139
 
         # Example 1
         # Data is [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
@@ -8017,13 +8043,12 @@ class TestQuantileTest():
         # equal to 60 against the alternative that the median is greater than
         # 60. The p-value is calculated as P(Y<=8), where Y is again a binomial
         # distributed random variable, now with p=0.5 and n=112. Conover uses a
-        # normal approximation, but we can calculate the CDF of the binomial
-        # distribution at k=8 to compare with a generous tolerance.
+        # normal approximation, but we can easily calculate the CDF of the
+        # binomial distribution.
         x = [59]*8 + [61]*(112-8)
         pvalue_expected = stats.binom(p=0.5, n=112).pmf(k=8)
         res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
         assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
-
 
 
 class TestPageTrendTest:
