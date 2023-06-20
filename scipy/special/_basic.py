@@ -2956,7 +2956,7 @@ def factorialk(n, k, exact=True):
         raise NotImplementedError
 
 
-def stirling2(N, K, exact=True):
+def stirling2(N, K, *, exact=True):
     """Generate Stirling number(s) of the second kind.
 
         Stirling numbers of the second kind count the number of ways to
@@ -2983,9 +2983,8 @@ def stirling2(N, K, exact=True):
         K : int, ndarray
             Number of non-empty subsets taken.
         exact : bool, optional
-            For integers, if `exact` is False, then floating point precision is
-            used, otherwise the result is computed exactly. For non-integers,
-            if `exact` is True, is truncated. Defaults to True.
+            This keyword is reserved for a planned future implementation
+            that allows trading speed for accuracy.
 
         Returns
         -------
@@ -3030,7 +3029,7 @@ def stirling2(N, K, exact=True):
                     for n in np.nditer(N, ['refs_ok'])
                 )
         ):
-            raise TypeError("Argument `N` contains non-integer type(s)")
+            raise TypeError("Argument `N` must contain only integers")
         if not (
                 np.issubdtype(K.dtype, np.integer)
                 or all(
