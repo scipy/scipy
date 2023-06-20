@@ -4247,6 +4247,8 @@ class halflogistic_gen(rv_continuous):
     def _entropy(self):
         return 2-np.log(2)
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         if (isinstance(data, CensoredData)) or kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
