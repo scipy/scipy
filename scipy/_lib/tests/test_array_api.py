@@ -16,6 +16,20 @@ if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
     )
 
 
+def to_numpy(array, xp):
+    """Convert `array` into a NumPy ndarray on the CPU. From sklearn."""
+    xp_name = xp.__name__
+
+    if xp_name in {"array_api_compat.torch", "torch"}:
+        return array.cpu().numpy()
+    elif xp_name == "cupy.array_api":
+        return array._array.get()
+    elif xp_name in {"array_api_compat.cupy", "cupy"}:  # pragma: nocover
+        return array.get()
+
+    return np.asarray(array)
+
+
 def test_array_namespace():
     x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
     xp = array_namespace(x, y)

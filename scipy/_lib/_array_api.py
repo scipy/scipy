@@ -181,20 +181,3 @@ def atleast_nd(x, *, ndim, xp):
         x = xp.expand_dims(x, axis=0)
         x = atleast_nd(x, ndim=ndim, xp=xp)
     return x
-
-
-def to_numpy(array, xp):
-    """Convert `array` into a NumPy ndarray on the CPU.
-
-    ONLY FOR TESTING
-    """
-    xp_name = xp.__name__
-
-    if xp_name in {"array_api_compat.torch", "torch"}:
-        return array.cpu().numpy()
-    elif xp_name == "cupy.array_api":
-        return array._array.get()
-    elif xp_name in {"array_api_compat.cupy", "cupy"}:  # pragma: nocover
-        return array.get()
-
-    return np.asarray(array)
