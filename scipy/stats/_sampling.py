@@ -95,6 +95,7 @@ class RatioUniforms:
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy import stats
     >>> from scipy.stats.sampling import RatioUniforms
     >>> rng = np.random.default_rng()
 

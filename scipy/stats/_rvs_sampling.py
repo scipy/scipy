@@ -6,6 +6,11 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Generate random samples from a probability density function using the
     ratio-of-uniforms method.
 
+    .. deprecated:: 1.12.0
+        `rvs_ratio_uniforms` is deprecated in favour of
+        `scipy.stats.sampling.RatioUniforms` from version 1.12.0 and will
+        be removed in SciPy 1.14.0
+
     Parameters
     ----------
     pdf : callable
@@ -39,12 +44,12 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
     Notes
     -----
-    Please refer to `scipy.stats.sampling.RatioUniforms` for the documentation
-    and use ``RatioUniforms`` instead of this function which is deprecated.
+    Please refer to `scipy.stats.sampling.RatioUniforms` for the documentation.
     """
     warnings.warn("Please use `RatioUniforms` from the "
                   "`scipy.stats.sampling` namespace. The "
-                  "`scipy.stats.rvs_ratio_uniforms` namespace is deprecated.",
+                  "`scipy.stats.rvs_ratio_uniforms` namespace is deprecated "
+                  "and will be removed in SciPy 1.14.0",
                   category=DeprecationWarning, stacklevel=2)
     gen = RatioUniforms(pdf, umax, vmin, vmax, c, random_state)
     return gen.rvs(size)
