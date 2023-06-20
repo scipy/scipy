@@ -340,7 +340,7 @@ class TestCumulative_trapezoid:
     def test_initial_warning(self, initial):
         """If initial is not None or 0, a ValueError is raised."""
         y = np.linspace(0, 10, num=10)
-        with pytest.deprecated_call():
+        with pytest.deprecated_call(match="`initial`"):
             res = cumulative_trapezoid(y, initial=initial)
         assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2]) 
 
