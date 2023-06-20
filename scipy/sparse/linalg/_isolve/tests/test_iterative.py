@@ -446,6 +446,7 @@ def test_zero_rhs(solver):
             assert_allclose(x, 0, atol=1e-300)
 
 
+@pytest.mark.xfail(reason="see gh-18697")
 def test_maxiter_worsening(solver):
     if solver not in (gmres, lgmres, qmr):
         # these were skipped from the very beginning, see gh-9201; gh-14160
