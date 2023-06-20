@@ -9,10 +9,9 @@ https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 import os
 
 import numpy as np
-# probably want to vendor it (submodule)
-import array_api_compat  # type: ignore[import]
-from array_api_compat import size
-import array_api_compat.numpy  # type: ignore[import]
+import scipy._lib.array_api_compat.array_api_compat as array_api_compat  # type: ignore[import]
+from scipy._lib.array_api_compat.array_api_compat import size
+import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy  # type: ignore[import]
 
 __all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
 
@@ -85,7 +84,7 @@ def array_namespace(*arrays):
     """
     if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
         # here we could wrap the namespace if needed
-        return array_api_compat.numpy
+        return array_api_compat_numpy
 
     arrays = [array for array in arrays if array is not None]
 
