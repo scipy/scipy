@@ -26,7 +26,7 @@ import warnings
 
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
@@ -3552,8 +3552,7 @@ def dlsim(system, u, t=None, x0=None):
         if len(u.shape) == 1:
             u = u[:, np.newaxis]
 
-        u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
-        u_dt = u_dt_interp(tout).transpose()
+        u_dt = make_interp_spline(t, u, k=1)(tout)
 
     # Simulate the system
     for i in range(0, out_samples - 1):
