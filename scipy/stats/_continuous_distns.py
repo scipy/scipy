@@ -4248,9 +4248,7 @@ class halflogistic_gen(rv_continuous):
         return 2-np.log(2)
 
     def fit(self, data, *args, **kwds):
-        if (isinstance(data, CensoredData)):
-            data = data._uncensor()
-        if kwds.pop('superfit', False):
+        if (isinstance(data, CensoredData)) or kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
         data, floc, fscale = _check_fit_input_parameters(self, data,
