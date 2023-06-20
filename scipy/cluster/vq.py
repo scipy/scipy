@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    as_xparray, array_namespace, size, isdtype, atleast_nd
+    as_xparray, array_namespace, size, atleast_nd
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -209,7 +209,7 @@ def vq(obs, code_book, check_finite=True):
     c_obs = xp.astype(obs, ct, copy=False)
     c_code_book = xp.astype(code_book, ct, copy=False)
 
-    if isdtype(ct, kind='real floating', xp=xp):
+    if xp.isdtype(ct, kind='real floating'):
         c_obs = np.asarray(c_obs)
         c_code_book = np.asarray(c_code_book)
         result = _vq.vq(c_obs, c_code_book)

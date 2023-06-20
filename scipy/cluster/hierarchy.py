@@ -3446,7 +3446,7 @@ def _append_singleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
-                                   i, labels, show_leaf_counts, xp):
+                                   i, labels, show_leaf_counts):
     # If the leaf id structure is not None and is a list then the caller
     # to dendrogram has indicated that cluster id's corresponding to the
     # leaf nodes should be recorded.
@@ -3458,7 +3458,7 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
             ivl.append(leaf_label_func(int(i)))
         else:
             if show_leaf_counts:
-                ivl.append("(" + str(xp.astype(Z[i - n, 3], xp.int64)) + ")")
+                ivl.append("(" + str(np.asarray(Z[i - n, 3], dtype=np.int64)) + ")")
             else:
                 ivl.append("")
 
@@ -3539,7 +3539,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
-                                           show_leaf_counts, xp)
+                                           show_leaf_counts)
             if contraction_marks is not None:
                 _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks, xp)
             return (iv + 5.0, 10.0, 0.0, d)
@@ -3552,7 +3552,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
-                                           show_leaf_counts, xp)
+                                           show_leaf_counts)
             if contraction_marks is not None:
                 _append_contraction_marks(Z, iv + 5.0, i, n, contraction_marks, xp)
             return (iv + 5.0, 10.0, 0.0, d)
