@@ -4261,23 +4261,33 @@ class halflogistic_gen(rv_continuous):
         loc = np.min(data)
 
         # scale is solution to a fix point problem ([1] 2.6)
-        # first, precompute shifted data and constants
-        shifted_data = data - loc
-        mean_minus_min = shifted_data.mean()
-        n_observations = data.shape[0]
-
         # use approximate MLE as starting point ([1] 3.1)
-        scale = (np.max(data) - loc)/10
+        n_observations = data.shape[0]
+        sorted_data = np.sort(data, axis=0)
+        p = np.arange(0, n_observations, 1)/(n_observations + 1)
+        q = 1 - p
+        pp1 = 1 + p
+        alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+        beta = 0.5 * q * pp1
+        sorted_data = sorted_data - loc
+        B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+        C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+        # starting guess
+        scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                 /(4 * n_observations))
+
+        # relative tolerance of fix point iterator
         rtol = 1e-8
         relative_residual = 1
+        shifted_mean = sorted_data.mean() #y_mean - y_min
 
         # find fix point by repeated application of eq. (2.6)
         # simplify as
         # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
         #                         = expit(-x))
         while relative_residual > rtol:
-            sum_term = shifted_data * sc.expit(-shifted_data/scale)
-            scale_new = mean_minus_min - 2/n_observations * sum_term.sum()
+            sum_term = sorted_data * sc.expit(-sorted_data/scale)
+            scale_new = shifted_mean - 2/n_observations * sum_term.sum()
             relative_residual = abs((scale - scale_new)/scale)
             scale = scale_new
         return loc, scale
