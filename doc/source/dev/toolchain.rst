@@ -84,6 +84,7 @@ The table shows the NumPy versions suitable for each major Python version.
  1.9.2              >=3.8, <3.12                >=1.18.5, <1.26.0
  1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
  1.11               >=3.9, <3.12                >=1.21.6, <1.27.0
+ 1.12               >=3.9, <3.13                >=1.22.4, <2.0.0
 =================  ========================    =======================
 
 In specific cases, such as a particular architecture, these requirements

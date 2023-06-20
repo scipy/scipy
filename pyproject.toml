@@ -25,21 +25,9 @@ requires = [
 
     # now matches minimum supported version, keep here as separate requirement
     # to be able to sync more easily with oldest-supported-numpy
-    # loongarch64 requires numpy>=1.22.0
-    "numpy==1.22.0; platform_machine=='loongarch64'",
-
-    # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
-    # built with vc142. 1.22.3 is the first version that has 32-bit Windows
-    # wheels *and* was built with vc141. So use that:
-    "numpy==1.22.3; python_version=='3.9' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
-    "numpy==1.22.3; python_version=='3.10' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
-    "numpy==1.21.6; python_version=='3.9' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
-    # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
-    # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
-    # (see oldest-supported-numpy issues gh-28 and gh-45)
-    "numpy==1.21.6; python_version=='3.10' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
+    "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
@@ -66,7 +54,7 @@ requires-python = ">=3.9"
 dependencies = [
     # TODO: update to "pin-compatible" once possible, see
     # https://github.com/FFY00/meson-python/issues/29
-    "numpy>=1.21.6",
+    "numpy>=1.22.4",
 ]
 readme = "README.rst"
 classifiers = [
