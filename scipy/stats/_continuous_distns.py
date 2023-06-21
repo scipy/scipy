@@ -4266,7 +4266,7 @@ class halflogistic_gen(rv_continuous):
         # use approximate MLE as starting point ([1] 3.1)
         n_observations = data.shape[0]
         sorted_data = np.sort(data, axis=0)
-        p = np.arange(0, n_observations, 1)/(n_observations + 1)
+        p = np.arange(1, n_observations + 1)/(n_observations + 1)
         q = 1 - p
         pp1 = 1 + p
         alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
