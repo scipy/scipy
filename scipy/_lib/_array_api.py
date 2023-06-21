@@ -6,19 +6,21 @@ https://data-apis.org/array-api/latest/purpose_and_scope.html
 The SciPy use case of the Array API is described on the following page:
 https://data-apis.org/array-api/latest/use_cases.html#use-case-scipy
 """
+from __future__ import annotations
+
 import os
 
 import numpy as np
-import scipy._lib.array_api_compat.array_api_compat as array_api_compat  # type: ignore[import]
-from scipy._lib.array_api_compat.array_api_compat import size
-import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy  # type: ignore[import]
+import scipy._lib.array_api_compat.array_api_compat as array_api_compat
+from scipy._lib.array_api_compat.array_api_compat import size  # noqa
+import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy
 
 __all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
-array_api_dispatch = os.environ.get("array_api_dispatch", "")
-SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
+array_api_dispatch = os.environ.get("array_api_dispatch", False)
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
 SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
 _GLOBAL_CONFIG = {

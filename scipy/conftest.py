@@ -102,7 +102,7 @@ def check_fpu_mode(request):
 # Array API backend handling
 xp_available_backends = {'numpy': np}
 
-if SCIPY_ARRAY_API != "":
+if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     # fill the dict of backends with available libraries
     xp_available_backends.update({'numpy.array_api': numpy.array_api})
 
@@ -122,16 +122,16 @@ if SCIPY_ARRAY_API != "":
 
     # by default, use all available backends
     if SCIPY_ARRAY_API.lower() != "true":
-        SCIPY_ARRAY_API = json.loads(SCIPY_ARRAY_API)
+        SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
 
-        if 'all' in SCIPY_ARRAY_API:
+        if 'all' in SCIPY_ARRAY_API_:
             pass  # same as True
         else:
             # only select a subset of backend by filtering out the dict
             try:
                 xp_available_backends = {
                     backend: xp_available_backends[backend]
-                    for backend in SCIPY_ARRAY_API
+                    for backend in SCIPY_ARRAY_API_
                 }
             except KeyError:
                 msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
