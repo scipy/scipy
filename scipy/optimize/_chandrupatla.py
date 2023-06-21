@@ -17,8 +17,8 @@ _ECALLBACK = -4
 _EINPROGRESS = 1
 
 
-def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
-                  fatol=None, frtol=0, maxiter=_iter, callback=None):
+def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
+                           fatol=None, frtol=0, maxiter=_iter, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar

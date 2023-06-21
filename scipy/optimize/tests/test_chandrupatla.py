@@ -3,11 +3,12 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_less
 
 from scipy import stats, optimize
-from scipy.optimize import _chandrupatla as zeros
+import scipy.optimize._chandrupatla as _chandrupatla
+from scipy.optimize._chandrupatla import _chandrupatla_minimize
 import scipy.optimize._tstutils
 
 
-class TestChandrupatla:
+class TestChandrupatlaMinimize:
 
     def f(self, q, dist, p):
         return dist.cdf(q) - p
@@ -16,7 +17,7 @@ class TestChandrupatla:
     def test_basic(self, p):
         # Invert distribution CDF and compare against distrtibution `ppf`
         dist = stats.norm()
-        res = zeros._chandrupatla(self.f, -5, 5, args=(dist, p))
+        res = _chandrupatla_minimize(self.f, -5, 5, args=(dist, p))
         ref = dist.ppf(p)
         np.testing.assert_allclose(res.x, ref)
         assert res.x.shape == ref.shape
@@ -31,14 +32,14 @@ class TestChandrupatla:
 
         @np.vectorize
         def chandrupatla_single(p):
-            return zeros._chandrupatla(self.f, -5, 5, args=(dist, p))
+            return _chandrupatla_minimize(self.f, -5, 5, args=(dist, p))
 
         def f(*args, **kwargs):
             f.f_evals += 1
             return self.f(*args, **kwargs)
         f.f_evals = 0
 
-        res = zeros._chandrupatla(f, -5, 5, args=args)
+        res = _chandrupatla_minimize(f, -5, 5, args=args)
         refs = chandrupatla_single(p).ravel()
 
         ref_x = [ref.x for ref in refs]
@@ -106,10 +107,10 @@ class TestChandrupatla:
         def f(x):
             return [x[0] - 2.5, x[1] - 10, (x[2]-0.1)**3, np.nan]
 
-        res = zeros._chandrupatla(f, [0] * 4, [np.pi] * 4, maxiter=2)
+        res = _chandrupatla_minimize(f, [0] * 4, [np.pi] * 4, maxiter=2)
 
-        ref_flags = np.array([zeros._ECONVERGED, zeros._ESIGNERR,
-                              zeros._ECONVERR, zeros._EVALUEERR])
+        ref_flags = np.array([_chandrupatla._ECONVERGED, _chandrupatla._ESIGNERR,
+                              _chandrupatla._ECONVERR, _chandrupatla._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
     def test_convergence(self):
@@ -123,28 +124,28 @@ class TestChandrupatla:
 
         kwargs = kwargs0.copy()
         kwargs['xatol'] = 1e-3
-        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(res1.xr - res1.xl, 1e-3)
         kwargs['xatol'] = 1e-6
-        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(res2.xr - res2.xl, 1e-6)
         assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
 
         kwargs = kwargs0.copy()
         kwargs['xrtol'] = 1e-3
-        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(res1.xr - res1.xl, 1e-3 * np.abs(res1.x))
         kwargs['xrtol'] = 1e-6
-        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(res2.xr - res2.xl, 1e-6 * np.abs(res2.x))
         assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
 
         kwargs = kwargs0.copy()
         kwargs['fatol'] = 1e-3
-        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(np.abs(res1.fun), 1e-3)
         kwargs['fatol'] = 1e-6
-        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(np.abs(res2.fun), 1e-6)
         assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
 
@@ -152,10 +153,10 @@ class TestChandrupatla:
         kwargs['frtol'] = 1e-3
         x1, x2 = bracket
         f0 = np.minimum(abs(self.f(x1, *args)), abs(self.f(x2, *args)))
-        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res1 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(np.abs(res1.fun), 1e-3*f0)
         kwargs['frtol'] = 1e-6
-        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        res2 = _chandrupatla_minimize(self.f, *bracket, **kwargs)
         assert_array_less(np.abs(res2.fun), 1e-6*f0)
         assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
 
@@ -166,7 +167,7 @@ class TestChandrupatla:
         bracket = (-5, 5)
         maxiter = 5
 
-        res = zeros._chandrupatla(self.f, *bracket, args=(dist, p),
+        res = _chandrupatla_minimize(self.f, *bracket, args=(dist, p),
                                   maxiter=maxiter)
         assert not np.any(res.success)
         assert np.all(res.nfev == maxiter+2)
@@ -179,22 +180,22 @@ class TestChandrupatla:
             if callback.iter == 0:
                 # callback is called once with initial bracket
                 assert res.xl, res.xr == bracket
-            assert res.status == zeros._EINPROGRESS
+            assert res.status == _chandrupatla._EINPROGRESS
             if callback.iter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
 
-        res2 = zeros._chandrupatla(self.f, *bracket, args=(dist, p),
+        res2 = _chandrupatla_minimize(self.f, *bracket, args=(dist, p),
                                    callback=callback)
 
         # terminating with callback is identical to terminating due to maxiter
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                assert res[key] == zeros._ECONVERR
-                assert callback.res[key] == zeros._EINPROGRESS
-                assert res2[key] == zeros._ECALLBACK
+                assert res[key] == _chandrupatla._ECONVERR
+                assert callback.res[key] == _chandrupatla._EINPROGRESS
+                assert res2[key] == _chandrupatla._ECALLBACK
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
@@ -208,7 +209,7 @@ class TestChandrupatla:
         # abs(x2-x1) < 4*abs(xmin)*xrtol + xatol, but we use the more standard
         # abs(x2-x1) < abs(xmin)*xrtol + xatol. Therefore, set xrtol to 4x
         # that used by Chandrupatla in tests.
-        res = zeros._chandrupatla(f, *bracket, xrtol=4e-10, xatol=1e-5)
+        res = _chandrupatla_minimize(f, *bracket, xrtol=4e-10, xatol=1e-5)
         assert_allclose(res.fun, f(root), rtol=1e-8, atol=2e-3)
         assert_equal(res.nfev, nfeval)
 
@@ -220,7 +221,7 @@ class TestChandrupatla:
         def f(x):
             return ((x - root) ** 3).astype(dtype)
 
-        res = zeros._chandrupatla(f, dtype(-3), dtype(5), xatol=1e-3)
+        res = _chandrupatla_minimize(f, dtype(-3), dtype(5), xatol=1e-3)
         assert res.x.dtype == dtype
         assert_allclose(res.x, root, atol=1e-3)
 
@@ -229,38 +230,38 @@ class TestChandrupatla:
 
         message = '`func` must be callable.'
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(None, -4, 4)
+            _chandrupatla_minimize(None, -4, 4)
 
         message = 'Bracket and function output must be real numbers.'
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4+1j, 4)
+            _chandrupatla_minimize(lambda x: x, -4+1j, 4)
 
         message = "shape mismatch: objects cannot be broadcast"
         # raised by `np.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, [-2, -3], [3, 4, 5])
+            _chandrupatla_minimize(lambda x: x, [-2, -3], [3, 4, 5])
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
+            _chandrupatla_minimize(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
 
         message = 'Tolerances must be non-negative scalars.'
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, xatol=-1)
+            _chandrupatla_minimize(lambda x: x, -4, 4, xatol=-1)
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, xrtol=None)
+            _chandrupatla_minimize(lambda x: x, -4, 4, xrtol=None)
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, fatol='ekki')
+            _chandrupatla_minimize(lambda x: x, -4, 4, fatol='ekki')
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, frtol=None)
+            _chandrupatla_minimize(lambda x: x, -4, 4, frtol=None)
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=1.5)
+            _chandrupatla_minimize(lambda x: x, -4, 4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=-1)
+            _chandrupatla_minimize(lambda x: x, -4, 4, maxiter=-1)
 
         message = '`callback` must be callable.'
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, callback='shrubbery')
+            _chandrupatla_minimize(lambda x: x, -4, 4, callback='shrubbery')
 
     def test_special_cases(self):
         # Test edge cases and other special cases
@@ -271,7 +272,7 @@ class TestChandrupatla:
             # assert np.issubdtype(x.dtype, np.floating)
             return x ** 99 - 1
 
-        res = zeros._chandrupatla(f, -7, 5)
+        res = _chandrupatla_minimize(f, -7, 5)
         assert res.success
         assert_allclose(res.x, 1)
 
@@ -280,7 +281,7 @@ class TestChandrupatla:
         def f(x):
             return x**2 - 1
 
-        res = zeros._chandrupatla(f, 1, 1)
+        res = _chandrupatla_minimize(f, 1, 1)
         # assert res.success
         assert_equal(res.x, 1)
 
@@ -288,7 +289,7 @@ class TestChandrupatla:
             return 1/x
 
         with np.errstate(invalid='ignore'):
-            res = zeros._chandrupatla(f, np.inf, np.inf)
+            res = _chandrupatla_minimize(f, np.inf, np.inf)
         assert res.success
         assert_equal(res.x, np.inf)
 
@@ -297,7 +298,7 @@ class TestChandrupatla:
             return x**3 - 1
 
         bracket = (-3, 5)
-        res = zeros._chandrupatla(f, *bracket, maxiter=0)
+        res = _chandrupatla_minimize(f, *bracket, maxiter=0)
         assert res.xl, res.xr == bracket
         assert res.nit == 0
         assert res.nfev == 2
@@ -305,7 +306,7 @@ class TestChandrupatla:
         assert res.x == -3  # best so far
 
         # Test maxiter = 1
-        res = zeros._chandrupatla(f, *bracket, maxiter=1)
+        res = _chandrupatla_minimize(f, *bracket, maxiter=1)
         assert res.success
         assert res.status == 0
         assert res.nit == 1
@@ -316,7 +317,7 @@ class TestChandrupatla:
         def f(x, c):
             return c*x - 1
 
-        res = zeros._chandrupatla(f, -1, 1, args=3)
+        res = _chandrupatla_minimize(f, -1, 1, args=3)
         assert_allclose(res.x, 1/3)
 
         # # TODO: Test zero tolerance
@@ -326,7 +327,7 @@ class TestChandrupatla:
         # def f(x):
         #     return np.cos(x)
         #
-        # res = zeros._chandrupatla(f, 0, np.pi, xatol=0, xrtol=0)
+        # res = _chandrupatla_minimize(f, 0, np.pi, xatol=0, xrtol=0)
         # assert res.nit < 100
         # xp = np.nextafter(res.x, np.inf)
         # xm = np.nextafter(res.x, -np.inf)
