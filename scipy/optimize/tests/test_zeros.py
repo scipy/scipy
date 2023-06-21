@@ -365,7 +365,15 @@ class TestChandrupatla(TestScalarRootFinders):
         bracket = (-5, 5)
         maxiter = 5
 
-        res = zeros._chandrupatla(self.f, *bracket, args=(dist, p),
+        def f(q, dist, p):
+            res = dist.cdf(q) - p
+            f.x = q
+            f.fun = res
+            return res
+        f.x = None
+        f.fun = None
+
+        res = zeros._chandrupatla(f, *bracket, args=(dist, p),
                                   maxiter=maxiter)
         assert not np.any(res.success)
         assert np.all(res.nfev == maxiter+2)
@@ -378,13 +386,17 @@ class TestChandrupatla(TestScalarRootFinders):
             if callback.iter == 0:
                 # callback is called once with initial bracket
                 assert res.xl, res.xr == bracket
+            else:
+                # Ensure that attributes are updating each iteration
+                assert f.x in {res.xl, res.xr}
+                assert f.fun in {res.fl, res.fr}
             assert res.status == zeros._EINPROGRESS
             if callback.iter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
 
-        res2 = zeros._chandrupatla(self.f, *bracket, args=(dist, p),
+        res2 = zeros._chandrupatla(f, *bracket, args=(dist, p),
                                    callback=callback)
 
         # terminating with callback is identical to terminating due to maxiter
@@ -480,7 +492,7 @@ class TestChandrupatla(TestScalarRootFinders):
             return x**2 - 1
 
         res = zeros._chandrupatla(f, 1, 1)
-        # assert res.success
+        assert res.success
         assert_equal(res.x, 1)
 
         def f(x):

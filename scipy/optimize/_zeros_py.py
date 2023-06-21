@@ -1536,7 +1536,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
 
     if callback is not None:
-        temp = _chandrupatla_prepare_result(shape, res, active, nit, nfev)
+        temp = _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
+                                            x1, f1, x2, f2, nit, nfev)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
@@ -1552,7 +1553,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         # TODO: allow user to specify that `func` works with compressed input
         x_full = res.x.copy()
         x_full[active] = x
-        x_full = x_full.reshape(shape)
+        x_full = x_full.reshape(shape)[()]
         f = func(x_full, *args)
         nfev += 1
         # Ensure that the outpuf of `func` is an array of the appropriate
@@ -1576,7 +1577,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
 
         if callback is not None:
-            temp = _chandrupatla_prepare_result(shape, res, active, nit, nfev)
+            temp = _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
+                                                x1, f1, x2, f2, nit, nfev)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
@@ -1599,7 +1601,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         t = np.clip(t, tl, 1-tl)
 
     res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _chandrupatla_prepare_result(shape, res, active, nit, nfev)
+    return _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
+                                        x1, f1, x2, f2, nit, nfev)
 
 def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
@@ -1724,16 +1727,26 @@ def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
     return xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl
 
 
-def _chandrupatla_prepare_result(shape, res, active, nit, nfev):
+def _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
+                                 x1, f1, x2, f2, nit, nfev):
     res = res.copy()
+    res['x'][active] = xmin
+    res['fun'][active] = fmin
+    res['xl'][active] = x1
+    res['fl'][active] = f1
+    res['xr'][active] = x2
+    res['fr'][active] = f2
+    res['nit'][active] = nit
+    res['nfev'][active] = nfev
+
     xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
     i = res['xl'] < res['xr']
     res['xl'] = np.choose(i, (xr, xl))
     res['xr'] = np.choose(i, (xl, xr))
     res['fl'] = np.choose(i, (fr, fl))
     res['fr'] = np.choose(i, (fl, fr))
-    res['nit'][active] = nit
-    res['nfev'][active] = nfev
     for key, val in res.items():
         res[key] = np.reshape(val, shape)[()]
+    res['_order_keys'] = ['success', 'status', 'x', 'fun', 'nit', 'nfev',
+                          'xl', 'fl', 'xr', 'fr']
     return OptimizeResult(**res)
