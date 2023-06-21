@@ -152,10 +152,11 @@ skip_if_array_api_gpu = pytest.mark.skipif(
     reason="do not run with Array API on and not on CPU",
 )
 
+
 def skip_if_array_api_backend(backend):
     def wrapper(func):
         reason = (
-            f"do not run with Array API on and using the backend: {backend}"
+            f"do not run with Array API backend: {backend}"
         )
         # method gets there as a function so we cannot use inspect.ismethod
         if '.' in func.__qualname__:
