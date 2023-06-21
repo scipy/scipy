@@ -48,7 +48,10 @@ from scipy.cluster.hierarchy import (
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 from scipy.conftest import (
-    skip_if_array_api, array_api_compatible, skip_if_array_api_gpu
+    array_api_compatible,
+    skip_if_array_api,
+    skip_if_array_api_gpu,
+    skip_if_array_api_backend,
 )
 
 from . import hierarchy_test_data
@@ -1183,6 +1186,7 @@ def test_node_compare(xp):
 
 @skip_if_array_api_gpu
 @array_api_compatible
+@skip_if_array_api_backend('numpy.array_api')
 def test_cut_tree(xp):
     np.random.seed(23)
     nobs = 50
