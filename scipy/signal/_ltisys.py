@@ -30,12 +30,12 @@ from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+                             cont2discrete, _atleast_2d_or_none)
 
 import numpy
 import numpy as np
 from numpy.testing import suppress_warnings
-from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
@@ -1218,11 +1218,6 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     """
     pass
-
-
-def _atleast_2d_or_none(arg):
-    if arg is not None:
-        return atleast_2d(arg)
 
 
 class StateSpace(LinearTimeInvariant):
