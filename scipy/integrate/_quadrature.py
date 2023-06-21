@@ -414,9 +414,13 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
-        Typically this value should be 0. Default is None, which means no
-        value at ``x[0]`` is returned and `res` has one element less than `y`
-        along the axis of integration.
+        0 or None are the only values accepted. Default is None, which means
+        `res` has one element less than `y` along the axis of integration.
+
+        .. deprecated:: 1.12.0
+            The option for non-zero inputs for `initial` will be deprecated in
+            SciPy 1.14.0. After this time, a ValueError will be raised if
+            `initial` is not None or 0.
 
     Returns
     -------
@@ -479,6 +483,13 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
+        if initial != 0:
+            warnings.warn(
+                "The option for values for `initial` other than None or 0 is "
+                "deprecated as of SciPy 1.12.0 and will raise a value error in"
+                " SciPy 1.14.0.",
+                DeprecationWarning, stacklevel=2
+            )
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
