@@ -109,7 +109,7 @@ namespace fast_matrix_market {
         header.format = array;
         header.symmetry = general;
 
-        write_header(os, header);
+        write_header(os, header, options);
 
         line_formatter<int64_t, VT> lf(header, options);
         auto formatter = array_formatter(lf, values.begin(), order, header.nrows, header.ncols);

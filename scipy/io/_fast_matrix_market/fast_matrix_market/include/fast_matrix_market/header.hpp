@@ -267,7 +267,7 @@ namespace fast_matrix_market {
         return lines_read;
     }
 
-    inline bool write_header(std::ostream& os, const matrix_market_header& header) {
+    inline bool write_header(std::ostream& os, const matrix_market_header& header, const write_options options = {}) {
         // Write the banner
         os << kMatrixMarketBanner << kSpace;
         os << object_map.at(header.object) << kSpace;
@@ -280,6 +280,8 @@ namespace fast_matrix_market {
             std::string write_comment = replace_all(header.comment, "\n", "\n%");
 
             os << "%" << write_comment << kNewline;
+        } else if (options.always_comment) {
+            os << "%" << kNewline;
         }
 
         // Write dimension line

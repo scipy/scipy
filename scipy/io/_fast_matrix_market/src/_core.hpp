@@ -146,7 +146,7 @@ void write_body_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& sh
     cursor.header.field = (data.size() == 0 ? (cursor.header.nnz == 0 ? fmm::real : fmm::pattern) : fmm::get_field_type((const VT*)nullptr));
     cursor.header.format = fmm::coordinate;
 
-    fmm::write_header(cursor.stream(), cursor.header);
+    fmm::write_header(cursor.stream(), cursor.header, cursor.options);
 
     auto rows_unchecked = rows.unchecked();
     auto cols_unchecked = cols.unchecked();
@@ -189,7 +189,7 @@ void write_body_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& sh
     cursor.header.format = fmm::coordinate;
     cursor.header.symmetry = fmm::general;
 
-    fmm::write_header(cursor.stream(), cursor.header);
+    fmm::write_header(cursor.stream(), cursor.header, cursor.options);
 
     auto indptr_unchecked = indptr.unchecked();
     auto indices_unchecked = indices.unchecked();

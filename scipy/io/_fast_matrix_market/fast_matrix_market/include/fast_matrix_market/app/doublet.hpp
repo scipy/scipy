@@ -84,19 +84,23 @@ namespace fast_matrix_market {
         using IT = typename std::iterator_traits<decltype(indices.begin())>::value_type;
         using VT = typename std::iterator_traits<decltype(values.begin())>::value_type;
 
-        header.nnz = values.size();
+        header.nnz = indices.size();
 
         header.object = vector;
-        header.field = get_field_type((const VT*)nullptr);
+        if (header.nnz > 0 && (values.cbegin() == values.cend())) {
+            header.field = pattern;
+        } else if (header.field != pattern) {
+            header.field = get_field_type((const VT *) nullptr);
+        }
         header.format = coordinate;
 
-        write_header(os, header);
+        write_header(os, header, options);
 
         vector_line_formatter<IT, VT> lf(header, options);
         auto formatter = triplet_formatter(lf,
-                                          indices.begin(), indices.end(),
-                                          indices.begin(), indices.end(),
-                                          values.begin(), values.end());
+                                          indices.cbegin(), indices.cend(),
+                                          indices.cbegin(), indices.cend(),
+                                          values.cbegin(), header.field == pattern ? values.cbegin() : values.cend());
         write_body(os, formatter, options);
     }
 

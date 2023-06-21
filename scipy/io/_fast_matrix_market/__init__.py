@@ -366,15 +366,16 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     >>> mmwrite(target, a)
     >>> print(target.getvalue().decode('latin1'))
     %%MatrixMarket matrix array real general
+    %
     2 4
-    1E0
-    0E0
-    0E0
-    2.5E0
-    0E0
-    0E0
-    0E0
-    6.25E0
+    1
+    0
+    0
+    2.5
+    0
+    0
+    0
+    6.25
 
     Add a comment to the output file, and set the precision to 3.
 
@@ -403,6 +404,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     >>> mmwrite(target, coo_matrix(a), precision=3)
     >>> print(target.getvalue().decode('latin1'))
     %%MatrixMarket matrix coordinate real general
+    %
     2 4 3
     1 1 1.00e+00
     2 2 2.50e+00
@@ -422,6 +424,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     >>> mmwrite(target, z, precision=2)
     >>> print(target.getvalue().decode('latin1'))
     %%MatrixMarket matrix array complex hermitian
+    %
     3 3
     3.0e+00 0.0e+00
     1.0e+00 -2.0e+00

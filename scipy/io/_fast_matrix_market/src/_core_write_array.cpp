@@ -20,7 +20,7 @@ void write_body_array(write_cursor& cursor, py::array_t<T>& array) {
     cursor.header.field = fmm::get_field_type((const T*)nullptr);
     cursor.header.format = fmm::array;
 
-    fmm::write_header(cursor.stream(), cursor.header);
+    fmm::write_header(cursor.stream(), cursor.header, cursor.options);
 
     auto unchecked = array.unchecked();
     fmm::line_formatter<int64_t, T> lf(cursor.header, cursor.options);

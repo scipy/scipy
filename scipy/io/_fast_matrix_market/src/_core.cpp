@@ -145,6 +145,7 @@ write_cursor open_write_file(const std::string& filename, const fmm::matrix_mark
     // Set options
     cursor.options.num_threads = num_threads;
     cursor.options.precision = precision;
+    cursor.options.always_comment = true; // scipy.io._mmio always writes a comment line, even if comment is empty.
     cursor.header = header;
     return cursor;
 }
@@ -155,13 +156,14 @@ write_cursor open_write_stream(std::shared_ptr<pystream::ostream>& stream, fmm::
     // Set options
     cursor.options.num_threads = num_threads;
     cursor.options.precision = precision;
+    cursor.options.always_comment = true; // scipy.io._mmio always writes a comment line, even if comment is empty.
     cursor.header = header;
     return cursor;
 }
 
 #ifndef FMM_SCIPY_PRUNE
 void write_header_only(write_cursor& cursor) {
-    fmm::write_header(cursor.stream(), cursor.header);
+    fmm::write_header(cursor.stream(), cursor.header, cursor.options);
     cursor.stream().flush();
 }
 #endif

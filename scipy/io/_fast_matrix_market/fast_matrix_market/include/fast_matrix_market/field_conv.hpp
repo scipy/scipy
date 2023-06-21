@@ -412,11 +412,18 @@ namespace fast_matrix_market {
         }
     }
 
-#ifdef FMM_USE_DRAGONBOX
+// Sometimes Dragonbox and Ryu may render '1' as '1E0'
+// This controls whether to truncate those suffixes.
+#ifndef FMM_DROP_ENDING_E0
+#define FMM_DROP_ENDING_E0 1
+#endif
 
-    #ifndef DRAGONBOX_DROP_E0
-    #define DRAGONBOX_DROP_E0 true
-    #endif
+// Same as above, but for context where precision is specified
+#ifndef FMM_DROP_ENDING_E0_PRECISION
+#define FMM_DROP_ENDING_E0_PRECISION 0
+#endif
+
+#ifdef FMM_USE_DRAGONBOX
 
     inline std::string value_to_string_dragonbox(const float& value) {
         std::string buffer(jkj::dragonbox::max_output_string_length<jkj::dragonbox::ieee754_binary32> + 1, ' ');
@@ -424,9 +431,11 @@ namespace fast_matrix_market {
         char *end_ptr = jkj::dragonbox::to_chars(value, buffer.data());
         buffer.resize(end_ptr - buffer.data());
 
-        if (DRAGONBOX_DROP_E0 && ends_with(buffer, "E0")) {
+#if FMM_DROP_ENDING_E0
+        if (ends_with(buffer, "E0")) {
             buffer.resize(buffer.size() - 2);
         }
+#endif
         return buffer;
     }
 
@@ -436,9 +445,11 @@ namespace fast_matrix_market {
         char *end_ptr = jkj::dragonbox::to_chars(value, buffer.data());
         buffer.resize(end_ptr - buffer.data());
 
-        if (DRAGONBOX_DROP_E0 && ends_with(buffer, "E0")) {
+#if FMM_DROP_ENDING_E0
+        if (ends_with(buffer, "E0")) {
             buffer.resize(buffer.size() - 2);
         }
+#endif
         return buffer;
     }
 #endif
@@ -451,6 +462,12 @@ namespace fast_matrix_market {
             // shortest representation
             auto len = f2s_buffered_n(value, ret.data());
             ret.resize(len);
+
+#if FMM_DROP_ENDING_E0
+            if (ends_with(ret, "E0")) {
+                ret.resize(ret.size() - 2);
+            }
+#endif
         } else {
             // explicit precision
             if (precision > 0) {
@@ -460,6 +477,12 @@ namespace fast_matrix_market {
             }
             auto len = d2exp_buffered_n(static_cast<double>(value), precision, ret.data());
             ret.resize(len);
+
+#if FMM_DROP_ENDING_E0_PRECISION
+            if (ends_with(ret, "e+00")) {
+                ret.resize(ret.size() - 4);
+            }
+#endif
         }
 
         return ret;
@@ -472,6 +495,12 @@ namespace fast_matrix_market {
             // shortest representation
             auto len = d2s_buffered_n(value, ret.data());
             ret.resize(len);
+
+#if FMM_DROP_ENDING_E0
+            if (ends_with(ret, "E0")) {
+                ret.resize(ret.size() - 2);
+            }
+#endif
         } else {
             // explicit precision
             if (precision > 0) {
@@ -481,6 +510,12 @@ namespace fast_matrix_market {
             }
             auto len = d2exp_buffered_n(value, precision, ret.data());
             ret.resize(len);
+
+#if FMM_DROP_ENDING_E0_PRECISION
+            if (ends_with(ret, "e+00")) {
+                ret.resize(ret.size() - 4);
+            }
+#endif
         }
 
         return ret;

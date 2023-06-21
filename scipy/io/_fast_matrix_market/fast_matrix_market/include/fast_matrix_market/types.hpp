@@ -102,7 +102,7 @@ namespace fast_matrix_market {
         enum {ExtraZeroElement, DuplicateElement} generalize_coordinate_diagnonal_values = ExtraZeroElement;
 
         /**
-         * Whether or not parallel implementation is allowed.
+         * Whether parallel implementation is allowed.
          */
         bool parallel_ok = true;
 
@@ -124,7 +124,7 @@ namespace fast_matrix_market {
         int64_t chunk_size_values = 2 << 12;
 
         /**
-         * Whether or not parallel implementation is allowed.
+         * Whether parallel implementation is allowed.
          */
         bool parallel_ok = true;
 
@@ -138,5 +138,10 @@ namespace fast_matrix_market {
          * Placeholder. Currently not used due to the various supported float rendering backends.
          */
         int precision = -1;
+
+        /**
+         * Whether to always write a comment line even if comment is empty.
+         */
+        bool always_comment = false;
     };
 }
