@@ -1,7 +1,6 @@
 import numpy as np
 from ._optimize import OptimizeResult, _call_callback_maybe_halt
 
-
 _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
@@ -16,19 +15,27 @@ _EVALUEERR = -3
 _ECALLBACK = -4
 _EINPROGRESS = 1
 
+# TODO:
+#  - Figure out whether we want to follow original termination conditions
+#  - In this and `_chandrupatla`, fix result object not updating
+#  - Check over object returned by `_chandrupatla_minimize`. Make sure that
+#    attributes are printed in a reasonable order and that `xl < x < xr`.
+#    Should `xm` even be reported if it's identical to `x`?
 
-def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
-                           fatol=None, frtol=0, maxiter=_iter, callback=None):
-    """Find the root of an elementwise function using Chandrupatla's algorithm.
+def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
+                           xrtol=_rtol, fatol=None, frtol=0, maxiter=_iter,
+                           callback=None):
+    """Find the minimizer of an elementwise function.
 
-    For each element of the output of `func`, `chandrupatla` seeks the scalar
-    root that makes the element 0. This function allows for `a`, `b`, and the
-    output of `func` to be of any broadcastable shapes.
+    For each element of the output of `func`, `_chandrupatla_minimize` seeks
+    the scalar minimizer that minimizes the element. This function allows for
+    `x1`, `x2`, `x3`, and the output of `func` to be of any broadcastable
+    shapes.
 
     Parameters
     ----------
     func : callable
-        The function whose root is desired. The signature must be::
+        The function whose minimizer is desired. The signature must be::
 
             func(x: ndarray, *args) -> ndarray
 
@@ -36,14 +43,15 @@ def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
          which may contain an arbitrary number of components of any type(s).
          ``func`` must be an elementwise function: each element ``func(x)[i]``
          must equal ``func(x[i])`` for all indices ``i``. `_chandrupatla`
-         seeks an array ``x`` such that ``func(x)`` is an array of zeros.
-    a, b : array_like
-        The lower and upper bounds of the root of the function. Must be
-        broadcastable with one another.
+         seeks an array ``x`` such that ``func(x)`` is an array of minima.
+    x1, x2, x3 : array_like
+        The abscissae of a standard scalar minimization bracket. A bracket is
+        valid if ``x1 < x2 < x3`` and ``func(x1) > func(x2) < func(x3)``.
+        Must be broadcastable with one another.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
     xatol, xrtol, fatol, frtol : float, optional
-        Absolute and relative tolerances on the root and function value.
+        Absolute and relative tolerances on the minimizer and function value.
         See Notes for details.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
@@ -51,10 +59,10 @@ def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
-        similar to that returned by `_chandrupatla` (but containing the current
-        iterate's values of all variables). If `callback` raises a
+        similar to that returned by `_chandrupatla_minimize` (but containing
+        the current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_chandrupatla` will return a result.
+        `_chandrupatla_minimize` will return a result.
 
     Returns
     -------
@@ -65,11 +73,14 @@ def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         arrays of the same shape.
 
         x : float
-            The root of the function, if the algorithm terminated successfully.
+            The minimizer of the function, if the algorithm terminated
+            successfully.
+        fun : float
+            The value of `func` evaluated at `x`.
         nfev : int
-            The number of times the function was called to find the root.
+            The number of times the function was called.
         nit : int
-            The number of iterations of Chandrupatla's algorithm performed.
+            The number of iterations of the algorithm that were performed.
         status : int
             An integer representing the exit status of the algorithm.
             ``0`` : The algorithm converged to the specified tolerances.
@@ -80,122 +91,143 @@ def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
             ``1`` : The algorithm is proceeding normally (in `callback` only).
         success : bool
             ``True`` when the algorithm terminated successfully (status ``0``).
-        fun : float
-            The value of `func` evaluated at `x`.
-        xl, xr : float
-            The lower and upper ends of the bracket.
-        fl, fr : float
-            The function value at the lower and upper ends of the bracket.
+        x1, x2, x3 : float
+            The final three-point bracket.
+        f1, f2, f3 : float
+            The function value at the bracket points.
 
     Notes
     -----
     Implemented based on Chandrupatla's original paper [1]_.
 
-    If ``xl`` and ``xr`` are the left and right ends of the bracket,
-    ``xmin = xl if abs(func(xl)) <= abs(func(xr)) else xr``,
-    and ``fmin0 = min(func(a), func(b))``, then the algorithm is considered to
-    have converged when ``abs(xr - xl) < xatol + abs(xmin) * xrtol`` or
-    ``fun(xmin) <= fatol + abs(fmin0) * frtol``. This is equivalent to the
-    termination condition described in [1]_ with ``xrtol = 4e-10``,
-    ``xatol = 1e-5``, and ``fatol = frtol = 0``. The default values are
-    ``xatol = 2e-12``, ``xrtol = 4 * np.finfo(float).eps``, ``frtol = 0``,
-    and ``fatol`` is the smallest normal number of the ``dtype`` returned
-    by ``func``.
+    If ``x1 < x2 < x3`` are the points of the bracket and ``f1 > f2 <= f3``
+    are the values of ``func`` at those points, then the algorithm is
+    considered to have converged when ``x3 - x1 <= abs(x2)*xrtol + xatol``
+    or ``(f1 - 2*f2 + f3)/2 <= abs(f2)*frtol + fatol``. Note that first of
+    these differs from the termination conditions described in [1]_. The
+    default values of the tolerances are ``xatol = 1e-12``,
+    ``xrtol = 4 * np.finfo(float).eps``, and ``fatol = frtol = 0``.
 
     References
     ----------
-
-    .. [1] Chandrupatla, Tirupathi R.
-        "A new hybrid quadratic/bisection algorithm for finding the zero of a
-        nonlinear function without using derivatives".
-        Advances in Engineering Software, 28(3), 145-149.
-        https://doi.org/10.1016/s0965-9978(96)00051-8
+    .. [1] Chandrupatla, Tirupathi R. (1998).
+        "An efficient quadratic fit—sectioning algorithm for minimization
+        without derivatives".
+        Computer Methods in Applied Mechanics and Engineering, 152 (1-2),
+        211-217. https://doi.org/10.1016/S0045-7825(97)00190-4
 
     See Also
     --------
-    brentq, brenth, ridder, bisect, newton
+    golden, brent, bounded
 
     Examples
     --------
-    >>> from scipy import optimize
-    >>> def f(x, c):
-    ...     return x**3 - 2*x - c
-    >>> c = 5
-    >>> res = optimize._zeros_py._chandrupatla(f, 0, 3, args=(c,))
+    >>> from scipy.optimize._chandrupatla import _chandrupatla_minimize
+    >>> def f(x, args=1):
+    ...     return (x - args)**2
+    >>> res = _chandrupatla_minimize(f, -5, 0, 5)
     >>> res.x
-    2.0945514818937463
-
-    >>> c = [3, 4, 5]
-    >>> res = optimize._zeros_py._chandrupatla(f, 0, 3, args=(c,))
+    1.0
+    >>> c = [1, 1.5, 2]
+    >>> res = _chandrupatla_minimize(f, -5, 0, 5, args=(c,))
     >>> res.x
-    array([1.8932892 , 2.        , 2.09455148])
-
+    array([1. , 1.5, 2. ])
     """
-    res = _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+    # _chandrupatla_iv can be used essentially verbatim. Validation of `a`/`b`
+    # (now `x1`, `x2`, `x3`) happen separately
+    res = _chandrupatla_iv(func, x1, x2, x3, args, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, x1, x2, x3, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    x1, f1, x2, f2, shape, dtype = _chandrupatla_initialize(func, a, b, args)
+    # _chandrupatla_initialize can be used by both if generalized to accept
+    # an arbitrary number of `x` elements
+    x1, f1, x2, f2, x3, f3, shape, dtype = _chandrupatla_initialize(func, x1, x2, x3, args)
+    q0 = x3  # At the start, q0 is set at x3...
+    phi = 1.61803398875
+
+    # Ensure that x1 < x2 < x3 initially.
+    xs, fs = np.vstack((x1, x2, x3)), np.vstack((f1, f2, f3))
+    i = np.argsort(xs, axis=0)
+    x1, x2, x3 = np.take_along_axis(xs, i, axis=0)
+    f1, f2, f3 = np.take_along_axis(fs, i, axis=0)
+
+    # all this is the same except nfev should be initialized to the number
+    # of different `x` arrays
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     active = np.arange(x1.size)  # indices of in-progress elements
-    nit, nfev = 0, 2  # two function evaluations performed above
+    nit, nfev = 0, 3  # three function evaluations performed above
     cb_terminate = False
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
-    frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
     tols = dict(xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol)
+
     # Elements of `x1`, `f1`, etc., are stored in this `OptimizeResult`
     # once a termination condition is met, and then the arrays are condensed
     # to reduce unnecessary computation.
     res = OptimizeResult(x=x1.copy(), fun=f1.copy(), xl=x1.copy(),
-                         fl=f1.copy(), xr=x2.copy(), fr=f2.copy(),
+                         fl=f1.copy(), xm=x2.copy(), fm=f2.copy(),
+                         xr=x3.copy(), fr=f3.copy(),
                          nit=np.full_like(status, nit)[()],
                          nfev=np.full_like(status, nfev)[()],
                          status=status.copy(), success=(status==0))
 
-    temp = _chandrupatla_check_termination(x1, f1, x2, f2, None, None, res,
+    temp = _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, q0, res,
                                            active, status, nfev, nit, tols)
-    xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
+    x1, f1, x2, f2, x3, f3, q0, xtol, active, status = temp
 
     if callback is not None:
         temp = _chandrupatla_prepare_result(shape, res, active, nit, nfev)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
-    t = 0.5
     while nit < maxiter and active.size and not cb_terminate:
-        # [1] Figure 1 (first box)
-        x = x1 + t * (x2 - x1)
 
-        # For now, we assume that `func` requires arguments of the original
-        # shapes. However, `x` is compressed (contains only active elements).
-        # Therefore, we inflate `x` by creating a full-size array, copying the
-        # elements of `x` into it, and making it the expected shape.
-        # TODO: allow user to specify that `func` works with compressed input
+        A = (x2 - x1) * (f3 - f2)
+        B = (x3 - x2) * (f1 - f2)
+        C = A / (A + B)
+        q1 = C * (x1 + x2) / 2 + (1 - C) * (x2 + x3) / 2
+
+        dq = abs(q1 - q0)
+        dx12 = abs(x2 - x1)
+
+        i = dq < 0.5 * dx12
+        x = x2 + (2 - phi) * (x3 - x2)
+
+        j = abs(q1[i] - x2[i]) > xtol[i]
+        xi = x[i]
+        xi[j] = q1[i][j]
+        xi[~j] = x2[i][~j] + np.sign(x3[i][~j] - x2[i][~j]) * xtol[i][~j]
+        x[i] = xi
+
+        q0 = q1
         x_full = res.x.copy()
         x_full[active] = x
         x_full = x_full.reshape(shape)
         f = func(x_full, *args)
         nfev += 1
-        # Ensure that the outpuf of `func` is an array of the appropriate
-        # dtype, ravel it (because we work with 1D arrays for simplicity), and
-        # compress it to contain only active elements.
         f = np.asarray(f, dtype=dtype).ravel()[active]
 
-        # [1] Figure 1 (first diamond and boxes)
-        # Note: y/n are reversed in figure; compare to BASIC in appendix
-        x3, f3 = x2.copy(), f2.copy()
-        j = np.sign(f) == np.sign(f1)
-        nj = ~j
-        x3[j], f3[j] = x1[j], f1[j]
-        x2[nj], f2[nj] = x1[nj], f1[nj]
-        x1, f1 = x, f
+        i = np.sign(x - x2) == np.sign(x3 - x2)
+
+        # TODO: tame this mess
+        xi, fi, x1i, f1i, x2i, f2i, x3i, f3i = x[i], f[i], x1[i], f1[i], x2[i], f2[i], x3[i], f3[i]
+        j = fi > f2i
+        x3i[j], f3i[j] = xi[j], fi[j]
+        x1i[~j], f1i[~j], x2i[~j], f2i[~j] = x2i[~j], f2i[~j], xi[~j], fi[~j]
+
+        xni, fni, x1ni, f1ni, x2ni, f2ni, x3ni, f3ni = x[~i], f[~i], x1[~i], f1[~i], x2[~i], f2[~i], x3[~i], f3[~i]
+        j = fni > f2ni
+        x1ni[j], f1ni[j] = xni[j], fni[j]
+        x3ni[~j], f3ni[~j], x2ni[~j], f2ni[~j] = x2ni[~j], f2ni[~j], xni[~j], fni[~j]
+
+        x[i], f[i], x1[i], f1[i], x2[i], f2[i], x3[i], f3[i] = xi, fi, x1i, f1i, x2i, f2i, x3i, f3i
+        x[~i], f[~i], x1[~i], f1[~i], x2[~i], f2[~i], x3[~i], f3[~i] = xni, fni, x1ni, f1ni, x2ni, f2ni, x3ni, f3ni
 
         # [1] Figure 1 (second diamond)
         nit += 1
-        temp = _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
+        temp = _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, q0, res,
                                                active, status, nfev, nit, tols)
-        xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
+        x1, f1, x2, f2, x3, f3, q0, xtol, active, status = temp
 
         if callback is not None:
             temp = _chandrupatla_prepare_result(shape, res, active, nit, nfev)
@@ -205,31 +237,18 @@ def _chandrupatla_minimize(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         if active.size==0:
             break
 
-        # [1] Figure 1 (third diamond and boxes / Equation 1)
-        xi1 = (x1 - x2) / (x3 - x2)
-        phi1 = (f1 - f2) / (f3 - f2)
-        alpha = (x3 - x1) / (x2 - x1)
-        j = ((1 - np.sqrt(1 - xi1)) < phi1) & (phi1 < np.sqrt(xi1))
-
-        f1j, f2j, f3j, alphaj = f1[j], f2[j], f3[j], alpha[j]
-        t = np.full_like(alpha, 0.5)
-        t[j] = (f1j / (f1j - f2j) * f3j / (f3j - f2j)
-                - alphaj * f1j / (f3j - f1j) * f2j / (f2j - f3j))
-
-        # [1] Figure 1 (last box; see also BASIC in appendix with comment
-        # "Adjust T Away from the Interval Boundary")
-        t = np.clip(t, tl, 1-tl)
-
     res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
     return _chandrupatla_prepare_result(shape, res, active, nit, nfev)
 
-def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+
+def _chandrupatla_iv(func, x1, x2, x3, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
 
-    # a and b have more complex IV that is taken care of during initialization
+    # x1, x2, x3 have more complex IV that is taken care of during
+    # initialization
 
     if not np.iterable(args):
         args = (args,)
@@ -247,78 +266,76 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
+    return func, x1, x2, x3, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
-def _chandrupatla_initialize(func, a, b, args):
+def _chandrupatla_initialize(func, x1, x2, x3, args):
     # initializing left and right bracket and function value arrays
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function because integers
     # can overflow and cause failure.
-    x1, x2 = np.broadcast_arrays(a, b)  # broadcast and rename
-    xt = np.result_type(x1.dtype, x2.dtype)
+    x1, x2, x3 = np.broadcast_arrays(x1, x2, x3)  # broadcast and rename
+    xt = np.result_type(x1.dtype, x2.dtype, x3.dtype)
     xt = np.float64 if np.issubdtype(xt, np.integer) else xt
-    x1, x2 = x1.astype(xt, copy=False)[()], x2.astype(xt, copy=False)[()]
-    f1, f2 = func(x1, *args), func(x2, *args)
+    x1, x2, x3 = x1.astype(xt, copy=False)[()], x2.astype(xt, copy=False)[()], x3.astype(xt, copy=False)[()]
+    f1, f2, f3 = func(x1, *args), func(x2, *args), func(x3, *args)
 
     # It's possible that the functions will return multiple outputs for each
     # scalar input, so we need to broadcast again. All arrays need to be,
     # writable, so we'll need to copy after broadcasting. Finally, we're going
     # to be doing operations involving `x1`, `x2`, `f1`, and `f2` throughout,
     # so figure out the right type from the outset.
-    x1, f1, x2, f2 = np.broadcast_arrays(x1, f1, x2, f2)
-    ft = np.result_type(x1.dtype, x2.dtype, f1.dtype, f2.dtype)
+    x1, f1, x2, f2, x3, f3 = np.broadcast_arrays(x1, f1, x2, f2, x3, f3)
+    ft = np.result_type(x1.dtype, x2.dtype, x3.dtype, f1.dtype, f2.dtype, f3.dtype)
     ft = np.float64 if np.issubdtype(ft, np.integer) else ft
-    if not np.issubdtype(np.result_type(x1, x2, f1, f2), np.floating):
+    if not np.issubdtype(np.result_type(x1, f1, x2, f2, x3, f3), np.floating):
         raise ValueError("Bracket and function output must be real numbers.")
-    x1, f1, x2, f2 = x1.astype(ft), f1.astype(ft), x2.astype(ft), f2.astype(ft)
+    x1, f1, x2, f2, x3, f3 = x1.astype(ft), f1.astype(ft), x2.astype(ft), f2.astype(ft), x3.astype(ft), f3.astype(ft)
 
     # To ensure that we can do indexing, we'll work with at least 1d arrays,
     # but remember the appropriate shape of the output.
     shape = x1.shape
-    x1, f1, x2, f2, = x1.ravel(), f1.ravel(), x2.ravel(), f2.ravel()
-    return x1, f1, x2, f2, shape, ft
+    x1, f1, x2, f2, x3, f3 = x1.ravel(), f1.ravel(), x2.ravel(), f2.ravel(), x3.ravel(), f3.ravel()
+    return x1, f1, x2, f2, x3, f3, shape, ft
 
 
-def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
+def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, q0, res,
                                     active, status, nfev, nit, tols):
     # Check for all terminal conditions and record statuses.
 
     # See [1] Section 4 (first two sentences)
-    i = np.abs(f1) < np.abs(f2)
-    xmin = np.choose(i, (x2, x1))
-    fmin = np.choose(i, (f2, f1))
+    i = abs(x2 - x1) < abs(x3 - x2)
+    x1, x3 = np.choose(i, (x3, x1)), np.choose(i, (x1, x3))
+    f1, f3 = np.choose(i, (f3, f1)), np.choose(i, (f1, f3))
     stop = np.zeros_like(x1, dtype=bool)  # termination condition met
 
-    # This is the convergence criterion used in bisect. Chandrupatla's
-    # criterion is equivalent to this except with a factor of 4 on `xrtol`.
-    dx = abs(x2 - x1)
-    tol = abs(xmin)*tols['xrtol'] + tols['xatol']
-    i = dx < tol
-    # Modify in place to incorporate tolerance on function value. Note that
-    # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
-    # where `f1` and `f2` are the function evaluated at the original ends of
-    # the bracket.
-    i |= np.abs(fmin) <= tols['fatol'] + tols['frtol']
+    i = ((f2 > f1) | (f2 > f3))
+    x2[i], f2[i], stop[i], status[i] = np.nan, np.nan, True, _ESIGNERR
+
+    xtol = abs(x2)*tols['xrtol'] + tols['xatol']
+    i = abs(x3 - x2)/2 < xtol
+    # Modify in place to incorporate tolerance on function value.
+    i |= (f1 - 2 * f2 + f3)/2 < abs(f2)*tols['frtol'] + tols['fatol']
+    i &=  ~stop
     stop[i], status[i] = True, _ECONVERGED
 
-    i = (np.sign(f1) == np.sign(f2)) & ~stop
-    xmin[i], fmin[i], stop[i], status[i] = np.nan, np.nan, True, _ESIGNERR
+    i = ~((np.isfinite(x1) & np.isfinite(x2) & np.isfinite(x3)
+           & np.isfinite(f1) & np.isfinite(f2) & np.isfinite(f3)) | stop)
+    x2[i], x2[i], stop[i], status[i] = np.nan, np.nan, True, _EVALUEERR
 
-    i = ~((np.isfinite(x1) & np.isfinite(x2)
-           & np.isfinite(f1) & np.isfinite(f2)) | stop)
-    xmin[i], fmin[i], stop[i], status[i] = np.nan, np.nan, True, _EVALUEERR
-
+    ### This stuff can be put into a function and reused
     if np.any(stop):
         # update the result object with the elements for which termination
         # condition has been met
         active_stop = active[stop]
-        res.x[active_stop] = xmin[stop]
-        res.fun[active_stop] = fmin[stop]
+        res.x[active_stop] = x2[stop]
+        res.fun[active_stop] = f2[stop]
         res.xl[active_stop] = x1[stop]
-        res.xr[active_stop] = x2[stop]
+        res.xm[active_stop] = x2[stop]
+        res.xr[active_stop] = x3[stop]
         res.fl[active_stop] = f1[stop]
-        res.fr[active_stop] = f2[stop]
+        res.fm[active_stop] = f2[stop]
+        res.fr[active_stop] = f3[stop]
         res.status[active_stop] = status[stop]
         res.nfev[active_stop] = nfev
         res.nit[active_stop] = nit
@@ -327,23 +344,17 @@ def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
         active = active[proceed]
-        xmin = xmin[proceed]
-        fmin = fmin[proceed]
         x1 = x1[proceed]
         f1 = f1[proceed]
         x2 = x2[proceed]
         f2 = f2[proceed]
-        x3 = x3[proceed] if x3 is not None else x3
-        f3 = f3[proceed] if f3 is not None else f3
+        x3 = x3[proceed]
+        f3 = f3[proceed]
+        q0 = q0[proceed]
+        xtol = xtol[proceed]
         status = status[proceed]
-        tols['frtol'] = tols['frtol'][proceed]
-        tol = tol[proceed]
-        dx = dx[proceed]
 
-    # See [1] Appendix, "Adjust T Away from the Interval Boundary"
-    tl = 0.5 * tol / dx
-
-    return xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl
+    return x1, f1, x2, f2, x3, f3, q0, xtol, active, status
 
 
 def _chandrupatla_prepare_result(shape, res, active, nit, nfev):
