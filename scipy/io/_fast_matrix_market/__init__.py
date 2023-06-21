@@ -456,18 +456,18 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         a = _apply_field(a, field, no_pattern=True)
         _core.write_body_array(cursor, a)
 
-    elif scipy.sparse.isspmatrix(a):
+    elif scipy.sparse.issparse(a):
         # Write sparse scipy matrices
         a = a.tocoo()
 
         if symmetry is not None and symmetry != "general":
             # A symmetric matrix only specifies the elements below the diagonal.
             # Ensure that the matrix satisfies this requirement.
-            from scipy.sparse import coo_matrix
+            from scipy.sparse import coo_array
             lower_triangle_mask = a.row >= a.col
-            a = coo_matrix((a.data[lower_triangle_mask],
-                            (a.row[lower_triangle_mask],
-                             a.col[lower_triangle_mask])), shape=a.shape)
+            a = coo_array((a.data[lower_triangle_mask],
+                          (a.row[lower_triangle_mask],
+                           a.col[lower_triangle_mask])), shape=a.shape)
 
         data = _apply_field(a.data, field)
         _core.write_body_coo(cursor, a.shape, a.row, a.col, data)
