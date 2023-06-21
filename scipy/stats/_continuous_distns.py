@@ -4250,7 +4250,7 @@ class halflogistic_gen(rv_continuous):
     @_call_super_mom
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
-        if (isinstance(data, CensoredData)) or kwds.pop('superfit', False):
+        if kwds.pop('superfit', False):
             return super().fit(data, *args, **kwds)
 
         data, floc, fscale = _check_fit_input_parameters(self, data,
@@ -4281,7 +4281,7 @@ class halflogistic_gen(rv_continuous):
         # relative tolerance of fix point iterator
         rtol = 1e-8
         relative_residual = 1
-        shifted_mean = sorted_data.mean() #y_mean - y_min
+        shifted_mean = sorted_data.mean()  # y_mean - y_min
 
         # find fix point by repeated application of eq. (2.6)
         # simplify as
