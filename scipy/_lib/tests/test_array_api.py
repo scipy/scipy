@@ -5,7 +5,6 @@ import pytest
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
     _GLOBAL_CONFIG, array_namespace, as_xparray, as_xparray_namespace,
-    to_numpy
 )
 
 
