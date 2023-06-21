@@ -46,8 +46,8 @@ class MemUsage(Benchmark):
     def params(self):
         return [
             list(self._get_size().keys()),
-            ['scipy.io._mmio', 'scipy.io._fast_matrix_market'],
-            ['dense', 'coo', 'csr']
+            ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],
+            ['dense', 'coo']  # + ['csr']
         ]
 
     def _get_size(self):
@@ -147,8 +147,8 @@ class MemUsage(Benchmark):
 class IOSpeed(Benchmark):
     param_names = ['implementation', 'matrix_type']
     params = [
-        ['scipy.io._mmio', 'scipy.io._fast_matrix_market'],
-        ['dense', 'coo', 'csr']
+        ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],
+        ['dense', 'coo']  # + ['csr']
     ]
 
     def setup(self, implementation, matrix_type):
@@ -173,7 +173,9 @@ class IOSpeed(Benchmark):
             # cannot read directly into csr, only coo
             return
 
-        if implementation == 'scipy.io._mmio':
+        if implementation == 'scipy.io':
+            impl_module = scipy.io
+        elif implementation == 'scipy.io._mmio':
             impl_module = scipy.io._mmio
         elif implementation == 'scipy.io._fast_matrix_market':
             impl_module = scipy.io._fast_matrix_market
@@ -183,7 +185,9 @@ class IOSpeed(Benchmark):
         impl_module.mmread(StringIO(self.a_str))
 
     def time_mmwrite(self, implementation, matrix_type):
-        if implementation == 'scipy.io._mmio':
+        if implementation == 'scipy.io':
+            impl_module = scipy.io
+        elif implementation == 'scipy.io._mmio':
             impl_module = scipy.io._mmio
         elif implementation == 'scipy.io._fast_matrix_market':
             impl_module = scipy.io._fast_matrix_market
