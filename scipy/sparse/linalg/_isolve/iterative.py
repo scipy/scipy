@@ -3,15 +3,16 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol(name, b, tol=None, atol=0., rtol=1e-5):
+def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
     """
     A helper function to handle tolerance deprecations and normalization
     """
-    if tol is not None:
+    if tol is not _NoValue:
         msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
                "v.1.14.0. Until then, if set, will override 'rtol'.")
@@ -31,7 +32,7 @@ def _get_atol(name, b, tol=None, atol=0., rtol=1e-5):
     return atol
 
 
-def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
          atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
@@ -159,7 +160,7 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
              atol=0., rtol=1e-5):
     """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
 
@@ -301,8 +302,8 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
-       rtol=1e-5):
+def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+       atol=0., rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
     Parameters
@@ -415,7 +416,7 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
         return postprocess(x), maxiter
 
 
-def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
@@ -567,7 +568,7 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
+def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
           callback=None, restrt=None, atol=0., callback_type=None,
           rtol=1e-5):
     """
@@ -853,8 +854,8 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     return postprocess(x), info
 
 
-def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
-        atol=0., rtol=1e-5):
+def qmr(A, b, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
+        callback=None, atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
