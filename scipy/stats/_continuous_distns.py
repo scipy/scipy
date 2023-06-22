@@ -4200,6 +4200,11 @@ class halflogistic_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+
     %(example)s
 
     """
@@ -4241,6 +4246,53 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        if floc is not None or fscale is not None:
+            return super().fit(data, *args, **kwds)
+
+        # location is the minimum of the sample ([1] Equation 2.3)
+        loc = np.min(data)
+
+        # scale is solution to a fix point problem ([1] 2.6)
+        # use approximate MLE as starting point ([1] 3.1)
+        n_observations = data.shape[0]
+        sorted_data = np.sort(data, axis=0)
+        p = np.arange(1, n_observations + 1)/(n_observations + 1)
+        q = 1 - p
+        pp1 = 1 + p
+        alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+        beta = 0.5 * q * pp1
+        sorted_data = sorted_data - loc
+        B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+        C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+        # starting guess
+        scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                 /(4 * n_observations))
+
+        # relative tolerance of fix point iterator
+        rtol = 1e-8
+        relative_residual = 1
+        shifted_mean = sorted_data.mean()  # y_mean - y_min
+
+        # find fix point by repeated application of eq. (2.6)
+        # simplify as
+        # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+        #                         = expit(-x))
+        while relative_residual > rtol:
+            sum_term = sorted_data * sc.expit(-sorted_data/scale)
+            scale_new = shifted_mean - 2/n_observations * sum_term.sum()
+            relative_residual = abs((scale - scale_new)/scale)
+            scale = scale_new
+        return loc, scale
 
 
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')

@@ -1175,6 +1175,16 @@ class TestHalfLogistic:
     def test_isf(self, q, ref):
         assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
 
+    @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
+    @pytest.mark.parametrize("rvs_scale", [1e-2, 100, 1e8])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.halflogistic.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
+                                      random_state=rng)
+
+        _assert_less_or_close_loglike(stats.halflogistic, data)
+
 
 class TestHalfgennorm:
     def test_expon(self):
