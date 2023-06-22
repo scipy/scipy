@@ -4256,42 +4256,46 @@ class halflogistic_gen(rv_continuous):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
+        def find_scale(data, loc):
+            # scale is solution to a fix point problem ([1] 2.6)
+            # use approximate MLE as starting point ([1] 3.1)
+            n_observations = data.shape[0]
+            sorted_data = np.sort(data, axis=0)
+            p = np.arange(1, n_observations + 1)/(n_observations + 1)
+            q = 1 - p
+            pp1 = 1 + p
+            alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+            beta = 0.5 * q * pp1
+            sorted_data = sorted_data - loc
+            B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+            C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+            # starting guess
+            scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                    /(4 * n_observations))
 
-        # location is the minimum of the sample ([1] Equation 2.3)
-        loc = np.min(data)
+            # relative tolerance of fix point iterator
+            rtol = 1e-8
+            relative_residual = 1
+            shifted_mean = sorted_data.mean()  # y_mean - y_min
 
-        # scale is solution to a fix point problem ([1] 2.6)
-        # use approximate MLE as starting point ([1] 3.1)
-        n_observations = data.shape[0]
-        sorted_data = np.sort(data, axis=0)
-        p = np.arange(1, n_observations + 1)/(n_observations + 1)
-        q = 1 - p
-        pp1 = 1 + p
-        alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
-        beta = 0.5 * q * pp1
-        sorted_data = sorted_data - loc
-        B = 2 * np.sum(alpha[1:] * sorted_data[1:])
-        C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
-        # starting guess
-        scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
-                 /(4 * n_observations))
+            # find fix point by repeated application of eq. (2.6)
+            # simplify as
+            # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+            #                         = expit(-x))
+            while relative_residual > rtol:
+                sum_term = sorted_data * sc.expit(-sorted_data/scale)
+                scale_new = shifted_mean - 2/n_observations * sum_term.sum()
+                relative_residual = abs((scale - scale_new)/scale)
+                scale = scale_new
+            return scale
 
-        # relative tolerance of fix point iterator
-        rtol = 1e-8
-        relative_residual = 1
-        shifted_mean = sorted_data.mean()  # y_mean - y_min
+        # location is independent from the scale
+        # if not given, it is the minimum data point ([1] Equation 2.3)
+        loc = floc if floc is not None else np.min(data)
 
-        # find fix point by repeated application of eq. (2.6)
-        # simplify as
-        # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
-        #                         = expit(-x))
-        while relative_residual > rtol:
-            sum_term = sorted_data * sc.expit(-sorted_data/scale)
-            scale_new = shifted_mean - 2/n_observations * sum_term.sum()
-            relative_residual = abs((scale - scale_new)/scale)
-            scale = scale_new
+        # scale depends on location
+        scale = fscale if fscale is not None else find_scale(data, loc)
+
         return loc, scale
 
 
