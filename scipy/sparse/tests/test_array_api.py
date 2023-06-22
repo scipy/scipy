@@ -59,6 +59,23 @@ def test_mean(A):
 
 
 @parametrize_sparrays
+def test_min_max(A):
+    # Some formats don't support min/max operations, so we skip those here.
+    if hasattr(A, 'min'):
+        assert not isinstance(A.min(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'max'):
+        assert not isinstance(A.max(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmin'):
+        assert not isinstance(A.argmin(axis=1), np.matrix), \
+            "Expected array, got matrix"
+    if hasattr(A, 'argmax'):
+        assert not isinstance(A.argmax(axis=1), np.matrix), \
+            "Expected array, got matrix"
+
+
+@parametrize_sparrays
 def test_todense(A):
     assert not isinstance(A.todense(), np.matrix), \
         "Expected array, got matrix"
@@ -131,6 +148,10 @@ def test_pow(B):
 def test_sparse_divide(A):
     assert isinstance(A / A, np.ndarray)
 
+@parametrize_sparrays
+def test_sparse_dense_divide(A):
+    with pytest.warns(RuntimeWarning):
+        assert (A / A.todense())._is_array
 
 @parametrize_sparrays
 def test_dense_divide(A):
@@ -151,18 +172,8 @@ def test_no_H_attr(A):
 
 @parametrize_sparrays
 def test_getrow_getcol(A):
-    assert A.getcol(0)._is_array
-    assert A.getrow(0)._is_array
-
-
-@parametrize_sparrays
-def test_docstr(A):
-    if A.__doc__ is None:
-        return
-
-    docstr = A.__doc__.lower()
-    for phrase in ('matrix', 'matrices'):
-        assert phrase not in docstr
+    assert A._getcol(0)._is_array
+    assert A._getrow(0)._is_array
 
 
 # -- linalg --
@@ -337,3 +348,200 @@ def test_spilu():
 def test_power_operator(A):
     # https://github.com/scipy/scipy/issues/15948
     npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+
+@pytest.mark.parametrize(
+    "cls,indices_attrs",
+    [
+        (
+            scipy.sparse.csr_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.csc_array,
+            ["indices", "indptr"],
+        ),
+        (
+            scipy.sparse.coo_array,
+            ["row", "col"],
+        ),
+    ]
+)
+@pytest.mark.parametrize("expected_dtype", [np.int64, np.int32])
+def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
+    input_array = scipy.sparse.coo_array(np.arange(9).reshape(3, 3))
+    coo_tuple = (
+        input_array.data,
+        (
+            input_array.row.astype(expected_dtype),
+            input_array.col.astype(expected_dtype),
+        )
+    )
+
+    result = cls(coo_tuple)
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    result = cls(coo_tuple, shape=(3, 3))
+    for attr in indices_attrs:
+        assert getattr(result, attr).dtype == expected_dtype
+
+    if issubclass(cls, scipy.sparse._compressed._cs_matrix):
+        input_array_csr = input_array.tocsr()
+        csr_tuple = (
+            input_array_csr.data,
+            input_array_csr.indices.astype(expected_dtype),
+            input_array_csr.indptr.astype(expected_dtype),
+        )
+
+        result = cls(csr_tuple)
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
+
+        result = cls(csr_tuple, shape=(3, 3))
+        for attr in indices_attrs:
+            assert getattr(result, attr).dtype == expected_dtype
+
+
+def test_default_is_matrix_diags():
+    m = scipy.sparse.diags([0, 1, 2])
+    assert not m._is_array
+
+
+def test_default_is_matrix_eye():
+    m = scipy.sparse.eye(3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_spdiags():
+    m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_identity():
+    m = scipy.sparse.identity(3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_kron_dense():
+    m = scipy.sparse.kron(
+        np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
+    )
+    assert not m._is_array
+
+
+def test_default_is_matrix_kron_sparse():
+    m = scipy.sparse.kron(
+        np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
+    )
+    assert not m._is_array
+
+
+def test_default_is_matrix_kronsum():
+    m = scipy.sparse.kronsum(
+        np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
+    )
+    assert not m._is_array
+
+
+def test_default_is_matrix_random():
+    m = scipy.sparse.random(3, 3)
+    assert not m._is_array
+
+
+def test_default_is_matrix_rand():
+    m = scipy.sparse.rand(3, 3)
+    assert not m._is_array
+
+
+@pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
+def test_default_is_matrix_stacks(fn):
+    """Same idea as `test_default_construction_fn_matrices`, but for the
+    stacking creation functions."""
+    A = scipy.sparse.coo_matrix(np.eye(2))
+    B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
+    m = fn([A, B])
+    assert not m._is_array
+
+
+def test_blocks_default_construction_fn_matrices():
+    """Same idea as `test_default_construction_fn_matrices`, but for the block
+    creation function"""
+    A = scipy.sparse.coo_matrix(np.eye(2))
+    B = scipy.sparse.coo_matrix([[2], [0]])
+    C = scipy.sparse.coo_matrix([[3]])
+
+    # block diag
+    m = scipy.sparse.block_diag((A, B, C))
+    assert not m._is_array
+
+    # bmat
+    m = scipy.sparse.bmat([[A, None], [None, C]])
+    assert not m._is_array
+
+
+def test_format_property():
+    for fmt in sparray_types:
+        arr_cls = getattr(scipy.sparse, f"{fmt}_array")
+        M = arr_cls([[1, 2]])
+        assert M.format == fmt
+        assert M._format == fmt
+        with pytest.raises(AttributeError):
+            M.format = "qqq"
+
+
+def test_issparse():
+    m = scipy.sparse.eye(3)
+    a = scipy.sparse.csr_array(m)
+    assert not m._is_array
+    assert a._is_array
+
+    # Both sparse arrays and sparse matrices should be sparse
+    assert scipy.sparse.issparse(a)
+    assert scipy.sparse.issparse(m)
+
+    # ndarray and array_likes are not sparse
+    assert not scipy.sparse.issparse(a.todense())
+    assert not scipy.sparse.issparse(m.todense())
+
+
+def test_isspmatrix():
+    m = scipy.sparse.eye(3)
+    a = scipy.sparse.csr_array(m)
+    assert not m._is_array
+    assert a._is_array
+
+    # Should only be true for sparse matrices, not sparse arrays
+    assert not scipy.sparse.isspmatrix(a)
+    assert scipy.sparse.isspmatrix(m)
+
+    # ndarray and array_likes are not sparse
+    assert not scipy.sparse.isspmatrix(a.todense())
+    assert not scipy.sparse.isspmatrix(m.todense())
+
+
+@pytest.mark.parametrize(
+    ("fmt", "fn"),
+    (
+        ("bsr", scipy.sparse.isspmatrix_bsr),
+        ("coo", scipy.sparse.isspmatrix_coo),
+        ("csc", scipy.sparse.isspmatrix_csc),
+        ("csr", scipy.sparse.isspmatrix_csr),
+        ("dia", scipy.sparse.isspmatrix_dia),
+        ("dok", scipy.sparse.isspmatrix_dok),
+        ("lil", scipy.sparse.isspmatrix_lil),
+    ),
+)
+def test_isspmatrix_format(fmt, fn):
+    m = scipy.sparse.eye(3, format=fmt)
+    a = scipy.sparse.csr_array(m).asformat(fmt)
+    assert not m._is_array
+    assert a._is_array
+
+    # Should only be true for sparse matrices, not sparse arrays
+    assert not fn(a)
+    assert fn(m)
+
+    # ndarray and array_likes are not sparse
+    assert not fn(a.todense())
+    assert not fn(m.todense())

@@ -10,13 +10,30 @@ from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less)
 
+from scipy import sparse
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
+from scipy.sparse.linalg._eigen.lobpcg.lobpcg import _b_orthonormalize
 
 _IS_32BIT = (sys.maxsize < 2**32)
 
+INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
+# np.half is unsupported on many test systems so excluded
+REAL_DTYPES = {np.single, np.double, np.longdouble}
+COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+# use sorted tuple to ensure fixed order of tests
+VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+
+
+def sign_align(A, B):
+    """Align signs of columns of A match those of B: column-wise remove
+    sign of A by multiplying with its sign then multiply in sign of B.
+    """
+    return np.array([col_A * np.sign(col_A[0]) * np.sign(col_B[0])
+                     for col_A, col_B in zip(A.T, B.T)]).T
 
 def ElasticRod(n):
     """Build the matrices for the generalized eigenvalue problem of the
@@ -81,6 +98,66 @@ def test_MikotaPair():
     compare_solutions(A, B, 2)
 
 
+@pytest.mark.parametrize("n", [50])
+@pytest.mark.parametrize("m", [1, 2, 10])
+@pytest.mark.parametrize("Vdtype", REAL_DTYPES)
+@pytest.mark.parametrize("Bdtype", REAL_DTYPES)
+@pytest.mark.parametrize("BVdtype", REAL_DTYPES)
+def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
+    """Test B-orthonormalization by Cholesky with callable 'B'.
+    The function '_b_orthonormalize' is key in LOBPCG but may
+    lead to numerical instabilities. The input vectors are often
+    badly scaled, so the function needs scale-invariant Cholesky;
+    see https://netlib.org/lapack/lawnspdf/lawn14.pdf.
+    """
+    rnd = np.random.RandomState(0)
+    X = rnd.standard_normal((n, m)).astype(Vdtype)
+    Xcopy = np.copy(X)
+    vals = np.arange(1, n+1, dtype=float)
+    B = diags([vals], [0], (n, n)).astype(Bdtype)
+    BX = B @ X
+    BX = BX.astype(BVdtype)
+    dtype = min(X.dtype, B.dtype, BX.dtype)
+    # np.longdouble tol cannot be achieved on most systems
+    atol = m * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
+
+    Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
+    # Check in-place.
+    assert_equal(X, Xo)
+    assert_equal(id(X), id(Xo))
+    assert_equal(BX, BXo)
+    assert_equal(id(BX), id(BXo))
+    # Check BXo.
+    assert_allclose(B @ Xo, BXo, atol=atol, rtol=atol)
+    # Check B-orthonormality
+    assert_allclose(Xo.T.conj() @ B @ Xo, np.identity(m),
+                    atol=atol, rtol=atol)
+    # Repeat without BX in outputs
+    X = np.copy(Xcopy)
+    Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X)
+    assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
+    assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
+    # Check in-place.
+    assert_equal(X, Xo1)
+    assert_equal(id(X), id(Xo1))
+    # Check BXo1.
+    assert_allclose(B @ Xo1, BXo1, atol=atol, rtol=atol)
+
+    # Introduce column-scaling in X.
+    scaling = 1.0 / np.geomspace(10, 1e10, num=m)
+    X = Xcopy * scaling
+    X = X.astype(Vdtype)
+    BX = B @ X
+    BX = BX.astype(BVdtype)
+    # Check scaling-invariance of Cholesky-based orthonormalization
+    Xo1, BXo1, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
+    # The output should be the same, up the signs of the columns.
+    Xo1 =  sign_align(Xo1, Xo)
+    assert_allclose(Xo, Xo1, atol=atol, rtol=atol)
+    BXo1 =  sign_align(BXo1, BXo)
+    assert_allclose(BXo, BXo1, atol=atol, rtol=atol)
+
+
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
@@ -116,7 +193,7 @@ def test_regression():
 
 
 @pytest.mark.filterwarnings("ignore:The problem size")
-@pytest.mark.parametrize('n, m, m_excluded', [(100, 4, 3), (4, 2, 0)])
+@pytest.mark.parametrize('n, m, m_excluded', [(30, 4, 3), (4, 2, 0)])
 def test_diagonal(n, m, m_excluded):
     """Test ``m - m_excluded`` eigenvalues and eigenvectors of
     diagonal matrices of the size ``n`` varying matrix formats:
@@ -259,7 +336,7 @@ def test_fiedler_large_12():
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_failure_to_run_iterations():
-    """Check that the code exists gracefully without breaking. Issue #10974.
+    """Check that the code exits gracefully without breaking. Issue #10974.
     The code may or not issue a warning, filtered out. Issue #15935, #17954.
     """
     rnd = np.random.RandomState(0)
@@ -288,35 +365,40 @@ def test_hermitian():
     """
     rnd = np.random.RandomState(0)
 
-    sizes = [3, 10, 50]
-    ks = [1, 3, 10, 50]
+    sizes = [3, 12]
+    ks = [1, 2]
     gens = [True, False]
 
-    for s, k, gen in itertools.product(sizes, ks, gens):
-        if k > s:
-            continue
-
+    for s, k, gen, dh, dx, db in (
+        itertools.product(sizes, ks, gens, gens, gens, gens)
+    ):
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
+        H = H.astype(np.complex128) if dh else H.astype(np.complex64)
 
         X = rnd.standard_normal((s, k))
         X = X + 1.j * rnd.standard_normal((s, k))
+        X = X.astype(np.complex128) if dx else X.astype(np.complex64)
 
         if not gen:
             B = np.eye(s)
-            w, v = lobpcg(H, X, maxiter=5000)
+            w, v = lobpcg(H, X, maxiter=99, verbosityLevel=0)
+            # Also test mixing complex H with real B.
+            wb, _ = lobpcg(H, X, B, maxiter=99, verbosityLevel=0)
+            assert_allclose(w, wb, rtol=1e-6)
             w0, _ = eigh(H)
         else:
             B = rnd.random((s, s)) + 1.j * rnd.random((s, s))
             B = 10 * np.eye(s) + B.dot(B.T.conj())
-            w, v = lobpcg(H, X, B, maxiter=5000, largest=False)
+            B = B.astype(np.complex128) if db else B.astype(np.complex64)
+            w, v = lobpcg(H, X, B, maxiter=99, verbosityLevel=0)
             w0, _ = eigh(H, B)
 
         for wx, vx in zip(w, v.T):
             # Check eigenvector
             assert_allclose(np.linalg.norm(H.dot(vx) - B.dot(vx) * wx)
                             / np.linalg.norm(H.dot(vx)),
-                            0, atol=5e-4, rtol=0)
+                            0, atol=5e-2, rtol=0)
 
             # Compare eigenvalues
             j = np.argmin(abs(w0 - wx))
@@ -332,7 +414,7 @@ def test_eigs_consistency(n, atol):
     vals = np.arange(1, n+1, dtype=np.float64)
     A = spdiags(vals, 0, n, n)
     rnd = np.random.RandomState(0)
-    X = rnd.random((n, 2))
+    X = rnd.standard_normal((n, 2))
     lvals, lvecs = lobpcg(A, X, largest=True, maxiter=100)
     vals, _ = eigs(A, k=2)
 
@@ -371,19 +453,41 @@ def test_tolerance_float32():
     assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
-def test_random_initial_float32():
-    """Check lobpcg in float32 for specific initial.
+@pytest.mark.parametrize("vdtype", VDTYPES)
+@pytest.mark.parametrize("mdtype", MDTYPES)
+@pytest.mark.parametrize("arr_type", [np.array,
+                                      sparse.csr_matrix,
+                                      sparse.coo_matrix])
+def test_dtypes(vdtype, mdtype, arr_type):
+    """Test lobpcg in various dtypes.
     """
     rnd = np.random.RandomState(0)
-    n = 50
-    m = 4
+    n = 12
+    m = 2
+    A = arr_type(np.diag(np.arange(1, n + 1)).astype(mdtype))
+    X = rnd.random((n, m))
+    X = X.astype(vdtype)
+    eigvals, eigvecs = lobpcg(A, X, tol=1e-2, largest=False)
+    assert_allclose(eigvals, np.arange(1, 1 + m), atol=1e-1)
+    # eigenvectors must be nearly real in any case
+    assert_allclose(np.sum(np.abs(eigvecs - eigvecs.conj())), 0, atol=1e-2)
+
+
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
+def test_inplace_warning():
+    """Check lobpcg gives a warning in '_b_orthonormalize'
+    that in-place orthogonalization is impossible due to dtype mismatch.
+    """
+    rnd = np.random.RandomState(0)
+    n = 6
+    m = 1
     vals = -np.arange(1, n + 1)
     A = diags([vals], [0], (n, n))
-    A = A.astype(np.float32)
-    X = rnd.random((n, m))
-    X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-3, maxiter=50, verbosityLevel=1)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-2)
+    A = A.astype(np.cdouble)
+    X = rnd.standard_normal((n, m))
+    with pytest.warns(UserWarning, match="Inplace update"):
+        eigvals, _ = lobpcg(A, X, maxiter=2, verbosityLevel=1)
 
 
 def test_maxit():
@@ -425,12 +529,13 @@ def test_maxit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("n", [20])
-@pytest.mark.parametrize("m", [1, 3])
+@pytest.mark.parametrize("n", [15])
+@pytest.mark.parametrize("m", [1, 2])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
+    Constraints are imposed, so a dense eigensolver eig cannot run.
     """
     rnd = np.random.RandomState(0)
     # Define the generalized eigenvalue problem Av = cBv

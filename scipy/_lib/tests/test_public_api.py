@@ -65,11 +65,12 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "stats.sampling"
 ]]
 
-# The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
-# of underscores) but should not be used.  For many of those modules the
-# current status is fine.  For others it may make sense to work on making them
-# private, to clean up our public API and avoid confusion.
-# These private modules support will be removed in SciPy v2.0.0
+# The PRIVATE_BUT_PRESENT_MODULES list contains modules that lacked underscores
+# in their name and hence looked public, but weren't meant to be. All these
+# namespace were deprecated in the 1.8.0 release - see "clear split between
+# public and private API" in the 1.8.0 release notes.
+# These private modules support will be removed in SciPy v2.0.0, as the
+# deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.constants.codata',
     'scipy.constants.constants',

@@ -14,7 +14,7 @@ from pytest import raises as assert_raises
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
-        csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+        csr_matrix, identity, issparse, dok_matrix, lil_matrix, bsr_matrix)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular, factorized)
@@ -35,7 +35,7 @@ except ImportError:
     has_umfpack = False
 
 def toarray(a):
-    if isspmatrix(a):
+    if issparse(a):
         return a.toarray()
     else:
         return a
@@ -328,9 +328,9 @@ class TestLinsolve:
                 assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
 
                 # dense vs. sparse output  ("vectors" are always dense)
-                if isspmatrix(b) and x.ndim > 1:
-                    assert_(isspmatrix(x1), repr((b, spmattype, 1)))
-                    assert_(isspmatrix(x2), repr((b, spmattype, 2)))
+                if issparse(b) and x.ndim > 1:
+                    assert_(issparse(x1), repr((b, spmattype, 1)))
+                    assert_(issparse(x2), repr((b, spmattype, 2)))
                 else:
                     assert_(isinstance(x1, np.ndarray), repr((b, spmattype, 1)))
                     assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))

@@ -30,9 +30,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
     Parameters
     ----------
-    x : (Npoints, Ndims) ndarray of floats
+    x : (npoints, ndims) 2-D ndarray of floats
         Data point coordinates.
-    y : (Npoints,) ndarray of float or complex
+    y : (npoints, ) 1-D ndarray of float or complex
         Data values.
     rescale : boolean, optional
         Rescale points to unit cube before performing interpolation.
@@ -53,6 +53,10 @@ class NearestNDInterpolator(NDInterpolatorBase):
         Piecewise linear interpolant in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     Notes
     -----
@@ -106,6 +110,9 @@ class NearestNDInterpolator(NDInterpolatorBase):
             or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
+        # For the sake of enabling subclassing, NDInterpolatorBase._set_xi performs some operations
+        # which are not required by NearestNDInterpolator.__call__, hence here we operate
+        # on xi directly, without calling a parent class function.
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
         xi = self._check_call_shape(xi)
         xi = self._scale_x(xi)
@@ -177,6 +184,10 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         Nearest-neighbor interpolation in N dimensions.
     CloughTocher2DInterpolator :
         Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    interpn : Interpolation on a regular grid or rectilinear grid.
+    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     Notes
     -----

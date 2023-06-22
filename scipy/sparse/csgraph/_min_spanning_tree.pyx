@@ -50,6 +50,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     Small elements < 1E-8 of the dense matrix are rounded to zero.
     All users should input sparse matrices if possible to avoid it.
 
+    If the graph is not connected, this routine returns the minimum spanning
+    forest, i.e. the union of the minimum spanning trees on each connected
+    component.
 
     Examples
     --------
@@ -98,7 +101,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     rank = np.zeros(N, dtype=ITYPE)
     predecessors = np.arange(N, dtype=ITYPE)
 
-    i_sort = np.argsort(data).astype(ITYPE)
+    # Stable sort is a necessary but not sufficient operation
+    # to get to a canonical representation of solutions.
+    i_sort = np.argsort(data, kind='stable').astype(ITYPE)
     row_indices = np.zeros(len(data), dtype=ITYPE)
 
     _min_spanning_tree(data, indices, indptr, i_sort,
@@ -118,7 +123,7 @@ cdef void _min_spanning_tree(DTYPE_t[::1] data,
                              ITYPE_t[::1] i_sort,
                              ITYPE_t[::1] row_indices,
                              ITYPE_t[::1] predecessors,
-                             ITYPE_t[::1] rank) nogil:
+                             ITYPE_t[::1] rank) noexcept nogil:
     # Work-horse routine for computing minimum spanning tree using
     #  Kruskal's algorithm.  By separating this code here, we get more
     #  efficient indexing.

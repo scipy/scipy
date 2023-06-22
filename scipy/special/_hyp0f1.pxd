@@ -1,5 +1,4 @@
-from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
-from numpy.math cimport NAN, isinf
+from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, NAN, fabs, isinf
 cimport numpy as np
 
 from ._cephes cimport iv, jv, Gamma, lgam, gammasgn
@@ -20,7 +19,7 @@ cdef extern from "amos_wrappers.h":
 #
 # Real-valued kernel
 #
-cdef inline double _hyp0f1_real(double v, double z) nogil:
+cdef inline double _hyp0f1_real(double v, double z) noexcept nogil:
     cdef double arg, v1, arg_exp, bess_val
 
     # handle poles, zeros
@@ -48,7 +47,7 @@ cdef inline double _hyp0f1_real(double v, double z) nogil:
         return pow(arg, 1.0 - v) * Gamma(v) * jv(v - 1, 2*arg)
 
 
-cdef inline double _hyp0f1_asy(double v, double z) nogil:
+cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     r"""Asymptotic expansion for I_{v-1}(2*sqrt(z)) * Gamma(v)
     for real $z > 0$ and $v\to +\infty$.
 
@@ -95,7 +94,7 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
 #
 # Complex valued kernel
 #
-cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
+cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept nogil:
     cdef:
         np.npy_cdouble zz = npy_cdouble_from_double_complex(z)
         np.npy_cdouble r
