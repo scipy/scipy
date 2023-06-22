@@ -7659,15 +7659,15 @@ class TestRatioUniforms:
     as rvs_ratio_uniforms is deprecated and moved to stats.sampling """
     def test_consistency(self):
         f = stats.norm.pdf
-        v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
-        gen = stats.sampling.RatioUniforms(f, umax, vmin, vmax,
+        v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+        umax = np.sqrt(f(0))
+        gen = stats.sampling.RatioUniforms(f, umax=umax, vmin=-v, vmax=v,
                                            random_state=12345)
         r1 = gen.rvs(10)
         deprecation_msg = ("Please use `RatioUniforms` from the "
                            "`scipy.stats.sampling` namespace.")
         with pytest.warns(DeprecationWarning, match=deprecation_msg):
-            r2 = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=10,
+            r2 = stats.rvs_ratio_uniforms(f, umax, -v, v, size=10,
                                           random_state=12345)
         assert_equal(r1, r2)
 

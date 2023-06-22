@@ -51,5 +51,6 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
                   "`scipy.stats.rvs_ratio_uniforms` namespace is deprecated "
                   "and will be removed in SciPy 1.14.0",
                   category=DeprecationWarning, stacklevel=2)
-    gen = RatioUniforms(pdf, umax, vmin, vmax, c, random_state)
+    gen = RatioUniforms(pdf, umax=umax, vmin=vmin, vmax=vmax,
+                        c=c, random_state=random_state)
     return gen.rvs(size)

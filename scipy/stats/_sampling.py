@@ -104,9 +104,9 @@ class RatioUniforms:
     normalization factor of the density.
 
     >>> f = lambda x: np.exp(-x**2 / 2)
-    >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-    >>> umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
-    >>> gen = RatioUniforms(f, umax, vmin, vmax, random_state=rng)
+    >>> v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
+    >>> umax = np.sqrt(f(0))
+    >>> gen = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=rng)
     >>> r = gen.rvs(size=2500)
 
     The K-S test confirms that the random variates are indeed normally
@@ -126,7 +126,7 @@ class RatioUniforms:
 
     """
     
-    def __init__(self, pdf, umax, vmin, vmax, c=0, random_state=None):
+    def __init__(self, pdf, *, umax, vmin, vmax, c=0, random_state=None):
         if vmin >= vmax:
             raise ValueError("vmin must be smaller than vmax.")
 
@@ -140,7 +140,7 @@ class RatioUniforms:
         self._c = c
         self._rng = check_random_state(random_state)
 
-    def rvs(self, size=1, random_state=None):
+    def rvs(self, size=1):
         """Sampling of random variates
 
         Parameters
@@ -153,24 +153,10 @@ class RatioUniforms:
         rvs : ndarray
             The random variates distributed according to the probability
             distribution defined by the pdf.
-        random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None, ``self.random_state`` is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
 
         """
         size1d = tuple(np.atleast_1d(size))
         N = np.prod(size1d)  # number of rvs needed, reshape upon return
-
-        # use self._rng unless a new random_state is provided
-        if random_state is not None:
-            rng = check_random_state(random_state)
-        else:
-            rng = self._rng
 
         # start sampling using ratio of uniforms method
         x = np.zeros(N)
@@ -184,8 +170,8 @@ class RatioUniforms:
         while simulated < N:
             k = N - simulated
             # simulate uniform rvs on [0, umax] and [vmin, vmax]
-            u1 = self._umax * rng.uniform(size=k)
-            v1 = rng.uniform(self._vmin, self._vmax, size=k)
+            u1 = self._umax * self._rng.uniform(size=k)
+            v1 = self._rng.uniform(self._vmin, self._vmax, size=k)
             # apply rejection method
             rvs = v1 / u1 + self._c
             accept = (u1**2 <= self._pdf(rvs))
