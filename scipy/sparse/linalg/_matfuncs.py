@@ -867,10 +867,8 @@ def matrix_power(A, power, structure=None):
     """
     Raise a square matrix to the integer power, `power`.
 
-    For positive integers, ``A**power`` is computed using repeated
-    matrix multiplications. If ``power==0``, the identity matrix of
-    the same shape as M is returned. If ``power < 0``, then the
-    inverse is computed and ``A`` is raised to ``abs(power)``
+    For non-negative integers, ``A**power`` is computed using repeated
+    matrix multiplications. Negative integers are not supported. 
 
     Parameters
     ----------
