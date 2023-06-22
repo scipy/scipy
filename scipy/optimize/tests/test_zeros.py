@@ -442,7 +442,7 @@ class TestChandrupatla(TestScalarRootFinders):
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(None, -4, 4)
 
-        message = 'Bracket and function output must be real numbers.'
+        message = 'Abscissae and function output must be real numbers.'
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(lambda x: x, -4+1j, 4)
 

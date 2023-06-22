@@ -1514,7 +1514,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    x1, f1, x2, f2, shape, dtype = _chandrupatla_initialize(func, a, b, args)
+    xs, fs, shape, dtype = _chandrupatla_initialize(func, (a, b), args)
+    x1, x2 = xs
+    f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     active = np.arange(x1.size)  # indices of in-progress elements
     nit, nfev = 0, 2  # two function evaluations performed above
@@ -1630,35 +1632,76 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
 
     return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
-def _chandrupatla_initialize(func, a, b, args):
-    # initializing left and right bracket and function value arrays
+def _chandrupatla_initialize(func, xs, args):
+    """Initializing abscissa and function arrays for elementwise function
+
+    Parameters
+    ----------
+    func : callable
+        An elementwise function with signature
+
+            func(x: ndarray, *args) -> ndarray
+
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of components of any type(s).
+    xs : tuple of arrays
+        Finite real abscissa arrays. Must be broadcastable.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`.
+
+    Returns
+    -------
+    xs, fs : tuple of arrays
+        Broadcasted, writeable, 1D abscissa and function value arrays (or
+        NumPy floats, if appropriate) of the appropriate dtype.
+    shape : tuple of ints
+        Original shape of broadcasted arrays.
+    xft : NumPy dtype
+        Result dtype of abscissae and function values determined using
+        `np.result_type`, except integer types are promoted to `np.float64`.
+
+    Raises
+    ------
+    ValueError
+        If the result dtype is not that of a real scalar
+
+    Notes
+    -----
+    Useful for initializing the input of SciPy functions that accept
+    an elementwise callable, abscissae, and arguments; e.g.
+    `scipy.optimize._chandrupatla`.
+    """
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function because integers
     # can overflow and cause failure.
-    x1, x2 = np.broadcast_arrays(a, b)  # broadcast and rename
-    xt = np.result_type(x1.dtype, x2.dtype)
+    # There might be benefit to combining the `xs` into a single array and
+    # calling `func` once on the combined array. For now, keep them separate.
+    xs = np.broadcast_arrays(*xs)  # broadcast and rename
+    xt = np.result_type(*[x.dtype for x in xs])
     xt = np.float64 if np.issubdtype(xt, np.integer) else xt
-    x1, x2 = x1.astype(xt, copy=False)[()], x2.astype(xt, copy=False)[()]
-    f1, f2 = func(x1, *args), func(x2, *args)
+    xs = [x.astype(xt, copy=False)[()] for x in xs]
+    fs = [func(x, *args) for x in xs]
 
     # It's possible that the functions will return multiple outputs for each
     # scalar input, so we need to broadcast again. All arrays need to be,
     # writable, so we'll need to copy after broadcasting. Finally, we're going
     # to be doing operations involving `x1`, `x2`, `f1`, and `f2` throughout,
     # so figure out the right type from the outset.
-    x1, f1, x2, f2 = np.broadcast_arrays(x1, f1, x2, f2)
-    ft = np.result_type(x1.dtype, x2.dtype, f1.dtype, f2.dtype)
-    ft = np.float64 if np.issubdtype(ft, np.integer) else ft
-    if not np.issubdtype(np.result_type(x1, x2, f1, f2), np.floating):
-        raise ValueError("Bracket and function output must be real numbers.")
-    x1, f1, x2, f2 = x1.astype(ft), f1.astype(ft), x2.astype(ft), f2.astype(ft)
+    xfs = np.broadcast_arrays(*xs, *fs)
+    xft = np.result_type(*[xf.dtype for xf in xfs])
+    xft = np.float64 if np.issubdtype(xft, np.integer) else xft
+    if not np.issubdtype(xft, np.floating):
+        raise ValueError("Abscissae and function output must be real numbers.")
+    xfs = [xf.astype(xt, copy=True)[()] for xf in xfs]
+    xs, fs = xfs[:int(len(xfs)/2)], xfs[int(len(xfs)/2):]
 
     # To ensure that we can do indexing, we'll work with at least 1d arrays,
     # but remember the appropriate shape of the output.
-    shape = x1.shape
-    x1, f1, x2, f2, = x1.ravel(), f1.ravel(), x2.ravel(), f2.ravel()
-    return x1, f1, x2, f2, shape, ft
+    shape = xs[0].shape
+    xs = [x.ravel() for x in xs]
+    fs = [f.ravel() for f in fs]
+    return xs, fs, shape, xft
 
 
 def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
