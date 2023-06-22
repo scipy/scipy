@@ -14,6 +14,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
 from ._comb import _comb_int
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = [
@@ -2588,7 +2589,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=None):
+def comb(N, k, exact=False, repetition=False, legacy=_NoValue):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2613,7 +2614,7 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
 
         .. deprecated:: 1.9.0
             Using `legacy` is deprecated and will removed by
-            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
             your inputs directly, e.g.
             ``comb(int(your_N), int(your_k), exact=True)``.
 
@@ -2647,10 +2648,10 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
     220
 
     """
-    if legacy is not None:
+    if legacy is not _NoValue:
         warnings.warn(
             "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
             "your inputs directly, e.g. "
             "'comb(int(your_N), int(your_k), exact=True)'.",
             DeprecationWarning,
