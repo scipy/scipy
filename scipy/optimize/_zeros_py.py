@@ -1514,17 +1514,15 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    xs, fs, shape, dtype = _chandrupatla_initialize(func, (a, b), args)
+    xs, fs, shape, dtype = _scalar_optimization_initialize(func, (a, b), args)
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     success = status == _ECONVERGED
-    active = np.arange(x1.size)  # indices of in-progress elements
     nit, nfev = 0, 2  # two function evaluations performed above
-    cb_terminate = False
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
-    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None,
+    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
                           xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
                           nit=nit, nfev=nfev, status=status, success=success)
 
@@ -1537,33 +1535,12 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
                          nfev=np.full_like(status, nfev)[()],
                          status=status.copy(), success=(status==0))
 
-    work, active = _chandrupatla_check_termination(work, res, active)
-
-    if callback is not None:
-        temp = _chandrupatla_prepare_result(shape, res, active, work)
-        if _call_callback_maybe_halt(callback, temp):
-            cb_terminate = True
-
-    t = 0.5
-    while work.nit < maxiter and active.size and not cb_terminate:
+    def pre_func_eval(work):
         # [1] Figure 1 (first box)
-        x = work.x1 + t * (work.x2 - work.x1)
+        x = work.x1 + work.t * (work.x2 - work.x1)
+        return x
 
-        # For now, we assume that `func` requires arguments of the original
-        # shapes. However, `x` is compressed (contains only active elements).
-        # Therefore, we inflate `x` by creating a full-size array, copying the
-        # elements of `x` into it, and making it the expected shape.
-        # TODO: allow user to specify that `func` works with compressed input
-        x_full = res.x.copy()
-        x_full[active] = x
-        x_full = x_full.reshape(shape)[()]
-        f = func(x_full, *args)
-        work.nfev += 1
-        # Ensure that the outpuf of `func` is an array of the appropriate
-        # dtype, ravel it (because we work with 1D arrays for simplicity), and
-        # compress it to contain only active elements.
-        f = np.asarray(f, dtype=dtype).ravel()[active]
-
+    def post_func_eval(x, f, work):
         # [1] Figure 1 (first diamond and boxes)
         # Note: y/n are reversed in figure; compare to BASIC in appendix
         work.x3, work.f3 = work.x2.copy(), work.f2.copy()
@@ -1573,18 +1550,45 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         work.x2[nj], work.f2[nj] = work.x1[nj], work.f1[nj]
         work.x1, work.f1 = x, f
 
+    def check_termination(work):
         # [1] Figure 1 (second diamond)
-        work.nit += 1
-        work, active = _chandrupatla_check_termination(work, res, active)
+        # Check for all terminal conditions and record statuses.
 
-        if callback is not None:
-            temp = _chandrupatla_prepare_result(shape, res, active, work)
-            if _call_callback_maybe_halt(callback, temp):
-                cb_terminate = True
-                break
-        if active.size==0:
-            break
+        # See [1] Section 4 (first two sentences)
+        i = np.abs(work.f1) < np.abs(work.f2)
+        work.xmin = np.choose(i, (work.x2, work.x1))
+        work.fmin = np.choose(i, (work.f2, work.f1))
+        stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
 
+        # This is the convergence criterion used in bisect. Chandrupatla's
+        # criterion is equivalent to this except with a factor of 4 on `xrtol`.
+        work.dx = abs(work.x2 - work.x1)
+        work.tol = abs(work.xmin) * work.xrtol + work.xatol
+        i = work.dx < work.tol
+        # Modify in place to incorporate tolerance on function value. Note that
+        # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
+        # where `f1` and `f2` are the function evaluated at the original ends of
+        # the bracket.
+        i |= np.abs(work.fmin) <= work.fatol + work.frtol
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _ESIGNERR
+        stop[i] = True
+
+        i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
+               & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _EVALUEERR
+        stop[i] = True
+
+        return stop
+    check_termination.work_res_keys = dict(x='xmin', fun='fmin', xl='x1',
+                                           xr='x2', fl='f1', fr='f2',
+                                           status='status', nfev='nfev',
+                                           nit='nit')
+
+    def post_termination_check(work):
         # [1] Figure 1 (third diamond and boxes / Equation 1)
         xi1 = (work.x1 - work.x2) / (work.x3 - work.x2)
         phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
@@ -1599,10 +1603,150 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         # [1] Figure 1 (last box; see also BASIC in appendix with comment
         # "Adjust T Away from the Interval Boundary")
         tl = 0.5 * work.tol / work.dx
-        t = np.clip(t, tl, 1-tl)
+        work.t = np.clip(t, tl, 1 - tl)
+
+    def prepare_result(shape, res, active, work):
+        # TODO: abstract out anything involving `active` and `shape`;
+        #       the developer should not have to worry about these
+        res = res.copy()
+        # status is _EINPROGRESS and success is False until set otherwise,
+        # so these do not need to be updated
+        update_dict = dict(x=work.xmin, fun=work.fmin, xl=work.x1, xr=work.x2,
+                           fl=work.f1, fr=work.f2, nfev=work.nfev,
+                           nit=work.nit)
+        _scalar_optimization_update_active(res, update_dict, active)
+
+        xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
+        i = res['xl'] < res['xr']
+        res['xl'] = np.choose(i, (xr, xl))
+        res['xr'] = np.choose(i, (xl, xr))
+        res['fl'] = np.choose(i, (fr, fl))
+        res['fr'] = np.choose(i, (fl, fr))
+        for key, val in res.items():
+            res[key] = np.reshape(val, shape)[()]
+        res['_order_keys'] = ['success', 'status', 'x', 'fun', 'nit', 'nfev',
+                              'xl', 'fl', 'xr', 'fr']
+        return OptimizeResult(**res)
+
+    return _scalar_optimization_loop(res, work, callback, shape,
+                                     maxiter, func, args, dtype,
+                                     pre_func_eval, post_func_eval,
+                                     check_termination, post_termination_check,
+                                     prepare_result)
+
+def _scalar_optimization_loop(res, work, callback, shape, maxiter,
+                              func, args, dtype, pre_func_eval, post_func_eval,
+                              check_termination, post_termination_check,
+                              prepare_result):
+    """Main loop of a vectorized scalar optimization algorithm
+
+    Parameters
+    ----------
+    res : OptimizeResult
+        Object containing the result object, which is updated each
+        iteration with elements that have converged. Must contain attribute
+        `x`, the abscissae at which `func` is evaluated.
+    work : OptimizeResult
+        All variables that need to be retained between iterations. Must
+        contain attributes `nit`, `nfev`, and `success`
+    callback : callable
+        User-specified callback function
+    shape : tuple of ints
+        The shape of all output arrays
+    maxiter :
+        Maximum number of iterations of the algorithm
+    func : callable
+        The user-specified callable that is being optimized or solved
+    args : tuple
+        Additional positional arguments to be passed to `func`.
+    dtype : NumPy dtype
+        The common dtype of all abscissae and function values
+    pre_func_eval : callable
+        A function that accepts `work` and returns `x`, the active elements
+        of `x` at which `func` will be evaluated. May modify attributes
+        of `work` with any algorithmic steps that need to happen
+         at the beginning of an iteration, before `func` is evaluated,
+    post_func_eval : callable
+        A function that accepts `x`, `func(x)`, and `work`. May modify
+        attributes of `work` with any algorithmic steps that need to happen
+         in the middle of an iteration, after `func` is evaluated but before
+         the termination check.
+    check_termination : callable
+        A function that accepts `work` and returns `stop`, a boolean array
+        indicating which of the active elements have met a termination
+        condition.
+    post_termination_check : callable
+        A function that accepts `work`. May modify `work` with any algorithmic
+        steps that need to happen after the termination check and before the
+        end of the iteration.
+    prepare_result :
+        A function that accepts `shape`, `res`, `active`, and `work` and
+        returns an update OptimizeResult: a copy of `res` with the latest
+        elements from `work`.
+
+    Returns
+    -------
+    res : OptimizeResult
+        The final result object
+
+    Notes
+    -----
+    Besides providing structure, this framework provides several important
+    services for a vectorized optimization algorithm.
+
+    - It handles common tasks involving iteration count, function evaluation
+      count, a user-specified callback, and associated termination conditions.
+    - It compresses the attributes of `work` to eliminate unnecessary
+      computation on elements that have already converged.
+
+    """
+    cb_terminate = False
+    active = np.arange(int(np.prod(shape)) or 1)  # indices of in-progress elements
+
+    work, active = _scalar_optimization_check_termination(work, res, active,
+                                                          check_termination)
+
+    if callback is not None:
+        temp = prepare_result(shape, res, active, work)
+        if _call_callback_maybe_halt(callback, temp):
+            cb_terminate = True
+
+    while work.nit < maxiter and active.size and not cb_terminate:
+        x = pre_func_eval(work)
+
+        # For now, we assume that `func` requires arguments of the original
+        # shapes. However, `x` is compressed (contains only active elements).
+        # Therefore, we inflate `x` by creating a full-size array, copying the
+        # elements of `x` into it, and making it the expected shape.
+        # TODO: allow user to specify that `func` works with compressed input
+        x_full = res.x.copy()
+        x_full[active] = x
+        x_full = x_full.reshape(shape)[()]
+        f = func(x_full, *args)
+        work.nfev += 1
+        # Ensure that the output of `func` is an array of the appropriate
+        # dtype, ravel it (because we work with 1D arrays for simplicity), and
+        # compress it to contain only active elements.
+        f = np.asarray(f, dtype=dtype).ravel()[active]
+
+        post_func_eval(x, f, work)
+
+        work.nit += 1
+        work, active = _scalar_optimization_check_termination(work, res, active,
+                                                              check_termination)
+
+        if callback is not None:
+            temp = prepare_result(shape, res, active, work)
+            if _call_callback_maybe_halt(callback, temp):
+                cb_terminate = True
+                break
+        if active.size==0:
+            break
+
+        post_termination_check(work)
 
     res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _chandrupatla_prepare_result(shape, res, active, work)
+    return prepare_result(shape, res, active, work)
 
 
 def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
@@ -1632,7 +1776,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
     return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _chandrupatla_initialize(func, xs, args):
+def _scalar_optimization_initialize(func, xs, args):
     """Initializing abscissa and function arrays for elementwise function
 
     Parameters
@@ -1704,56 +1848,31 @@ def _chandrupatla_initialize(func, xs, args):
     return xs, fs, shape, xft
 
 
-def _chandrupatla_check_termination(work, res, active):
-    # Check for all terminal conditions and record statuses.
+def _scalar_optimization_check_termination(work, res, active,
+                                           check_termination):
+    # Checks termination conditions, updates elements of `res` with
+    # corresponding elements of `work`, and compresses `work`.
 
-    # See [1] Section 4 (first two sentences)
-    i = np.abs(work.f1) < np.abs(work.f2)
-    work.xmin = np.choose(i, (work.x2, work.x1))
-    work.fmin = np.choose(i, (work.f2, work.f1))
-    stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
-
-    # This is the convergence criterion used in bisect. Chandrupatla's
-    # criterion is equivalent to this except with a factor of 4 on `xrtol`.
-    work.dx = abs(work.x2 - work.x1)
-    work.tol = abs(work.xmin)*work.xrtol + work.xatol
-    i = work.dx < work.tol
-    # Modify in place to incorporate tolerance on function value. Note that
-    # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
-    # where `f1` and `f2` are the function evaluated at the original ends of
-    # the bracket.
-    i |= np.abs(work.fmin) <= work.fatol + work.frtol
-    work.status[i] = _ECONVERGED
-    stop[i] = True
-
-    i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
-    work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _ESIGNERR
-    stop[i] = True
-
-    i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
-           & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
-    work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _EVALUEERR
-    stop[i] = True
+    stop = check_termination(work)
 
     if np.any(stop):
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
-        update_dict = dict(x=work.xmin, fun=work.fmin, xl=work.x1, xr=work.x2,
-                           fl=work.f1, fr=work.f2, status=work.status,
-                           nfev=work.nfev, nit=work.nit,
-                           success=(work.status==0))
-        _chandrupatla_update_active(res, update_dict, active, stop)
+        update_dict = {key1: work[key2] for key1, key2
+                       in check_termination.work_res_keys.items()}
+        update_dict['success'] = work.status==0
+        _scalar_optimization_update_active(res, update_dict, active, stop)
 
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
         active = active[proceed]
-        _chandrupatla_compress_work(work, proceed)
+        _scalar_optimization_compress_work(work, proceed)
 
     return work, active
 
 
-def _chandrupatla_update_active(res, update_dict, active, mask=None):
-    # Update `active` indices of the arrays in result upject `res` with the
+def _scalar_optimization_update_active(res, update_dict, active, mask=None):
+    # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
     # that are to be used and to the arrays in `res` that are to be updated.
@@ -1766,27 +1885,7 @@ def _chandrupatla_update_active(res, update_dict, active, mask=None):
             res[key][active] = val
 
 
-def _chandrupatla_compress_work(work, mask):
+def _scalar_optimization_compress_work(work, mask):
+    # Compress the array elements of the work object; keep only masked elements
     for key, val in work.items():
         work[key] = val[mask] if np.size(val) > 1 else val
-
-
-def _chandrupatla_prepare_result(shape, res, active, work):
-    res = res.copy()
-    # status is _EINPROGRESS and success is False until set otherwise,
-    # so these do not need to be updated
-    update_dict = dict(x=work.xmin, fun=work.fmin, xl=work.x1, xr=work.x2,
-                       fl=work.f1, fr=work.f2, nfev=work.nfev, nit=work.nit)
-    _chandrupatla_update_active(res, update_dict, active)
-
-    xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
-    i = res['xl'] < res['xr']
-    res['xl'] = np.choose(i, (xr, xl))
-    res['xr'] = np.choose(i, (xl, xr))
-    res['fl'] = np.choose(i, (fr, fl))
-    res['fr'] = np.choose(i, (fl, fr))
-    for key, val in res.items():
-        res[key] = np.reshape(val, shape)[()]
-    res['_order_keys'] = ['success', 'status', 'x', 'fun', 'nit', 'nfev',
-                          'xl', 'fl', 'xr', 'fr']
-    return OptimizeResult(**res)
