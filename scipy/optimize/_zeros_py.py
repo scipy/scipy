@@ -1734,19 +1734,12 @@ def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
     xmin[i], fmin[i], stop[i], status[i] = np.nan, np.nan, True, _EVALUEERR
 
     if np.any(stop):
-        # update the result object with the elements for which termination
-        # condition has been met
-        active_stop = active[stop]
-        res.x[active_stop] = xmin[stop]
-        res.fun[active_stop] = fmin[stop]
-        res.xl[active_stop] = x1[stop]
-        res.xr[active_stop] = x2[stop]
-        res.fl[active_stop] = f1[stop]
-        res.fr[active_stop] = f2[stop]
-        res.status[active_stop] = status[stop]
-        res.nfev[active_stop] = nfev
-        res.nit[active_stop] = nit
-        res.success[active_stop] = res.status[active_stop] == 0
+        # update the active elements of the result object with the active
+        # elements for which a termination condition has been met
+        update_dict = dict(x=xmin, fun=fmin, xl=x1, xr=x2, fl=f1, fr=f2,
+                           status=status, nfev=nfev, nit=nit,
+                           success=(status==0))
+        _chandrupatla_update_active(res, update_dict, active, stop)
 
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
@@ -1770,17 +1763,28 @@ def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
     return xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl
 
 
+def _chandrupatla_update_active(res, update_dict, active, mask=None):
+    # Update `active` indices of the arrays in result upject `res` with the
+    # contents of the scalars and arrays in `update_dict`. When provided,
+    # `mask` is a boolean array applied both to the arrays in `update_dict`
+    # that are to be used and to the arrays in `res` that are to be updated.
+    if mask is not None:
+        active_mask = active[mask]
+        for key, val in update_dict.items():
+            res[key][active_mask] = val[mask] if np.size(val) > 1 else val
+    else:
+        for key, val in update_dict.items():
+            res[key][active] = val
+
+
 def _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
                                  x1, f1, x2, f2, nit, nfev):
     res = res.copy()
-    res['x'][active] = xmin
-    res['fun'][active] = fmin
-    res['xl'][active] = x1
-    res['fl'][active] = f1
-    res['xr'][active] = x2
-    res['fr'][active] = f2
-    res['nit'][active] = nit
-    res['nfev'][active] = nfev
+    # status is _EINPROGRESS and success is False until set otherwise,
+    # so these do not need to be updated
+    update_dict = dict(x=xmin, fun=fmin, xl=x1, xr=x2, fl=f1, fr=f2,
+                       nfev=nfev, nit=nit)
+    _chandrupatla_update_active(res, update_dict, active)
 
     xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
     i = res['xl'] < res['xr']
