@@ -32,11 +32,11 @@ def to_numpy(array, xp):
 def test_array_namespace():
     x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
     xp = array_namespace(x, y)
-    assert xp.__name__ == 'array_api_compat.numpy'
+    assert 'array_api_compat.numpy' in xp.__name__
 
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
     xp = array_namespace(x, y)
-    assert xp.__name__ == 'array_api_compat.numpy'
+    assert 'array_api_compat.numpy' in xp.__name__
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
@@ -51,7 +51,7 @@ def test_asarray(xp):
 def test_as_xparray_namespace():
     x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
     x, y, xp_ = as_xparray_namespace(x, y)
-    assert xp_.__name__ == 'array_api_compat.numpy'
+    assert 'array_api_compat.numpy' in xp_.__name__
     ref = np.array([0, 1, 2])
     assert_equal(x, ref)
     assert_equal(y, ref)
@@ -59,7 +59,7 @@ def test_as_xparray_namespace():
 
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = False
     x, y, xp_ = as_xparray_namespace(x, y)
-    assert xp_.__name__ == 'array_api_compat.numpy'
+    assert 'array_api_compat.numpy' in xp_.__name__
     _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
 
