@@ -79,6 +79,8 @@ def configuration(parent_package='',top_path=None):
 
     config.add_subpackage('_uarray')
 
+    config.add_subpackage('array_api_compat')
+
     # ensure Boost was checked out and builds
     config.add_library(
         'test_boost_build',

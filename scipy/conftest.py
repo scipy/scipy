@@ -165,7 +165,7 @@ def skip_if_array_api_backend(backend):
                     pytest.skip(reason=reason)
                 return func(self, *args, xp, **kwargs)
         else:
-            def wrapped(*args, xp, **kwargs):
+            def wrapped(*args, xp, **kwargs):  # type: ignore[misc]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
                 return func(*args, xp, **kwargs)
