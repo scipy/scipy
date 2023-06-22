@@ -308,7 +308,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [3] https://www.researchgate.net/publication/352226370_Original_DE-homepage_files_as_previously_hosted_by_ICSI
+    .. [3] https://www.sciencedirect.com/science/article/pii/S111001682100613X#s0030
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
