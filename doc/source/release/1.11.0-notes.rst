@@ -2,8 +2,6 @@
 SciPy 1.11.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.11.0 is not released yet!
-
 .. contents::
 
 SciPy 1.11.0 is the culmination of 6 months of hard work. It contains
@@ -337,7 +335,7 @@ Authors
 * boeleman (1) +
 * Jack Borchanian (1) +
 * Matt Borland (3) +
-* Jake Bowhay (40)
+* Jake Bowhay (41)
 * Larry Bradley (1) +
 * Sienna Brent (1) +
 * Matthew Brett (1)
@@ -364,17 +362,17 @@ Authors
 * Stefano Frazzetto (1) +
 * Neil Girdhar (1)
 * Caden Gobat (1) +
-* Ralf Gommers (152)
+* Ralf Gommers (153)
 * GonVas (1) +
 * Marco Gorelli (1)
 * Brett Graham (2) +
-* Matt Haberland (390)
+* Matt Haberland (388)
 * harshvardhan2707 (1) +
 * Alex Herbert (1) +
 * Guillaume Horel (1)
 * Geert-Jan Huizing (1) +
 * Jakob Jakobson (2)
-* Julien Jerphanion (14)
+* Julien Jerphanion (10)
 * jyuv (2)
 * Rajarshi Karmakar (1) +
 * Ganesh Kathiresan (3) +
@@ -416,7 +414,7 @@ Authors
 * Ilhan Polat (32)
 * Quentin Barthélemy (1)
 * Matteo Raso (12) +
-* Tyler Reddy (131)
+* Tyler Reddy (134)
 * Lucas Roberts (1)
 * Pamphile Roy (225)
 * Jordan Rupprecht (1) +
@@ -1170,5 +1168,8 @@ Pull requests for 1.11.0
 * `#18657 <https://github.com/scipy/scipy/pull/18657>`__: MAINT: fix 'no such option' error in build_scipy CI
 * `#18658 <https://github.com/scipy/scipy/pull/18658>`__: TST: fix two test failures that showed up on conda-forge
 * `#18659 <https://github.com/scipy/scipy/pull/18659>`__: DOC: \`scipy._sensitivity_analysis\`: correct statement about...
+* `#18671 <https://github.com/scipy/scipy/pull/18671>`__: MAINT: backports for 1.11.0rc2
 * `#18672 <https://github.com/scipy/scipy/pull/18672>`__: BUG: small shim for release process
 * `#18676 <https://github.com/scipy/scipy/pull/18676>`__: BUG: signal: fix detrend with array-like bp
+* `#18697 <https://github.com/scipy/scipy/pull/18697>`__: MAINT: NumPy 1.25.0 shims for arm64
+* `#18698 <https://github.com/scipy/scipy/pull/18698>`__: DEP: interpolate: delay interp2d deprecation and update link
