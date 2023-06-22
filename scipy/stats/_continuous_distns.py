@@ -850,8 +850,10 @@ class beta_gen(rv_continuous):
             sum_ab = a + b
             t1 = sc.gammaln(a) - (a - 1) * sc.psi(a)
             t2 = (
-                - 1/(2*b) + 1/(12*b) - b ** -2.0/ 12 - 1/(12*sum_ab)
-                + 1/sum_ab + sum_ab**-2.0/6
+                - 1/(2*b) + 1/(12*b) - b**-2.0/12 - b**-3.0/120 + b**-4.0/120
+                + b**-5.0/252 - b**-6.0/252 + 1/sum_ab - 1/(12*sum_ab)
+                + sum_ab**-2.0/6 + sum_ab**-3.0/120 - sum_ab**-4.0/60
+                - sum_ab**-5.0/252 + sum_ab**-6.0/126
             )
             log_term = sum_ab*np.log1p(a/b) + np.log(b) - 2*np.log(sum_ab)
             return t1 + t2 + log_term
