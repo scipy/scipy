@@ -1518,12 +1518,16 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
+    success = status == _ECONVERGED
     active = np.arange(x1.size)  # indices of in-progress elements
     nit, nfev = 0, 2  # two function evaluations performed above
     cb_terminate = False
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
-    tols = dict(xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol)
+    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None,
+                          xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
+                          nit=nit, nfev=nfev, status=status, success=success)
+
     # Elements of `x1`, `f1`, etc., are stored in this `OptimizeResult`
     # once a termination condition is met, and then the arrays are condensed
     # to reduce unnecessary computation.
@@ -1533,20 +1537,17 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
                          nfev=np.full_like(status, nfev)[()],
                          status=status.copy(), success=(status==0))
 
-    temp = _chandrupatla_check_termination(x1, f1, x2, f2, None, None, res,
-                                           active, status, nfev, nit, tols)
-    xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
+    work, active = _chandrupatla_check_termination(work, res, active)
 
     if callback is not None:
-        temp = _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
-                                            x1, f1, x2, f2, nit, nfev)
+        temp = _chandrupatla_prepare_result(shape, res, active, work)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
     t = 0.5
-    while nit < maxiter and active.size and not cb_terminate:
+    while work.nit < maxiter and active.size and not cb_terminate:
         # [1] Figure 1 (first box)
-        x = x1 + t * (x2 - x1)
+        x = work.x1 + t * (work.x2 - work.x1)
 
         # For now, we assume that `func` requires arguments of the original
         # shapes. However, `x` is compressed (contains only active elements).
@@ -1557,7 +1558,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         x_full[active] = x
         x_full = x_full.reshape(shape)[()]
         f = func(x_full, *args)
-        nfev += 1
+        work.nfev += 1
         # Ensure that the outpuf of `func` is an array of the appropriate
         # dtype, ravel it (because we work with 1D arrays for simplicity), and
         # compress it to contain only active elements.
@@ -1565,22 +1566,19 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
 
         # [1] Figure 1 (first diamond and boxes)
         # Note: y/n are reversed in figure; compare to BASIC in appendix
-        x3, f3 = x2.copy(), f2.copy()
-        j = np.sign(f) == np.sign(f1)
+        work.x3, work.f3 = work.x2.copy(), work.f2.copy()
+        j = np.sign(f) == np.sign(work.f1)
         nj = ~j
-        x3[j], f3[j] = x1[j], f1[j]
-        x2[nj], f2[nj] = x1[nj], f1[nj]
-        x1, f1 = x, f
+        work.x3[j], work.f3[j] = work.x1[j], work.f1[j]
+        work.x2[nj], work.f2[nj] = work.x1[nj], work.f1[nj]
+        work.x1, work.f1 = x, f
 
         # [1] Figure 1 (second diamond)
-        nit += 1
-        temp = _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
-                                               active, status, nfev, nit, tols)
-        xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl = temp
+        work.nit += 1
+        work, active = _chandrupatla_check_termination(work, res, active)
 
         if callback is not None:
-            temp = _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
-                                                x1, f1, x2, f2, nit, nfev)
+            temp = _chandrupatla_prepare_result(shape, res, active, work)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
@@ -1588,23 +1586,24 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
             break
 
         # [1] Figure 1 (third diamond and boxes / Equation 1)
-        xi1 = (x1 - x2) / (x3 - x2)
-        phi1 = (f1 - f2) / (f3 - f2)
-        alpha = (x3 - x1) / (x2 - x1)
+        xi1 = (work.x1 - work.x2) / (work.x3 - work.x2)
+        phi1 = (work.f1 - work.f2) / (work.f3 - work.f2)
+        alpha = (work.x3 - work.x1) / (work.x2 - work.x1)
         j = ((1 - np.sqrt(1 - xi1)) < phi1) & (phi1 < np.sqrt(xi1))
 
-        f1j, f2j, f3j, alphaj = f1[j], f2[j], f3[j], alpha[j]
+        f1j, f2j, f3j, alphaj = work.f1[j], work.f2[j], work.f3[j], alpha[j]
         t = np.full_like(alpha, 0.5)
         t[j] = (f1j / (f1j - f2j) * f3j / (f3j - f2j)
                 - alphaj * f1j / (f3j - f1j) * f2j / (f2j - f3j))
 
         # [1] Figure 1 (last box; see also BASIC in appendix with comment
         # "Adjust T Away from the Interval Boundary")
+        tl = 0.5 * work.tol / work.dx
         t = np.clip(t, tl, 1-tl)
 
     res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
-                                        x1, f1, x2, f2, nit, nfev)
+    return _chandrupatla_prepare_result(shape, res, active, work)
+
 
 def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
@@ -1631,6 +1630,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
         raise ValueError('`callback` must be callable.')
 
     return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
+
 
 def _chandrupatla_initialize(func, xs, args):
     """Initializing abscissa and function arrays for elementwise function
@@ -1704,63 +1704,52 @@ def _chandrupatla_initialize(func, xs, args):
     return xs, fs, shape, xft
 
 
-def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, res,
-                                    active, status, nfev, nit, tols):
+def _chandrupatla_check_termination(work, res, active):
     # Check for all terminal conditions and record statuses.
 
     # See [1] Section 4 (first two sentences)
-    i = np.abs(f1) < np.abs(f2)
-    xmin = np.choose(i, (x2, x1))
-    fmin = np.choose(i, (f2, f1))
-    stop = np.zeros_like(x1, dtype=bool)  # termination condition met
+    i = np.abs(work.f1) < np.abs(work.f2)
+    work.xmin = np.choose(i, (work.x2, work.x1))
+    work.fmin = np.choose(i, (work.f2, work.f1))
+    stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
 
     # This is the convergence criterion used in bisect. Chandrupatla's
     # criterion is equivalent to this except with a factor of 4 on `xrtol`.
-    dx = abs(x2 - x1)
-    tol = abs(xmin)*tols['xrtol'] + tols['xatol']
-    i = dx < tol
+    work.dx = abs(work.x2 - work.x1)
+    work.tol = abs(work.xmin)*work.xrtol + work.xatol
+    i = work.dx < work.tol
     # Modify in place to incorporate tolerance on function value. Note that
     # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
     # where `f1` and `f2` are the function evaluated at the original ends of
     # the bracket.
-    i |= np.abs(fmin) <= tols['fatol'] + tols['frtol']
-    stop[i], status[i] = True, _ECONVERGED
+    i |= np.abs(work.fmin) <= work.fatol + work.frtol
+    work.status[i] = _ECONVERGED
+    stop[i] = True
 
-    i = (np.sign(f1) == np.sign(f2)) & ~stop
-    xmin[i], fmin[i], stop[i], status[i] = np.nan, np.nan, True, _ESIGNERR
+    i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
+    work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _ESIGNERR
+    stop[i] = True
 
-    i = ~((np.isfinite(x1) & np.isfinite(x2)
-           & np.isfinite(f1) & np.isfinite(f2)) | stop)
-    xmin[i], fmin[i], stop[i], status[i] = np.nan, np.nan, True, _EVALUEERR
+    i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
+           & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
+    work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _EVALUEERR
+    stop[i] = True
 
     if np.any(stop):
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
-        update_dict = dict(x=xmin, fun=fmin, xl=x1, xr=x2, fl=f1, fr=f2,
-                           status=status, nfev=nfev, nit=nit,
-                           success=(status==0))
+        update_dict = dict(x=work.xmin, fun=work.fmin, xl=work.x1, xr=work.x2,
+                           fl=work.f1, fr=work.f2, status=work.status,
+                           nfev=work.nfev, nit=work.nit,
+                           success=(work.status==0))
         _chandrupatla_update_active(res, update_dict, active, stop)
 
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
         active = active[proceed]
-        xmin = xmin[proceed]
-        fmin = fmin[proceed]
-        x1 = x1[proceed]
-        f1 = f1[proceed]
-        x2 = x2[proceed]
-        f2 = f2[proceed]
-        x3 = x3[proceed] if x3 is not None else x3
-        f3 = f3[proceed] if f3 is not None else f3
-        status = status[proceed]
-        tols['frtol'] = tols['frtol'][proceed]
-        tol = tol[proceed]
-        dx = dx[proceed]
+        _chandrupatla_compress_work(work, proceed)
 
-    # See [1] Appendix, "Adjust T Away from the Interval Boundary"
-    tl = 0.5 * tol / dx
-
-    return xmin, fmin, x1, f1, x2, f2, x3, f3, active, status, tl
+    return work, active
 
 
 def _chandrupatla_update_active(res, update_dict, active, mask=None):
@@ -1777,13 +1766,17 @@ def _chandrupatla_update_active(res, update_dict, active, mask=None):
             res[key][active] = val
 
 
-def _chandrupatla_prepare_result(shape, res, active, xmin, fmin,
-                                 x1, f1, x2, f2, nit, nfev):
+def _chandrupatla_compress_work(work, mask):
+    for key, val in work.items():
+        work[key] = val[mask] if np.size(val) > 1 else val
+
+
+def _chandrupatla_prepare_result(shape, res, active, work):
     res = res.copy()
     # status is _EINPROGRESS and success is False until set otherwise,
     # so these do not need to be updated
-    update_dict = dict(x=xmin, fun=fmin, xl=x1, xr=x2, fl=f1, fr=f2,
-                       nfev=nfev, nit=nit)
+    update_dict = dict(x=work.xmin, fun=work.fmin, xl=work.x1, xr=work.x2,
+                       fl=work.f1, fr=work.f2, nfev=work.nfev, nit=work.nit)
     _chandrupatla_update_active(res, update_dict, active)
 
     xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
