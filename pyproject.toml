@@ -53,7 +53,7 @@ maintainers = [
 requires-python = ">=3.9"
 dependencies = [
     # TODO: update to "pin-compatible" once possible, see
-    # https://github.com/FFY00/meson-python/issues/29
+    # https://github.com/mesonbuild/meson-python/issues/29
     "numpy>=1.22.4",
 ]
 readme = "README.rst"
