@@ -2440,7 +2440,7 @@ class weibull_min_gen(rv_continuous):
 
     Suppose ``X`` is an exponentially distributed random variable with
     scale ``s``. Then ``Y = X**k`` is `weibull_min` distributed with shape
-    ``c = 1/k`` and scale `s**k`.
+    ``c = 1/k`` and scale ``s**k``.
 
     %(after_notes)s
 
