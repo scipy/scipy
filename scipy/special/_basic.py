@@ -3105,9 +3105,9 @@ def stirling2(N, K, *, exact=True):
         The numbers are sometimes denoted
         .. math::
 
-            `{N \brace K}`;
+            {N \brace{K}}
 
-        see [GKP]_ for details. This is often expressed-verbally-as
+        see [1]_ for details. This is often expressed-verbally-as
         "N subset K".
 
         Parameters
@@ -3139,7 +3139,7 @@ def stirling2(N, K, *, exact=True):
 
         References
         ----------
-         .. [GKP] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
+         .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
         Mathematics: A Foundation for Computer Science," Addison-Wesley
         Publishing Company, Boston, 1989. Chapter 6, page 258.
 
@@ -3171,7 +3171,7 @@ def stirling2(N, K, *, exact=True):
                     for k in np.nditer(K, ['refs_ok'])
                 )
         ):
-            raise TypeError("Argument `K` contains non-integer type(s)")
+            raise TypeError("Argument `K` must contain only integers")
         nk_pairs = list(
             set([(n.take(0), k.take(0))
                  for n, k in np.nditer([N, K], ['refs_ok'])])
