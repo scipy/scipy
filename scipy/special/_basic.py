@@ -3093,64 +3093,64 @@ def factorialk(n, k, exact=True):
 def stirling2(N, K, *, exact=True):
     """Generate Stirling number(s) of the second kind.
 
-        Stirling numbers of the second kind count the number of ways to
-        partition a set with N elements into K non-empty subsets.
+    Stirling numbers of the second kind count the number of ways to
+    partition a set with N elements into K non-empty subsets.
 
-        The values this function returns are calculated using a dynamic
-        program which avoids redundant computation across the subproblems
-        in the solution. For array-like input, this implementation also 
-        avoids redundant computation across the different Stirling number
-        calculations.
+    The values this function returns are calculated using a dynamic
+    program which avoids redundant computation across the subproblems
+    in the solution. For array-like input, this implementation also 
+    avoids redundant computation across the different Stirling number
+    calculations.
 
-        The numbers are sometimes denoted
-        .. math::
+    The numbers are sometimes denoted
+    .. math::
 
-            {N \brace{K}}
+        {N \brace{K}}
 
-        see [1]_ for details. This is often expressed-verbally-as
-        "N subset K".
+    see [1]_ for details. This is often expressed-verbally-as
+    "N subset K".
 
-        Parameters
-        ----------
-        N : int, ndarray
-            Number of things.
-        K : int, ndarray
-            Number of non-empty subsets taken.
-        exact : bool, optional
-            This keyword is reserved for a planned future implementation
-            that allows trading speed for accuracy.
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    K : int, ndarray
+        Number of non-empty subsets taken.
+    exact : bool, optional
+        This keyword is reserved for a planned future implementation
+        that allows trading speed for accuracy.
 
-        Returns
-        -------
-        val : int, float, ndarray
-            The number of partitions.
+    Returns
+    -------
+    val : int, float, ndarray
+        The number of partitions.
 
-        See Also
-        --------
-        comb : The number of combinations of N things taken k at a time.
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
 
-        Notes
-        -----
-        - If N < 0, or K < 0, then 0 is returned.
-        - If K > N, then 0 is returned.
-        The output type will always be `int` or ndarray of `object`.
-        The input must contain either numpy or python integers otherwise a
-        TypeError is raised.
+    Notes
+    -----
+    - If N < 0, or K < 0, then 0 is returned.
+    - If K > N, then 0 is returned.
+    The output type will always be `int` or ndarray of `object`.
+    The input must contain either numpy or python integers otherwise a
+    TypeError is raised.
 
-        References
-        ----------
-         .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
-        Mathematics: A Foundation for Computer Science," Addison-Wesley
-        Publishing Company, Boston, 1989. Chapter 6, page 258.
+    References
+    ----------
+    .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
+    Mathematics: A Foundation for Computer Science," Addison-Wesley
+    Publishing Company, Boston, 1989. Chapter 6, page 258.
 
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from scipy.special import stirling2
-        >>> k = np.array([3, -1, 3])
-        >>> n = np.array([10, 10, 9])
-        >>> stirling2(n, k)
-        array([9330, 0, 3025], dtype=object)
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import stirling2
+    >>> k = np.array([3, -1, 3])
+    >>> n = np.array([10, 10, 9])
+    >>> stirling2(n, k)
+    array([9330, 0, 3025], dtype=object)
 
     """
     if exact:
