@@ -1190,6 +1190,12 @@ class TestHalfLogistic:
                                       random_state=rng)
 
         kwds = {}
+        if fix_loc and fix_scale:
+            loc, scale = stats.halflogistic.fit(data, floc=rvs_loc, fscale=rvs_scale)
+            assert loc == rvs_loc
+            assert scale == rvs_scale
+            return
+
         if fix_loc:
             kwds['floc'] = rvs_loc
         if fix_scale:
