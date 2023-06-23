@@ -162,9 +162,9 @@ jobs:
 
       - name: Test
         run: |
-          cd $RUNNER_TEMP
+          cd doc
           # run full test suite
-          pytest -c pytest.ini --pyargs scipy
+          pytest -c ..\pytest.ini --pyargs scipy
 
 
   #############################################################################
@@ -224,5 +224,5 @@ jobs:
 
       - name: Test
         run: |
-          cd $RUNNER_TEMP
-          pytest -c pytest.ini --pyargs scipy -m "not slow"
+          cd doc
+          pytest -c ..\pytest.ini --pyargs scipy -m "not slow"
