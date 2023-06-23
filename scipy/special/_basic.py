@@ -3091,7 +3091,7 @@ def factorialk(n, k, exact=True):
 
 
 def stirling2(N, K, *, exact=True):
-    """Generate Stirling number(s) of the second kind.
+    r"""Generate Stirling number(s) of the second kind.
 
     Stirling numbers of the second kind count the number of ways to
     partition a set with N elements into K non-empty subsets.
