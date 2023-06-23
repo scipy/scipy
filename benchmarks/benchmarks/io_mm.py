@@ -145,6 +145,11 @@ class MemUsage(Benchmark):
 
 
 class IOSpeed(Benchmark):
+    """
+    Basic speed test. Does not show full potential as
+    1) a relatively small matrix is used to keep test duration reasonable
+    2) StringIO/BytesIO are noticeably slower than native C++ I/O to an SSD.
+    """
     param_names = ['implementation', 'matrix_type']
     params = [
         ['scipy.io', 'scipy.io._mmio', 'scipy.io._fast_matrix_market'],

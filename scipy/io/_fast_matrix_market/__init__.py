@@ -14,6 +14,7 @@ import os
 import numpy as np
 import scipy.sparse
 
+__all__ = ['mminfo', 'mmread', 'mmwrite']
 
 PARALLELISM = 0
 """

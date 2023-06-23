@@ -8,12 +8,12 @@
 #include <string>
 
 namespace fast_matrix_market {
-    inline std::string get_next_chunk(std::istream &instream, const read_options &options) {
+    inline void get_next_chunk(std::string& chunk, std::istream &instream, const read_options &options) {
         constexpr size_t chunk_extra = 4096; // extra chunk bytes to leave room for rest of line
-
-        // allocate chunk
-        std::string chunk(options.chunk_size_bytes, ' ');
         size_t chunk_length = 0;
+
+        // ensure enough space
+        chunk.resize(options.chunk_size_bytes);
 
         // read chunk from the stream
         auto bytes_to_read = chunk.size() > chunk_extra ? (std::streamsize) (chunk.size() - chunk_extra) : 0;
@@ -25,7 +25,7 @@ namespace fast_matrix_market {
             // test for EOF
             if (num_read == 0 || instream.eof() || chunk[chunk_length - 1] == '\n') {
                 chunk.resize(chunk_length);
-                return chunk;
+                return;
             }
         }
 
@@ -46,6 +46,12 @@ namespace fast_matrix_market {
             chunk_length += suffix.size();
             chunk.resize(chunk_length);
         }
+    }
+
+    inline std::string get_next_chunk(std::istream &instream, const read_options &options) {
+        // allocate chunk
+        std::string chunk(options.chunk_size_bytes, ' ');
+        get_next_chunk(chunk, instream, options);
         return chunk;
     }
 
