@@ -2438,6 +2438,10 @@ class weibull_min_gen(rv_continuous):
     :math:`c=2` where Weibull distribution reduces to the `expon` and
     `rayleigh` distributions respectively.
 
+    Suppose ``X`` is an exponentially distributed random variable with
+    scale ``s``. Then ``Y = X**k`` is `weibull_min` distributed with shape
+    ``c = 1/k`` and scale ``s**k``.
+
     %(after_notes)s
 
     References
