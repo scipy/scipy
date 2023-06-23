@@ -164,7 +164,7 @@ jobs:
         run: |
           cd $RUNNER_TEMP
           # run full test suite
-          pytest --ignore=scipy\_lib\array_api_compat --pyargs scipy
+          pytest --pyargs scipy
 
 
   #############################################################################
@@ -225,4 +225,4 @@ jobs:
       - name: Test
         run: |
           cd $RUNNER_TEMP
-          pytest --ignore=scipy\_lib\array_api_compat --pyargs scipy -m "not slow"
+          pytest --pyargs scipy -m "not slow"

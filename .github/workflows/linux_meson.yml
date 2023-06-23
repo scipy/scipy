@@ -201,7 +201,7 @@ jobs:
         run: |
           cd doc
           python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
-          python3-dbg -m pytest -c ../pytest.ini --pyargs scipy -n2 --durations=10 -m "not slow"
+          python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
 
   #################################################################################
   gcc8:
@@ -246,9 +246,10 @@ jobs:
       - name: Run tests
         run: |
           # can't be in source directory
-          cd doc
+          pushd $RUNNER_TEMP
           export PYTHONOPTIMIZE=2
-          python -m pytest -c ../pytest.ini --pyargs scipy -n2 --durations=10
+          python -m pytest --pyargs scipy -n2 --durations=10
+          popd
 
   #################################################################################
   prerelease_deps_coverage_64bit_blas:

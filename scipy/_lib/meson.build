@@ -143,10 +143,6 @@ python_sources = [
   'array_api_compat/array_api_compat/torch/__init__.py',
   'array_api_compat/array_api_compat/torch/_aliases.py',
   'array_api_compat/array_api_compat/torch/linalg.py',
-  'array_api_compat/tests/test_common.py',
-  'array_api_compat/tests/test_isdtype.py',
-  'array_api_compat/tests/test_vendoring.py',
-  'array_api_compat/tests/test_array_namespace.py',
 ]
 
 py3.install_sources(
