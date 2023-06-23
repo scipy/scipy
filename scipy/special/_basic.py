@@ -3133,6 +3133,7 @@ def stirling2(N, K, *, exact=True):
     -----
     - If N < 0, or K < 0, then 0 is returned.
     - If K > N, then 0 is returned.
+
     The output type will always be `int` or ndarray of `object`.
     The input must contain either numpy or python integers otherwise a
     TypeError is raised.
