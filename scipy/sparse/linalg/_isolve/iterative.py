@@ -15,7 +15,7 @@ def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
     if tol is not _NoValue:
         msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               "v.1.14.0. Until then, if set, will override 'rtol'.")
+               "v.1.14.0. Until then, if set, it will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         rtol = float(tol)
 
@@ -569,7 +569,7 @@ def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
 
 
 def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
-          callback=None, restrt=None, atol=0., callback_type=None,
+          callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
@@ -623,7 +623,7 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
 
         .. deprecated:: 0.11.0
            `gmres` keyword argument `restrt` is deprecated in favor of
-           `restart` and will be removed in SciPy 1.12.0.
+           `restart` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
         .. deprecated 1.12.0
@@ -670,15 +670,15 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     """
 
     # Handle the deprecation frenzy
-    if restrt and restart:
-        raise ValueError("Cannot specify both restart and restrt"
+    if restrt not in (None, _NoValue) and restart:
+        raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
-                         " and will be removed in SciPy 1.12.0. Use "
+                         " and will be removed in SciPy 1.14.0. Use "
                          "'restart' instad.")
-    if restrt is not None:
+    if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"
-               " 1.12.0. Until then, if set, 'rstrt' will override 'restart'."
+               " 1.14.0. Until then, if set, 'rstrt' will override 'restart'."
                )
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
         restart = restrt
