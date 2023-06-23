@@ -1182,18 +1182,16 @@ class TestHalfLogistic:
     def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale,
                                     fix_loc, fix_scale):
 
-        if fix_scale and fix_loc:
-            pytest.skip("Nothing to fit.")
-
         rng = np.random.default_rng(6762668991392531563)
         data = stats.halflogistic.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
                                       random_state=rng)
 
         kwds = {}
         if fix_loc and fix_scale:
-            loc, scale = stats.halflogistic.fit(data, floc=rvs_loc, fscale=rvs_scale)
-            assert loc == rvs_loc
-            assert scale == rvs_scale
+            error_msg = ("All parameters fixed. There is nothing to "
+                         "optimize.")
+            with pytest.raises(RuntimeError, match=error_msg):
+                stats.halflogistic.fit(data, floc=rvs_loc, fscale=rvs_scale)
             return
 
         if fix_loc:
