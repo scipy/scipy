@@ -957,30 +957,10 @@ class betaprime_gen(rv_continuous):
         return out
 
     def _munp(self, n, a, b):
-        if n == 1.0:
-            return _lazywhere(
-                b > 1, (a, b),
-                lambda a, b: a/(b-1.0),
-                fillvalue=np.inf)
-        elif n == 2.0:
-            return _lazywhere(
-                b > 2, (a, b),
-                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
-                fillvalue=np.inf)
-        elif n == 3.0:
-            return _lazywhere(
-                b > 3, (a, b),
-                lambda a, b: (a*(a+1.0)*(a+2.0)
-                              / ((b-3.0)*(b-2.0)*(b-1.0))),
-                fillvalue=np.inf)
-        elif n == 4.0:
-            return _lazywhere(
-                b > 4, (a, b),
-                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                fillvalue=np.inf)
-        else:
-            raise NotImplementedError
+        return _lazywhere(
+            b > n, (a, b),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -2786,11 +2766,21 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for real :math:`x` and :math:`c > 0`.
+    for real :math:`x` and :math:`c > 0`. In literature, different
+    generalizations of the logistic distribution can be found. This is the type 1
+    generalized logistic distribution according to [1]_. It is also referred to
+    as the skew-logistic distribution [2]_.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson et al. "Continuous Univariate Distributions", Volume 2,
+           Wiley. 1995.
+    .. [2] "Generalized Logistic Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_logistic_distribution
 
     %(example)s
 
@@ -4210,6 +4200,11 @@ class halflogistic_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+
     %(example)s
 
     """
@@ -4251,6 +4246,53 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        if floc is not None or fscale is not None:
+            return super().fit(data, *args, **kwds)
+
+        # location is the minimum of the sample ([1] Equation 2.3)
+        loc = np.min(data)
+
+        # scale is solution to a fix point problem ([1] 2.6)
+        # use approximate MLE as starting point ([1] 3.1)
+        n_observations = data.shape[0]
+        sorted_data = np.sort(data, axis=0)
+        p = np.arange(1, n_observations + 1)/(n_observations + 1)
+        q = 1 - p
+        pp1 = 1 + p
+        alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+        beta = 0.5 * q * pp1
+        sorted_data = sorted_data - loc
+        B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+        C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+        # starting guess
+        scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                 /(4 * n_observations))
+
+        # relative tolerance of fix point iterator
+        rtol = 1e-8
+        relative_residual = 1
+        shifted_mean = sorted_data.mean()  # y_mean - y_min
+
+        # find fix point by repeated application of eq. (2.6)
+        # simplify as
+        # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+        #                         = expit(-x))
+        while relative_residual > rtol:
+            sum_term = sorted_data * sc.expit(-sorted_data/scale)
+            scale_new = shifted_mean - 2/n_observations * sum_term.sum()
+            relative_residual = abs((scale - scale_new)/scale)
+            scale = scale_new
+        return loc, scale
 
 
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
@@ -9277,16 +9319,61 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     This distribution is the normal distribution centered on ``loc`` (default
-    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
-    ``b`` standard deviations to the left, right (respectively) from ``loc``.
-    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
-    opposed to the number of standard deviations) then they can be converted
-    to the required form according to::
+    0), with standard deviation ``scale`` (default 1), and truncated at ``a``
+    and ``b`` *standard deviations* from ``loc``. For arbitrary ``loc`` and
+    ``scale``, ``a`` and ``b`` are *not* the abscissae at which the shifted
+    and scaled distribution is truncated.
 
-        a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
+    .. note::
+        If ``a_trunc`` and ``b_trunc`` are the abscissae at which we wish
+        to truncate the distribution (as opposed to the number of standard
+        deviations from ``loc``), then we can calculate the distribution
+        parameters ``a`` and ``b`` as follows::
+
+            a, b = (a_trunc - loc) / scale, (b_trunc - loc) / scale
+
+        This is a common point of confusion. For additional clarification,
+        please see the example below.
 
     %(example)s
 
+    In the examples above, ``loc=0`` and ``scale=1``, so the plot is truncated
+    at ``a`` on the left and ``b`` on the right. However, suppose we were to
+    produce the same histogram with ``loc = 1`` and ``scale=0.5``.
+
+    >>> loc, scale = 1, 0.5
+    >>> rv = truncnorm(a, b, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=1000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a, b)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Note that the distribution is no longer appears to be truncated at
+    abscissae ``a`` and ``b``. That is because the *standard* normal
+    distribution is first truncated at ``a`` and ``b``, *then* the resulting
+    distribution is scaled by ``scale`` and shifted by ``loc``. If we instead
+    want the shifted and scaled distribution to be truncated at ``a`` and
+    ``b``, we need to transform these values before passing them as the
+    distribution parameters.
+
+    >>> a_transformed, b_transformed = (a - loc) / scale, (b - loc) / scale
+    >>> rv = truncnorm(a_transformed, b_transformed, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=10000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a-0.1, b+0.1)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
     """
 
     def _argcheck(self, a, b):
@@ -9406,7 +9493,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):

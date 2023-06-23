@@ -39,6 +39,7 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy._lib.deprecation import _NoValue
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
     _FACTORIALK_LIMITS_32BITS
@@ -1325,12 +1326,12 @@ class TestCombinatorics:
         assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, None])
+    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
     @pytest.mark.parametrize("k", [3.5, 3])
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy is not None:
+        if legacy is not _NoValue:
             with pytest.warns(
                 DeprecationWarning,
                 match=r"Using 'legacy' keyword is deprecated"
@@ -1352,7 +1353,7 @@ class TestCombinatorics:
                 N, k = int(N), int(k)
         # expected result is the same as with exact=False
         with suppress_warnings() as sup:
-            if legacy is not None:
+            if legacy is not _NoValue:
                 sup.filter(DeprecationWarning)
             expected = special.comb(N, k, legacy=legacy, repetition=repetition)
         assert_equal(result, expected)

@@ -1480,6 +1480,8 @@ class dirichlet_gen(multi_rv_generic):
         The mean of the Dirichlet distribution
     var(alpha)
         The variance of the Dirichlet distribution
+    cov(alpha)
+        The covariance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
 
@@ -1672,6 +1674,26 @@ class dirichlet_gen(multi_rv_generic):
         out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
         return _squeeze_output(out)
 
+    def cov(self, alpha):
+        """Covariance matrix of the Dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : ndarray
+            The covariance matrix of the distribution.
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+        alpha0 = np.sum(alpha)
+        a = alpha / alpha0
+
+        cov = (np.diag(a) - np.outer(a, a)) / (alpha0 + 1)
+        return _squeeze_output(cov)
+
     def entropy(self, alpha):
         """
         Differential entropy of the Dirichlet distribution.
@@ -1740,6 +1762,9 @@ class dirichlet_frozen(multi_rv_frozen):
     def var(self):
         return self._dist.var(self.alpha)
 
+    def cov(self):
+        return self._dist.cov(self.alpha)
+
     def entropy(self):
         return self._dist.entropy(self.alpha)
 
@@ -1749,7 +1774,7 @@ class dirichlet_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'cov', 'entropy']:
     method = dirichlet_gen.__dict__[name]
     method_frozen = dirichlet_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
