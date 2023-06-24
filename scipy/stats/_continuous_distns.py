@@ -4362,6 +4362,25 @@ class halfnorm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
 
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        loc = floc if floc is not None else np.min(data)
+
+        def find_scale(data, loc):
+            n_observations = data.shape[0]
+            scale = np.sqrt(np.sum((data - loc)**2) / n_observations)
+            return scale
+
+        scale = fscale if fscale is not None else find_scale(data, loc)
+
+        return loc, scale
+
 
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
 
