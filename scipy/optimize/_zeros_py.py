@@ -1677,9 +1677,10 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
 
     """
     cb_terminate = False
-    active = np.arange(int(np.prod(shape)) or 1)  # in-progress element indices
 
-    n_elements = int(np.product(shape))
+    # Initialize the result object and active element index array
+    n_elements = int(np.product(shape)) or 1
+    active = np.arange(n_elements)  # in-progress element indices
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
     res_dict['status'] = np.full(n_elements, _EINPROGRESS)
@@ -1687,7 +1688,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     res_dict['nfev'] = res_dict['nfev'].astype(int)
     res = OptimizeResult(res_dict)
 
-    work, active = _scalar_optimization_check_termination(
+    active = _scalar_optimization_check_termination(
         work, res, res_work_pairs, active, check_termination)
 
     if callback is not None:
@@ -1717,7 +1718,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         post_func_eval(x, f, work)
 
         work.nit += 1
-        work, active = _scalar_optimization_check_termination(
+        active = _scalar_optimization_check_termination(
             work, res, res_work_pairs, active, check_termination)
 
         if callback is not None:
@@ -1726,7 +1727,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
-        if active.size==0:
+        if active.size == 0:
             break
 
         post_termination_check(work)
@@ -1738,6 +1739,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
 
 def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
+    # Input validation for `_chandrupatla`
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -1764,7 +1766,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
 
 
 def _scalar_optimization_initialize(func, xs, args):
-    """Initializing abscissa and function arrays for elementwise function
+    """Initialize abscissa and function arrays for elementwise function
 
     Parameters
     ----------
@@ -1802,7 +1804,6 @@ def _scalar_optimization_initialize(func, xs, args):
     an elementwise callable, abscissae, and arguments; e.g.
     `scipy.optimize._chandrupatla`.
     """
-
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function because integers
     # can overflow and cause failure.
@@ -1853,7 +1854,7 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
         active = active[proceed]
         _scalar_optimization_compress_work(work, proceed)
 
-    return work, active
+    return active
 
 
 def _scalar_optimization_update_active(work, res, res_work_pairs, active,
@@ -1876,7 +1877,9 @@ def _scalar_optimization_update_active(work, res, res_work_pairs, active,
 
 def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
                                         shape, customize_result):
-    # Prepare result object
+    # Prepare the result object `res` by creating a copy, copying the latest
+    # data from work, running the provided result customization function,
+    # and reshaping the data to the original shapes.
     res = res.copy()
     _scalar_optimization_update_active(work, res, res_work_pairs, active)
 
