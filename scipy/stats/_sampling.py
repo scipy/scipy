@@ -38,12 +38,12 @@ class RatioUniforms:
     -----
     Given a univariate probability density function `pdf` and a constant `c`,
     define the set ``A = {(u, v) : 0 < u <= sqrt(pdf(v/u + c))}``.
-    If `(U, V)` is a random vector uniformly distributed over `A`,
-    then `V/U + c` follows a distribution according to `pdf`.
+    If ``(U, V)`` is a random vector uniformly distributed over ``A``,
+    then ``V/U + c`` follows a distribution according to `pdf`.
 
     The above result (see [1]_, [2]_) can be used to sample random variables
-    using only the pdf, i.e. no inversion of the cdf is required. Typical
-    choices of `c` are zero or the mode of `pdf`. The set `A` is a subset of
+    using only the PDF, i.e. no inversion of the CDF is required. Typical
+    choices of `c` are zero or the mode of `pdf`. The set ``A`` is a subset of
     the rectangle ``R = [0, umax] x [vmin, vmax]`` where
 
     - ``umax = sup sqrt(pdf(x))``
@@ -52,8 +52,8 @@ class RatioUniforms:
 
     In particular, these values are finite if `pdf` is bounded and
     ``x**2 * pdf(x)`` is bounded (i.e. subquadratic tails).
-    One can generate `(U, V)` uniformly on `R` and return
-    `V/U + c` if `(U, V)` are also in `A` which can be directly
+    One can generate ``(U, V)`` uniformly on ``R`` and return
+    ``V/U + c`` if ``(U, V)`` are also in ``A`` which can be directly
     verified.
 
     The algorithm is not changed if one replaces `pdf` by k * `pdf` for any
@@ -61,22 +61,22 @@ class RatioUniforms:
     that is proportional to the probability density function by dropping
     unnecessary normalization factors.
 
-    Intuitively, the method works well if `A` fills up most of the
-    enclosing rectangle such that the probability is high that `(U, V)`
-    lies in `A` whenever it lies in `R` as the number of required
+    Intuitively, the method works well if ``A`` fills up most of the
+    enclosing rectangle such that the probability is high that ``(U, V)``
+    lies in ``A`` whenever it lies in ``R`` as the number of required
     iterations becomes too large otherwise. To be more precise, note that
-    the expected number of iterations to draw `(U, V)` uniformly
-    distributed on `R` such that `(U, V)` is also in `A` is given by
+    the expected number of iterations to draw ``(U, V)`` uniformly
+    distributed on ``R`` such that ``(U, V)`` is also in ``A`` is given by
     the ratio ``area(R) / area(A) = 2 * umax * (vmax - vmin) / area(pdf)``,
     where `area(pdf)` is the integral of `pdf` (which is equal to one if the
     probability density function is used but can take on other values if a
     function proportional to the density is used). The equality holds since
-    the area of `A` is equal to 0.5 * area(pdf) (Theorem 7.1 in [1]_).
+    the area of ``A`` is equal to ``0.5 * area(pdf)`` (Theorem 7.1 in [1]_).
     If the sampling fails to generate a single random variate after 50000
-    iterations (i.e. not a single draw is in `A`), an exception is raised.
+    iterations (i.e. not a single draw is in ``A``), an exception is raised.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
-    contain `A`), the algorithm samples from a distribution different from
+    contain ``A``), the algorithm samples from a distribution different from
     the one given by `pdf`. It is therefore recommended to perform a
     test such as `~scipy.stats.kstest` as a check.
 
@@ -181,10 +181,12 @@ class RatioUniforms:
                 simulated += num_accept
 
             if (simulated == 0) and (i*N >= 50000):
-                msg = ("Not a single random variate could be generated in {} "
+                msg = (
+                    f"Not a single random variate could be generated in {i*N} "
                     "attempts. The ratio of uniforms method does not appear "
                     "to work for the provided parameters. Please check the "
-                    "pdf and the bounds.".format(i*N))
+                    "pdf and the bounds."
+                )
                 raise RuntimeError(msg)
             i += 1
 
