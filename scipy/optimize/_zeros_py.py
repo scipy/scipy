@@ -19,6 +19,7 @@ _ESIGNERR = -1
 _ECONVERR = -2
 _EVALUEERR = -3
 _ECALLBACK = -4
+_EERRORINCREASE = -1
 _EINPROGRESS = 1
 
 CONVERGED = 'converged'
@@ -1894,4 +1895,237 @@ def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
 def _scalar_optimization_compress_work(work, mask):
     # Compress the array elements of the work object; keep only masked elements
     for key, val in work.items():
-        work[key] = val[mask] if np.size(val) > 1 else val
+        work[key] = val[mask] if isinstance(val, np.ndarray) else val
+
+
+def _differentiate_iv(func, x, args, atol, rtol, maxiter, callback):
+    # Input validation for `_differentiate`
+
+    if not callable(func):
+        raise ValueError('`func` must be callable.')
+
+    # x has more complex IV that is taken care of during initialization
+
+    if not np.iterable(args):
+        args = (args,)
+
+    tols = np.asarray([atol, rtol])
+    if (not np.issubdtype(tols.dtype, np.number)
+            or np.any(tols < 0)
+            or tols.shape != (2,)):
+        raise ValueError('Tolerances must be non-negative scalars.')
+
+    maxiter_int = int(maxiter)
+    if maxiter != maxiter_int or maxiter < 0:
+        raise ValueError('`maxiter` must be a non-negative integer.')
+
+    if callback is not None and not callable(callback):
+        raise ValueError('`callback` must be callable.')
+
+    return func, x, args, atol, rtol, maxiter, callback
+
+
+def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=_iter,
+                   callback=None):
+    """Evaluate the derivative of an elementwise scalar function numerically.
+
+    Parameters
+    ----------
+    func : callable
+        The function whose derivative is desired. The signature must be::
+
+            func(x: ndarray, *args) -> ndarray
+
+         where each element of ``x`` is a finite real and ``args`` is a tuple,
+         which may contain an arbitrary number of components of any type(s).
+         ``func`` must be an elementwise function: each element ``func(x)[i]``
+         must equal ``func(x[i])`` for all indices ``i``.
+    x : array_like
+        Value at which to evaluate the derivative.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`.
+    atol, rtol : float, optional
+        Absolute and relative tolerances on the derivative. Iteration will
+        stop when ``res.error < atol + rtol * abs(res.df)``.
+    maxiter : int, optional
+        The maximum number of iterations of the algorithm to perform. The
+        derivative is estimated with a fixed step size before the first
+        iteration, and subsequent iterations refine the estimate using
+        Richardson extrapolation.
+    callback : callable, optional
+        An optional user-supplied function to be called before the first
+        iteration and after each iteration.
+        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        similar to that returned by `_chandrupatla` (but containing the current
+        iterate's values of all variables). If `callback` raises a
+        ``StopIteration``, the algorithm will terminate immediately and
+        `_chandrupatla` will return a result.
+
+    Returns
+    -------
+    res : OptimizeResult
+        An instance of `scipy.optimize.OptimizeResult` with the following
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+        arrays of the same shape.
+
+        df : float
+            The derivative of `func` at `x`, if the algorithm terminated
+            successfully.
+        error : float
+            An estimate of the error.
+        nfev : int
+            The number of times `func` was evaluated.
+        nit : int
+            The number of Richardson extrapolation refinements performed.
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm converged to the specified tolerances.
+            ``-1`` : The error estimate increased, so iteration was terminated.
+            ``-2`` : The maximum number of iterations was reached.
+            ``-3`` : A non-finite value was encountered.
+            ``-4`` : Iteration was terminated by `callback`.
+            ``1`` : The algorithm is proceeding normally (in `callback` only).
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
+        x : float
+            The value at which the derivative is evaluated.
+
+    Notes
+    -----
+    The implementation was inspired by the work of jacobi [1]_,
+    numdifftools [2]_, and DERIVEST [3]_, but the algorithm is simpler.
+    As in [1]_, a second-order finite difference formula is used to estimate
+    the derivative with an initial step size. In each iteration, the step size
+    is reduced by a constant factor, the second-order formula is used with the
+    new step size, and the sequence of second-order approximations is used to
+    produce a higher-order approximation and estimate of the error. Unlike in
+    [1]_, the higher-order approximation is produced using Richardson
+    extrapolation, and the error estimate is related to the highest-order error
+    term canceled by Richard extrapolation.
+
+    References
+    ----------
+    [1]_ Hans Dembinski (@HDembinski). jacobi.
+         https://github.com/HDembinski/jacobi
+    [2]_ Per A. Brodtkorb and John D'Errico. numdifftools.
+         https://numdifftools.readthedocs.io/en/latest/
+    [3]_ John D'Errico. DERIVEST: Adaptive Robust Numerical Differentiation.
+         https://www.mathworks.com/matlabcentral/fileexchange/13490-adaptive-robust-numerical-differentiation
+    [4]_ Numerical Differentition. Wikipedia.
+         https://en.wikipedia.org/wiki/Numerical_differentiation
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.optimize._zeros_py import _differentiate
+    >>> f = np.exp
+    >>> x = np.linspace(1, 2, 5)
+    >>> res = _differentiate(f, x)
+    >>> res.df  # approximation of the derivative
+    array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
+    >>> res.error  # estimate of the error
+    array([2.79620077e-14, 3.59469399e-14, 4.60985417e-14, 5.91887650e-14, 7.61127272e-14])
+    >>> abs(res.df - np.exp(x))  # true error
+    array([3.55271368e-15, 8.88178420e-16, 7.99360578e-15, 7.99360578e-15, 3.55271368e-15])
+
+    """
+    # TODO:
+    #  - expose initial step size and reduction factor
+    #  - tests
+    #  - cache weights
+    #  - one-sided difference formulae
+    #  - improve error estimate
+    #  - multivariate functions?
+    #  - vector-valued functions?
+
+    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, callback)
+    func, x, args, atol, rtol, maxiter, callback = res
+
+    def cd(x, *args):  # centered difference
+        return (func(x + cd.h) - func(x - cd.h))/(2*cd.h)
+    cd.h = 0.5
+
+    # Initialization
+    xs, fs, shape, dtype = _scalar_optimization_initialize(cd, (x,), args)
+    x0, df0 = xs[0], fs[0]
+    status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
+    nit, nfev = 0, 1  # one function evaluations performed above
+    work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
+                          last_error=np.nan, fac=2, atol=atol, rtol=rtol,
+                          nit=nit, nfev=nfev, status=status, cd=cd)
+    res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
+
+    def pre_func_eval(work):
+        work.cd.h /= work.fac
+        return work.x
+
+    def post_func_eval(x, df, work):
+        # Optimization: pre-allocate space for work.dfs
+        work.dfs = np.concatenate((work.dfs, df[:, np.newaxis]), axis=-1)
+        n = work.dfs.shape[-1]
+
+        # Richardson extrapolation, although it looks different than some
+        # implementations. Let `df(h)` be the second-order central-difference
+        # approximation with step size `h`, `t` be the step size reduction
+        # factor, c0 be the true derivative, and `ci` be (unknown) constants.
+        # After two iterations (for example), we have by construction
+        #     f(h)      = c0 + c1*h**2       + c2*h**4       + O(h**6)
+        #     f(h/t)    = c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
+        #     f(h/t**2) = c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
+        # We seek weights `wi` such that:
+        #     w1*f(h)      = w1*(c0 + c1*h**2       + c2*h**4       + O(h**6)
+        #   + w2*f(h/t)    = w2*(c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
+        #   + w3*f(h/t**2) = w3*(c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
+        #                  =     c0 + 0             + 0             + O(h**6)
+        # The Vandermonde matrix collects the coefficients on the unknown `ci`,
+        # and we solve for the weights needed to cancel the `ci` except for the
+        # one we are interested in - the true derivative, `c0`.
+
+        # Optimization: cache these
+        i = np.arange(0, 2*n, 2)
+        A = np.vander(1 / work.fac ** i, increasing=True)
+        b = np.zeros(n)
+        b[0] = 1  # we want
+        w = np.linalg.solve(A.T, b)
+        work.df = work.dfs @ w
+
+        # As an estimate of the error, we solve for the highest order error
+        # term that we cancelled (e.g. `c2` above), and we multiply by a power
+        # of `h` to get the full magnitude of the term that was cancelled.
+        b[0], b[-1] = 0, 1
+        w = np.linalg.solve(A.T, b)
+        h_power = min((2*(n-1)), 4)  # maxing out at 4 is heuristic
+        work.error = abs(work.dfs @ w * work.cd.h**h_power)
+
+    def check_termination(work):
+        stop = np.zeros_like(work.df).astype(bool)
+
+        i = work.error < work.atol + work.rtol*abs(work.df)
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
+        work.df[i], work.status[i] = np.nan, _EVALUEERR
+        stop[i] = True
+
+        i = (work.error > work.last_error) & ~stop
+        work.status[i] = _EERRORINCREASE
+        stop[i] = True
+        work.last_error = work.error
+
+        return stop
+
+    def post_termination_check(work):
+        return
+
+    def customize_result(res):
+        res['nfev'] *= 2  # two function evaluations per iteration
+        return
+
+    return _scalar_optimization_loop(work, callback, shape,
+                                     maxiter, cd, args, dtype,
+                                     pre_func_eval, post_func_eval,
+                                     check_termination, post_termination_check,
+                                     customize_result, res_work_pairs)
