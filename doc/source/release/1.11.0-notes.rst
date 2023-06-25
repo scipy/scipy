@@ -414,7 +414,7 @@ Authors
 * Ilhan Polat (32)
 * Quentin Barthélemy (1)
 * Matteo Raso (12) +
-* Tyler Reddy (134)
+* Tyler Reddy (143)
 * Lucas Roberts (1)
 * Pamphile Roy (225)
 * Jordan Rupprecht (1) +
@@ -657,6 +657,7 @@ Issues closed for 1.11.0
 * `#18634 <https://github.com/scipy/scipy/issues/18634>`__: BUG: stats.truncnorm.moments yields error for moment order greater...
 * `#18654 <https://github.com/scipy/scipy/issues/18654>`__: BUG: ci/circleci: build_scipy broken
 * `#18675 <https://github.com/scipy/scipy/issues/18675>`__: BUG: \`signal.detrend\` on main no longer accepts a sequence...
+* `#18732 <https://github.com/scipy/scipy/issues/18732>`__: TST, MAINT: some tests blocking 1.11.0 on MacOS ARM64 with NumPy...
 
 ************************
 Pull requests for 1.11.0
@@ -1173,3 +1174,6 @@ Pull requests for 1.11.0
 * `#18676 <https://github.com/scipy/scipy/pull/18676>`__: BUG: signal: fix detrend with array-like bp
 * `#18697 <https://github.com/scipy/scipy/pull/18697>`__: MAINT: NumPy 1.25.0 shims for arm64
 * `#18698 <https://github.com/scipy/scipy/pull/18698>`__: DEP: interpolate: delay interp2d deprecation and update link
+* `#18724 <https://github.com/scipy/scipy/pull/18724>`__: MAINT, REL: prepare for SciPy 1.11.0 "final"
+* `#18737 <https://github.com/scipy/scipy/pull/18737>`__: TST: flaky TestSOSFreqz::test_fs_param
+* `#18738 <https://github.com/scipy/scipy/pull/18738>`__: TST: flaky \`test_complex_iir_dlti\`
