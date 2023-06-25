@@ -1898,7 +1898,8 @@ def _scalar_optimization_compress_work(work, mask):
         work[key] = val[mask] if isinstance(val, np.ndarray) else val
 
 
-def _differentiate_iv(func, x, args, atol, rtol, maxiter, callback):
+def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
+                      step_factor, callback):
     # Input validation for `_differentiate`
 
     if not callable(func):
@@ -1909,11 +1910,12 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, callback):
     if not np.iterable(args):
         args = (args,)
 
-    tols = np.asarray([atol, rtol])
+    message = 'Tolerances and step parameters must be non-negative scalars.'
+    tols = np.asarray([atol, rtol, initial_step, step_factor])
     if (not np.issubdtype(tols.dtype, np.number)
             or np.any(tols < 0)
-            or tols.shape != (2,)):
-        raise ValueError('Tolerances must be non-negative scalars.')
+            or tols.shape != (4,)):
+        raise ValueError(message)
 
     maxiter_int = int(maxiter)
     if maxiter != maxiter_int or maxiter < 0:
@@ -1922,11 +1924,12 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, callback):
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, x, args, atol, rtol, maxiter, callback
+    return (func, x, args, atol, rtol, maxiter, initial_step, step_factor,
+            callback)
 
 
 def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
-                   callback=None):
+                   initial_step=0.5, step_factor=2.0, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
     Parameters
@@ -1945,13 +1948,22 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
     atol, rtol : float, optional
-        Absolute and relative tolerances on the derivative. Iteration will
-        stop when ``res.error < atol + rtol * abs(res.df)``.
+        Absolute and relative tolerances for the stopping condition: iteration
+        will stop when ``res.error < atol + rtol * abs(res.df)``.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform. The
         derivative is estimated with a fixed step size before the first
         iteration, and subsequent iterations refine the estimate using
         Richardson extrapolation.
+    initial_step : float, default: 0.5
+        The initial step size for the finite difference derivative
+        approximation.
+    step_factor : float, default: 2.0
+        The factor by which the step size is *reduced* in each iteration; i.e.
+        the step size in iteration 1 is ``initial_step/step_factor``. If
+        ``step_factor < 1``, subsequent steps will be greater than the initial
+        step; this may be useful if steps smaller than some threshold are
+        undesirable (e.g. due to subtractive cancellation error).
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -2031,7 +2043,6 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
 
     """
     # TODO:
-    #  - expose initial step size and reduction factor
     #  - preserve dtype
     #  - what's going on with constant functions?
     #  - cache weights
@@ -2040,13 +2051,14 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
     #  - multivariate functions?
     #  - vector-valued functions?
 
-    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, callback)
-    func, x, args, atol, rtol, maxiter, callback = res
+    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
+                            step_factor, callback)
+    func, x, args, atol, rtol, maxiter, h0, fac, callback = res
 
     def cd(x, *args):  # centered difference
         return (np.asarray(func(x + cd.h, *args))
                 - np.asarray(func(x - cd.h, *args)))/(2*cd.h)
-    cd.h = 0.5
+    cd.h = h0
 
     # Initialization
     xs, fs, shape, dtype = _scalar_optimization_initialize(cd, (x,), args)
@@ -2054,7 +2066,7 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
     status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
     work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
-                          last_error=np.nan, fac=2, atol=atol, rtol=rtol,
+                          last_error=np.nan, fac=fac, atol=atol, rtol=rtol,
                           nit=nit, nfev=nfev, status=status, cd=cd)
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]

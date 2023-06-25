@@ -1371,6 +1371,26 @@ class TestDifferentiate():
         assert_array_less(abs(res2.df - ref), 1e-6 * np.abs(ref))
         assert_array_less(abs(res2.df - ref), abs(res1.df - ref))
 
+    def test_step_parameters(self):
+        # Test that step factors have the expected effect on accuracy
+        dist = stats.norm()
+        x = 1
+        f = dist.cdf
+        ref = dist.pdf(x)
+
+        res1 = zeros._differentiate(f, x, initial_step=0.5, maxiter=0)
+        res2 = zeros._differentiate(f, x, initial_step=0.05, maxiter=0)
+        assert abs(res2.df - ref) < abs(res1.df - ref)
+
+        res1 = zeros._differentiate(f, x, step_factor=2, maxiter=1)
+        res2 = zeros._differentiate(f, x, step_factor=20, maxiter=1)
+        assert abs(res2.df - ref) < abs(res1.df - ref)
+
+        # `step_factor` can be less than 1: `initial_step` is the minimum step
+        res = zeros._differentiate(f, x, initial_step=0.0001, step_factor=0.5)
+        assert res.success
+        assert_allclose(res.df, ref)
+
     def test_maxiter_callback(self):
         # Test behavior of `maxiter` parameter and `callback` interface
         x = 0.612814
@@ -1437,11 +1457,15 @@ class TestDifferentiate():
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: [1, 2, 3], [-2, -3])
 
-        message = 'Tolerances must be non-negative scalars.'
+        message = 'Tolerances and step parameters must be non-negative...'
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, 1, atol=-1)
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, 1, rtol=None)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, initial_step='ekki')
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, step_factor=object())
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
