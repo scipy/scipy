@@ -6,7 +6,7 @@
 # cython: cdivision=True
 # cython: cpow=True
 
-from libc.math cimport exp, sqrt, abs, log, asin, acos
+from libc.math cimport exp, sqrt, abs, log, acos
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
@@ -222,7 +222,7 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     cdef double Z90 = 0.12816e1, Z95 = 0.16449E1, Z99 = 0.23263e1
     cdef double ZM = 0.17509e1, ZSS = 0.56268
     cdef double BF1 = 0.8378, XX90 = 0.556, XX95 = 0.622
-    cdef double SQRTH = sqrt(2)/2, PI6 = 6/np.pi, PI_OVER_3 = np.pi/3
+    cdef double SQRTH = sqrt(2)/2, PI6 = 6/np.pi
     cdef double SMALL=1e-19, w, pw, an, an25, summ2, ssumm2, rsn
     cdef double A1, A2, fac, delta, w1, y, ld, bf, gamma, m, s
     cdef double RANGE, SA, SX, SSX, SSA, SAX, ASA, XSX, SSASSX, XX, XI
@@ -340,10 +340,15 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
         #
         # pw = PI6 * (asin(sqrt(w)) - PI_OVER_3)
         #
-        # However this can return negative p-values for N==3; see gh-18322.
+        # However this can return negative p-values for N==3;
+        # see gh-18322 and also 32-bit Linux systems.
         # Thus, a potential improvement: precision for small p-values
-        pw = 1 - PI6 * acos(sqrt(w))
-        return w, pw, ifault
+        # Theoretically w >= 0.75, hence clamping the value
+        if w < 0.75:
+            return 0.75, 0., ifault
+        else:
+            pw = 1. - PI6 * acos(sqrt(w))
+            return w, pw, ifault
 
     y = log(w1)
     XX = log(an)
