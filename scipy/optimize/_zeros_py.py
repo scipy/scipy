@@ -1679,7 +1679,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     cb_terminate = False
 
     # Initialize the result object and active element index array
-    n_elements = int(np.product(shape)) or 1
+    n_elements = int(np.prod(shape)) or 1
     active = np.arange(n_elements)  # in-progress element indices
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
