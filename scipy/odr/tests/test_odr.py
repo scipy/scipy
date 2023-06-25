@@ -554,7 +554,7 @@ class TestODR:
         rd3 = RealData(x, y, sx=x_err, sy=np.full((1, n_data), 0.1))
         rd4 = RealData(x, y, sx=x_err, covy=[[0.01]])
         rd5 = RealData(x, y, sx=x_err, covy=np.full((1, 1, n_data), 0.01))
-        for rd in enumerate([rd0, rd1, rd2, rd3, rd4, rd5]):
+        for rd in [rd0, rd1, rd2, rd3, rd4, rd5]:
             odr_obj = ODR(rd, linear_model, beta0=[0.4, 0.4],
                           delta0=np.full(n_data, -0.1))
             odr_obj.set_job(fit_type=0, del_init=1)
