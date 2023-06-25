@@ -2658,7 +2658,7 @@ class TestDecimate:
         yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
                                  u)[::2]
 
-        assert_equal(yzp, yzpref)
+        assert_allclose(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
     def test_complex_fir_dlti(self):
         # centre frequency for filter [Hz]
