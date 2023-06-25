@@ -559,4 +559,4 @@ class TestODR:
                           delta0=np.full(n_data, -0.1))
             odr_obj.set_job(fit_type=0, del_init=1)
             # Just make sure that it runs without raising an exception.
-            out = odr_obj.run()
+            odr_obj.run()
