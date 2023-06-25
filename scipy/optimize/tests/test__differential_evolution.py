@@ -259,16 +259,37 @@ class TestDifferentialEvolutionSolver:
         result = solver.solve()
         assert_equal(result.x, solver.x)
 
+    def test_intermediate_result(self):
+        bounds = [(0, 2), (0, 2)]
+        visited = [False]
+        def callback(intermediate_result):
+            visited[0] = True
+            assert intermediate_result.population.ndim == 2
+            assert intermediate_result.population.shape[1] == 2
+
+        result = differential_evolution(rosen, bounds, callback=callback)
+        assert result.success
+        assert visited[0]
+
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
-        expected_msg = 'callback function requested stop early by returning True'
-
+        expected_msg = 'callback function requested stop early'
         def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        result = differential_evolution(
+            rosen, bounds, callback=callback_python_true
+        )
         assert_string_equal(result.message, expected_msg)
+
+        # if callback raises StopIteration then solve should be interrupted
+        # with no polishing
+        def callback_stop(intermediate_result):
+            raise StopIteration
+
+        result = differential_evolution(rosen, bounds, callback=callback_stop)
+        assert not result.success
 
         def callback_evaluates_true(param, convergence=0.):
             # DE should stop if bool(self.callback) is True
@@ -276,6 +297,7 @@ class TestDifferentialEvolutionSolver:
 
         result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
         assert_string_equal(result.message, expected_msg)
+        assert not result.success
 
         def callback_evaluates_false(param, convergence=0.):
             return []

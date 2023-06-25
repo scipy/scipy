@@ -145,6 +145,9 @@ def _wrap_callback(callback, method=None):
     elif method == 'trust-constr':
         def wrapped_callback(res):
             return callback(np.copy(res.x), res)
+    elif method == 'differential_evolution':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res.convergence)
     else:
         def wrapped_callback(res):
             return callback(np.copy(res.x))

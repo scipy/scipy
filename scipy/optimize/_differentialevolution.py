@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize._optimize import _status_message
+from scipy.optimize._optimize import _status_message, _wrap_callback
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
@@ -116,12 +116,32 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the best solution found so far. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(OptimizeResult: intermediate_result)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+        When ``val`` is greater than one the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        The minimization will halt if the callback raises ``StopIteration``
+        or returns ``True`` (any polishing is still carried out).
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -489,12 +509,28 @@ class DifferentialEvolutionSolver:
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence. When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(OptimizeResult: intermediate_result)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+        When ``val`` is greater than one the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        The minimization will halt if the callback raises ``StopIteration``
+        or returns ``True`` (any polishing is still carried out).
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -624,7 +660,7 @@ class DifferentialEvolutionSolver:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
-        self.callback = callback
+        self.callback = _wrap_callback(callback, "differential_evolution")
         self.polish = polish
 
         # set the updating / parallelisation options
@@ -1030,16 +1066,21 @@ class DifferentialEvolutionSolver:
                 break
 
             if self.disp:
-                print("differential_evolution step %d: f(x)= %g"
-                      % (nit,
-                         self.population_energies[0]))
+                print(f"differential_evolution step {nit}: f(x)="
+                      f" {self.population_energies[0]}"
+                      )
 
             if self.callback:
                 c = self.tol / (self.convergence + _MACHEPS)
-                warning_flag = bool(self.callback(self.x, convergence=c))
+                res = self._result(nit=nit)
+                res.convergence = c
+                try:
+                    warning_flag = bool(self.callback(res))
+                except StopIteration:
+                    warning_flag = True
+
                 if warning_flag:
-                    status_message = ('callback function requested stop early'
-                                      ' by returning True')
+                    status_message = 'callback function requested stop early'
 
             # should the solver terminate?
             if warning_flag or self.converged():
@@ -1049,13 +1090,9 @@ class DifferentialEvolutionSolver:
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        DE_result = OptimizeResult(
-            x=self.x,
-            fun=self.population_energies[0],
-            nfev=self._nfev,
-            nit=nit,
-            message=status_message,
-            success=(warning_flag is not True))
+        DE_result = self._result(
+            nit=nit, message=status_message, warning_flag=warning_flag
+        )
 
         if self.polish and not np.all(self.integrality):
             # can't polish if all the parameters are integers
@@ -1115,6 +1152,29 @@ class DifferentialEvolutionSolver:
                                      f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
+
+    def _result(self, **kwds):
+        # form an intermediate OptimizeResult
+        nit = kwds.get('nit', None)
+        message = kwds.get('message', None)
+        warning_flag = kwds.get('warning_flag', False)
+        result = OptimizeResult(
+            x=self.x,
+            fun=self.population_energies[0],
+            nfev=self._nfev,
+            nit=nit,
+            message=message,
+            success=(warning_flag is not True),
+            population=self._scale_parameters(self.population)
+        )
+        if self._wrapped_constraints:
+            result.constr = [c.violation(result.x) for
+                                c in self._wrapped_constraints]
+            result.constr_violation = np.max(
+                np.concatenate(result.constr))
+            result.maxcv = result.constr_violation
+
+        return result
 
     def _calculate_population_energies(self, population):
         """
