@@ -6,7 +6,7 @@
 # cython: cdivision=True
 # cython: cpow=True
 
-from libc.math cimport exp, sqrt, abs, log, asin
+from libc.math cimport exp, sqrt, abs, log, asin, acos
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
@@ -14,12 +14,11 @@ cnp.import_array()
 
 def gscale(int test, int other):
     """
-    Cython translation for the FORTRAN code given in [1]_.
+    Cython translation for the FORTRAN 77 code given in:
 
-    [1]: Dinneen, L. C. and Blakesley, B. C., "Algorithm AS 93:
-         A Generator for the Null Distribution of the Ansari-Bradley
-         W Statistic", Applied Statistics, 25(1), 1976
-         :doi:`10.2307/2346534`
+    Dinneen, L. C. and Blakesley, B. C., "Algorithm AS 93: A Generator for the
+    Null Distribution of the Ansari-Bradley W Statistic", Applied Statistics,
+    25(1), 1976, :doi:`10.2307/2346534`
     """
     cdef int m = min(test, other), n = max(test, other)
     cdef int astart = ((test + 1) // 2) * (1 + (test // 2))
@@ -42,7 +41,8 @@ def gscale(int test, int other):
 
     # Small cases
     if m == 0:
-        a1v[0] = 1
+        a1[0] = 1
+        return astart, a1, 0
 
     if m == 1:
         _start1(a1v, n)
@@ -104,7 +104,7 @@ def gscale(int test, int other):
 
 cdef inline void _start1(float[::1] a, int n) nogil noexcept:
     """
-    Helper function 1 for gscale function, see gscale docstring.
+    Helper function for gscale function, see gscale docstring.
     """
     cdef int lout = 1 + (n // 2)
 
@@ -115,7 +115,7 @@ cdef inline void _start1(float[::1] a, int n) nogil noexcept:
 
 cdef inline void _start2(float[::1] a, int n) nogil noexcept:
     """
-    Helper function 2 for gscale function, see gscale docstring.
+    Helper function for gscale function, see gscale docstring.
     """
     cdef int odd = n % 2
     cdef float A = 1., B = 3., C = 2. if odd else 0.
@@ -137,6 +137,9 @@ cdef inline void _start2(float[::1] a, int n) nogil noexcept:
 
 cdef inline int _frqadd(float[::1] a, float[::1] b, int lenb,
                         int offset) nogil noexcept:
+    """
+    Helper function for gscale function, see gscale docstring.
+    """
     cdef float two = 2
     cdef int lout = lenb + offset, ind
     for ind in range(lenb):
@@ -146,6 +149,9 @@ cdef inline int _frqadd(float[::1] a, float[::1] b, int lenb,
 
 cdef int _imply(float[::1] a, int curlen, int reslen, float[::1] b,
                 int offset) nogil noexcept:
+    """
+    Helper function for gscale function, see gscale docstring.
+    """
     cdef int i1, i2 = -offset, j2 = reslen-offset, j2min = (j2 + 1) // 2 - 1
     cdef int nextlenb = j2, j1 = reslen-1
     cdef float summ, diff
@@ -177,9 +183,13 @@ cdef int _imply(float[::1] a, int curlen, int reslen, float[::1] b,
 
 def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     """
-    ALGORITHM AS R94 APPL. STATIST. (1995) VOL.44, NO.4
-
     Calculates the Shapiro-Wilk W test and its significance level
+
+    This is a double precision Cython translation (with modifications) of the
+    FORTRAN 77 code given in:
+
+    Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The W-test for
+    Normality", 1995, Applied Statistics, Vol. 44, :doi:`10.2307/2986146`
 
     IFAULT error code details from the R94 paper:
     - 0 for no fault
@@ -229,7 +239,6 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     pw = 1.
     an = n
 
-
     if not init:
         if n == 3:
             a[0] = SQRTH
@@ -248,7 +257,8 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
             if n > 5:
                 i1 = 2
                 A2 = -a[1]/ssumm2 + _poly(c2, 6, rsn)
-                fac = sqrt((summ2 - (2 * a[0]**2) - 2 * a[1]**2) / (1 - (2 * A1**2) - 2 * A2**2))
+                fac = sqrt((summ2 - (2 * a[0]**2) - 2 * a[1]**2) /
+                           (1 - (2 * A1**2) - 2 * A2**2))
                 a[1] = A2
             else:
                 i1 = 1
@@ -258,7 +268,6 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
             for ind1 in range(i1, nn2):
                 a[ind1] *= -1./fac
         init = True
-
 
     if n1 < 3:
         return w, pw, 1
@@ -270,9 +279,9 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     if delta > 0.8:
         return w, pw, 5
 
-
     # Original Fortran code checked the W input value
     # and acted on it via
+    #
     # C
     # C If W input as negative, calculate significance level of -W
     # C
@@ -281,9 +290,10 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     #         IFAULT = 0
     #         GOTO 70
     #       END IF
-    # However W was marked as output in the fortran wrappers
-    # leading to undefined behavior of the uninitialized W
-    # Here W is assumed to be 0.
+    #
+    # However W was marked as output in the fortran wrappers leading to
+    # undefined behavior of the uninitialized W with different compilers.
+    # Here W is assumed to be always 0 hence the test is skipped.
     RANGE = x[n1-1] - x[0]
     if RANGE < SMALL:
         return w, pw, 6
@@ -326,7 +336,13 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
 
     # Calculate significance level for W (exact for N=3)
     if n == 3:
-        pw = PI6 * (asin(sqrt(w)) - PI_OVER_3)
+        # Original Fortran code computation was below
+        #
+        # pw = PI6 * (asin(sqrt(w)) - PI_OVER_3)
+        #
+        # However this can return negative p-values for N==3; see gh-18322.
+        # Thus, a potential improvement: precision for small p-values
+        pw = 1 - PI6 * acos(sqrt(w))
         return w, pw, ifault
 
     y = log(w1)
@@ -360,8 +376,25 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
 
 
 cdef double _alnorm(double x, bint upper) nogil noexcept:
+    """
+    Helper function for swilk.
+
+    Evaluates the tail area of the standardized normal curve from x to inf
+    if upper is True or from -inf to x if upper is False
+
+    Modification has been done to the Fortran version in November 2001 with the
+    following note;
+
+        MODIFY UTZERO.  ALTHOUGH NOT NECESSARY
+        WHEN USING ALNORM FOR SIMPLY COMPUTING PERCENT POINTS,
+        EXTENDING RANGE IS HELPFUL FOR USE WITH FUNCTIONS THAT
+        USE ALNORM IN INTERMEDIATE COMPUTATIONS.
+
+    The change is shown below as a commented utzero definition
+    """
     cdef double A1, A2, A3, A4, A5, A6, A7
     cdef double B1, B2, B3, B4, B5, B6, B7, B8, B9, B10, B11, B12
+    # cdef double utzero = 18.66
     cdef double ltone = 7., utzero = 38., con = 1.28
     cdef double y, z, temp
     A1 = 0.398942280444
