@@ -1427,12 +1427,12 @@ class TestRatioUniforms:
     def test_exceptions(self):
         f = stats.norm.pdf
         # need vmin < vmax
-        assert_raises(ValueError,
-                      RatioUniforms, pdf=f, umax=1, vmin=3, vmax=1)
-        assert_raises(ValueError,
-                      RatioUniforms, pdf=f, umax=1, vmin=1, vmax=1)
+        with assert_raises(ValueError, match="vmin must be smaller than vmax"):
+            RatioUniforms(pdf=f, umax=1, vmin=3, vmax=1)
+        with assert_raises(ValueError, match="vmin must be smaller than vmax"):
+            RatioUniforms(pdf=f, umax=1, vmin=1, vmax=1)
         # need umax > 0
-        assert_raises(ValueError,
-                      RatioUniforms, pdf=f, umax=-1, vmin=1, vmax=1)
-        assert_raises(ValueError,
-                      RatioUniforms, pdf=f, umax=0, vmin=1, vmax=1)
+        with assert_raises(ValueError, match="umax must be positive"):
+            RatioUniforms(pdf=f, umax=-1, vmin=1, vmax=3)
+        with assert_raises(ValueError, match="umax must be positive"):
+            RatioUniforms(pdf=f, umax=0, vmin=1, vmax=3)
