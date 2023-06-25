@@ -1925,7 +1925,7 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, callback):
     return func, x, args, atol, rtol, maxiter, callback
 
 
-def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=_iter,
+def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
                    callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
@@ -2032,10 +2032,11 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=_iter,
     """
     # TODO:
     #  - expose initial step size and reduction factor
-    #  - tests
+    #  - preserve dtype
+    #  - what's going on with constant functions?
     #  - cache weights
     #  - one-sided difference formulae
-    #  - improve error estimate
+    #  - improve error estimate and error increase stopping criterion
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2043,7 +2044,8 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=_iter,
     func, x, args, atol, rtol, maxiter, callback = res
 
     def cd(x, *args):  # centered difference
-        return (func(x + cd.h) - func(x - cd.h))/(2*cd.h)
+        return (np.asarray(func(x + cd.h, *args))
+                - np.asarray(func(x - cd.h, *args)))/(2*cd.h)
     cd.h = 0.5
 
     # Initialization
@@ -2110,10 +2112,13 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=_iter,
         work.df[i], work.status[i] = np.nan, _EVALUEERR
         stop[i] = True
 
-        i = (work.error > work.last_error) & ~stop
-        work.status[i] = _EERRORINCREASE
-        stop[i] = True
-        work.last_error = work.error
+        # This is really messing up the accuracy test. Perhaps stop after
+        # multiple iterations of error increase, or get a better error
+        # estimate.
+        # i = (work.error > work.last_error) & ~stop
+        # work.status[i] = _EERRORINCREASE
+        # stop[i] = True
+        # work.last_error = work.error
 
         return stop
 

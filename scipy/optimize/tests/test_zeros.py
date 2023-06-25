@@ -1245,3 +1245,258 @@ def test_maxiter_int_check_gh10236(method):
     message = "'float' object cannot be interpreted as an integer"
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
+
+
+class TestDifferentiate():
+
+    def f(self, x, dist):
+        return dist.cdf(x)
+
+    @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
+    def test_basic(self, x):
+        # Invert distribution CDF and compare against distribution `ppf`
+        dist = stats.norm()
+        res = zeros._differentiate(self.f, x, args=dist)
+        ref = dist.pdf(x)
+        np.testing.assert_allclose(res.df, ref)
+        # This would be nice, but doesn't always work out. `error` is an
+        # estimate, not a bound.
+        # assert_array_less(abs(res.df - ref), res.error)
+        assert res.x.shape == ref.shape
+
+    @pytest.mark.parametrize('case', stats._distr_params.distcont)
+    def test_accuracy(self, case):
+        distname, params = case
+        dist = getattr(stats, distname)(*params)
+        x = dist.median() + 0.1
+        res = zeros._differentiate(dist.cdf, x, maxiter=10)
+        ref = dist.pdf(x)
+        assert_allclose(res.df, ref, atol=1e-8)
+
+    @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, shape):
+        # Test for correct functionality, output shapes, and dtypes for various
+        # input shapes.
+        x = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        dist = stats.norm()
+        args = (dist,)
+
+        @np.vectorize
+        def _differentiate_single(x):
+            return zeros._differentiate(self.f, x, args=(dist,))
+
+        def f(*args, **kwargs):
+            f.f_evals += 1
+            return self.f(*args, **kwargs)
+        f.f_evals = 0
+
+        res = zeros._differentiate(f, x, args=args)
+        refs = _differentiate_single(x).ravel()
+
+        ref_x = [ref.x for ref in refs]
+        assert_allclose(res.x.ravel(), ref_x)
+        assert_equal(res.x.shape, shape)
+
+        ref_df = [ref.df for ref in refs]
+        assert_allclose(res.df.ravel(), ref_df)
+        assert_equal(res.df.shape, shape)
+
+        ref_error = [ref.error for ref in refs]
+        assert_allclose(res.error.ravel(), ref_error)
+        assert_equal(res.error.shape, shape)
+
+        ref_success = [ref.success for ref in refs]
+        assert_equal(res.success.ravel(), ref_success)
+        assert_equal(res.success.shape, shape)
+        assert np.issubdtype(res.success.dtype, np.bool_)
+
+        ref_flag = [ref.status for ref in refs]
+        assert_equal(res.status.ravel(), ref_flag)
+        assert_equal(res.status.shape, shape)
+        assert np.issubdtype(res.status.dtype, np.integer)
+
+        ref_nfev = [ref.nfev for ref in refs]
+        assert_equal(res.nfev.ravel(), ref_nfev)
+        assert_equal(np.max(res.nfev), f.f_evals)
+        assert_equal(res.nfev.shape, res.x.shape)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+
+        ref_nit = [ref.nit for ref in refs]
+        assert_equal(res.nit.ravel(), ref_nit)
+        assert_equal(np.max(res.nit), (f.f_evals-2)/2)
+        assert_equal(res.nit.shape, res.x.shape)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        rng = np.random.default_rng(816315295151135845454)
+
+        def f(x):
+            return [x[0] - 2.5, # rng.random(),
+                    np.exp(x[1]), np.nan]
+
+        res = zeros._differentiate(f, [1] * 3, maxiter=3)
+
+        ref_flags = np.array([zeros._ECONVERGED, # zeros._EERRORINCREASE,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
+
+    def test_convergence(self):
+        # Test that the convergence tolerances behave as expected
+        rng = np.random.default_rng(2585255913088665241)
+        p = rng.random(size=3)
+        dist = stats.norm()
+        x = 1
+        f = dist.cdf
+        ref = dist.pdf(x)
+        args = (dist, p)
+        kwargs0 = dict(atol=0, rtol=0)
+
+        kwargs = kwargs0.copy()
+        kwargs['atol'] = 1e-3
+        res1 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res1.df - ref), 1e-3)
+        kwargs['atol'] = 1e-6
+        res2 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res2.df - ref), 1e-6)
+        assert_array_less(abs(res2.df - ref), abs(res1.df - ref))
+
+        kwargs = kwargs0.copy()
+        kwargs['rtol'] = 1e-3
+        res1 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res1.df - ref), 1e-3 * np.abs(ref))
+        kwargs['rtol'] = 1e-6
+        res2 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res2.df - ref), 1e-6 * np.abs(ref))
+        assert_array_less(abs(res2.df - ref), abs(res1.df - ref))
+
+    def test_maxiter_callback(self):
+        # Test behavior of `maxiter` parameter and `callback` interface
+        x = 0.612814
+        dist = stats.norm()
+        maxiter = 2
+
+        def f(x):
+            res = dist.cdf(x)
+            return res
+
+        res = zeros._differentiate(f, x, maxiter=maxiter)
+        assert not np.any(res.success)
+        assert np.all(res.nfev == maxiter*2+2)
+        assert np.all(res.nit == maxiter)
+
+        def callback(res):
+            callback.iter += 1
+            callback.res = res
+            assert hasattr(res, 'x')
+            assert res.df not in callback.dfs
+            callback.dfs.add(res.df)
+            assert res.status == zeros._EINPROGRESS
+            if callback.iter == maxiter:
+                raise StopIteration
+        callback.iter = -1  # callback called once before first iteration
+        callback.res = None
+        callback.dfs = set()
+
+        res2 = zeros._differentiate(f, x, callback=callback)
+        # terminating with callback is identical to terminating due to maxiter
+        # (except for `status`)
+        for key in res.keys():
+            if key == 'status':
+                assert res[key] == zeros._ECONVERR
+                assert callback.res[key] == zeros._EINPROGRESS
+                assert res2[key] == zeros._ECALLBACK
+            else:
+                assert res2[key] == callback.res[key] == res[key]
+
+    # # more work is needed to preserve dtypes
+    # @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    # def test_dtype(self, dtype):
+    #     # Test that dtypes are preserved
+    #     f = np.exp
+    #     eps = np.finfo(dtype).eps
+    #     res = zeros._differentiate(f, dtype(1), atol=eps)
+    #     assert res.x.dtype == dtype
+    #     assert res.df.dtype == dtype
+    #     assert_allclose(res.df, np.exp(res.x), atol=eps)
+
+    def test_input_validation(self):
+        # Test input validation for appropriate error messages
+
+        message = '`func` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(None, 1)
+
+        message = 'Abscissae and function output must be real numbers.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, -4+1j)
+
+        message = "shape mismatch: objects cannot be broadcast"
+        # raised by `np.broadcast, but the traceback is readable IMO
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: [1, 2, 3], [-2, -3])
+
+        message = 'Tolerances must be non-negative scalars.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, atol=-1)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, rtol=None)
+
+        message = '`maxiter` must be a non-negative integer.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, maxiter=1.5)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, maxiter=-1)
+
+        message = '`callback` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, callback='shrubbery')
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            assert np.issubdtype(x.dtype, np.floating)
+            return x ** 99 - 1
+
+        res = zeros._differentiate(f, 7, rtol=1e-10)
+        assert res.success
+        assert_allclose(res.df, 99*7.**98)
+
+        # Test that if success is achieved in the correct number
+        # of iterations if function is a polynomial. Ideally, all polynomials
+        # of order 0-2 would get exact result with 0 refinement iterations, but
+        # `_differentiate` needs 1 iteration to estimate the error. Also,
+        # all polynomials of order 3-4 would be differentiated exactly after
+        # 1 iteration, but it seems that _differentiate needs an extra
+        # iteration to confirm this based on the error.
+
+        # res = zeros._differentiate(lambda x: 2, 1.5)
+        # assert res.success
+        # assert res.nit == 1
+        # assert_equal(res.df, 0)
+
+        for n in range(1, 6):
+            x = 1.5
+            def f(x):
+                return 2*x**n
+
+            ref = 2*n*x**(n-1)
+
+            res = zeros._differentiate(f, x, maxiter=(n-1)//2)
+            assert_allclose(res.df, ref, rtol=1e-15)
+
+            res = zeros._differentiate(f, x)
+            assert res.success
+            assert res.nit == np.ceil(n/2)
+            assert_allclose(res.df, ref, rtol=1e-15)
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return c*x - 1
+
+        res = zeros._differentiate(f, 2, args=3)
+        assert_allclose(res.df, 3)
