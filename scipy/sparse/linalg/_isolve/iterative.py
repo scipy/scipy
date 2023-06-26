@@ -17,7 +17,7 @@ def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
                "deprecated in favor of 'rtol' and will be removed in SciPy "
                "v.1.14.0. Until then, if set, it will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
-        rtol = float(tol)
+        rtol = float(tol) if tol is not None else rtol
 
     if atol == 'legacy':
         warnings.warn("scipy.sparse.linalg.{name} called with `atol` set to "
