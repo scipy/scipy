@@ -7109,6 +7109,21 @@ class TestBurr:
         assert_(np.isfinite(e3))
         assert_(np.isfinite(e4))
 
+    @pytest.mark.parametrize(
+        'q, expected',
+        [
+            (0.1, 1.9469686558286508),
+            (1e-10, 124.57309395989076),
+            (1e-20, 12457.309396155173),
+            (1e-40, 124573093.96155174),
+        ]
+    )
+    def test_burr_isf(self, q, expected):
+        c, d = 5.0, 3.0
+        assert_allclose(stats.burr.isf(q, c, d), expected, rtol=1e-14)
+
+
+
 
 class TestBurr12:
 
