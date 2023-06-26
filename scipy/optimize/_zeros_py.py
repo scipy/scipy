@@ -1906,9 +1906,14 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
         raise ValueError('`func` must be callable.')
 
     # x has more complex IV that is taken care of during initialization
+    x = np.asarray(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
 
     if not np.iterable(args):
         args = (args,)
+
+    if atol is None:
+        atol = np.finfo(dtype).tiny
 
     message = 'Tolerances and step parameters must be non-negative scalars.'
     tols = np.asarray([atol, rtol, initial_step, step_factor])
@@ -1916,6 +1921,7 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
             or np.any(tols < 0)
             or tols.shape != (4,)):
         raise ValueError(message)
+    initial_step, step_factor = tols[2:].astype(dtype)
 
     maxiter_int = int(maxiter)
     if maxiter != maxiter_int or maxiter < 0:
@@ -1928,7 +1934,7 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
             callback)
 
 
-def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
+def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
                    initial_step=0.5, step_factor=2.0, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
@@ -1949,8 +1955,10 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
         Additional positional arguments to be passed to `func`.
     atol, rtol : float, optional
         Absolute and relative tolerances for the stopping condition: iteration
-        will stop when ``res.error < atol + rtol * abs(res.df)``.
-    maxiter : int, optional
+        will stop when ``res.error < atol + rtol * abs(res.df)``. The default
+        `atol` is the smallest normal number of the appropriate dtype, and
+        the default `rtol` is ``1e-12``.
+    maxiter : int, default: 10
         The maximum number of iterations of the algorithm to perform. The
         derivative is estimated with a fixed step size before the first
         iteration, and subsequent iterations refine the estimate using
@@ -2043,10 +2051,9 @@ def _differentiate(func, x, *, args=(), atol=0, rtol=1e-12, maxiter=10,
 
     """
     # TODO:
-    #  - preserve dtype
-    #  - what's going on with constant functions?
     #  - cache weights
     #  - one-sided difference formulae
+    #  - preserve dtype
     #  - improve error estimate and error increase stopping criterion
     #  - multivariate functions?
     #  - vector-valued functions?

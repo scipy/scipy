@@ -1492,30 +1492,24 @@ class TestDifferentiate():
 
         # Test that if success is achieved in the correct number
         # of iterations if function is a polynomial. Ideally, all polynomials
-        # of order 0-2 would get exact result with 0 refinement iterations, but
-        # `_differentiate` needs 1 iteration to estimate the error. Also,
+        # of order 0-2 would get exact result with 0 refinement iterations,
         # all polynomials of order 3-4 would be differentiated exactly after
-        # 1 iteration, but it seems that _differentiate needs an extra
-        # iteration to confirm this based on the error.
+        # 1 iteration, etc. However, it seems that _differentiate needs an
+        # extra iteration to detect convergence based on the error estimate.
 
-        # res = zeros._differentiate(lambda x: 2, 1.5)
-        # assert res.success
-        # assert res.nit == 1
-        # assert_equal(res.df, 0)
-
-        for n in range(1, 6):
+        for n in range(6):
             x = 1.5
             def f(x):
                 return 2*x**n
 
             ref = 2*n*x**(n-1)
 
-            res = zeros._differentiate(f, x, maxiter=(n-1)//2)
+            res = zeros._differentiate(f, x, maxiter=max((n-1)//2, 1))
             assert_allclose(res.df, ref, rtol=1e-15)
 
             res = zeros._differentiate(f, x)
             assert res.success
-            assert res.nit == np.ceil(n/2)
+            assert res.nit == np.ceil(max(n/2, 1))
             assert_allclose(res.df, ref, rtol=1e-15)
 
         # Test scalar `args` (not in tuple)
