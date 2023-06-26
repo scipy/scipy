@@ -1269,7 +1269,7 @@ class TestDifferentiate():
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
-        res = zeros._differentiate(dist.cdf, x, maxiter=10)
+        res = zeros._differentiate(dist.cdf, x, maxiter=10, rtol=1e-12)
         ref = dist.pdf(x)
         assert_allclose(res.df, ref, atol=1e-8)
 
@@ -1336,7 +1336,7 @@ class TestDifferentiate():
             return [x[0] - 2.5, # rng.random(),
                     np.exp(x[1]), np.nan]
 
-        res = zeros._differentiate(f, [1] * 3, maxiter=3)
+        res = zeros._differentiate(f, [1] * 3, maxiter=3, rtol=1e-12)
 
         ref_flags = np.array([zeros._ECONVERGED, # zeros._EERRORINCREASE,
                               zeros._ECONVERR, zeros._EVALUEERR])
@@ -1430,16 +1430,27 @@ class TestDifferentiate():
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
-    # # more work is needed to preserve dtypes
-    # @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
-    # def test_dtype(self, dtype):
-    #     # Test that dtypes are preserved
-    #     f = np.exp
-    #     eps = np.finfo(dtype).eps
-    #     res = zeros._differentiate(f, dtype(1), atol=eps)
-    #     assert res.x.dtype == dtype
-    #     assert res.df.dtype == dtype
-    #     assert_allclose(res.df, np.exp(res.x), atol=eps)
+    @pytest.mark.parametrize("x", (1, [1, 2, 3]))
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    def test_dtype(self, x, dtype):
+        # Test that dtypes are preserved
+        x = np.asarray(x, dtype=dtype)[()]
+
+        def f(x):
+            assert x.dtype == dtype
+            return np.exp(x)
+
+        def callback(res):
+            assert res.x.dtype == dtype
+            assert res.df.dtype == dtype
+            assert res.error.dtype == dtype
+
+        res = zeros._differentiate(f, x, callback=callback)
+        assert res.x.dtype == dtype
+        assert res.df.dtype == dtype
+        assert res.error.dtype == dtype
+        eps = np.finfo(dtype).eps
+        assert_allclose(res.df, np.exp(res.x), rtol=np.sqrt(eps))
 
     def test_input_validation(self):
         # Test input validation for appropriate error messages
@@ -1461,9 +1472,9 @@ class TestDifferentiate():
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, 1, atol=-1)
         with pytest.raises(ValueError, match=message):
-            zeros._differentiate(lambda x: x, 1, rtol=None)
+            zeros._differentiate(lambda x: x, 1, rtol='ekki')
         with pytest.raises(ValueError, match=message):
-            zeros._differentiate(lambda x: x, 1, initial_step='ekki')
+            zeros._differentiate(lambda x: x, 1, initial_step=None)
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, 1, step_factor=object())
 

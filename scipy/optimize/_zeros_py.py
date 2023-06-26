@@ -1915,6 +1915,9 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
     if atol is None:
         atol = np.finfo(dtype).tiny
 
+    if rtol is None:
+        rtol = np.sqrt(np.finfo(dtype).eps)
+
     message = 'Tolerances and step parameters must be non-negative scalars.'
     tols = np.asarray([atol, rtol, initial_step, step_factor])
     if (not np.issubdtype(tols.dtype, np.number)
@@ -1934,7 +1937,7 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
             callback)
 
 
-def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
+def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                    initial_step=0.5, step_factor=2.0, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
@@ -1957,7 +1960,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
         Absolute and relative tolerances for the stopping condition: iteration
         will stop when ``res.error < atol + rtol * abs(res.df)``. The default
         `atol` is the smallest normal number of the appropriate dtype, and
-        the default `rtol` is ``1e-12``.
+        the default `rtol` is the square root of the appropriate dtype.
     maxiter : int, default: 10
         The maximum number of iterations of the algorithm to perform. The
         derivative is estimated with a fixed step size before the first
@@ -2053,7 +2056,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
     # TODO:
     #  - cache weights
     #  - one-sided difference formulae
-    #  - preserve dtype
     #  - improve error estimate and error increase stopping criterion
     #  - multivariate functions?
     #  - vector-valued functions?
@@ -2062,9 +2064,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
                             step_factor, callback)
     func, x, args, atol, rtol, maxiter, h0, fac, callback = res
 
+    two = np.asarray(2., dtype=h0.dtype)
     def cd(x, *args):  # centered difference
-        return (np.asarray(func(x + cd.h, *args))
-                - np.asarray(func(x - cd.h, *args)))/(2*cd.h)
+        fxph = np.asarray(func(x + cd.h, *args))
+        fxmh = np.asarray(func(x - cd.h, *args))
+        return (fxph - fxmh)/(two*cd.h)
     cd.h = h0
 
     # Initialization
@@ -2074,7 +2078,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
     nit, nfev = 0, 1  # one function evaluations performed above
     work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
                           last_error=np.nan, fac=fac, atol=atol, rtol=rtol,
-                          nit=nit, nfev=nfev, status=status, cd=cd)
+                          nit=nit, nfev=nfev, status=status, cd=cd, dtype=dtype)
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
@@ -2107,18 +2111,17 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=1e-12, maxiter=10,
         # Optimization: cache these
         i = np.arange(0, 2*n, 2)
         A = np.vander(1 / work.fac ** i, increasing=True)
-        b = np.zeros(n)
-        b[0] = 1  # we want
-        w = np.linalg.solve(A.T, b)
+        b = np.zeros((n, 2))
+        b[0, 0] = 1
+        b[-1, -1] = 1
+        w, w2 = np.linalg.solve(A.T, b).astype(work.dtype).T
         work.df = work.dfs @ w
 
         # As an estimate of the error, we solve for the highest order error
         # term that we cancelled (e.g. `c2` above), and we multiply by a power
         # of `h` to get the full magnitude of the term that was cancelled.
-        b[0], b[-1] = 0, 1
-        w = np.linalg.solve(A.T, b)
-        h_power = min((2*(n-1)), 4)  # maxing out at 4 is heuristic
-        work.error = abs(work.dfs @ w * work.cd.h**h_power)
+        h_power = np.minimum((2*(n-1)), 4).astype(work.dtype)  # maxing out at 4 is heuristic
+        work.error = abs(work.dfs @ w2 * work.cd.h**h_power)
 
     def check_termination(work):
         stop = np.zeros_like(work.df).astype(bool)
