@@ -1972,7 +1972,7 @@ class TestBoxcox:
         """Test boxcox_normmax raises ValueError if x contains non-positive values."""
         message = "positive, finite, and non-NaN"
         with pytest.raises(ValueError, match=message):
-            stats.boxcox_normmax(bad_x, lmbda=None)
+            stats.boxcox_normmax(bad_x)
 
 
 class TestBoxcoxNormmax:
