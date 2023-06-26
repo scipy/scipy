@@ -23,6 +23,7 @@ void read_body_array(read_cursor& cursor, py::array_t<T>& array) {
 #else
     fmm::read_matrix_market_body<decltype(handler), fmm::compile_all>(cursor.stream(), cursor.header, handler, 1, cursor.options);
 #endif
+    cursor.close();
 }
 
 

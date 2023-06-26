@@ -27,7 +27,7 @@ void write_body_array(write_cursor& cursor, py::array_t<T>& array) {
     auto formatter = fmm::dense_2d_call_formatter<decltype(lf), decltype(unchecked), int64_t>(
         lf, unchecked, cursor.header.nrows, cursor.header.ncols);
     fmm::write_body(cursor.stream(), formatter, cursor.options);
-    cursor.stream().flush();
+    cursor.close();
 }
 
 

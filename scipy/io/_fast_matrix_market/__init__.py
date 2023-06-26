@@ -136,6 +136,7 @@ def _get_read_cursor(source, parallelism=None):
     """
     from . import _core
 
+    ret_stream_to_close = None
     if parallelism is None:
         parallelism = PARALLELISM
 
@@ -151,17 +152,19 @@ def _get_read_cursor(source, parallelism=None):
         if path.endswith('.gz'):
             import gzip
             source = gzip.GzipFile(path, 'r')
+            ret_stream_to_close = source
         elif path.endswith('.bz2'):
             import bz2
             source = bz2.BZ2File(path, 'rb')
+            ret_stream_to_close = source
         else:
-            return _core.open_read_file(path, parallelism)
+            return _core.open_read_file(path, parallelism), ret_stream_to_close
 
     # Stream object.
     if hasattr(source, "read"):
         if isinstance(source, io.TextIOBase):
             source = _TextToBytesWrapper(source)
-        return _core.open_read_stream(source, parallelism)
+        return _core.open_read_stream(source, parallelism), ret_stream_to_close
     else:
         raise TypeError("Unknown source type")
 
@@ -306,13 +309,18 @@ def mmread(source, parallelism=None):
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
     """
-    cursor = _get_read_cursor(source, parallelism)
+    cursor, stream_to_close = _get_read_cursor(source, parallelism)
 
     if cursor.header.format == "array":
-        return _read_body_array(cursor)
+        mat = _read_body_array(cursor)
+        if stream_to_close:
+            stream_to_close.close()
+        return mat
     else:
         from scipy.sparse import coo_matrix
         triplet, shape = _read_body_coo(cursor, generalize_symmetry=True)
+        if stream_to_close:
+            stream_to_close.close()
         return coo_matrix(triplet, shape=shape)
 
 
@@ -531,5 +539,9 @@ def mminfo(source):
     >>> mminfo(StringIO(text))
     (5, 5, 7, 'coordinate', 'real', 'general')
     """
-    h = _get_read_cursor(source, 1).header
+    cursor, stream_to_close = _get_read_cursor(source, 1)
+    h = cursor.header
+    cursor.close()
+    if stream_to_close:
+        stream_to_close.close()
     return h.nrows, h.ncols, h.nnz, h.format, h.field, h.symmetry

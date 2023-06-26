@@ -164,7 +164,7 @@ write_cursor open_write_stream(std::shared_ptr<pystream::ostream>& stream, fmm::
 #ifndef FMM_SCIPY_PRUNE
 void write_header_only(write_cursor& cursor) {
     fmm::write_header(cursor.stream(), cursor.header, cursor.options);
-    cursor.stream().flush();
+    cursor.close();
 }
 #endif
 
@@ -225,7 +225,8 @@ PYBIND11_MODULE(_core, m) {
     ///////////////////////////////
     // Read methods
     py::class_<read_cursor>(m, "_read_cursor")
-    .def_readonly("header", &read_cursor::header);
+    .def_readonly("header", &read_cursor::header)
+    .def("close", &read_cursor::close);
 
     m.def("open_read_file", &open_read_file);
     m.def("open_read_stream", &open_read_stream);

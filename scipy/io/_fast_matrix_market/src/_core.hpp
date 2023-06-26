@@ -51,6 +51,20 @@ struct read_cursor {
     std::istream& stream() {
         return *stream_ptr;
     }
+
+    /**
+     * Finish using the cursor. If a file has been opened it will be closed.
+     */
+    void close() {
+        // If stream is a std::ifstream() then close the file.
+        std::ifstream* f = dynamic_cast<std::ifstream*>(stream_ptr.get());
+        if (f != nullptr) {
+            f->close();
+        }
+
+        // Remove this reference to the stream.
+        stream_ptr.reset();
+    }
 };
 
 /**
@@ -76,6 +90,22 @@ struct write_cursor {
 
     std::ostream& stream() {
         return *stream_ptr;
+    }
+
+    /**
+     * Finish using the cursor. Flush the backing stream, and if a file has been opened it will be closed.
+     */
+    void close() {
+        // If stream is a std::ofstream() then close the file.
+        std::ofstream* f = dynamic_cast<std::ofstream*>(stream_ptr.get());
+        if (f != nullptr) {
+            f->close();
+        } else {
+            stream_ptr->flush();
+        }
+
+        // Remove this reference to the stream.
+        stream_ptr.reset();
     }
 };
 
@@ -161,7 +191,7 @@ void write_body_coo(write_cursor& cursor, const std::tuple<int64_t, int64_t>& sh
                                             py_array_iterator<decltype(data_unchecked), VT>(data_unchecked),
                                             py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()));
     fmm::write_body(cursor.stream(), formatter, cursor.options);
-    cursor.stream().flush();
+    cursor.close();
 }
 
 #ifndef FMM_SCIPY_PRUNE
@@ -205,7 +235,7 @@ void write_body_csc(write_cursor& cursor, const std::tuple<int64_t, int64_t>& sh
                                         py_array_iterator<decltype(data_unchecked), VT>(data_unchecked, data_unchecked.size()),
                                         is_csr);
     fmm::write_body(cursor.stream(), formatter, cursor.options);
-    cursor.stream().flush();
+    cursor.close();
 }
 #endif
 

@@ -25,6 +25,7 @@ void read_body_coo(read_cursor& cursor, py::array_t<IT>& row, py::array_t<IT>& c
 #else
     fmm::read_matrix_market_body<decltype(handler), fmm::compile_all>(cursor.stream(), cursor.header, handler, 1, cursor.options);
 #endif
+    cursor.close();
 }
 
 
