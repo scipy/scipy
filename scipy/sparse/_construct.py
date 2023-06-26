@@ -850,6 +850,18 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
+    .. warning::
+
+        Since numpy 1.17, passing ``np.random.Generator`` for ``random_state``
+        will lead to much faster execution times. For example:
+
+        >>> from scipy.sparse import random
+        >>> from numpy.random import default_rng
+        >>> random(100_000, 100_000, density=0.001, random_state=default_rng(0))
+
+        A much slower implementation is used by default for backwards
+        compatibility.
+
     Parameters
     ----------
     m, n : int
