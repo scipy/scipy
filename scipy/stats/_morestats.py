@@ -1117,7 +1117,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Parameters
     ----------
-    x : array_like
+    x : array_like, all entries must be positive
         Input array.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
@@ -1273,10 +1273,21 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    res = optimfunc(x)
+
+    try:
+        res = optimfunc(x)
+    except ValueError as e:
+        if "infs or NaNs" in e.args[0]:
+            raise ValueError(
+                "the `x` argument of `boxcox_norm` must only contain values "
+                " that are positive, finite, and non-NaN"
+            )
+
     if res is None:
-        message = ("`optimizer` must return an object containing the optimal "
-                   "`lmbda` in attribute `x`")
+        message = (
+            "the `optimizer` argument of `boxcox_norm` must return an object "
+            "containing the optimal `lmbda` in attribute `x`"
+        )
         raise ValueError(message)
     return res
 
