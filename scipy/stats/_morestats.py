@@ -1134,7 +1134,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             normally-distributed.
 
         'mle'
-            Minimizes the log-likelihood `boxcox_llf`.  This is the method used
+            Maximizes the log-likelihood `boxcox_llf`.  This is the method used
             in `boxcox`.
 
         'all'
@@ -1144,10 +1144,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         `optimizer` is a callable that accepts one argument:
 
         fun : callable
-            The objective function to be optimized. `fun` accepts one argument,
-            the Box-Cox transform parameter `lmbda`, and returns the negative
-            log-likelihood function at the provided value. The job of `optimizer`
-            is to find the value of `lmbda` that minimizes `fun`.
+            The objective function to be minimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the value of
+            the function (e.g., the negative log-likelihood) at the provided
+            argument. The job of `optimizer` is to find the value of `lmbda`
+            that *minimizes* `fun`.
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
