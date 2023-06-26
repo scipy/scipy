@@ -1282,6 +1282,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
                 "the `x` argument of `boxcox_normmax` must only contain values"
                 " that are positive, finite, and non-NaN"
             )
+        else:
+            raise e
 
     if res is None:
         message = (
