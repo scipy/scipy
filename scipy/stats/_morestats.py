@@ -1117,7 +1117,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Parameters
     ----------
-    x : array_like, all entries must be positive
+    x : array_like, all entries must be positive, finite, non-NaN
         Input array.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
