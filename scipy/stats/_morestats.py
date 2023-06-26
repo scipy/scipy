@@ -1285,8 +1285,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     if res is None:
         message = (
-            "the `optimizer` argument of `boxcox_norm` must return an object "
-            "containing the optimal `lmbda` in attribute `x`"
+            "the `optimizer` argument of `boxcox_norm`, if passed, must "
+            "return an object containing the optimal `lmbda` in attribute `x`"
         )
         raise ValueError(message)
     return res
