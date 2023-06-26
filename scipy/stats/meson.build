@@ -215,6 +215,7 @@ py3.install_sources([
     '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
+    '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
