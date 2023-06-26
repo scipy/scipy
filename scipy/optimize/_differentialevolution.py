@@ -119,7 +119,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     callback : callable, optional
         A callable called after each iteration. Has the signature:
 
-            ``callback(OptimizeResult: intermediate_result)``
+            ``callback(intermediate_result: OptimizeResult)``
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
@@ -129,7 +129,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         The callback also supports a signature like:
 
-            ``callback(x, convergence=val)``
+            ``callback(x, convergence: float =val)``
 
         ``val`` represents the fractional value of the population convergence.
         When ``val`` is greater than one the function halts.
@@ -512,7 +512,7 @@ class DifferentialEvolutionSolver:
     callback : callable, optional
         A callable called after each iteration. Has the signature:
 
-            ``callback(OptimizeResult: intermediate_result)``
+            ``callback(intermediate_result: OptimizeResult)``
 
         where ``intermediate_result`` is a keyword parameter containing an
         `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
@@ -522,7 +522,7 @@ class DifferentialEvolutionSolver:
 
         The callback also supports a signature like:
 
-            ``callback(x, convergence=val)``
+            ``callback(x, convergence: float =val)``
 
         ``val`` represents the fractional value of the population convergence.
         When ``val`` is greater than one the function halts.
