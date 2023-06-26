@@ -1269,9 +1269,9 @@ class TestDifferentiate():
         distname, params = case
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
-        res = zeros._differentiate(dist.cdf, x, maxiter=10, rtol=1e-12)
+        res = zeros._differentiate(dist.cdf, x)
         ref = dist.pdf(x)
-        assert_allclose(res.df, ref, atol=1e-8)
+        assert_allclose(res.df, ref, atol=1e-10)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape):
@@ -1330,15 +1330,16 @@ class TestDifferentiate():
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
-        rng = np.random.default_rng(816315295151135845454)
-
         def f(x):
-            return [x[0] - 2.5, # rng.random(),
-                    np.exp(x[1]), np.nan]
+            f.i += 1
+            # This causes a sudden increase in the error estimate
+            val = np.exp(x[1]) if f.i <= 4 else 100
+            return [x[0] - 2.5, val, np.exp(x[2]), np.nan]
+        f.i = 0
 
-        res = zeros._differentiate(f, [1] * 3, maxiter=3, rtol=1e-12)
+        res = zeros._differentiate(f, [1] * 4, maxiter=3, rtol=1e-12)
 
-        ref_flags = np.array([zeros._ECONVERGED, # zeros._EERRORINCREASE,
+        ref_flags = np.array([zeros._ECONVERGED, zeros._EERRORINCREASE,
                               zeros._ECONVERR, zeros._EVALUEERR])
         assert_equal(res.status, ref_flags)
 

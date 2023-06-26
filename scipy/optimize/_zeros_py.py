@@ -2021,11 +2021,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     As in [1]_, a second-order finite difference formula is used to estimate
     the derivative with an initial step size. In each iteration, the step size
     is reduced by a constant factor, the second-order formula is used with the
-    new step size, and the sequence of second-order approximations is used to
-    produce a higher-order approximation and estimate of the error. Unlike in
-    [1]_, the higher-order approximation is produced using Richardson
-    extrapolation, and the error estimate is related to the highest-order error
-    term canceled by Richard extrapolation.
+    new step size, and the sequence of second-order derivative approximations
+    is used to produce a higher-order approximation. Unlike in [1]_, the
+    higher-order approximation is produced using Richardson extrapolation, and
+    the error estimate is the change in the derivative estimate due to the
+    most recent Richardson extrapolation.
 
     References
     ----------
@@ -2056,7 +2056,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # TODO:
     #  - cache weights
     #  - one-sided difference formulae
-    #  - improve error estimate and error increase stopping criterion
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2065,7 +2064,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     func, x, args, atol, rtol, maxiter, h0, fac, callback = res
 
     two = np.asarray(2., dtype=h0.dtype)
-    def cd(x, *args):  # centered difference
+    def cd(x, *args):  # central difference
         fxph = np.asarray(func(x + cd.h, *args))
         fxmh = np.asarray(func(x - cd.h, *args))
         return (fxph - fxmh)/(two*cd.h)
@@ -2077,8 +2076,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
     work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
-                          last_error=np.nan, fac=fac, atol=atol, rtol=rtol,
-                          nit=nit, nfev=nfev, status=status, cd=cd, dtype=dtype)
+                          df_last=df0, error_last=np.nan, fac=fac,
+                          atol=atol, rtol=rtol, nit=nit, nfev=nfev,
+                          status=status, cd=cd, dtype=dtype)
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
@@ -2111,17 +2111,14 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # Optimization: cache these
         i = np.arange(0, 2*n, 2)
         A = np.vander(1 / work.fac ** i, increasing=True)
-        b = np.zeros((n, 2))
-        b[0, 0] = 1
-        b[-1, -1] = 1
-        w, w2 = np.linalg.solve(A.T, b).astype(work.dtype).T
+        b = np.zeros(n)
+        b[0] = 1
+        w = np.linalg.solve(A.T, b).astype(work.dtype)
+        work.df_last = work.df
         work.df = work.dfs @ w
-
-        # As an estimate of the error, we solve for the highest order error
-        # term that we cancelled (e.g. `c2` above), and we multiply by a power
-        # of `h` to get the full magnitude of the term that was cancelled.
-        h_power = np.minimum((2*(n-1)), 4).astype(work.dtype)  # maxing out at 4 is heuristic
-        work.error = abs(work.dfs @ w2 * work.cd.h**h_power)
+        work.error_last = work.error
+        # Simple error estimate - the difference in derivative estimates
+        work.error = abs(work.df - work.df_last)
 
     def check_termination(work):
         stop = np.zeros_like(work.df).astype(bool)
@@ -2134,13 +2131,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         work.df[i], work.status[i] = np.nan, _EVALUEERR
         stop[i] = True
 
-        # This is really messing up the accuracy test. Perhaps stop after
-        # multiple iterations of error increase, or get a better error
-        # estimate.
-        # i = (work.error > work.last_error) & ~stop
-        # work.status[i] = _EERRORINCREASE
-        # stop[i] = True
-        # work.last_error = work.error
+        i = (work.error > work.error_last*10) & ~stop  # heuristic
+        work.status[i] = _EERRORINCREASE
+        stop[i] = True
 
         return stop
 
