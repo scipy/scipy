@@ -2054,7 +2054,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     """
     # TODO:
-    #  - cache weights
     #  - one-sided difference formulae
     #  - multivariate functions?
     #  - vector-valued functions?
@@ -2076,7 +2075,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
     work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
-                          df_last=df0, error_last=np.nan, fac=fac,
+                          df_last=df0, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                           status=status, cd=cd, dtype=dtype)
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
@@ -2089,32 +2088,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def post_func_eval(x, df, work):
         # Optimization: pre-allocate space for work.dfs
         work.dfs = np.concatenate((work.dfs, df[:, np.newaxis]), axis=-1)
-        n = work.dfs.shape[-1]
-
-        # Richardson extrapolation, although it looks different than some
-        # implementations. Let `df(h)` be the second-order central-difference
-        # approximation with step size `h`, `t` be the step size reduction
-        # factor, c0 be the true derivative, and `ci` be (unknown) constants.
-        # After two iterations (for example), we have by construction
-        #     f(h)      = c0 + c1*h**2       + c2*h**4       + O(h**6)
-        #     f(h/t)    = c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
-        #     f(h/t**2) = c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
-        # We seek weights `wi` such that:
-        #     w1*f(h)      = w1*(c0 + c1*h**2       + c2*h**4       + O(h**6)
-        #   + w2*f(h/t)    = w2*(c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
-        #   + w3*f(h/t**2) = w3*(c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
-        #                  =     c0 + 0             + 0             + O(h**6)
-        # The Vandermonde matrix collects the coefficients on the unknown `ci`,
-        # and we solve for the weights needed to cancel the `ci` except for the
-        # one we are interested in - the true derivative, `c0`.
-
-        # Optimization: cache these
-        i = np.arange(0, 2*n, 2)
-        A = np.vander(1 / work.fac ** i, increasing=True)
-        b = np.zeros(n)
-        b[0] = 1
-        w = np.linalg.solve(A.T, b).astype(work.dtype)
+        w = _differentiate_weights(work)
         work.df_last = work.df
+        # This is Richardson extrapolation, although it may look different
+        # from other implementations. See _differentiate_weights
         work.df = work.dfs @ w
         work.error_last = work.error
         # Simple error estimate - the difference in derivative estimates
@@ -2149,3 +2126,46 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                                      pre_func_eval, post_func_eval,
                                      check_termination, post_termination_check,
                                      customize_result, res_work_pairs)
+
+
+def _differentiate_weights(work):
+    # This produces the weights needed to refine the derivative estimate using
+    # Richardson extrapolation, although it looks different from some other
+    # implementations. Let `df(h)` be the second-order central-difference
+    # approximation with step size `h`, `t` be the step size reduction
+    # factor, c0 be the true derivative, and `ci` be (unknown) constants.
+    # After two iterations (for example), we have:
+    #     f(h)      = c0 + c1*h**2       + c2*h**4       + O(h**6)
+    #     f(h/t)    = c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
+    #     f(h/t**2) = c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
+    # by construction of the second-order central difference formula.
+    # We seek weights `wi` such that:
+    #     w1*f(h)      = w1*(c0 + c1*h**2       + c2*h**4       + O(h**6)
+    #   + w2*f(h/t)    = w2*(c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
+    #   + w3*f(h/t**2) = w3*(c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
+    #                  =     c0 + 0             + 0             + O(h**6)
+    # The Vandermonde matrix collects the coefficients on the unknown `ci`,
+    # and we solve for the weights needed to cancel as many of the `ci`
+    # as we can except for the one we are interested in - the true derivative,
+    # `c0`.
+
+    step_parameters = (work.h0, work.fac)
+    cached_step_parameters = _differentiate_weights.step_parameters
+    if step_parameters != cached_step_parameters:
+        _differentiate_weights.cache = []
+        _differentiate_weights.step_parameters = step_parameters
+
+    n = work.dfs.shape[-1]
+    if len(_differentiate_weights.cache) > n - 2:
+        weights = _differentiate_weights.cache[n - 2]
+        return weights.astype(work.dtype, copy=False)
+
+    i = np.arange(0, 2*n, 2)
+    A = np.vander(1 / work.fac ** i, increasing=True)
+    b = np.zeros(n)
+    b[0] = 1
+    w = np.linalg.solve(A.T, b).astype(work.dtype)
+    _differentiate_weights.cache.append(w)
+    return w
+_differentiate_weights.cache = []
+_differentiate_weights.step_parameters = tuple()
