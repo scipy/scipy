@@ -1963,9 +1963,16 @@ class TestBoxcox:
         def optimizer(fun):
             return 1
 
-        message = "`optimizer` must return an object containing the optimal..."
+        message = "return an object containing the optimal `lmbda`"
         with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    @pytest.mark.parametrize("bad_x", [np.array([1, -42]), np.array([np.nan, 42])])
+    def test_negative_x_value_raises_error(self, bad_x):
+        """Test boxcox_normmax raises ValueError if x contains non-positive values."""
+        message = "positive, finite, and non-NaN"
+        with pytest.raises(ValueError, match=message):
+            stats.boxcox_normmax(bad_x, lmbda=None)
 
 
 class TestBoxcoxNormmax:
@@ -2553,7 +2560,7 @@ class TestMedianTest:
         assert_allclose(s, 0.31250000000000006)
         assert_allclose(p, 0.57615012203057869)
         assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2],[2, 1]]))
+        assert_equal(t, np.array([[0, 2], [2, 1]]))
         assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):

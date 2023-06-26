@@ -1279,13 +1279,13 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     except ValueError as e:
         if "infs or NaNs" in e.args[0]:
             raise ValueError(
-                "the `x` argument of `boxcox_norm` must only contain values "
+                "the `x` argument of `boxcox_normmax` must only contain values"
                 " that are positive, finite, and non-NaN"
             )
 
     if res is None:
         message = (
-            "the `optimizer` argument of `boxcox_norm`, if passed, must "
+            "the `optimizer` argument of `boxcox_normmax`, if passed, must "
             "return an object containing the optimal `lmbda` in attribute `x`"
         )
         raise ValueError(message)
