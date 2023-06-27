@@ -1898,8 +1898,8 @@ def _scalar_optimization_compress_work(work, mask):
         work[key] = val[mask] if isinstance(val, np.ndarray) else val
 
 
-def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
-                      step_factor, callback):
+def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
+                      initial_step, step_factor, callback):
     # Input validation for `_differentiate`
 
     if not callable(func):
@@ -1930,15 +1930,23 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
     if maxiter != maxiter_int or maxiter < 0:
         raise ValueError('`maxiter` must be a non-negative integer.')
 
+    if miniter is None:
+        miniter = min(4, maxiter)
+
+    miniter_int = int(miniter)
+    if miniter != miniter_int or miniter < 0 or miniter > maxiter:
+        raise ValueError('`miniter` must be a non-negative integer <= maxiter.')
+
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return (func, x, args, atol, rtol, maxiter, initial_step, step_factor,
-            callback)
+    return (func, x, args, atol, rtol, maxiter, miniter, initial_step,
+            step_factor, callback)
 
 
 def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
-                   initial_step=0.5, step_factor=2.0, callback=None):
+                   miniter=None, initial_step=0.5, step_factor=2.0,
+                   callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
     Parameters
@@ -1966,6 +1974,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         derivative is estimated with a fixed step size before the first
         iteration, and subsequent iterations refine the estimate using
         Richardson extrapolation.
+    miniter : int, default: min(4, maxiter)
+        The minimum number of iterations of the algorithm to perform. Most
+        functions that are not low-order polynomials require a few iterations
+        to converge to the default tolerances, and setting this close to the
+        number of iterations required typically increases performance.
     initial_step : float, default: 0.5
         The initial step size for the finite difference derivative
         approximation.
@@ -2054,30 +2067,60 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     """
     # TODO:
+    #  - fix test_flags and test_vectorization iteration count
+    #  - test miniter more thoroughly
     #  - one-sided difference formulae
     #  - multivariate functions?
     #  - vector-valued functions?
 
-    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, initial_step,
-                            step_factor, callback)
-    func, x, args, atol, rtol, maxiter, h0, fac, callback = res
+    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
+                            initial_step, step_factor, callback)
+    func, x, args, atol, rtol, maxiter, miniter, h0, fac, callback = res
 
     two = np.asarray(2., dtype=h0.dtype)
-    def cd(x, *args):  # central difference
-        fxph = np.asarray(func(x + cd.h, *args))
-        fxmh = np.asarray(func(x - cd.h, *args))
-        return (fxph - fxmh)/(two*cd.h)
+    def cd(x, *args, fxph=None, fxmh=None, h=None):  # central difference
+        h = cd.h if h is None else h
+        fxph = np.asarray(func(x + h, *args)) if fxph is None else fxph
+        fxmh = np.asarray(func(x - h, *args)) if fxmh is None else fxmh
+        return (fxph - fxmh)/(two*h)
     cd.h = h0
 
     # Initialization
-    xs, fs, shape, dtype = _scalar_optimization_initialize(cd, (x,), args)
-    x0, df0 = xs[0], fs[0]
+    xs, fs, shape, dtype = _scalar_optimization_initialize(func, (x + h0,), args)
+    x0, fxph = xs[0]-h0, fs[0]
+    fxmh = np.asarray(func(x0 - h0, *args)).astype(dtype, copy=False)
+    df0 = cd(x, *args, fxph=fxph, fxmh=fxmh)[()]
+    dfs = df0[:, np.newaxis]
+    h = h0
+
     status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
-    nit, nfev = 0, 1  # one function evaluations performed above
-    work = OptimizeResult(x=x0, df=df0, dfs=df0[:, np.newaxis], error=np.nan,
-                          df_last=df0, error_last=np.nan, h0=h0, fac=fac,
+    nit, nfev = 0, 1   # one function evaluations performed above
+    work = OptimizeResult(x=x0, df=df0, dfs=dfs, error=np.nan,
+                          df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                           status=status, cd=cd, dtype=dtype)
+
+    if miniter >= 1:
+        i = np.arange(1, miniter+1, dtype=dtype)[:, np.newaxis]
+        h = h / fac**i
+        fxph = np.asarray(func(x0 + h, *args)).astype(dtype, copy=False)
+        fxmh = np.asarray(func(x0 - h, *args)).astype(dtype, copy=False)
+        df_jumpstart = cd(x0, *args, fxph=fxph, fxmh=fxmh, h=h).T
+        h = h[-1]
+        work.dfs = np.concatenate((work.dfs, df_jumpstart), axis=-1)
+
+        work.df_last = work.df
+        w = _differentiate_weights(work, work.dfs.shape[-1])
+        work.df = work.dfs @ w
+
+    if miniter >= 2:
+        w = _differentiate_weights(work, work.dfs.shape[-1]-1)
+        work.df_last = work.dfs[:, :-1] @ w
+
+    work.error = abs(work.df - work.df_last)
+    cd.h = h
+    work.nit += miniter
+    work.nfev += miniter
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
@@ -2088,7 +2131,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def post_func_eval(x, df, work):
         # Optimization: pre-allocate space for work.dfs
         work.dfs = np.concatenate((work.dfs, df[:, np.newaxis]), axis=-1)
-        w = _differentiate_weights(work)
+        w = _differentiate_weights(work, work.dfs.shape[-1])
         work.df_last = work.df
         # This is Richardson extrapolation, although it may look different
         # from other implementations. See _differentiate_weights
@@ -2128,7 +2171,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                                      customize_result, res_work_pairs)
 
 
-def _differentiate_weights(work):
+def _differentiate_weights(work, n):
     # This produces the weights needed to refine the derivative estimate using
     # Richardson extrapolation, although it looks different from some other
     # implementations. Let `df(h)` be the second-order central-difference
@@ -2155,17 +2198,16 @@ def _differentiate_weights(work):
         _differentiate_weights.cache = []
         _differentiate_weights.step_parameters = step_parameters
 
-    n = work.dfs.shape[-1]
-    if len(_differentiate_weights.cache) > n - 2:
-        weights = _differentiate_weights.cache[n - 2]
-        return weights.astype(work.dtype, copy=False)
+    for j in range(len(_differentiate_weights.cache), n):
+        m = j + 2
+        i = np.arange(0, 2 * m, 2)
+        A = np.vander(1 / work.fac ** i, increasing=True)
+        b = np.zeros(m)
+        b[0] = 1
+        w = np.linalg.solve(A.T, b).astype(work.dtype)
+        _differentiate_weights.cache.append(w)
 
-    i = np.arange(0, 2*n, 2)
-    A = np.vander(1 / work.fac ** i, increasing=True)
-    b = np.zeros(n)
-    b[0] = 1
-    w = np.linalg.solve(A.T, b).astype(work.dtype)
-    _differentiate_weights.cache.append(w)
-    return w
+    weights = _differentiate_weights.cache[n - 2]
+    return weights.astype(work.dtype, copy=False)
 _differentiate_weights.cache = []
 _differentiate_weights.step_parameters = tuple()
