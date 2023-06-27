@@ -932,6 +932,23 @@ class TestDet:
     def setup_method(self):
         self.rng = np.random.default_rng(1680305949878959)
 
+    def test_1x1_all_singleton_dims(self):
+        a = np.array([[1]])
+        deta = det(a)
+        assert deta.dtype.char == 'd'
+        assert np.isscalar(deta)
+        assert deta == 1.
+        a = np.array([[[[1]]]], dtype='f')
+        deta = det(a)
+        assert deta.dtype.char == 'd'
+        assert np.isscalar(deta)
+        assert deta == 1.
+        a = np.array([[[1 + 3.j]]], dtype=np.complex64)
+        deta = det(a)
+        assert deta.dtype.char == 'D'
+        assert np.isscalar(deta)
+        assert deta == 1.+3.j
+
     def test_1by1_stacked_input_output(self):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
         deta = det(a)
