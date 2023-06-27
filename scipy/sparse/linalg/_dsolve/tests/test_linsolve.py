@@ -706,7 +706,7 @@ class TestSplu:
                 self._internal_test_spilu_smoketest()
                 oks.append(True)
             except Exception:
-                pass
+                oks.append(False)
 
         threads = [threading.Thread(target=worker)
                    for k in range(20)]
@@ -715,7 +715,9 @@ class TestSplu:
         for t in threads:
             t.join()
 
-        assert_equal(len(oks), 20)
+        for t in threads:
+            assert t._started
+        assert all(oks)
 
 
 class TestSpsolveTriangular:
