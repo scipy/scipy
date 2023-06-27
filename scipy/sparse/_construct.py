@@ -853,7 +853,7 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     .. warning::
 
         Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
-        ``np.random.default_rng`` for ``random_state`` will lead to much
+        ``np.random.default_rng``) for ``random_state`` will lead to much
         faster execution times.
 
         A much slower implementation is used by default for backwards
