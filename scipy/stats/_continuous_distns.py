@@ -1303,6 +1303,9 @@ class fisk_gen(burr_gen):
     def _ppf(self, x, c):
         return burr._ppf(x, c, 1.0)
 
+    def _isf(self, q, c):
+        return burr._isf(q, c, 1.0)
+
     def _munp(self, n, c):
         return burr._munp(n, c, 1.0)
 
