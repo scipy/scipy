@@ -1967,7 +1967,9 @@ class TestBoxcox:
         with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
 
-    @pytest.mark.parametrize("bad_x", [np.array([1, -42]), np.array([np.nan, 42])])
+    @pytest.mark.parametrize(
+            "bad_x", [np.array([1, -42, 12345.6]), np.array([np.nan, 42, 1])]
+        )
     def test_negative_x_value_raises_error(self, bad_x):
         """Test boxcox_normmax raises ValueError if x contains non-positive values."""
         message = "positive, finite, and non-NaN"
