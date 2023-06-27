@@ -7112,7 +7112,7 @@ class TestBurr:
     def test_burr_isf(self):
         # reference values were computed via the reference distribution, e.g.
         # mp.dps = 100
-        # Burr(c=c, d=d).sf(q).
+        # Burr(c=c, d=d).isf(q).
         c, d = 5.0, 3.0
         q = [0.1, 1e-10, 1e-20, 1e-40]
         ref = [1.9469686558286508, 124.57309395989076, 12457.309396155173,
