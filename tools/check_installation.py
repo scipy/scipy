@@ -56,7 +56,7 @@ def main(install_dir):
         if test_file in exception_list_test_files:
             continue
 
-        if not test_file in installed_test_files.keys():
+        if test_file not in installed_test_files.keys():
             raise Exception("%s is not installed" % scipy_test_files[test_file])
 
     print("----------- All the test files were installed --------------")
