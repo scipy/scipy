@@ -2,8 +2,6 @@
 
 import cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from libc.string cimport memcpy
-
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
 from scipy.linalg._cythonized_array_utils cimport lapack_t, swap_c_and_f_layout
 
@@ -103,7 +101,9 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
         # as final. Solution without argsort : ipiv[perm] = np.arange(m)
         for ind1 in range(m):
             ipiv[perm[ind1]] = ind1
-        memcpy(&perm[0], ipiv, m*sizeof(int))
+        for ind1 in range(m):
+            perm[ind1] = ipiv[ind1]
+
     finally:
         PyMem_Free(ipiv)
 
@@ -135,24 +135,22 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
         # rows from b as dictated by perm
 
         if m > n:
-            memcpy(bb, &a[0, 0], m*mn*sizeof(lapack_t))
+            b[:, :] = a[:, :]
+            # memcpy(bb, &a[0, 0], m*mn*sizeof(lapack_t))
             for ind1 in range(m):
                 if perm[ind1] == ind1:
                     continue
                 else:
-                    memcpy(&a[ind1, 0],
-                           bb + (perm[ind1]*mn),  # row stride
-                           mn*sizeof(lapack_t))  # copy one row of memory
+                    a[ind1, :] = b[perm[ind1], :]
 
         else:  # same but for lu array
-            memcpy(bb, &lu[0, 0], mn*n*sizeof(lapack_t))
+            b[:mn, :mn] = lu[:, :]
+            # memcpy(bb, &lu[0, 0], mn*n*sizeof(lapack_t))
             for ind1 in range(mn):
                 if perm[ind1] == ind1:
                     continue
                 else:
-                    memcpy(&lu[ind1, 0],
-                           bb + (perm[ind1]*mn),
-                           mn*sizeof(lapack_t))
+                    lu[ind1, :] = b[perm[ind1], :mn]
 
 
 @cython.nonecheck(False)
