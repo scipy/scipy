@@ -4362,6 +4362,7 @@ class halfnorm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
 
+    @_call_super_mom
     @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         if kwds.pop('superfit', False):
