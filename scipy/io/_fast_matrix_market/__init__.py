@@ -276,9 +276,8 @@ def mmread(source, parallelism=None):
 
     Notes
     -----
-    C++ implementation.
-
-    .. versionadded:: 1.12.0
+    .. versionchanged:: 1.12.0
+        C++ implementation.
 
     Examples
     --------
@@ -356,9 +355,8 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
 
     Notes
     -----
-    C++ implementation.
-
-    .. versionadded:: 1.12.0
+    .. versionchanged:: 1.12.0
+        C++ implementation.
 
     Examples
     --------
@@ -512,9 +510,8 @@ def mminfo(source):
 
     Notes
     -----
-    C++ implementation.
-
-    .. versionadded:: 1.12.0
+    .. versionchanged:: 1.12.0
+        C++ implementation.
 
     Examples
     --------
