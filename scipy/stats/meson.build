@@ -23,8 +23,8 @@ _stats = py3.extension_module('_stats',
   subdir: 'scipy/stats'
 )
 
-_AB_SW = py3.extension_module('_AB_SW',
-  cython_gen.process('_AB_SW.pyx'),
+_ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
+  cython_gen.process('_ansari_swilk_statistics.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
