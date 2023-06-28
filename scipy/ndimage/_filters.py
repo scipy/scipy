@@ -396,6 +396,14 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the one-dimensional Prewitt filter.
+    Horizontal edges are emphasised with the horizontal transform (axis=0),
+    vertical edges with the vertical transform (axis=1), and so on for higher
+    dimensions. These can be combined to give the magnitude. See the Sobel
+    filter for a similar example.
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
