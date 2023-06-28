@@ -1173,6 +1173,12 @@ class TestHalfNorm:
 
         _assert_less_or_close_loglike(stats.halfnorm, data, **kwds)
 
+    def test_fit_error(self):
+        # `floc` bigger than the minimal data point
+        with pytest.raises(FitDataError):
+            stats.halfnorm.fit([1, 2, 3], floc=2)
+
+
 class TestHalfLogistic:
     # survival function reference values were computed with mpmath
     # from mpmath import mp

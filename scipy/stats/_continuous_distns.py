@@ -4371,10 +4371,20 @@ class halfnorm_gen(rv_continuous):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        loc = floc if floc is not None else np.min(data)
+        data_min = np.min(data)
 
-        scale = (fscale if fscale is not None 
-                 else stats.moment(data, moment=2, center=loc)**0.5)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfnorm", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            loc = data_min
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = stats.moment(data, moment=2, center=loc)**0.5
 
         return loc, scale
 
