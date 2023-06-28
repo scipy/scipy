@@ -33,7 +33,12 @@ def gscale(int test, int other):
 
         bint symm = True if (m+n) % 2 == 0 else False
         bint odd = n % 2
-
+        # We use NumPy arrays for mostly infix operators and slice mechanics
+        # Then we define memoryviews on top of these arrays to circumvent
+        # the NumPy overhead in the for loop heavy helper functions.
+        # In the future, this can be cleaned-up with a better organization
+        # of the helper functions. Here we only provided literal FORTRAN
+        # translations to remove legacy code.
         cnp.ndarray a1 = cnp.PyArray_ZEROS(1, [LL], cnp.NPY_FLOAT32, 0)
         cnp.ndarray a2 = cnp.PyArray_ZEROS(1, [LL], cnp.NPY_FLOAT32, 0)
         cnp.ndarray a3 = cnp.PyArray_ZEROS(1, [LL], cnp.NPY_FLOAT32, 0)
