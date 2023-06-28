@@ -125,13 +125,13 @@ def _get_umf_family(A):
 
 def _safe_downcast_indices(A):
     # check for safe downcasting
-    int32max = np.iinfo(np.int32).max
+    max_value = np.iinfo(np.intc).max
 
-    if indptr[-1] > int32max:  # indptr[-1] is max b/c indptr always sorted
+    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
         raise ValueError("indptr values too large for SuperLU")
 
-    if max(*shape) > int32max:  # only check large enough arrays
-        if np.any(A.indices > int32max):
+    if max(*A.shape) > max_value:  # only check large enough arrays
+        if np.any(A.indices > max_value):
             raise ValueError("indices values too large for SuperLU")
 
     indices = A.indices.astype(np.intc, copy=False)
