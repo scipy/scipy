@@ -1001,7 +1001,8 @@ def det(a, overwrite_a=False, check_finite=True):
     det : (...) float or complex
         Determinant of `a`. For stacked arrays, a scalar is returned for each
         (m, m) slice in the last two dimensions of the input. For example, an
-        input of shape (p, q, m, m) will produce a result of shape (p, q).
+        input of shape (p, q, m, m) will produce a result of shape (p, q). If
+        all dimensions are 1 a scalar is returned regardless of ndim.
 
     Notes
     -----
@@ -1066,11 +1067,17 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):
-        if a1.dtype.char in 'dD':
-            return np.squeeze(a1)
+        # Either ndarray with spurious singletons or a single element
+        if max(*a1.shape) > 1:
+            temp = np.squeeze(a1)
+            if a1.dtype.char in 'dD':
+                return temp
+            else:
+                return (temp.astype('d') if a1.dtype.char == 'f' else
+                        temp.astype('D'))
         else:
-            return (np.squeeze(a1).astype('d') if a1.dtype.char == 'f' else
-                    np.squeeze(a1).astype('D'))
+            return (np.float64(a1.item()) if a1.dtype.char in 'fd' else
+                    np.complex128(a1.item()))
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"

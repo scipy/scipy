@@ -2129,6 +2129,8 @@ class TestFactorialFunctions:
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         result = None
         if not content:
@@ -2151,14 +2153,22 @@ class TestFactorialFunctions:
             # no error
             result = special.factorial(n, exact=exact)
 
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
+        # https://github.com/numpy/numpy/issues/24050
+        def assert_really_equal(x, y):
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert_equal(x, y)
+
         if result is not None:
             # expected result is empty if and only if n is empty,
             # and has the same dtype & dimension as n
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning)
-                r = special.factorial(n.ravel(), exact=exact) if n.size else []
+                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+                n_flat = n.ravel() if n.ndim else n
+                r = special.factorial(n_flat, exact=exact) if n.size else []
             expected = np.array(r, ndmin=dim, dtype=dtype)
-            assert_equal(result, expected)
+            assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
@@ -2211,6 +2221,8 @@ class TestFactorialFunctions:
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error
@@ -2262,6 +2274,8 @@ class TestFactorialFunctions:
     def test_factorialk_array_corner_cases(self, content, dim, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error; expected result is identical to n

@@ -2930,7 +2930,11 @@ def factorial(n, exact=False):
         return _exact_factorialx_array(n)
     # we do not raise for non-integers with exact=True due to
     # historical reasons, though deprecation would be possible
-    return _ufuncs._factorial(n)
+    res = _ufuncs._factorial(n)
+    if isinstance(n, np.ndarray):
+        # _ufuncs._factorial does not maintain 0-dim arrays
+        return np.array(res)
+    return res
 
 
 def factorial2(n, exact=False):
