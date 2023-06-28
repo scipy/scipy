@@ -1117,8 +1117,8 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Parameters
     ----------
-    x : array_like, all entries must be positive, finite, non-NaN
-        Input array.
+    x : array_like
+        Input array. All entries must be positive and finite.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1277,19 +1277,16 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     try:
         res = optimfunc(x)
     except ValueError as e:
-        if "infs or NaNs" in e.args[0]:
-            raise ValueError(
-                "the `x` argument of `boxcox_normmax` must only contain values"
-                " that are positive, finite, and non-NaN"
-            )
+        if "infs or NaNs" in str(e):
+            message = ("The `x` argument of `boxcox_normmax` must contain "
+                       "only positive, finite values.")
+            raise ValueError(message) from e
         else:
             raise e
 
     if res is None:
-        message = (
-            "the `optimizer` argument of `boxcox_normmax`, if passed, must "
-            "return an object containing the optimal `lmbda` in attribute `x`"
-        )
+        message = ("The `optimizer` argument of `boxcox_normmax` must return "
+                   "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
     return res
 
