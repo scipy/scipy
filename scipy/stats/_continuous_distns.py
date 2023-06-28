@@ -1116,6 +1116,10 @@ class burr_gen(rv_continuous):
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
+    def _isf(self, q, c, d):
+        _q = sc.xlog1py(-1.0 / d, -q)
+        return sc.expm1(_q) ** (-1.0 / c)
+
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
         # ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
@@ -1298,6 +1302,9 @@ class fisk_gen(burr_gen):
 
     def _ppf(self, x, c):
         return burr._ppf(x, c, 1.0)
+
+    def _isf(self, q, c):
+        return burr._isf(q, c, 1.0)
 
     def _munp(self, n, c):
         return burr._munp(n, c, 1.0)
