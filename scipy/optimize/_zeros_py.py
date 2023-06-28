@@ -2067,8 +2067,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     """
     # TODO:
-    #  - fix test_flags and test_vectorization iteration count
-    #  - test miniter more thoroughly
     #  - one-sided difference formulae
     #  - multivariate functions?
     #  - vector-valued functions?
@@ -2086,26 +2084,36 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     cd.h = h0
 
     # Initialization
-    xs, fs, shape, dtype = _scalar_optimization_initialize(func, (x + h0,), args)
-    x0, fxph = xs[0]-h0, fs[0]
-    fxmh = np.asarray(func(x0 - h0, *args)).astype(dtype, copy=False)
+    xs = (x + h0, x - h0)
+    xs, fs, shape, dtype = _scalar_optimization_initialize(func, xs, args)
+    x = np.broadcast_to(x, shape).ravel().astype(dtype)
+    fxph, fxmh = fs
     df0 = cd(x, *args, fxph=fxph, fxmh=fxmh)[()]
     dfs = df0[:, np.newaxis]
     h = h0
 
-    status = np.full_like(x0, _EINPROGRESS, dtype=int)  # in progress
+    status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1   # one function evaluations performed above
-    work = OptimizeResult(x=x0, df=df0, dfs=dfs, error=np.nan,
+    work = OptimizeResult(x=x, df=df0, dfs=dfs, error=np.nan,
                           df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                           status=status, cd=cd, dtype=dtype)
+    res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
+    # "Jumpstart". The idea is that most functions require at least a few
+    # (`miniter`) iterations to converge. To reduce looping and the number
+    # of separate function evaluations, take care of them all at once. Good
+    # idea, and reduces execution time *a little*, but looks ugly and has been
+    # very tricky to get right. Consider removing this feature.
     if miniter >= 1:
-        i = np.arange(1, miniter+1, dtype=dtype)[:, np.newaxis]
+        i = np.arange(1, miniter+1, dtype=dtype)
         h = h / fac**i
-        fxph = np.asarray(func(x0 + h, *args)).astype(dtype, copy=False)
-        fxmh = np.asarray(func(x0 - h, *args)).astype(dtype, copy=False)
-        df_jumpstart = cd(x0, *args, fxph=fxph, fxmh=fxmh, h=h).T
+        x = x.reshape(shape)[..., np.newaxis]
+        fxph = np.asarray(func(x + h, *args)).astype(dtype, copy=False)
+        fxmh = np.asarray(func(x - h, *args)).astype(dtype, copy=False)
+        df_jumpstart = cd(x, *args, fxph=fxph, fxmh=fxmh, h=h)
+        df_jumpstart = df_jumpstart.reshape(-1, len(h))
         h = h[-1]
         work.dfs = np.concatenate((work.dfs, df_jumpstart), axis=-1)
 
@@ -2121,8 +2129,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     cd.h = h
     work.nit += miniter
     work.nfev += miniter
-    res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
-                      ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
     def pre_func_eval(work):
         work.cd.h /= work.fac

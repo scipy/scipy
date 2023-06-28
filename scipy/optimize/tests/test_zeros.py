@@ -1287,9 +1287,9 @@ class TestDifferentiate():
             return zeros._differentiate(self.f, x, args=(dist,),
                                         miniter=miniter)
 
-        def f(*args, **kwargs):
-            f.f_evals += 1
-            return self.f(*args, **kwargs)
+        def f(x, *args, **kwargs):
+            f.f_evals += 1 if x.ndim <= len(shape) else x.shape[-1]
+            return self.f(x, *args, **kwargs)
         f.f_evals = 0
 
         res = zeros._differentiate(f, x, args=args, miniter=miniter)
@@ -1319,31 +1319,30 @@ class TestDifferentiate():
 
         ref_nfev = [ref.nfev for ref in refs]
         assert_equal(res.nfev.ravel(), ref_nfev)
-        # assert_equal(np.max(res.nfev), f.f_evals)
+        assert_equal(np.max(res.nfev), f.f_evals)
         assert_equal(res.nfev.shape, res.x.shape)
         assert np.issubdtype(res.nfev.dtype, np.integer)
 
         ref_nit = [ref.nit for ref in refs]
         assert_equal(res.nit.ravel(), ref_nit)
-        # assert_equal(np.max(res.nit), (f.f_evals-2)/2)
+        assert_equal(np.max(res.nit), (f.f_evals-2)/2)
         assert_equal(res.nit.shape, res.x.shape)
         assert np.issubdtype(res.nit.dtype, np.integer)
 
-    # def test_flags(self):
-    #     # Test cases that should produce different status flags; show that all
-    #     # can be produced simultaneously.
-    #     def f(x):
-    #         f.i += 1
-    #         # This causes a sudden increase in the error estimate
-    #         val = np.exp(x[1]) if f.i <= 4 else 100
-    #         return [x[0] - 2.5, val, np.exp(x[2]), np.nan]
-    #     f.i = 0
-    #
-    #     res = zeros._differentiate(f, [1] * 4, maxiter=3, rtol=1e-12)
-    #
-    #     ref_flags = np.array([zeros._ECONVERGED, zeros._EERRORINCREASE,
-    #                           zeros._ECONVERR, zeros._EVALUEERR])
-    #     assert_equal(res.status, ref_flags)
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(x):
+            f.i += 2
+            return [x[0] - 2.5, np.exp(x[1]),
+                    np.abs(x[2]-1.01), np.full_like(x[3], np.nan)]
+        f.i = 0
+
+        res = zeros._differentiate(f, [1] * 4, rtol=2e-15)
+
+        ref_flags = np.array([zeros._ECONVERGED, zeros._EERRORINCREASE,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
 
     def test_convergence(self):
         # Test that the convergence tolerances behave as expected
@@ -1394,17 +1393,19 @@ class TestDifferentiate():
         assert res.success
         assert_allclose(res.df, ref)
 
-    def test_maxiter_callback(self):
+    @pytest.mark.parametrize("miniter", [0, 1, 4])
+    def test_maxiter_callback(self, miniter):
         # Test behavior of `maxiter` parameter and `callback` interface
         x = 0.612814
         dist = stats.norm()
-        maxiter = 2
+        maxiter = 6
 
         def f(x):
             res = dist.cdf(x)
             return res
 
-        res = zeros._differentiate(f, x, maxiter=maxiter)
+        res = zeros._differentiate(f, x, miniter=miniter, maxiter=maxiter,
+                                   rtol=1e-15)
         assert not np.any(res.success)
         assert np.all(res.nfev == maxiter*2+2)
         assert np.all(res.nit == maxiter)
@@ -1416,13 +1417,14 @@ class TestDifferentiate():
             assert res.df not in callback.dfs
             callback.dfs.add(res.df)
             assert res.status == zeros._EINPROGRESS
-            if callback.iter == maxiter:
+            if callback.iter + miniter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
         callback.dfs = set()
 
-        res2 = zeros._differentiate(f, x, callback=callback, miniter=0)
+        res2 = zeros._differentiate(f, x, callback=callback, miniter=miniter,
+                                    rtol=1e-15)
         # terminating with callback is identical to terminating due to maxiter
         # (except for `status`)
         for key in res.keys():
@@ -1541,3 +1543,17 @@ class TestDifferentiate():
 
         res = zeros._differentiate(f, 2, args=3)
         assert_allclose(res.df, 3)
+
+    @pytest.mark.parametrize("x", (1, [1, 2, 3]))
+    @pytest.mark.parametrize("maxiter", range(6))
+    def test_miniter(self, x, maxiter):
+        # Check that `miniter` does not affect the results when it shouldn't
+        # (it should only reduce the number of function calls)
+        f = np.exp
+        kwargs = dict(maxiter=maxiter, rtol=1e-12)
+        res1 = zeros._differentiate(f, x, miniter=0, **kwargs)
+        res2 = zeros._differentiate(f, x, miniter=min(1, maxiter), **kwargs)
+        res3 = zeros._differentiate(f, x, **kwargs)
+        for key in res1.keys():
+            assert_array_equal(res1[key], res3[key])
+            assert_array_equal(res2[key], res3[key])
