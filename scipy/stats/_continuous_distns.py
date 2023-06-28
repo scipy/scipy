@@ -5275,7 +5275,7 @@ class johnsonsu_gen(rv_continuous):
         # Numerical improvements left to future enhancements.
         mu, mu2, g1, g2 = None, None, None, None
 
-        bn2 = b**-2
+        bn2 = b**-2.
         expbn2 = np.exp(bn2)
         a_b = a / b
 
