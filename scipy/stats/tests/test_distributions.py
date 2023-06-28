@@ -1156,7 +1156,7 @@ class TestHalfNorm:
 
         rng = np.random.default_rng(6762668991392531563)
         data = stats.halfnorm.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
-                                      random_state=rng)
+                                  random_state=rng)
 
         if fix_loc and fix_scale:
             error_msg = ("All parameters fixed. There is nothing to "

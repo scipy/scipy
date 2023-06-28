@@ -4373,12 +4373,8 @@ class halfnorm_gen(rv_continuous):
 
         loc = floc if floc is not None else np.min(data)
 
-        def find_scale(data, loc):
-            n_observations = data.shape[0]
-            scale = np.sqrt(np.sum((data - loc)**2) / n_observations)
-            return scale
-
-        scale = fscale if fscale is not None else find_scale(data, loc)
+        scale = (fscale if fscale is not None 
+                 else stats.moment(data, moment=2, center=loc)**0.5)
 
         return loc, scale
 
