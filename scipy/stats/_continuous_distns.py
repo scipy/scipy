@@ -4301,8 +4301,15 @@ class halflogistic_gen(rv_continuous):
             return scale
 
         # location is independent from the scale
-        # if not given, it is the minimum data point ([1] Equation 2.3)
-        loc = floc if floc is not None else np.min(data)
+        data_min = np.min(data)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halflogistic", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            # if not provided, location MLE is the minimal data point
+            loc = data_min
 
         # scale depends on location
         scale = fscale if fscale is not None else find_scale(data, loc)
