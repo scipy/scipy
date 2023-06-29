@@ -1201,6 +1201,11 @@ class TestHalfLogistic:
 
         _assert_less_or_close_loglike(stats.halflogistic, data, **kwds)
 
+    def test_fit_bad_floc(self):
+        msg = r" Maximum likelihood estimation with 'halflogistic' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.halflogistic.fit([0, 2, 4], floc=1)
+
 
 class TestHalfgennorm:
     def test_expon(self):
