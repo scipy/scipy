@@ -130,14 +130,14 @@ Additional information
 Here are some additional resources which motivated and helped during the
 development phase:
 
-* Initial `PR <https://github.com/tupui/scipy/pull/24>`_ with some discussions
-* Quick started from this `PR <https://github.com/scipy/scipy/pull/15395>`_ and
+* Initial `PR <https://github.com/tupui/scipy/pull/24>`__ with some discussions
+* Quick started from this `PR <https://github.com/scipy/scipy/pull/15395>`__ and
   take some inspiration from
-  `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`_.
-* `PR https://github.com/scikit-learn/scikit-learn/issues/22352`_ adding Array
+  `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`__.
+* `PR <https://github.com/scikit-learn/scikit-learn/issues/22352>`__ adding Array
   API surpport to scikit-learn
 * Some other PRs from scikit-learn
-  `22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`_ and
-  `25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`_
+  `22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`__ and
+  `25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__
 
 .. _RFC: https://github.com/scipy/scipy/issues/18286
