@@ -432,10 +432,10 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> magnitude *= 255 / np.max(magnitude)
     >>> fig, axes = plt.subplots(2, 2, figsize = (8, 8))
     >>> plt.gray()
-    >>> axs[0, 0].imshow(ascent)
-    >>> axs[0, 1].imshow(prewitt_h)
-    >>> axs[1, 0].imshow(prewitt_v)
-    >>> axs[1, 1].imshow(magnitude)
+    >>> axes[0, 0].imshow(ascent)
+    >>> axes[0, 1].imshow(prewitt_h)
+    >>> axes[1, 0].imshow(prewitt_v)
+    >>> axes[1, 1].imshow(magnitude)
     >>> titles = ["original", "horizontal", "vertical", "magnitude"]
     >>> for i, ax in enumerate(axs.ravel()):
     ...     ax.set_title(titles[i])
