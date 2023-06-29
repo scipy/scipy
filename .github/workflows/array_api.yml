@@ -84,5 +84,6 @@ jobs:
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
         # expand as new modules are added
-        python dev.py --no-build test --array-api-backend pytorch --array-api-backend numpy -s cluster -- --durations 10 --timeout=60
+        # --array-api-backend == -b
+        python dev.py --no-build test -b pytorch -b numpy -b numpy.array_api -s cluster -- --durations 10 --timeout=60
         python dev.py --no-build test --array-api-backend all --tests scipy/_lib/tests/test_array_api.py
