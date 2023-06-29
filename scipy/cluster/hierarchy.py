@@ -1458,8 +1458,8 @@ def to_tree(Z, rd=False):
     for i in range(Z.shape[0]):
         row = Z[i, :]
 
-        fi = xp.astype(row[0], xp.int64)
-        fj = xp.astype(row[1], xp.int64)
+        fi = int(row[0])
+        fj = int(row[1])
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
@@ -2575,8 +2575,6 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Z = as_xparray(Z, order='c', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    t = xp.asarray(t)
-
     n = Z.shape[0] + 1
     T = np.zeros((n,), dtype='i')
 
@@ -2600,15 +2598,13 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     elif criterion == 'distance':
         _hierarchy.cluster_dist(Z, T, float(t), int(n))
     elif criterion == 'maxclust':
-        t_ = xp.astype(t, xp.int64)
-        _hierarchy.cluster_maxclust_dist(Z, T, int(n), t_)
+        _hierarchy.cluster_maxclust_dist(Z, T, int(n), t)
     elif criterion == 'monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
         _hierarchy.cluster_monocrit(Z, monocrit, T, float(t), int(n))
     elif criterion == 'maxclust_monocrit':
         [monocrit] = _copy_arrays_if_base_present([monocrit])
-        t_ = xp.astype(t, xp.int64)
-        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), t_)
+        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), t)
     else:
         raise ValueError('Invalid cluster formation criterion: %s'
                          % str(criterion))
@@ -3464,15 +3460,15 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks, xp):
-    _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 0], xp.int64), n, contraction_marks, xp)
-    _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 1], xp.int64), n, contraction_marks, xp)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks, xp)
+    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks, xp)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks, xp):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 0], xp.int64), n, contraction_marks, xp)
-        _append_contraction_marks_sub(Z, iv, xp.astype(Z[i - n, 1], xp.int64), n, contraction_marks, xp)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks, xp)
+        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks, xp)
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode,
@@ -3572,8 +3568,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = xp.astype(Z[i - n, 0], xp.int64)
-    ab = xp.astype(Z[i - n, 1], xp.int64)
+    aa = int(Z[i - n, 0])
+    ab = int(Z[i - n, 1])
     if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]
