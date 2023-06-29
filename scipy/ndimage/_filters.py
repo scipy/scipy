@@ -429,7 +429,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> prewitt_h = ndimage.prewitt(ascent, axis=0)
     >>> prewitt_v = ndimage.prewitt(ascent, axis=1)
     >>> magnitude = np.sqrt(prewitt_h ** 2 + prewitt_v ** 2)
-    >>> magnitude *= 255 / np.max(magnitude)
+    >>> magnitude *= 255 / np.max(magnitude) # Normalization
     >>> fig, axes = plt.subplots(2, 2, figsize = (8, 8))
     >>> plt.gray()
     >>> axes[0, 0].imshow(ascent)
