@@ -1250,15 +1250,14 @@ def test_maxiter_int_check_gh10236(method):
 
 class TestDifferentiate():
 
-    def f(self, x, dist):
-        return dist.cdf(x)
+    def f(self, x):
+        return stats.norm().cdf(x)
 
     @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, x):
         # Invert distribution CDF and compare against distribution `ppf`
-        dist = stats.norm()
-        res = zeros._differentiate(self.f, x, args=dist)
-        ref = dist.pdf(x)
+        res = zeros._differentiate(self.f, x)
+        ref = stats.norm().pdf(x)
         np.testing.assert_allclose(res.df, ref)
         # This would be nice, but doesn't always work out. `error` is an
         # estimate, not a bound.
@@ -1280,20 +1279,19 @@ class TestDifferentiate():
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         x = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
-        dist = stats.norm()
-        args = (dist,)
+        n = np.size(x)
 
         @np.vectorize
         def _differentiate_single(x):
-            return zeros._differentiate(self.f, x, args=(dist,),
-                                        miniter=miniter)
+            return zeros._differentiate(self.f, x, miniter=miniter)
 
         def f(x, *args, **kwargs):
-            f.f_evals += 1 if x.ndim <= len(shape) else x.shape[-1]
+            in_jumpstart = (x.ndim == 2 and x.shape[0] == n)
+            f.f_evals += x.shape[-1] if in_jumpstart else 1
             return self.f(x, *args, **kwargs)
         f.f_evals = 0
 
-        res = zeros._differentiate(f, x, args=args, miniter=miniter)
+        res = zeros._differentiate(f, x, miniter=miniter)
         refs = _differentiate_single(x).ravel()
 
         ref_x = [ref.x for ref in refs]
@@ -1333,13 +1331,17 @@ class TestDifferentiate():
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
-        def f(x):
-            f.i += 2
-            return [x[0] - 2.5, np.exp(x[1]),
-                    np.abs(x[2]-1.01), np.full_like(x[3], np.nan)]
-        f.i = 0
 
-        res = zeros._differentiate(f, [1] * 4, rtol=2e-15)
+        def f(xs, js):
+            funcs = [lambda x: x - 2.5,
+                     lambda x: np.exp(x),
+                     lambda x: np.abs(x - 1.01),
+                     lambda x: np.full_like(x, np.nan)]
+
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._differentiate(f, [1]*4, rtol=2e-15, args=args)
 
         ref_flags = np.array([zeros._ECONVERGED, zeros._EERRORINCREASE,
                               zeros._ECONVERR, zeros._EVALUEERR])
@@ -1469,7 +1471,7 @@ class TestDifferentiate():
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, -4+1j)
 
-        message = "shape mismatch: objects cannot be broadcast"
+        message = "operands could not be broadcast together"
         # raised by `np.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: [1, 2, 3], [-2, -3])

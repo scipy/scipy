@@ -2080,7 +2080,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     # Initialization
     xs = (x + h0, x - h0)
-    xs, fs, shape, dtype = _scalar_optimization_initialize(func, xs, args)
+    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, xs, args)
+    # broadcasting with astype (which copies) creates new elements of `x`
+    # as needed. `ravel` because we work with 1D arrays throughout.
     x = np.broadcast_to(x, shape).ravel().astype(dtype)
     fxph, fxmh = fs
     df0 = cd(x, *args, fxph=fxph, fxmh=fxmh)[()]
@@ -2104,7 +2106,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     if miniter >= 1:
         i = np.arange(1, miniter+1, dtype=dtype)
         h = h / fac**i
-        x = x.reshape(shape)[..., np.newaxis]
+        x = x[..., np.newaxis]
         fxph = np.asarray(func(x + h, *args)).astype(dtype, copy=False)
         fxmh = np.asarray(func(x - h, *args)).astype(dtype, copy=False)
         df_jumpstart = cd(x, *args, fxph=fxph, fxmh=fxmh, h=h)
