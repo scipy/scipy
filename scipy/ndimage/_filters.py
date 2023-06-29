@@ -420,6 +420,28 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> ax1.imshow(ascent)
     >>> ax2.imshow(result)
     >>> plt.show()
+
+    In the example above, the directional filter is returned,
+    which is the default. The next example shows how to get
+    the magnitude, which is the more typical use case.
+
+    >>> import numpy as np
+    >>> prewitt_h = ndimage.prewitt(ascent, axis=0)
+    >>> prewitt_v = ndimage.prewitt(ascent, axis=1)
+    >>> magnitude = np.sqrt(prewitt_h ** 2 + prewitt_v ** 2)
+    >>> magnitude *= 255 / np.max(magnitude)
+    >>> fig, axes = plt.subplots(2, 2, figsize = (8, 8))
+    >>> plt.gray()
+    >>> axs[0, 0].imshow(ascent)
+    >>> axs[0, 1].imshow(prewitt_h)
+    >>> axs[1, 0].imshow(prewitt_v)
+    >>> axs[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axs.ravel()):
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
+    >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
