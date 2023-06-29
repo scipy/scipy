@@ -437,7 +437,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> axes[1, 0].imshow(prewitt_v)
     >>> axes[1, 1].imshow(magnitude)
     >>> titles = ["original", "horizontal", "vertical", "magnitude"]
-    >>> for i, ax in enumerate(axs.ravel()):
+    >>> for i, ax in enumerate(axes.ravel()):
     ...     ax.set_title(titles[i])
     ...     ax.axis("off")
     >>> plt.show()
