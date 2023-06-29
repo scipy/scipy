@@ -71,6 +71,7 @@ except Exception:
 
 
 class TestLinkage:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
