@@ -13,7 +13,7 @@ from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
-from . import _statlib
+from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
@@ -1771,18 +1771,23 @@ def shapiro(x):
     References
     ----------
     .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
-    .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
-           normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
-    .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
-           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
-           Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
-    .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
-    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           :doi:`10.18434/M32189`
+    .. [2] Shapiro, S. S. & Wilk, M.B, "An analysis of variance test for
+           normality (complete samples)", Biometrika, 1965, Vol. 52,
+           pp. 591-611, :doi:`10.2307/2333709`
+    .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
+           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
+           of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
+    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
+           W-test for Normality", 1995, Applied Statistics, Vol. 44,
+           :doi:`10.2307/2986146`
+    .. [5] Phipson B., and Smyth, G. K., "Permutation P-values Should Never Be
            Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [6] Panagiotakos, D. B. (2008). The value of p-value in biomedical
-           research. The open cardiovascular medicine journal, 2, 97.
+           Drawn", Statistical Applications in Genetics and Molecular Biology,
+           2010, Vol.9, :doi:`10.2202/1544-6115.1585`
+    .. [6] Panagiotakos, D. B., "The value of p-value in biomedical
+           research", The Open Cardiovascular Medicine Journal, 2008, Vol.2,
+           pp. 97-99, :doi:`10.2174/1874192400802010097`
 
     Examples
     --------
@@ -1862,29 +1867,27 @@ def shapiro(x):
       and false negatives (failure to reject a false null hypothesis).
 
     """
-    x = np.ravel(x)
+    x = np.ravel(x).astype(np.float64)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x = x - np.median(x)
-
-    a = zeros(N, 'f')
+    a = zeros(N//2, dtype=np.float64)
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
-    if ifault not in [0, 2]:
-        warnings.warn("Input data for shapiro has range zero. The results "
-                      "may not be accurate.")
-    if N > 5000:
-        warnings.warn("p-value may not be accurate for N > 5000.")
+    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
 
-    # `swilk` can return negative p-values for N==3; see gh-18322.
-    if N == 3:
-        # Potential improvement: precision for small p-values
-        pw = 1 - 6/np.pi*np.arccos(np.sqrt(w))
+    w, pw, ifault = swilk(y, a, init)
+    if ifault not in [0, 2]:
+        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
+                      " results may not be accurate.", stacklevel=2)
+    if N > 5000:
+        warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
+                      f"may not be accurate. Current N is {N}.",
+                      stacklevel=2)
+
     return ShapiroResult(w, pw)
 
 
@@ -2470,7 +2473,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = _statlib.gscale(n, m)
+            astart, a1, _ = gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
