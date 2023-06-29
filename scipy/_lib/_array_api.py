@@ -12,10 +12,10 @@ import os
 
 import numpy as np
 import scipy._lib.array_api_compat.array_api_compat as array_api_compat
-from scipy._lib.array_api_compat.array_api_compat import size  # noqa
+from scipy._lib.array_api_compat.array_api_compat import size
 import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy
 
-__all__ = ['array_namespace', 'as_xparray', 'as_xparray_namespace']
+__all__ = ['array_namespace', 'as_xparray', 'size']
 
 
 # SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
@@ -126,53 +126,6 @@ def as_xparray(
         _check_finite(array, xp)
 
     return array
-
-
-def as_xparray_namespace(*arrays):
-    """Validate and convert arrays to a common namespace.
-
-    Parameters
-    ----------
-    *arrays : sequence of array_like
-        Arrays to validate and convert.
-
-    Returns
-    -------
-    *arrays : sequence of array_like
-        Validated and converted arrays to the common namespace.
-    namespace : module
-        Common namespace.
-
-    Notes
-    -----
-    This function is meant to be called from each public function in a SciPy
-    submodule it does the following:
-
-    1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
-       dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
-    2. `compliance_scipy` raise exceptions on known-bad subclasses. See
-       it's definition for more details.
-    3. Determine the namespace, without doing any coercion of array(-like)
-       inputs.
-    4. Call `xp.asarray` on all array.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> x, y, xp = as_xparray_namespace(np.array([0, 1, 2]), np.array([0, 1, 2]))
-    >>> xp.__name__
-    'array_api_compat.numpy'
-    >>> x, y
-    (array([0, 1, 2]), array([0, 1, 2]))
-
-    """
-    arrays = list(arrays)
-    xp = array_namespace(*arrays)
-
-    for i, array in enumerate(arrays):
-        arrays[i] = xp.asarray(array)
-
-    return *arrays, xp
 
 
 def atleast_nd(x, *, ndim, xp):
