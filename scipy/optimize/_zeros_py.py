@@ -1515,7 +1515,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    xs, fs, shape, dtype = _scalar_optimization_initialize(func, (a, b), args)
+    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (a, b),
+                                                                 args)
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
@@ -1688,6 +1689,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     res_dict['nit'] = res_dict['nit'].astype(int)
     res_dict['nfev'] = res_dict['nfev'].astype(int)
     res = OptimizeResult(res_dict)
+    work.args = args
 
     active = _scalar_optimization_check_termination(
         work, res, res_work_pairs, active, check_termination)
@@ -1701,20 +1703,9 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     while work.nit < maxiter and active.size and not cb_terminate:
         x = pre_func_eval(work)
 
-        # For now, we assume that `func` requires arguments of the original
-        # shapes. However, `x` is compressed (contains only active elements).
-        # Therefore, we inflate `x` by creating a full-size array, copying the
-        # elements of `x` into it, and making it the expected shape.
-        # TODO: allow user to specify that `func` works with compressed input
-        x_full = res.x.copy()
-        x_full[active] = x
-        x_full = x_full.reshape(shape)[()]
-        f = func(x_full, *args)
+        f = func(x, *work.args)
+        f = np.asarray(f, dtype=dtype).ravel()
         work.nfev += 1
-        # Ensure that the output of `func` is an array of the appropriate
-        # dtype, ravel it (because we work with 1D arrays for simplicity), and
-        # compress it to contain only active elements.
-        f = np.asarray(f, dtype=dtype).ravel()[active]
 
         post_func_eval(x, f, work)
 
@@ -1767,7 +1758,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
 
 
 def _scalar_optimization_initialize(func, xs, args):
-    """Initialize abscissa and function arrays for elementwise function
+    """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
     ----------
@@ -1777,7 +1768,8 @@ def _scalar_optimization_initialize(func, xs, args):
             func(x: ndarray, *args) -> ndarray
 
         where each element of ``x`` is a finite real and ``args`` is a tuple,
-        which may contain an arbitrary number of components of any type(s).
+        which may contain an arbitrary number of arrays that are broadcastable
+        with ``x``.
     xs : tuple of arrays
         Finite real abscissa arrays. Must be broadcastable.
     args : tuple, optional
@@ -1785,13 +1777,14 @@ def _scalar_optimization_initialize(func, xs, args):
 
     Returns
     -------
-    xs, fs : tuple of arrays
+    xs, fs, args : tuple of arrays
         Broadcasted, writeable, 1D abscissa and function value arrays (or
-        NumPy floats, if appropriate) of the appropriate dtype.
+        NumPy floats, if appropriate). The dtypes of the `xs` and `fs` are
+        `xfat`; the dtype of the `args` are unchanged.
     shape : tuple of ints
         Original shape of broadcasted arrays.
-    xft : NumPy dtype
-        Result dtype of abscissae and function values determined using
+    xfat : NumPy dtype
+        Result dtype of abscissae, function values, and args determined using
         `np.result_type`, except integer types are promoted to `np.float64`.
 
     Raises
@@ -1805,36 +1798,36 @@ def _scalar_optimization_initialize(func, xs, args):
     an elementwise callable, abscissae, and arguments; e.g.
     `scipy.optimize._chandrupatla`.
     """
+    nx = len(xs)
+
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
-    # least floats before passing them into the function because integers
-    # can overflow and cause failure.
+    # least floats before passing them into the function; integers can overflow
+    # and cause failure.
     # There might be benefit to combining the `xs` into a single array and
     # calling `func` once on the combined array. For now, keep them separate.
-    xs = np.broadcast_arrays(*xs)  # broadcast and rename
-    xt = np.result_type(*[x.dtype for x in xs])
-    xt = np.float64 if np.issubdtype(xt, np.integer) else xt
-    xs = [x.astype(xt, copy=False)[()] for x in xs]
-    fs = [func(x, *args) for x in xs]
+    xas = np.broadcast_arrays(*xs, *args)  # broadcast and rename
+    xat = np.result_type(*[xa.dtype for xa in xas])
+    xat = np.float64 if np.issubdtype(xat, np.integer) else xat
+    xs, args = xas[:nx], xas[nx:]
+    xs = [x.astype(xat, copy=False)[()] for x in xs]
+    fs = [np.asarray(func(x, *args)) for x in xs]
+    shape = xs[0].shape
 
-    # It's possible that the functions will return multiple outputs for each
-    # scalar input, so we need to broadcast again. All arrays need to be,
-    # writable, so we'll need to copy after broadcasting. Finally, we're going
-    # to be doing operations involving `x1`, `x2`, `f1`, and `f2` throughout,
-    # so figure out the right type from the outset.
-    xfs = np.broadcast_arrays(*xs, *fs)
-    xft = np.result_type(*[xf.dtype for xf in xfs])
-    xft = np.float64 if np.issubdtype(xft, np.integer) else xft
-    if not np.issubdtype(xft, np.floating):
+    # These algorithms tend to mix the dtypes of the abscissae and function
+    # values, so figure out what the result will be and convert them all to
+    # that time from the outset.
+    xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
+    if not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
-    xfs = [xf.astype(xt, copy=True)[()] for xf in xfs]
-    xs, fs = xfs[:int(len(xfs)/2)], xfs[int(len(xfs)/2):]
+    xs = [x.astype(xfat, copy=True)[()] for x in xs]
+    fs = [f.astype(xfat, copy=True)[()] for f in fs]
 
     # To ensure that we can do indexing, we'll work with at least 1d arrays,
     # but remember the appropriate shape of the output.
-    shape = xs[0].shape
     xs = [x.ravel() for x in xs]
     fs = [f.ravel() for f in fs]
-    return xs, fs, shape, xft
+    args = [arg.flatten() for arg in args]
+    return xs, fs, args, shape, xfat
 
 
 def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
@@ -1853,7 +1846,9 @@ def _scalar_optimization_check_termination(work, res, res_work_pairs, active,
         # compress the arrays to avoid unnecessary computation
         proceed = ~stop
         active = active[proceed]
-        _scalar_optimization_compress_work(work, proceed)
+        for key, val in work.items():
+            work[key] = val[proceed] if isinstance(val, np.ndarray) else val
+        work.args = [arg[proceed] for arg in work.args]
 
     return active
 

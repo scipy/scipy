@@ -208,15 +208,14 @@ class TestBracketMethods(TestScalarRootFinders):
 
 class TestChandrupatla(TestScalarRootFinders):
 
-    def f(self, q, dist, p):
-        return dist.cdf(q) - p
+    def f(self, q, p):
+        return stats.norm.cdf(q) - p
 
     @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, p):
         # Invert distribution CDF and compare against distrtibution `ppf`
-        dist = stats.norm()
-        res = zeros._chandrupatla(self.f, -5, 5, args=(dist, p))
-        ref = dist.ppf(p)
+        res = zeros._chandrupatla(self.f, -5, 5, args=(p,))
+        ref = stats.norm().ppf(p)
         np.testing.assert_allclose(res.x, ref)
         assert res.x.shape == ref.shape
 
@@ -225,12 +224,11 @@ class TestChandrupatla(TestScalarRootFinders):
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
-        dist = stats.norm()
-        args = (dist, p)
+        args = (p,)
 
         @np.vectorize
         def chandrupatla_single(p):
-            return zeros._chandrupatla(self.f, -5, 5, args=(dist, p))
+            return zeros._chandrupatla(self.f, -5, 5, args=(p,))
 
         def f(*args, **kwargs):
             f.f_evals += 1
@@ -298,14 +296,19 @@ class TestChandrupatla(TestScalarRootFinders):
                       np.minimum(np.abs(res.fl[finite]),
                                  np.abs(res.fr[finite])))
 
-
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
-        def f(x):
-            return [x[0] - 2.5, x[1] - 10, (x[2]-0.1)**3, np.nan]
+        def f(xs, js):
+            funcs = [lambda x: x - 2.5,
+                     lambda x: x - 10,
+                     lambda x: (x - 0.1)**3,
+                     lambda x: np.nan]
 
-        res = zeros._chandrupatla(f, [0] * 4, [np.pi] * 4, maxiter=2)
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._chandrupatla(f, [0]*4, [np.pi]*4, args=args, maxiter=2)
 
         ref_flags = np.array([zeros._ECONVERGED, zeros._ESIGNERR,
                               zeros._ECONVERR, zeros._EVALUEERR])
@@ -315,9 +318,8 @@ class TestChandrupatla(TestScalarRootFinders):
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
         p = rng.random(size=3)
-        dist = stats.norm()
         bracket = (-5, 5)
-        args = (dist, p)
+        args = (p,)
         kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
 
         kwargs = kwargs0.copy()
@@ -361,19 +363,18 @@ class TestChandrupatla(TestScalarRootFinders):
     def test_maxiter_callback(self):
         # Test behavior of `maxiter` parameter and `callback` interface
         p = 0.612814
-        dist = stats.norm()
         bracket = (-5, 5)
         maxiter = 5
 
-        def f(q, dist, p):
-            res = dist.cdf(q) - p
+        def f(q, p):
+            res = stats.norm().cdf(q) - p
             f.x = q
             f.fun = res
             return res
         f.x = None
         f.fun = None
 
-        res = zeros._chandrupatla(f, *bracket, args=(dist, p),
+        res = zeros._chandrupatla(f, *bracket, args=(p,),
                                   maxiter=maxiter)
         assert not np.any(res.success)
         assert np.all(res.nfev == maxiter+2)
@@ -388,15 +389,15 @@ class TestChandrupatla(TestScalarRootFinders):
                 assert res.xl, res.xr == bracket
             else:
                 # Ensure that attributes are updating each iteration
-                assert f.x in {res.xl, res.xr}
-                assert f.fun in {res.fl, res.fr}
+                assert f.x[0] in {res.xl, res.xr}
+                assert f.fun[0] in {res.fl, res.fr}
             assert res.status == zeros._EINPROGRESS
             if callback.iter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
 
-        res2 = zeros._chandrupatla(f, *bracket, args=(dist, p),
+        res2 = zeros._chandrupatla(f, *bracket, args=(p,),
                                    callback=callback)
 
         # terminating with callback is identical to terminating due to maxiter
