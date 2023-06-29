@@ -2701,7 +2701,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     xp = array_namespace(X)
     X = as_xparray(X, order='c', dtype=xp.float64)
 
-    if len(X.shape) != 2:
+    if X.ndim != 2:
         raise TypeError('The observation matrix X must be an n by m '
                         'array.')
 

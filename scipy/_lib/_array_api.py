@@ -96,7 +96,7 @@ def array_namespace(*arrays):
 
 
 def as_xparray(
-    array, dtype=None, order=None, copy=None, *, xp=None, check_finite=True
+    array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False
 ):
     """Drop-in replacement for `np.asarray`.
 

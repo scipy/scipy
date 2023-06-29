@@ -468,12 +468,11 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
         raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    if size(guess) > 1:
+    if size(guess) != 1:
         if size(guess) < 1:
             raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
-        elif size(guess) > 1:
-            return _kmeans(obs, guess, thresh=thresh, xp=xp)
+        return _kmeans(obs, guess, thresh=thresh, xp=xp)
 
     # k_or_guess is a scalar, now verify that it's an integer
     k = int(guess)
@@ -599,12 +598,7 @@ def _kpp(data, k, rng, xp):
 
     dims = data.shape[1] if len(data.shape) > 1 else 1
 
-    # k should be an integer, NOT a NumPy
-    # scalar array thing...
-    if not isinstance(k, int):
-        k = xp.astype(k, xp.int64)
-
-    init = xp.empty((k, dims))
+    init = xp.empty((int(k), dims))
 
     for i in range(k):
         if i == 0:
