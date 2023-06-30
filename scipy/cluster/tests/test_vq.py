@@ -210,6 +210,9 @@ class TestVq:
         assert_array_equal(codes0, codes1)
 
 
+# Class-level skip on GPU for now; once pdist/cdist are hooked up for CuPy,
+# more tests will work so use per-test markers then
+@skip_if_array_api_gpu
 class TestKMean:
     @array_api_compatible
     def test_large_features(self, xp):

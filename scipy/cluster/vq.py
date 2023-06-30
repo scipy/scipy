@@ -265,8 +265,9 @@ def py_vq(obs, code_book, check_finite=True):
         obs = obs[:, xp.newaxis]
         code_book = code_book[:, xp.newaxis]
 
-    dist = cdist(obs, code_book)
-    code = dist.argmin(axis=1)
+    # Once `cdist` has array API support, this `xp.asarray` call can be removed
+    dist = xp.asarray(cdist(obs, code_book))
+    code = xp.argmin(dist, axis=1)
     min_dist = dist[xp.arange(len(code)), code]
     return code, min_dist
 
