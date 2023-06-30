@@ -566,7 +566,7 @@ def _linear_operator_difference(fun, x0, f0, h, method):
 def _dense_difference(fun, x0, f0, h, use_one_sided, method):
     m = f0.size
     n = x0.size
-    J_transposed = np.empty((n, m))
+    J_transposed = np.empty((n, m), dtype=f0.dtype)
     h_vecs = np.diag(h)
 
     for i in range(h.size):
