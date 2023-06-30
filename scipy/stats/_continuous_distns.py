@@ -4376,6 +4376,32 @@ class halfnorm_gen(rv_continuous):
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        data_min = np.min(data)
+
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfnorm", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            loc = data_min
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = stats.moment(data, moment=2, center=loc)**0.5
+
+        return loc, scale
+
 
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
 
