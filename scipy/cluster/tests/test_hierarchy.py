@@ -245,7 +245,6 @@ class TestFcluster:
         # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
         expectedT = xp.asarray(getattr(hierarchy_test_data, 'fcluster_' + criterion)[t])
         X = xp.asarray(hierarchy_test_data.Q_X)
-        t = xp.asarray(t)
         T = fclusterdata(X, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
 
@@ -262,7 +261,6 @@ class TestFcluster:
         # Tests fcluster(Z, criterion=criterion, t=t) on a random 3-cluster data set.
         expectedT = xp.asarray(getattr(hierarchy_test_data, 'fcluster_' + criterion)[t])
         Z = single(xp.asarray(hierarchy_test_data.Q_X))
-        t = xp.asarray(t)
         T = fcluster(Z, criterion=criterion, t=t)
         assert_(is_isomorphic(T, expectedT))
 

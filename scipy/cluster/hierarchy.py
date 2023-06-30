@@ -177,6 +177,12 @@ def _copy_arrays_if_base_present(T):
     return [_copy_array_if_base_present(a) for a in T]
 
 
+def int_floor(arr, xp):
+    # numpy.array_api is strict about not allowing `int()` on a float array.
+    # That's typically not needed, here it is - so explicitly convert
+    return int(xp.astype(arr, xp.int64))
+
+
 def single(y):
     """
     Perform single/min/nearest linkage on the condensed distance matrix ``y``.
@@ -1458,8 +1464,8 @@ def to_tree(Z, rd=False):
     for i in range(Z.shape[0]):
         row = Z[i, :]
 
-        fi = int(row[0])
-        fj = int(row[1])
+        fi = int_floor(row[0], xp)
+        fj = int_floor(row[1], xp)
         if fi > i + n:
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
@@ -3460,15 +3466,19 @@ def _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl, leaf_label_func,
 
 
 def _append_contraction_marks(Z, iv, i, n, contraction_marks, xp):
-    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks, xp)
-    _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks, xp)
+    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+                                  n, contraction_marks, xp)
+    _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+                                  n, contraction_marks, xp)
 
 
 def _append_contraction_marks_sub(Z, iv, i, n, contraction_marks, xp):
     if i >= n:
         contraction_marks.append((iv, Z[i - n, 2]))
-        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 0]), n, contraction_marks, xp)
-        _append_contraction_marks_sub(Z, iv, int(Z[i - n, 1]), n, contraction_marks, xp)
+        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 0], xp),
+                                      n, contraction_marks, xp)
+        _append_contraction_marks_sub(Z, iv, int_floor(Z[i - n, 1], xp),
+                                      n, contraction_marks, xp)
 
 
 def _dendrogram_calculate_info(Z, p, truncate_mode,
@@ -3568,8 +3578,8 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
     # !!! Otherwise, we don't have a leaf node, so work on plotting a
     # non-leaf node.
     # Actual indices of a and b
-    aa = int(Z[i - n, 0])
-    ab = int(Z[i - n, 1])
+    aa = int_floor(Z[i - n, 0], xp)
+    ab = int_floor(Z[i - n, 1], xp)
     if aa >= n:
         # The number of singletons below cluster a
         na = Z[aa - n, 3]

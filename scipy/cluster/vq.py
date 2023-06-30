@@ -268,7 +268,7 @@ def py_vq(obs, code_book, check_finite=True):
     # Once `cdist` has array API support, this `xp.asarray` call can be removed
     dist = xp.asarray(cdist(obs, code_book))
     code = xp.argmin(dist, axis=1)
-    min_dist = dist[xp.arange(len(code)), code]
+    min_dist = xp.min(dist, axis=1)
     return code, min_dist
 
 
