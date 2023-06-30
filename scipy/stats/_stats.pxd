@@ -7,3 +7,4 @@ cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) noexcep
 cdef double _studentized_range_moment(int n, double[3] x_arg, void *user_data) noexcept nogil
 cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil
 cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil
+cdef double _gausshyper_pdf(double x, void *user_data) except * nogil

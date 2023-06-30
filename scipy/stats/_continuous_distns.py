@@ -4494,10 +4494,34 @@ class gausshyper_gen(rv_continuous):
         return [ia, ib, ic, iz]
 
     def _pdf(self, x, a, b, c, z):
-        # gausshyper.pdf(x, a, b, c, z) =
-        #   C * x**(a-1) * (1-x)**(b-1) * (1+z*x)**(-c)
-        Cinv = sc.gamma(a)*sc.gamma(b)/sc.gamma(a+b)*sc.hyp2f1(c, a, a+b, -z)
-        return 1.0/Cinv * x**(a-1.0) * (1.0-x)**(b-1.0) / (1.0+z*x)**c
+        @np.vectorize
+        def _pdf_single(x, a, b, c, z):
+            return _stats.gausshyper_pdf(x, a, b, c, z)
+
+        return _pdf_single(x, a, b, c, z)
+
+    # same approach as genhyperbolic distribution
+    @lambda func: np.vectorize(func.__get__(object), otypes=[np.float64])
+    @staticmethod
+    def _integrate_pdf(lower_bound, upper_bound, a, b, c, z):
+        """
+        Integrate the pdf of the gausshyper distribution from lower_bound to
+        upper bound. This is a private function used by _cdf() and _sf() only.
+        """
+        user_data = np.array([a, b, c, z], float).ctypes.data_as(ctypes.c_void_p)
+        integrand = LowLevelCallable.from_cython(_stats, '_gausshyper_pdf',
+                                                 user_data)
+
+        integral = integrate.quad(integrand, lower_bound, upper_bound,
+                                  epsrel=1e-10)[0]
+
+        return integral
+
+    def _cdf(self, x, a, b, c, z):
+        return self._integrate_pdf(0, x, a, b, c, z)
+
+    def _sf(self,  x, a, b, c, z):
+        return self._integrate_pdf(x, 1, a, b, c, z)
 
     def _munp(self, n, a, b, c, z):
         fac = sc.beta(n+a, b) / sc.beta(a, b)
