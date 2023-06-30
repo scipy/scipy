@@ -1972,7 +1972,7 @@ class TestBoxcox:
         )
     def test_negative_x_value_raises_error(self, bad_x):
         """Test boxcox_normmax raises ValueError if x contains non-positive values."""
-        message = "only positive, finite values"
+        message = "only positive, finite, real numbers"
         with pytest.raises(ValueError, match=message):
             stats.boxcox_normmax(bad_x)
 

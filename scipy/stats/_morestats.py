@@ -1118,7 +1118,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     Parameters
     ----------
     x : array_like
-        Input array. All entries must be positive and finite.
+        Input array. All entries must be positive, finite, real numbers.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1279,7 +1279,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     except ValueError as e:
         if "infs or NaNs" in str(e):
             message = ("The `x` argument of `boxcox_normmax` must contain "
-                       "only positive, finite values.")
+                       "only positive, finite, real numbers.")
             raise ValueError(message) from e
         else:
             raise e
