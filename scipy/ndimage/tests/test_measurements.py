@@ -1390,3 +1390,10 @@ class TestWatershedIft:
         expected = [[1, 1],
                     [1, 1]]
         assert_array_almost_equal(out, expected)
+
+
+def test_gh_18780():
+    arr = np.array([[True, False, True]], dtype=bool)
+    result_bool = ndimage.find_objects(arr)
+    result_int = ndimage.find_objects(arr.astype(int))
+    assert result_bool == result_int

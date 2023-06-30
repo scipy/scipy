@@ -298,7 +298,7 @@ def find_objects(input, max_label=0):
            [0, 0, 1]])
 
     """
-    input = numpy.asarray(input)
+    input = numpy.asarray(input, dtype=int)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
 
