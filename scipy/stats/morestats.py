@@ -10,7 +10,7 @@ __all__ = [  # noqa: F822
     'mvsdist',
     'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
     'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-    'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
+    'shapiro', 'anderson', 'ansari', 'bartlett', 'levene',
     'fligner', 'mood', 'wilcoxon', 'median_test',
     'circmean', 'circvar', 'circstd', 'anderson_ksamp',
     'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',

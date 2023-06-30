@@ -275,9 +275,9 @@ def diagsvd(s, M, N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return r_['-1', part, zeros((M, N-M), typ)]
+        return numpy.hstack((part, zeros((M, N - M), dtype=typ)))
     elif MorN == N:
-        return r_[part, zeros((M-N, N), typ)]
+        return r_[part, zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 

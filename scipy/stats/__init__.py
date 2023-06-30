@@ -444,13 +444,6 @@ tests) are listed above.
    combine_pvalues
    false_discovery_control
 
-Deprecated and Legacy Functions
--------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   binom_test
 
 The following functions are related to the tests above but do not belong in the
 above categories.
@@ -633,7 +626,7 @@ from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
 )
 
 

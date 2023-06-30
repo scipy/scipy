@@ -8,6 +8,7 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -134,6 +135,9 @@ def trapz(y, x=None, dx=1.0, axis=-1):
     `trapz` is kept for backwards compatibility. For new code, prefer
     `trapezoid` instead.
     """
+    msg = ("'scipy.integrate.trapz' is deprecated in favour of "
+           "'scipy.integrate.trapezoid' and will be removed in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return trapezoid(y, x=x, dx=dx, axis=axis)
 
 
@@ -387,6 +391,10 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     `cumtrapz` is kept for backwards compatibility. For new code, prefer
     `cumulative_trapezoid` instead.
     """
+    msg = ("'scipy.integrate.cumtrapz' is deprecated in favour of "
+           "'scipy.integrate.cumulative_trapezoid' and will be removed "
+           "in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
 
 
@@ -407,9 +415,13 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         Specifies the axis to cumulate. Default is -1 (last axis).
     initial : scalar, optional
         If given, insert this value at the beginning of the returned result.
-        Typically this value should be 0. Default is None, which means no
-        value at ``x[0]`` is returned and `res` has one element less than `y`
-        along the axis of integration.
+        0 or None are the only values accepted. Default is None, which means
+        `res` has one element less than `y` along the axis of integration.
+
+        .. deprecated:: 1.12.0
+            The option for non-zero inputs for `initial` will be deprecated in
+            SciPy 1.14.0. After this time, a ValueError will be raised if
+            `initial` is not None or 0.
 
     Returns
     -------
@@ -472,6 +484,13 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     res = np.cumsum(d * (y[slice1] + y[slice2]) / 2.0, axis=axis)
 
     if initial is not None:
+        if initial != 0:
+            warnings.warn(
+                "The option for values for `initial` other than None or 0 is "
+                "deprecated as of SciPy 1.12.0 and will raise a value error in"
+                " SciPy 1.14.0.",
+                DeprecationWarning, stacklevel=2
+            )
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
@@ -522,16 +541,19 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even=None):
+def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
     """
+    msg = ("'scipy.integrate.simps' is deprecated in favour of "
+           "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even=None):
+def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -580,7 +602,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
 
         .. deprecated:: 1.11.0
             Parameter `even` is deprecated and will be removed in SciPy
-            1.13.0. After this time the behaviour for an even number of
+            1.14.0. After this time the behaviour for an even number of
             points will follow that of `even='simpson'`.
 
     Returns
@@ -656,10 +678,10 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
                              "same as y.")
 
     # even keyword parameter is deprecated
-    if even is not None:
+    if even is not _NoValue:
         warnings.warn(
             "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
-            "removed in SciPy 1.13.0",
+            "removed in SciPy 1.14.0",
             DeprecationWarning, stacklevel=2
         )
 
@@ -669,7 +691,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=None):
         slice_all = (slice(None),) * nd
 
         # default is 'simpson'
-        even = even if even is not None else "simpson"
+        even = even if even not in (_NoValue, None) else "simpson"
 
         if even not in ['avg', 'last', 'first', 'simpson']:
             raise ValueError(

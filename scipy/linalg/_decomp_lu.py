@@ -59,6 +59,9 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     :func:`lu`, it outputs the L and U factors into a single array
     and returns pivot indices instead of a permutation matrix.
 
+    While the underlying ``*GETRF`` routines return 1-based pivot indices, the
+    ``piv`` array returned by ``lu_factor`` contains 0-based indices.
+
     Examples
     --------
     >>> import numpy as np
@@ -70,9 +73,32 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
 
     Convert LAPACK's ``piv`` array to NumPy index and test the permutation
 
-    >>> piv_py = [2, 0, 3, 1]
+    >>> def pivot_to_permutation(piv):
+    ...     perm = np.arange(len(piv))
+    ...     for i in range(len(piv)):
+    ...         perm[i], perm[piv[i]] = perm[piv[i]], perm[i]
+    ...     return perm
+    ...
+    >>> p_inv = pivot_to_permutation(piv)
+    >>> p_inv
+    array([2, 0, 3, 1])
     >>> L, U = np.tril(lu, k=-1) + np.eye(4), np.triu(lu)
-    >>> np.allclose(A[piv_py] - L @ U, np.zeros((4, 4)))
+    >>> np.allclose(A[p_inv] - L @ U, np.zeros((4, 4)))
+    True
+
+    The P matrix in P L U is defined by the inverse permutation and
+    can be recovered using argsort:
+
+    >>> p = np.argsort(p_inv)
+    >>> p
+    array([1, 3, 0, 2])
+    >>> np.allclose(A - L[p] @ U, np.zeros((4, 4)))
+    True
+
+    or alternatively:
+
+    >>> P = np.eye(4)[p]
+    >>> np.allclose(A - P @ L @ U, np.zeros((4, 4)))
     True
     """
     if check_finite:
@@ -97,7 +123,8 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     Parameters
     ----------
     (lu, piv)
-        Factorization of the coefficient matrix a, as given by lu_factor
+        Factorization of the coefficient matrix a, as given by lu_factor.
+        In particular piv are 0-indexed pivot indices.
     b : array
         Right-hand side
     trans : {0, 1, 2}, optional
