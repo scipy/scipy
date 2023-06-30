@@ -1894,7 +1894,7 @@ def _scalar_optimization_compress_work(work, mask):
 
 
 def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
-                      initial_step, step_factor, callback):
+                      initial_step, step_factor, step_direction, callback):
     # Input validation for `_differentiate`
 
     if not callable(func):
@@ -1932,16 +1932,19 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
     if miniter != miniter_int or miniter < 0 or miniter > maxiter:
         raise ValueError('`miniter` must be a non-negative integer <= maxiter.')
 
+    step_direction = np.sign(step_direction).astype(dtype)
+    x, step_direction = np.broadcast_arrays(x, step_direction)
+
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
     return (func, x, args, atol, rtol, maxiter, miniter, initial_step,
-            step_factor, callback)
+            step_factor, step_direction, callback)
 
 
 def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                    miniter=None, initial_step=0.5, step_factor=2.0,
-                   callback=None):
+                   step_direction=0, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
     Parameters
@@ -1983,6 +1986,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
+    step_direction : array_like
+        An array representing the direction of the step.
+        Where 0 (default), central differences are used; where negative (e.g.
+        -1), steps are non-positive; and where positive (e.g. 1), all steps are
+        non-negative.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -2067,8 +2075,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     #  - vector-valued functions?
 
     res = _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
-                            initial_step, step_factor, callback)
-    func, x, args, atol, rtol, maxiter, miniter, h0, fac, callback = res
+                            initial_step, step_factor, step_direction, callback)
+    func, x, args, atol, rtol, maxiter, miniter, h0, fac, hdir, callback = res
 
     two = np.asarray(2., dtype=h0.dtype)
     def cd(x, *args, fxph=None, fxmh=None, h=None):  # central difference
@@ -2084,6 +2092,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # broadcasting with astype (which copies) creates new elements of `x`
     # as needed. `ravel` because we work with 1D arrays throughout.
     x = np.broadcast_to(x, shape).ravel().astype(dtype)
+
     fxph, fxmh = fs
     df0 = cd(x, *args, fxph=fxph, fxmh=fxmh)[()]
     dfs = df0[:, np.newaxis]
