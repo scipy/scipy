@@ -10,7 +10,7 @@ from scipy._lib._array_api import (
 
 if not _GLOBAL_CONFIG["SCIPY_ARRAY_API"]:
     pytest.skip(
-        "Array API test; set environment variable array_api_dispatch=1 to run it",
+        "Array API test; set environment variable SCIPY_ARRAY_API=1 to run it",
         allow_module_level=True
     )
 

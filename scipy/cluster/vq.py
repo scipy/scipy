@@ -192,13 +192,13 @@ def vq(obs, code_book, check_finite=True):
     --------
     >>> import numpy as np
     >>> from scipy.cluster.vq import vq
-    >>> code_book = np.array([[1.,1.,1.],
-    ...                       [2.,2.,2.]])
-    >>> features  = np.array([[  1.9,2.3,1.7],
-    ...                       [  1.5,2.5,2.2],
-    ...                       [  0.8,0.6,1.7]])
-    >>> vq(features,code_book)
-    (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
+    >>> code_book = np.array([[1., 1., 1.],
+    ...                       [2., 2., 2.]])
+    >>> features  = np.array([[1.9, 2.3, 1.7],
+    ...                       [1.5, 2.5, 2.2],
+    ...                       [0.8, 0.6, 1.7]])
+    >>> vq(features, code_book)
+    (array([1, 1, 0], dtype=int32), array([0.43588989, 0.73484692, 0.83066239]))
 
     """
     xp = array_namespace(obs, code_book)

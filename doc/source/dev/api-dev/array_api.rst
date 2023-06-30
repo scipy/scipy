@@ -1,48 +1,128 @@
 Support for Array API
 =====================
 
-.. note:: Array API support is still experimental and only a fraction of the
-          public API is covered
+.. note:: Array API support is still experimental and hidden behind an
+          environment variable. Only a small part of the public API is covered
+          right now.
 
-This guide describes how to **use** and **add support** for the
-`Array API <https://data-apis.org/array-api/latest/index.html>`_ standard.
-This standard allow users to use any Array API compatible array without having
-to do anything.
+This guide describes how to **use** and **add support for** the
+`Python Array API standard <https://data-apis.org/array-api/latest/index.html>`_.
+This standard allows users to use any Array API compatible array library
+without having to do anything.
 
-The `RFC`_ defines how SciPy implements the standard.
+The `RFC`_ defines how SciPy implements support for the standard, with the main
+principle being *"array type in equals array type out"*. In addition, the
+implementation does more strict validation of allowed array-like inputs, e.g.
+rejecting numpy matrix and masked array instances, and arrays with object
+dtype.
 
-In the following, a Array API compatible namespace is noted as ``xp``.
+In the following, an Array API compatible namespace is noted as ``xp``.
 
-Use Array API
--------------
 
-There are two global variables controlling the behaviour of functions which
-are supporting the Array API standard.
+Using Array API support
+-----------------------
 
-* ``SCIPY_ARRAY_API``: either a bool, ``"all"``, or a list of supported
-  backend. For now these are ``"cupy", "pytorch", "numpy", "numpy.array_api"``.
-  The global variable can be adjusted dynamically. This is an optional flag.
-  By default the backend is ``numpy`` and it only affects functions modified
-  with the helpers described in the next section.
-* ``SCIPY_DEVICE``: can be ``"cpu", "gpu", "mps"`` (something supported by the
-  backend)
+To enable the Array API standard support, an environment variable must be set
+before importing SciPy:
 
-A new runtime dependency is introduced via a submodule:
+.. code:: bash
+
+   export SCIPY_ARRAY_API=1
+
+This both enables array API standard support and the more strict input
+validation for array-like arguments. This clustering example shows usage with
+PyTorch tensors as inputs and return values:
+
+.. code:: python
+
+    >>> import torch
+    >>> from scipy.cluster.vq import vq
+    >>> code_book = torch.tensor([[1., 1., 1.],
+    ...                           [2., 2., 2.]])
+    >>> features  = torch.tensor([[1.9, 2.3, 1.7],
+    ...                           [1.5, 2.5, 2.2],
+    ...                           [0.8, 0.6, 1.7]])
+    >>> code, dist = vq(features, code_book)
+    >>> code
+    tensor([1, 1, 0], dtype=torch.int32)
+    >>> dist
+    tensor([0.4359, 0.7348, 0.8307])
+
+Note that the above example works for PyTorch CPU tensors. For GPU tensors or
+CuPy arrays, the expected result for ``vq`` is a ``TypeError``, because ``vq``
+is not a pure Python function and hence won't work on GPU.
+
+More strict array input validation will reject ``np.matrix`` and
+``np.ma.MaskedArray`` instances, as well as arrays with ``object`` dtype:
+
+.. code:: python
+
+    >>> import numpy as np
+    >>> from scipy.cluster.vq import vq
+    >>> code_book = np.array([[1., 1., 1.],
+    ...                       [2., 2., 2.]])
+    >>> features  = np.array([[1.9, 2.3, 1.7],
+    ...                       [1.5, 2.5, 2.2],
+    ...                       [0.8, 0.6, 1.7]])
+    >>> vq(features, code_book)
+    (array([1, 1, 0], dtype=int32), array([0.43588989, 0.73484692, 0.83066239]))
+
+    >>> # The above uses numpy arrays; trying to use np.matrix instances or object
+    >>> # arrays instead will yield an exception with `SCIPY_ARRAY_API=1`:
+    >>> vq(np.asmatrix(features), code_book)
+    ...
+    TypeError: 'numpy.matrix' are not supported
+
+    >>> vq(np.ma.asarray(features), code_book)
+    ...
+    TypeError: 'numpy.ma.MaskedArray' are not supported
+
+    >>> vq(features.astype(np.object_), code_book)
+    ...
+    TypeError: object arrays are not supported
+
+
+Currently supported functionality
+`````````````````````````````````
+
+The following modules provide Array API standard support when the environment
+variable is set:
+
+- ``scipy.cluster.hierarchy``
+- ``scipy.cluster.vq``
+
+
+Implementation notes
+--------------------
+
+A key part of the support for the array API standard and specific compatibility
+functions for Numpy, CuPy and PyTorch is provided through
 `array-api-compat <https://github.com/data-apis/array-api-compat>`_.
+This package is included in the SciPy code base via a git submodule (under
+``scipy/_lib``), so no new dependencies are introduced.
 
-This library allows to convert arrays from various libraries (NumPy, PyTorch,
-Cupy) into Array API compatible arrays. It add aliases such as ``xp.concat``.
+``array-api_compat`` provides generic utility functions and adds aliases such
+as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
+using a uniform API across NumPy, PyTorch and CuPy (as of right now; support
+for other libraries like JAX is expected to be added in the future).
 
-When the global flag is off, we still use the "augmented" version of NumPy
-arrays, which is ``array_api_compat.numpy``. When the flag is on, depending
-on the type of arrays, it will return the corresponding compatible namespace.
+When the environment variable isn't set and hence Array API support in SciPy is
+disabled, we still use the "augmented" version of the NumPy namespace, which is
+``array_api_compat.numpy`` (this should not change behavior of SciPy functions).
+When support is enabled, depending on the type of arrays, ``xp`` will return the
+standard-compatible namespace matching the input array type to a function (e.g.,
+if the input to ``cluster.vq.kmeans`` is a PyTorch array, then ``xp`` is
+``array_api_compat.torch``).
 
-Add support to a function
--------------------------
 
-As much as possible, new code should try to follow as closely as possible the
-Array API. By following the standard, effectively adding support for Array API
-is trivial and we ideally don't need to maintain any customization.
+Adding Array API support to a SciPy function
+--------------------------------------------
+
+As much as possible, new code added to SciPy should try to follow as closely as
+possible the Array API standard (these functions typically are best-practice
+idioms for NumPy usage as well). By following the standard, effectively adding
+support for Array API is typically straightforward, and we ideally don't need
+to maintain any customization.
 
 Two helper functions are available:
 
@@ -54,7 +134,31 @@ Two helper functions are available:
   of non standard features. In the end we would want to upstream our needs to
   the compatibility library.
 
-Here are some practical guidelines using an example::
+To add support to a Python-level SciPy function, what you have to change is:
+
+1. Input array validation,
+2. Using ``xp`` rather ``np`` functions,
+3. When calling into compiled code, convert the array to a NumPy array before
+   and convert it back to the input array type after.
+
+Input array validation uses the following pattern::
+
+   xp = array_namespace(arr)  # where `arr` is the first input array
+   # Do this for each input array, it applies all the validation steps (reject
+   # matrix, etc.) as well as the conversion to a numpy array if it's a
+   # sequence, or preserve the non-numpy array type:
+   arr = as_xparray(arr)
+
+If a function calls into a compiled code just once, use the following pattern::
+
+   x = np.asarray(x)  # convert to numpy right before compiled call(s)
+   y = _call_compiled_code(x)
+   y = xp.asarray(y)  # convert back to original array type
+
+If there are multiple calls to compiled code, ensure doing the conversion just
+once to avoid too much overhead.
+
+Here is an example for a hypothetical public SciPy function ``toto``::
 
   def toto(a, b):
       a = np.asarray(a)
@@ -83,22 +187,25 @@ You would convert this like so::
 
       return d
 
+Going through compiled code requires going back to a NumPy array, because
+SciPy's extension modules only work with NumPy arrays (or memoryviews in the
+case of Cython), but not with other array types. For arrays on CPU, the
+conversions should be zero-copy, while on GPU and other devices the attempt at
+conversion will raise an exception. The reason for that is that silent data
+transfer between devices is considered bad practice, as it is likely to be a
+large and hard-to-detect performance bottleneck.
 
-The key is that, going to compiled code requires to go back to a NumPy array.
-Meaning that it will raise if you are on a GPU as the conversion would be
-silent otherwise-which is not good. For CPU interactions, it should be a
-zero-copy operation.
 
 Adding tests
 ------------
 
-Some testing fixture:
+The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
-  multiple Array backend.
+  multiple array backends.
 * ``skip_if_array_api``: don't run a test if ``SCIPY_ARRAY_API`` is on.
 * ``skip_if_array_api_gpu``: don't run a test if GPU is involved (also applies
-  to PyTorch's MPS mode.)
+  to PyTorch's MPS mode).
 * ``skip_if_array_api_backend(backend)``: don't run a test for a specific
   backend
 
@@ -111,24 +218,27 @@ parametrization::
       b = xp.asarray([0, 2, 5])
       toto(a, b)
 
-
 Then ``dev.py`` can be used with he new option ``-b`` or
 ``--array-api-backend``::
 
   python dev.py test -b numpy -b pytorch -s cluster
 
 This automatically set ``SCIPY_ARRAY_API`` appropriately. And if wanted, to
-test a different device, ``SCIPY_DEVICE`` can be manually set. e.g.
-``SCIPY_DEVICE=mps python dev.py ...``.
+test a different device, a second environment variable only used in the test
+suite, ``SCIPY_DEVICE``, can be manually set. Valid values depend on the array
+library under test, e.g. for PyTorch (currently the only library with
+multi-device support that is known to work) valid values are  ``"cpu", "cuda",
+"mps"``. So to run the test suite with the PyTorch MPS backend, use:
+``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
 
-Finally, there is a GitHub action workflow which runs ``pytorch-cpu``.
+Note that there is a GitHub Actions workflow which runs ``pytorch-cpu``.
 
 
 Additional information
 ----------------------
 
-Here are some additional resources which motivated and helped during the
-development phase:
+Here are some additional resources which motivated some design decisions and
+helped during the development phase:
 
 * Initial `PR <https://github.com/tupui/scipy/pull/24>`__ with some discussions
 * Quick started from this `PR <https://github.com/scipy/scipy/pull/15395>`__ and
@@ -136,8 +246,8 @@ development phase:
   `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`__.
 * `PR <https://github.com/scikit-learn/scikit-learn/issues/22352>`__ adding Array
   API surpport to scikit-learn
-* Some other PRs from scikit-learn
-  `22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`__ and
-  `25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__
+* Some other relevant scikit-learn PRs:
+  `#22554 <https://github.com/scikit-learn/scikit-learn/pull/22554>`__ and
+  `#25956 <https://github.com/scikit-learn/scikit-learn/pull/25956>`__
 
 .. _RFC: https://github.com/scipy/scipy/issues/18286
