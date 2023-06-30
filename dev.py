@@ -721,7 +721,7 @@ class Test(Task):
         ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
         multiple=True,
         help=(
-            "Array API backend ('all', 'numpy', 'pytorch', 'numpy.array_api')."
+            "Array API backend ('all', 'numpy', 'pytorch', 'cupy', 'numpy.array_api')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`

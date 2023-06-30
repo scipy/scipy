@@ -121,7 +121,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     # by default, use all available backends
-    if SCIPY_ARRAY_API.lower() != "true":
+    if SCIPY_ARRAY_API.lower() not in ("1", "true"):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
 
         if 'all' in SCIPY_ARRAY_API_:
