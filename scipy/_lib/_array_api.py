@@ -18,9 +18,9 @@ import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_nu
 __all__ = ['array_namespace', 'as_xparray', 'size']
 
 
-# SCIPY_ARRAY_API, array_api_dispatch is used by sklearn
-array_api_dispatch = os.environ.get("array_api_dispatch", False)
-SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", array_api_dispatch)
+# To enable array API and strict array-like input validation
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
+# To control the default device - for use in the test suite only
 SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
 _GLOBAL_CONFIG = {
