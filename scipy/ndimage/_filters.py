@@ -411,21 +411,8 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
-    >>> ascent = datasets.ascent()
-    >>> result = ndimage.prewitt(ascent)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
-    >>> plt.show()
-
-    In the example above, the directional filter is returned,
-    which is the default. The next example shows how to get
-    the magnitude, which is the more typical use case.
-
     >>> import numpy as np
+    >>> ascent = datasets.ascent()
     >>> prewitt_h = ndimage.prewitt(ascent, axis=0)
     >>> prewitt_v = ndimage.prewitt(ascent, axis=1)
     >>> magnitude = np.sqrt(prewitt_h ** 2 + prewitt_v ** 2)
