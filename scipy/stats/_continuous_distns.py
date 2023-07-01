@@ -9002,6 +9002,11 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+        def d_skew(skew):  # delta in terms of skewness
+            s_23 = np.abs(skew)**(2/3)
+            return np.sign(skew) * np.sqrt(
+                np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
+            )
 
         # If skewness of data is greater than max possible population skewness,
         # MoM won't provide a good guess. Get out early.
@@ -9023,7 +9028,7 @@ class skewnorm_gen(rv_continuous):
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
             s = np.clip(s, -s_max, s_max)
-            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
         else:
