@@ -132,7 +132,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             ``callback(x, convergence: float=val)``
 
         ``val`` represents the fractional value of the population convergence.
-        When ``val`` is greater than one the function halts.
+        When ``val`` is greater than one, the function halts.
 
         Introspection is used to determine which of the signatures is invoked.
 
