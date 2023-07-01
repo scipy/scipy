@@ -1170,8 +1170,7 @@ class DifferentialEvolutionSolver:
         if self._wrapped_constraints:
             result.constr = [c.violation(result.x)
                              for c in self._wrapped_constraints]
-            result.constr_violation = np.max(
-                np.concatenate(result.constr))
+            result.constr_violation = np.max(np.concatenate(result.constr))
             result.maxcv = result.constr_violation
 
         return result
