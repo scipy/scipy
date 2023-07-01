@@ -2068,7 +2068,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     """
     # TODO:
     #  - improve comments / documentation after extensive changes
-    #  - one-sided difference formulae
+    #  - test one-sided differences
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2091,19 +2091,28 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
     def pre_func_eval(work):
+
         if work.fs.shape[-1] == 1:
             i = np.arange(work.terms, dtype=work.dtype)
-            h = work.h / work.fac**i
-            h = np.concatenate((-h[::-1], h))
+            hc = work.h / work.fac**i
+            hc = np.concatenate((-hc[::-1], hc))
         else:
-            h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
+            hc = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
 
-        # if work.fs.shape[-1] == 1:
-        #     i = np.arange(2*work.terms, dtype=work.dtype)
-        #     h = work.h / (work.fac**0.5)**i
-        # else:
-        #     h = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
-        x_eval = work.x[:, np.newaxis] + h.astype(work.dtype)
+        if work.fs.shape[-1] == 1:
+            i = np.arange(2*work.terms, dtype=work.dtype)
+            hr = work.h / (work.fac**0.5)**i
+        else:
+            hr = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
+
+        n_new = 2*work.terms if work.nit == 0 else 2  # number of new abscissae
+        il = work.hdir < 0
+        ic = work.hdir == 0
+        ir = work.hdir > 0
+        x_eval = np.zeros((len(work.hdir), n_new), dtype=work.dtype)
+        x_eval[ir] = work.x[ir, np.newaxis] + hr
+        x_eval[ic] = work.x[ic, np.newaxis] + hc
+        x_eval[il] = work.x[il, np.newaxis] - hr
 
         return x_eval
 
@@ -2112,24 +2121,36 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         n = work.terms
         n_new = n if work.nit == 0 else 1
 
+        il = work.hdir < 0
+        ic = work.hdir == 0
+        ir = work.hdir > 0
+        io = il | ir
+
         # Central difference
-        work.fs = np.concatenate((f[:, :n_new], work.fs, f[:, -n_new:]), axis=-1)
+        work_fc = np.concatenate((f[ic, :n_new], work.fs[ic, :], f[ic, -n_new:]), axis=-1)
         if work.nit == 0:
-            fs = work.fs
+            fc = work_fc
         else:
-            fs = (work.fs[:, :n], work.fs[:, n:n+1], work.fs[:, -n:])
-            fs = np.concatenate(fs, axis=-1)
+            fc = (work_fc[:, :n], work_fc[:, n:n+1], work_fc[:, -n:])
+            fc = np.concatenate(fc, axis=-1)
 
         # One-sided difference
-        # work.fs = np.concatenate((work.fs, f), axis=-1)
-        # if work.nit == 0:
-        #     fs = work.fs
-        # else:
-        #     fs = np.concatenate((work.fs[:, 0:1], work.fs[:, -2*n:]), axis=-1)
+        work_fo = np.concatenate((work.fs[io, :], f[io, :]), axis=-1)
+        if work.nit == 0:
+            fo = work_fo
+        else:
+            fo = np.concatenate((work_fo[:, 0:1], work_fo[:, -2*n:]), axis=-1)
 
-        wc, wr = _differentiate_weights(work, n)
-        work.df_last = work.df
-        work.df = fs @ wc / work.h
+        work.fs = np.zeros((len(ic), work.fs.shape[-1] + 2*n_new))
+        work.fs[ic] = work_fc
+        work.fs[io] = work_fo
+
+        wc, wo = _differentiate_weights(work, n)
+        work.df_last = work.df.copy()
+        work.df[ic] = fc @ wc / work.h
+        work.df[io] = fo @ wo / work.h
+        work.df[il] *= -1
+
         work.h /= work.fac
         work.error_last = work.error
         # Simple error estimate - the difference in derivative estimates
