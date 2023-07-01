@@ -1395,17 +1395,17 @@ class TestDifferentiate():
         res2 = zeros._differentiate(f, x, step_factor=20, maxiter=1)
         assert abs(res2.df - ref) < abs(res1.df - ref)
 
-        # # `step_factor` can be less than 1: `initial_step` is the minimum step
-        # kwargs = dict(order=4, maxiter=1)
-        # res = zeros._differentiate(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
-        # ref = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        # assert_allclose(res.df, ref.df, rtol=2e-16)
+        # `step_factor` can be less than 1: `initial_step` is the minimum step
+        kwargs = dict(order=4, maxiter=1)
+        res = zeros._differentiate(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        assert_allclose(res.df, ref.df, rtol=2e-16)
 
-        # This is a similar test for one-sided difference
-        kwargs = dict(order=2, maxiter=1)
-        res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
-        assert_allclose(res.df, ref.df, rtol=5e-15)
+        # # This is a similar test for one-sided difference
+        # kwargs = dict(order=2, maxiter=1)
+        # res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        # ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        # assert_allclose(res.df, ref.df, rtol=5e-15)
 
     def test_maxiter_callback(self):
         # Test behavior of `maxiter` parameter and `callback` interface

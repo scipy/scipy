@@ -2085,49 +2085,51 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     work = OptimizeResult(x=x, df=f, fs=f[:, np.newaxis], error=np.nan, h=h0,
                           df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
-                          status=status, dtype=dtype, terms=(order+1)//2)
+                          status=status, dtype=dtype, terms=(order+1)//2,
+                          hdir=hdir.flatten())
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
     def pre_func_eval(work):
-        # if work.fs.shape[-1] == 1:
-        #     i = np.arange(work.terms, dtype=work.dtype)
-        #     h = work.h / work.fac**i
-        #     h = np.concatenate((-h[::-1], h))
-        # else:
-        #     h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
-
         if work.fs.shape[-1] == 1:
-            i = np.arange(2*work.terms, dtype=work.dtype)
-            h = work.h / (work.fac**0.5)**i
+            i = np.arange(work.terms, dtype=work.dtype)
+            h = work.h / work.fac**i
+            h = np.concatenate((-h[::-1], h))
         else:
-            h = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
+            h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
+
+        # if work.fs.shape[-1] == 1:
+        #     i = np.arange(2*work.terms, dtype=work.dtype)
+        #     h = work.h / (work.fac**0.5)**i
+        # else:
+        #     h = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
         x_eval = work.x[:, np.newaxis] + h.astype(work.dtype)
 
         return x_eval
 
     def post_func_eval(x, f, work):
-        # Optimization: pre-allocate space for work.dfs
+
         n = work.terms
-        m = work.fs.shape[-1]
-        # if m == 1:
-        #     work.fs = np.concatenate((f[:, :n], work.fs, f[:, -n:]), axis=-1)
-        # else:
-        #     leftmost = f[:, 0:1]
-        #     left = work.fs[:, :n-1]
-        #     center = work.fs[:, n:n+1]  # need this only to fill space
-        #     right = work.fs[:, m-n+1:]
-        #     rightmost = f[:, -1:]
-        #     fs = (leftmost, left, center, right, rightmost)
-        #     work.fs = np.concatenate(fs, axis=-1)
-        work.fs = np.concatenate((work.fs, f), axis=-1)
-        if m == 1:
+        n_new = n if work.nit == 0 else 1
+
+        # Central difference
+        work.fs = np.concatenate((f[:, :n_new], work.fs, f[:, -n_new:]), axis=-1)
+        if work.nit == 0:
             fs = work.fs
         else:
-            fs = np.concatenate((work.fs[:, 0:1], work.fs[:, -2*n:]), axis=-1)
+            fs = (work.fs[:, :n], work.fs[:, n:n+1], work.fs[:, -n:])
+            fs = np.concatenate(fs, axis=-1)
+
+        # One-sided difference
+        # work.fs = np.concatenate((work.fs, f), axis=-1)
+        # if work.nit == 0:
+        #     fs = work.fs
+        # else:
+        #     fs = np.concatenate((work.fs[:, 0:1], work.fs[:, -2*n:]), axis=-1)
+
         wc, wr = _differentiate_weights(work, n)
         work.df_last = work.df
-        work.df = fs @ wr / work.h
+        work.df = fs @ wc / work.h
         work.h /= work.fac
         work.error_last = work.error
         # Simple error estimate - the difference in derivative estimates
