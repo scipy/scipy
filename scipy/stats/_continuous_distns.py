@@ -4521,8 +4521,8 @@ class gausshyper_gen(rv_continuous):
         cdf = self._integrate_pdf(0, x, a, b, c, z)
         # for x -> 1, quadrature integration can result in values > 1
         # in that case, use the survival function instead
-        if cdf > 1:
-            cdf = 1 - self._sf(x, a, b, c, z)
+        i = cdf > 1
+        cdf[i] = 1 - self._sf(x[i], a[i], b[i], c[i], z[i])
         return cdf
 
     def _sf(self, x, a, b, c, z):
