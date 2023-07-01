@@ -4513,14 +4513,14 @@ class gausshyper_gen(rv_continuous):
                                                  user_data)
 
         integral = integrate.quad(integrand, lower_bound, upper_bound,
-                                  epsrel=1e-10)[0]
+                                  epsrel=1e-14, limit=100)[0]
 
         return integral
 
     def _cdf(self, x, a, b, c, z):
-        return self._integrate_pdf(0, x, a, b, c, z)
+        return np.clip(self._integrate_pdf(0, x, a, b, c, z), 0, 1)
 
-    def _sf(self,  x, a, b, c, z):
+    def _sf(self, x, a, b, c, z):
         return self._integrate_pdf(x, 1, a, b, c, z)
 
     def _munp(self, n, a, b, c, z):

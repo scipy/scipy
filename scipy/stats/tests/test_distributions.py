@@ -567,6 +567,28 @@ class TestNBinom:
         assert_allclose(vals, ref)
 
 
+class TestGaussHyper:
+    # reference values were computed via the ReferenceDistribution
+    # e. g. GaussHyper().cdf(a=a, b=b, c=c, z=z, x=x)
+    @pytest.mark.parametrize('x, a, b, c, z, cdf_ref, sf_ref',
+                             [(1e-3, 5.5, 25., 2, -0.5,
+                               6.9012263077066474e-12, 0.9999999999930987),
+                              (0.8, 15., 25., 5., 1.,
+                               0.9999999993771566, 6.228434475357731e-10)])
+    def test_cdf_sf(self, x, a, b, c, z, cdf_ref, sf_ref):
+        gausshyper_dist = stats.gausshyper(a=a, b=b, c=c, z=z)
+        cdf = gausshyper_dist.cdf(x)
+        assert_allclose(cdf, cdf_ref, rtol=1e-8)
+        sf = gausshyper_dist.sf(x)
+        assert_allclose(sf, sf_ref, rtol=1e-8)
+
+    def test_cdf_not_greater_than_one(self):
+        # inegrate.quad(pdf) results in a CDF > 1 here, test that is correctly
+        # clipped
+        gausshyper_dist = stats.gausshyper(a=1.5, b=2.5, c=2, z=-0.5)
+        assert gausshyper_dist.cdf(0.999999) <= 1.
+
+
 class TestGenInvGauss:
     def setup_method(self):
         np.random.seed(1234)

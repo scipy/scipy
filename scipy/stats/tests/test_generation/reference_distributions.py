@@ -404,3 +404,17 @@ class TruncExpon(ReferenceDistribution):
 
     def _sf(self, x, b):
         return (mp.exp(-b) - mp.exp(-x))/mp.expm1(-b)
+
+
+class GaussHyper(ReferenceDistribution):
+
+    def __init__(self, *, a, b, c, z):
+        super().__init__(a=a, b=b, c=c, z=z)
+
+    def _pdf(self, x, a, b, c, z):
+        return (x**(a - mp.one) * (mp.one -x)**(b - mp.one)/((mp.one + z*x)**c
+                * mp.beta(a, b) * mp.hyp2f1(c, a, a + b, -z)))
+
+    def _cdf(self, x, a, b, c, z):
+        return (x**a * mp.appellf1(a, mp.one - b, c, a + mp.one, x, -z * x)
+                /(a * mp.beta(a, b) * mp.hyp2f1(a, c, a + b, -z)))
