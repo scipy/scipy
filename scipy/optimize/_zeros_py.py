@@ -1704,8 +1704,8 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         x = pre_func_eval(work)
 
         f = func(x, *work.args)
-        f = np.asarray(f, dtype=dtype).ravel()
-        work.nfev += 1
+        f = np.asarray(f, dtype=dtype)
+        work.nfev += 1 if x.ndim == 1 else x.shape[-1]
 
         post_func_eval(x, f, work)
 
@@ -1816,6 +1816,8 @@ def _scalar_optimization_initialize(func, xs, args):
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
     # that time from the outset.
+    xfs = np.broadcast_arrays(*xs, *fs)
+    xs, fs = xfs[:nx], xfs[nx:]
     xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
     if not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
@@ -1893,7 +1895,7 @@ def _scalar_optimization_compress_work(work, mask):
         work[key] = val[mask] if isinstance(val, np.ndarray) else val
 
 
-def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
+def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
                       initial_step, step_factor, step_direction, callback):
     # Input validation for `_differentiate`
 
@@ -1922,15 +1924,12 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
     initial_step, step_factor = tols[2:].astype(dtype)
 
     maxiter_int = int(maxiter)
-    if maxiter != maxiter_int or maxiter < 0:
-        raise ValueError('`maxiter` must be a non-negative integer.')
+    if maxiter != maxiter_int or maxiter <= 0:
+        raise ValueError('`maxiter` must be a positive integer.')
 
-    if miniter is None:
-        miniter = min(4, maxiter)
-
-    miniter_int = int(miniter)
-    if miniter != miniter_int or miniter < 0 or miniter > maxiter:
-        raise ValueError('`miniter` must be a non-negative integer <= maxiter.')
+    order_int = int(order)
+    if order_int != order or order <= 0:
+        raise ValueError('`order` must be a positive integer.')
 
     step_direction = np.sign(step_direction).astype(dtype)
     x, step_direction = np.broadcast_arrays(x, step_direction)
@@ -1938,12 +1937,12 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return (func, x, args, atol, rtol, maxiter, miniter, initial_step,
+    return (func, x, args, atol, rtol, maxiter_int, order_int, initial_step,
             step_factor, step_direction, callback)
 
 
 def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
-                   miniter=None, initial_step=0.5, step_factor=2.0,
+                   order=8, initial_step=0.5, step_factor=2.0,
                    step_direction=0, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
@@ -1972,11 +1971,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         derivative is estimated with a fixed step size before the first
         iteration, and subsequent iterations refine the estimate using
         Richardson extrapolation.
-    miniter : int, default: min(4, maxiter)
-        The minimum number of iterations of the algorithm to perform. Most
-        functions that are not low-order polynomials require a few iterations
-        to converge to the default tolerances, and setting this close to the
-        number of iterations required typically increases performance.
+    order : int, default: 10
+        The minimmum order of the finite difference formula to be used.
     initial_step : float, default: 0.5
         The initial step size for the finite difference derivative
         approximation.
@@ -2074,80 +2070,53 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     #  - multivariate functions?
     #  - vector-valued functions?
 
-    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, miniter,
+    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
                             initial_step, step_factor, step_direction, callback)
-    func, x, args, atol, rtol, maxiter, miniter, h0, fac, hdir, callback = res
-
-    two = np.asarray(2., dtype=h0.dtype)
-    def cd(x, *args, fxph=None, fxmh=None, h=None):  # central difference
-        h = cd.h if h is None else h
-        fxph = np.asarray(func(x + h, *args)) if fxph is None else fxph
-        fxmh = np.asarray(func(x - h, *args)) if fxmh is None else fxmh
-        return (fxph - fxmh)/(two*h)
-    cd.h = h0
+    func, x, args, atol, rtol, maxiter, order, h0, fac, hdir, callback = res
 
     # Initialization
-    xs = (x + h0, x - h0)
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, xs, args)
-    # broadcasting with astype (which copies) creates new elements of `x`
-    # as needed. `ravel` because we work with 1D arrays throughout.
-    x = np.broadcast_to(x, shape).ravel().astype(dtype)
-
-    fxph, fxmh = fs
-    df0 = cd(x, *args, fxph=fxph, fxmh=fxmh)[()]
-    dfs = df0[:, np.newaxis]
-    h = h0
+    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (x,), args)
+    x, f = xs[0], fs[0]
 
     status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1   # one function evaluations performed above
-    work = OptimizeResult(x=x, df=df0, dfs=dfs, error=np.nan,
+    work = OptimizeResult(x=x, df=f, fs=f[:, np.newaxis], error=np.nan, h=h0,
                           df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
-                          status=status, cd=cd, dtype=dtype)
+                          status=status, dtype=dtype, terms=(order+1)//2)
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
-    # "Jumpstart". The idea is that most functions require at least a few
-    # (`miniter`) iterations to converge. To reduce looping and the number
-    # of separate function evaluations, take care of them all at once. Good
-    # idea, and reduces execution time *a little*, but looks ugly and has been
-    # very tricky to get right. Consider removing this feature.
-    if miniter >= 1:
-        i = np.arange(1, miniter+1, dtype=dtype)
-        h = h / fac**i
-        x = x[..., np.newaxis]
-        fxph = np.asarray(func(x + h, *args)).astype(dtype, copy=False)
-        fxmh = np.asarray(func(x - h, *args)).astype(dtype, copy=False)
-        df_jumpstart = cd(x, *args, fxph=fxph, fxmh=fxmh, h=h)
-        df_jumpstart = df_jumpstart.reshape(-1, len(h))
-        h = h[-1]
-        work.dfs = np.concatenate((work.dfs, df_jumpstart), axis=-1)
-
-        work.df_last = work.df
-        w = _differentiate_weights(work, work.dfs.shape[-1])
-        work.df = work.dfs @ w
-
-    if miniter >= 2:
-        w = _differentiate_weights(work, work.dfs.shape[-1]-1)
-        work.df_last = work.dfs[:, :-1] @ w
-
-    work.error = abs(work.df - work.df_last)
-    cd.h = h
-    work.nit += miniter
-    work.nfev += miniter
-
     def pre_func_eval(work):
-        work.cd.h /= work.fac
-        return work.x
+        if work.fs.shape[-1] == 1:
+            i = np.arange(work.terms, dtype=work.dtype)
+            h = work.h / work.fac**i
+            h = np.concatenate((-h[::-1], h))
+        else:
+            h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
+        x_eval = work.x[:, np.newaxis] + h
 
-    def post_func_eval(x, df, work):
+        return x_eval
+
+    def post_func_eval(x, f, work):
         # Optimization: pre-allocate space for work.dfs
-        work.dfs = np.concatenate((work.dfs, df[:, np.newaxis]), axis=-1)
-        w = _differentiate_weights(work, work.dfs.shape[-1])
+        n = work.terms
+        m = work.fs.shape[-1]
+        if m == 1:
+            work.fs = np.concatenate((f[:, :n], work.fs, f[:, -n:]), axis=-1)
+        else:
+            leftmost = f[:, 0:1]
+            left = work.fs[:, :n-1]
+            center = work.fs[:, n:n+1]  # need this only to fill space
+            right = work.fs[:, m-n+1:]
+            rightmost = f[:, -1:]
+            fs = (leftmost, left, center, right, rightmost)
+            work.fs = np.concatenate(fs, axis=-1)
+
+        w = _differentiate_weights(work, work.terms).astype(work.dtype)
         work.df_last = work.df
-        # This is Richardson extrapolation, although it may look different
-        # from other implementations. See _differentiate_weights
-        work.df = work.dfs @ w
+        work.df = work.fs @ w / work.h
+        work.h /= work.fac
         work.error_last = work.error
         # Simple error estimate - the difference in derivative estimates
         work.error = abs(work.df - work.df_last)
@@ -2173,11 +2142,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         return
 
     def customize_result(res):
-        res['nfev'] *= 2  # two function evaluations per iteration
         return
 
     return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, cd, args, dtype,
+                                     maxiter, func, args, dtype,
                                      pre_func_eval, post_func_eval,
                                      check_termination, post_termination_check,
                                      customize_result, res_work_pairs)
@@ -2210,16 +2178,23 @@ def _differentiate_weights(work, n):
         _differentiate_weights.cache = []
         _differentiate_weights.step_parameters = step_parameters
 
-    for j in range(len(_differentiate_weights.cache), n):
-        m = j + 2
-        i = np.arange(0, 2 * m, 2)
-        A = np.vander(1 / work.fac ** i, increasing=True)
-        b = np.zeros(m)
-        b[0] = 1
-        w = np.linalg.solve(A.T, b).astype(work.dtype)
-        _differentiate_weights.cache.append(w)
+    if len(_differentiate_weights.cache) != 2*n + 1:
+        i = np.arange(-n, n + 1)
+        p = np.abs(i) - 1.
+        s = np.sign(i)
 
-    weights = _differentiate_weights.cache[n - 2]
-    return weights.astype(work.dtype, copy=False)
+        h = s / work.fac ** p
+        A = np.vander(h, increasing=True).T
+        b = np.zeros(2*n + 1)
+        b[1] = 1
+        weights = np.linalg.solve(A, b)
+        weights[n] = 0
+
+        for i in range(n):
+            weights[-i-1] = -weights[i]
+
+        _differentiate_weights.cache = weights
+
+    return _differentiate_weights.cache.astype(work.dtype, copy=False)
 _differentiate_weights.cache = []
 _differentiate_weights.step_parameters = tuple()
