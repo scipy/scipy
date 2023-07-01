@@ -1933,6 +1933,7 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
 
     step_direction = np.sign(step_direction).astype(dtype)
     x, step_direction = np.broadcast_arrays(x, step_direction)
+    x, step_direction = x[()], step_direction[()]
 
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
@@ -2066,6 +2067,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     """
     # TODO:
+    #  - improve comments / documentation after extensive changes
     #  - one-sided difference formulae
     #  - multivariate functions?
     #  - vector-valued functions?
@@ -2088,13 +2090,19 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
     def pre_func_eval(work):
+        # if work.fs.shape[-1] == 1:
+        #     i = np.arange(work.terms, dtype=work.dtype)
+        #     h = work.h / work.fac**i
+        #     h = np.concatenate((-h[::-1], h))
+        # else:
+        #     h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
+
         if work.fs.shape[-1] == 1:
-            i = np.arange(work.terms, dtype=work.dtype)
-            h = work.h / work.fac**i
-            h = np.concatenate((-h[::-1], h))
+            i = np.arange(2*work.terms, dtype=work.dtype)
+            h = work.h / (work.fac**0.5)**i
         else:
-            h = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
-        x_eval = work.x[:, np.newaxis] + h
+            h = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
+        x_eval = work.x[:, np.newaxis] + h.astype(work.dtype)
 
         return x_eval
 
@@ -2102,20 +2110,24 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # Optimization: pre-allocate space for work.dfs
         n = work.terms
         m = work.fs.shape[-1]
+        # if m == 1:
+        #     work.fs = np.concatenate((f[:, :n], work.fs, f[:, -n:]), axis=-1)
+        # else:
+        #     leftmost = f[:, 0:1]
+        #     left = work.fs[:, :n-1]
+        #     center = work.fs[:, n:n+1]  # need this only to fill space
+        #     right = work.fs[:, m-n+1:]
+        #     rightmost = f[:, -1:]
+        #     fs = (leftmost, left, center, right, rightmost)
+        #     work.fs = np.concatenate(fs, axis=-1)
+        work.fs = np.concatenate((work.fs, f), axis=-1)
         if m == 1:
-            work.fs = np.concatenate((f[:, :n], work.fs, f[:, -n:]), axis=-1)
+            fs = work.fs
         else:
-            leftmost = f[:, 0:1]
-            left = work.fs[:, :n-1]
-            center = work.fs[:, n:n+1]  # need this only to fill space
-            right = work.fs[:, m-n+1:]
-            rightmost = f[:, -1:]
-            fs = (leftmost, left, center, right, rightmost)
-            work.fs = np.concatenate(fs, axis=-1)
-
-        w = _differentiate_weights(work, work.terms).astype(work.dtype)
+            fs = np.concatenate((work.fs[:, 0:1], work.fs[:, -2*n:]), axis=-1)
+        wc, wr = _differentiate_weights(work, n)
         work.df_last = work.df
-        work.df = work.fs @ w / work.h
+        work.df = fs @ wr / work.h
         work.h /= work.fac
         work.error_last = work.error
         # Simple error estimate - the difference in derivative estimates
@@ -2175,15 +2187,19 @@ def _differentiate_weights(work, n):
     step_parameters = (work.h0, work.fac)
     cached_step_parameters = _differentiate_weights.step_parameters
     if step_parameters != cached_step_parameters:
-        _differentiate_weights.cache = []
+        _differentiate_weights.central = []
+        _differentiate_weights.right = []
         _differentiate_weights.step_parameters = step_parameters
 
-    if len(_differentiate_weights.cache) != 2*n + 1:
+    fac = work.fac.astype(np.float64)
+
+    if len(_differentiate_weights.central) != 2*n + 1:
+        # Central difference weights
         i = np.arange(-n, n + 1)
         p = np.abs(i) - 1.
         s = np.sign(i)
 
-        h = s / work.fac ** p
+        h = s / fac ** p
         A = np.vander(h, increasing=True).T
         b = np.zeros(2*n + 1)
         b[1] = 1
@@ -2193,8 +2209,23 @@ def _differentiate_weights(work, n):
         for i in range(n):
             weights[-i-1] = -weights[i]
 
-        _differentiate_weights.cache = weights
+        _differentiate_weights.central = weights
 
-    return _differentiate_weights.cache.astype(work.dtype, copy=False)
-_differentiate_weights.cache = []
+        # One-sided difference weights
+        i = np.arange(2*n + 1)
+        p = i - 1.
+        s = np.sign(i)
+
+        h = s / np.sqrt(fac) ** p
+        A = np.vander(h, increasing=True).T
+        b = np.zeros(2 * n + 1)
+        b[1] = 1
+        weights = np.linalg.solve(A, b)
+
+        _differentiate_weights.right = weights
+
+    return (_differentiate_weights.central.astype(work.dtype, copy=False),
+            _differentiate_weights.right.astype(work.dtype, copy=False))
+_differentiate_weights.central = []
+_differentiate_weights.right = []
 _differentiate_weights.step_parameters = tuple()
