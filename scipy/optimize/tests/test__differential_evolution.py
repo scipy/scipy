@@ -261,9 +261,10 @@ class TestDifferentialEvolutionSolver:
 
     def test_intermediate_result(self):
         bounds = [(0, 2), (0, 2)]
-        visited = [False]
+        visited = [0]
+
         def callback(intermediate_result):
-            visited[0] = True
+            visited[0] += 1
             assert intermediate_result.population.ndim == 2
             assert intermediate_result.population.shape[1] == 2
             assert_equal(
@@ -281,7 +282,6 @@ class TestDifferentialEvolutionSolver:
 
         result = differential_evolution(rosen, bounds, callback=callback)
         assert result.success
-        assert visited[0]
         assert_equal(visited[0], result.nit)
 
     def test_callback_terminates(self):
