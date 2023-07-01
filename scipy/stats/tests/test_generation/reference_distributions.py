@@ -416,5 +416,7 @@ class GaussHyper(ReferenceDistribution):
                 * mp.beta(a, b) * mp.hyp2f1(c, a, a + b, -z)))
 
     def _cdf(self, x, a, b, c, z):
+        # to avoid lengthy high precision integration, use analytical CDF
+        # reference: https://www.redalyc.org/pdf/835/83522621002.pdf
         return (x**a * mp.appellf1(a, mp.one - b, c, a + mp.one, x, -z * x)
                 /(a * mp.beta(a, b) * mp.hyp2f1(a, c, a + b, -z)))
