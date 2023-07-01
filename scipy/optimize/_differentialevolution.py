@@ -522,15 +522,19 @@ class DifferentialEvolutionSolver:
 
         The callback also supports a signature like:
 
-            ``callback(x, convergence: float =val)``
+            ``callback(x, convergence: float=val)``
 
         ``val`` represents the fractional value of the population convergence.
-        When ``val`` is greater than one the function halts.
+        When ``val`` is greater than one, the function halts.
 
         Introspection is used to determine which of the signatures is invoked.
 
         The minimization will halt if the callback raises ``StopIteration``
         or returns ``True`` (any polishing is still carried out).
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -1072,7 +1076,7 @@ class DifferentialEvolutionSolver:
 
             if self.callback:
                 c = self.tol / (self.convergence + _MACHEPS)
-                res = self._result(nit=nit)
+                res = self._result(nit=nit, message="in progress")
                 res.convergence = c
                 try:
                     warning_flag = bool(self.callback(res))
@@ -1165,13 +1169,16 @@ class DifferentialEvolutionSolver:
             nit=nit,
             message=message,
             success=(warning_flag is not True),
-            population=self._scale_parameters(self.population)
+            population=self._scale_parameters(self.population),
+            population_energies=self.population_energies
         )
         if self._wrapped_constraints:
             result.constr = [c.violation(result.x)
                              for c in self._wrapped_constraints]
             result.constr_violation = np.max(np.concatenate(result.constr))
             result.maxcv = result.constr_violation
+            if result.maxcv > 0:
+                result.success = False
 
         return result
 

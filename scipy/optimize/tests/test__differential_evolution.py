@@ -6,7 +6,7 @@ import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen, minimize
@@ -266,10 +266,23 @@ class TestDifferentialEvolutionSolver:
             visited[0] = True
             assert intermediate_result.population.ndim == 2
             assert intermediate_result.population.shape[1] == 2
+            assert_equal(
+                intermediate_result.population_energies[0],
+                rosen(intermediate_result.population[0])
+            )
+            assert_equal(
+                intermediate_result.population_energies[3],
+                rosen(intermediate_result.population[3])
+            )
+            assert_equal(intermediate_result.fun, rosen(intermediate_result.x))
+            assert intermediate_result.message == 'in progress'
+            assert intermediate_result.success is True
+            assert isinstance(intermediate_result, OptimizeResult)
 
         result = differential_evolution(rosen, bounds, callback=callback)
         assert result.success
         assert visited[0]
+        assert_equal(visited[0], result.nit)
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
@@ -284,7 +297,6 @@ class TestDifferentialEvolutionSolver:
         assert_string_equal(result.message, expected_msg)
 
         # if callback raises StopIteration then solve should be interrupted
-        # with no polishing
         def callback_stop(intermediate_result):
             raise StopIteration
 
