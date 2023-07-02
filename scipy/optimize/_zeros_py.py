@@ -1967,27 +1967,27 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
             func(x: ndarray, *args) -> ndarray
 
          where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of components of any type(s).
-         ``func`` must be an elementwise function: each element ``func(x)[i]``
-         must equal ``func(x[i])`` for all indices ``i``.
+         which may contain an arbitrary number of arrays that are broadcastable
+         with `x`. ``func`` must be an elementwise function: each element
+         ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
     x : array_like
-        Value at which to evaluate the derivative.
+        Abscissae at which to evaluate the derivative.
     args : tuple, optional
-        Additional positional arguments to be passed to `func`.
+        Additional positional arguments to be passed to `func`. Must be arrays
+        broadcastable with `x`. If the callable to be differentiated requires
+        arguments that are not broadcastable with `x`, wrap that callable with
+        `func`. See Examples.
     atol, rtol : float, optional
         Absolute and relative tolerances for the stopping condition: iteration
         will stop when ``res.error < atol + rtol * abs(res.df)``. The default
         `atol` is the smallest normal number of the appropriate dtype, and
-        the default `rtol` is the square root of the appropriate dtype.
-    maxiter : int, default: 10
-        The maximum number of iterations of the algorithm to perform. The
-        derivative is estimated with a fixed step size before the first
-        iteration, and subsequent iterations refine the estimate using
-        Richardson extrapolation.
-    order : int, default: 10
-        The minimmum order of the finite difference formula to be used.
+        the default `rtol` is the square root of the precision of the
+        appropriate dtype.
+    order : int, default: 8
+        The (positive integer) order of the finite difference formula to be
+        used. Odd integers will be rounded up to the next even integer.
     initial_step : float, default: 0.5
-        The initial step size for the finite difference derivative
+        The (absolute) initial step size for the finite difference derivative
         approximation.
     step_factor : float, default: 2.0
         The factor by which the step size is *reduced* in each iteration; i.e.
@@ -1995,8 +1995,12 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         ``step_factor < 1``, subsequent steps will be greater than the initial
         step; this may be useful if steps smaller than some threshold are
         undesirable (e.g. due to subtractive cancellation error).
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform. See
+        notes.
     step_direction : array_like
-        An array representing the direction of the step.
+        An array representing the direction of the step. Must be broadcastable
+        with `x` and all `args`.
         Where 0 (default), central differences are used; where negative (e.g.
         -1), steps are non-positive; and where positive (e.g. 1), all steps are
         non-negative.
@@ -2004,10 +2008,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
-        similar to that returned by `_chandrupatla` (but containing the current
+        similar to that returned by `_differentiate` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_chandrupatla` will return a result.
+        `_differentiate` will return a result.
 
     Returns
     -------
@@ -2021,11 +2025,13 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
             The derivative of `func` at `x`, if the algorithm terminated
             successfully.
         error : float
-            An estimate of the error.
+            An estimate of the error: the magnitude of the difference between
+            the current estimate of the derivative and the estimate in the
+            previous iteration.
         nfev : int
-            The number of times `func` was evaluated.
+            The number of points at which `func` was evaluated.
         nit : int
-            The number of Richardson extrapolation refinements performed.
+            The number of iterations performed.
         status : int
             An integer representing the exit status of the algorithm.
             ``0`` : The algorithm converged to the specified tolerances.
@@ -2043,14 +2049,24 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     -----
     The implementation was inspired by the work of jacobi [1]_,
     numdifftools [2]_, and DERIVEST [3]_, but the algorithm is simpler.
-    As in [1]_, a second-order finite difference formula is used to estimate
-    the derivative with an initial step size. In each iteration, the step size
-    is reduced by a constant factor, the second-order formula is used with the
-    new step size, and the sequence of second-order derivative approximations
-    is used to produce a higher-order approximation. Unlike in [1]_, the
-    higher-order approximation is produced using Richardson extrapolation, and
-    the error estimate is the change in the derivative estimate due to the
-    most recent Richardson extrapolation.
+    In the first iteration, the derivative is estimated using a finite
+    difference formula of order `order` with maximum step size `initial_step`.
+    Each subsequent iteration, the maximum step size is reduced by
+    `step_factor`, and the derivative is estimated again until a termination
+    condition is reached. The error estimate is the magnitude of the difference
+    between the current derivative approximation and that of the previous
+    iteration.
+
+    The stencils of the finite difference formulae are designed such that
+    abscissae are "nested": after `func` is evaluated at ``order + 1``
+    points in the first iteration, `func` is evaluated at only two new points
+    in each subsequent iteration; the remaining ``order - 1`` function values
+    required by the finite difference formula are reused.
+
+    Step sizes are absolute. When the step size is small relative to the
+    magnitude of `x`, precision is lost; for example, if `x` is ``1e20``, the
+    default initial step size of ``0.5`` cannot be resolved. Accordingly,
+    consider using larger initial step sizes for large magnitudes of `x`.
 
     References
     ----------
@@ -2079,7 +2095,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     """
     # TODO:
-    #  - improve comments / documentation after extensive changes
+    #  - continue to improve comments / documentation after extensive changes
+    #  - add examples
+    #  - prepare PR
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2125,6 +2143,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         x_eval[ir] = work.x[ir, np.newaxis] + hr
         x_eval[ic] = work.x[ic, np.newaxis] + hc
         x_eval[il] = work.x[il, np.newaxis] - hr
+        # Yes, I know it's common to measure the actual step, which may not
+        # exactly equal `h`. We leave that improvement to future work.
 
         return x_eval
 
@@ -2165,7 +2185,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
         work.h /= work.fac
         work.error_last = work.error
-        # Simple error estimate - the difference in derivative estimates
+        # Simple error estimate - the difference in derivative estimates. This
+        # is typically conservative because if convergence has begin, the true
+        # error is much closer to the difference between the current estimate
+        # and the *next* error estimate (but we don't know it yet).
         work.error = abs(work.df - work.df_last)
 
     def check_termination(work):
@@ -2179,7 +2202,13 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         work.df[i], work.status[i] = np.nan, _EVALUEERR
         stop[i] = True
 
-        i = (work.error > work.error_last*10) & ~stop  # heuristic
+        # With infinite precision, there is a step size below which
+        # all smaller step sizes will reduce the error. But in floating point
+        # arithmetic, catastrophic cancellation will begin to cause the error
+        # to increase again. This heuristic tries to avoid step sizes that are
+        # too small. Note that there are more theoretically sound approache,
+        # but this was simple and effective.
+        i = (work.error > work.error_last*10) & ~stop
         work.status[i] = _EERRORINCREASE
         stop[i] = True
 
@@ -2199,39 +2228,81 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
 
 def _differentiate_weights(work, n):
-    # This produces the weights needed to refine the derivative estimate using
-    # Richardson extrapolation, although it looks different from some other
-    # implementations. Let `df(h)` be the second-order central-difference
-    # approximation with step size `h`, `t` be the step size reduction
-    # factor, c0 be the true derivative, and `ci` be (unknown) constants.
-    # After two iterations (for example), we have:
-    #     f(h)      = c0 + c1*h**2       + c2*h**4       + O(h**6)
-    #     f(h/t)    = c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
-    #     f(h/t**2) = c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
-    # by construction of the second-order central difference formula.
+    # This produces the weights of the finite difference formula for a given
+    # stencil. In experiments, use of a second-order central difference formula
+    # with Richardson extrapolation was more stable numerically, but it was
+    # more complicated, and it would have become even more complicated when
+    # adding support for one-sided differences. However, now that all the
+    # function evaluation values are stored, they can be processed in whatever
+    # way is desired to produce the derivative estimate. We leave alternative
+    # approaches to future work. To be more self-contained, here is the theory
+    # for deriving these weights.
+    #
+    # Recall that the Taylor expansion of a univariate, scalar-values function
+    # about a point `x` may be expressed as:
+    #      f(x + h)  =     f(x) + f'(x)*h + f''(x)/2!*h**2  + O(h**3)
+    # Suppose we evaluate f(x), f(x+h), and f(x-h).  We have:
+    #      f(x)      =     f(x)
+    #      f(x + h)  =     f(x) + f'(x)*h + f''(x)/2!*h**2  + O(h**3)
+    #      f(x - h)  =     f(x) - f'(x)*h + f''(x)/2!*h**2  + O(h**3)
     # We seek weights `wi` such that:
-    #     w1*f(h)      = w1*(c0 + c1*h**2       + c2*h**4       + O(h**6)
-    #   + w2*f(h/t)    = w2*(c0 + c1*h**2/t**2  + c2*h**4/t**4  + O(h**6)
-    #   + w3*f(h/t**2) = w3*(c0 + c1*h**2/t**4  + c2*h**4/t**8  + O(h**6)
-    #                  =     c0 + 0             + 0             + O(h**6)
-    # The Vandermonde matrix collects the coefficients on the unknown `ci`,
-    # and we solve for the weights needed to cancel as many of the `ci`
-    # as we can except for the one we are interested in - the true derivative,
-    # `c0`.
+    #   w1*f(x)      = w1*(f(x))
+    # + w2*f(x + h)  = w2*(f(x) + f'(x)*h + f''(x)/2!*h**2) + O(h**3)
+    # + w3*f(x - h)  = w3*(f(x) - f'(x)*h + f''(x)/2!*h**2) + O(h**3)
+    #                =     0    + f'(x)*h + 0               + O(h**3)
+    # Then
+    #     f'(x) ~ (w1*f(x) + w2*f(x+h) + w3*f(x-h))/h
+    # is a finite difference derivative approximation with error O(h**2),
+    # and so it is said to be a "second-order" approximation. Under certain
+    # conditions, the error in the approximation will decrease with h**2; that
+    # is, if `h` is reduced by a factor of 2, the error is reduced by a factor
+    # of 4.
+    # By default, we use eighth-order formulae. Our central-difference formula
+    # uses abscissae:
+    #   x-h/c**3, x-h/c**2, x-h/c, x-h, x, x+h, x+h/c, x+h/c**2, x+h/c**3
+    # where `c` is the step factor. (Typically, the step factor is greater than
+    # one, so the outermost points as written are those closest to `x`.)
+    # These points are chosen so that each iteration, the step can be reduced
+    # by the factor c, and most of the function evaluations can be reused with
+    # the new step size. For example, in the next iteration, we have:
+    #   x-h/c**4, x-h/c**3, x-h/c**2, x-h/c, x, x+h/c, x+h/c**2, x+h/c**3, x+h/c**4
+    # We do not re-use x-h or x+h; while that would increase the order of the
+    # formula and thus the theoretical convergence rate, it is also less stable
+    # numerically using this scheme. (As noted above, there are other
+    # ways of processing the values that are more stable; consider using those
+    # in the future.)
+    # The (right) one-sided formula is produced similarly using abscissae
+    #   x, x+h, x+h/d, x+h/d**2, ..., x+h/d**6, x+h/d**7, x+h/d**7
+    # where d is the square root of c. When the step size is reduced by a factor
+    # of c = d**2, we have abscissae
+    #   x, x+h/d**2, x+h/d**3..., x+h/d**8, x+h/d**9, x+h/d**9
+    # `d` is chosen as the square root of `c` so that the one-sided abscissae
+    # are also nested but the rate of the step-size reduction is the same
+    # per iteration as in the central difference case. Note that because the
+    # central difference formulas are inherently of even order, for simplicity,
+    # we use only even-order formulas for one-sided differences, too.
 
-    step_parameters = (work.h0, work.fac)
-    cached_step_parameters = _differentiate_weights.step_parameters
-    if step_parameters != cached_step_parameters:
-        _differentiate_weights.central = []
-        _differentiate_weights.right = []
-        _differentiate_weights.step_parameters = step_parameters
-
+    # It's possible for the user to specify `fac` in, say, double precision but
+    # `x` and `args` in single precision. `fac` gets converted to single
+    # precision, but we should always use double precision for the intermediate
+    # calculations here to avoid additional error in the weights.
     fac = work.fac.astype(np.float64)
 
+    # Note that if the user switches back to floating point precision with
+    # `x` and `args`, then `fac` will not necessarily equal the (lower
+    # precision) cached `_differentiate_weights.fac`, and the weights will
+    # need to be recalculated. This could be fixed, but it's late, and of
+    # low consequence.
+    if fac != _differentiate_weights.fac:
+        _differentiate_weights.central = []
+        _differentiate_weights.right = []
+        _differentiate_weights.fac = fac
+
     if len(_differentiate_weights.central) != 2*n + 1:
-        # Central difference weights
+        # Central difference weights. Consider refactoring this; it could
+        # probably be more compact.
         i = np.arange(-n, n + 1)
-        p = np.abs(i) - 1.
+        p = np.abs(i) - 1.  # center point has power `p` -1, but sign `s` is 0
         s = np.sign(i)
 
         h = s / fac ** p
@@ -2239,14 +2310,19 @@ def _differentiate_weights(work, n):
         b = np.zeros(2*n + 1)
         b[1] = 1
         weights = np.linalg.solve(A, b)
-        weights[n] = 0
 
+        # Enforce identities to improve accuracy
+        weights[n] = 0
         for i in range(n):
             weights[-i-1] = -weights[i]
 
+        # Cache the weights. We only need to calculate them once unless
+        # the step
         _differentiate_weights.central = weights
 
-        # One-sided difference weights
+        # One-sided difference weights. The left one-sided weights (with
+        # negative steps) are simply the negative of the right one-sided
+        # weights, so no need to compute them separately.
         i = np.arange(2*n + 1)
         p = i - 1.
         s = np.sign(i)
@@ -2263,4 +2339,4 @@ def _differentiate_weights(work, n):
             _differentiate_weights.right.astype(work.dtype, copy=False))
 _differentiate_weights.central = []
 _differentiate_weights.right = []
-_differentiate_weights.step_parameters = tuple()
+_differentiate_weights.fac = None
