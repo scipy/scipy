@@ -1999,8 +1999,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         The maximum number of iterations of the algorithm to perform. See
         notes.
     step_direction : array_like
-        An array representing the direction of the step. Must be broadcastable
-        with `x` and all `args`.
+        An array representing the direction of the finite difference steps (for
+        use when `x` lies near to the boundary of the domain of the function.)
+        Must be broadcastable with `x` and all `args`.
         Where 0 (default), central differences are used; where negative (e.g.
         -1), steps are non-positive; and where positive (e.g. 1), all steps are
         non-negative.
@@ -2008,8 +2009,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
-        similar to that returned by `_differentiate` (but containing the current
-        iterate's values of all variables). If `callback` raises a
+        similar to that returned by `_differentiate` (but containing the
+        current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
         `_differentiate` will return a result.
 
@@ -2017,21 +2018,12 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     -------
     res : OptimizeResult
         An instance of `scipy.optimize.OptimizeResult` with the following
-        attributes. The descriptions are written as though the values will be
+        attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
-        arrays of the same shape.
+        arrays of the same shape.)
 
-        df : float
-            The derivative of `func` at `x`, if the algorithm terminated
-            successfully.
-        error : float
-            An estimate of the error: the magnitude of the difference between
-            the current estimate of the derivative and the estimate in the
-            previous iteration.
-        nfev : int
-            The number of points at which `func` was evaluated.
-        nit : int
-            The number of iterations performed.
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
         status : int
             An integer representing the exit status of the algorithm.
             ``0`` : The algorithm converged to the specified tolerances.
@@ -2040,15 +2032,26 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
             ``-3`` : A non-finite value was encountered.
             ``-4`` : Iteration was terminated by `callback`.
             ``1`` : The algorithm is proceeding normally (in `callback` only).
-        success : bool
-            ``True`` when the algorithm terminated successfully (status ``0``).
+        df : float
+            The derivative of `func` at `x`, if the algorithm terminated
+            successfully.
+        error : float
+            An estimate of the error: the magnitude of the difference between
+            the current estimate of the derivative and the estimate in the
+            previous iteration.
+        nit : int
+            The number of iterations performed.
+        nfev : int
+            The number of points at which `func` was evaluated.
         x : float
-            The value at which the derivative is evaluated.
+            The value at which the derivative of `func` was evaluated
+            (after broadcasting with `args` and `step_direction`).
 
     Notes
     -----
-    The implementation was inspired by the work of jacobi [1]_,
-    numdifftools [2]_, and DERIVEST [3]_, but the algorithm is simpler.
+    The implementation was inspired by jacobi [1]_, numdifftools [2]_, and
+    DERIVEST [3]_, but the implementation follows the theory of Taylor series
+    more straightforwardly (and arguably naively so).
     In the first iteration, the derivative is estimated using a finite
     difference formula of order `order` with maximum step size `initial_step`.
     Each subsequent iteration, the maximum step size is reduced by
@@ -2060,8 +2063,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     The stencils of the finite difference formulae are designed such that
     abscissae are "nested": after `func` is evaluated at ``order + 1``
     points in the first iteration, `func` is evaluated at only two new points
-    in each subsequent iteration; the remaining ``order - 1`` function values
-    required by the finite difference formula are reused.
+    in each subsequent iteration; ``order - 1`` previously evaluated function
+    values required by the finite difference formula are reused, and two
+    function values (evaluations at the points furthest from `x`) are unused.
 
     Step sizes are absolute. When the step size is small relative to the
     magnitude of `x`, precision is lost; for example, if `x` is ``1e20``, the
@@ -2081,23 +2085,74 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     Examples
     --------
+    Evaluate the derivative of ``np.exp`` at several points ``x``.
+
     >>> import numpy as np
     >>> from scipy.optimize._zeros_py import _differentiate
     >>> f = np.exp
+    >>> df = np.exp  # true derivative
     >>> x = np.linspace(1, 2, 5)
     >>> res = _differentiate(f, x)
     >>> res.df  # approximation of the derivative
     array([2.71828183, 3.49034296, 4.48168907, 5.75460268, 7.3890561 ])
     >>> res.error  # estimate of the error
-    array([2.79620077e-14, 3.59469399e-14, 4.60985417e-14, 5.91887650e-14, 7.61127272e-14])
-    >>> abs(res.df - np.exp(x))  # true error
-    array([3.55271368e-15, 8.88178420e-16, 7.99360578e-15, 7.99360578e-15, 3.55271368e-15])
+    array([7.12940817e-12, 9.16688947e-12, 1.17594823e-11, 1.50972568e-11, 1.93942640e-11])
+    >>> abs(res.df - df(x))  # true error
+    array([3.06421555e-14, 3.01980663e-14, 5.06261699e-14, 6.30606678e-14, 8.34887715e-14])
+
+    Show the convergence of the approximation as the step size is reduced.
+    Each iteration, the step size is reduced by `step_factor`, so for
+    sufficiently small initial step, each iteration reduces the error by a
+    factor of ``1/step_factor**order`` until finite precision arithmetic
+    inhibits further improvement.
+
+    >>> iter = list(range(1, 12))  # maximum iterations
+    >>> hfac = 2  # step size reduction per iteration
+    >>> hdir = [-1, 0, 1]  # compare left-, central-, and right- steps
+    >>> order = 4  # order of differentiation formula
+    >>> x = 1
+    >>> ref = df(x)
+    >>> errors = []  # true error
+    >>>> for i in iter:
+    ...     res = _differentiate(f, x, maxiter=i, step_factor=hfac,
+    ...                          step_direction=hdir, order=order,
+    ...                          atol=0, rtol=0)  # prevent early termination
+    ...     errors.append(abs(res.df - ref))
+    >>> errors = np.array(errors)
+    >>> plt.semilogy(iter, errors[:, 0], label='left differences')
+    >>> plt.semilogy(iter, errors[:, 1], label='central differences')
+    >>> plt.semilogy(iter, errors[:, 2], label='right differences')
+    >>> plt.xlabel('iteration')
+    >>> plt.ylabel('error')
+    >>> plt.legend()
+    >>> plt.show()
+    >>> (errors[1, 1] / errors[0, 1], 1 / hfac**order)
+    (0.06215223140159822, 0.0625)
+
+    The implementation is vectorized over `x`, `step_direction`, and `args`.
+    The function is evaluated once before the first iteration to perform input
+    validation and standardization, and once per iteration thereafter.
+
+    >>> def f(x, p):
+    ...     print('here')
+    ...     f.nit += 1
+    ...     return x**p
+    >>> f.nit = 0
+    >>> def df(x, p):
+    ...     return p*x**(p-1)
+    >>> x = np.arange(1, 5)
+    >>> p = np.arange(1, 6).reshape((-1, 1))
+    >>> hdir = np.arange(-1, 2).reshape((-1, 1, 1))
+    >>> res = _differentiate(f, x, args=(p,), step_direction=hdir, maxiter=1)
+    >>> np.allclose(res.df, df(x, p))
+    True
+    >>> res.df.shape
+    (3, 5, 4)
+    >>> f.nit
+    2
 
     """
     # TODO:
-    #  - continue to improve comments / documentation after extensive changes
-    #  - add examples
-    #  - prepare PR
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2106,60 +2161,124 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     func, x, args, atol, rtol, maxiter, order, h0, fac, hdir, callback = res
 
     # Initialization
+    # Since f(x) (no step) is not needed for central differences, it may be
+    # possible to eliminate this function evaluation. However, it's useful for
+    # input validation and standardization, and everything else is designed to
+    # reduce function calls, so let's keep it simple.
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (x,), args)
     x, f = xs[0], fs[0]
-    hdir = np.broadcast_to(hdir, shape)  # should do this in _scalar_opt_init
+    df = np.full_like(f, np.nan)
+    # Ideally we'd broadcast the shape of `hdir` in `_scalar_opt_init`, but
+    # it's simpler to do it here than to generalize `_scalar_opt_init` further.
+    # `hdir` and `x` are already broadcasted in `_differentiate_iv`, so we know
+    # that `hdir` can be broadcasted to the final shape.
+    hdir = np.broadcast_to(hdir, shape).flatten()
 
     status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
-    nit, nfev = 0, 1   # one function evaluations performed above
-    work = OptimizeResult(x=x, df=f, fs=f[:, np.newaxis], error=np.nan, h=h0,
+    nit, nfev = 0, 1  # one function evaluations performed above
+    # Boolean indices of left, central, right, and (all) one-sided steps
+    il = hdir < 0
+    ic = hdir == 0
+    ir = hdir > 0
+    io = il | ir
+
+    # Most of these attributes are reasonably obvious, but:
+    # - `fs` holds all the function values of all active `x`. The zeroth
+    #   axis corresponds with active points `x`, the first axis corresponds
+    #   with the different steps (in the order described in
+    #   `_differentiate_weights`).
+    # - `terms` (which could probably use a better name) is half the `order`,
+    #   which is always even.
+    work = OptimizeResult(x=x, df=df, fs=f[:, np.newaxis], error=np.nan, h=h0,
                           df_last=np.nan, error_last=np.nan, h0=h0, fac=fac,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                           status=status, dtype=dtype, terms=(order+1)//2,
-                          hdir=hdir.flatten())
+                          hdir=hdir, il=il, ic=ic, ir=ir, io=io)
+    # This is the correspondence between terms in the `work` object and the
+    # final result. In this case, the mapping is trivial. Note that `success`
+    # is prepanded automatically.
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
     def pre_func_eval(work):
+        """Determine the abscissae at which the function needs to be evaluated.
 
-        if work.fs.shape[-1] == 1:
-            i = np.arange(work.terms, dtype=work.dtype)
-            hc = work.h / work.fac**i
+        See `_differentiate_weights` for a description of the stencil (pattern
+        of the abscissae).
+
+        In the first iteration, there is only one stored function value in
+        `work.fs`, `f(x)`, so we need to evaluate at `order` new points. In
+        subsequent iterations, we evaluate at two new points. Note that
+        `work.x` is always flattened into a 1D array after broadcasting with
+        all `args`, so we add a new axis at the end and evaluate all point
+        in one call to the function.
+
+        For improvement:
+        - Consider measuring the step size actually taken, since `(x + h) - x`
+          is not identically equal to `h` with floating point arithmetic.
+        - Adjust the step size automatically if `x` is too big to resolve the
+          step.
+        - We could probably save some work if there are no central difference
+          steps or no one-sided steps.
+        """
+        n = work.terms  # half the order
+        h = work.h  # step size
+        c = work.fac  # step reduction factor
+        d = c**0.5  # square root of step reduction factor (one-sided stencil)
+        # Note - no need to be careful about dtypes until we allocate `x_eval`
+
+        if work.nit == 0:
+            hc = h / c**np.arange(n)
             hc = np.concatenate((-hc[::-1], hc))
         else:
-            hc = np.asarray([-work.h, work.h])/work.fac**(work.terms-1)
+            hc = np.asarray([-h, h]) / c**(n-1)
 
-        if work.fs.shape[-1] == 1:
-            i = np.arange(2*work.terms, dtype=work.dtype)
-            hr = work.h / (work.fac**0.5)**i
+        if work.nit == 0:
+            hr = h / d**np.arange(2*n)
         else:
-            hr = np.asarray([work.h, work.h/work.fac**0.5])/work.fac**(work.terms-1)
+            hr = np.asarray([h, h/d]) / c**(n-1)
 
-        n_new = 2*work.terms if work.nit == 0 else 2  # number of new abscissae
-        il = work.hdir < 0
-        ic = work.hdir == 0
-        ir = work.hdir > 0
+        n_new = 2*n if work.nit == 0 else 2  # number of new abscissae
         x_eval = np.zeros((len(work.hdir), n_new), dtype=work.dtype)
+        il, ic, ir = work.il, work.ic, work.ir
         x_eval[ir] = work.x[ir, np.newaxis] + hr
         x_eval[ic] = work.x[ic, np.newaxis] + hc
         x_eval[il] = work.x[il, np.newaxis] - hr
-        # Yes, I know it's common to measure the actual step, which may not
-        # exactly equal `h`. We leave that improvement to future work.
-
         return x_eval
 
     def post_func_eval(x, f, work):
+        """ Estimate the derivative and error from the function evaluations
 
+        As in `pre_func_eval`: in the first iteration, there is only one stored
+        function value in `work.fs`, `f(x)`, so we need to add the `order` new
+        points. In subsequent iterations, we add two new points. The tricky
+        part is getting the order to match that of the weights, which is
+        described in `_differentiate_weights`.
+
+        For improvement:
+        - Change the order of the weights (and steps in `pre_func_eval`) to
+          simplify `work_fc` concatenation and eliminate `fc` concatenation.
+        - It would be simple to do one-step Richardson extrapolation with `df`
+          and `df_last` to increase the order of the estimate and/or improve
+          the error estimate.
+        - Process the function evaluations in a more numerically favorable
+          way. For instance, combining the pairs of central difference evals
+          into a second-order approximation and using Richardson extrapolation
+          to produce a higher order approximation seemed to retain accuracy up
+          to very high order.
+        - Alternatively, we could use `polyfit` like Jacobi. An advantage of
+          fitting polynomial to more points than necessary is improved noise
+          tolerance.
+        """
         n = work.terms
         n_new = n if work.nit == 0 else 1
-
-        il = work.hdir < 0
-        ic = work.hdir == 0
-        ir = work.hdir > 0
-        io = il | ir
+        il, ic, ir, io = work.il, work.ic, work.ir, work.io
 
         # Central difference
-        work_fc = np.concatenate((f[ic, :n_new], work.fs[ic, :], f[ic, -n_new:]), axis=-1)
+        # `work_fc` is *all* the points at which the function has been evaluated
+        # `fc` is the points we're using *this iteration* to produce the estimate
+        work_fc = (f[ic, :n_new], work.fs[ic, :], f[ic, -n_new:])
+        work_fc = np.concatenate(work_fc, axis=-1)
         if work.nit == 0:
             fc = work_fc
         else:
@@ -2185,22 +2304,27 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
         work.h /= work.fac
         work.error_last = work.error
-        # Simple error estimate - the difference in derivative estimates. This
-        # is typically conservative because if convergence has begin, the true
-        # error is much closer to the difference between the current estimate
-        # and the *next* error estimate (but we don't know it yet).
+        # Simple error estimate - the difference in derivative estimates between
+        # this iteration and the last. This is typically conservative because if
+        # convergence has begin, the true error is much closer to the difference
+        # between the current estimate and the *next* error estimate. However,
+        # we could use Richarson extrapolation to produce an error estimate that
+        # is one order higher, and take the difference between that and
+        # `work.df` (which would just be constant factor that depends on `fac`.)
         work.error = abs(work.df - work.df_last)
 
     def check_termination(work):
+        """Terminate due to convergence, non-finite values, or error increase"""
         stop = np.zeros_like(work.df).astype(bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
         work.status[i] = _ECONVERGED
         stop[i] = True
 
-        i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
-        work.df[i], work.status[i] = np.nan, _EVALUEERR
-        stop[i] = True
+        if work.nit > 0:
+            i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
+            work.df[i], work.status[i] = np.nan, _EVALUEERR
+            stop[i] = True
 
         # With infinite precision, there is a step size below which
         # all smaller step sizes will reduce the error. But in floating point
@@ -2230,13 +2354,13 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 def _differentiate_weights(work, n):
     # This produces the weights of the finite difference formula for a given
     # stencil. In experiments, use of a second-order central difference formula
-    # with Richardson extrapolation was more stable numerically, but it was
+    # with Richardson extrapolation was more accurate numerically, but it was
     # more complicated, and it would have become even more complicated when
     # adding support for one-sided differences. However, now that all the
     # function evaluation values are stored, they can be processed in whatever
     # way is desired to produce the derivative estimate. We leave alternative
     # approaches to future work. To be more self-contained, here is the theory
-    # for deriving these weights.
+    # for deriving the weights below.
     #
     # Recall that the Taylor expansion of a univariate, scalar-values function
     # about a point `x` may be expressed as:
@@ -2245,7 +2369,7 @@ def _differentiate_weights(work, n):
     #      f(x)      =     f(x)
     #      f(x + h)  =     f(x) + f'(x)*h + f''(x)/2!*h**2  + O(h**3)
     #      f(x - h)  =     f(x) - f'(x)*h + f''(x)/2!*h**2  + O(h**3)
-    # We seek weights `wi` such that:
+    # We can solve for weights `wi` such that:
     #   w1*f(x)      = w1*(f(x))
     # + w2*f(x + h)  = w2*(f(x) + f'(x)*h + f''(x)/2!*h**2) + O(h**3)
     # + w3*f(x - h)  = w3*(f(x) - f'(x)*h + f''(x)/2!*h**2) + O(h**3)
@@ -2254,33 +2378,38 @@ def _differentiate_weights(work, n):
     #     f'(x) ~ (w1*f(x) + w2*f(x+h) + w3*f(x-h))/h
     # is a finite difference derivative approximation with error O(h**2),
     # and so it is said to be a "second-order" approximation. Under certain
-    # conditions, the error in the approximation will decrease with h**2; that
-    # is, if `h` is reduced by a factor of 2, the error is reduced by a factor
-    # of 4.
+    # conditions (e.g. well-behaved function, `h` sufficiently small), the
+    # error in the approximation will decrease with h**2; that is, if `h` is
+    # reduced by a factor of 2, the error is reduced by a factor of 4.
+    #
     # By default, we use eighth-order formulae. Our central-difference formula
     # uses abscissae:
     #   x-h/c**3, x-h/c**2, x-h/c, x-h, x, x+h, x+h/c, x+h/c**2, x+h/c**3
     # where `c` is the step factor. (Typically, the step factor is greater than
-    # one, so the outermost points as written are those closest to `x`.)
-    # These points are chosen so that each iteration, the step can be reduced
-    # by the factor c, and most of the function evaluations can be reused with
-    # the new step size. For example, in the next iteration, we have:
+    # one, so the outermost points - as written above - are actually closest to
+    # `x`.) This "stencil" is chosen so that each iteration, the step can be
+    # reduced by the factor `c`, and most of the function evaluations can be
+    # reused with the new step size. For example, in the next iteration, we
+    # will have:
     #   x-h/c**4, x-h/c**3, x-h/c**2, x-h/c, x, x+h/c, x+h/c**2, x+h/c**3, x+h/c**4
-    # We do not re-use x-h or x+h; while that would increase the order of the
-    # formula and thus the theoretical convergence rate, it is also less stable
-    # numerically using this scheme. (As noted above, there are other
-    # ways of processing the values that are more stable; consider using those
-    # in the future.)
+    # We do not reuse `x-h` and `x+h` for the new derivative estimate.
+    # While this would increase the order of the formula and thus the
+    # theoretical convergence rate, it is also less stable numerically.
+    # (As noted above, there are other ways of processing the values that are
+    # more stable. Thus, even now we store `f(x-h)` and `f(x+h)` in `work.fs`
+    # to simplify future development of this sort of improvement.)
+    #
     # The (right) one-sided formula is produced similarly using abscissae
     #   x, x+h, x+h/d, x+h/d**2, ..., x+h/d**6, x+h/d**7, x+h/d**7
-    # where d is the square root of c. When the step size is reduced by a factor
-    # of c = d**2, we have abscissae
+    # where `d` is the square root of `c`. (The left one-sided formula simply
+    # uses -h.) When the step size is reduced by factor `c = d**2`, we have
+    # abscissae:
     #   x, x+h/d**2, x+h/d**3..., x+h/d**8, x+h/d**9, x+h/d**9
-    # `d` is chosen as the square root of `c` so that the one-sided abscissae
-    # are also nested but the rate of the step-size reduction is the same
-    # per iteration as in the central difference case. Note that because the
-    # central difference formulas are inherently of even order, for simplicity,
-    # we use only even-order formulas for one-sided differences, too.
+    # `d` is chosen as the square root of `c` so that the rate of the step-size
+    # reduction is the same per iteration as in the central difference case.
+    # Note that because the central difference formulas are inherently of even
+    # order, for simplicity, we use only even-order formulas for one-sided
+    # differences, too.
 
     # It's possible for the user to specify `fac` in, say, double precision but
     # `x` and `args` in single precision. `fac` gets converted to single
@@ -2317,7 +2446,7 @@ def _differentiate_weights(work, n):
             weights[-i-1] = -weights[i]
 
         # Cache the weights. We only need to calculate them once unless
-        # the step
+        # the step factor changes.
         _differentiate_weights.central = weights
 
         # One-sided difference weights. The left one-sided weights (with

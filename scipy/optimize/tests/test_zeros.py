@@ -1484,9 +1484,10 @@ class TestDifferentiate():
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
-    @pytest.mark.parametrize("x", (1, [0.4, .5, .6]))
+    @pytest.mark.parametrize("hdir", (-1, 0, 1))
+    @pytest.mark.parametrize("x", (0.65, [0.65, 0.7]))
     @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
-    def test_dtype(self, x, dtype):
+    def test_dtype(self, hdir, x, dtype):
         # Test that dtypes are preserved
         x = np.asarray(x, dtype=dtype)[()]
 
@@ -1499,7 +1500,8 @@ class TestDifferentiate():
             assert res.df.dtype == dtype
             assert res.error.dtype == dtype
 
-        res = zeros._differentiate(f, x, order=4, callback=callback)
+        res = zeros._differentiate(f, x, order=4, step_direction=hdir,
+                                   callback=callback)
         assert res.x.dtype == dtype
         assert res.df.dtype == dtype
         assert res.error.dtype == dtype
@@ -1577,6 +1579,7 @@ class TestDifferentiate():
 
             res = zeros._differentiate(f, x, maxiter=1, order=max(1, n))
             assert_allclose(res.df, ref, rtol=1e-15)
+            assert_equal(res.error, np.nan)
 
             res = zeros._differentiate(f, x, order=max(1, n))
             assert res.success
