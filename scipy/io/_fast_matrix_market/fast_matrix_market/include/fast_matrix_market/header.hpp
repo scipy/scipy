@@ -57,6 +57,12 @@ namespace fast_matrix_market {
         return is_all_spaces(std::cbegin(line), end);
     }
 
+    inline void strip_trailing_cr(std::string &line) {
+        if (!line.empty() && line[line.size() - 1] == '\r') {
+            line.resize(line.size() - 1);
+        }
+    }
+
     /**
      * Calculate how many nonzero elements will need to be stored.
      * For general matrices this will be the same as header.nnz, but if the MatrixMarket file has symmetry and
@@ -163,6 +169,7 @@ namespace fast_matrix_market {
 
         // read banner
         std::getline(instream, line);
+        strip_trailing_cr(line);
         lines_read++;
 
         if (line.find("MatrixMarket", 0) == std::string::npos) {
@@ -189,6 +196,7 @@ namespace fast_matrix_market {
         // Read any comments
         do {
             std::getline(instream, line);
+            strip_trailing_cr(line);
             lines_read++;
 
             if (!instream) {

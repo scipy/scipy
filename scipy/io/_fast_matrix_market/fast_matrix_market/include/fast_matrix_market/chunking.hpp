@@ -57,7 +57,7 @@ namespace fast_matrix_market {
 
     template <typename ITER>
     bool is_all_spaces(ITER begin, ITER end) {
-        return std::all_of(begin, end, [](char c) { return c == ' ' || c == '\t'; });
+        return std::all_of(begin, end, [](char c) { return c == ' ' || c == '\t' || c == '\r'; });
     }
 
     /**
