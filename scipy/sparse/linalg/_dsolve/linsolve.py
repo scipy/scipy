@@ -123,6 +123,21 @@ def _get_umf_family(A):
 
     return family, A_new
 
+def _safe_downcast_indices(A):
+    # check for safe downcasting
+    max_value = np.iinfo(np.intc).max
+
+    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
+        raise ValueError("indptr values too large for SuperLU")
+
+    if max(*A.shape) > max_value:  # only check large enough arrays
+        if np.any(A.indices > max_value):
+            raise ValueError("indices values too large for SuperLU")
+
+    indices = A.indices.astype(np.intc, copy=False)
+    indptr = A.indptr.astype(np.intc, copy=False)
+    return indices, indptr
+
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
 
@@ -269,8 +284,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             else:
                 flag = 0  # CSR format
 
+            indices = A.indices.astype(np.intc, copy=False)
+            indptr = A.indptr.astype(np.intc, copy=False)
             options = dict(ColPerm=permc_spec)
-            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+            x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
             if info != 0:
                 warn("Matrix is exactly singular", MatrixRankWarning)
@@ -402,6 +419,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
+    indices, indptr = _safe_downcast_indices(A)
+
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
     if options is not None:
@@ -411,7 +430,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=False, options=_options)
 
@@ -495,6 +514,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
 
+    indices, indptr = _safe_downcast_indices(A)
+
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
                     DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
@@ -506,7 +527,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=True, options=_options)
 
