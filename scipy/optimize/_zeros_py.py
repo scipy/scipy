@@ -1703,6 +1703,14 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     while work.nit < maxiter and active.size and not cb_terminate:
         x = pre_func_eval(work)
 
+        if work.args and work.args[0].ndim != x.ndim:
+            # `x` always starts as 1D. If the SciPy function that uses
+            # _scalar_optimization_loop added dimensions to `x`, we need to
+            # add them to the elements of `args`.
+            dims = np.arange(x.ndim, dtype=np.int64)
+            work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
+                         for arg in work.args]
+
         f = func(x, *work.args)
         f = np.asarray(f, dtype=dtype)
         work.nfev += 1 if x.ndim == 1 else x.shape[-1]
@@ -1813,11 +1821,15 @@ def _scalar_optimization_initialize(func, xs, args):
     fs = [np.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
 
+    message = ("The shape of the array returned by `func` must be the same as "
+               "the broadcasted shape of `x` and all other `args`.")
+    shapes_equal = [f.shape == shape for f in fs]
+    if not np.all(shapes_equal):
+        raise ValueError(message)
+
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
     # that time from the outset.
-    xfs = np.broadcast_arrays(*xs, *fs)
-    xs, fs = xfs[:nx], xfs[nx:]
     xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
     if not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
@@ -2068,7 +2080,6 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     """
     # TODO:
     #  - improve comments / documentation after extensive changes
-    #  - test one-sided differences
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2079,6 +2090,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # Initialization
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (x,), args)
     x, f = xs[0], fs[0]
+    hdir = np.broadcast_to(hdir, shape)  # should do this in _scalar_opt_init
 
     status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1   # one function evaluations performed above

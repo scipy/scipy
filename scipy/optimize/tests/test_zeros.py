@@ -451,6 +451,8 @@ class TestChandrupatla(TestScalarRootFinders):
         # raised by `np.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(lambda x: x, [-2, -3], [3, 4, 5])
+
+        message = "The shape of the array returned by `func`..."
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
 
@@ -1340,8 +1342,9 @@ class TestDifferentiate():
             funcs = [lambda x: x - 2.5,  # converges
                      lambda x: np.exp(x)*rng.random(),  # error increases
                      lambda x: np.exp(x),  # reaches maxiter due to order=2
-                     lambda x: np.full_like(x, np.nan)]  # stops due to NaN
-            return [funcs[j](x) for x, j in zip(xs, js)]
+                     lambda x: np.full_like(x, np.nan)[()]]  # stops due to NaN
+            res = [funcs[j](x) for x, j in zip(xs, js.ravel())]
+            return res
         f.nit = 0
 
         args = (np.arange(4, dtype=np.int64),)
@@ -1411,6 +1414,35 @@ class TestDifferentiate():
         res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
         ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
         assert_allclose(res.df, ref.df, rtol=5e-15)
+
+    def test_step_direction(self):
+        # test that `step_direction` works as expected
+        def f(x):
+            y = np.exp(x)
+            y[(x < 0) + (x > 2)] = np.nan
+            return y
+
+        x = np.linspace(0, 2, 10)
+        step_direction = np.zeros_like(x)
+        step_direction[x < 0.6], step_direction[x > 1.4] = 1, -1
+        res = zeros._differentiate(f, x, step_direction=step_direction)
+        assert_allclose(res.df, np.exp(x))
+        assert np.all(res.success)
+
+    def test_vectorized_step_direction_args(self):
+        # test that `step_direction` and `args` are vectorized properly
+        def f(x, p):
+            return x ** p
+
+        def df(x, p):
+            return p * x ** (p - 1)
+
+        x = np.array([1, 2, 3, 4]).reshape(-1, 1, 1)
+        hdir = np.array([-1, 0, 1]).reshape(1, -1, 1)
+        p = np.array([2, 3]).reshape(1, 1, -1)
+        res = zeros._differentiate(f, x, step_direction=hdir, args=(p,))
+        ref = np.broadcast_to(df(x, p), res.df.shape)
+        assert_allclose(res.df, ref)
 
     def test_maxiter_callback(self):
         # Test behavior of `maxiter` parameter and `callback` interface
@@ -1485,7 +1517,7 @@ class TestDifferentiate():
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: x, -4+1j)
 
-        message = "shape mismatch: objects cannot be broadcast"
+        message = "The shape of the array returned by `func`"
         # raised by `np.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
             zeros._differentiate(lambda x: [1, 2, 3], [-2, -3])
