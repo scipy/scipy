@@ -304,7 +304,6 @@ class TestChandrupatla(TestScalarRootFinders):
                      lambda x: x - 10,
                      lambda x: (x - 0.1)**3,
                      lambda x: np.nan]
-
             return [funcs[j](x) for x, j in zip(xs, js)]
 
         args = (np.arange(4, dtype=np.int64),)

@@ -531,3 +531,32 @@ class TestODR:
         p = Model(func)
         p.set_meta(name='Sample Model Meta', ref='ODRPACK')
         assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})
+
+    def test_work_array_del_init(self):
+        """
+        Verify fix for gh-18739 where del_init=1 fails.
+        """
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        # generate some data
+        n_data = 4
+        x = np.arange(n_data)
+        y = np.where(x % 2, x + 0.1, x - 0.1)
+        x_err = np.full(n_data, 0.1)
+        y_err = np.full(n_data, 0.1)
+
+        linear_model = Model(func)
+        # Try various shapes of the `we` array from various `sy` and `covy`
+        rd0 = RealData(x, y, sx=x_err, sy=y_err)
+        rd1 = RealData(x, y, sx=x_err, sy=0.1)
+        rd2 = RealData(x, y, sx=x_err, sy=[0.1])
+        rd3 = RealData(x, y, sx=x_err, sy=np.full((1, n_data), 0.1))
+        rd4 = RealData(x, y, sx=x_err, covy=[[0.01]])
+        rd5 = RealData(x, y, sx=x_err, covy=np.full((1, 1, n_data), 0.01))
+        for rd in [rd0, rd1, rd2, rd3, rd4, rd5]:
+            odr_obj = ODR(rd, linear_model, beta0=[0.4, 0.4],
+                          delta0=np.full(n_data, -0.1))
+            odr_obj.set_job(fit_type=0, del_init=1)
+            # Just make sure that it runs without raising an exception.
+            odr_obj.run()

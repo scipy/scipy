@@ -14,35 +14,17 @@ stats_special_cython_gen = generator(cython,
     _stats_pxd,
     cython_special_pxd])
 
-statlib_lib = static_library('statlib_lib',
-  [
-    'statlib/ansari.f',
-    'statlib/spearman.f',
-    'statlib/swilk.f'
-  ],
-  fortran_args: _fflag_Wno_unused_variable
-)
-
-statlib_module = custom_target('statlib_module',
-  output: ['_statlib-f2pywrappers.f', '_statlibmodule.c'],
-  input: 'statlib.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-statlib = py3.extension_module('_statlib',
-  statlib_module,
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
-  link_with: statlib_lib,
-  dependencies: [fortranobject_dep],
+_stats = py3.extension_module('_stats',
+  stats_special_cython_gen.process('_stats.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/stats'
 )
 
-_stats = py3.extension_module('_stats',
-  stats_special_cython_gen.process('_stats.pyx'),
+_ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
+  cython_gen.process('_ansari_swilk_statistics.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,
@@ -215,6 +197,7 @@ py3.install_sources([
     '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
+    '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
@@ -233,7 +216,6 @@ py3.install_sources([
     'mvn.py',
     'qmc.py',
     'sampling.py',
-    'statlib.py',
     'stats.py'
   ],
   subdir: 'scipy/stats'

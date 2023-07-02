@@ -1681,7 +1681,7 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     cb_terminate = False
 
     # Initialize the result object and active element index array
-    n_elements = int(np.product(shape)) or 1
+    n_elements = int(np.prod(shape)) or 1
     active = np.arange(n_elements)  # in-progress element indices
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
@@ -2113,7 +2113,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> x = 1
     >>> ref = df(x)
     >>> errors = []  # true error
-    >>>> for i in iter:
+    >>> for i in iter:
     ...     res = _differentiate(f, x, maxiter=i, step_factor=hfac,
     ...                          step_direction=hdir, order=order,
     ...                          atol=0, rtol=0)  # prevent early termination
