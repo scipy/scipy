@@ -356,6 +356,6 @@ jobs:
         python3.9 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
-        python -m pip install numpy==1.21.6 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch meson && \
-        python dev.py build && \
+        python -m pip install numpy==1.21.6 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson && \
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
