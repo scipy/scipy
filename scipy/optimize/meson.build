@@ -206,6 +206,10 @@ endif
 
 _dummy_init_optimize = fs.copyfile('__init__.py')
 
+_cython_tree = [
+  fs.copyfile('cython_optimize.pxd'),
+]
+
 opt_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
