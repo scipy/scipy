@@ -20,6 +20,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
+from scipy._lib.deprecation import _NoValue
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -1440,12 +1441,12 @@ class TestPinv:
         adiff2 = a_m @ a_p @ a_m - a_m
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
-    
-    def test_deprecation(self):
+
+    @pytest.mark.parametrize(["cond", "rcond"],
+                             [(1, 1), (1, _NoValue), (_NoValue, 1)])
+    def test_deprecation(self, cond, rcond):
         with pytest.deprecated_call(match='"cond" and "rcond"'):
-            pinv(np.ones((2,2)), cond=1)
-        with pytest.deprecated_call(match='"cond" and "rcond"'):
-            pinv(np.ones((2,2)), rcond=1)
+            pinv(np.ones((2,2)), cond=cond, rcond=rcond)
 
 
 class TestPinvSymmetric:
