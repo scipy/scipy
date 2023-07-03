@@ -4114,7 +4114,9 @@ class TestLognorm:
 
     def test_isf(self):
         # reference values were computed via the reference distribution, e.g.
-        # mp.dps = 100; LogNormal(s=s).isf(q=2e-10, guess=100).
+        # mp.dps = 100;
+        # LogNormal(s=s).isf(q=0.1, guess=0)
+        # LogNormal(s=s).isf(q=2e-10, guess=100)
         s = 0.954
         q = [0.1, 2e-10, 5e-20, 6e-40]
         ref = [3.3960065375794937, 390.07632793595974, 5830.5020828128445,
