@@ -8224,19 +8224,3 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
-
-
-def test_normaltest_gh18781():
-    import numpy as np
-    import scipy as sp
-    sp.stats.normaltest(np.linspace(0, 10, 10000))
-
-    warnings.simplefilter("always")
-    sp.stats.normaltest(np.linspace(0, 10, 10000))
-
-    warnings.filterwarnings("error")
-    sp.stats.normaltest(np.linspace(0, 10, 10000))
-
-    warnings.resetwarnings()
-
-
