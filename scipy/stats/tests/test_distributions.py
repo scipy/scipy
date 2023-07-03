@@ -3520,6 +3520,10 @@ class TestRvDiscrete:
         pk = [0.3, 0.3, 0.3, 0.3, -0.2]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
+        xk = [1, 1]
+        pk = [0.5, 0.5]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
     def test_shape_rv_sample(self):
         # tests added for gh-9565
 
