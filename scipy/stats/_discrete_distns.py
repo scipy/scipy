@@ -1070,7 +1070,7 @@ class randint_gen(rv_discrete):
     >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
     
     Alternatively, the distribution object can be called (as a function) to 
-    fix the shape and location. This returns a “frozen” RV object holding the 
+    fix the shape and location. This returns a "frozen" RV object holding the
     given parameters fixed.
 
     Freeze the distribution and display the frozen pmf:
@@ -1078,7 +1078,7 @@ class randint_gen(rv_discrete):
     >>> rv = randint(low, high)
     >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
     ...         label='frozen pmf')
-    >>> ax.legend(loc='best', frameon=False)
+    >>> ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
     >>> plt.show()
     
     Check accuracy of cdf and ppf:
