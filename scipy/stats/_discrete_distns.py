@@ -1069,7 +1069,9 @@ class randint_gen(rv_discrete):
     >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
     >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
     
-    Alternatively, the distribution object can be called (as a function) to fix the shape and location. This returns a “frozen” RV object holding the given parameters fixed.
+    Alternatively, the distribution object can be called (as a function) to 
+    fix the shape and location. This returns a “frozen” RV object holding the 
+    given parameters fixed.
 
     Freeze the distribution and display the frozen pmf:
 
