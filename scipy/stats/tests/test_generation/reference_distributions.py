@@ -349,6 +349,12 @@ class LogLaplace(ReferenceDistribution):
         else:
             return c / 2 * x**(-c - mp.one)
 
+    def _ppf(self, q, guess, c):
+        if q < 0.5:
+            return (2.0 * q)**(mp.one / c)
+        else:
+            return (2 * (mp.one - q))**(-mp.one / c)
+
 
 class Normal(ReferenceDistribution):
 
