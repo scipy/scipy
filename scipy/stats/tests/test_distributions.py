@@ -3774,10 +3774,10 @@ class TestSkewNorm:
         # test that MLE and MoM behave as expected under sign changes
         a6p, loc6p, scale6p = stats.skewnorm.fit(rvs, method='mle')
         a6m, loc6m, scale6m = stats.skewnorm.fit(-rvs, method='mle')
-        assert_allclose([-a6p, -loc6p, scale6p], [a6m, loc6m, scale6m])
+        assert_allclose([a6m, loc6m, scale6m], [-a6p, -loc6p, scale6p])
         a7p, loc7p, scale7p = stats.skewnorm.fit(rvs, method='mm')
         a7m, loc7m, scale7m = stats.skewnorm.fit(-rvs, method='mm')
-        assert_allclose([-a7p, -loc7p, scale7p], [a7m, loc7m, scale7m])
+        assert_allclose([a7m, loc7m, scale7m], [-a7p, -loc7p, scale7p])
 
 class TestExpon:
     def test_zero(self):
