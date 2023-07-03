@@ -2272,7 +2272,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         """
         n = work.terms
         n_new = n if work.nit == 0 else 1
-        il, ic, ir, io = work.il, work.ic, work.ir, work.io
+        il, ic, io = work.il, work.ic, work.io
 
         # Central difference
         # `work_fc` is *all* the points at which the function has been evaluated

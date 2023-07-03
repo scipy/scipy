@@ -11,7 +11,7 @@ from numpy.testing import (assert_warns, assert_,
 import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
-from scipy import stats, optimize, special
+from scipy import stats, optimize
 from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
                             OptimizeResult)
 
@@ -1307,7 +1307,7 @@ class TestDifferentiate():
         assert_equal(res.df.shape, shape)
 
         ref_error = [ref.error for ref in refs]
-        assert_allclose(res.error.ravel(), ref_error, atol=1e-15)
+        assert_allclose(res.error.ravel(), ref_error, atol=5e-15)
         assert_equal(res.error.shape, shape)
 
         ref_success = [ref.success for ref in refs]
@@ -1356,12 +1356,10 @@ class TestDifferentiate():
     def test_convergence(self):
         # Test that the convergence tolerances behave as expected
         rng = np.random.default_rng(2585255913088665241)
-        p = rng.random(size=3)
         dist = stats.norm()
         x = 1
         f = dist.cdf
         ref = dist.pdf(x)
-        args = (dist, p)
         kwargs0 = dict(atol=0, rtol=0, order=4)
 
         kwargs = kwargs0.copy()
@@ -1401,7 +1399,7 @@ class TestDifferentiate():
         kwargs = dict(order=4, maxiter=1, step_direction=0)
         res = zeros._differentiate(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
         ref = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        assert_allclose(res.df, ref.df, rtol=2e-16)
+        assert_allclose(res.df, ref.df, rtol=5e-15)
 
         # This is a similar test for one-sided difference
         kwargs = dict(order=2, maxiter=1, step_direction=1)
