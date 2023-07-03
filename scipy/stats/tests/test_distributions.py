@@ -3024,6 +3024,15 @@ class TestLogLaplace:
         ref = [0.99999999995, 5e-31, 5e-76]
         assert_allclose(stats.loglaplace.sf(x, c), ref, rtol=1e-15)
 
+    def test_isf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100; LogLaplace(c=c).isf(q).
+        c = 3.25
+        q = [0.8, 0.1, 1e-10, 1e-20, 1e-40]
+        ref = [0.7543222539245642, 1.6408455124660906, 964.4916294395846,
+               1151387.578354072, 1640845512466.0906]
+        assert_allclose(stats.loglaplace.isf(q, c), ref, rtol=1e-14)
+
 
 class TestPowerlaw:
 
