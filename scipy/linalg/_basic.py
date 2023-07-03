@@ -14,6 +14,7 @@ from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
+from scipy._lib.deprecation import _NoValue
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1317,7 +1318,7 @@ lstsq.default_lapack_driver = 'gelsd'
 
 
 def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
-         cond=None, rcond=None):
+         cond=_NoValue, rcond=_NoValue):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -1358,9 +1359,9 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
         the tolerances above are recommended instead. In fact, if provided,
         atol, rtol takes precedence over these keywords.
 
-        .. versionchanged:: 1.7.0
+        .. deprecated:: 1.7.0
             Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in future versions of SciPy.
+            will be removed in SciPy 1.14.0.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
@@ -1435,14 +1436,15 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     t = u.dtype.char.lower()
     maxS = np.max(s)
 
-    if rcond or cond:
+    if rcond is not _NoValue or cond is not _NoValue:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in future versions of SciPy. Use "atol" and '
+             'will be removed in SciPy 1.14.0. Use "atol" and '
              '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
     # backwards compatible only atol and rtol are both missing
-    if (rcond or cond) and (atol is None) and (rtol is None):
-        atol = rcond or cond
+    if ((rcond is not _NoValue or cond is not _NoValue)
+        and (atol is None) and (rtol is None)):
+        atol = rcond if rcond is not _NoValue else cond
         rtol = 0.
 
     atol = 0. if atol is None else atol
