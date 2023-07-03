@@ -6219,6 +6219,9 @@ class lognorm_gen(rv_continuous):
     def _logsf(self, x, s):
         return _norm_logsf(np.log(x) / s)
 
+    def _isf(self, q, s):
+        return np.exp(s * _norm_isf(q))
+
     def _stats(self, s):
         p = np.exp(s*s)
         mu = np.sqrt(p)
