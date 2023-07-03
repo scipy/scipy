@@ -1442,9 +1442,9 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
              '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
     # backwards compatible only atol and rtol are both missing
-    if ((rcond is not _NoValue or cond is not _NoValue)
-        and (atol is None) and (rtol is None)):
-        atol = rcond if rcond is not _NoValue else cond
+    if ((rcond not in (_NoValue, None) or cond not in (_NoValue, None))
+         and (atol is None) and (rtol is None)):
+        atol = rcond if rcond not in (_NoValue, None) else cond
         rtol = 0.
 
     atol = 0. if atol is None else atol
