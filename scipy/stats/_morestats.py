@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
