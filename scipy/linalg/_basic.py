@@ -1361,7 +1361,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
         .. deprecated:: 1.7.0
             Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in SciPy 1.14.0.
+            will be removed in SciPy 1.13.0.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
@@ -1438,7 +1438,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     if rcond is not _NoValue or cond is not _NoValue:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in SciPy 1.14.0. Use "atol" and '
+             'will be removed in SciPy 1.13.0. Use "atol" and '
              '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
     # backwards compatible only atol and rtol are both missing
