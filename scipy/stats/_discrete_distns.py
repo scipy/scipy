@@ -1078,7 +1078,7 @@ class randint_gen(rv_discrete):
     >>> rv = randint(low, high)
     >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-',
     ...           lw=1, label='frozen pmf')
-    >>> ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
+    >>> ax.legend(loc='lower center')
     >>> plt.show()
     
     Check the relationship between the cumulative distribution function
