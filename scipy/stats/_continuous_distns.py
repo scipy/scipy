@@ -6143,6 +6143,9 @@ class loglaplace_gen(rv_continuous):
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
 
+    def _isf(self, q, c):
+        return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
+
     def _munp(self, n, c):
         return c**2 / (c**2 - n**2)
 
