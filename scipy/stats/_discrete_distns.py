@@ -1063,7 +1063,7 @@ class randint_gen(rv_discrete):
     >>> low, high = 7, 31
     >>> mean, var, skew, kurt = randint.stats(low, high, moments='mvsk')
 
-    Display the probability mass function (pmf):
+    Display the probability mass function (``pmf``):
 
     >>> x = np.arange(low - 5, high + 5)
     >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
@@ -1073,18 +1073,21 @@ class randint_gen(rv_discrete):
     fix the shape and location. This returns a "frozen" RV object holding the
     given parameters fixed.
 
-    Freeze the distribution and display the frozen pmf:
+    Freeze the distribution and display the frozen ``pmf``:
 
     >>> rv = randint(low, high)
-    >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-', lw=1,
-    ...         label='frozen pmf')
+    >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-',
+    ...           lw=1, label='frozen pmf')
     >>> ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1))
     >>> plt.show()
     
-    Check accuracy of cdf and ppf:
+    Check the relationship between the cumulative distribution function
+    (``cdf``) and its inverse, the percent point function (``ppf``):
 
-    >>> prob = randint.cdf(x, low, high)
-    >>> np.allclose(x, randint.ppf(prob, low, high))
+    >>> q = np.arange(low, high)
+    >>> p = randint.cdf(q, low, high)
+    >>> np.allclose(q, randint.ppf(p, low, high))
+    True
 
     Generate random numbers:
 
