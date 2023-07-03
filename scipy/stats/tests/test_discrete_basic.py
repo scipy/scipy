@@ -423,6 +423,7 @@ def test_interval(distname, shapes):
     npt.assert_equal(dist.interval(1, *shapes), (a-1, b))
 
 
+@pytest.mark.xfail_on_32bit("Sensible to machine precision")
 def test_rv_sample():
     # Thoroughly test rv_sample and check that gh-3758 is resolved
 

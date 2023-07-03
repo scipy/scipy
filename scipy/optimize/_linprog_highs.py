@@ -84,7 +84,8 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = np.isinf(x)
-    x[infs] = np.sign(x[infs])*CONST_INF
+    with np.errstate(invalid="ignore"):
+        x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
 
@@ -322,7 +323,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
-    lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
+    with np.errstate(invalid="ignore"):
+        lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
     rhs_ub = b_ub  # RHS of UB constraints is b_ub
     lhs_eq = b_eq  # Equality constaint is inequality
     rhs_eq = b_eq  # constraint with LHS=RHS

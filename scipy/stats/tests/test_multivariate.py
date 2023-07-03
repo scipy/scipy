@@ -1118,15 +1118,23 @@ class TestDirichlet:
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
-    def test_mean_and_var(self):
+    def test_mean_var_cov(self):
+        # Reference values calculated by hand and confirmed with Mathematica, e.g.
+        # `Covariance[DirichletDistribution[{ 1, 0.8, 0.2, 10^-300}]]`
         alpha = np.array([1., 0.8, 0.2])
         d = dirichlet(alpha)
 
-        expected_var = [1. / 12., 0.08, 0.03]
         expected_mean = [0.5, 0.4, 0.1]
+        expected_var = [1. / 12., 0.08, 0.03]
+        expected_cov = [
+                [ 1. / 12, -1. / 15, -1. / 60],
+                [-1. / 15,  2. / 25, -1. / 75],
+                [-1. / 60, -1. / 75,  3. / 100],
+        ]
 
-        assert_array_almost_equal(d.var(), expected_var)
         assert_array_almost_equal(d.mean(), expected_mean)
+        assert_array_almost_equal(d.var(), expected_var)
+        assert_array_almost_equal(d.cov(), expected_cov)
 
     def test_scalar_values(self):
         alpha = np.array([0.2])

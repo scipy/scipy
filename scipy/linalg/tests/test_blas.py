@@ -487,6 +487,11 @@ class TestFBLAS2Simple:
             y2 = alpha * A.dot(x) + beta * y
             assert_array_almost_equal(y1, y2)
 
+            y1 = func(m=m, n=n, ku=ku, kl=kl, alpha=alpha, a=Ab,
+                      x=y, y=x, beta=beta, trans=1)
+            y2 = alpha * A.T.dot(y) + beta * x
+            assert_array_almost_equal(y1, y2)
+
     def test_sbmv_hbmv(self):
         seed(1234)
         for ind, dtype in enumerate(DTYPES):
