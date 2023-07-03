@@ -1440,6 +1440,12 @@ class TestPinv:
         adiff2 = a_m @ a_p @ a_m - a_m
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
+    
+    def test_deprecation(self):
+        with pytest.deprecated_call(match='"cond" and "rcond"'):
+            pinv(np.ones((2,2)), cond=1)
+        with pytest.deprecated_call(match='"cond" and "rcond"'):
+            pinv(np.ones((2,2)), rcond=1)
 
 
 class TestPinvSymmetric:
