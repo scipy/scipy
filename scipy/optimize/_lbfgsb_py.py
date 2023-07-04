@@ -196,7 +196,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'callback': callback,
             'maxls': maxls}
 
-    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac.astype(np.float64),
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac,
                            bounds=bounds, **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
