@@ -209,17 +209,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         work.q0 = q1
         return x
 
-    while work.nit < maxiter and active.size and not cb_terminate:
-
-        x = pre_func_eval(work)
-        x_full = res.x.copy()
-        x_full[active] = x
-        x_full = x_full.reshape(shape)
-        args_full = [arg.reshape(shape) for arg in args]
-        f = func(x_full, *args_full)
-        work.nfev += 1
-        f = np.asarray(f, dtype=dtype).ravel()[active]
-
+    def post_func_eval(x, f, work):
         i = np.sign(x - work.x2) == np.sign(work.x3 - work.x2)
 
         # TODO: tame this mess
@@ -235,6 +225,21 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
         x[i], f[i], work.x1[i], work.f1[i], work.x2[i], work.f2[i], work.x3[i], work.f3[i] = xi, fi, x1i, f1i, x2i, f2i, x3i, f3i
         x[~i], f[~i], work.x1[~i], work.f1[~i], work.x2[~i], work.f2[~i], work.x3[~i], work.f3[~i] = xni, fni, x1ni, f1ni, x2ni, f2ni, x3ni, f3ni
+
+
+    while work.nit < maxiter and active.size and not cb_terminate:
+
+        x = pre_func_eval(work)
+
+        x_full = res.x.copy()
+        x_full[active] = x
+        x_full = x_full.reshape(shape)
+        args_full = [arg.reshape(shape) for arg in args]
+        f = func(x_full, *args_full)
+        work.nfev += 1
+        f = np.asarray(f, dtype=dtype).ravel()[active]
+
+        post_func_eval(x, f, work)
 
         # [1] Figure 1 (second diamond)
         work.nit += 1
