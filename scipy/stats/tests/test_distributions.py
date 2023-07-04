@@ -9335,7 +9335,8 @@ class TestTruncPareto:
 
 
 @pytest.mark.parametrize("case", [("loglaplace", None, None, None),
-                                  ("lognorm", None, None, None),])
+                                  ("lognorm", None, None, None),
+                                  ("pareto", None, None, None),])
 def test_generic_sf_isf(case):
     distname, domain, atol, rtol = case
     domain = domain or (-290, 0)
