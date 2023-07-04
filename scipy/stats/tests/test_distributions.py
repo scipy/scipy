@@ -9323,3 +9323,18 @@ class TestTruncPareto:
                 stats.truncpareto.fit(data, **kwds)
         else:
             _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
+
+
+@pytest.mark.parametrize("case", [("loglaplace", None, None, None),
+                                  ("lognorm", None, None, None),])
+def test_generic_sf_isf(case):
+    distname, domain, atol, rtol = case
+    domain = domain or (-290, 0)
+    atol = atol or 0
+    rtol = rtol or 1e-12
+    dist = getattr(stats, distname)
+    params = dict(distcont)[distname]
+    dist_frozen = dist(*params)
+    ref = np.logspace(*domain)
+    res = dist_frozen.sf(dist_frozen.isf(ref))
+    assert_allclose(res, ref, atol=atol, rtol=rtol)
