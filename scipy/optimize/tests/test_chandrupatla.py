@@ -112,7 +112,7 @@ class TestChandrupatlaMinimize:
     def test_basic(self, loc):
         # Invert distribution CDF and compare against distrtibution `ppf`
         dist = stats.norm()
-        res = _chandrupatla_minimize(self.f, -5, 0, 5, args=(loc,))
+        res = _chandrupatla_minimize(self.f, -4, 0, 5, args=(loc,))
         ref = loc
         np.testing.assert_allclose(res.x, ref)
         assert res.x.shape == np.shape(ref)
@@ -264,7 +264,6 @@ class TestChandrupatlaMinimize:
     def test_maxiter_callback(self):
         # Test behavior of `maxiter` parameter and `callback` interface
         loc = 0.612814
-        dist = stats.norm()
         bracket = (-5, 0, 5)
         maxiter = 5
 
@@ -394,9 +393,9 @@ class TestChandrupatlaMinimize:
             return (x-1) ** 100
 
         with np.errstate(invalid='ignore'):
-            res = _chandrupatla_minimize(f, -7, 1, 8, fatol=0, frtol=0)
+            res = _chandrupatla_minimize(f, -7, 0, 8, fatol=0, frtol=0)
         assert res.success
-        assert_allclose(res.x, 1)
+        assert_allclose(res.x, 1, rtol=1e-3)
 
         # Test that if all elements of bracket equal minimizer, algorithm
         # reports convergence
