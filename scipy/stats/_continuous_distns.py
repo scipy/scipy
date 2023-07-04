@@ -4189,6 +4189,50 @@ class halfcauchy_gen(rv_continuous):
     def _entropy(self):
         return np.log(2*np.pi)
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # location is independent from the scale
+        data_min = np.min(data)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfcauchy", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            # if not provided, location MLE is the minimal data point
+            loc = data_min
+
+        # find scale
+        def find_scale(loc, data):
+            shifted_data = data - loc
+            n = data.size
+            shifted_data_squared = np.square(shifted_data)
+            x0 = np.median(shifted_data)
+
+            def fun_to_solve(scale):
+                denominator = scale**2 + shifted_data_squared
+                f = 2 * np.sum(shifted_data_squared/denominator) - n
+                grad = - 4 * np.sum(shifted_data_squared * scale
+                                    /denominator**2)
+                return f, grad
+
+            res = root_scalar(fun_to_solve, fprime=True, x0=x0)
+            return res.root
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = find_scale(loc, data)
+
+        return loc, scale
+
 
 halfcauchy = halfcauchy_gen(a=0.0, name='halfcauchy')
 
