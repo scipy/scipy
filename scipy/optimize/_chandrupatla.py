@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
 from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
-                                      _chandrupatla_iv)
+                                      _chandrupatla_iv, _scalar_optimization_prepare_result)
 
 _iter = 100
 _xtol = 2e-12
@@ -182,11 +182,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
     active = _chandrupatla_check_termination(res, active, work)
 
-    if callback is not None:
-        temp = _chandrupatla_prepare_result(shape, res, active, work.nit, work.nfev)
-        if _call_callback_maybe_halt(callback, temp):
-            cb_terminate = True
-
     def pre_func_eval(work):
         A = (work.x2 - work.x1) * (work.f3 - work.f2)
         B = (work.x3 - work.x2) * (work.f1 - work.f2)
@@ -226,6 +221,19 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         x[i], f[i], work.x1[i], work.f1[i], work.x2[i], work.f2[i], work.x3[i], work.f3[i] = xi, fi, x1i, f1i, x2i, f2i, x3i, f3i
         x[~i], f[~i], work.x1[~i], work.f1[~i], work.x2[~i], work.f2[~i], work.x3[~i], work.f3[~i] = xni, fni, x1ni, f1ni, x2ni, f2ni, x3ni, f3ni
 
+    def customize_result(res):
+        xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
+        i = res['xl'] < res['xr']
+        res['xl'] = np.choose(i, (xr, xl))
+        res['xr'] = np.choose(i, (xl, xr))
+        res['fl'] = np.choose(i, (fr, fl))
+        res['fr'] = np.choose(i, (fl, fr))
+
+    if callback is not None:
+        temp = _scalar_optimization_prepare_result(
+            work, res, res_work_pairs, active, shape, customize_result)
+        if _call_callback_maybe_halt(callback, temp):
+            cb_terminate = True
 
     while work.nit < maxiter and active.size and not cb_terminate:
 
@@ -246,15 +254,17 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         active = _chandrupatla_check_termination(res, active, work)
 
         if callback is not None:
-            temp = _chandrupatla_prepare_result(shape, res, active, work.nit, work.nfev)
+            temp = _scalar_optimization_prepare_result(
+                work, res, res_work_pairs, active, shape, customize_result)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
         if active.size==0:
             break
 
-    res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _chandrupatla_prepare_result(shape, res, active, work.nit, work.nfev)
+    work.status = _ECALLBACK if cb_terminate else _ECONVERR
+    return _scalar_optimization_prepare_result(
+        work, res, res_work_pairs, active, shape, customize_result)
 
 
 def _chandrupatla_check_termination(res, active, work):
@@ -313,17 +323,3 @@ def _chandrupatla_check_termination(res, active, work):
 
     return active
 
-
-def _chandrupatla_prepare_result(shape, res, active, nit, nfev):
-    res = res.copy()
-    xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
-    i = res['xl'] < res['xr']
-    res['xl'] = np.choose(i, (xr, xl))
-    res['xr'] = np.choose(i, (xl, xr))
-    res['fl'] = np.choose(i, (fr, fl))
-    res['fr'] = np.choose(i, (fl, fr))
-    res['nit'][active] = nit
-    res['nfev'][active] = nfev
-    for key, val in res.items():
-        res[key] = np.reshape(val, shape)[()]
-    return OptimizeResult(**res)
