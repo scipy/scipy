@@ -5703,6 +5703,9 @@ def test_normalitytests():
     x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
     assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
 
+    message = "NumPy DeprecationWarnings are not emitted, but this is."
+    warnings.warn(DeprecationWarning(message))
+
 
 class TestRankSums:
 
