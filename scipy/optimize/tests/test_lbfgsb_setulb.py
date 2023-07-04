@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import _lbfgsb
+from scipy.optimize import _lbfgsb, minimize
 
 
 def objfun(x):
@@ -114,3 +114,11 @@ def test_setulb_floatround():
 
         assert (x <= upper_bnd).all() and (x >= low_bnd).all(), (
             "_lbfgsb.setulb() stepped to a point outside of the bounds")
+
+
+def test_gh_issue18730():
+    def fun(x):
+        return np.sum(x**2), (2*x).astype(np.float32)
+
+    res = minimize(fun, x0=np.array([1.]), jac=True, method="l-bfgs-b")
+    np.testing.assert_allclose(res.x, 0., atol=1e-15)
