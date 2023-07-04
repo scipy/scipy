@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
-from scipy.optimize._zeros_py import _scalar_optimization_initialize
+from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
+                                      _chandrupatla_iv)
 
 _iter = 100
 _xtol = 2e-12
@@ -134,15 +135,11 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     >>> res.x
     array([1. , 1.5, 2. ])
     """
-    # _chandrupatla_iv can be used essentially verbatim. Validation of `a`/`b`
-    # (now `x1`, `x2`, `x3`) happen separately
-    res = _chandrupatla_iv(func, x1, x2, x3, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, x1, x2, x3, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    # _chandrupatla_initialize can be used by both if generalized to accept
-    # an arbitrary number of `x` elements
     xs = (x1, x2, x3)
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, xs, args)
     x1, x2, x3 = xs
@@ -244,34 +241,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
     res.status[active] = _ECALLBACK if cb_terminate else _ECONVERR
     return _chandrupatla_prepare_result(shape, res, active, nit, nfev)
-
-
-def _chandrupatla_iv(func, x1, x2, x3, args, xatol, xrtol,
-                     fatol, frtol, maxiter, callback):
-
-    if not callable(func):
-        raise ValueError('`func` must be callable.')
-
-    # x1, x2, x3 have more complex IV that is taken care of during
-    # initialization
-
-    if not np.iterable(args):
-        args = (args,)
-
-    tols = np.asarray([xatol, xrtol, fatol if fatol is not None else 1, frtol])
-    if (not np.issubdtype(tols.dtype, np.number)
-            or np.any(tols < 0)
-            or tols.shape != (4,)):
-        raise ValueError('Tolerances must be non-negative scalars.')
-
-    maxiter_int = int(maxiter)
-    if maxiter != maxiter_int or maxiter < 0:
-        raise ValueError('`maxiter` must be a non-negative integer.')
-
-    if callback is not None and not callable(callback):
-        raise ValueError('`callback` must be callable.')
-
-    return func, x1, x2, x3, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
 def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, q0, res,

@@ -1509,9 +1509,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     array([1.8932892 , 2.        , 2.09455148])
 
     """
-    res = _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (a, b),
@@ -1728,14 +1728,12 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         work, res, res_work_pairs, active, shape, customize_result)
 
 
-def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+def _chandrupatla_iv(func, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
     # Input validation for `_chandrupatla`
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
-
-    # a and b have more complex IV that is taken care of during initialization
 
     if not np.iterable(args):
         args = (args,)
@@ -1753,7 +1751,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
+    return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
 def _scalar_optimization_initialize(func, xs, args):
