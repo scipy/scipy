@@ -109,7 +109,7 @@ def as_xparray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "array_api_compat.numpy", "numpy.array_api"}:
+    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.array_api_compat.numpy"}:
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype)
