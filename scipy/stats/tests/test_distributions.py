@@ -9337,7 +9337,9 @@ class TestTruncPareto:
 @pytest.mark.parametrize("case", [("loglaplace", None, None, None),
                                   ("lognorm", None, None, None),
                                   ("pareto", None, None, None),])
-def test_generic_sf_isf(case):
+def test_sf_isf_overrides(case):
+    # A stronger test that supplements `test_continuous_basic.check_sf_isf`
+    # for distributions with overridden `sf` and `isf` methods.
     distname, domain, atol, rtol = case
     domain = domain or (-290, 0)
     atol = atol or 0
