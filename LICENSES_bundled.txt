@@ -260,4 +260,4 @@ License 3-Clause BSD
 Name: array-api-compat
 Files: scipy/_lib/array-api-compat/*
 License: MIT
-  For details, see scipy/optimize/_highs/LICENCE
+  For details, see scipy/_lib/array-api-compat/LICENCE
