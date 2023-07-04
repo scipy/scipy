@@ -104,14 +104,15 @@ cases = [
 
 class TestChandrupatlaMinimize:
 
-    def f(self, x, dist, loc):
+    def f(self, x, loc):
+        dist = stats.norm()
         return -dist.pdf(x - loc)
 
     @pytest.mark.parametrize('loc', [0.6, np.linspace(-0.05, 1.05, 10)])
     def test_basic(self, loc):
         # Invert distribution CDF and compare against distrtibution `ppf`
         dist = stats.norm()
-        res = _chandrupatla_minimize(self.f, -5, 0, 5, args=(dist, loc))
+        res = _chandrupatla_minimize(self.f, -5, 0, 5, args=(loc,))
         ref = loc
         np.testing.assert_allclose(res.x, ref)
         assert res.x.shape == np.shape(ref)
@@ -121,12 +122,11 @@ class TestChandrupatlaMinimize:
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
         loc = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
-        dist = stats.norm()
-        args = (dist, loc)
+        args = (loc,)
 
         @np.vectorize
-        def chandrupatla_single(loc):
-            return _chandrupatla_minimize(self.f, -5, 0, 5, args=(dist, loc))
+        def chandrupatla_single(loc_single):
+            return _chandrupatla_minimize(self.f, -5, 0, 5, args=(loc_single,))
 
         def f(*args, **kwargs):
             f.f_evals += 1
@@ -261,7 +261,7 @@ class TestChandrupatlaMinimize:
         bracket = (-5, 0, 5)
         maxiter = 5
 
-        res = _chandrupatla_minimize(self.f, *bracket, args=(dist, loc),
+        res = _chandrupatla_minimize(self.f, *bracket, args=(loc,),
                                   maxiter=maxiter)
         assert not np.any(res.success)
         assert np.all(res.nfev == maxiter+3)
@@ -280,7 +280,7 @@ class TestChandrupatlaMinimize:
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
 
-        res2 = _chandrupatla_minimize(self.f, *bracket, args=(dist, loc),
+        res2 = _chandrupatla_minimize(self.f, *bracket, args=(loc,),
                                    callback=callback)
 
         # terminating with callback is identical to terminating due to maxiter
@@ -335,7 +335,7 @@ class TestChandrupatlaMinimize:
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(None, -4, 0, 4)
 
-        message = 'Bracket and function output must be real numbers.'
+        message = 'Abscissae and function output must be real numbers.'
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(lambda x: x, -4+1j, 0, 4)
 
@@ -343,7 +343,9 @@ class TestChandrupatlaMinimize:
         # raised by `np.broadcast, but the traceback is readable IMO
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(lambda x: x, [-2, -3], [0, 0], [3, 4, 5])
-        with pytest.raises(ValueError, match=message):
+
+        message = "shape mismatch: indexing arrays could not be broadcast"
+        with pytest.raises(IndexError, match=message):
             _chandrupatla_minimize(lambda x: [x[0], x[1], x[1]], [-3, -3],
                                    [0, 0], [5, 5])
 
@@ -369,10 +371,9 @@ class TestChandrupatlaMinimize:
 
     def test_bracket_order(self):
         # Confirm that order of points in bracket doesn't matter
-        dist = stats.norm()
         loc = np.linspace(-1, 1, 6)
         brackets = np.array(list(permutations([-5, 0, 5]))).T
-        res = _chandrupatla_minimize(self.f, *brackets, args=(dist, loc))
+        res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
         np.testing.assert_allclose(res.x, loc)
 
     def test_special_cases(self):

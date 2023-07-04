@@ -1,5 +1,6 @@
 import numpy as np
-from ._optimize import OptimizeResult, _call_callback_maybe_halt
+from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
+from scipy.optimize._zeros_py import _scalar_optimization_initialize
 
 _iter = 100
 _xtol = 2e-12
@@ -142,7 +143,10 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     # Initialization
     # _chandrupatla_initialize can be used by both if generalized to accept
     # an arbitrary number of `x` elements
-    x1, f1, x2, f2, x3, f3, shape, dtype = _chandrupatla_initialize(func, x1, x2, x3, args)
+    xs = (x1, x2, x3)
+    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, xs, args)
+    x1, x2, x3 = xs
+    f1, f2, f3 = fs
     q0 = x3  # At the start, q0 is set at x3...
     phi = 1.61803398875
 
@@ -203,7 +207,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         x_full = res.x.copy()
         x_full[active] = x
         x_full = x_full.reshape(shape)
-        f = func(x_full, *args)
+        args_full = [arg.reshape(shape) for arg in args]
+        f = func(x_full, *args_full)
         nfev += 1
         f = np.asarray(f, dtype=dtype).ravel()[active]
 
@@ -267,36 +272,6 @@ def _chandrupatla_iv(func, x1, x2, x3, args, xatol, xrtol,
         raise ValueError('`callback` must be callable.')
 
     return func, x1, x2, x3, args, xatol, xrtol, fatol, frtol, maxiter, callback
-
-def _chandrupatla_initialize(func, x1, x2, x3, args):
-    # initializing left and right bracket and function value arrays
-
-    # Try to preserve `dtype`, but we need to ensure that the arguments are at
-    # least floats before passing them into the function because integers
-    # can overflow and cause failure.
-    x1, x2, x3 = np.broadcast_arrays(x1, x2, x3)  # broadcast and rename
-    xt = np.result_type(x1.dtype, x2.dtype, x3.dtype)
-    xt = np.float64 if np.issubdtype(xt, np.integer) else xt
-    x1, x2, x3 = x1.astype(xt, copy=False)[()], x2.astype(xt, copy=False)[()], x3.astype(xt, copy=False)[()]
-    f1, f2, f3 = func(x1, *args), func(x2, *args), func(x3, *args)
-
-    # It's possible that the functions will return multiple outputs for each
-    # scalar input, so we need to broadcast again. All arrays need to be,
-    # writable, so we'll need to copy after broadcasting. Finally, we're going
-    # to be doing operations involving `x1`, `x2`, `f1`, and `f2` throughout,
-    # so figure out the right type from the outset.
-    x1, f1, x2, f2, x3, f3 = np.broadcast_arrays(x1, f1, x2, f2, x3, f3)
-    ft = np.result_type(x1.dtype, x2.dtype, x3.dtype, f1.dtype, f2.dtype, f3.dtype)
-    ft = np.float64 if np.issubdtype(ft, np.integer) else ft
-    if not np.issubdtype(np.result_type(x1, f1, x2, f2, x3, f3), np.floating):
-        raise ValueError("Bracket and function output must be real numbers.")
-    x1, f1, x2, f2, x3, f3 = x1.astype(ft), f1.astype(ft), x2.astype(ft), f2.astype(ft), x3.astype(ft), f3.astype(ft)
-
-    # To ensure that we can do indexing, we'll work with at least 1d arrays,
-    # but remember the appropriate shape of the output.
-    shape = x1.shape
-    x1, f1, x2, f2, x3, f3 = x1.ravel(), f1.ravel(), x2.ravel(), f2.ravel(), x3.ravel(), f3.ravel()
-    return x1, f1, x2, f2, x3, f3, shape, ft
 
 
 def _chandrupatla_check_termination(x1, f1, x2, f2, x3, f3, q0, res,
