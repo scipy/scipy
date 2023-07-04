@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
 from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
-                                      _chandrupatla_iv, _scalar_optimization_prepare_result)
+                                      _chandrupatla_iv,
+                                      _scalar_optimization_prepare_result,
+                                      _scalar_optimization_check_termination)
 
 _iter = 100
 _xtol = 2e-12
@@ -164,7 +166,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
     work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
                           xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
-                          nit=nit, nfev=nfev, status=status, q0=q0)
+                          nit=nit, nfev=nfev, status=status, q0=q0, args=args)
     res_work_pairs = [('status', 'status'), ('x', 'x1'), ('fun', 'f1'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('xl', 'x1'),
                       ('fl', 'f1'), ('xm', 'x2'), ('fm', 'f2'), ('xr', 'x3'),
@@ -179,8 +181,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
                          nit=np.full_like(status, work.nit)[()],
                          nfev=np.full_like(status, work.nfev)[()],
                          status=work.status.copy(), success=(work.status==0))
-
-    active = _chandrupatla_check_termination(res, active, work)
 
     def pre_func_eval(work):
         A = (work.x2 - work.x1) * (work.f3 - work.f2)
@@ -221,6 +221,37 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         x[i], f[i], work.x1[i], work.f1[i], work.x2[i], work.f2[i], work.x3[i], work.f3[i] = xi, fi, x1i, f1i, x2i, f2i, x3i, f3i
         x[~i], f[~i], work.x1[~i], work.f1[~i], work.x2[~i], work.f2[~i], work.x3[~i], work.f3[~i] = xni, fni, x1ni, f1ni, x2ni, f2ni, x3ni, f3ni
 
+    def check_termination(work):
+        # Check for all terminal conditions and record statuses.
+
+        # See [1] Section 4 (first two sentences)
+        i = abs(work.x2 - work.x1) < abs(work.x3 - work.x2)
+        work.x1, work.x3 = np.choose(i, (work.x3, work.x1)), np.choose(i, (
+        work.x1, work.x3))
+        work.f1, work.f3 = np.choose(i, (work.f3, work.f1)), np.choose(i, (
+        work.f1, work.f3))
+        stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
+
+        i = ((work.f2 > work.f1) | (work.f2 > work.f3))
+        work.x2[i], work.f2[i], stop[i], work.status[
+            i] = np.nan, np.nan, True, _ESIGNERR
+
+        work.xtol = abs(work.x2) * work.xrtol + work.xatol
+        i = abs(work.x3 - work.x2) / 2 < work.xtol
+        # Modify in place to incorporate tolerance on function value.
+        i |= (work.f1 - 2 * work.f2 + work.f3) / 2 < abs(
+            work.f2) * work.frtol + work.fatol
+        i &= ~stop
+        stop[i], work.status[i] = True, _ECONVERGED
+
+        i = ~((np.isfinite(work.x1) & np.isfinite(work.x2) & np.isfinite(
+            work.x3)
+               & np.isfinite(work.f1) & np.isfinite(work.f2) & np.isfinite(
+                    work.f3)) | stop)
+        work.x2[i], work.x2[i], stop[i], work.status[i] = np.nan, np.nan, True, _EVALUEERR
+
+        return stop
+
     def customize_result(res):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
         i = res['xl'] < res['xr']
@@ -228,6 +259,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         res['xr'] = np.choose(i, (xl, xr))
         res['fl'] = np.choose(i, (fr, fl))
         res['fr'] = np.choose(i, (fl, fr))
+
+    active = _scalar_optimization_check_termination(
+        work, res, res_work_pairs, active, check_termination)
 
     if callback is not None:
         temp = _scalar_optimization_prepare_result(
@@ -251,7 +285,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
         # [1] Figure 1 (second diamond)
         work.nit += 1
-        active = _chandrupatla_check_termination(res, active, work)
+        active = _scalar_optimization_check_termination(
+            work, res, res_work_pairs, active, check_termination)
 
         if callback is not None:
             temp = _scalar_optimization_prepare_result(
@@ -266,60 +301,4 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     return _scalar_optimization_prepare_result(
         work, res, res_work_pairs, active, shape, customize_result)
 
-
-def _chandrupatla_check_termination(res, active, work):
-    # Check for all terminal conditions and record statuses.
-
-    # See [1] Section 4 (first two sentences)
-    i = abs(work.x2 - work.x1) < abs(work.x3 - work.x2)
-    work.x1, work.x3 = np.choose(i, (work.x3, work.x1)), np.choose(i, (work.x1, work.x3))
-    work.f1, work.f3 = np.choose(i, (work.f3, work.f1)), np.choose(i, (work.f1, work.f3))
-    stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
-
-    i = ((work.f2 > work.f1) | (work.f2 > work.f3))
-    work.x2[i], work.f2[i], stop[i], work.status[i] = np.nan, np.nan, True, _ESIGNERR
-
-    work.xtol = abs(work.x2)*work.xrtol + work.xatol
-    i = abs(work.x3 - work.x2)/2 < work.xtol
-    # Modify in place to incorporate tolerance on function value.
-    i |= (work.f1 - 2 * work.f2 + work.f3)/2 < abs(work.f2)*work.frtol + work.fatol
-    i &=  ~stop
-    stop[i], work.status[i] = True, _ECONVERGED
-
-    i = ~((np.isfinite(work.x1) & np.isfinite(work.x2) & np.isfinite(work.x3)
-           & np.isfinite(work.f1) & np.isfinite(work.f2) & np.isfinite(work.f3)) | stop)
-    work.x2[i], work.x2[i], stop[i], work.status[i] = np.nan, np.nan, True, _EVALUEERR
-
-    ### This stuff can be put into a function and reused
-    if np.any(stop):
-        # update the result object with the elements for which termination
-        # condition has been met
-        active_stop = active[stop]
-        res.x[active_stop] = work.x2[stop]
-        res.fun[active_stop] = work.f2[stop]
-        res.xl[active_stop] = work.x1[stop]
-        res.xm[active_stop] = work.x2[stop]
-        res.xr[active_stop] = work.x3[stop]
-        res.fl[active_stop] = work.f1[stop]
-        res.fm[active_stop] = work.f2[stop]
-        res.fr[active_stop] = work.f3[stop]
-        res.status[active_stop] = work.status[stop]
-        res.nfev[active_stop] = work.nfev
-        res.nit[active_stop] = work.nit
-        res.success[active_stop] = res.status[active_stop] == 0
-
-        # compress the arrays to avoid unnecessary computation
-        proceed = ~stop
-        active = active[proceed]
-        work.x1 = work.x1[proceed]
-        work.f1 = work.f1[proceed]
-        work.x2 = work.x2[proceed]
-        work.f2 = work.f2[proceed]
-        work.x3 = work.x3[proceed]
-        work.f3 = work.f3[proceed]
-        work.q0 = work.q0[proceed]
-        work.xtol = work.xtol[proceed]
-        work.status = work.status[proceed]
-
-    return active
 
