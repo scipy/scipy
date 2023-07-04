@@ -287,6 +287,14 @@ virtual environments:
 
 .. tab-set::
 
+  .. tab-item:: Conda env
+
+    To create a ``scipy-dev`` development environment with every required and
+    optional dependency installed, run::
+
+        mamba env create -f environment.yml
+        mamba activate scipy-dev
+
   .. tab-item:: Virtual env or system Python
 
     .. note::
@@ -319,14 +327,6 @@ virtual environments:
 
        # Dev dependencies (static typing and linting)
        python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
-
-  .. tab-item:: Conda env
-
-    To create a ``scipy-dev`` development environment with every required and
-    optional dependency installed, run::
-
-        mamba env create -f environment.yml
-        mamba activate scipy-dev
 
 To build SciPy in an activated development environment, run::
 
