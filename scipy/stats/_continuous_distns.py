@@ -6861,6 +6861,11 @@ class kappa3_gen(rv_continuous):
     def _ppf(self, q, a):
         return (a/(q**-a - 1.0))**(1.0/a)
 
+    def _isf(self, q, a):
+        lg = sc.xlog1py(-a, -q)
+        denom = sc.expm1(lg)
+        return (a / denom)**(1.0 / a)
+
     def _stats(self, a):
         outputs = [None if np.any(i < a) else np.nan for i in range(1, 5)]
         return outputs[:]
