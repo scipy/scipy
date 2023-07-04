@@ -183,9 +183,6 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         fun = func
         jac = fprime
 
-    # Fortran expects a double precision array for gradient
-    jac=jac.astype(np.float64)
-
     # build options
     callback = _wrap_callback(callback)
     opts = {'disp': disp,
