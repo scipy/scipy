@@ -374,6 +374,21 @@ class LogNormal(ReferenceDistribution):
         return mp.ncdf(mp.log(x) / s)
 
 
+class Lomax(ReferenceDistribution):
+
+    def __init__(self, *, c):
+        super().__init__(c=c)
+
+    def _support(self, c):
+        return 0, mp.inf
+
+    def _pdf(self, x, c):
+        return c / (mp.one + x)**(c + mp.one)
+
+    def _ppf(self, q, guess, c):
+        return mp.expm1(-mp.log1p(-q) / c)
+
+
 class Normal(ReferenceDistribution):
 
     def _pdf(self, x):

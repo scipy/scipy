@@ -3034,6 +3034,19 @@ class TestLogLaplace:
         assert_allclose(stats.loglaplace.isf(q, c), ref, rtol=1e-14)
 
 
+class TestLomax:
+
+    def test_isf(self):
+        # reference values were generated using the reference distribution
+        # e.g. mp.dps=100;
+        # Lomax(c=c).isf(q)
+        c = [1.0, 5.0, 12.0, 20.5]
+        q = [3e-10, 9e-30, 5e-50, 6e-60]
+        ref = [3333333332.3333335, 644393.0149772542, 12834.688421125164,
+               773.2312038523736]
+        assert_allclose(stats.lomax.isf(q, c), ref, rtol=1e-15)
+
+
 class TestPowerlaw:
 
     # In the following data, `sf` was computed with mpmath.

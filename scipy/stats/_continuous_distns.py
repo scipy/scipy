@@ -7693,6 +7693,9 @@ class lomax_gen(rv_continuous):
     def _ppf(self, q, c):
         return sc.expm1(-sc.log1p(-q)/c)
 
+    def _isf(self, q, c):
+        return q**(-1.0 / c) - 1
+
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
         return mu, mu2, g1, g2
