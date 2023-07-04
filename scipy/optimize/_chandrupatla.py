@@ -13,6 +13,8 @@ _rtol = 4 * np.finfo(float).eps
 __all__ = []
 
 # TODO:
+#  - Add `test_convergence` and equivalents of any other tests/documentation
+#     that were added to `_differentiate`. Add to `_chandrupatla`, too.
 #  - make tolerances depend on dtype
 #  - Figure out whether we want to follow original termination conditions
 #  - Check over object returned by `_chandrupatla_minimize`. Make sure that
@@ -160,7 +162,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
                           xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
                           nit=nit, nfev=nfev, status=status, q0=q0, args=args)
     res_work_pairs = [('status', 'status'),
-                      ('x', 'x1'), ('fun', 'f1'),
+                      ('x', 'x2'), ('fun', 'f2'),
                       ('nit', 'nit'), ('nfev', 'nfev'),
                       ('xl', 'x1'), ('xm', 'x2'), ('xr', 'x3'),
                       ('fl', 'f1'), ('fm', 'f2'), ('fr', 'f3')]

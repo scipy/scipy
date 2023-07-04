@@ -321,8 +321,7 @@ class TestChandrupatlaMinimize:
                                      fatol=fatol, xrtol=xrtol, frtol=frtol)
         assert_equal(res.nit, nit)
 
-    # TODO: why did np.float32 break when factoring out check_termination?
-    @pytest.mark.parametrize("dtype", (np.float16, np.float64))
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
     def test_dtype(self, dtype):
         # Test that dtypes are preserved
 
@@ -389,7 +388,7 @@ class TestChandrupatlaMinimize:
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            # assert np.issubdtype(x.dtype, np.floating)
+            assert np.issubdtype(x.dtype, np.floating)
             return (x-1) ** 100
 
         with np.errstate(invalid='ignore'):
@@ -416,8 +415,7 @@ class TestChandrupatlaMinimize:
         assert res.nit == 0
         assert res.nfev == 3
         assert res.status == -2
-        # TODO: why did this break when factoring out `_customize_result`?
-        # assert res.x == -3  # best so far
+        assert res.x == 1.1  # best so far
 
         # Test scalar `args` (not in tuple)
         def f(x, c):
@@ -426,16 +424,15 @@ class TestChandrupatlaMinimize:
         res = _chandrupatla_minimize(f, -1, 0, 1, args=1/3)
         assert_allclose(res.x, 1/3)
 
-    #     # # TODO: Test zero tolerance
-    #     # # ~~What's going on here - why are iterations repeated?~~
-    #     # # tl goes to zero when xatol=xrtol=0. When function is nearly linear,
-    #     # # this causes convergence issues.
-    #     # def f(x):
-    #     #     return np.cos(x)
-    #     #
-    #     # res = _chandrupatla_minimize(f, 0, np.pi, xatol=0, xrtol=0)
-    #     # assert res.nit < 100
-    #     # xp = np.nextafter(res.x, np.inf)
-    #     # xm = np.nextafter(res.x, -np.inf)
-    #     # assert np.abs(res.fun) < np.abs(f(xp))
-    #     # assert np.abs(res.fun) < np.abs(f(xm))
+        # Test zero tolerances
+        # TODO: fatol/frtol = 0?
+        def f(x):
+            return -np.sin(x)
+
+        res = _chandrupatla_minimize(f, 0, 1, np.pi, xatol=0, xrtol=0)
+        assert res.success
+        # found a minimum exactly (according to floating point arithmetic)
+        xp = np.nextafter(res.x, np.inf)
+        xm = np.nextafter(res.x, -np.inf)
+        assert np.abs(res.fun) == np.abs(f(xp))
+        assert np.abs(res.fun) == np.abs(f(xm))
