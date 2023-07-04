@@ -224,6 +224,9 @@ Otherwise, conda is recommended.
     If you don't have a conda installation yet, we recommend using
     Mambaforge_; any conda flavor will work though.
 
+Building from source to use SciPy
+`````````````````````````````````
+
 .. tab-set::
 
   .. tab-item:: Conda env
