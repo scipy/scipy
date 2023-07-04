@@ -393,6 +393,21 @@ class NormInvGauss(ReferenceDistribution):
         return a * q**-1 * mp.besselk(1, alpha*q) * mp.exp(beta*x)
 
 
+class Pareto(ReferenceDistribution):
+
+    def __init__(self, *, b):
+        super().__init__(b=b)
+
+    def _support(self, b):
+        return 1, mp.inf
+
+    def _pdf(self, x, b):
+        return b / x**(b+1)
+
+    def _ppf(self, q, guess, b):
+        return mp.power(mp.one - q, -mp.one / b)
+
+
 class Pearson3(ReferenceDistribution):
     def __init__(self, *, skew):
         super().__init__(skew=skew)

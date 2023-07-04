@@ -2243,6 +2243,15 @@ class TestPareto:
         # method.
         _ = stats.pareto.fit(data)
 
+    def test_isf(self):
+        # reference values were generated using the reference distribution
+        # e.g. mp.dps = 100; Pareto(b=b).isf(q)
+        b = 2.62
+        q = [0.01, 2e-10, 3e-20, 4e-40]
+        ref = [5.7990757086193945, 5033.811495713687, 28280067.20126172,
+               1089887527714828.1]
+        assert_allclose(stats.pareto.isf(q, b), ref, rtol=1e-14)
+
 
 class TestGenpareto:
     def test_ab(self):
