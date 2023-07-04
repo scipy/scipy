@@ -187,8 +187,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
-    while work.nit < maxiter and active.size and not cb_terminate:
-
+    def pre_func_eval(work):
         A = (work.x2 - work.x1) * (work.f3 - work.f2)
         B = (work.x3 - work.x2) * (work.f1 - work.f2)
         C = A / (A + B)
@@ -203,10 +202,16 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         j = abs(q1[i] - work.x2[i]) > work.xtol[i]
         xi = x[i]
         xi[j] = q1[i][j]
-        xi[~j] = work.x2[i][~j] + np.sign(work.x3[i][~j] - work.x2[i][~j]) * work.xtol[i][~j]
+        xi[~j] = work.x2[i][~j] + np.sign(work.x3[i][~j] - work.x2[i][~j]) * \
+                 work.xtol[i][~j]
         x[i] = xi
 
         work.q0 = q1
+        return x
+
+    while work.nit < maxiter and active.size and not cb_terminate:
+
+        x = pre_func_eval(work)
         x_full = res.x.copy()
         x_full[active] = x
         x_full = x_full.reshape(shape)
