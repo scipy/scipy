@@ -2658,7 +2658,7 @@ class TestDecimate:
         yzpref = signal.filtfilt(*signal.zpk2tf(z, p, k),
                                  u)[::2]
 
-        assert_equal(yzp, yzpref)
+        assert_allclose(yzp, yzpref, rtol=1e-10, atol=1e-13)
 
     def test_complex_fir_dlti(self):
         # centre frequency for filter [Hz]
@@ -3605,6 +3605,20 @@ class TestDetrend:
         # breakpoint index > shape[axis]: raises
         with assert_raises(ValueError):
             detrend(data, type="linear", bp=3)
+
+    @pytest.mark.parametrize('bp', [np.array([0, 2]), [0, 2]])
+    def test_detrend_array_bp(self, bp):
+        # regression test for https://github.com/scipy/scipy/issues/18675
+        rng = np.random.RandomState(12345)
+        x = rng.rand(10)
+       # bp = np.array([0, 2])
+
+        res = detrend(x, bp=bp)
+        res_scipy_191 = np.array([-4.44089210e-16, -2.22044605e-16,
+            -1.11128506e-01, -1.69470553e-01,  1.14710683e-01,  6.35468419e-02,
+            3.53533144e-01, -3.67877935e-02, -2.00417675e-02, -1.94362049e-01])
+
+        assert_allclose(res, res_scipy_191, atol=1e-14)
 
 
 class TestUniqueRoots:

@@ -26,16 +26,16 @@ import warnings
 
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+                             cont2discrete, _atleast_2d_or_none)
 
 import numpy
 import numpy as np
 from numpy.testing import suppress_warnings
-from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
@@ -1218,11 +1218,6 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
 
     """
     pass
-
-
-def _atleast_2d_or_none(arg):
-    if arg is not None:
-        return atleast_2d(arg)
 
 
 class StateSpace(LinearTimeInvariant):
@@ -3552,8 +3547,7 @@ def dlsim(system, u, t=None, x0=None):
         if len(u.shape) == 1:
             u = u[:, np.newaxis]
 
-        u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
-        u_dt = u_dt_interp(tout).transpose()
+        u_dt = make_interp_spline(t, u, k=1)(tout)
 
     # Simulate the system
     for i in range(0, out_samples - 1):

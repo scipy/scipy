@@ -7,7 +7,9 @@ Random Number Generators (:mod:`scipy.stats.sampling`)
 
 This module contains a collection of random number generators to sample
 from univariate continuous and discrete distributions. It uses the
-implementation of a C library called "UNU.RAN".
+implementation of a C library called "UNU.RAN". The only exception is
+RatioUniforms, which is a pure Python implementation of the
+Ratio-of-Uniforms method.
 
 Generators Wrapped
 ==================
@@ -22,6 +24,7 @@ For continuous distributions
    NumericalInversePolynomial
    TransformedDensityRejection
    SimpleRatioUniforms
+   RatioUniforms
 
 For discrete distributions
 --------------------------
@@ -40,6 +43,7 @@ Warnings / Errors used in :mod:`scipy.stats.sampling`
 
    UNURANError
 """
+from ._sampling import RatioUniforms  # noqa: F401
 from ._unuran.unuran_wrapper import (  # noqa: F401
     TransformedDensityRejection,
     DiscreteAliasUrn,

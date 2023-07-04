@@ -232,9 +232,10 @@ class OptimizeResult(dict):
                       'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
                       'converged', 'flag', 'function_calls', 'iterations',
                       'root']
+        order_keys = getattr(self, '_order_keys', order_keys)
         # 'slack', 'con' are redundant with residuals
         # 'crossover_nit' is probably not interesting to most users
-        omit_keys = {'slack', 'con', 'crossover_nit'}
+        omit_keys = {'slack', 'con', 'crossover_nit', '_order_keys'}
 
         def key(item):
             try:

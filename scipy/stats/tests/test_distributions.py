@@ -1147,6 +1147,37 @@ class TestHalfNorm:
     def test_cdf(self, x, ref):
         assert_allclose(stats.halfnorm.cdf(x), ref, rtol=1e-15)
 
+    @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
+    @pytest.mark.parametrize("rvs_scale", [1e-2, 100, 1e8])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale,
+                                    fix_loc, fix_scale):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.halfnorm.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
+                                  random_state=rng)
+
+        if fix_loc and fix_scale:
+            error_msg = ("All parameters fixed. There is nothing to "
+                         "optimize.")
+            with pytest.raises(RuntimeError, match=error_msg):
+                stats.halflogistic.fit(data, floc=rvs_loc, fscale=rvs_scale)
+            return
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.halfnorm, data, **kwds)
+
+    def test_fit_error(self):
+        # `floc` bigger than the minimal data point
+        with pytest.raises(FitDataError):
+            stats.halfnorm.fit([1, 2, 3], floc=2)
+
 
 class TestHalfLogistic:
     # survival function reference values were computed with mpmath
@@ -1174,6 +1205,37 @@ class TestHalfLogistic:
                                         (1-1e-15, 1.9984014443252818e-15)])
     def test_isf(self, q, ref):
         assert_allclose(stats.halflogistic.isf(q), ref, rtol=1e-15)
+
+    @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
+    @pytest.mark.parametrize("rvs_scale", [1e-2, 100, 1e8])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale,
+                                    fix_loc, fix_scale):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.halflogistic.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
+                                      random_state=rng)
+
+        kwds = {}
+        if fix_loc and fix_scale:
+            error_msg = ("All parameters fixed. There is nothing to "
+                         "optimize.")
+            with pytest.raises(RuntimeError, match=error_msg):
+                stats.halflogistic.fit(data, floc=rvs_loc, fscale=rvs_scale)
+            return
+
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.halflogistic, data, **kwds)
+
+    def test_fit_bad_floc(self):
+        msg = r" Maximum likelihood estimation with 'halflogistic' requires"
+        with assert_raises(FitDataError, match=msg):
+            stats.halflogistic.fit([0, 2, 4], floc=1)
 
 
 class TestHalfgennorm:
@@ -1494,6 +1556,15 @@ class TestTruncnorm:
         assert_allclose(stats.truncnorm(a, b).logcdf(x), expected)
         assert_allclose(stats.truncnorm(-b, -a).logsf(-x), expected)
 
+    def test_moments_gh18634(self):
+        # gh-18634 reported that moments 5 and higher didn't work; check that
+        # this is resolved
+        res = stats.truncnorm(-2, 3).moment(5)
+        # From Mathematica:
+        # Moment[TruncatedDistribution[{-2, 3}, NormalDistribution[]], 5]
+        ref = 1.645309620208361
+        assert_allclose(res, ref)
+
 
 class TestGenLogistic:
 
@@ -1794,6 +1865,23 @@ class TestLoggamma:
         btest = stats.binomtest(np.count_nonzero(x < med), len(x))
         ci = btest.proportion_ci(confidence_level=0.999)
         assert ci.low < 0.5 < ci.high
+
+    @pytest.mark.parametrize("c, ref",
+                             [(1e-8, 19.420680753952364),
+                              (1, 1.5772156649015328),
+                              (1e4, -3.186214986116763),
+                              (1e10, -10.093986931748889),
+                              (1e100, -113.71031611649761)])
+    def test_entropy(self, c, ref):
+    
+        # Reference values were calculated with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # def loggamma_entropy_mpmath(c):
+        #     c = mp.mpf(c)
+        #     return float(mp.log(mp.gamma(c)) + c * (mp.one - mp.digamma(c)))
+        
+        assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
 
 class TestJohnsonsu:
@@ -2350,6 +2438,17 @@ class TestPearson3:
                         stats.pearson3.sf(-x, -skew))
         assert_allclose(stats.pearson3.ppf(x, skew),
                         -stats.pearson3.isf(x, -skew))
+
+    def test_sf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 50; Pearson3(skew=skew).sf(x). Check positive, negative,
+        # and zero skew due to branching.
+        skew = [0.1, 0.5, 1.0, -0.1]
+        x = [5.0, 10.0, 50.0, 8.0]
+        ref = [1.64721926440872e-06, 8.271911573556123e-11,
+               1.3149506021756343e-40, 2.763057937820296e-21]
+        assert_allclose(stats.pearson3.sf(x, skew), ref, rtol=2e-14)
+        assert_allclose(stats.pearson3.sf(x, 0), stats.norm.sf(x), rtol=2e-14)
 
 
 class TestKappa4:
@@ -2915,6 +3014,26 @@ class TestLaplace:
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
 
+class TestLogLaplace:
+
+    def test_sf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100; LogLaplace(c=c).sf(x).
+        c = np.array([2.0, 3.0, 5.0])
+        x = np.array([1e-5, 1e10, 1e15])
+        ref = [0.99999999995, 5e-31, 5e-76]
+        assert_allclose(stats.loglaplace.sf(x, c), ref, rtol=1e-15)
+
+    def test_isf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100; LogLaplace(c=c).isf(q).
+        c = 3.25
+        q = [0.8, 0.1, 1e-10, 1e-20, 1e-40]
+        ref = [0.7543222539245642, 1.6408455124660906, 964.4916294395846,
+               1151387.578354072, 1640845512466.0906]
+        assert_allclose(stats.loglaplace.isf(q, c), ref, rtol=1e-14)
+
+
 class TestPowerlaw:
 
     # In the following data, `sf` was computed with mpmath.
@@ -3410,6 +3529,10 @@ class TestRvDiscrete:
         pk = [0.3, 0.3, 0.3, 0.3, -0.2]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
+        xk = [1, 1]
+        pk = [0.5, 0.5]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
     def test_shape_rv_sample(self):
         # tests added for gh-9565
 
@@ -3645,22 +3768,29 @@ class TestSkewNorm:
         assert_allclose(res, ref)
 
         # Test behavior when skew of data is beyond maximum of skewnorm
-        rvs = stats.pareto.rvs(1, size=100, random_state=rng)
+        rvs2 = stats.pareto.rvs(1, size=100, random_state=rng)
 
         # MLE still works
-        res = stats.skewnorm.fit(rvs)
+        res = stats.skewnorm.fit(rvs2)
         assert np.all(np.isfinite(res))
 
         # MoM fits variance and skewness
-        a5, loc5, scale5 = stats.skewnorm.fit(rvs, method='mm')
+        a5, loc5, scale5 = stats.skewnorm.fit(rvs2, method='mm')
         assert np.isinf(a5)
         # distribution infrastruction doesn't allow infinite shape parameters
         # into _stats; it just bypasses it and produces NaNs. Calculate
         # moments manually.
-        m, v = np.mean(rvs), np.var(rvs)
+        m, v = np.mean(rvs2), np.var(rvs2)
         assert_allclose(m, loc5 + scale5 * np.sqrt(2/np.pi))
         assert_allclose(v, scale5**2 * (1 - 2 / np.pi))
 
+        # test that MLE and MoM behave as expected under sign changes
+        a6p, loc6p, scale6p = stats.skewnorm.fit(rvs, method='mle')
+        a6m, loc6m, scale6m = stats.skewnorm.fit(-rvs, method='mle')
+        assert_allclose([a6m, loc6m, scale6m], [-a6p, -loc6p, scale6p])
+        a7p, loc7p, scale7p = stats.skewnorm.fit(rvs, method='mm')
+        a7m, loc7m, scale7m = stats.skewnorm.fit(-rvs, method='mm')
+        assert_allclose([a7m, loc7m, scale7m], [-a7p, -loc7p, scale7p])
 
 class TestExpon:
     def test_zero(self):
@@ -3843,10 +3973,10 @@ class TestExponNorm:
 
 class TestGenExpon:
     def test_pdf_unity_area(self):
-        from scipy.integrate import simps
+        from scipy.integrate import simpson
         # PDF should integrate to one
         p = stats.genexpon.pdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
-        assert_almost_equal(simps(p, dx=0.01), 1, 1)
+        assert_almost_equal(simpson(p, dx=0.01), 1, 1)
 
     def test_cdf_bounds(self):
         # CDF should always be positive
@@ -4002,6 +4132,17 @@ class TestLognorm:
 
         _assert_less_or_close_loglike(stats.lognorm, data, **kwds)
 
+    def test_isf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100;
+        # LogNormal(s=s).isf(q=0.1, guess=0)
+        # LogNormal(s=s).isf(q=2e-10, guess=100)
+        s = 0.954
+        q = [0.1, 2e-10, 5e-20, 6e-40]
+        ref = [3.3960065375794937, 390.07632793595974, 5830.5020828128445,
+               287872.84087457904]
+        assert_allclose(stats.lognorm.isf(q, s), ref, rtol=1e-14)
+
 
 class TestBeta:
     def test_logpdf(self):
@@ -4142,6 +4283,32 @@ class TestBeta:
     def test_entropy(self, a, b, ref):
         assert_allclose(stats.beta(a, b).entropy(), ref)
 
+    @pytest.mark.parametrize(
+        "a, b, ref, tol",
+        [
+            (1, 10, -1.4025850929940458, 1e-14),
+            (10, 20, -1.0567887388936708, 1e-13),
+            (4e6, 4e6+20, -7.221686009678741, 1e-9),
+            (5e6, 5e6+10, -7.333257022834638, 1e-8),
+            (1e10, 1e10+20, -11.133707703130474, 1e-11),
+            (1e50, 1e50+20, -57.185409562486385, 1e-15),
+        ]
+    )
+    def test_extreme_entropy(self, a, b, ref, tol):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def beta_entropy_mpmath(a, b):
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     entropy = (
+        #       mp.log(mp.beta(a, b)) - (a - 1) * mp.digamma(a)
+        #       - (b - 1) * mp.digamma(b) + (a + b - 2) * mp.digamma(a + b)
+        #     )
+        #     return float(entropy)
+        assert_allclose(stats.beta(a, b).entropy(), ref, rtol=tol)
+
 
 class TestBetaPrime:
     # the test values are used in test_cdf_gh_17631 / test_ppf_gh_17631
@@ -4276,6 +4443,17 @@ class TestBetaPrime:
         stats.betaprime.fit([0.1, 0.25, 0.3, 1.2, 1.6], floc=0, fscale=1)
         stats.betaprime(a=1, b=1).stats('mvsk')
 
+    def test_moment_gh18634(self):
+        # Testing for gh-18634 revealed that `betaprime` raised a
+        # NotImplementedError for higher moments. Check that this is
+        # resolved. Parameters are arbitrary but lie on either side of the
+        # moment order (5) to test both branches of `_lazywhere`. Reference
+        # values produced with Mathematica, e.g.
+        # `Moment[BetaPrimeDistribution[2,7],5]`
+        ref = [np.inf, 0.867096912929055]
+        res = stats.betaprime(2, [4.2, 7.1]).moment(5)
+        assert_allclose(res, ref)
+
 
 class TestGamma:
     def test_pdf(self):
@@ -4361,7 +4539,8 @@ class TestDgamma:
         assert_allclose(res, ref)
 
         dist = stats.dgamma(a)
-        assert_equal(dist.pdf(x), res)
+        # There was an intermittent failure with assert_equal on Linux - 32 bit
+        assert_allclose(dist.pdf(x), res, rtol=5e-16)
 
     # mpmath was used to compute the expected values.
     # For x < 0, cdf(x, a) is mp.gammainc(a, -x, mp.inf, regularized=True)/2
@@ -6997,6 +7176,16 @@ class TestBurr:
         assert_(np.isfinite(e2))
         assert_(np.isfinite(e3))
         assert_(np.isfinite(e4))
+
+    def test_burr_isf(self):
+        # reference values were computed via the reference distribution, e.g.
+        # mp.dps = 100
+        # Burr(c=5, d=3).isf([0.1, 1e-10, 1e-20, 1e-40])
+        c, d = 5.0, 3.0
+        q = [0.1, 1e-10, 1e-20, 1e-40]
+        ref = [1.9469686558286508, 124.57309395989076, 12457.309396155173,
+               124573093.96155174]
+        assert_allclose(stats.burr.isf(q, c, d), ref, rtol=1e-14)
 
 
 class TestBurr12:

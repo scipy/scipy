@@ -38,14 +38,14 @@ from . import dfitpack
 dfitpack_int = dfitpack.types.intvar.dtype
 
 
-def _int_overflow(x, msg=None):
+def _int_overflow(x, exception, msg=None):
     """Cast the value to an dfitpack_int and raise an OverflowError if the value
     cannot fit.
     """
     if x > iinfo(dfitpack_int).max:
         if msg is None:
             msg = f'{x!r} cannot fit into an {dfitpack_int!r}'
-        raise OverflowError(msg)
+        raise exception(msg)
     return dfitpack_int.type(x)
 
 
@@ -569,8 +569,9 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
     msg = "Too many data points to interpolate"
     lwrk1 = _int_overflow(u*v*(2 + b1 + b2) +
                           2*(u + v + km*(m + ne) + ne - kx - ky) + b2 + 1,
+                          OverflowError,
                           msg=msg)
-    lwrk2 = _int_overflow(u*v*(b2 + 1) + b2, msg=msg)
+    lwrk2 = _int_overflow(u*v*(b2 + 1) + b2, OverflowError, msg=msg)
     tx, ty, c, o = _fitpack._surfit(x, y, z, w, xb, xe, yb, ye, kx, ky,
                                     task, s, eps, tx, ty, nxest, nyest,
                                     wrk, lwrk1, lwrk2)
@@ -665,7 +666,18 @@ def bisplev(x, y, tck, dx=0, dy=0):
     x, y = map(atleast_1d, [x, y])
     if (len(x.shape) != 1) or (len(y.shape) != 1):
         raise ValueError("First two entries should be rank-1 arrays.")
-    z, ier = _fitpack._bispev(tx, ty, c, kx, ky, x, y, dx, dy)
+
+    msg = "Too many data points to interpolate."
+
+    _int_overflow(x.size * y.size, MemoryError, msg=msg)
+
+    if dx != 0 or dy != 0:
+        _int_overflow((tx.size - kx - 1)*(ty.size - ky - 1),
+                      MemoryError, msg=msg)
+        z, ier = dfitpack.parder(tx, ty, c, kx, ky, dx, dy, x, y)
+    else:
+        z, ier = dfitpack.bispev(tx, ty, c, kx, ky, x, y)
+
     if ier == 10:
         raise ValueError("Invalid input data")
     if ier:

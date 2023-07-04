@@ -98,7 +98,7 @@ cdef inline int _elementary_basis_index(uchar axis) noexcept:
 # canonical "positive" single cover
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _quat_canonical_single(double[:] q) nogil:
+cdef inline void _quat_canonical_single(double[:] q) noexcept nogil:
     if ((q[3] < 0)
         or (q[3] == 0 and q[0] < 0)
         or (q[3] == 0 and q[0] == 0 and q[1] < 0)
@@ -110,7 +110,7 @@ cdef inline void _quat_canonical_single(double[:] q) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline void _quat_canonical(double[:, :] q):
+cdef inline void _quat_canonical(double[:, :] q) noexcept:
     cdef Py_ssize_t n = q.shape[0]
     for ind in range(n):
         _quat_canonical_single(q[ind])

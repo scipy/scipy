@@ -2444,16 +2444,14 @@ def hilbert2(x, N=None):
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
     h1 = np.zeros(N[0], dtype=Xf.dtype)
     h2 = np.zeros(N[1], dtype=Xf.dtype)
-    for p in range(2):
-        h = eval("h%d" % (p + 1))
-        N1 = N[p]
+    for h in (h1, h2):
+        N1 = h.shape[0]
         if N1 % 2 == 0:
             h[0] = h[N1 // 2] = 1
             h[1:N1 // 2] = 2
         else:
             h[0] = 1
             h[1:(N1 + 1) // 2] = 2
-        exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, np.newaxis] * h2[np.newaxis, :]
     k = x.ndim
@@ -3572,7 +3570,7 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     else:
         dshape = data.shape
         N = dshape[axis]
-        bp = np.sort(np.unique([0, bp, N]))
+        bp = np.sort(np.unique(np.concatenate(np.atleast_1d(0, bp, N))))
         if np.any(bp > N):
             raise ValueError("Breakpoints must be less than length "
                              "of data along given axis.")

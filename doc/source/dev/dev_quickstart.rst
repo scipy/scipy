@@ -107,7 +107,7 @@ many. For more detailed instructions, see the :ref:`contributor-toc`.
     When creating a codespace for the ``scipy/scipy`` repository, the default
     2-core machine type works; 4-core will build and work a bit faster (but of
     course at a cost of halving your number of free usage hours). Once your
-    codespace has started, you can run ``mamba activate scipy-dev`` and your
+    codespace has started, you can run ``conda activate scipy-dev`` and your
     development environment is completely set up - you can then follow the
     relevant parts of the SciPy documentation to build, test, develop, write
     docs, and contribute to SciPy.
