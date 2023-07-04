@@ -203,13 +203,13 @@ your system.
         invoking a Fortran compiler in the shell you use (e.g., ``gfortran
         --version`` or ``ifort --version``).
 
-  .. warning::
+    .. warning::
 
-       When using a conda environment it is possible that the environment
-       creation will not work due to an outdated Fortran compiler. If that
-       happens, remove the ``compilers`` entry from ``environment.yml`` and
-       try again. The Fortran compiler should be installed as described in
-       this section.
+        When using a conda environment it is possible that the environment
+        creation will not work due to an outdated Fortran compiler. If that
+        happens, remove the ``compilers`` entry from ``environment.yml`` and
+        try again. The Fortran compiler should be installed as described in
+        this section.
 
 
 Building SciPy from source
