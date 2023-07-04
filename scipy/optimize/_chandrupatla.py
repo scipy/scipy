@@ -1,23 +1,16 @@
 import numpy as np
-from scipy.optimize._optimize import OptimizeResult, _call_callback_maybe_halt
+from scipy.optimize._optimize import OptimizeResult
 from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
                                       _chandrupatla_iv,
-                                      _scalar_optimization_prepare_result,
-                                      _scalar_optimization_check_termination)
+                                      _scalar_optimization_loop,
+                                      _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
 _iter = 100
 _xtol = 2e-12
 _rtol = 4 * np.finfo(float).eps
 
 __all__ = []
-
-# Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
-_ECONVERGED = 0
-_ESIGNERR = -1
-_ECONVERR = -2
-_EVALUEERR = -3
-_ECALLBACK = -4
-_EINPROGRESS = 1
 
 # TODO:
 #  - Figure out whether we want to follow original termination conditions
@@ -158,9 +151,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     # all this is the same except nfev should be initialized to the number
     # of different `x` arrays
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
-    active = np.arange(x1.size)  # indices of in-progress elements
     nit, nfev = 0, 3  # three function evaluations performed above
-    cb_terminate = False
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     tols = dict(xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol)
 
@@ -171,16 +162,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
                       ('nit', 'nit'), ('nfev', 'nfev'), ('xl', 'x1'),
                       ('fl', 'f1'), ('xm', 'x2'), ('fm', 'f2'), ('xr', 'x3'),
                       ('fr', 'f3')]
-
-    # Elements of `x1`, `f1`, etc., are stored in this `OptimizeResult`
-    # once a termination condition is met, and then the arrays are condensed
-    # to reduce unnecessary computation.
-    res = OptimizeResult(x=work.x1.copy(), fun=work.f1.copy(), xl=work.x1.copy(),
-                         fl=work.f1.copy(), xm=work.x2.copy(), fm=work.f2.copy(),
-                         xr=work.x3.copy(), fr=work.f3.copy(),
-                         nit=np.full_like(status, work.nit)[()],
-                         nfev=np.full_like(status, work.nfev)[()],
-                         status=work.status.copy(), success=(work.status==0))
 
     def pre_func_eval(work):
         A = (work.x2 - work.x1) * (work.f3 - work.f2)
@@ -252,6 +233,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
 
         return stop
 
+    def post_termination_check(work):
+        pass
+
     def customize_result(res):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
         i = res['xl'] < res['xr']
@@ -260,45 +244,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         res['fl'] = np.choose(i, (fr, fl))
         res['fr'] = np.choose(i, (fl, fr))
 
-    active = _scalar_optimization_check_termination(
-        work, res, res_work_pairs, active, check_termination)
-
-    if callback is not None:
-        temp = _scalar_optimization_prepare_result(
-            work, res, res_work_pairs, active, shape, customize_result)
-        if _call_callback_maybe_halt(callback, temp):
-            cb_terminate = True
-
-    while work.nit < maxiter and active.size and not cb_terminate:
-
-        x = pre_func_eval(work)
-
-        x_full = res.x.copy()
-        x_full[active] = x
-        x_full = x_full.reshape(shape)
-        args_full = [arg.reshape(shape) for arg in args]
-        f = func(x_full, *args_full)
-        work.nfev += 1
-        f = np.asarray(f, dtype=dtype).ravel()[active]
-
-        post_func_eval(x, f, work)
-
-        # [1] Figure 1 (second diamond)
-        work.nit += 1
-        active = _scalar_optimization_check_termination(
-            work, res, res_work_pairs, active, check_termination)
-
-        if callback is not None:
-            temp = _scalar_optimization_prepare_result(
-                work, res, res_work_pairs, active, shape, customize_result)
-            if _call_callback_maybe_halt(callback, temp):
-                cb_terminate = True
-                break
-        if active.size==0:
-            break
-
-    work.status = _ECALLBACK if cb_terminate else _ECONVERR
-    return _scalar_optimization_prepare_result(
-        work, res, res_work_pairs, active, shape, customize_result)
-
-
+    return _scalar_optimization_loop(work, callback, shape,
+                                     maxiter, func, args, dtype,
+                                     pre_func_eval, post_func_eval,
+                                     check_termination, post_termination_check,
+                                     customize_result, res_work_pairs)

@@ -197,10 +197,17 @@ class TestChandrupatlaMinimize:
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
         # can be produced simultaneously.
-        def f(x):
-            return [(x[0] - 2.5) ** 2, x[1] - 10, (x[2] - 2.5) ** 4, np.nan]
+        def f(xs, js):
+            funcs = [lambda x: (x - 2.5) ** 2,
+                     lambda x: x - 10,
+                     lambda x: (x - 2.5) ** 4,
+                     lambda x: np.nan]
 
-        res = _chandrupatla_minimize(f, [0] * 4, [2] * 4, [np.pi] * 4,
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+
+        res = _chandrupatla_minimize(f, [0]*4, [2]*4, [np.pi]*4, args=args,
                                      maxiter=10)
 
         ref_flags = np.array([_chandrupatla._ECONVERGED, _chandrupatla._ESIGNERR,
