@@ -3627,7 +3627,7 @@ class TestSoftplus:
         # Mächler, M. (2012). log1mexp-note.pdf. Rmpfr: R MPFR - Multiple Precision Floating-Point Reliable.
         # Retrieved from https://cran.r-project.org/web/packages/Rmpfr/vignettes/log1mexp-note.pdf
         result = softplus(value)
-        assert assert_allclose(result, expected)
+        assert_allclose(result, expected)
 
 class TestRound:
     def test_round(self):
