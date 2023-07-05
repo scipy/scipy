@@ -3170,7 +3170,6 @@ def softplus(x, **kwargs):
     ----------
     x : array_like
         Input array-like object.
-
     **kwargs :
         out: Specify the output array.
         where: Boolean array to control ufunc calculation at each position.
