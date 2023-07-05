@@ -3645,7 +3645,7 @@ class TestSoftplus:
                                       dtype=dtype,
                                       subok=subok,
                                       )
-       assert_allclose(softplus_result_kwargs, np.array([0, 0, 1]))
+        assert_allclose(softplus_result_kwargs, np.array([0, 0, 1]))
 
 class TestRound:
     def test_round(self):
