@@ -7532,6 +7532,9 @@ class pareto_gen(rv_continuous):
     def _sf(self, x, b):
         return x**(-b)
 
+    def _isf(self, q, b):
+        return np.power(q, -1.0 / b)
+
     def _stats(self, b, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
