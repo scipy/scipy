@@ -9330,6 +9330,7 @@ class TestTruncPareto:
 # rtol). None uses default values.
 @pytest.mark.parametrize("case", [("loglaplace", None, None, None, None),
                                   ("lognorm", None, None, None, None),
+                                  ("lomax", None, None, None, None),
                                   ("pareto", None, None, None, None),])
 def test_sf_isf_overrides(case):
     # Test that SF is the inverse of ISF. Supplements
