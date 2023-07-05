@@ -1355,7 +1355,6 @@ class TestDifferentiate():
 
     def test_convergence(self):
         # Test that the convergence tolerances behave as expected
-        rng = np.random.default_rng(2585255913088665241)
         dist = stats.norm()
         x = 1
         f = dist.cdf
