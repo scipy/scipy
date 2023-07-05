@@ -3190,9 +3190,9 @@ def softplus(x, **kwargs):
 
     Examples
     --------
-    >>> import scipy.special as sc
+    >>> from scipy import special
     
-    >>> sc.softplus(0)
+    >>> special.softplus(0)
     0.6931471805599453
 
     >>> sc.softplus([-1, 0, 1])
