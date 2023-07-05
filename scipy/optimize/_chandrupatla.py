@@ -6,23 +6,14 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
                                       _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
-_iter = 100
-_xtol = 2e-12
-_rtol = 4 * np.finfo(float).eps
-
 __all__ = []
 
 # TODO:
-#  - Add `test_convergence` and equivalents of any other tests/documentation
-#     that were added to `_differentiate`. Add to `_chandrupatla`, too.
-#  - make tolerances depend on dtype
+#  - Go back and improve tests of `chandrupatla`
 #  - Figure out whether we want to follow original termination conditions
-#  - Check over object returned by `_chandrupatla_minimize`. Make sure that
-#    attributes are printed in a reasonable order and that `xl < x < xr`.
-#    Should `xm` even be reported if it's identical to `x`?
 
-def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
-                           xrtol=_rtol, fatol=None, frtol=0, maxiter=_iter,
+def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
+                           xrtol=None, fatol=None, frtol=None, maxiter=100,
                            callback=None):
     """Find the minimizer of an elementwise function.
 
@@ -109,8 +100,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     considered to have converged when ``x3 - x1 <= abs(x2)*xrtol + xatol``
     or ``(f1 - 2*f2 + f3)/2 <= abs(f2)*frtol + fatol``. Note that first of
     these differs from the termination conditions described in [1]_. The
-    default values of the tolerances are ``xatol = 1e-12``,
-    ``xrtol = 4 * np.finfo(float).eps``, and ``fatol = frtol = 0``.
+    default values of `xrtol` is the square root of the precision of the
+    appropriate dtype, and ``xatol=fatol = frtol`` is the smallest normal
+    number of the appropriate dtype.
 
     References
     ----------
@@ -147,10 +139,13 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     q0 = x3  # "At the start, q0 is set at x3..." ([1] after (7))
-    phi = 0.5 + 0.5*5**0.5  # golden ratio
+    phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
+    frtol = np.finfo(dtype).tiny if frtol is None else frtol
+    xatol = np.finfo(dtype).tiny if xatol is None else xatol
+    xrtol = np.sqrt(np.finfo(dtype).eps) if xrtol is None else xrtol
 
     # Ensure that x1 < x2 < x3 initially.
     xs, fs = np.vstack((x1, x2, x3)), np.vstack((f1, f2, f3))
@@ -205,6 +200,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
     def post_func_eval(x, f, work):
         # Standard logic for updating a three-point bracket based on a new
         # point. In QBASIC code, see "IF SGN(X-X2) = SGN(X3-X2) THEN...".
+        # There is an awful lot of data copying going on here; this would
+        # probably benefit from code optimization or implementation in Pythran.
         i = np.sign(x - work.x2) == np.sign(work.x3 - work.x2)
         xi, x1i, x2i, x3i = x[i], work.x1[i], work.x2[i], work.x3[i],
         fi, f1i, f2i, f3i = f[i], work.f1[i], work.f2[i], work.f3[i]
@@ -254,14 +251,15 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=_xtol,
         # "We set a tolerance value xtol..."
         work.xtol = abs(work.x2) * work.xrtol + work.xatol  # [1] (8)
         # "The convergence based on interval is achieved when..."
-        i = abs(work.x3 - work.x2) < 2 * work.xtol  #[1] (9)
+        # Note: Equality allowed in case of `xtol=0`
+        i = abs(work.x3 - work.x2) <= 2 * work.xtol  #[1] (9)
 
         # "We define ftol using..."
         ftol = abs(work.f2) * work.frtol + work.fatol  # [1] (10)
         # "The convergence based on function values is achieved when..."
         # Note 1: modify in place to incorporate tolerance on function value.
         # Note 2: factor of 2 is not in the text; see QBASIC start of DO loop
-        i |= (work.f1 - 2 * work.f2 + work.f3) < 2*ftol  # [1] (11)
+        i |= (work.f1 - 2 * work.f2 + work.f3) <= 2*ftol  # [1] (11)
         i &= ~stop
         stop[i], work.status[i] = True, _ECONVERGED
 

@@ -1520,6 +1520,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
+    xatol = _xtol if xatol is None else xatol
+    xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
     work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
@@ -1738,10 +1740,12 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     if not np.iterable(args):
         args = (args,)
 
-    tols = np.asarray([xatol, xrtol, fatol if fatol is not None else 1, frtol])
-    if (not np.issubdtype(tols.dtype, np.number)
-            or np.any(tols < 0)
-            or tols.shape != (4,)):
+    tols = np.asarray([xatol if xatol is not None else 1,
+                       xrtol if xrtol is not None else 1,
+                       fatol if fatol is not None else 1,
+                       frtol if frtol is not None else 1])
+    if (not np.issubdtype(tols.dtype, np.number) or np.any(tols < 0)
+            or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError('Tolerances must be non-negative scalars.')
 
     maxiter_int = int(maxiter)
