@@ -3173,8 +3173,6 @@ def softplus(x, **kwargs):
     **kwargs :
         out: Specify the output array.
         where: Boolean array to control ufunc calculation at each position.
-        axes: List of tuples specifying indices of axes for generalized ufuncs.
-        axis: Single axis over which a generalized ufunc should operate.
         keepdims: If True, keep reduced axes as dimensions with size one.
         casting: Policy for permitted casting.
         order: Iteration order/memory layout of the output array.
