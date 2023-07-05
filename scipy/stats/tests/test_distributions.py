@@ -9328,7 +9328,8 @@ class TestTruncPareto:
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
 # rtol). None uses default values.
-@pytest.mark.parametrize("case", [("loglaplace", None, None, None, None),
+@pytest.mark.parametrize("case", [("kappa3", None, None, None, None),
+                                  ("loglaplace", None, None, None, None),
                                   ("lognorm", None, None, None, None),
                                   ("pareto", None, None, None, None),])
 def test_sf_isf_overrides(case):
