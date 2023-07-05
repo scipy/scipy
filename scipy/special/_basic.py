@@ -3193,7 +3193,7 @@ def softplus(x, **kwargs):
     >>> special.softplus(0)
     0.6931471805599453
 
-    >>> sc.softplus([-1, 0, 1])
+    >>> special.softplus([-1, 0, 1])
     array([0.31326169, 0.69314718, 1.31326169])
     """
     return np.logaddexp(0, x, **kwargs)
