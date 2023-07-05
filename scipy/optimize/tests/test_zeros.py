@@ -1262,14 +1262,12 @@ class TestDifferentiate():
         np.testing.assert_allclose(res.df, ref)
         # This would be nice, but doesn't always work out. `error` is an
         # estimate, not a bound.
-        # assert_array_less(abs(res.df - ref), res.error)
+        assert_array_less(abs(res.df - ref), res.error)
         assert res.x.shape == ref.shape
 
     @pytest.mark.parametrize('case', stats._distr_params.distcont)
     def test_accuracy(self, case):
         distname, params = case
-        if distname != 'chi':
-            return
         dist = getattr(stats, distname)(*params)
         x = dist.median() + 0.1
         res = zeros._differentiate(dist.cdf, x)
