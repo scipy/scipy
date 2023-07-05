@@ -255,10 +255,12 @@ class TestConstructUtils:
                     # arrays with negative diagonals. Therefore sp.sparse.eye
                     # validates that diagonal offsets fall within the shape of
                     # the array. See gh-18555.
-                    if abs(k) > m or k > n:
-                        pytest.raises(
+                    if (k > 0 and k > n) or (k < 0 and abs(k) > m):
+                        with pytest.raises(
                             ValueError, match="Offset.*out of bounds"
-                        )
+                        ):
+                            construct.eye(m, n, k=k)
+
                     else:
                         assert_equal(
                             construct.eye(m, n, k=k).toarray(),
