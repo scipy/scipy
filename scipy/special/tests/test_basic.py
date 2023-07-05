@@ -3633,11 +3633,8 @@ class TestSoftplus:
         x = np.arange(5) - 2
         out = np.ones(5)
         where = x>0
-        softplus_result_kwargs = softplus(x,
-                                      out=out,
-                                      where=where,
-                                      )
-        assert_allclose(softplus_result_kwargs, np.array([1., 1., 1., 1.31326169, 2.12692801]))
+        softplus(x, out=out, where=where)
+        assert_allclose(out, np.array([1., 1., 1., 1.31326169, 2.12692801]))
 
 class TestRound:
     def test_round(self):
