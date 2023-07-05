@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_less
 
-from scipy import stats, optimize
+from scipy import stats
 import scipy.optimize._chandrupatla as _chandrupatla
 from scipy.optimize._chandrupatla import _chandrupatla_minimize
 from itertools import permutations

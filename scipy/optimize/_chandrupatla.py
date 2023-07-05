@@ -6,12 +6,6 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
                                       _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
-__all__ = []
-
-# TODO:
-#  - Go back and improve tests of `chandrupatla`
-#  - Figure out whether we want to follow original termination conditions
-
 
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
