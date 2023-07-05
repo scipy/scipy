@@ -12,6 +12,7 @@ __all__ = []
 #  - Go back and improve tests of `chandrupatla`
 #  - Figure out whether we want to follow original termination conditions
 
+
 def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
                            xrtol=None, fatol=None, frtol=None, maxiter=100,
                            callback=None):
@@ -135,7 +136,8 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     # Initialization
     xs = (x1, x2, x3)
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, xs, args)
+    temp = _scalar_optimization_initialize(func, xs, args)
+    xs, fs, args, shape, dtype = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     q0 = x3  # "At the start, q0 is set at x3..." ([1] after (7))
@@ -173,7 +175,9 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         A = x21 * (work.f3 - work.f2)
         B = x32 * (work.f1 - work.f2)
         C = A / (A + B)
-        q1 = C * (work.x1 + work.x2) / 2 + (1 - C) * (work.x2 + work.x3) / 2
+        # q1 = C * (work.x1 + work.x2) / 2 + (1 - C) * (work.x2 + work.x3) / 2
+        q1 = 0.5 * (C*(work.x1 - work.x3) + work.x2 + work.x3)  # much faster
+        # this is an array, so multiplying by 0.5 does not change dtype
 
         # "If Q1 and Q0 are sufficiently close... Q1 is accepted if it is
         # sufficiently away from the inside point x2"
@@ -184,12 +188,12 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # tol away from x2."
         # See also QBASIC code after "Accept Ql adjust if close to X2".
         j = abs(q1[i] - work.x2[i]) <= work.xtol[i]
-        xi[j] = work.x2[i][j] + np.sign(x32[i][j]) *  work.xtol[i][j]
+        xi[j] = work.x2[i][j] + np.sign(x32[i][j]) * work.xtol[i][j]
 
         # "If condition (7) is not satisfied, golden sectioning of the larger
         # interval is carried out to introduce the new point."
         # (For simplicity, we go ahead and calculate it for all points, but we
-        # change the elements for which the codition was satisfied.)
+        # change the elements for which the condition was satisfied.)
         x = work.x2 + (2 - work.phi) * x32
         x[i] = xi
 
@@ -240,19 +244,23 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
         # [1] Section 3 "Points 1 and 3 are interchanged if necessary to make
         # the (x2, x3) the larger interval."
-        # Is there a NumPy function that will swap these more efficiently?
-        i = abs(work.x2 - work.x1) < abs(work.x3 - work.x2)
-        work.x1, work.x3 = (np.choose(i, (work.x3, work.x1)),
-                            np.choose(i, (work.x1, work.x3)))
-        work.f1, work.f3 = (np.choose(i, (work.f3, work.f1)),
-                            np.choose(i, (work.f1, work.f3)))
+        # Note: I had used np.choose; this is much faster. This would be a good
+        # place to save e.g. `work.x3 - work.x2` for reuse, but I tried and
+        # didn't notice a speed boost, so let's keep it simple.
+        i = abs(work.x3 - work.x2) < abs(work.x2 - work.x1)
+        temp = work.x1[i]
+        work.x1[i] = work.x3[i]
+        work.x3[i] = temp
+        temp = work.f1[i]
+        work.f1[i] = work.f3[i]
+        work.f3[i] = temp
 
         # [1] Section 3 (bottom of page 212)
         # "We set a tolerance value xtol..."
         work.xtol = abs(work.x2) * work.xrtol + work.xatol  # [1] (8)
         # "The convergence based on interval is achieved when..."
         # Note: Equality allowed in case of `xtol=0`
-        i = abs(work.x3 - work.x2) <= 2 * work.xtol  #[1] (9)
+        i = abs(work.x3 - work.x2) <= 2 * work.xtol  # [1] (9)
 
         # "We define ftol using..."
         ftol = abs(work.f2) * work.frtol + work.fatol  # [1] (10)

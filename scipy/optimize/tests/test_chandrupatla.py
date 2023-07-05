@@ -11,17 +11,22 @@ from itertools import permutations
 def f1(x):
     return 100*(1 - x**3.)**2 + (1-x**2.) + 2*(1-x)**2.
 
+
 def f2(x):
     return 5 + (x - 2.)**6
+
 
 def f3(x):
     return np.exp(x) - 5*x
 
+
 def f4(x):
     return x**5. - 5*x**3. - 20.*x + 5.
 
+
 def f5(x):
     return 8*x**3 - 2*x**2 - 7*x + 3
+
 
 def _bracket_minimum(func, x1, x2):
     phi = 1.61803398875
@@ -289,9 +294,9 @@ class TestChandrupatlaMinimize:
                 # callback is called once with initial bracket
                 assert (res.xl, res.xm, res.xr) == bracket
             else:
-                changed = (((res.xl == callback.xl) & (res.xr != callback.xr))
-                           | ((res.xl != callback.xl) & (res.xr == callback.xr)))
-                assert np.all(changed)
+                changed_xr = (res.xl == callback.xl) & (res.xr != callback.xr)
+                changed_xl = (res.xl != callback.xl) & (res.xr == callback.xr)
+                assert np.all(changed_xr | changed_xl)
 
             callback.xl = res.xl
             callback.xr = res.xr
@@ -309,7 +314,7 @@ class TestChandrupatlaMinimize:
         callback.res = None
 
         res2 = _chandrupatla_minimize(self.f, *bracket, args=(loc,),
-                                   callback=callback)
+                                      callback=callback)
 
         # terminating with callback is identical to terminating due to maxiter
         # (except for `status`)
@@ -349,6 +354,7 @@ class TestChandrupatlaMinimize:
         # Test that dtypes are preserved
 
         loc = dtype(loc)
+
         def f(x, loc):
             assert x.dtype == dtype
             return ((x - loc) ** 2).astype(dtype)
