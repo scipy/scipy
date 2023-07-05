@@ -407,10 +407,12 @@ class TestChandrupatlaMinimize:
 
     def test_bracket_order(self):
         # Confirm that order of points in bracket doesn't matter
-        loc = np.linspace(-1, 1, 6)
+        loc = np.linspace(-1, 1, 6)[:, np.newaxis]
         brackets = np.array(list(permutations([-5, 0, 5]))).T
         res = _chandrupatla_minimize(self.f, *brackets, args=(loc,))
-        np.testing.assert_allclose(res.x, loc)
+        assert np.all(np.isclose(res.x, loc) | (res.fun == self.f(loc, loc)))
+        ref = res.x[:, 0]  # all columns should be the same
+        assert_allclose(*np.broadcast_arrays(res.x.T, ref), rtol=1e-15)
 
     def test_special_cases(self):
         # Test edge cases and other special cases

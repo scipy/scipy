@@ -102,7 +102,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     References
     ----------
     .. [1] Chandrupatla, Tirupathi R. (1998).
-        "An efficient quadratic fit—sectioning algorithm for minimization
+        "An efficient quadratic fit-sectioning algorithm for minimization
         without derivatives".
         Computer Methods in Applied Mechanics and Engineering, 152 (1-2),
         211-217. https://doi.org/10.1016/S0045-7825(97)00190-4
@@ -134,7 +134,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     xs, fs, args, shape, dtype = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
-    q0 = x3  # "At the start, q0 is set at x3..." ([1] after (7))
     phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
@@ -148,6 +147,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     i = np.argsort(xs, axis=0)
     x1, x2, x3 = np.take_along_axis(xs, i, axis=0)
     f1, f2, f3 = np.take_along_axis(fs, i, axis=0)
+    q0 = x3.copy()  # "At the start, q0 is set at x3..." ([1] after (7))
 
     work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=x3, f3=f3, phi=phi,
                           xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
