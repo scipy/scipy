@@ -335,21 +335,6 @@ class Burr(ReferenceDistribution):
         return (p**(-1.0/d) - 1)**(-1.0/c)
 
 
-class Kappa3(ReferenceDistribution):
-
-    def __init__(self, *, a):
-        super().__init__(a=a)
-
-    def _support(self, a):
-        return 0, mp.inf
-
-    def _pdf(self, x, a):
-        return a * (a + x**a)**(-(a + 1) / a)
-
-    def _ppf(self, q, guess, a):
-        return (a / (q**-a - mp.one))**(mp.one / a)
-
-
 class LogLaplace(ReferenceDistribution):
 
     def __init__(self, *, c):

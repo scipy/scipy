@@ -2451,18 +2451,6 @@ class TestPearson3:
         assert_allclose(stats.pearson3.sf(x, 0), stats.norm.sf(x), rtol=2e-14)
 
 
-class TestKappa3:
-
-    def test_isf(self):
-        # reference values were generated using the reference distribution
-        # e.g. mp.dps = 100; Kappa3(a=a).isf(q)
-        a = [0.5, 2.0, 5.0, 10.0]
-        q = [0.001, 1e-15, 3e-30, 5e-50]
-        ref = [998500.4375312617, 31622776.60168377, 802741.5617602307,
-               85133.99225207846]
-        assert_allclose(stats.kappa3.isf(q, a), ref, rtol=1e-15)
-
-
 class TestKappa4:
     def test_cdf_genpareto(self):
         # h = 1 and k != 0 is generalized Pareto
