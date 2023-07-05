@@ -3629,7 +3629,7 @@ class TestSoftplus:
         result = softplus(value)
         assert_allclose(result, expected)
 
-     def test_softplus_with_kwargs(self):
+    def test_softplus_with_kwargs(self):
         x = np.array([-1, 0, 1])
         out = np.empty_like(x)
         where = x > 0
