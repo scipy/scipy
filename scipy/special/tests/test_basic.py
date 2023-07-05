@@ -3629,6 +3629,24 @@ class TestSoftplus:
         result = softplus(value)
         assert_allclose(result, expected)
 
+     def test_softplus_with_kwargs(self):
+             x = np.array([-1, 0, 1])
+             out = np.empty_like(x)
+             where = x > 0
+             casting = 'unsafe'
+             order = 'C'
+             dtype = np.float64
+             subok = False
+             softplus_result_kwargs = softplus(x,
+                                              out=out,
+                                              where=where,
+                                              casting=casting,
+                                              order=order,
+                                              dtype=dtype,
+                                              subok=subok,
+                                              )
+            assert_allclose(softplus_result_kwargs, np.array([0, 0, 1]))
+
 class TestRound:
     def test_round(self):
         rnd = list(map(int,(special.round(10.1),special.round(10.4),special.round(10.5),special.round(10.6))))
