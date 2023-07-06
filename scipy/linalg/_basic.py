@@ -1443,7 +1443,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     # backwards compatible only atol and rtol are both missing
     if ((rcond not in (_NoValue, None) or cond not in (_NoValue, None))
-         and (atol is None) and (rtol is None)):
+            and (atol is None) and (rtol is None)):
         atol = rcond if rcond not in (_NoValue, None) else cond
         rtol = 0.
 
