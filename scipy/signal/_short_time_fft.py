@@ -1,20 +1,22 @@
-"""Implementation of an FFT-based Short-time Fourier Transform.
+"""Implementation of an FFT-based Short-time Fourier Transform. """
 
-Implementation Notes (as of 2023-04)
-------------------------------------
-* MyPy version 1.1.1 does not seem to support decorated property methods
-  properly. Hence, applying ``@property`` to methods decorated with `@cache``
-  (as tried with the ``lower_border_end`` method) causes a mypy error when
-  accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
-* The entry ``.. currentmodule:: scipy.signal.ShortTimeFFT`` is required
-  in docstrings to ensure that `stft` and `istft` generate HTML links to
-  methods and not the legacy functions. The side effect is that `ShortTimeFFT`
-  does not work anymore. It is not known how to do this file-wide instead of
-  method-wide.
-* The HTML documentation currently renders each method/property on a separate
-  page without reference to the parent class. Thus, a link to `ShortTimeFFT`
-  was added to the "See Also" section of each method/property.
-"""
+# Implementation Notes for this file (as of 2023-07)
+# --------------------------------------------------
+# * MyPy version 1.1.1 does not seem to support decorated property methods
+#   properly. Hence, applying ``@property`` to methods decorated with `@cache``
+#   (as tried with the ``lower_border_end`` method) causes a mypy error when
+#   accessing it as an index (e.g., ``SFT.lower_border_end[0]``).
+# * Since the method `stft` and `istft` have identical names as the legacy
+#   functions in the signal module, referencing them as HTML link in the
+#   docstrings has to be done by an explicit `~ShortTimeFFT.stft` instead of an
+#   ambiguous `stft` (The ``~`` hides the class / module name).
+# * The HTML documentation currently renders each method/property on a separate
+#   page without reference to the parent class. Thus, a link to `ShortTimeFFT`
+#   was added to the "See Also" section of each method/property. These links
+#   can be removed, when SciPy updates ``pydata-sphinx-theme`` to >= 0.13.3
+#   (currently 0.9). Consult Issue 18512 and PR 16660 for further details.
+#
+
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
@@ -79,20 +81,20 @@ class ShortTimeFFT:
 
     .. currentmodule:: scipy.signal.ShortTimeFFT
 
-    The `stft` calculates sequential FFTs by sliding a window (`win`) over
-    an input signal by `hop` increments. It can be used to quantify the change
-    of the spectrum over time.
+    The `~ShortTimeFFT.stft` calculates sequential FFTs by sliding a
+    window (`win`) over an input signal by `hop` increments. It can be used to
+    quantify the change of the spectrum over time.
 
-    The `stft` is represented by a complex-valued matrix S[q,p] where the
-    p-th column represents an FFT with the window centered at the time
-    t[p] = p * `delta_t` = p * `hop` * `T` where `T` is  the sampling interval
-    of the input signal. The q-th row represents the values at the frequency
-    f[q] = q * `delta_f` with `delta_f` = 1 / (`mfft` * `T`) being the bin
-    width of the FFT.
+    The `~ShortTimeFFT.stft` is represented by a complex-valued matrix S[q,p]
+    where the p-th column represents an FFT with the window centered at the
+    time t[p] = p * `delta_t` = p * `hop` * `T` where `T` is  the sampling
+    interval of the input signal. The q-th row represents the values at the
+    frequency f[q] = q * `delta_f` with `delta_f` = 1 / (`mfft` * `T`) being
+    the bin width of the FFT.
 
-    The inverse STFT `istft` is calculated by reversing the steps of the
-    STFT: Take the IFFT of the p-th slice of S[q,p] and multiply the result
-    with the so-called dual window (see `dual_win`). Shift the result by
+    The inverse STFT `~ShortTimeFFT.istft` is calculated by reversing the steps
+    of the STFT: Take the IFFT of the p-th slice of S[q,p] and multiply the
+    result with the so-called dual window (see `dual_win`). Shift the result by
     p * `delta_t` and add the result to previous shifted results to reconstruct
     the signal. If only the dual window is known and the STFT is invertible,
     `from_dual` can be used to instanciate this class.
@@ -193,9 +195,9 @@ class ShortTimeFFT:
     >>> fig1.tight_layout()
     >>> plt.show()
 
-    Reconstructing the signal with the `istft` is straightforward, but note
-    that the length of `x1` should be specified, since the SFT length
-    increases in `hop` steps:
+    Reconstructing the signal with the `~ShortTimeFFT.istft` is
+    straightforward, but note that the length of `x1` should be specified,
+    since the SFT length increases in `hop` steps:
 
     >>> SFT.invertible  # check if invertible
     True
@@ -710,10 +712,8 @@ class ShortTimeFFT:
                   padding: PAD_TYPE) -> Generator[np.ndarray, None, None]:
         """Generate signal slices along last axis of `x`.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         This method is only used by `stft_detrend`. The parameters are
-        described in `stft`.
+        described in `~ShortTimeFFT.stft`.
         """
         if padding not in (padding_types := get_args(PAD_TYPE)):
             raise ValueError(f"Parameter {padding=} not in {padding_types}!")
@@ -742,8 +742,6 @@ class ShortTimeFFT:
             -> np.ndarray:
         """Perform the short-time Fourier transform.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         A two-dimensional matrix with ``p1-p0`` columns is calculated.
         The `f_pts` rows represent value at the frequencies `f`. The q-th
         column of the windowed FFT with the window `win` is centered at t[q].
@@ -760,7 +758,7 @@ class ShortTimeFFT:
         p1
             The end of the array. If ``None`` then `p_max(n)` is used.
         k_offset
-            Index of first sample (t = 0) in `x`
+            Index of first sample (t = 0) in `x`.
         padding
             Kind of values which are added, when the sliding window sticks out
             on either the lower or upper end of the input `x`. Zeros are added
@@ -788,7 +786,7 @@ class ShortTimeFFT:
         delta_t: Time increment of STFT
         f: Frequencies values of the STFT.
         invertible: Check if STFT is invertible.
-        istft: Inverse short-time Fourier transform.
+        :meth:`~ShortTimeFFT.istft`: Inverse short-time Fourier transform.
         p_range: Determine and validate slice index range.
         stft_detrend: STFT with detrended segments.
         t: Times of STFT for an input signal with `n` samples.
@@ -807,22 +805,21 @@ class ShortTimeFFT:
         """Short-time Fourier transform with a trend being subtracted from each
         segment beforehand.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         If `detr` is set to 'constant', the mean is subtracted, if set to
         "linear", the linear trend is removed. This is achieved by calling
         :func:`scipy.signal.detrend`. If `detr` is a function, `detr` is
         applied to each segment.
-        All other parameters have the same meaning as in `stft`.
+        All other parameters have the same meaning as in `~ShortTimeFFT.stft`.
 
         Note that due to the detrending, the original signal cannot be
-        reconstructed by the `istft`.
+        reconstructed by the `~ShortTimeFFT.istft`.
 
         See Also
         --------
         invertible: Check if STFT is invertible.
-        istft: Inverse short-time Fourier transform.
-        stft: Short-time Fourier transform (without detrending).
+        :meth:`~ShortTimeFFT.istft`: Inverse short-time Fourier transform.
+        :meth:`~ShortTimeFFT.stft`: Short-time Fourier transform
+                                   (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if isinstance(detr, str):
@@ -859,16 +856,14 @@ class ShortTimeFFT:
             -> np.ndarray:
         r"""Calculate spectrogram or cross-spectrogram.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         The spectrogram is the absolute square of the STFT, i.e, it is
         ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
         as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
-        This is a convenience function for calling `stft` / `stft_detrend`,
-        hence all parameters are discussed there. If `y` is not ``None`` it
-        needs to have the same shape as `x`.
+        This is a convenience function for calling `~ShortTimeFFT.stft` /
+        `stft_detrend`, hence all parameters are discussed there. If `y` is not
+        ``None`` it needs to have the same shape as `x`.
 
         Examples
         --------
@@ -934,7 +929,7 @@ class ShortTimeFFT:
 
         See Also
         --------
-        stft: Perform the short-time Fourier transform.
+        :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
         stft_detrend: STFT with a trend subtracted from each segment.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
@@ -996,8 +991,6 @@ class ShortTimeFFT:
             -> np.ndarray:
         """Inverse short-time Fourier transform.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         It returns an array of dimension ``S.ndim - 1``  which is real
         if `onesided_fft` is set, else complex. If the STFT is not
         `invertible`, or the parameters are out of bounds  a ``ValueError`` is
@@ -1033,7 +1026,7 @@ class ShortTimeFFT:
         See Also
         --------
         invertible: Check if STFT is invertible.
-        stft: Short-time Fourier transform.
+        :meth:`~ShortTimeFFT.stft`: Perform Short-time Fourier transform.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         if f_axis == t_axis:
@@ -1443,9 +1436,25 @@ class ShortTimeFFT:
           k_offset: int = 0) -> np.ndarray:
         """Times of STFT for an input signal with `n` samples.
 
-        Besides the number of input signal samples `n`, the parameters have
-        identical meaning as in `stft`.
-        The times are ``delta_t = hop * T`` time units apart.
+        Returns a 1d array with times of the `~ShortTimeFFT.stft` values with
+        the same  parametrization. Note that the slices are
+        ``delta_t = hop * T`` time units apart.
+
+         Parameters
+        ----------
+        n
+            Number of sample of the input signal.
+        x
+            The input signal as real or complex valued array.
+        p0
+            The first element of the range of slices to calculate. If ``None``
+            then it is set to :attr:`p_min`, which is the smallest possible
+            slice.
+        p1
+            The end of the array. If ``None`` then `p_max(n)` is used.
+        k_offset
+            Index of first sample (t = 0) in `x`.
+
 
         See Also
         --------
@@ -1619,11 +1628,9 @@ class ShortTimeFFT:
                center_bins: bool = False) -> tuple[float, float, float, float]:
         """Return minimum and maximum values time-frequency values.
 
-        .. currentmodule:: scipy.signal.ShortTimeFFT
-
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
         ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
-        of the time-frequency domain of the `stft`.
+        of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.
 
@@ -1636,8 +1643,8 @@ class ShortTimeFFT:
         center_bins: bool
             If set (default ``False``), the values of the time slots and
             frequency bins are moved from the side the middle. This is useful,
-            when plotting the `stft` values as step functions, i.e., with no
-            interpolation.
+            when plotting the `~ShortTimeFFT.stft` values as step functions,
+            i.e., with no interpolation.
 
         See Also
         --------
