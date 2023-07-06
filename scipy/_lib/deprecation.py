@@ -10,7 +10,7 @@ __all__ = ["_deprecated"]
 # be used over 'None' as the user could parse 'None' as a positional argument
 _NoValue = object()
 
-def _sub_module_deprecation(sub_module, module, all, name):
+def _sub_module_deprecation(sub_module, module, private_module, all, name):
     if name not in all:
         raise AttributeError(
             f"`scipy.{module}.{sub_module}` has no attribute `{name}`; furthermore, "
@@ -31,7 +31,7 @@ def _sub_module_deprecation(sub_module, module, all, name):
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 
-    return getattr(import_module(f"scipy.{module}._{sub_module}"), name)
+    return getattr(import_module(f"scipy.{module}.{private_module}"), name)
     
 
 def _deprecated(msg, stacklevel=2):

@@ -32,4 +32,4 @@ def __dir__():
 
 
 def __getattr__(name):
-    return _sub_module_deprecation("morestats", "stats", __all__, name)
+    return _sub_module_deprecation("morestats", "stats", "_morestats", __all__, name)
