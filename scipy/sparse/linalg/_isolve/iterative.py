@@ -568,7 +568,7 @@ def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
+def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
           callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
