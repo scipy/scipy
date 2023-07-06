@@ -1,5 +1,7 @@
 import functools
 import warnings
+from importlib import import_module
+
 
 __all__ = ["_deprecated"]
 
@@ -8,6 +10,29 @@ __all__ = ["_deprecated"]
 # be used over 'None' as the user could parse 'None' as a positional argument
 _NoValue = object()
 
+def _sub_module_deprecation(sub_module, module, all, name):
+    if name not in all:
+        raise AttributeError(
+            f"`scipy.{module}.{sub_module}` has no attribute `{name}`; furthermore, "
+            f"`scipy.{module}.{sub_module}` is deprecated and will be removed in "
+            "SciPy 2.0.0.")
+
+    attr = getattr(import_module(f"scipy.{module}"), name, None)
+
+    if attr is not None:
+        message = (f"Please import `{name}` from the `scipy.{module}` namespace; "
+                   f"the `scipy.{module}.{sub_module}` namespace is deprecated and "
+                   "will be removed in SciPy 2.0.0.")
+    else:
+        message = (f"`scipy.{module}.{sub_module}.{name}` is deprecated along with "
+                   f"the `scipy.{module}.{sub_module}` namespace. "
+                   f"`scipy.{module}.{sub_module}.{name}` will be removed in SciPy 1.13.0, and "
+                   f"the `scipy.{module}.{sub_module}` namespace will be removed in SciPy 2.0.0.")
+
+    warnings.warn(message, category=DeprecationWarning, stacklevel=3)
+
+    return getattr(import_module(f"scipy.{module}._{sub_module}"), name)
+    
 
 def _deprecated(msg, stacklevel=2):
     """Deprecate a function by emitting a warning on use."""
