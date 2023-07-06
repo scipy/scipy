@@ -6858,6 +6858,10 @@ class kappa3_gen(rv_continuous):
     def _cdf(self, x, a):
         return x*(a + x**a)**(-1.0/a)
 
+    def _sf(self, x, a):
+        lg = sc.xlog1py(-1.0 / a, a * x**-a)
+        return -sc.expm1(lg)
+
     def _ppf(self, q, a):
         return (a/(q**-a - 1.0))**(1.0/a)
 
