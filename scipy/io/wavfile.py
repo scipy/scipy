@@ -771,7 +771,7 @@ def write(filename, rate, data):
     try:
         dkind = data.dtype.kind
         allowed_dtypes = ['float32', 'float64',
-                          'uint8', 'int8', 'int16', 'int32', 'int64']
+                          'uint8', 'int16', 'int32', 'int64']
         if data.dtype.name not in allowed_dtypes:
             raise ValueError("Unsupported data type '%s'" % data.dtype)
 
