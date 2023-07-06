@@ -1442,11 +1442,14 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
-    @pytest.mark.parametrize(["cond", "rcond"],
-                             [(1, 1), (1, _NoValue), (_NoValue, 1)])
+    @pytest.mark.parametrize("cond", [1, None, _NoValue])
+    @pytest.mark.parametrize("rcond", [1, None, _NoValue])
     def test_deprecation(self, cond, rcond):
-        with pytest.deprecated_call(match='"cond" and "rcond"'):
+        if cond is _NoValue and rcond is _NoValue:
             pinv(np.ones((2,2)), cond=cond, rcond=rcond)
+        else:
+            with pytest.deprecated_call(match='"cond" and "rcond"'):
+                pinv(np.ones((2,2)), cond=cond, rcond=rcond)
 
 
 class TestPinvSymmetric:
