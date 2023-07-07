@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """cythonize
 
 Cythonize pyx files into C files as needed.
@@ -47,6 +46,7 @@ from os.path import dirname, join
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
 
+
 #
 # Rules
 #
@@ -58,60 +58,83 @@ def process_pyx(fromfile, tofile, cwd):
         # Try to find pyproject.toml
         pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
         if not os.path.exists(pyproject_toml):
-            raise ImportError()
+            # This exception is ignored in the except block
+            # change to warning?
+            raise ImportError('Could not find pyproject.toml file.')
 
         # Try to find the minimum version from pyproject.toml
-        with open(pyproject_toml) as pt:
+        # by checking the line that mentions "cython"
+        with open(pyproject_toml, mode='r', encoding='utf-8') as pt:
             for line in pt:
+
                 if "cython" not in line.lower():
                     continue
-                line = ''.join(line.split('=')[1:])  # get rid of "Cython>="
+
+                # parse a string such as 'Cython>=x.y.z,<=a.b.c'
+                # Assume always >= and not a singleton >
+                # hence split at the first "=" and discard "Cython>" part
+                line = ''.join(line.split('=', 1)[1:])
+
+                # Check also if there is upper bound specified
                 if ',<' in line:
-                    # There's an upper bound as well
-                    split_on = ',<'
-                    if ',<=' in line:
-                        split_on = ',<='
-                    min_required_version, max_required_version = line.split(split_on)
-                    max_required_version, _ = max_required_version.split('"')
+
+                    split_on = ",<=" if ",<=" in line else ",<"
+
+                    min_req_ver, max_req_ver = line.split(split_on)
+                    # Discard the trailing part from max required version
+                    max_req_ver = max_req_ver.split('"')[0]
+
                 else:
-                    min_required_version, _ = line.split('"')
+                    min_req_ver = line.split('"')[0]
 
                 break
             else:
-                raise ImportError()
+                # This exception is ignored in the except block below
+                # change to warning?
+                raise ImportError("Could not parse any Cython specification"
+                                  " in pyproject.toml file.")
 
         # Note: we only check lower bound, for upper bound we rely on pip
         # respecting pyproject.toml. Reason: we want to be able to build/test
         # with more recent Cython locally or on main, upper bound is for
         # sdist in a release.
-        if _pep440.parse(cython_version) < _pep440.Version(min_required_version):
-            raise Exception('Building SciPy requires Cython >= {}, found '
-                            '{}'.format(min_required_version, cython_version))
+        if _pep440.parse(cython_version) < _pep440.Version(min_req_ver):
+            raise Exception(f'Building SciPy requires Cython >= {min_req_ver}'
+                            f', found {cython_version}')
 
     except ImportError:
         pass
 
     flags = ['--fast-fail', '-3']
+
     if tofile.endswith('.cxx'):
         flags += ['--cplus']
 
     try:
         try:
-            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile], cwd=cwd)
-            if r != 0:
-                raise Exception('Cython failed')
-        except OSError as e:
-            # There are ways of installing Cython that don't result in a cython
-            # executable on the path, see gh-2397.
-            r = subprocess.call([sys.executable, '-c',
-                                 'import sys; from Cython.Compiler.Main import '
-                                 'setuptools_main as main; sys.exit(main())'] + flags +
-                                 ["-o", tofile, fromfile],
+            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile],
                                 cwd=cwd)
             if r != 0:
-                raise Exception("Cython either isn't installed or it failed.") from e
+                raise Exception('Cython system call failed:\n'
+                                f' cython {" ".join(flags)} -o {tofile}'
+                                f' {fromfile}')
+        except OSError as e:
+            # There are ways of installing Cython that don't result in a
+            # cython executable on the path, see gh-2397.
+            py_command = 'import sys;'
+            py_command += ('from Cython.Compiler.Main '
+                           'import setuptools_main as main;')
+            py_command += 'sys.exit(main())'
+
+            r = subprocess.call([sys.executable, '-c'] + [py_command] +
+                                flags + ["-o", tofile, fromfile], cwd=cwd)
+
+            if r != 0:
+                raise Exception("Cython either isn't installed or "
+                                "it failed.") from e
     except OSError as e:
         raise OSError('Cython needs to be installed') from e
+
 
 def process_tempita_pyx(fromfile, tofile, cwd):
     try:
@@ -122,7 +145,7 @@ def process_tempita_pyx(fromfile, tofile, cwd):
     except ImportError as e:
         raise Exception('Building SciPy requires Tempita: '
                         'pip install --user Tempita') from e
-    with open(os.path.join(cwd, fromfile), mode='r') as f_in:
+    with open(os.path.join(cwd, fromfile), mode='r', encoding='utf-8') as f_in:
         template = f_in.read()
         pyxcontent = tempita.sub(template)
         assert fromfile.endswith('.pyx.in')
@@ -138,6 +161,7 @@ rules = {
     '.pyx.in': process_tempita_pyx
     }
 
+
 #
 # Hash db
 #
@@ -145,7 +169,7 @@ def load_hashes(filename):
     # Return { filename : (sha1 of input, sha1 of output) }
     if os.path.isfile(filename):
         hashes = {}
-        with open(filename, 'r') as f:
+        with open(filename, mode='r', encoding='utf-8') as f:
             for line in f:
                 filename, inhash, outhash = line.split()
                 if outhash == "None":
@@ -155,16 +179,19 @@ def load_hashes(filename):
         hashes = {}
     return hashes
 
+
 def save_hashes(hash_db, filename):
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         for key, value in sorted(hash_db.items()):
-            f.write("%s %s %s\n" % (key, value[0], value[1]))
+            f.write(f"{key} {value[0]} {value[1]}\n")
+
 
 def sha1_of_file(filename):
     h = hashlib.sha1()
     with open(filename, "rb") as f:
         h.update(f.read())
     return h.hexdigest()
+
 
 #
 # Main program
@@ -176,6 +203,7 @@ def normpath(path):
         path = path[2:]
     return path
 
+
 def get_hash(frompath, topath):
     from_hash = sha1_of_file(frompath)
     if topath:
@@ -184,10 +212,11 @@ def get_hash(frompath, topath):
         to_hash = None
     return (from_hash, to_hash)
 
+
 def get_cython_dependencies(fullfrompath):
     fullfromdir = os.path.dirname(fullfrompath)
     deps = set()
-    with open(fullfrompath, 'r') as f:
+    with open(fullfrompath, mode='r', encoding='utf-8') as f:
         pxipattern = re.compile(r'include "([a-zA-Z0-9_]+\.pxi)"')
         pxdpattern1 = re.compile(r'from \. cimport ([a-zA-Z0-9_]+)')
         pxdpattern2 = re.compile(r'from \.([a-zA-Z0-9_]+) cimport')
@@ -203,6 +232,7 @@ def get_cython_dependencies(fullfrompath):
             if m:
                 deps.add(os.path.join(fullfromdir, m.group(1) + '.pxd'))
     return list(deps)
+
 
 def process(path, fromfile, tofile, processor_function, hash_db,
             dep_hashes, lock):
@@ -241,6 +271,7 @@ def process(path, fromfile, tofile, processor_function, hash_db,
         # store hash in db
         hash_db[normpath(fullfrompath)] = current_hash
 
+
 def process_generate_pyx(path, lock):
     with lock:
         print('Running {}'.format(path))
@@ -249,17 +280,18 @@ def process_generate_pyx(path, lock):
         if ret != 0:
             raise RuntimeError("Running {} failed".format(path))
 
+
 def find_process_files(root_dir):
     lock = Lock()
 
     try:
         num_proc = int(os.environ.get('SCIPY_NUM_CYTHONIZE_JOBS', cpu_count()))
         pool = Pool(processes=num_proc)
-    except ImportError as e:
+    except ImportError:
         # Allow building (single-threaded) on GNU/Hurd, which does not
         # support semaphores so Pool cannot initialize.
         pool = type('', (), {'imap_unordered': lambda self, func,
-                iterable: map(func, iterable)})()
+                             iterable: map(func, iterable)})()
     except ValueError:
         pool = Pool()
 
@@ -276,11 +308,14 @@ def find_process_files(root_dir):
         if os.path.exists(generate_pyx):
             jobs.append(generate_pyx)
 
-    for result in pool.imap_unordered(lambda fn: process_generate_pyx(fn, lock), jobs):
+    for result in pool.imap_unordered(lambda fn:
+                                      process_generate_pyx(fn, lock), jobs):
         pass
 
     # Process pyx files
     jobs = []
+    m_pattern = br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$"
+
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
             in_file = os.path.join(cur_dir, filename + ".in")
@@ -291,7 +326,7 @@ def find_process_files(root_dir):
                     toext = ".c"
                     with open(os.path.join(cur_dir, filename), 'rb') as f:
                         data = f.read()
-                        m = re.search(br"^\s*#\s*distutils:\s*language\s*=\s*c\+\+\s*$", data, re.I | re.M)
+                        m = re.search(m_pattern, data, re.I | re.M)
                         if m:
                             toext = ".cxx"
                     fromfile = filename
@@ -304,6 +339,7 @@ def find_process_files(root_dir):
 
     hash_db.update(dep_hashes)
     save_hashes(hash_db, HASH_FILE)
+
 
 def main():
     try:

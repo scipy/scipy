@@ -7,5 +7,5 @@
 # support. Changing it causes an ABI forward-compatibility break
 # (gh-11793), so we currently leave it as is (no further cimport
 # statements should be used in this file).
-from .cython_optimize._zeros cimport (
+from scipy.optimize.cython_optimize._zeros cimport (
     brentq, brenth, ridder, bisect, zeros_full_output)

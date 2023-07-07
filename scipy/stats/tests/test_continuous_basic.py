@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -16,7 +17,7 @@ from .common_tests import (check_normalization, check_moment,
                            check_meth_dtype, check_ppf_dtype,
                            check_cmplx_deriv,
                            check_pickling, check_rvs_broadcast,
-                           check_freezing,)
+                           check_freezing, check_munp_expect,)
 from scipy.stats._distr_params import distcont
 from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
@@ -35,6 +36,7 @@ not for numerically exact results.
 # to _distr_params
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
+_IS_32BIT = (sys.maxsize < 2**32)
 
 # For skipping test_cont_basic
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
@@ -166,6 +168,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
         check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
+    check_cdf_sf(distfn, arg, distname)
+    check_ppf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
     check_pdf_logpdf(distfn, arg, distname)
     check_pdf_logpdf_at_endpoints(distfn, arg, distname)
@@ -196,7 +200,12 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     check_named_args(distfn, x, arg, locscale_defaults, meths)
     check_random_state_property(distfn, arg)
-    check_pickling(distfn, arg)
+
+    if distname in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
+    else:
+        check_pickling(distfn, arg)
     check_freezing(distfn, arg)
 
     # Entropy
@@ -311,6 +320,8 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(IntegrationWarning,
                    "The maximum number of subdivisions.")
+        sup.filter(IntegrationWarning,
+                   "The algorithm does not converge.")
 
         if is_xfailing:
             sup.filter(IntegrationWarning)
@@ -326,6 +337,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                 check_skew_expect(distfn, arg, m, v, s, distname)
                 check_var_expect(distfn, arg, m, v, distname)
                 check_kurt_expect(distfn, arg, m, v, k, distname)
+                check_munp_expect(distfn, arg, distname)
 
         check_loc_scale(distfn, arg, m, v, distname)
 
@@ -337,6 +349,10 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
 def test_rvs_broadcast(dist, shape_args):
     if dist in ['gausshyper', 'studentized_range']:
         pytest.skip("too slow")
+
+    if dist in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
 
     # If shape_only is True, it means the _rvs method of the
     # distribution uses more than one random number to generate a random
@@ -572,10 +588,20 @@ def check_sf_isf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1, 0.5, 0.9], *arg), *arg),
                             [0.1, 0.5, 0.9], decimal=DECIMAL, err_msg=msg +
                             ' - sf-isf roundtrip')
+
+
+def check_cdf_sf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.cdf([0.1, 0.9], *arg),
                             1.0 - distfn.sf([0.1, 0.9], *arg),
                             decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
+
+
+def check_ppf_isf(distfn, arg, msg):
+    p = np.array([0.1, 0.9])
+    npt.assert_almost_equal(distfn.isf(p, *arg), distfn.ppf(1-p, *arg),
+                            decimal=DECIMAL, err_msg=msg +
+                            ' - ppf-isf relationship')
 
 
 def check_pdf(distfn, arg, msg):
@@ -688,7 +714,7 @@ def check_loc_scale(distfn, arg, m, v, msg):
     # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
     # `loc` and `scale` arrays improperly broadcast with shapes.
     loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
-    mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
+    mt, vt = distfn.stats(*arg, loc=loc, scale=scale)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
 

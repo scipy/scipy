@@ -61,7 +61,7 @@ def _constraints_to_components(constraints):
         b_us.append(np.atleast_1d(constraint.ub).astype(np.double))
 
     if len(As) > 1:
-        A = vstack(As)
+        A = vstack(As, format="csc")
         b_l = np.concatenate(b_ls)
         b_u = np.concatenate(b_us)
     else:  # avoid unnecessary copying

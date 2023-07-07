@@ -90,7 +90,7 @@ def compute_sha256(idirs):
 
 def write_release_task(filename='NOTES.txt'):
     idirs = Path('release')
-    source = Path(get_latest_release_doc('doc/release'))
+    source = Path(get_latest_release_doc('doc/source/release'))
     target = Path(filename)
     if target.exists():
         target.remove()

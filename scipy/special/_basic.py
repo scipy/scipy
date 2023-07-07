@@ -14,6 +14,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
 from ._comb import _comb_int
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = [
@@ -300,6 +301,7 @@ def jnyn_zeros(n, nt):
     >>> fig, ax = plt.subplots()
     >>> xmax= 11
     >>> x = np.linspace(0, xmax)
+    >>> x[0] += 1e-15
     >>> ax.plot(x, jn(1, x), label=r"$J_1$", c='r')
     >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$", c='b')
     >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
@@ -789,6 +791,7 @@ def y1p_zeros(nt, complex=False):
     >>> real_roots = y1_roots.real
     >>> xmax = 15
     >>> x = np.linspace(0, xmax, 500)
+    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y1(x), label=r'$Y_1$')
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
@@ -967,6 +970,7 @@ def yvp(v, z, n=1):
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
+    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, yvp(1, x, 0), label=r"$Y_1$")
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
@@ -2585,7 +2589,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=None):
+def comb(N, k, exact=False, repetition=False, legacy=_NoValue):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2610,7 +2614,7 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
 
         .. deprecated:: 1.9.0
             Using `legacy` is deprecated and will removed by
-            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
             your inputs directly, e.g.
             ``comb(int(your_N), int(your_k), exact=True)``.
 
@@ -2644,10 +2648,10 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
     220
 
     """
-    if legacy is not None:
+    if legacy is not _NoValue:
         warnings.warn(
             "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
             "your inputs directly, e.g. "
             "'comb(int(your_N), int(your_k), exact=True)'.",
             DeprecationWarning,
@@ -2927,7 +2931,11 @@ def factorial(n, exact=False):
         return _exact_factorialx_array(n)
     # we do not raise for non-integers with exact=True due to
     # historical reasons, though deprecation would be possible
-    return _ufuncs._factorial(n)
+    res = _ufuncs._factorial(n)
+    if isinstance(n, np.ndarray):
+        # _ufuncs._factorial does not maintain 0-dim arrays
+        return np.array(res)
+    return res
 
 
 def factorial2(n, exact=False):

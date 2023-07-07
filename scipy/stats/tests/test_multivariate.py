@@ -1118,15 +1118,23 @@ class TestDirichlet:
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
-    def test_mean_and_var(self):
+    def test_mean_var_cov(self):
+        # Reference values calculated by hand and confirmed with Mathematica, e.g.
+        # `Covariance[DirichletDistribution[{ 1, 0.8, 0.2, 10^-300}]]`
         alpha = np.array([1., 0.8, 0.2])
         d = dirichlet(alpha)
 
-        expected_var = [1. / 12., 0.08, 0.03]
         expected_mean = [0.5, 0.4, 0.1]
+        expected_var = [1. / 12., 0.08, 0.03]
+        expected_cov = [
+                [ 1. / 12, -1. / 15, -1. / 60],
+                [-1. / 15,  2. / 25, -1. / 75],
+                [-1. / 60, -1. / 75,  3. / 100],
+        ]
 
-        assert_array_almost_equal(d.var(), expected_var)
         assert_array_almost_equal(d.mean(), expected_mean)
+        assert_array_almost_equal(d.var(), expected_var)
+        assert_array_almost_equal(d.cov(), expected_cov)
 
     def test_scalar_values(self):
         alpha = np.array([0.2])
@@ -1860,17 +1868,24 @@ class TestOrthoGroup:
         dets = np.array([[np.linalg.det(x) for x in xx] for xx in xs])
         assert_allclose(np.fabs(dets), np.ones(dets.shape), rtol=1e-13)
 
-        # Test that we get both positive and negative determinants
-        # Check that we have at least one and less than 10 negative dets in a sample of 10. The rest are positive by the previous test.
-        # Test each dimension separately
-        assert_array_less([0]*10, [np.nonzero(d < 0)[0].shape[0] for d in dets])
-        assert_array_less([np.nonzero(d < 0)[0].shape[0] for d in dets], [10]*10)
-
         # Test that these are orthogonal matrices
         for xx in xs:
             for x in xx:
                 assert_array_almost_equal(np.dot(x, x.T),
                                           np.eye(x.shape[0]))
+
+    @pytest.mark.parametrize("dim", [2, 5, 10, 20])
+    def test_det_distribution_gh18272(self, dim):
+        # Test that positive and negative determinants are equally likely.
+        rng = np.random.default_rng(6796248956179332344)
+        dist = ortho_group(dim=dim)
+        rvs = dist.rvs(size=5000, random_state=rng)
+        dets = scipy.linalg.det(rvs)
+        k = np.sum(dets > 0)
+        n = len(dets)
+        res = stats.binomtest(k, n)
+        low, high = res.proportion_ci(confidence_level=0.95)
+        assert low < 0.5 < high
 
     def test_haar(self):
         # Test that the distribution is constant under rotation
@@ -2468,7 +2483,7 @@ class TestMultivariateT:
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3
-        rng = np.random.default_rng(413722918996573)
+        rng = np.random.default_rng(41372291899657)
         w = 10 ** rng.uniform(-1, 1, size=dim)
         cov = _random_covariance(dim, w, rng, singular=True)
         mean = rng.random(dim)
@@ -2584,6 +2599,74 @@ class TestMultivariateT:
         loc = np.zeros((2, ))
         mvt = stats.multivariate_t(loc, cov, df)
         assert_allclose(mvt.entropy(), ref, rtol=tol)
+
+    @pytest.mark.parametrize(
+        "df, dim, ref, tol",
+        [
+            (10, 1, 1.5212624929756808, 1e-15),
+            (100, 1, 1.4289633653182439, 1e-13),
+            (500, 1, 1.420939531869349, 1e-14),
+            (1e20, 1, 1.4189385332046727, 1e-15),
+            (1e100, 1, 1.4189385332046727, 1e-15),
+            (10, 10, 15.069150450832911, 1e-15),
+            (1000, 10, 14.19936546446673, 1e-13),
+            (1e20, 10, 14.189385332046728, 1e-15),
+            (1e100, 10, 14.189385332046728, 1e-15),
+            (10, 100, 148.28902883192654, 1e-15),
+            (1000, 100, 141.99155538003762, 1e-14),
+            (1e20, 100, 141.8938533204673, 1e-15),
+            (1e100, 100, 141.8938533204673, 1e-15),
+        ]
+    )
+    def test_extreme_entropy(self, df, dim, ref, tol):
+        # Reference values were calculated with mpmath:
+        # from mpmath import mp
+        # mp.dps = 500
+        #
+        # def mul_t_mpmath_entropy(dim, df=1):
+        #     dim = mp.mpf(dim)
+        #     df = mp.mpf(df)
+        #     halfsum = (dim + df)/2
+        #     half_df = df/2
+        #
+        #     return float(
+        #         -mp.loggamma(halfsum) + mp.loggamma(half_df)
+        #         + dim / 2 * mp.log(df * mp.pi)
+        #         + halfsum * (mp.digamma(halfsum) - mp.digamma(half_df))
+        #         + 0.0
+        #     )
+        mvt = stats.multivariate_t(shape=np.eye(dim), df=df)
+        assert_allclose(mvt.entropy(), ref, rtol=tol)
+
+    def test_entropy_with_covariance(self):
+        # Generated using np.randn(5, 5) and then rounding
+        # to two decimal places
+        _A = np.array([
+            [1.42, 0.09, -0.49, 0.17, 0.74],
+            [-1.13, -0.01,  0.71, 0.4, -0.56],
+            [1.07, 0.44, -0.28, -0.44, 0.29],
+            [-1.5, -0.94, -0.67, 0.73, -1.1],
+            [0.17, -0.08, 1.46, -0.32, 1.36]
+        ])
+        # Set cov to be a symmetric positive semi-definite matrix
+        cov = _A @ _A.T
+
+        # Test the asymptotic case. For large degrees of freedom
+        # the entropy approaches the multivariate normal entropy.
+        df = 1e20
+        mul_t_entropy = stats.multivariate_t.entropy(shape=cov, df=df)
+        mul_norm_entropy = multivariate_normal(None, cov=cov).entropy()
+        assert_allclose(mul_t_entropy, mul_norm_entropy, rtol=1e-15)
+
+        # Test the regular case. For a dim of 5 the threshold comes out
+        # to be approximately 766.45. So using slightly
+        # different dfs on each site of the threshold, the entropies
+        # are being compared.
+        df1 = 765
+        df2 = 768
+        _entropy1 = stats.multivariate_t.entropy(shape=cov, df=df1)
+        _entropy2 = stats.multivariate_t.entropy(shape=cov, df=df2)
+        assert_allclose(_entropy1, _entropy2, rtol=1e-5)
 
 
 class TestMultivariateHypergeom:

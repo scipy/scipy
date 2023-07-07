@@ -4,7 +4,7 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.11.0.dev0',
+  version: '1.12.0.dev0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
@@ -50,8 +50,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=0.29.33')
-  error('SciPy requires Cython >= 0.29.33')
+if not cy.version().version_compare('>=0.29.35')
+  error('SciPy requires Cython >= 0.29.35')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -135,6 +135,10 @@ tempita = files('scipy/_build_utils/tempita.py')
 use_pythran = get_option('use-pythran')
 if use_pythran
   pythran = find_program('pythran', native: true)
+  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
+  # activation bug the default <prefix>/include/ may not be visible (see
+  # gh-15698). Hence look for xsimd explicitly.
+  xsimd_dep = dependency('xsimd', required: false)
 endif
 
 subdir('scipy')

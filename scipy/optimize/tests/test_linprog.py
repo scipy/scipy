@@ -486,7 +486,9 @@ class LinprogCommonTests:
 
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
-        assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(np.VisibleDeprecationWarning, "Creating an ndarray from ragged")
+            assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 
         # Test other invalid inputs
