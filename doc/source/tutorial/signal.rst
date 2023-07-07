@@ -1525,10 +1525,10 @@ The ISTFT can be utilized to reconstruct the original signal:
     True
 
 Note that the legacy implementation returns a signal which is longer than the
-original. On the other hand, the new `istft` allows the start and the end index
-of the reconstructed signal to be specified. The length discrepancy in the old
-implementation is caused by the fact that the signal length is not a multiple
-of the slices.
+original. On the other hand, the new `istft` allows to explicitly specify the
+start index `k0` and the end index `k1` of the reconstructed signal. The length
+discrepancy in the old implementation is caused by the fact that the signal
+length is not a multiple of the slices.
 
 Further differences between the new and legacy versions in this example are:
 
