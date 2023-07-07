@@ -142,6 +142,8 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
+    # ignore the DeprecationWarning emitted by the even kwd
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_simpson(self):
         y = np.arange(17)
         assert_equal(simpson(y), 128)
@@ -154,30 +156,86 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, even='first'), 13.75)
         assert_equal(simpson(y, x=x, even='last'), 14)
 
+        # `even='simpson'`
+        # integral should be exactly 21
+        x = np.linspace(1, 4, 4)
+        def f(x):
+            return x**2
+
+        assert_allclose(simpson(f(x), x=x, even='simpson'), 21.0)
+        assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
+
+        # integral should be exactly 114
+        x = np.linspace(1, 7, 4)
+        assert_allclose(simpson(f(x), dx=2.0, even='simpson'), 114)
+        assert_allclose(simpson(f(x), dx=2.0, even='avg'), 115 + 1/3)
+
+        # `even='simpson'`, test multi-axis behaviour
+        a = np.arange(16).reshape(4, 4)
+        x = np.arange(64.).reshape(4, 4, 4)
+        y = f(x)
+        for i in range(3):
+            r = simpson(y, x=x, even='simpson', axis=i)
+            it = np.nditer(a, flags=['multi_index'])
+            for _ in it:
+                idx = list(it.multi_index)
+                idx.insert(i, slice(None))
+                integral = x[tuple(idx)][-1]**3 / 3 - x[tuple(idx)][0]**3 / 3
+                assert_allclose(r[it.multi_index], integral)
+
+        # test when integration axis only has two points
+        x = np.arange(16).reshape(8, 2)
+        y = f(x)
+        for even in ['simpson', 'avg', 'first', 'last']:
+            r = simpson(y, x=x, even=even, axis=-1)
+
+            integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
+            assert_allclose(r, integral)
+
+        # odd points, test multi-axis behaviour
+        a = np.arange(25).reshape(5, 5)
+        x = np.arange(125).reshape(5, 5, 5)
+        y = f(x)
+        for i in range(3):
+            r = simpson(y, x=x, axis=i)
+            it = np.nditer(a, flags=['multi_index'])
+            for _ in it:
+                idx = list(it.multi_index)
+                idx.insert(i, slice(None))
+                integral = x[tuple(idx)][-1]**3 / 3 - x[tuple(idx)][0]**3 / 3
+                assert_allclose(r[it.multi_index], integral)
+
         # Tests for checking base case
         x = np.array([3])
         y = np.power(x, 2)
-        assert_equal(simpson(y, x=x, axis=0), 0.0)
-        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+        assert_allclose(simpson(y, x=x, axis=0), 0.0)
+        assert_allclose(simpson(y, x=x, axis=-1), 0.0)
 
         x = np.array([3, 3, 3, 3])
         y = np.power(x, 2)
-        assert_equal(simpson(y, x=x, axis=0), 0.0)
-        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+        assert_allclose(simpson(y, x=x, axis=0), 0.0)
+        assert_allclose(simpson(y, x=x, axis=-1), 0.0)
 
         x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
         y = np.power(x, 2)
         zero_axis = [0.0, 0.0, 0.0, 0.0]
-        default_axis = [175.75, 175.75, 175.75]
-        assert_equal(simpson(y, x=x, axis=0), zero_axis)
-        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+        default_axis = [170 + 1/3] * 3   # 8**3 / 3 - 1/3
+        assert_allclose(simpson(y, x=x, axis=0), zero_axis)
+        # the following should be exact for even='simpson'
+        assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
         x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
         y = np.power(x, 2)
         zero_axis = [0.0, 136.0, 1088.0, 8704.0]
-        default_axis = [175.75, 175.75, 11292.25]
-        assert_equal(simpson(y, x=x, axis=0), zero_axis)
-        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+        default_axis = [170 + 1/3, 170 + 1/3, 32**3 / 3 - 1/3]
+        assert_allclose(simpson(y, x=x, axis=0), zero_axis)
+        assert_allclose(simpson(y, x=x, axis=-1), default_axis)
+
+    def test_simpson_even_is_deprecated(self):
+        x = np.linspace(0, 3, 4)
+        y = x**2
+        with pytest.deprecated_call():
+            simpson(y, x=x, even='first')
 
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):
@@ -193,10 +251,13 @@ class TestQuadrature:
 
     def test_simps(self):
         # Basic coverage test for the alias
-        y = np.arange(4)
+        y = np.arange(5)
         x = 2**y
-        assert_equal(simpson(y, x=x, dx=0.5, even='first'),
-                     simps(y, x=x, dx=0.5, even='first'))
+        with pytest.deprecated_call(match="simpson"):
+            assert_allclose(
+                simpson(y, x=x, dx=0.5),
+                simps(y, x=x, dx=0.5)
+            )
 
 
 class TestCumulative_trapezoid:
@@ -226,7 +287,7 @@ class TestCumulative_trapezoid:
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
-            y_int = cumulative_trapezoid(y, x, initial=3.45, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=0, axis=axis)
             assert_equal(y_int.shape, (3, 2, 4))
             y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
@@ -262,25 +323,36 @@ class TestCumulative_trapezoid:
         y_expected = [-1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, initial=1.23)
-        y_expected = [1.23, -1.5, -2., -1.5, 0.]
+        y_int = cumulative_trapezoid(y, initial=0)
+        y_expected = [0, -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3)
         y_expected = [-4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, dx=3, initial=1.23)
-        y_expected = [1.23, -4.5, -6., -4.5, 0.]
+        y_int = cumulative_trapezoid(y, dx=3, initial=0)
+        y_expected = [0, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
+
+    @pytest.mark.parametrize(
+        "initial", [1, 0.5]
+    )
+    def test_initial_warning(self, initial):
+        """If initial is not None or 0, a ValueError is raised."""
+        y = np.linspace(0, 10, num=10)
+        with pytest.deprecated_call(match="`initial`"):
+            res = cumulative_trapezoid(y, initial=initial)
+        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2]) 
 
     def test_cumtrapz(self):
         # Basic coverage test for the alias
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
-                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
-                        rtol=1e-14)
+        with pytest.deprecated_call(match="cumulative_trapezoid"):
+            assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
+                            cumtrapz(y, x, dx=0.5, axis=0, initial=0),
+                            rtol=1e-14)
 
 
 class TestTrapezoid:
@@ -300,8 +372,9 @@ class TestTrapezoid:
         # Basic coverage test for the alias
         y = np.arange(4)
         x = 2**y
-        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
-                     trapz(y, x=x, dx=0.5, axis=0))
+        with pytest.deprecated_call(match="trapezoid"):
+            assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                         trapz(y, x=x, dx=0.5, axis=0))
 
 
 class TestQMCQuad:
@@ -366,8 +439,10 @@ class TestQMCQuad:
         logres = qmc_quad(lambda *args: np.log(func(*args)), a, b,
                           n_points=n_points, n_estimates=n_estimates,
                           log=True, qrng=qrng)
-        assert_allclose(np.exp(logres.integral), res.integral)
+        assert_allclose(np.exp(logres.integral), res.integral, rtol=1e-14)
         assert np.imag(logres.integral) == (np.pi if np.prod(signs) < 0 else 0)
+        assert_allclose(np.exp(logres.standard_error),
+                        res.standard_error, rtol=1e-14, atol=1e-16)
 
     @pytest.mark.parametrize("n_points", [2**8, 2**12])
     @pytest.mark.parametrize("n_estimates", [8, 16])

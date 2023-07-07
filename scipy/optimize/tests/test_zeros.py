@@ -1,27 +1,33 @@
 import pytest
 
-from math import sqrt, exp, sin, cos
 from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal,
                            assert_array_equal,
+                           assert_array_less,
                            suppress_warnings)
 import numpy as np
-from numpy import finfo, power, nan, isclose
+from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
-
-from scipy.optimize import _zeros_py as zeros, newton, root_scalar
+from scipy import stats, optimize
+from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
+                            OptimizeResult)
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
-from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
+from scipy.optimize._tstutils import get_tests, functions as tstutils_functions
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
 _FLOAT_EPS = finfo(float).eps
+
+bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
+                   zeros.toms748]
+gradient_methods = [zeros.newton]
+all_methods = bracket_methods + gradient_methods  # noqa
 
 # A few test functions used frequently:
 # # A simple quadratic, (x-1)^2 - 1
@@ -60,43 +66,11 @@ def f_lrucached(x):
     return x
 
 
-class TestBasic:
+class TestScalarRootFinders:
+    # Basic tests for all scalar root finders
 
-    def run_check_by_name(self, name, smoothness=0, **kwargs):
-        a = .5
-        b = sqrt(3)
-        xtol = 4*np.finfo(float).eps
-        rtol = 4*np.finfo(float).eps
-        for function, fname in zip(tstutils_functions, tstutils_fstrings):
-            if smoothness > 0 and fname in ['f4', 'f5', 'f6']:
-                continue
-            r = root_scalar(function, method=name, bracket=[a, b], x0=a,
-                            xtol=xtol, rtol=rtol, **kwargs)
-            zero = r.root
-            assert_(r.converged)
-            assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg=f'method {name}, function {fname}')
-
-    def run_check(self, method, name):
-        a = .5
-        b = sqrt(3)
-        xtol = 4 * _FLOAT_EPS
-        rtol = 4 * _FLOAT_EPS
-        for function, fname in zip(tstutils_functions, tstutils_fstrings):
-            zero, r = method(function, a, b, xtol=xtol, rtol=rtol,
-                             full_output=True)
-            assert_(r.converged)
-            assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
-                            err_msg=f'method {name}, function {fname}')
-
-    def run_check_lru_cached(self, method, name):
-        # check that https://github.com/scipy/scipy/issues/10846 is fixed
-        a = -1
-        b = 1
-        zero, r = method(f_lrucached, a, b, full_output=True)
-        assert_(r.converged)
-        assert_allclose(zero, 0,
-                        err_msg='method {}, function {}'.format(name, 'f_lrucached'))
+    xtol = 4 * np.finfo(float).eps
+    rtol = 4 * np.finfo(float).eps
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -121,9 +95,7 @@ class TestBasic:
         except Exception:
             return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR), tc
 
-    def run_tests(self, tests, method, name,
-                  xtol=4 * _FLOAT_EPS, rtol=4 * _FLOAT_EPS,
-                  known_fail=None, **kwargs):
+    def run_tests(self, tests, method, name, known_fail=None, **kwargs):
         r"""Run test-cases using the specified method and the supplied signature.
 
         Extract the arguments for the method call from the test case
@@ -142,10 +114,10 @@ class TestBasic:
                 sig_kwargs_keys.append('fprime')
                 if name in ['halley']:
                     sig_kwargs_keys.append('fprime2')
-            kwargs['tol'] = xtol
+            kwargs['tol'] = self.xtol
         else:
-            kwargs['xtol'] = xtol
-            kwargs['rtol'] = rtol
+            kwargs['xtol'] = self.xtol
+            kwargs['rtol'] = self.rtol
 
         results = [list(self._run_one_test(
             tc, method, sig_args_keys=sig_args_keys,
@@ -159,7 +131,7 @@ class TestBasic:
         assert_equal([len(notcvged_IDS), notcvged_IDS], [0, []])
 
         # The usable xtol and rtol depend on the test
-        tols = {'xtol': 4 * _FLOAT_EPS, 'rtol': 4 * _FLOAT_EPS}
+        tols = {'xtol': self.xtol, 'rtol': self.rtol}
         tols.update(**kwargs)
         rtol = tols['rtol']
         atol = tols.get('tol', tols['xtol'])
@@ -172,54 +144,409 @@ class TestBasic:
                     not isclose(a, c, rtol=rtol, atol=atol)
                     and elt[-1]['ID'] not in known_fail]
         # If not, evaluate the function and see if is 0 at the purported root
-        fvs = [tc['f'](aroot, *(tc['args'])) for aroot, c, fullout, tc in notclose]
+        fvs = [tc['f'](aroot, *tc.get('args', tuple()))
+               for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
 
     def run_collection(self, collection, method, name, smoothness=None,
-                       known_fail=None,
-                       xtol=4 * _FLOAT_EPS, rtol=4 * _FLOAT_EPS,
-                       **kwargs):
+                       known_fail=None, **kwargs):
         r"""Run a collection of tests using the specified method.
 
         The name is used to determine some optional arguments."""
         tests = get_tests(collection, smoothness=smoothness)
-        self.run_tests(tests, method, name, xtol=xtol, rtol=rtol,
-                       known_fail=known_fail, **kwargs)
+        self.run_tests(tests, method, name, known_fail=known_fail, **kwargs)
 
-    def test_bisect(self):
-        self.run_check(zeros.bisect, 'bisect')
-        self.run_check_lru_cached(zeros.bisect, 'bisect')
-        self.run_check_by_name('bisect')
-        self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
-    def test_ridder(self):
-        self.run_check(zeros.ridder, 'ridder')
-        self.run_check_lru_cached(zeros.ridder, 'ridder')
-        self.run_check_by_name('ridder')
-        self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
+class TestBracketMethods(TestScalarRootFinders):
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_basic_root_scalar(self, method, function):
+        # Tests bracketing root finders called via `root_scalar` on a small
+        # set of simple problems, each of which has a root at `x=1`. Checks for
+        # converged status and that the root was found.
+        a, b = .5, sqrt(3)
 
-    def test_brentq(self):
-        self.run_check(zeros.brentq, 'brentq')
-        self.run_check_lru_cached(zeros.brentq, 'brentq')
-        self.run_check_by_name('brentq')
-        # Brentq/h needs a lower tolerance to be specified
-        self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
-                            xtol=1e-14, rtol=1e-14)
+        r = root_scalar(function, method=method.__name__, bracket=[a, b], x0=a,
+                        xtol=self.xtol, rtol=self.rtol)
+        assert r.converged
+        assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
 
-    def test_brenth(self):
-        self.run_check(zeros.brenth, 'brenth')
-        self.run_check_lru_cached(zeros.brenth, 'brenth')
-        self.run_check_by_name('brenth')
-        self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
-                            xtol=1e-14, rtol=1e-14)
+    @pytest.mark.parametrize('method', bracket_methods)
+    @pytest.mark.parametrize('function', tstutils_functions)
+    def test_basic_individual(self, method, function):
+        # Tests individual bracketing root finders on a small set of simple
+        # problems, each of which has a root at `x=1`. Checks for converged
+        # status and that the root was found.
+        a, b = .5, sqrt(3)
+        root, r = method(function, a, b, xtol=self.xtol, rtol=self.rtol,
+                         full_output=True)
 
-    def test_toms748(self):
-        self.run_check(zeros.toms748, 'toms748')
-        self.run_check_lru_cached(zeros.toms748, 'toms748')
-        self.run_check_by_name('toms748')
-        self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
+        assert r.converged
+        assert_allclose(root, 1.0, atol=self.xtol, rtol=self.rtol)
 
+    @pytest.mark.parametrize('method', bracket_methods)
+    def test_aps_collection(self, method):
+        self.run_collection('aps', method, method.__name__, smoothness=1)
+
+    @pytest.mark.parametrize('method', [zeros.bisect, zeros.ridder,
+                                        zeros.toms748])
+    def test_chandrupatla_collection(self, method):
+        known_fail = {'fun7.4'} if method == zeros.ridder else {}
+        self.run_collection('chandrupatla', method, method.__name__,
+                            known_fail=known_fail)
+
+    @pytest.mark.parametrize('method', bracket_methods)
+    def test_lru_cached_individual(self, method):
+        # check that https://github.com/scipy/scipy/issues/10846 is fixed
+        # (`root_scalar` failed when passed a function that was `@lru_cache`d)
+        a, b = -1, 1
+        root, r = method(f_lrucached, a, b, full_output=True)
+        assert r.converged
+        assert_allclose(root, 0)
+
+
+class TestChandrupatla(TestScalarRootFinders):
+
+    def f(self, q, p):
+        return stats.norm.cdf(q) - p
+
+    @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
+    def test_basic(self, p):
+        # Invert distribution CDF and compare against distrtibution `ppf`
+        res = zeros._chandrupatla(self.f, -5, 5, args=(p,))
+        ref = stats.norm().ppf(p)
+        np.testing.assert_allclose(res.x, ref)
+        assert res.x.shape == ref.shape
+
+    @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, shape):
+        # Test for correct functionality, output shapes, and dtypes for various
+        # input shapes.
+        p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        args = (p,)
+
+        @np.vectorize
+        def chandrupatla_single(p):
+            return zeros._chandrupatla(self.f, -5, 5, args=(p,))
+
+        def f(*args, **kwargs):
+            f.f_evals += 1
+            return self.f(*args, **kwargs)
+        f.f_evals = 0
+
+        res = zeros._chandrupatla(f, -5, 5, args=args)
+        refs = chandrupatla_single(p).ravel()
+
+        ref_x = [ref.x for ref in refs]
+        assert_allclose(res.x.ravel(), ref_x)
+        assert_equal(res.x.shape, shape)
+
+        ref_fun = [ref.fun for ref in refs]
+        assert_allclose(res.fun.ravel(), ref_fun)
+        assert_equal(res.fun.shape, shape)
+        assert_equal(res.fun, self.f(res.x, *args))
+
+        ref_success = [ref.success for ref in refs]
+        assert_equal(res.success.ravel(), ref_success)
+        assert_equal(res.success.shape, shape)
+        assert np.issubdtype(res.success.dtype, np.bool_)
+
+        ref_flag = [ref.status for ref in refs]
+        assert_equal(res.status.ravel(), ref_flag)
+        assert_equal(res.status.shape, shape)
+        assert np.issubdtype(res.status.dtype, np.integer)
+
+        ref_nfev = [ref.nfev for ref in refs]
+        assert_equal(res.nfev.ravel(), ref_nfev)
+        assert_equal(np.max(res.nfev), f.f_evals)
+        assert_equal(res.nfev.shape, res.fun.shape)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+
+        ref_nit = [ref.nit for ref in refs]
+        assert_equal(res.nit.ravel(), ref_nit)
+        assert_equal(np.max(res.nit), f.f_evals-2)
+        assert_equal(res.nit.shape, res.fun.shape)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+
+        ref_xl = [ref.xl for ref in refs]
+        assert_allclose(res.xl.ravel(), ref_xl)
+        assert_equal(res.xl.shape, shape)
+
+        ref_xr = [ref.xr for ref in refs]
+        assert_allclose(res.xr.ravel(), ref_xr)
+        assert_equal(res.xr.shape, shape)
+
+        assert_array_less(res.xl, res.xr)
+        finite = np.isfinite(res.x)
+        assert np.all((res.x[finite] == res.xl[finite])
+                      | (res.x[finite] == res.xr[finite]))
+
+        ref_fl = [ref.fl for ref in refs]
+        assert_allclose(res.fl.ravel(), ref_fl)
+        assert_equal(res.fl.shape, shape)
+        assert_allclose(res.fl, self.f(res.xl, *args))
+
+        ref_fr = [ref.fr for ref in refs]
+        assert_allclose(res.fr.ravel(), ref_fr)
+        assert_equal(res.fr.shape, shape)
+        assert_allclose(res.fr, self.f(res.xr, *args))
+
+        assert np.all(np.abs(res.fun[finite]) ==
+                      np.minimum(np.abs(res.fl[finite]),
+                                 np.abs(res.fr[finite])))
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(xs, js):
+            funcs = [lambda x: x - 2.5,
+                     lambda x: x - 10,
+                     lambda x: (x - 0.1)**3,
+                     lambda x: np.nan]
+
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._chandrupatla(f, [0]*4, [np.pi]*4, args=args, maxiter=2)
+
+        ref_flags = np.array([zeros._ECONVERGED, zeros._ESIGNERR,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
+
+    def test_convergence(self):
+        # Test that the convergence tolerances behave as expected
+        rng = np.random.default_rng(2585255913088665241)
+        p = rng.random(size=3)
+        bracket = (-5, 5)
+        args = (p,)
+        kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
+
+        kwargs = kwargs0.copy()
+        kwargs['xatol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res1.xr - res1.xl, 1e-3)
+        kwargs['xatol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res2.xr - res2.xl, 1e-6)
+        assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
+
+        kwargs = kwargs0.copy()
+        kwargs['xrtol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res1.xr - res1.xl, 1e-3 * np.abs(res1.x))
+        kwargs['xrtol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res2.xr - res2.xl, 1e-6 * np.abs(res2.x))
+        assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
+
+        kwargs = kwargs0.copy()
+        kwargs['fatol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res1.fun), 1e-3)
+        kwargs['fatol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res2.fun), 1e-6)
+        assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
+
+        kwargs = kwargs0.copy()
+        kwargs['frtol'] = 1e-3
+        x1, x2 = bracket
+        f0 = np.minimum(abs(self.f(x1, *args)), abs(self.f(x2, *args)))
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res1.fun), 1e-3*f0)
+        kwargs['frtol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res2.fun), 1e-6*f0)
+        assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
+
+    def test_maxiter_callback(self):
+        # Test behavior of `maxiter` parameter and `callback` interface
+        p = 0.612814
+        bracket = (-5, 5)
+        maxiter = 5
+
+        def f(q, p):
+            res = stats.norm().cdf(q) - p
+            f.x = q
+            f.fun = res
+            return res
+        f.x = None
+        f.fun = None
+
+        res = zeros._chandrupatla(f, *bracket, args=(p,),
+                                  maxiter=maxiter)
+        assert not np.any(res.success)
+        assert np.all(res.nfev == maxiter+2)
+        assert np.all(res.nit == maxiter)
+
+        def callback(res):
+            callback.iter += 1
+            callback.res = res
+            assert hasattr(res, 'x')
+            if callback.iter == 0:
+                # callback is called once with initial bracket
+                assert res.xl, res.xr == bracket
+            else:
+                # Ensure that attributes are updating each iteration
+                assert f.x[0] in {res.xl, res.xr}
+                assert f.fun[0] in {res.fl, res.fr}
+            assert res.status == zeros._EINPROGRESS
+            if callback.iter == maxiter:
+                raise StopIteration
+        callback.iter = -1  # callback called once before first iteration
+        callback.res = None
+
+        res2 = zeros._chandrupatla(f, *bracket, args=(p,),
+                                   callback=callback)
+
+        # terminating with callback is identical to terminating due to maxiter
+        # (except for `status`)
+        for key in res.keys():
+            if key == 'status':
+                assert res[key] == zeros._ECONVERR
+                assert callback.res[key] == zeros._EINPROGRESS
+                assert res2[key] == zeros._ECALLBACK
+            else:
+                assert res2[key] == callback.res[key] == res[key]
+
+    @pytest.mark.parametrize('case', optimize._tstutils._CHANDRUPATLA_TESTS)
+    def test_nit_expected(self, case):
+        # Test that `_chandrupatla` implements Chandrupatla's algorithm:
+        # in all 40 test cases, the number of iterations performed
+        # matches the number reported in the original paper.
+        f, bracket, root, nfeval, id = case
+        # Chandrupatla's criterion is equivalent to
+        # abs(x2-x1) < 4*abs(xmin)*xrtol + xatol, but we use the more standard
+        # abs(x2-x1) < abs(xmin)*xrtol + xatol. Therefore, set xrtol to 4x
+        # that used by Chandrupatla in tests.
+        res = zeros._chandrupatla(f, *bracket, xrtol=4e-10, xatol=1e-5)
+        assert_allclose(res.fun, f(root), rtol=1e-8, atol=2e-3)
+        assert_equal(res.nfev, nfeval)
+
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    def test_dtype(self, dtype):
+        # Test that dtypes are preserved
+
+        root = 0.622
+        def f(x):
+            return ((x - root) ** 3).astype(dtype)
+
+        res = zeros._chandrupatla(f, dtype(-3), dtype(5), xatol=1e-3)
+        assert res.x.dtype == dtype
+        assert_allclose(res.x, root, atol=1e-3)
+
+    def test_input_validation(self):
+        # Test input validation for appropriate error messages
+
+        message = '`func` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(None, -4, 4)
+
+        message = 'Abscissae and function output must be real numbers.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4+1j, 4)
+
+        message = "shape mismatch: objects cannot be broadcast"
+        # raised by `np.broadcast, but the traceback is readable IMO
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, [-2, -3], [3, 4, 5])
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
+
+        message = 'Tolerances must be non-negative scalars.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, xatol=-1)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, xrtol=None)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, fatol='ekki')
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, frtol=None)
+
+        message = '`maxiter` must be a non-negative integer.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=1.5)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=-1)
+
+        message = '`callback` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, callback='shrubbery')
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            # assert np.issubdtype(x.dtype, np.floating)
+            return x ** 99 - 1
+
+        res = zeros._chandrupatla(f, -7, 5)
+        assert res.success
+        assert_allclose(res.x, 1)
+
+        # Test that if both ends of bracket equal root, algorithm reports
+        # convergence
+        def f(x):
+            return x**2 - 1
+
+        res = zeros._chandrupatla(f, 1, 1)
+        assert res.success
+        assert_equal(res.x, 1)
+
+        def f(x):
+            return 1/x
+
+        with np.errstate(invalid='ignore'):
+            res = zeros._chandrupatla(f, np.inf, np.inf)
+        assert res.success
+        assert_equal(res.x, np.inf)
+
+        # Test maxiter = 0. Should do nothing to bracket.
+        def f(x):
+            return x**3 - 1
+
+        bracket = (-3, 5)
+        res = zeros._chandrupatla(f, *bracket, maxiter=0)
+        assert res.xl, res.xr == bracket
+        assert res.nit == 0
+        assert res.nfev == 2
+        assert res.status == -2
+        assert res.x == -3  # best so far
+
+        # Test maxiter = 1
+        res = zeros._chandrupatla(f, *bracket, maxiter=1)
+        assert res.success
+        assert res.status == 0
+        assert res.nit == 1
+        assert res.nfev == 3
+        assert_allclose(res.x, 1)
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return c*x - 1
+
+        res = zeros._chandrupatla(f, -1, 1, args=3)
+        assert_allclose(res.x, 1/3)
+
+        # # TODO: Test zero tolerance
+        # # ~~What's going on here - why are iterations repeated?~~
+        # # tl goes to zero when xatol=xrtol=0. When function is nearly linear,
+        # # this causes convergence issues.
+        # def f(x):
+        #     return np.cos(x)
+        #
+        # res = zeros._chandrupatla(f, 0, np.pi, xatol=0, xrtol=0)
+        # assert res.nit < 100
+        # xp = np.nextafter(res.x, np.inf)
+        # xm = np.nextafter(res.x, -np.inf)
+        # assert np.abs(res.fun) < np.abs(f(xp))
+        # assert np.abs(res.fun) < np.abs(f(xm))
+
+
+class TestNewton(TestScalarRootFinders):
     def test_newton_collections(self):
         known_fail = ['aps.13.00']
         known_fail += ['aps.12.05', 'aps.12.17']  # fails under Windows Py27
@@ -236,33 +563,8 @@ class TestBasic:
             self.run_collection(collection, zeros.newton, 'halley',
                                 smoothness=2, known_fail=known_fail)
 
-    @staticmethod
-    def f1(x):
-        return x**2 - 2*x - 1  # == (x-1)**2 - 2
-
-    @staticmethod
-    def f1_1(x):
-        return 2*x - 2
-
-    @staticmethod
-    def f1_2(x):
-        return 2.0 + 0*x
-
-    @staticmethod
-    def f2(x):
-        return exp(x) - cos(x)
-
-    @staticmethod
-    def f2_1(x):
-        return exp(x) + sin(x)
-
-    @staticmethod
-    def f2_2(x):
-        return exp(x) + cos(x)
-
     def test_newton(self):
-        for f, f_1, f_2 in [(self.f1, self.f1_1, self.f1_2),
-                            (self.f2, self.f2_1, self.f2_2)]:
+        for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
             x = zeros.newton(f, 3, tol=1e-6)
             assert_allclose(f(x), 0, atol=1e-6)
             x = zeros.newton(f, 3, x1=5, tol=1e-6)  # secant, x0 and x1
@@ -423,10 +725,10 @@ class TestBasic:
 
         for derivs in range(3):
             kwargs = {'tol': 1e-6, 'full_output': True, }
-            for k, v in [['fprime', self.f1_1], ['fprime2', self.f1_2]][:derivs]:
+            for k, v in [['fprime', f1_1], ['fprime2', f1_2]][:derivs]:
                 kwargs[k] = v
 
-            x, r = zeros.newton(self.f1, x0, disp=False, **kwargs)
+            x, r = zeros.newton(f1, x0, disp=False, **kwargs)
             assert_(r.converged)
             assert_equal(x, r.root)
             assert_equal((r.iterations, r.function_calls), expected_counts[derivs])
@@ -437,7 +739,7 @@ class TestBasic:
 
             # Now repeat, allowing one fewer iteration to force convergence failure
             iters = r.iterations - 1
-            x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=False, **kwargs)
+            x, r = zeros.newton(f1, x0, maxiter=iters, disp=False, **kwargs)
             assert_(not r.converged)
             assert_equal(x, r.root)
             assert_equal(r.iterations, iters)
@@ -448,7 +750,7 @@ class TestBasic:
                 with pytest.raises(
                     RuntimeError,
                     match='Failed to converge after %d iterations, value is .*' % (iters)):
-                    x, r = zeros.newton(self.f1, x0, maxiter=iters, disp=True, **kwargs)
+                    x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
         def func(x):
@@ -466,13 +768,6 @@ class TestBasic:
         newton(np.sin, x0, np.cos)
         assert_array_equal(x0, x0_copy)
 
-    def test_maxiter_int_check(self):
-        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq,
-                       zeros.brenth, zeros.toms748]:
-            with pytest.raises(TypeError,
-                    match="'float' object cannot be interpreted as an integer"):
-                method(f1, 0.0, 1.0, maxiter=72.45)
-
     def test_gh17570_defaults(self):
         # Previously, when fprime was not specified, root_scalar would default
         # to secant. When x1 was not specified, secant failed.
@@ -484,10 +779,13 @@ class TestBasic:
         # `newton` uses the secant method when `x1` and `x2` are specified
         res_secant = newton(f1, x0=3, x1=2, tol=1e-6, full_output=True)[1]
 
-        # all three foun a root
+        # all three found a root
         assert_allclose(f1(res_newton_default.root), 0, atol=1e-6)
+        assert res_newton_default.root.shape == tuple()
         assert_allclose(f1(res_secant_default.root), 0, atol=1e-6)
+        assert res_secant_default.root.shape == tuple()
         assert_allclose(f1(res_secant.root), 0, atol=1e-6)
+        assert res_secant.root.shape == tuple()
 
         # Defaults are correct
         assert (res_secant_default.root
@@ -554,15 +852,16 @@ def test_brent_underflow_in_root_bracketing():
 
 
 class TestRootResults:
+    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0)
+
     def test_repr(self):
-        r = zeros.RootResults(root=1.0,
-                              iterations=44,
-                              function_calls=46,
-                              flag=0)
-        expected_repr = ("      converged: True\n           flag: 'converged'"
+        expected_repr = ("      converged: True\n           flag: converged"
                          "\n function_calls: 46\n     iterations: 44\n"
                          "           root: 1.0")
-        assert_equal(repr(r), expected_repr)
+        assert_equal(repr(self.r), expected_repr)
+
+    def test_type(self):
+        assert isinstance(self.r, OptimizeResult)
 
 
 def test_complex_halley():
@@ -808,19 +1107,33 @@ def test_gh9551_raise_error_if_disp_true():
 
 @pytest.mark.parametrize('solver_name',
                          ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
-@pytest.mark.parametrize('rs_interface', [True, False])
-def test_gh3089_8394(solver_name, rs_interface):
+def test_gh3089_8394(solver_name):
     # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
     # results when they encountered NaNs. Check that this is resolved.
-    solver = ((lambda f, a, b: root_scalar(f, bracket=(a, b))) if rs_interface
-              else getattr(zeros, solver_name))
-
     def f(x):
         return np.nan
 
-    message = "The function value at x..."
-    with pytest.raises(ValueError, match=message):
+    solver = getattr(zeros, solver_name)
+    with pytest.raises(ValueError, match="The function value at x..."):
         solver(f, 0, 1)
+
+
+@pytest.mark.parametrize('method',
+                         ['brentq', 'brenth', 'bisect', 'ridder', 'toms748'])
+def test_gh18171(method):
+    # gh-3089 and gh-8394 reported that bracketing solvers returned incorrect
+    # results when they encountered NaNs. Check that `root_scalar` returns
+    # normally but indicates that convergence was unsuccessful. See gh-18171.
+    def f(x):
+        f._count += 1
+        return np.nan
+    f._count = 0
+
+    res = root_scalar(f, bracket=(0, 1), method=method)
+    assert res.converged is False
+    assert res.flag.startswith("The function value at x")
+    assert res.function_calls == f._count
+    assert str(res.root) in res.flag
 
 
 @pytest.mark.parametrize('solver_name',
@@ -924,3 +1237,12 @@ def test_newton_complex_gh10103():
 
     res = root_scalar(f, x0=1+1j, x1=2+1.5j, method='secant')
     assert_allclose(res.root, 1, atol=1e-12)
+
+
+@pytest.mark.parametrize('method', all_methods)
+def test_maxiter_int_check_gh10236(method):
+    # gh-10236 reported that the error message when `maxiter` is not an integer
+    # was difficult to interpret. Check that this was resolved (by gh-10907).
+    message = "'float' object cannot be interpreted as an integer"
+    with pytest.raises(TypeError, match=message):
+        method(f1, 0.0, 1.0, maxiter=72.45)

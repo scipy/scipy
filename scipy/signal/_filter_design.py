@@ -6,7 +6,7 @@ import warnings
 import numpy
 import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
-                   resize, pi, absolute, logspace, r_, sqrt, tan, log10,
+                   resize, pi, absolute, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
@@ -102,17 +102,15 @@ def findfreqs(num, den, N, kind='ba'):
     if len(ep) == 0:
         ep = atleast_1d(-1000) + 0j
 
-    ez = r_['-1',
-            numpy.compress(ep.imag >= 0, ep, axis=-1),
-            numpy.compress((abs(tz) < 1e5) & (tz.imag >= 0), tz, axis=-1)]
+    ez = np.r_[ep[ep.imag >= 0], tz[(np.abs(tz) < 1e5) & (tz.imag >= 0)]]
 
-    integ = abs(ez) < 1e-10
-    hfreq = numpy.around(numpy.log10(numpy.max(3 * abs(ez.real + integ) +
-                                               1.5 * ez.imag)) + 0.5)
-    lfreq = numpy.around(numpy.log10(0.1 * numpy.min(abs(real(ez + integ)) +
-                                                     2 * ez.imag)) - 0.5)
+    integ = np.abs(ez) < 1e-10
+    hfreq = np.round(np.log10(np.max(3 * np.abs(ez.real + integ) +
+                                     1.5 * ez.imag)) + 0.5)
+    lfreq = np.round(np.log10(0.1 * np.min(np.abs((ez + integ).real) +
+                                           2 * ez.imag)) - 0.5)
 
-    w = logspace(lfreq, hfreq, N)
+    w = np.logspace(lfreq, hfreq, N)
     return w
 
 
@@ -4505,7 +4503,7 @@ def _arc_jac_sn(w, m):
         if niter > _ARC_JAC_SN_MAXITER:
             raise ValueError('Landen transformation not converging')
 
-    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+    K = np.prod(1 + np.array(ks[1:])) * np.pi/2
 
     wns = [w]
 

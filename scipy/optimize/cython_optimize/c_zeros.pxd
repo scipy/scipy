@@ -1,5 +1,5 @@
 cdef extern from "../Zeros/zeros.h":
-    ctypedef double (*callback_type)(double, void*)
+    ctypedef double (*callback_type)(double, void*) noexcept
     ctypedef struct scipy_zeros_info:
         int funcalls
         int iterations

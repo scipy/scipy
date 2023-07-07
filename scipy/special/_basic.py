@@ -14,6 +14,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
 from ._comb import _comb_int
+from scipy._lib.deprecation import _NoValue
 
 
 __all__ = [
@@ -76,6 +77,14 @@ __all__ = [
     'yvp',
     'zeta'
 ]
+
+
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
+_FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
+                             6: 74, 7: 84, 8: 93, 9: 101}
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
+_FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
+                             6: 43, 7: 47, 8: 51, 9: 56}
 
 
 def _nonneg_int_or_fail(n, var_name, strict=True):
@@ -292,6 +301,7 @@ def jnyn_zeros(n, nt):
     >>> fig, ax = plt.subplots()
     >>> xmax= 11
     >>> x = np.linspace(0, xmax)
+    >>> x[0] += 1e-15
     >>> ax.plot(x, jn(1, x), label=r"$J_1$", c='r')
     >>> ax.plot(x, jvp(1, x, 1), label=r"$J_1'$", c='b')
     >>> ax.plot(x, yn(1, x), label=r"$Y_1$", c='y')
@@ -781,6 +791,7 @@ def y1p_zeros(nt, complex=False):
     >>> real_roots = y1_roots.real
     >>> xmax = 15
     >>> x = np.linspace(0, xmax, 500)
+    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, y1(x), label=r'$Y_1$')
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
@@ -959,6 +970,7 @@ def yvp(v, z, n=1):
 
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
+    >>> x[0] += 1e-15
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, yvp(1, x, 0), label=r"$Y_1$")
     >>> ax.plot(x, yvp(1, x, 1), label=r"$Y_1'$")
@@ -2577,7 +2589,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=None):
+def comb(N, k, exact=False, repetition=False, legacy=_NoValue):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2602,7 +2614,7 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
 
         .. deprecated:: 1.9.0
             Using `legacy` is deprecated and will removed by
-            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
             your inputs directly, e.g.
             ``comb(int(your_N), int(your_k), exact=True)``.
 
@@ -2636,10 +2648,10 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
     220
 
     """
-    if legacy is not None:
+    if legacy is not _NoValue:
         warnings.warn(
             "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
             "your inputs directly, e.g. "
             "'comb(int(your_N), int(your_k), exact=True)'.",
             DeprecationWarning,
@@ -2725,23 +2737,99 @@ def perm(N, k, exact=False):
 
 
 # https://stackoverflow.com/a/16327037
-def _range_prod(lo, hi):
+def _range_prod(lo, hi, k=1):
     """
-    Product of a range of numbers.
+    Product of a range of numbers spaced k apart (from hi).
 
-    Returns the product of
+    For k=1, this returns the product of
     lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
     = hi! / (lo-1)!
+
+    For k>1, it correspond to taking only every k'th number when
+    counting down from hi - e.g. 18!!!! = _range_prod(1, 18, 4).
 
     Breaks into smaller products first for speed:
     _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
-    if lo + 1 < hi:
+    if lo + k < hi:
         mid = (hi + lo) // 2
-        return _range_prod(lo, mid) * _range_prod(mid + 1, hi)
-    if lo == hi:
-        return lo
-    return lo * hi
+        if k > 1:
+            # make sure mid is a multiple of k away from hi
+            mid = mid - ((mid - hi) % k)
+        return _range_prod(lo, mid, k) * _range_prod(mid + k, hi, k)
+    elif lo + k == hi:
+        return lo * hi
+    else:
+        return hi
+
+
+def _exact_factorialx_array(n, k=1):
+    """
+    Exact computation of factorial for an array.
+
+    The factorials are computed in incremental fashion, by taking
+    the sorted unique values of n and multiplying the intervening
+    numbers between the different unique values.
+
+    In other words, the factorial for the largest input is only
+    computed once, with each other result computed in the process.
+
+    k > 1 corresponds to the multifactorial.
+    """
+    un = np.unique(n)
+    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
+    # to unify the behaviour, we remove the nan's here; the respective
+    # values will be set separately at the end
+    un = un[~np.isnan(un)]
+
+    # Convert to object array if np.int64 can't handle size
+    if np.isnan(n).any():
+        dt = float
+    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+        if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
+            # e.g. k=1: 21! > np.iinfo(np.int64).max
+            dt = object
+        elif un[-1] > _FACTORIALK_LIMITS_32BITS[k]:
+            # e.g. k=3: 26!!! > np.iinfo(np.int32).max
+            dt = np.int64
+        else:
+            dt = np.int_
+    else:
+        # for k >= 10, we always use object
+        dt = object
+
+    out = np.empty_like(n, dtype=dt)
+
+    # Handle invalid/trivial values
+    un = un[un > 1]
+    out[n < 2] = 1
+    out[n < 0] = 0
+
+    # Calculate products of each range of numbers
+    # we can only multiply incrementally if the values are k apart;
+    # therefore we partition `un` into "lanes", i.e. its residues modulo k
+    for lane in range(0, k):
+        ul = un[(un % k) == lane] if k > 1 else un
+        if ul.size:
+            # after np.unique, un resp. ul are sorted, ul[0] is the smallest;
+            # cast to python ints to avoid overflow with np.int-types
+            val = _range_prod(1, int(ul[0]), k=k)
+            out[n == ul[0]] = val
+            for i in range(len(ul) - 1):
+                # by the filtering above, we have ensured that prev & current
+                # are a multiple of k apart
+                prev = ul[i]
+                current = ul[i + 1]
+                # we already multiplied all factors until prev; continue
+                # building the full factorial from the following (`prev + 1`);
+                # use int() for the same reason as above
+                val *= _range_prod(int(prev + 1), int(current), k=k)
+                out[n == current] = val
+
+    if np.isnan(n).any():
+        out = out.astype(np.float64)
+        out[np.isnan(n)] = np.nan
+    return out
 
 
 def factorial(n, exact=False):
@@ -2792,51 +2880,62 @@ def factorial(n, exact=False):
     120
 
     """
-    if exact:
-        if np.ndim(n) == 0:
-            if np.isnan(n):
-                return n
-            return 0 if n < 0 else math.factorial(n)
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not (np.issubdtype(type(n), np.integer)
+                  or np.issubdtype(type(n), np.floating)):
+            raise ValueError(
+                f"Unsupported datatype for factorial: {type(n)}\n"
+                "Permitted data types are integers and floating point numbers"
+            )
+        elif n < 0:
+            return 0
+        elif exact and np.issubdtype(type(n), np.integer):
+            return math.factorial(n)
+        # we do not raise for non-integers with exact=True due to
+        # historical reasons, though deprecation would be possible
+        return _ufuncs._factorial(n)
+
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not (np.issubdtype(n.dtype, np.integer)
+            or np.issubdtype(n.dtype, np.floating)):
+        raise ValueError(
+            f"Unsupported datatype for factorial: {n.dtype}\n"
+            "Permitted data types are integers and floating point numbers"
+        )
+    if exact and not np.issubdtype(n.dtype, np.integer):
+        # legacy behaviour is to support mixed integers/NaNs;
+        # deprecate this for exact=True
+        n_flt = n[~np.isnan(n)]
+        if np.allclose(n_flt, n_flt.astype(np.int64)):
+            warnings.warn(
+                "Non-integer arrays (e.g. due to presence of NaNs) "
+                "together with exact=True are deprecated. Either ensure "
+                "that the the array has integer dtype or use exact=False.",
+                DeprecationWarning,
+                stacklevel=2
+            )
         else:
-            n = asarray(n)
-            un = np.unique(n).astype(object)
+            msg = ("factorial with exact=True does not "
+                   "support non-integral arrays")
+            raise ValueError(msg)
 
-            # Convert to object array of long ints if np.int_ can't handle size
-            if np.isnan(n).any():
-                dt = float
-            elif un[-1] > 20:
-                dt = object
-            elif un[-1] > 12:
-                dt = np.int64
-            else:
-                dt = np.int_
-
-            out = np.empty_like(n, dtype=dt)
-
-            # Handle invalid/trivial values
-            # Ignore runtime warning when less operator used w/np.nan
-            with np.errstate(all='ignore'):
-                un = un[un > 1]
-                out[n < 2] = 1
-                out[n < 0] = 0
-
-            # Calculate products of each range of numbers
-            if un.size:
-                val = math.factorial(un[0])
-                out[n == un[0]] = val
-                for i in range(len(un) - 1):
-                    prev = un[i] + 1
-                    current = un[i + 1]
-                    val *= _range_prod(prev, current)
-                    out[n == current] = val
-
-            if np.isnan(n).any():
-                out = out.astype(np.float64)
-                out[np.isnan(n)] = n[np.isnan(n)]
-            return out
-    else:
-        out = _ufuncs._factorial(n)
-        return out
+    if exact:
+        return _exact_factorialx_array(n)
+    # we do not raise for non-integers with exact=True due to
+    # historical reasons, though deprecation would be possible
+    res = _ufuncs._factorial(n)
+    if isinstance(n, np.ndarray):
+        # _ufuncs._factorial does not maintain 0-dim arrays
+        return np.array(res)
+    return res
 
 
 def factorial2(n, exact=False):
@@ -2845,15 +2944,14 @@ def factorial2(n, exact=False):
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
 
-      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-          = 2**(n/2) * (n/2)!                           n even
+      n!! = 2 ** (n / 2) * gamma(n / 2 + 1) * sqrt(2 / pi)  n odd
+          = 2 ** (n / 2) * gamma(n / 2 + 1)                 n even
+          = 2 ** (n / 2) * (n / 2)!                         n even
 
     Parameters
     ----------
     n : int or array_like
-        Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False. If ``n < -1``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+        Calculate ``n!!``.  If ``n < 0``, the return value is 0.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2874,27 +2972,47 @@ def factorial2(n, exact=False):
     105
 
     """
-    if exact:
-        if n < -1:
+    def _approx(n):
+        # main factor that both even/odd approximations share
+        val = np.power(2, n / 2) * gamma(n / 2 + 1)
+        mask = np.ones_like(n, dtype=np.float64)
+        mask[n % 2 == 1] = sqrt(2 / pi)
+        # analytical continuation (based on odd integers)
+        # is scaled down by a factor of sqrt(2 / pi)
+        # compared to the value of even integers.
+        return val * mask
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorial2 does not support non-integral scalar arguments"
+            raise ValueError(msg)
+        elif n < 0:
             return 0
-        if n <= 0:
+        elif n in {0, 1}:
             return 1
-        val = 1
-        for k in range(n, 0, -2):
-            val *= k
-        return val
-    else:
-        n = asarray(n)
-        vals = zeros(n.shape, 'd')
-        cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
-        oddn = extract(cond1, n)
-        evenn = extract(cond2, n)
-        nd2o = oddn / 2.0
-        nd2e = evenn / 2.0
-        place(vals, cond1, gamma(nd2o + 1) / sqrt(pi) * pow(2.0, nd2o + 0.5))
-        place(vals, cond2, gamma(nd2e + 1) * pow(2.0, nd2e))
-        return vals
+        # general integer case
+        if exact:
+            return _range_prod(1, n, k=2)
+        return _approx(n)
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not np.issubdtype(n.dtype, np.integer):
+        raise ValueError("factorial2 does not support non-integral arrays")
+    if exact:
+        return _exact_factorialx_array(n, k=2)
+    # approximation
+    vals = zeros(n.shape)
+    cond = (n >= 0)
+    n_to_compute = extract(cond, n)
+    place(vals, cond, _approx(n_to_compute))
+    return vals
 
 
 def factorialk(n, k, exact=True):
@@ -2912,9 +3030,8 @@ def factorialk(n, k, exact=True):
 
     Parameters
     ----------
-    n : int
-        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+    n : int or array_like
+        Calculate multifactorial. If `n` < 0, the return value is 0.
     k : int
         Order of multifactorial.
     exact : bool, optional
@@ -2940,17 +3057,38 @@ def factorialk(n, k, exact=True):
     10
 
     """
-    if exact:
-        if n < 1-k:
-            return 0
-        if n <= 0:
-            return 1
-        val = 1
-        for j in range(n, 0, -k):
-            val = val*j
-        return val
-    else:
+    if not np.issubdtype(type(k), np.integer) or k < 1:
+        raise ValueError(f"k must be a positive integer, received: {k}")
+    if not exact:
         raise NotImplementedError
+
+    helpmsg = ""
+    if k in {1, 2}:
+        func = "factorial" if k == 1 else "factorial2"
+        helpmsg = f"\nYou can try to use {func} instead"
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if n is None or np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorialk does not support non-integral scalar arguments!"
+            raise ValueError(msg + helpmsg)
+        elif n < 0:
+            return 0
+        elif n in {0, 1}:
+            return 1
+        return _range_prod(1, n, k=k)
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not np.issubdtype(n.dtype, np.integer):
+        msg = "factorialk does not support non-integral arrays!"
+        raise ValueError(msg + helpmsg)
+    return _exact_factorialx_array(n, k=k)
 
 
 def zeta(x, q=None, out=None):

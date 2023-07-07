@@ -2460,10 +2460,9 @@ class rv_continuous(rv_generic):
         Likelihood Estimation (MLE), but Method of Moments (MM)
         is also available.
 
-        Starting estimates for
-        the fit are given by input arguments; for any arguments not provided
-        with starting estimates, ``self._fitstart(data)`` is called to generate
-        such.
+        Starting estimates for the fit are given by input arguments;
+        for any arguments not provided with starting estimates,
+        ``self._fitstart(data)`` is called to generate such.
 
         One can hold some parameters fixed to specific values by passing in
         keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters)
@@ -2751,7 +2750,8 @@ class rv_continuous(rv_generic):
         muhat = tmp.mean()
         mu2hat = tmp.var()
         Shat = sqrt(mu2hat / mu2)
-        Lhat = muhat - Shat*mu
+        with np.errstate(invalid='ignore'):
+            Lhat = muhat - Shat*mu
         if not np.isfinite(Lhat):
             Lhat = 0
         if not (np.isfinite(Shat) and (0 < Shat)):
@@ -3042,7 +3042,7 @@ class rv_discrete(rv_generic):
     values : tuple of two array_like, optional
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
-        and ``pk`` must have the same shape.
+        and ``pk`` must have the same shape, and ``xk`` must be unique.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3098,14 +3098,17 @@ class rv_discrete(rv_generic):
     This class is similar to `rv_continuous`. Whether a shape parameter is
     valid is decided by an ``_argcheck`` method (which defaults to checking
     that its arguments are strictly positive.)
-    The main differences are:
+    The main differences are as follows.
 
-    - the support of the distribution is a set of integers
-    - instead of the probability density function, ``pdf`` (and the
+    - The support of the distribution is a set of integers.
+    - Instead of the probability density function, ``pdf`` (and the
       corresponding private ``_pdf``), this class defines the
       *probability mass function*, `pmf` (and the corresponding
       private ``_pmf``.)
-    - scale parameter is not defined.
+    - There is no ``scale`` parameter.
+    - The default implementations of methods (e.g. ``_cdf``) are not designed
+      for distributions with support that is unbounded below (i.e.
+      ``a=-np.inf``), so they must be overridden.
 
     To create a new discrete distribution, we would do the following:
 
@@ -3886,6 +3889,8 @@ class rv_sample(rv_discrete):
             raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
+        if not len(set(np.ravel(xk))) == np.size(xk):
+            raise ValueError("xk may not contain duplicate values.")
 
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)

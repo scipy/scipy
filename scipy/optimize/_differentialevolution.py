@@ -308,7 +308,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [3] http://www1.icsi.berkeley.edu/~storn/code.html
+    .. [3] https://www.sciencedirect.com/science/article/pii/S111001682100613X#s0030
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
@@ -968,7 +968,7 @@ class DifferentialEvolutionSolver:
         if np.any(np.isinf(self.population_energies)):
             return np.inf
         return (np.std(self.population_energies) /
-                np.abs(np.mean(self.population_energies) + _MACHEPS))
+                (np.abs(np.mean(self.population_energies)) + _MACHEPS))
 
     def converged(self):
         """
@@ -1521,6 +1521,7 @@ class DifferentialEvolutionSolver:
             i = 0
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count
@@ -1580,10 +1581,16 @@ class DifferentialEvolutionSolver:
         obtain random integers from range(self.num_population_members),
         without replacement. You can't have the original candidate either.
         """
-        idxs = list(range(self.num_population_members))
-        idxs.remove(candidate)
-        self.random_number_generator.shuffle(idxs)
-        idxs = idxs[:number_samples]
+        pool = np.arange(self.num_population_members)
+        self.random_number_generator.shuffle(pool)
+
+        idxs = []
+        while len(idxs) < number_samples and len(pool) > 0:
+            idx = pool[0]
+            pool = pool[1:]
+            if idx != candidate:
+                idxs.append(idx)
+        
         return idxs
 
 

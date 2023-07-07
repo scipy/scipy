@@ -5,16 +5,15 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
-from scipy import optimize
-from scipy import special
+from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
-from . import _statlib
+from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
@@ -23,15 +22,12 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
-from .._lib.deprecation import _deprecated
-from scipy import stats, interpolate
-from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
+           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
@@ -1122,7 +1118,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     Parameters
     ----------
     x : array_like
-        Input array.
+        Input array. All entries must be positive, finite, real numbers.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1138,7 +1134,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             normally-distributed.
 
         'mle'
-            Minimizes the log-likelihood `boxcox_llf`.  This is the method used
+            Maximizes the log-likelihood `boxcox_llf`.  This is the method used
             in `boxcox`.
 
         'all'
@@ -1148,10 +1144,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         `optimizer` is a callable that accepts one argument:
 
         fun : callable
-            The objective function to be optimized. `fun` accepts one argument,
-            the Box-Cox transform parameter `lmbda`, and returns the negative
-            log-likelihood function at the provided value. The job of `optimizer`
-            is to find the value of `lmbda` that minimizes `fun`.
+            The objective function to be minimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the value of
+            the function (e.g., the negative log-likelihood) at the provided
+            argument. The job of `optimizer` is to find the value of `lmbda`
+            that *minimizes* `fun`.
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
@@ -1276,10 +1273,20 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    res = optimfunc(x)
+
+    try:
+        res = optimfunc(x)
+    except ValueError as e:
+        if "infs or NaNs" in str(e):
+            message = ("The `x` argument of `boxcox_normmax` must contain "
+                       "only positive, finite, real numbers.")
+            raise ValueError(message) from e
+        else:
+            raise e
+
     if res is None:
-        message = ("`optimizer` must return an object containing the optimal "
-                   "`lmbda` in attribute `x`")
+        message = ("The `optimizer` argument of `boxcox_normmax` must return "
+                   "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
     return res
 
@@ -1774,18 +1781,23 @@ def shapiro(x):
     References
     ----------
     .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
-    .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
-           normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
-    .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
-           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
-           Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
-    .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
-    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           :doi:`10.18434/M32189`
+    .. [2] Shapiro, S. S. & Wilk, M.B, "An analysis of variance test for
+           normality (complete samples)", Biometrika, 1965, Vol. 52,
+           pp. 591-611, :doi:`10.2307/2333709`
+    .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
+           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
+           of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
+    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
+           W-test for Normality", 1995, Applied Statistics, Vol. 44,
+           :doi:`10.2307/2986146`
+    .. [5] Phipson B., and Smyth, G. K., "Permutation P-values Should Never Be
            Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [6] Panagiotakos, D. B. (2008). The value of p-value in biomedical
-           research. The open cardiovascular medicine journal, 2, 97.
+           Drawn", Statistical Applications in Genetics and Molecular Biology,
+           2010, Vol.9, :doi:`10.2202/1544-6115.1585`
+    .. [6] Panagiotakos, D. B., "The value of p-value in biomedical
+           research", The Open Cardiovascular Medicine Journal, 2008, Vol.2,
+           pp. 97-99, :doi:`10.2174/1874192400802010097`
 
     Examples
     --------
@@ -1865,24 +1877,26 @@ def shapiro(x):
       and false negatives (failure to reject a false null hypothesis).
 
     """
-    x = np.ravel(x)
+    x = np.ravel(x).astype(np.float64)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x = x - np.median(x)
-
-    a = zeros(N, 'f')
+    a = zeros(N//2, dtype=np.float64)
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
+    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
+
+    w, pw, ifault = swilk(y, a, init)
     if ifault not in [0, 2]:
-        warnings.warn("Input data for shapiro has range zero. The results "
-                      "may not be accurate.")
+        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
+                      " results may not be accurate.", stacklevel=2)
     if N > 5000:
-        warnings.warn("p-value may not be accurate for N > 5000.")
+        warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
+                      f"may not be accurate. Current N is {N}.",
+                      stacklevel=2)
 
     return ShapiroResult(w, pw)
 
@@ -1977,7 +1991,7 @@ def _weibull_fit_check(params, x):
             raise ValueError(message)
 
     except (FloatingPointError, ValueError) as e:
-        message = ("An error occured while fitting the Weibull distribution "
+        message = ("An error occurred while fitting the Weibull distribution "
                    "to the data, so `anderson` cannot continue. " + suggestion)
         raise ValueError(message) from e
 
@@ -2281,7 +2295,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2299,20 +2313,6 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
-    n_resamples : int, default: 0
-        If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values. Typically 9999 is
-        sufficient for at least two digits of accuracy.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
 
     Returns
     -------
@@ -2325,8 +2325,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. If `n_resamples` is not
-            provided, the value is floored / capped at 0.1% / 25%.
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2384,9 +2384,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> samples = [rng.normal(size=50), rng.normal(size=30),
-    ...            rng.normal(size=20)]
-    >>> res = stats.anderson_ksamp(samples)
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2398,14 +2397,7 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    In such cases where the p-value is capped or when sample sizes are
-    small, a permutation test may be more accurate.
-
-    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
-    >>> res.pvalue
-    0.5254
-
-    """  # noqa
+    """
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2424,18 +2416,9 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
                          "observations")
 
     if midrank:
-        A2kN_fun = _anderson_ksamp_midrank
+        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
     else:
-        A2kN_fun = _anderson_ksamp_right
-    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    def statistic(*samples):
-        return A2kN_fun(samples, Z, Zstar, k, n, N)
-
-    if n_resamples:
-        res = permutation_test(samples, statistic, n_resamples=n_resamples,
-                               random_state=random_state,
-                               alternative='greater')
+        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2458,22 +2441,18 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min() and not n_resamples:
+    if A2 < critical.min():
         p = sig.max()
-        message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif A2 > critical.max() and not n_resamples:
+        warnings.warn("p-value capped: true value larger than {}".format(p),
+                      stacklevel=2)
+    elif A2 > critical.max():
         p = sig.min()
-        message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif not n_resamples:
+        warnings.warn("p-value floored: true value smaller than {}".format(p),
+                      stacklevel=2)
+    else:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-
-    p = res.pvalue if n_resamples else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -2504,7 +2483,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = _statlib.gscale(n, m)
+            astart, a1, _ = gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
@@ -2898,12 +2877,10 @@ def bartlett(*samples):
     Test whether the lists `a`, `b` and `c` come from populations
     with equal variances.
 
-    >>> import numpy as np
-    >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
     >>> c = [8.95, 9.12, 8.95, 8.85, 9.03, 8.84, 9.07, 8.98, 8.86, 8.98]
-    >>> stat, p = bartlett(a, b, c)
+    >>> stat, p = stats.bartlett(a, b, c)
     >>> p
     1.1254782518834628e-05
 
@@ -3225,106 +3202,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     W = numer / denom
     pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
     return LeveneResult(W, pval)
-
-
-@_deprecated("'binom_test' is deprecated in favour of"
-             " 'binomtest' from version 1.7.0 and will"
-             " be removed in Scipy 1.12.0.")
-def binom_test(x, n=None, p=0.5, alternative='two-sided'):
-    """Perform a test that the probability of success is p.
-
-    This is an exact, two-sided test of the null hypothesis
-    that the probability of success in a Bernoulli experiment
-    is `p`.
-
-    .. deprecated:: 1.10.0
-        `binom_test` is deprecated in favour of `binomtest` and will
-        be removed in Scipy 1.12.0.
-
-    Parameters
-    ----------
-    x : int or array_like
-        The number of successes, or if x has length 2, it is the
-        number of successes and the number of failures.
-    n : int
-        The number of trials.  This is ignored if x gives both the
-        number of successes and failures.
-    p : float, optional
-        The hypothesized probability of success.  ``0 <= p <= 1``. The
-        default value is ``p = 0.5``.
-    alternative : {'two-sided', 'greater', 'less'}, optional
-        Indicates the alternative hypothesis. The default value is
-        'two-sided'.
-
-    Returns
-    -------
-    p-value : float
-        The p-value of the hypothesis test.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Binomial_test
-
-    Examples
-    --------
-    >>> from scipy import stats
-
-    A car manufacturer claims that no more than 10% of their cars are unsafe.
-    15 cars are inspected for safety, 3 were found to be unsafe. Test the
-    manufacturer's claim:
-
-    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
-    0.18406106910639114
-
-    The null hypothesis cannot be rejected at the 5% level of significance
-    because the returned p-value is greater than the critical value of 5%.
-
-    """
-    x = atleast_1d(x).astype(np.int_)
-    if len(x) == 2:
-        n = x[1] + x[0]
-        x = x[0]
-    elif len(x) == 1:
-        x = x[0]
-        if n is None or n < x:
-            raise ValueError("n must be >= x")
-        n = np.int_(n)
-    else:
-        raise ValueError("Incorrect length for x.")
-
-    if (p > 1.0) or (p < 0.0):
-        raise ValueError("p must be in range [0,1]")
-
-    if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized\n"
-                         "should be 'two-sided', 'less' or 'greater'")
-
-    if alternative == 'less':
-        pval = distributions.binom.cdf(x, n, p)
-        return pval
-
-    if alternative == 'greater':
-        pval = distributions.binom.sf(x-1, n, p)
-        return pval
-
-    # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
-    d = distributions.binom.pmf(x, n, p)
-    rerr = 1 + 1e-7
-    if x == p * n:
-        # special case as shortcut, would also be handled by `else` below
-        pval = 1.
-    elif x < p * n:
-        i = np.arange(np.ceil(p * n), n+1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(x, n, p) +
-                distributions.binom.sf(n - y, n, p))
-    else:
-        i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(y-1, n, p) +
-                distributions.binom.sf(x-1, n, p))
-
-    return min(1.0, pval)
 
 
 def _apply_func(x, g, func):
@@ -3890,6 +3767,17 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if ``x`` is the first set of
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
+
+        .. warning::
+            When `y` is provided, `wilcoxon` calculates the test statistic
+            based on the ranks of the absolute values of ``d = x - y``.
+            Roundoff error in the subtraction can result in elements of ``d``
+            being assigned different ranks even when they would be tied with
+            exact arithmetic. Rather than passing `x` and `y` separately,
+            consider computing the difference ``x - y``, rounding as needed to
+            ensure that only truly unique elements are numerically distinct,
+            and passing the result as `x`, leaving `y` at the default (None).
+
     zero_method : {"wilcox", "pratt", "zsplit"}, optional
         There are different conventions for handling pairs of observations
         with equal values ("zero-differences", or "zeros").
@@ -4029,6 +3917,43 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     of ranks of positive differences) whereas it is 24 in the two-sided
     case (the minimum of sum of ranks above and below zero).
 
+    In the example above, the differences in height between paired plants are
+    provided to `wilcoxon` directly. Alternatively, `wilcoxon` accepts two
+    samples of equal length, calculates the differences between paired
+    elements, then performs the test. Consider the samples ``x`` and ``y``:
+
+    >>> import numpy as np
+    >>> x = np.array([0.5, 0.825, 0.375, 0.5])
+    >>> y = np.array([0.525, 0.775, 0.325, 0.55])
+    >>> res = wilcoxon(x, y, alternative='greater')
+    >>> res
+    WilcoxonResult(statistic=5.0, pvalue=0.5625)
+
+    Note that had we calculated the differences by hand, the test would have
+    produced different results:
+
+    >>> d = [-0.025, 0.05, 0.05, -0.05]
+    >>> ref = wilcoxon(d, alternative='greater')
+    >>> ref
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
+    The substantial difference is due to roundoff error in the results of
+    ``x-y``:
+
+    >>> d - (x-y)
+    array([2.08166817e-17, 6.93889390e-17, 1.38777878e-17, 4.16333634e-17])
+
+    Even though we expected all the elements of ``(x-y)[1:]`` to have the same
+    magnitude ``0.05``, they have slightly different magnitudes in practice,
+    and therefore are assigned different ranks in the test. Before performing
+    the test, consider calculating ``d`` and adjusting it as necessary to
+    ensure that theoretically identically values are not numerically distinct.
+    For example:
+
+    >>> d2 = np.around(x - y, decimals=3)
+    >>> wilcoxon(d2, alternative='greater')
+    WilcoxonResult(statistic=6.0, pvalue=0.4375)
+
     """
     mode = method
 
@@ -4053,12 +3978,15 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('Samples x and y must be one-dimensional.')
         if len(x) != len(y):
             raise ValueError('The samples x and y must have the same length.')
+        # Future enhancement: consider warning when elements of `d` appear to
+        # be tied but are numerically distinct.
         d = x - y
 
     if len(d) == 0:
-        res = WilcoxonResult(np.nan, np.nan)
+        NaN = _get_nan(d)
+        res = WilcoxonResult(NaN, NaN)
         if method == 'approx':
-            res.zstatistic = np.nan
+            res.zstatistic = NaN
         return res
 
     if mode == "auto":
@@ -4755,7 +4683,7 @@ def directional_stats(samples, *, axis=0, normalize=True):
         mean_resultant_length : ndarray
             The mean resultant length [1]_.
 
-    See also
+    See Also
     --------
     circmean: circular mean; i.e. directional mean for 2D *angles*
     circvar: circular variance; i.e. directional variance for 2D *angles*

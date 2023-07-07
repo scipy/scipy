@@ -10,6 +10,17 @@ import subprocess
 import sys
 import os
 
+
+# Run lint.py from the scipy source tree
+linters = [
+    '../../tools/lint.py',
+    'tools/lint.py',
+    'lint.py'  # in case pre-commit hook is run from tools dir
+]
+
+linter = [f for f in linters if os.path.exists(f)][0]
+
+
 # names of files that were staged
 # add  '*.pxd', '*.pxi' once cython-lint supports it
 p = subprocess.run(['git', 'diff',
@@ -36,27 +47,42 @@ fake_commit = p.stdout.decode('ascii').split('\n')[0]
 if not os.path.isdir(work_dir):
     subprocess.run(['git', 'clone', '-qns', git_dir, work_dir])
 
+subprocess.run(['git', 'reset', '--quiet', '--hard', 'HEAD'],
+               env={}, cwd=work_dir, check=True)
 subprocess.run(['git', 'checkout', '-q', fake_commit],
                env={}, cwd=work_dir, check=True)
+subprocess.run(['git', 'reset', '--quiet', '--hard', fake_commit],
+               env={}, cwd=work_dir, check=True)
 
-# Run lint.py from the scipy source tree
-linters = [
-    '../../tools/lint.py',
-    'tools/lint.py',
-    'lint.py'  # in case pre-commit hook is run from tools dir
-]
 
-linter = [f for f in linters if os.path.exists(f)][0]
+if '--fix' in sys.argv:
+    print('Running linter to fix errors...')
+    p = subprocess.run([linter, '--fix', '--files'] + files)
 
-p = subprocess.run([linter, '--fix', '--files'] + files,
-                   capture_output=True, text=True)
-print(p.stdout.strip(), end='')
-print(p.stderr.strip(), end='')
+    # Discover which files were modified
+    p = subprocess.run([linter, '--fix', '--files'] + files, cwd=work_dir)
+    p = subprocess.run(['git', 'diff', '--name-only', '--', '*.py', '*.pyx'],
+                       capture_output=True, check=True, cwd=work_dir)
+    files = p.stdout.decode(sys.getfilesystemencoding()).split('\0')
+    files = [f for f in files if f]
+    if files:
+        print('The following files were modified:')
+        print()
+        print('\n'.join(files))
+    else:
+        print('No files were modified.\n')
 
-if 'fixed, 0 remaining' in p.stdout:
-    print("\n\nAll errors have been fixed; please `git add` and re-commit.")
-    sys.exit(1)
+    print('Please remember to `git add` modified files.')
+    sys.exit(p.returncode)
+
+
+p = subprocess.run([linter, '--files'] + files, cwd=work_dir)
 
 if p.returncode != 0:
-    print("\n\n!! Linting failed; please make fixes, `git add` files, and re-commit.")
+    print('!! Linting failed; please fix errors, `git add` files, and re-commit.')
+    print()
+    print('Some errors may be fixable automatically by running:')
+    print()
+    print('  ./tools/pre-commit-hook.py --fix')
+
     sys.exit(p.returncode)

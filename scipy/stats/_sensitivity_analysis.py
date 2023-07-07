@@ -156,8 +156,8 @@ def saltelli_2010(
 
 @dataclass
 class BootstrapSobolResult:
-    first_order: BootstrapResult  # type: ignore[valid-type]
-    total_order: BootstrapResult  # type: ignore[valid-type]
+    first_order: BootstrapResult
+    total_order: BootstrapResult
 
 
 @dataclass
@@ -171,13 +171,13 @@ class SobolResult:
     _A: np.ndarray | None = None
     _B: np.ndarray | None = None
     _AB: np.ndarray | None = None
-    _bootstrap_result: BootstrapResult = None  # type: ignore[valid-type]
+    _bootstrap_result: BootstrapResult | None = None
 
     def bootstrap(
         self,
         confidence_level: DecimalNumber = 0.95,
         n_resamples: IntNumber = 999
-    ) -> BootstrapResult:  # type: ignore[valid-type]
+    ) -> BootstrapSobolResult:
         """Bootstrap Sobol' indices to provide confidence intervals.
 
         Parameters
@@ -272,7 +272,7 @@ def sobol_indices(
           (number of output variables), and
         - ``n`` is the number of samples (see `n` below).
 
-        Function evaluations values must be finite.
+        Function evaluation values must be finite.
 
         If `func` is a dictionary, contains the function evaluations from three
         different arrays. Keys must be: ``f_A``, ``f_B`` and ``f_AB``.
@@ -280,14 +280,14 @@ def sobol_indices(
         should have a shape ``(d, s, n)``.
         This is an advanced feature and misuse can lead to wrong analysis.
     n : int
-        Number of samples use to generate the matrices ``A`` and ``B``.
+        Number of samples used to generate the matrices ``A`` and ``B``.
         Must be a power of 2. The total number of points at which `func` is
         evaluated will be ``n*(d+2)``.
     dists : list(distributions), optional
         List of each parameter's distribution. The distribution of parameters
         depends on the application and should be carefully chosen.
-        Parameter should be independently distributed meaning there should
-        be no constraint nor relationship between input parameters values.
+        Parameters are assumed to be independently distributed, meaning there
+        is no constraint nor relationship between their values.
 
         Distributions must be an instance of a class with a ``ppf``
         method.
@@ -301,11 +301,12 @@ def sobol_indices(
             func(f_A: np.ndarray, f_B: np.ndarray, f_AB: np.ndarray)
             -> Tuple[np.ndarray, np.ndarray]
 
-        with ``f_A, f_B`` of shape (s, n) and ``f_AB`` of shape (d, s, n).
+        with ``f_A, f_B`` of shape ``(s, n)`` and ``f_AB`` of shape
+        ``(d, s, n)``.
         These arrays contain the function evaluations from three different sets
         of samples.
         The output is a tuple of the first and total indices with
-        shape (s, d).
+        shape ``(s, d)``.
         This is an advanced feature and misuse can lead to wrong analysis.
     random_state : {None, int, `numpy.random.Generator`}, optional
         If `random_state` is an int or None, a new `numpy.random.Generator` is
@@ -331,13 +332,13 @@ def sobol_indices(
             A method providing confidence intervals on the indices.
             See `scipy.stats.bootstrap` for more details.
 
-            The bootstrapping is done on both first and total order indices
+            The bootstrapping is done on both first and total order indices,
             and they are available in `BootstrapSobolResult` as attributes
             ``first_order`` and ``total_order``.
 
     Notes
     -----
-    Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
+    The Sobol' method [1]_, [2]_ is a variance-based Sensitivity Analysis which
     obtains the contribution of each parameter to the variance of the
     quantities of interest (QoIs; i.e., the outputs of `func`).
     Respective contributions can be used to rank the parameters and
@@ -378,22 +379,23 @@ def sobol_indices(
 
     :math:`S_{i}` corresponds to the first-order term which apprises the
     contribution of the i-th parameter, while :math:`S_{ij}` corresponds to the
-    second-order term which informs about the correlations between the
-    i-th and the j-th parameters. These equations can be generalized to compute
-    higher order terms; however, they are expensive to compute and their
-    interpretation is complex.
+    second-order term which informs about the contribution of interactions
+    between the i-th and the j-th parameters. These equations can be
+    generalized to compute higher order terms; however, they are expensive to
+    compute and their interpretation is complex.
     This is why only first order indices are provided.
 
-    Total indices represent the global contribution of the parameters on the
-    variance of the QoI and are defined as:
+    Total order indices represent the global contribution of the parameters
+    to the variance of the QoI and are defined as:
 
     .. math::
 
         S_{T_i} = S_i + \sum_j S_{ij} + \sum_{j,k} S_{ijk} + ...
         = 1 - \frac{\mathbb{V}[\mathbb{E}(Y|x_{\sim i})]}{\mathbb{V}[Y]}.
 
-    First order indices sum to 1, while the sum of total order indices will be
-    greater than 1 if there are interactions.
+    First order indices sum to at most 1, while total order indices sum to at
+    least 1. If there are no interactions, then first and total order indices
+    are equal, and both first and total order indices sum to 1.
 
     .. warning::
 
@@ -405,9 +407,8 @@ def sobol_indices(
         consider at minima ``n >= 2**12``. The more complex the model is,
         the more samples will be needed.
 
-        If the parameters are not independent, the first-order indices would
-        not sum to 1.
-        Numerical noise can also contribute to this.
+        Even for a purely addiditive model, the indices may not sum to 1 due
+        to numerical noise.
 
     References
     ----------
@@ -447,7 +448,7 @@ def sobol_indices(
     Remember, Sobol' indices assumes that samples are independently
     distributed. In this case we use a uniform distribution on each marginals.
 
-    >>> import numpy as  np
+    >>> import numpy as np
     >>> from scipy.stats import sobol_indices, uniform
     >>> rng = np.random.default_rng()
     >>> def f_ishigami(x):
@@ -467,9 +468,9 @@ def sobol_indices(
     ...     random_state=rng
     ... )
     >>> indices.first_order
-    array([3.14996175e-01, 4.40110556e-01, 2.17329918e-04])
+    array([0.31637954, 0.43781162, 0.00318825])
     >>> indices.total_order
-    array([0.55508078, 0.43995732, 0.23803014])
+    array([0.56122127, 0.44287857, 0.24229595])
 
     Confidence interval can be obtained using bootstrapping.
 
@@ -531,7 +532,7 @@ def sobol_indices(
     >>> output = f_ishigami(sample.T)
 
     Now we can do scatter plots of the output with respect to each parameter.
-    This gives a visual way to understand how each parameter impact the
+    This gives a visual way to understand how each parameter impacts the
     output of the function.
 
     >>> fig, ax = plt.subplots(1, n_dim, figsize=(12, 4))

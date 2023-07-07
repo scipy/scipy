@@ -211,6 +211,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         def func(x):
@@ -596,6 +597,16 @@ def test_neldermead_iteration_num():
     res = optimize._minimize._minimize_neldermead(optimize.rosen, x0,
                                                   xatol=1e-8)
     assert res.nit <= 339
+
+
+def test_neldermead_respect_fp():
+    # Nelder-Mead should respect the fp type of the input + function
+    x0 = np.array([5.0, 4.0]).astype(np.float32)
+    def rosen_(x):
+        assert x.dtype == np.float32
+        return optimize.rosen(x)
+
+    optimize.minimize(rosen_, x0, method='Nelder-Mead')
 
 
 def test_neldermead_xatol_fatol():
@@ -1157,6 +1168,8 @@ class TestOptimizeSimple(CheckOptimize):
                                      method=method)
             assert func(sol1.x) < func(sol2.x), f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
                              ['fmin', 'fmin_powell', 'fmin_cg', 'fmin_bfgs',
                               'fmin_ncg', 'fmin_l_bfgs_b', 'fmin_tnc',
@@ -1577,6 +1590,23 @@ class TestOptimizeSimple(CheckOptimize):
         with pytest.raises(ValueError, match=msg):
             optimize.minimize(f, x0=[1, 2, 3], method=method, bounds=bounds)
 
+    @pytest.mark.parametrize('method', ['bfgs', 'cg', 'newton-cg', 'powell'])
+    def test_minimize_warnings_gh1953(self, method):
+        # test that minimize methods produce warnings rather than just using
+        # `print`; see gh-1953.
+        kwargs = {} if method=='powell' else {'jac': optimize.rosen_der}
+        warning_type = (RuntimeWarning if method=='powell'
+                        else optimize.OptimizeWarning)
+
+        options = {'disp': True, 'maxiter': 10}
+        with pytest.warns(warning_type, match='Maximum number'):
+            optimize.minimize(lambda x: optimize.rosen(x), [0, 0],
+                              method=method, options=options, **kwargs)
+
+        options['disp'] = False
+        optimize.minimize(lambda x: optimize.rosen(x), [0, 0],
+                          method=method, options=options, **kwargs)
+
 
 @pytest.mark.parametrize(
     'method',
@@ -1682,6 +1712,7 @@ class TestOptimizeScalar:
         with pytest.raises(ValueError, match=message):
             optimize.brent(self.fun, brack=(0, -1, 1))
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_golden(self):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1852,6 +1883,7 @@ class TestOptimizeScalar:
         assert hasattr(result, "nfev")
         assert hasattr(result, "nit")
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
@@ -1930,6 +1962,66 @@ class TestOptimizeScalar:
 
         res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
+
+    @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])
+    def test_minimize_scalar_warnings_gh1953(self, method):
+        # test that minimize_scalar methods produce warnings rather than just
+        # using `print`; see gh-1953.
+        def f(x):
+            return (x - 1)**2
+
+        kwargs = {}
+        kwd = 'bounds' if method == 'bounded' else 'bracket'
+        kwargs[kwd] = [-2, 10]
+
+        options = {'disp': True, 'maxiter': 3}
+        with pytest.warns(optimize.OptimizeWarning, match='Maximum number'):
+            optimize.minimize_scalar(f, method=method, options=options,
+                                     **kwargs)
+
+        options['disp'] = False
+        optimize.minimize_scalar(f, method=method, options=options, **kwargs)
+
+
+class TestBracket:
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    def test_errors_and_status_false(self):
+        # Check that `bracket` raises the errors it is supposed to
+        def f(x):  # gh-14858
+            return x**2 if ((-1 < x) & (x < 1)) else 100.0
+
+        message = "The algorithm terminated without finding a valid bracket."
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -1, 1)
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -1, np.inf)
+        with pytest.raises(RuntimeError, match=message):
+            optimize.brent(f, brack=(-1, 1))
+        with pytest.raises(RuntimeError, match=message):
+            optimize.golden(f, brack=(-1, 1))
+
+        def f(x):  # gh-5899
+            return -5 * x**5 + 4 * x**4 - 12 * x**3 + 11 * x**2 - 2 * x + 1
+
+        message = "No valid bracket was found before the iteration limit..."
+        with pytest.raises(RuntimeError, match=message):
+            optimize.bracket(f, -0.5, 0.5, maxiter=10)
+
+    @pytest.mark.parametrize('method', ('brent', 'golden'))
+    def test_minimize_scalar_success_false(self, method):
+        # Check that status information from `bracket` gets to minimize_scalar
+        def f(x):  # gh-14858
+            return x**2 if ((-1 < x) & (x < 1)) else 100.0
+
+        message = "The algorithm terminated without finding a valid bracket."
+
+        res = optimize.minimize_scalar(f, bracket=(-1, 1), method=method)
+        assert not res.success
+        assert message in res.message
+        assert res.nfev == 3
+        assert res.nit == 0
+        assert res.fun == 100
 
 
 def test_brent_negative_tolerance():

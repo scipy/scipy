@@ -20,6 +20,7 @@ py3.install_sources([
     'test_morestats.py',
     'test_mstats_basic.py',
     'test_mstats_extras.py',
+    'test_multicomp.py',
     'test_multivariate.py',
     'test_odds_ratio.py',
     'test_qmc.py',
@@ -29,6 +30,7 @@ py3.install_sources([
     'test_sampling.py',
     'test_sensitivity_analysis.py',
     'test_stats.py',
+    'test_survival.py',
     'test_tukeylambda_stats.py',
     'test_variation.py'
   ],

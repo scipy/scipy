@@ -90,6 +90,12 @@ CONFIG = _cleanup(
                 "openblas configuration": "@LAPACK_OPENBLAS_CONFIG@",
                 "pc file directory": r"@LAPACK_PCFILEDIR@",
             },
+            "pybind11": {
+                "name": "@PYBIND11_NAME@",
+                "version": "@PYBIND11_VERSION@",
+                "detection method": "@PYBIND11_TYPE_NAME@",
+                "include directory": r"@PYBIND11_INCLUDEDIR@",
+            },
         },
         "Python Information": {
             "path": r"@PYTHON_PATH@",
