@@ -1446,8 +1446,10 @@ class TestPinv:
     @pytest.mark.parametrize("rcond", [1, None, _NoValue])
     def test_deprecation(self, cond, rcond):
         if cond is _NoValue and rcond is _NoValue:
+            # the defaults if cond/rcond aren't set -> no warning
             pinv(np.ones((2,2)), cond=cond, rcond=rcond)
         else:
+            # at least one of cond/rcond has a user-supplied value -> warn
             with pytest.deprecated_call(match='"cond" and "rcond"'):
                 pinv(np.ones((2,2)), cond=cond, rcond=rcond)
 
