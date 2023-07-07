@@ -22,12 +22,13 @@ meson*  @rgommers
 scipy/fft/*  @peterbell10
 scipy/fftpack/*  @peterbell10
 scipy/linalg/*  @larsoner @ilayn
+scipy/integrate/* @steppi
 scipy/interpolate/*  @ev-br
 scipy/optimize/*  @andyfaff
 scipy/signal/*  @larsoner @ilayn
 scipy/sparse/*  @perimosocordiae
 scipy/spatial/*  @tylerjereddy @peterbell10
-scipy/special/*  @person142
+scipy/special/*  @person142 @steppi
 scipy/stats/_distn_infrastructure  @andyfaff @ev-br
 scipy/stats/*distr*.py  @ev-br
 scipy/stats/_continuous_distns  @andyfaff

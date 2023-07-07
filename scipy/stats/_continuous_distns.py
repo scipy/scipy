@@ -1138,6 +1138,10 @@ class burr_gen(rv_continuous):
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
 
+    def _isf(self, q, c, d):
+        _q = sc.xlog1py(-1.0 / d, -q)
+        return sc.expm1(_q) ** (-1.0 / c)
+
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
         # ek is the kth raw moment, e1 is the mean e2-e1**2 variance etc.
@@ -1320,6 +1324,9 @@ class fisk_gen(burr_gen):
 
     def _ppf(self, x, c):
         return burr._ppf(x, c, 1.0)
+
+    def _isf(self, q, c):
+        return burr._isf(q, c, 1.0)
 
     def _munp(self, n, c):
         return burr._munp(n, c, 1.0)
@@ -2459,6 +2466,10 @@ class weibull_min_gen(rv_continuous):
     ``numpy.random.weibull``).  Special shape values are :math:`c=1` and
     :math:`c=2` where Weibull distribution reduces to the `expon` and
     `rayleigh` distributions respectively.
+
+    Suppose ``X`` is an exponentially distributed random variable with
+    scale ``s``. Then ``Y = X**k`` is `weibull_min` distributed with shape
+    ``c = 1/k`` and scale ``s**k``.
 
     %(after_notes)s
 
@@ -4222,6 +4233,11 @@ class halflogistic_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+
     %(example)s
 
     """
@@ -4263,6 +4279,64 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def find_scale(data, loc):
+            # scale is solution to a fix point problem ([1] 2.6)
+            # use approximate MLE as starting point ([1] 3.1)
+            n_observations = data.shape[0]
+            sorted_data = np.sort(data, axis=0)
+            p = np.arange(1, n_observations + 1)/(n_observations + 1)
+            q = 1 - p
+            pp1 = 1 + p
+            alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+            beta = 0.5 * q * pp1
+            sorted_data = sorted_data - loc
+            B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+            C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+            # starting guess
+            scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                    /(4 * n_observations))
+
+            # relative tolerance of fix point iterator
+            rtol = 1e-8
+            relative_residual = 1
+            shifted_mean = sorted_data.mean()  # y_mean - y_min
+
+            # find fix point by repeated application of eq. (2.6)
+            # simplify as
+            # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+            #                         = expit(-x))
+            while relative_residual > rtol:
+                sum_term = sorted_data * sc.expit(-sorted_data/scale)
+                scale_new = shifted_mean - 2/n_observations * sum_term.sum()
+                relative_residual = abs((scale - scale_new)/scale)
+                scale = scale_new
+            return scale
+
+        # location is independent from the scale
+        data_min = np.min(data)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halflogistic", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            # if not provided, location MLE is the minimal data point
+            loc = data_min
+
+        # scale depends on location
+        scale = fscale if fscale is not None else find_scale(data, loc)
+
+        return loc, scale
 
 
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
@@ -4323,6 +4397,32 @@ class halfnorm_gen(rv_continuous):
 
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        data_min = np.min(data)
+
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfnorm", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            loc = data_min
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = stats.moment(data, moment=2, center=loc)**0.5
+
+        return loc, scale
 
 
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
@@ -5323,7 +5423,7 @@ class johnsonsu_gen(rv_continuous):
         # Numerical improvements left to future enhancements.
         mu, mu2, g1, g2 = None, None, None, None
 
-        bn2 = b**-2
+        bn2 = b**-2.
         expbn2 = np.exp(bn2)
         a_b = a / b
 
@@ -6065,6 +6165,9 @@ class loglaplace_gen(rv_continuous):
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
 
+    def _isf(self, q, c):
+        return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
+
     def _munp(self, n, c):
         return c**2 / (c**2 - n**2)
 
@@ -6137,6 +6240,9 @@ class lognorm_gen(rv_continuous):
 
     def _logsf(self, x, s):
         return _norm_logsf(np.log(x) / s)
+
+    def _isf(self, q, s):
+        return np.exp(s * _norm_isf(q))
 
     def _stats(self, s):
         p = np.exp(s*s)
@@ -7443,6 +7549,9 @@ class pareto_gen(rv_continuous):
     def _sf(self, x, b):
         return x**(-b)
 
+    def _isf(self, q, b):
+        return np.power(q, -1.0 / b)
+
     def _stats(self, b, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
@@ -7608,6 +7717,9 @@ class lomax_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return sc.expm1(-sc.log1p(-q)/c)
+
+    def _isf(self, q, c):
+        return q**(-1.0 / c) - 1
 
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
@@ -8924,6 +9036,11 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+        def d_skew(skew):  # delta in terms of skewness
+            s_23 = np.abs(skew)**(2/3)
+            return np.sign(skew) * np.sqrt(
+                np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
+            )
 
         # If skewness of data is greater than max possible population skewness,
         # MoM won't provide a good guess. Get out early.
@@ -8945,7 +9062,7 @@ class skewnorm_gen(rv_continuous):
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
             s = np.clip(s, -s_max, s_max)
-            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
         else:

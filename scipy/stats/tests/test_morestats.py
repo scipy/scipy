@@ -1963,9 +1963,18 @@ class TestBoxcox:
         def optimizer(fun):
             return 1
 
-        message = "`optimizer` must return an object containing the optimal..."
+        message = "return an object containing the optimal `lmbda`"
         with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    @pytest.mark.parametrize(
+            "bad_x", [np.array([1, -42, 12345.6]), np.array([np.nan, 42, 1])]
+        )
+    def test_negative_x_value_raises_error(self, bad_x):
+        """Test boxcox_normmax raises ValueError if x contains non-positive values."""
+        message = "only positive, finite, real numbers"
+        with pytest.raises(ValueError, match=message):
+            stats.boxcox_normmax(bad_x)
 
 
 class TestBoxcoxNormmax:
@@ -2553,7 +2562,7 @@ class TestMedianTest:
         assert_allclose(s, 0.31250000000000006)
         assert_allclose(p, 0.57615012203057869)
         assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2],[2, 1]]))
+        assert_equal(t, np.array([[0, 2], [2, 1]]))
         assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):
@@ -2760,3 +2769,28 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
         assert_array_equal(stats.false_discovery_control(0.25), 0.25)
         assert_array_equal(stats.false_discovery_control([]), [])
+
+
+def test_morestats_deprecation():
+    # gh-18279 noted that deprecation warnings for imports from private modules
+    # were misleading. Check that this is resolved.
+    import scipy.stats.morestats as module
+
+    # Attributes that were formerly in `morestats` can still be imported from
+    # `morestats`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy.stats` or not.
+    for attr_name in module.__all__:
+        attr = getattr(stats, attr_name, None)
+        if attr is None:
+            message = f"`scipy.stats.morestats.{attr_name}` is deprecated..."
+        else:
+            message = f"Please import `{attr_name}` from the `scipy.stats`..."
+        with pytest.warns(DeprecationWarning, match=message):
+            getattr(module, attr_name)
+
+    # Attributes that were not in `morestats` get an error notifying the user
+    # that the attribute is not in `morestats` and that `morestats` is
+    # deprecated.
+    message = "`scipy.stats.morestats` is deprecated..."
+    with pytest.raises(AttributeError, match=message):
+        getattr(module, "ekki")
