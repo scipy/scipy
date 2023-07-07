@@ -859,6 +859,9 @@ class beta_gen(rv_continuous):
             return t1 + t2 + log_term
 
         def threshold_large(v):
+            if v == 1.0:
+                return 1000
+
             j = np.log10(v)
             digits = int(j)
             d = int(v / 10 ** digits) + 2
@@ -866,9 +869,9 @@ class beta_gen(rv_continuous):
 
         if a >= 4.96e6 and b >= 4.96e6:
             return asymptotic_ab_large(a, b)
-        elif a <= 1e6 and b >= threshold_large(a):
+        elif a <= 4.9e6 and b - a >= 1e6 and b >= threshold_large(a):
             return asymptotic_b_large(a, b)
-        elif b <= 1e6 and a >= threshold_large(b):
+        elif b <= 4.9e6 and a - b >= 1e6 and a >= threshold_large(b):
             return asymptotic_b_large(b, a)
         else:
             return regular(a, b)
