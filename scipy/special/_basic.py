@@ -3169,22 +3169,29 @@ def softplus(x, **kwargs):
     Parameters
     ----------
     x : array_like
-        Input array-like object.
+        Input value.
     **kwargs :
-        out: Specify the output array.
-        where: Boolean array to control ufunc calculation at each position.
-        keepdims: If True, keep reduced axes as dimensions with size one.
-        casting: Policy for permitted casting.
-        order: Iteration order/memory layout of the output array.
-        dtype: Override the output array's dtype.
-        subok: If False, the output will always be a strict array.
-        signature: Dtype(s), tuple of DTypes, or special signature string indicating input/output types of a ufunc.
-        extobj: List of length 3 specifying ufunc buffer-size, error mode integer, and error callback function.
+        out : ndarray, None, or tuple of ndarray and None, optional
+            A location into which the result is stored. If provided, it must have
+            a shape that the inputs broadcast to. If not provided or None,
+            a freshly-allocated array is returned. A tuple (possible only as a
+            keyword argument) must have length equal to the number of outputs.
+        where : array_like, optional
+            This condition is broadcast over the input. At locations where the
+            condition is True, the `out` array will be set to the ufunc result.
+            Elsewhere, the `out` array will retain its original value.
+            Note that if an uninitialized `out` array is created via the default
+            ``out=None``, locations within it where the condition is False will
+            remain uninitialized.
+        **kwargs
+            For other keyword-only arguments, see the
+            :ref:`ufunc docs <ufuncs.kwargs>`.
 
     Returns
     -------
-    softplus : array_like
-        Array containing the softplus of each element in `x`.
+    softplus : ndarray
+        Logarithm of ``exp(0) + exp(x)``.
+        
 
     Examples
     --------
