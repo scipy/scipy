@@ -7214,6 +7214,34 @@ class TestBurr12:
         assert_allclose(delta, expected, rtol=1e-13)
 
 
+    @pytest.mark.parametrize('n', range(6))
+    @pytest.mark.parametrize('c', [1.6, 2.6])
+    @pytest.mark.parametrize('d', [0.1, 1, 2])
+    def test_moments(self, n, c, d):
+        # gh-18838 reported that burr12 moments could be invalid. This was
+        # because moment n exists iff shape parameters c*d > n, but this was
+        # not checked in the implementation. Confirm that this is resolved.
+        res = stats.burr12(c, d).moment(n)
+        if c*d > n:
+            assert np.isfinite(res)
+        else:
+            assert np.isnan(res)
+
+    def test_moments_edge(self):
+        # gh-18838 reported that burr12 moments could be invalid; see above.
+        # Check that this is resolved in an edge case where c*d == n, and
+        # compare the results against those produced by Mathematica, e.g.
+        # `SinghMaddalaDistribution[2, 2, 1]` at Wolfram Alpha.
+        c, d = 2, 2
+        mean = np.pi/4
+        var = 1 - np.pi**2/16
+        skew = np.pi**3/(32*var**1.5)
+        kurtosis = np.nan
+        ref = [mean, var, skew, kurtosis]
+        res = stats.burr12(c, d).stats('mvsk')
+        assert_allclose(res, ref, rtol=1e-14)
+
+
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
     # v = [1, 3, 10, 20, 120, inf], a Q was picked from each table for
