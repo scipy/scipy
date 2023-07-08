@@ -165,7 +165,7 @@ def _copy_array_if_base_present(a):
     """
     if a.base is not None:
         return a.copy()
-    elif np.issubsctype(a, np.float32):
+    elif issubclass(a.dtype.type, np.float32):
         return np.array(a, dtype=np.double)
     else:
         return a
