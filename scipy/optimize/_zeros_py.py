@@ -1395,34 +1395,78 @@ def toms748(f, a, b, args=(), k=1,
     return _results_select(full_output, (x, function_calls, iterations, flag))
 
 
-def _bracket_root(f, a, b=None, *, min=None, max=None, factor=None, batch=100):
+def _bracket_root_iv(func, a, b, min, max, factor, args):
+
+    if not callable(func):
+        raise ValueError('`func` must be callable.')
+
+    if not np.iterable(args):
+        args = (args,)
+
+    a = np.asarray(a)[()]
+    if not np.issubdtype(a.dtype, np.number) or np.iscomplex(a):
+        raise ValueError('`a` must be numeric and real.')
+
+    b = a + 1 if b is None else b
+    min = -np.inf if min is None else min
+    max = np.inf if max is None else max
+    # golden ratio as suggested in gh-18348, but higher values are faster.
+    factor = .5 + .5*5**.5 if factor is None else factor
+    a, b, min, max, factor = np.broadcast_arrays(a, b, min, max, factor)
+
+    if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b):
+        raise ValueError('`b` must be numeric and real.')
+
+    if not np.issubdtype(min.dtype, np.number) or np.iscomplex(min):
+        raise ValueError('`min` must be numeric and real.')
+
+    if not np.issubdtype(max.dtype, np.number) or np.iscomplex(max):
+        raise ValueError('`max` must be numeric and real.')
+
+    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor):
+        raise ValueError('`factor` must be numeric and real.')
+    if not np.all(factor > 1):
+        raise ValueError('All elements of `factor` must be greater than 1.')
+
+    if not np.all((min < a) & (a < b) & (b < max)):
+        raise ValueError('`min < a < b < max` must be True (elementwise).')
+
+    return func, a, b, min, max, factor, args
+
+
+def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=()):
     """Bracket the root of a monotonic scalar function of one variable
 
     Parameters
     ----------
-    f : callable
+    func : callable
         The function for which the root is to be bracketed.
     a, b : float
         Starting guess of bracket, which need not contain a root. If `b` is
-        not provided, ``b = a + 1``.
+        not provided, ``b = a + 1``. Must be broadcastable with one another.
     min, max : float, optional
-        Minimum and maximum allowable endpoints of the bracket, inclusive.
+        Minimum and maximum allowable endpoints of the bracket, inclusive. Must
+        be braodcastable with `a` and `b`.
     factor : float, default: golden ratio
         The factor used to grow the bracket. See notes for details.
-    batch : int, default: 100
-        The maximum number of arguments passed to the callable `f` at once.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`.  Must be arrays
+        broadcastable with `a`, `b`, `min`, and `max`. If the callable to be
+        differentiated requires arguments that are not broadcastable with the
+        other arrays, wrap that callable with `func` such that `func` accepts
+        only `x` and broadcastable arrays.
 
     Returns
     -------
     l, r : float
         The left and right endpoints of the bracket such that
-        ``f(l) < 0 < f(r)``.
+        ``func(l) < 0 < func(r)``.
 
     Notes
     -----
     This function generalizes an algorithm found in pieces throughout
     `scipy.stats`. The strategy is to iteratively grow the bracket `(l, r)`
-     until ``f(l) < 0 < f(r)``.
+     until ``func(l) < 0 < func(r)``.
 
     - If `min` is not provided, the distance between `b` and `l` is iteratively
       increased by `factor`.
@@ -1441,83 +1485,45 @@ def _bracket_root(f, a, b=None, *, min=None, max=None, factor=None, batch=100):
     If roots of the function are found, both `l` and `r` are set to the
     leftmost root.
 
-    `_bracket` takes advantage of vectorized callables by evaluating `f` at
-    `batch` arguments in each call.
-
-    As a private function, there is no input validation. It is assumed that
-    `min <= a <= b <= max`.
-
     """
     # Todo:
     # - find bracket with sign change in specified direction
     # - Add tolerance
     # - Vectorize (i.e. support callables with array output)
 
-    if b is None:
-        b = a + 1
+    temp = _bracket_root_iv(func, a, b, min, max, factor, args)
+    func, a, b, min, max, factor, args = temp
 
-    if factor is None:
-        factor = 1.61803398875  # golden ratio as suggested in gh-18348
+    xs = (a, b)
+    temp = _scalar_optimization_initialize(func, xs, args)
+    xs, fs, args, shape, dtype = temp  # line split for PEP8
+    x1, x2 = xs
+    f1, f2 = fs
 
-    a, b, factor = np.float64(a), np.float64(b), np.float64(factor)
-    d = b - a
-    i = np.arange(batch, dtype=np.float64)  # avoid int to negative int power
-    x, fx = np.array([]), np.array([])
-    left_stop = right_stop = False
 
-    def _explore(t, v, i, limit, stop):
-        # Generate candidate bracket endpoints based on starting values `t`,
-        # `v`, and exponents `i`. Determine whether bracket growth should
-        # `stop` due to non-finite endpoint, non-finite function value, or
-        # endpoint reaching `limit`. Return candidate bracket endpoints and
-        # corresponding function values.
-        if stop:
-            w, fw = np.array([]), np.array([])
+    d = x2-x1
+    min = min.astype(dtype, copy=False).ravel()
+    max = min.astype(dtype, copy=False).ravel()
+    factor = factor.astype(dtype, copy=False).ravel()
+    status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
+    nit, nfev = 0, 2  # two function evaluations performed above
 
-        else:
-            # See `_bracket` notes for explanation. For bracket growth to the
-            # left, `t = a`, `v = b`, and `limit = min`. For bracket growth to
-            # the right, `t = b`, `v = a`, and `limit = max`.
-            sign = 1 if t < v else -1  # positive grows to the left
-            if limit is None:
-                w = v - sign * d * factor**i
-            else:
-                w = limit + (t - limit) * factor**(-i)
+    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, min=min, max=max,
+                          factor=factor, nit=nit, nfev=nfev, status=status,
+                          args=args)
+    res_work_pairs = [('status', 'status'),
+                      ('xl', 'x1'), ('xr', 'x2'),
+                      ('fl', 'f1'), ('fr', 'f2')]
 
-            w = w[np.isfinite(w)]
-            fw = f(w)
+    # sign = 1 if t < v else -1  # positive grows to the left
+    # if limit is None:
+    #     w = v - sign * d * factor ** i
+    # else:
+    #     w = limit + (t - limit) * factor ** (-i)
 
-            jf = np.isfinite(fw)
-            w, fw = w[jf], fw[jf]
+    def pre_func_eval(work):
 
-            if fw.size != i.size or w[-1] == limit:
-                stop = True
-
-        return w, fw, stop
-
-    while not (left_stop and right_stop):
-
-        l, fl, left_stop = _explore(a, b, i, min, left_stop)
-        r, fr, right_stop = _explore(b, a, i, max, right_stop)
-
-        # we really only need to retain the leftmost and rightmost elements of
-        # `x` and the corresponding `fx`, but copying everything is simpler.
-        # Optimization can be done later, if there is a need.
-        x = np.concatenate((l[::-1], x, r))  # keeps points in order
-        fx = np.concatenate((fl[::-1], fx, fr))
-        sfx = np.sign(fx)
-
-        j = np.where(sfx == 0)[0]  # get leftmost root if one is found
-        if j.size:
-            return x[j[0]], x[j[0]]
-
-        j = np.where(np.abs(np.diff(sfx)))[0]  # get leftmost bracket
-        if j.size:
-            return x[j[0]], x[j[0]+1]
-
-        i += batch
-
-    return None, None  # no bracket found
+        return x
 
 
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
