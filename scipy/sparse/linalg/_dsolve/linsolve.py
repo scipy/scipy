@@ -94,24 +94,23 @@ def use_solver(**kwargs):
 
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
-    _families = {
-        (np.float64, np.int32): 'di',
-        (np.complex128, np.int32): 'zi',
-        (np.float64, np.int64): 'dl',
-        (np.complex128, np.int64): 'zl'
-    }
+    if A.dtype == np.float64:
+        f_type = 'd'
+    elif A.dtype == np.complex128:
+        f_type = 'z'
+    else:
+        raise ValueError(f"only float64 or complex128 matrices are supported "
+                         f" (got {A.dtype})")
 
-    f_type = np.sctypeDict[A.dtype.name]
-    i_type = np.sctypeDict[A.indices.dtype.name]
+    if A.indices.dtype == np.int32:
+        i_type = 'i'
+    elif A.indices.dtype == np.int64:
+        i_type = 'l'
+    else:
+        raise ValueError(f"only int32 or int64 indices are supported "
+                         f" (got {A.indices.dtype})")
 
-    try:
-        family = _families[(f_type, i_type)]
-
-    except KeyError as e:
-        msg = 'only float64 or complex128 matrices with int32 or int64' \
-            ' indices are supported! (got: matrix: %s, indices: %s)' \
-            % (f_type, i_type)
-        raise ValueError(msg) from e
+    family = f_type + i_type
 
     # See gh-8278. Considered converting only if
     # A.shape[0]*A.shape[1] > np.iinfo(np.int32).max,
