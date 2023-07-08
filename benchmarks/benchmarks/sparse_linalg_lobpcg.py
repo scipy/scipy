@@ -28,7 +28,6 @@ def _sakurai_rev(n):
     d1 = -4 * np.ones(n)
     d2 = np.ones(n)
     B = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
-
     return B
 
 
@@ -60,7 +59,7 @@ def _precond(LorU, lower, x):
 class Bench(Benchmark):
     params = [
         [],
-        ['lobpcg', 'eigh']
+        ['lobpcg', 'eigsh', 'eigh']
     ]
     param_names = ['n', 'solver']
 
@@ -97,8 +96,11 @@ class Bench(Benchmark):
                                matvec=partial(_precond, LorU, lower),
                                matmat=partial(_precond, LorU, lower))
             eigs, vecs = lobpcg(self.A, X, self.B, M, tol=1e-4, maxiter=40)
+        elif solver == 'eigsh':
+            _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
+                                   v0=X[:, 0])
         else:
-            eigh(self.A, self.B, eigvals_only=True, eigvals=(0, m - 1))
+            _, _ = eigh(self.A, self.B, eigvals=(0, m - 1))
 
     def time_sakurai(self, n, solver):
         m = 3
@@ -106,6 +108,8 @@ class Bench(Benchmark):
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000)
-        else:
+        elif solver == 'eigsh':
             _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
                                    v0=X[:, 0])
+        else:
+            _, _ = eigh(self.A, eigvals=(0, m - 1))
