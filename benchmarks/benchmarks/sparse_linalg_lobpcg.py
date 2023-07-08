@@ -4,39 +4,42 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy import array, r_, ones, arange, sort, diag, cos, rand, pi
-    from scipy.linalg import eigh, orth, cho_factor, cho_solve
+    from scipy.linalg import eigh, cho_factor, cho_solve
     import scipy.sparse
-    from scipy.sparse.linalg import lobpcg
+    from scipy.sparse.linalg import lobpcg, eigsh
     from scipy.sparse.linalg._interface import LinearOperator
 
 
-def _sakurai(n):
-    """ Example taken from
+def _sakurai_rev(n):
+    """ Example turns a generalized eigenproblem for the matrix pair A and B
         T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
         A moment-based method for large-scale generalized eigenvalue problems
-        Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004) """
+        Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004)
+        where A is the identity into an eigenpromem for the matrix B.
+        The matrix B gets ill-conditioned with its size growing, leading to
+        a lack of convergence especially for the original generalized
+        eigenproblem used in earlier versions of this benchmark. The exact
+        eigenvalues of B are given by
+        k = np.arange(1, n+1)
+        w_ex = np.sort(16.*np.power(np.cos(0.5*k*np.pi/(n+1)), 4))
+        but unused in this benchmark. """
 
-    A = scipy.sparse.eye(n, n)
-    d0 = array(r_[5, 6*ones(n-2), 5])
-    d1 = -4*ones(n)
-    d2 = ones(n)
+    d0 = np.r_[5, 6 * np.ones(n-2), 5]
+    d1 = -4 * np.ones(n)
+    d2 = np.ones(n)
     B = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
 
-    k = arange(1, n+1)
-    w_ex = sort(1. / (16.*pow(cos(0.5*k*pi/(n+1)), 4)))  # exact eigenvalues
-
-    return A, B, w_ex
+    return B
 
 
 def _mikota_pair(n):
     # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
-    x = arange(1, n + 1)
-    B = diag(1. / x)
-    y = arange(n - 1, 0, -1)
-    z = arange(2 * n - 1, 0, -2)
-    A = diag(z) - diag(y, -1) - diag(y, 1)
+    x = np.arange(1, n + 1)
+    B = np.diag(1. / x)
+    y = np.arange(n - 1, 0, -1)
+    z = np.arange(2 * n - 1, 0, -2)
+    A = np.diag(z) - np.diag(y, -1) - np.diag(y, 1)
     return A.astype(float), B.astype(float)
 
 
@@ -67,7 +70,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [50, 400]
+        self.time_sakurai.__func__.params[0] = [49, 99]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
     def setup_mikota(self, n, solver):
@@ -78,17 +81,17 @@ class Bench(Benchmark):
             # skip: slow, and not useful to benchmark
             raise NotImplementedError()
 
-    def setup_sakurai(self, n, solver):
+    def setup_sakurai_rev(self, n, solver):
         self.shape = (n, n)
-        self.A, self.B, all_eigenvalues = _sakurai(n)
+        self.A, self.B, all_eigenvalues = _sakurai_rev(n)
         self.A_dense = self.A.A
         self.B_dense = self.B.A
 
     def time_mikota(self, n, solver):
         m = 10
         if solver == 'lobpcg':
-            X = rand(n, m)
-            X = orth(X)
+            rng = np.random.default_rng(0)
+            X =rng.normal(size=(n, m))
             LorU, lower = cho_factor(self.A, lower=0, overwrite_a=0)
             M = LinearOperator(self.shape,
                                matvec=partial(_precond, LorU, lower),
@@ -99,13 +102,10 @@ class Bench(Benchmark):
 
     def time_sakurai(self, n, solver):
         m = 3
+        rng = np.random.default_rng(0)
+        X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            X = rand(n, m)
-            eigs, vecs, resnh = lobpcg(self.A, X, self.B, tol=1e-6, maxiter=500,
-                                       retResidualNormsHistory=1)
+            _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000)
         else:
-            eigh(self.A_dense, self.B_dense, eigvals_only=True, eigvals=(0, m - 1))
-
-    # Retain old benchmark results (remove this if changing the benchmark)
-    time_mikota.version = "a1fb679758f7e5cf79d18cc4930afdff999fccc142fe7a4f63e73b39ab1f58bb"
-    time_sakurai.version = "7c38d449924fb71f777bd408072ecc883b8b05e53a6544e97da3887fbc10b235"
+            _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
+                                   v0=X[:, 0])
