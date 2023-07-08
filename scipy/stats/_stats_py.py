@@ -9738,7 +9738,7 @@ class QuantileTestResult:
     statistic1: float
     statistic2: float
     pvalue: float
-    _alternative: list['two-sided', 'less', 'greater'] = field(repr=False)
+    _alternative: list[str] = field(repr=False)
     _x : np.ndarray = field(repr=False)
     _p : float = field(repr=False)
 

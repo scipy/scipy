@@ -7926,9 +7926,10 @@ class TestQuantileTest():
         res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
         assert_allclose(res.pvalue, ref, rtol=1e-12)
 
+    @pytest.mark.parametrize('case', ['continuous', 'discrete'])
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
     @pytest.mark.parametrize('alpha', [0.9, 0.95])
-    def test_pval_ci_match(self, alternative, alpha):
+    def test_pval_ci_match(self, case, alternative, alpha):
         # Verify that the following statement holds:
         #
         # The 95% confidence interval corresponding with alternative='less' 
@@ -7939,28 +7940,32 @@ class TestQuantileTest():
         # 
         # And the corresponding statement for the alternative='greater' case.
 
-        rng = np.random.default_rng(7716774463289760271)
-        p, q = rng.random(size=2)
-        x = np.sort(rng.random(size=100))
+        seed = int((7**len(case) + len(alternative))*alpha)
+        rng = np.random.default_rng(seed)
+        if case == 'continuous':
+            p, q = rng.random(size=2)
+            rvs = rng.random(size=100)
+        else:
+            rvs = rng.integers(1, 11, size=100)
+            p = rng.random()
+            q = rng.integers(1, 11)
 
-        res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
-        lb, ub = res.confidence_interval(confidence_level=alpha)
+        res = stats.quantile_test(rvs, q=q, p=p, alternative=alternative)
+        ci = res.confidence_interval(confidence_level=alpha)
 
-        # Interpretation for `alternative='less'`: the upper bound is the
-        # largest element from the sample that is still *inside* the CI.
-        q_inside = ub if alternative == 'less' else lb
-        i = np.where(x == q_inside)[0][0]
-        # The next element from the sample that is greater is *outside* the CI.
-        q_outside = x[i+1] if alternative == 'less' else x[i-1]
+        # select elements inside the confidence interval based on alternative
+        if alternative == 'less':
+            i_inside = rvs <= ci.high
+        else:
+            i_inside = rvs >= ci.low
 
-        # The p-value for elements inside the sample will be greater than
-        # 1-confidence_level.
-        res = stats.quantile_test(x, q=q_inside, p=p, alternative=alternative)
-        assert res.pvalue > 1-alpha
-        # The p-value for elements outside the sample will be less than
-        # 1-confidence_level.
-        res = stats.quantile_test(x, q=q_outside, p=p, alternative=alternative)
-        assert res.pvalue <= 1-alpha
+        for x in rvs[i_inside]:
+            res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
+            assert res.pvalue > 1 - alpha
+
+        for x in rvs[~i_inside]:
+            res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
+            assert res.pvalue < 1 - alpha
 
     def test_match_conover_examples(self):
         # Test against the examples in [1] (Conover Practical Nonparametric
