@@ -975,7 +975,7 @@ class ShortTimeFFT:
 
         See Also
         --------
-        istft: Inverse short-time Fourier transform.
+        :meth:`~ShortTimeFFT.istft`: Inverse short-time Fourier transform.
         m_num: Number of samples in window `win` and `dual_win`.
         dual_win: Canonical dual window.
         win: Window for STFT.
