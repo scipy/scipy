@@ -197,6 +197,7 @@ py3.install_sources([
     '_rbf.py',
     '_rbfinterp.py',
     '_rgi.py',
+    '_ndbspline.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',

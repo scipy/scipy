@@ -4,6 +4,11 @@ import warnings
 __all__ = ["_deprecated"]
 
 
+# Object to use as default value for arguments to be deprecated. This should
+# be used over 'None' as the user could parse 'None' as a positional argument
+_NoValue = object()
+
+
 def _deprecated(msg, stacklevel=2):
     """Deprecate a function by emitting a warning on use."""
     def wrap(fun):

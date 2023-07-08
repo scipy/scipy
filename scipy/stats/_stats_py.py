@@ -61,6 +61,7 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
+from scipy._lib.deprecation import _NoValue
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -5583,7 +5584,7 @@ def pointbiserialr(x, y):
     return res
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
+def kendalltau(x, y, initial_lexsort=_NoValue, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -5606,7 +5607,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
 
         .. deprecated:: 1.10.0
            `kendalltau` keyword argument `initial_lexsort` is deprecated as it
-           is unused and will be removed in SciPy 1.12.0.
+           is unused and will be removed in SciPy 1.14.0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5821,7 +5822,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     accurate results.
 
     """
-    if initial_lexsort is not None:
+    if initial_lexsort is not _NoValue:
         msg = ("'kendalltau' keyword argument 'initial_lexsort' is deprecated"
                " as it is unused and will be removed in SciPy 1.12.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)

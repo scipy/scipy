@@ -203,12 +203,29 @@ your system.
         invoking a Fortran compiler in the shell you use (e.g., ``gfortran
         --version`` or ``ifort --version``).
 
+    .. warning::
+
+        When using a conda environment it is possible that the environment
+        creation will not work due to an outdated Fortran compiler. If that
+        happens, remove the ``compilers`` entry from ``environment.yml`` and
+        try again. The Fortran compiler should be installed as described in
+        this section.
+
 
 Building SciPy from source
 --------------------------
 
 If you want to only install SciPy from source once and not do any development
-work, then the recommended way to build and install is to use ``pip``:
+work, then the recommended way to build and install is to use ``pip``.
+Otherwise, conda is recommended.
+
+.. note::
+
+    If you don't have a conda installation yet, we recommend using
+    Mambaforge_; any conda flavor will work though.
+
+Building from source to use SciPy
+`````````````````````````````````
 
 .. tab-set::
 
@@ -273,6 +290,14 @@ virtual environments:
 
 .. tab-set::
 
+  .. tab-item:: Conda env
+
+    To create a ``scipy-dev`` development environment with every required and
+    optional dependency installed, run::
+
+        mamba env create -f environment.yml
+        mamba activate scipy-dev
+
   .. tab-item:: Virtual env or system Python
 
     .. note::
@@ -305,25 +330,6 @@ virtual environments:
 
        # Dev dependencies (static typing and linting)
        python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
-
-  .. tab-item:: Conda env
-
-    If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
-
-    To create a ``scipy-dev`` development environment with every required and
-    optional dependency installed, run::
-
-        mamba env create -f environment.yml
-        mamba activate scipy-dev
-
-    .. note::
-
-       On Windows it is possible that the environment creation will not work due
-       to an outdated Fortran compiler. If that happens, remove the ``compilers``
-       entry from ``environment.yml`` and try again. The Fortran compiler should
-       be installed as described under the *Windows* tab of the *System-level
-       dependencies* section higher up.
 
 To build SciPy in an activated development environment, run::
 

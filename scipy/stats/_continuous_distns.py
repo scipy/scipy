@@ -832,8 +832,24 @@ class beta_gen(rv_continuous):
         return a, b, floc, fscale
 
     def _entropy(self, a, b):
-        return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
-                (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+        def regular(a, b):
+            return (sc.betaln(a, b) - (a - 1) * sc.psi(a) -
+                    (b - 1) * sc.psi(b) + (a + b - 2) * sc.psi(a + b))
+
+        def asymptotic_ab_large(a, b):
+            sum_ab = a + b
+            log_term = 0.5 * (
+                np.log(2*np.pi) + np.log(a) + np.log(b) - 3*np.log(sum_ab) + 1
+            )
+            t1 = 110/sum_ab + 20*sum_ab**-2.0 + sum_ab**-3.0 - 2*sum_ab**-4.0
+            t2 = -50/a - 10*a**-2.0 - a**-3.0 + a**-4.0
+            t3 = -50/b - 10*b**-2.0 - b**-3.0 + b**-4.0
+            return log_term + (t1 + t2 + t3) / 120
+
+        if a >= 4.96e6 and b >= 4.96e6:
+            return asymptotic_ab_large(a, b)
+        else:
+            return regular(a, b)
 
 
 beta = beta_gen(a=0.0, b=1.0, name='beta')
@@ -941,30 +957,10 @@ class betaprime_gen(rv_continuous):
         return out
 
     def _munp(self, n, a, b):
-        if n == 1.0:
-            return _lazywhere(
-                b > 1, (a, b),
-                lambda a, b: a/(b-1.0),
-                fillvalue=np.inf)
-        elif n == 2.0:
-            return _lazywhere(
-                b > 2, (a, b),
-                lambda a, b: a*(a+1.0)/((b-2.0)*(b-1.0)),
-                fillvalue=np.inf)
-        elif n == 3.0:
-            return _lazywhere(
-                b > 3, (a, b),
-                lambda a, b: (a*(a+1.0)*(a+2.0)
-                              / ((b-3.0)*(b-2.0)*(b-1.0))),
-                fillvalue=np.inf)
-        elif n == 4.0:
-            return _lazywhere(
-                b > 4, (a, b),
-                lambda a, b: (a*(a + 1.0)*(a + 2.0)*(a + 3.0) /
-                              ((b - 4.0)*(b - 3.0)*(b - 2.0)*(b - 1.0))),
-                fillvalue=np.inf)
-        else:
-            raise NotImplementedError
+        return _lazywhere(
+            b > n, (a, b),
+            lambda a, b: np.prod([(a+i-1)/(b-i) for i in range(1, n+1)], axis=0),
+            fillvalue=np.inf)
 
 
 betaprime = betaprime_gen(a=0.0, name='betaprime')
@@ -1119,6 +1115,10 @@ class burr_gen(rv_continuous):
 
     def _ppf(self, q, c, d):
         return (q**(-1.0/d) - 1)**(-1.0/c)
+
+    def _isf(self, q, c, d):
+        _q = sc.xlog1py(-1.0 / d, -q)
+        return sc.expm1(_q) ** (-1.0 / c)
 
     def _stats(self, c, d):
         nc = np.arange(1, 5).reshape(4,1) / c
@@ -1302,6 +1302,9 @@ class fisk_gen(burr_gen):
 
     def _ppf(self, x, c):
         return burr._ppf(x, c, 1.0)
+
+    def _isf(self, q, c):
+        return burr._isf(q, c, 1.0)
 
     def _munp(self, n, c):
         return burr._munp(n, c, 1.0)
@@ -2442,6 +2445,10 @@ class weibull_min_gen(rv_continuous):
     :math:`c=2` where Weibull distribution reduces to the `expon` and
     `rayleigh` distributions respectively.
 
+    Suppose ``X`` is an exponentially distributed random variable with
+    scale ``s``. Then ``Y = X**k`` is `weibull_min` distributed with shape
+    ``c = 1/k`` and scale ``s**k``.
+
     %(after_notes)s
 
     References
@@ -2770,11 +2777,21 @@ class genlogistic_gen(rv_continuous):
         f(x, c) = c \frac{\exp(-x)}
                          {(1 + \exp(-x))^{c+1}}
 
-    for real :math:`x` and :math:`c > 0`.
+    for real :math:`x` and :math:`c > 0`. In literature, different
+    generalizations of the logistic distribution can be found. This is the type 1
+    generalized logistic distribution according to [1]_. It is also referred to
+    as the skew-logistic distribution [2]_.
 
     `genlogistic` takes ``c`` as a shape parameter for :math:`c`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] Johnson et al. "Continuous Univariate Distributions", Volume 2,
+           Wiley. 1995.
+    .. [2] "Generalized Logistic Distribution", Wikipedia,
+           https://en.wikipedia.org/wiki/Generalized_logistic_distribution
 
     %(example)s
 
@@ -4194,6 +4211,11 @@ class halflogistic_gen(rv_continuous):
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+
     %(example)s
 
     """
@@ -4235,6 +4257,64 @@ class halflogistic_gen(rv_continuous):
 
     def _entropy(self):
         return 2-np.log(2)
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        def find_scale(data, loc):
+            # scale is solution to a fix point problem ([1] 2.6)
+            # use approximate MLE as starting point ([1] 3.1)
+            n_observations = data.shape[0]
+            sorted_data = np.sort(data, axis=0)
+            p = np.arange(1, n_observations + 1)/(n_observations + 1)
+            q = 1 - p
+            pp1 = 1 + p
+            alpha = p - 0.5 * q * pp1 * np.log(pp1 / q)
+            beta = 0.5 * q * pp1
+            sorted_data = sorted_data - loc
+            B = 2 * np.sum(alpha[1:] * sorted_data[1:])
+            C = 2 * np.sum(beta[1:] * sorted_data[1:]**2)
+            # starting guess
+            scale = ((B + np.sqrt(B**2 + 8 * n_observations * C))
+                    /(4 * n_observations))
+
+            # relative tolerance of fix point iterator
+            rtol = 1e-8
+            relative_residual = 1
+            shifted_mean = sorted_data.mean()  # y_mean - y_min
+
+            # find fix point by repeated application of eq. (2.6)
+            # simplify as
+            # exp(-x) / (1 + exp(-x)) = 1 / (1 + exp(x))
+            #                         = expit(-x))
+            while relative_residual > rtol:
+                sum_term = sorted_data * sc.expit(-sorted_data/scale)
+                scale_new = shifted_mean - 2/n_observations * sum_term.sum()
+                relative_residual = abs((scale - scale_new)/scale)
+                scale = scale_new
+            return scale
+
+        # location is independent from the scale
+        data_min = np.min(data)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halflogistic", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            # if not provided, location MLE is the minimal data point
+            loc = data_min
+
+        # scale depends on location
+        scale = fscale if fscale is not None else find_scale(data, loc)
+
+        return loc, scale
 
 
 halflogistic = halflogistic_gen(a=0.0, name='halflogistic')
@@ -4295,6 +4375,32 @@ class halfnorm_gen(rv_continuous):
 
     def _entropy(self):
         return 0.5*np.log(np.pi/2.0)+0.5
+
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        data_min = np.min(data)
+
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfnorm", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            loc = data_min
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = stats.moment(data, moment=2, center=loc)**0.5
+
+        return loc, scale
 
 
 halfnorm = halfnorm_gen(a=0.0, name='halfnorm')
@@ -4482,7 +4588,7 @@ class invgamma_gen(rv_continuous):
             # gammaln(a) ~ a * ln(a) - a - 0.5 * ln(a) + 0.5 * ln(2 * pi)
             # psi(a) ~ ln(a) - 1 / (2 * a)
             h = ((1 - 3*np.log(a) + np.log(2) + np.log(np.pi))/2
-                 + 2/3*a**-1 + a**-2/12 - a**-3/90 - a**-4/120)
+                 + 2/3*a**-1. + a**-2./12 - a**-3./90 - a**-4./120)
             return h
 
         h = _lazywhere(a >= 2e2, (a,), f=asymptotic, f2=regular)
@@ -5295,7 +5401,7 @@ class johnsonsu_gen(rv_continuous):
         # Numerical improvements left to future enhancements.
         mu, mu2, g1, g2 = None, None, None, None
 
-        bn2 = b**-2
+        bn2 = b**-2.
         expbn2 = np.exp(bn2)
         a_b = a / b
 
@@ -5971,6 +6077,20 @@ class loggamma_gen(rv_continuous):
         excess_kurtosis = sc.polygamma(3, c) / (var*var)
         return mean, var, skewness, excess_kurtosis
 
+    def _entropy(self, c):
+        def regular(c):
+            h = sc.gammaln(c) - c * sc.digamma(c) + c
+            return h
+
+        def asymptotic(c):
+            # using asymptotic expansions for gammaln and psi (see gh-18093)
+            term = -0.5*np.log(c) + c**-1./6 - c**-3./90 + c**-5./210
+            h = norm._entropy() + term
+            return h
+
+        h = _lazywhere(c >= 45, (c, ), f=asymptotic, f2=regular)
+        return h
+
 
 loggamma = loggamma_gen(name='loggamma')
 
@@ -6022,6 +6142,9 @@ class loglaplace_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return np.where(q < 0.5, (2.0*q)**(1.0/c), (2*(1.0-q))**(-1.0/c))
+
+    def _isf(self, q, c):
+        return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
         return c**2 / (c**2 - n**2)
@@ -6095,6 +6218,9 @@ class lognorm_gen(rv_continuous):
 
     def _logsf(self, x, s):
         return _norm_logsf(np.log(x) / s)
+
+    def _isf(self, q, s):
+        return np.exp(s * _norm_isf(q))
 
     def _stats(self, s):
         p = np.exp(s*s)
@@ -7401,6 +7527,9 @@ class pareto_gen(rv_continuous):
     def _sf(self, x, b):
         return x**(-b)
 
+    def _isf(self, q, b):
+        return np.power(q, -1.0 / b)
+
     def _stats(self, b, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
@@ -7566,6 +7695,9 @@ class lomax_gen(rv_continuous):
 
     def _ppf(self, q, c):
         return sc.expm1(-sc.log1p(-q)/c)
+
+    def _isf(self, q, c):
+        return q**(-1.0 / c) - 1
 
     def _stats(self, c):
         mu, mu2, g1, g2 = pareto.stats(c, loc=-1.0, moments='mvsk')
@@ -8882,6 +9014,11 @@ class skewnorm_gen(rv_continuous):
         def skew_d(d):  # skewness in terms of delta
             return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
                                   / (1 - 2*d**2 / np.pi)**(3/2))
+        def d_skew(skew):  # delta in terms of skewness
+            s_23 = np.abs(skew)**(2/3)
+            return np.sign(skew) * np.sqrt(
+                np.pi/2 * s_23 / (s_23 + ((4 - np.pi)/2)**(2/3))
+            )
 
         # If skewness of data is greater than max possible population skewness,
         # MoM won't provide a good guess. Get out early.
@@ -8903,7 +9040,7 @@ class skewnorm_gen(rv_continuous):
             # Solve for a that matches sample distribution skewness to sample
             # skewness.
             s = np.clip(s, -s_max, s_max)
-            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            d = d_skew(s)
             with np.errstate(divide='ignore'):
                 a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
         else:
@@ -9247,16 +9384,61 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     This distribution is the normal distribution centered on ``loc`` (default
-    0), with standard deviation ``scale`` (default 1), and clipped at ``a``,
-    ``b`` standard deviations to the left, right (respectively) from ``loc``.
-    If ``myclip_a`` and ``myclip_b`` are clip values in the sample space (as
-    opposed to the number of standard deviations) then they can be converted
-    to the required form according to::
+    0), with standard deviation ``scale`` (default 1), and truncated at ``a``
+    and ``b`` *standard deviations* from ``loc``. For arbitrary ``loc`` and
+    ``scale``, ``a`` and ``b`` are *not* the abscissae at which the shifted
+    and scaled distribution is truncated.
 
-        a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
+    .. note::
+        If ``a_trunc`` and ``b_trunc`` are the abscissae at which we wish
+        to truncate the distribution (as opposed to the number of standard
+        deviations from ``loc``), then we can calculate the distribution
+        parameters ``a`` and ``b`` as follows::
+
+            a, b = (a_trunc - loc) / scale, (b_trunc - loc) / scale
+
+        This is a common point of confusion. For additional clarification,
+        please see the example below.
 
     %(example)s
 
+    In the examples above, ``loc=0`` and ``scale=1``, so the plot is truncated
+    at ``a`` on the left and ``b`` on the right. However, suppose we were to
+    produce the same histogram with ``loc = 1`` and ``scale=0.5``.
+
+    >>> loc, scale = 1, 0.5
+    >>> rv = truncnorm(a, b, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=1000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a, b)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Note that the distribution is no longer appears to be truncated at
+    abscissae ``a`` and ``b``. That is because the *standard* normal
+    distribution is first truncated at ``a`` and ``b``, *then* the resulting
+    distribution is scaled by ``scale`` and shifted by ``loc``. If we instead
+    want the shifted and scaled distribution to be truncated at ``a`` and
+    ``b``, we need to transform these values before passing them as the
+    distribution parameters.
+
+    >>> a_transformed, b_transformed = (a - loc) / scale, (b - loc) / scale
+    >>> rv = truncnorm(a_transformed, b_transformed, loc=loc, scale=scale)
+    >>> x = np.linspace(truncnorm.ppf(0.01, a, b),
+    ...                 truncnorm.ppf(0.99, a, b), 100)
+    >>> r = rv.rvs(size=10000)
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> ax.set_xlim(a-0.1, b+0.1)
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
     """
 
     def _argcheck(self, a, b):
@@ -9376,7 +9558,7 @@ class truncnorm_gen(rv_continuous):
             Returns n-th moment. Defined only if n >= 0.
             Function cannot broadcast due to the loop over n
             """
-            pA, pB = self._pdf([a, b], a, b)
+            pA, pB = self._pdf(np.asarray([a, b]), a, b)
             probs = [pA, -pB]
             moments = [0, 1]
             for k in range(1, n+1):

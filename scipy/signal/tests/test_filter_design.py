@@ -1041,7 +1041,7 @@ class TestSOSFreqz:
         # N = None, whole=True
         w1, h1 = sosfreqz(sos, whole=True, fs=fs)
         w2, h2 = sosfreqz(sos, whole=True)
-        assert_allclose(h1, h2)
+        assert_allclose(h1, h2, atol=1e-27)
         assert_allclose(w1, np.linspace(0, fs, 512, endpoint=False))
 
         # N = 5, whole=False
@@ -1547,6 +1547,13 @@ class TestButtord:
         with pytest.warns(RuntimeWarning, match=r'Order is zero'):
             buttord(0.0, 1.0, 3, 60)
 
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 14
+
 
 class TestCheb1ord:
 
@@ -1657,6 +1664,16 @@ class TestCheb1ord:
         with pytest.raises(ValueError) as exc_info:
             cheb1ord(0.2, 0.3, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb1(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w2).all()
 
 
 class TestCheb2ord:
@@ -1771,6 +1788,16 @@ class TestCheb2ord:
         with pytest.raises(ValueError) as exc_info:
             cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb2(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w1).all()
 
 
 class TestEllipord:
@@ -1899,6 +1926,13 @@ class TestEllipord:
         with pytest.raises(ValueError) as exc_info:
             ellipord(0.2, 0.5, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 5
 
 
 class TestBessel:

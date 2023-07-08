@@ -5,8 +5,7 @@ from scipy.stats import _boost
 
 
 type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
-                         'd': (np.float64, 32*np.finfo(np.float64).eps),
-                         'g': (np.longdouble, 32*np.finfo(np.longdouble).eps)}
+                         'd': (np.float64, 32*np.finfo(np.float64).eps)}
 
 
 # Each item in this list is

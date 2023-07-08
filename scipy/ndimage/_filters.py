@@ -396,19 +396,39 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(mode_multiple)s
     %(cval)s
 
+    Notes
+    -----
+    This function computes the one-dimensional Prewitt filter.
+    Horizontal edges are emphasised with the horizontal transform (axis=0),
+    vertical edges with the vertical transform (axis=1), and so on for higher
+    dimensions. These can be combined to give the magnitude.
+
+    See Also
+    --------
+    sobel: Sobel filter
+
     Examples
     --------
     >>> from scipy import ndimage, datasets
     >>> import matplotlib.pyplot as plt
-    >>> fig = plt.figure()
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> ax1 = fig.add_subplot(121)  # left side
-    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> import numpy as np
     >>> ascent = datasets.ascent()
-    >>> result = ndimage.prewitt(ascent)
-    >>> ax1.imshow(ascent)
-    >>> ax2.imshow(result)
+    >>> prewitt_h = ndimage.prewitt(ascent, axis=0)
+    >>> prewitt_v = ndimage.prewitt(ascent, axis=1)
+    >>> magnitude = np.sqrt(prewitt_h ** 2 + prewitt_v ** 2)
+    >>> magnitude *= 255 / np.max(magnitude) # Normalization
+    >>> fig, axes = plt.subplots(2, 2, figsize = (8, 8))
+    >>> plt.gray()
+    >>> axes[0, 0].imshow(ascent)
+    >>> axes[0, 1].imshow(prewitt_h)
+    >>> axes[1, 0].imshow(prewitt_v)
+    >>> axes[1, 1].imshow(magnitude)
+    >>> titles = ["original", "horizontal", "vertical", "magnitude"]
+    >>> for i, ax in enumerate(axes.ravel()):
+    ...     ax.set_title(titles[i])
+    ...     ax.axis("off")
     >>> plt.show()
+
     """
     input = numpy.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
@@ -436,7 +456,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     Notes
     -----
     This function computes the axis-specific Sobel gradient.
-    The horizontal edges can emphasised with the horizontal trasform (axis=0),
+    The horizontal edges can be emphasised with the horizontal trasform (axis=0),
     the vertical edges with the vertical transform (axis=1) and so on for higher
     dimensions. These can be combined to give the magnitude.
 

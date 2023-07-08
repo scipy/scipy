@@ -7,6 +7,9 @@ Also, please name and describe your PR as you would write a
 commit message:
 http://scipy.github.io/devdocs/dev/contributor/development_workflow.html#writing-the-commit-message
 
+Depending on your changes, you can skip CI operations and save time and energy: 
+http://scipy.github.io/devdocs/dev/contributor/continuous_integration.html#skipping
+
 Note that we are a team of volunteers; we appreciate your
 patience during the review process.
 

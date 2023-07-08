@@ -899,10 +899,16 @@ class ODR:
         elif len(self.data.we.shape) == 3:
             ld2we, ldwe = self.data.we.shape[1:]
         else:
-            # Okay, this isn't precisely right, but for this calculation,
-            # it's fine
+            we = self.data.we
             ldwe = 1
-            ld2we = self.data.we.shape[1]
+            ld2we = 1
+            if we.ndim == 1 and q == 1:
+                ldwe = n
+            elif we.ndim == 2:
+                if we.shape == (q, q):
+                    ld2we = q
+                elif we.shape == (q, n):
+                    ldwe = n
 
         if self.job % 10 < 2:
             # ODR not OLS
