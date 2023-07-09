@@ -65,7 +65,7 @@ from scipy._lib.deprecation import _NoValue
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa
-from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,
+from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa
                                        Ttest_relResult)  # noqa
 
 

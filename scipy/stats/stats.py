@@ -2,8 +2,6 @@
 # Use the `scipy.stats` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _stats_py
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
