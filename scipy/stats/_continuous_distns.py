@@ -8041,7 +8041,7 @@ class powerlaw_gen(rv_continuous):
             if fscale <= 0:
                 raise ValueError("Negative or zero `fscale` is outside the "
                                  "range allowed by the distribution.")
-            if fscale <= data.ptp():
+            if fscale <= np.ptp(data):
                 msg = "`fscale` must be greater than the range of data."
                 raise ValueError(msg)
 
@@ -9992,7 +9992,7 @@ class FitUniformFixedScaleDataError(FitDataError):
         self.args = (
             "Invalid values in `data`.  Maximum likelihood estimation with "
             "the uniform distribution and fixed scale requires that "
-            f"data.ptp() <= fscale, but data.ptp() = {ptp} and "
+            f"np.ptp(data) <= fscale, but np.ptp(data) = {ptp} and "
             f"fscale = {fscale}."
         )
 
@@ -10139,25 +10139,25 @@ class uniform_gen(rv_continuous):
         # while keeping loc <= x <= loc + scale.   So if neither loc nor scale
         # are fixed, the log-likelihood is maximized by choosing
         #     loc = x.min()
-        #     scale = x.ptp()
+        #     scale = np.ptp(x)
         # If loc is fixed, it must be less than or equal to x.min(), and then
         # the scale is
         #     scale = x.max() - loc
-        # If scale is fixed, it must not be less than x.ptp().  If scale is
-        # greater than x.ptp(), the solution is not unique.  Note that the
+        # If scale is fixed, it must not be less than np.ptp(x).  If scale is
+        # greater than np.ptp(x), the solution is not unique.  Note that the
         # likelihood does not depend on loc, except for the requirement that
         # loc <= x <= loc + scale.  All choices of loc for which
         #     x.max() - scale <= loc <= x.min()
         # have the same log-likelihood.  In this case, we choose loc such that
         # the support is centered over the interval [data.min(), data.max()]:
-        #     loc = x.min() = 0.5*(scale - x.ptp())
+        #     loc = x.min() = 0.5*(scale - np.ptp(x))
 
         if fscale is None:
             # scale is not fixed.
             if floc is None:
                 # loc is not fixed, scale is not fixed.
                 loc = data.min()
-                scale = data.ptp()
+                scale = np.ptp(data)
             else:
                 # loc is fixed, scale is not fixed.
                 loc = floc
@@ -10166,7 +10166,7 @@ class uniform_gen(rv_continuous):
                     raise FitDataError("uniform", lower=loc, upper=loc + scale)
         else:
             # loc is not fixed, scale is fixed.
-            ptp = data.ptp()
+            ptp = np.ptp(data)
             if ptp > fscale:
                 raise FitUniformFixedScaleDataError(ptp=ptp, fscale=fscale)
             # If ptp < fscale, the ML estimate is not unique; see the comments
