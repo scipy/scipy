@@ -440,12 +440,12 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     if turbo is not _NoValue:
         warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
                       "driver=gvd' keyword instead and will be removed in "
-                      "SciPy 1.12.0.",
+                      "SciPy 1.14.0.",
                       DeprecationWarning, stacklevel=2)
     if eigvals is not _NoValue:
         warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
                       "'subset_by_index' keyword instead and will be removed "
-                      "in SciPy 1.12.0.",
+                      "in SciPy 1.14.0.",
                       DeprecationWarning, stacklevel=2)
 
     # set lower
