@@ -923,11 +923,13 @@ class TestCyclicSd:
         fs, nperseg = 1, 15
         f = fftfreq(nperseg, 1/fs)
 
-        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, sym=True)
+        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, sym=True)
         assert_allclose(f, f1)
-        cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, sym=False)
+        cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
+                  noverlap=10, nfft=nperseg, detrend=False, scaling='spectrum',
+                  average='median')
 
-        assert_raises(ValueError, cyclic_sd, x, x, fs, fs)
+        assert_raises(ValueError, cyclic_sd, x, x, fs=fs, alpha=fs)
 
 class TestSpectrogram:
     def test_average_all_segments(self):

@@ -1703,7 +1703,7 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
-    noverlap: int, optional
+    noverlap : int, optional
         Number of points to overlap between segments. If `None`,
         ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
@@ -1819,23 +1819,21 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
         raise ValueError('Cyclic frequency must be inferior to Nyquist '
                          'frequency, got %s' % (alpha,))
 
-    # to avoid leakage, noverlap >= nperseg//4*3, cf Boustany2005
-    if (noverlap is None) and (nperseg is None):
-        nperseg = 256
-        noverlap = nperseg // 4 * 3
-    elif noverlap is None:
-        noverlap = nperseg // 4 * 3
-    else:
-        raise ValueError('If nperseg is defined, noverlap must be defined too')
+    # to avoid leakage, noverlap >= 3/4*nperseg, see Boustany2005
+    if (nperseg is None) and (noverlap is None):
+        nperseg = min(256, x.shape[axis])
+        noverlap = int(3 * nperseg / 4)
+    elif (nperseg is not None) and (noverlap is None):
+        raise ValueError('In case nperseg is defined, set noverlap')
 
-    if (noverlap < nperseg // 4 * 3):
+    if (noverlap < 3 * nperseg // 4):
         warnings.warn('To avoid leakage, overlap should be larger than 75%')
 
     if sym:
-        y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[-1]))
-        x = x * np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
+        y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[axis]))
+        x = x * np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
     else:
-        x = x * np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[-1]))
+        x = x * np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
 
     freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
