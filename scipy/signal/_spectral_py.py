@@ -1817,7 +1817,7 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
 
     if alpha > fs / 2:
         raise ValueError('Cyclic frequency must be inferior to Nyquist '
-                         'frequency, got %s' % (alpha,))
+                         f'frequency, got {alpha}')
 
     # to avoid leakage, noverlap >= 3/4*nperseg, see Boustany2005
     if (nperseg is None) and (noverlap is None):
@@ -1827,7 +1827,8 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
         raise ValueError('In case nperseg is defined, set noverlap')
 
     if (noverlap < 3 * nperseg // 4):
-        warnings.warn('To avoid leakage, overlap should be larger than 75%')
+        warnings.warn('To avoid leakage, overlap should be larger than 75%',
+                      stacklevel=2)
 
     if sym:
         y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[axis]))
