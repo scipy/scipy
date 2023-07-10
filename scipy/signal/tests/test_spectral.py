@@ -932,6 +932,9 @@ class TestCyclicSd:
         with pytest.raises(ValueError, match='Cyclic frequency must be'):
             cyclic_sd(x, x, fs=fs, alpha=fs)
 
+        with pytest.raises(ValueError, match='In case nperseg is defined,'):
+            cyclic_sd(x, x, fs=fs, alpha=0.4, nperseg=10)
+
 class TestSpectrogram:
     def test_average_all_segments(self):
         x = np.random.randn(1024)
