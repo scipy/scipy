@@ -1503,11 +1503,11 @@ def _yeojohnson_transform(x, lmbda):
     if abs(lmbda) < np.spacing(1.):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
-        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+        out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
 
     # when x < 0
     if abs(lmbda - 2) > np.spacing(1.):
-        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+        out[~pos] = -np.expm1((2 - lmbda) * np.log1p(-x[~pos])) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log1p(-x[~pos])
 
@@ -1613,11 +1613,11 @@ def yeojohnson_llf(lmb, data):
     loglike[~tiny_variance] = (
         -n_samples / 2 * np.log(trans_var[~tiny_variance]))
     loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0))
+        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
     return loglike
 
 
-def yeojohnson_normmax(x, brack=(-2, 2)):
+def yeojohnson_normmax(x, brack=None):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1630,7 +1630,8 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     brack : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`. Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket.
+        final result is allowed to be outside this bracket. If None,
+        `optimize.fminbound` is used with bounds that avoid overflow.
 
     Returns
     -------
@@ -1673,7 +1674,16 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
         return -llf
 
     with np.errstate(invalid='ignore'):
-        return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        if brack is not None:
+            return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        x = np.asarray(x)
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        b = np.log(np.finfo(dtype).eps)
+        max_x = 20 * np.nanmax(np.abs(x))
+        lb = (np.log(np.finfo(dtype).tiny) - b) / 2 / np.log(max_x + 1)
+        ub = (np.log(np.finfo(dtype).max) + b) / 2 / np.log(max_x + 1)
+        tol_brent = 1.48e-08
+        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
