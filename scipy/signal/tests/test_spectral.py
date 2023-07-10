@@ -924,7 +924,7 @@ class TestCyclicSd:
         fs, nperseg = 1, 15
         f = fftfreq(nperseg, 1/fs)
 
-        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, sym=True)
+        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, noverlap=10)
         assert_allclose(f, f1)
         cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
                   noverlap=10, nfft=nperseg, detrend=False, scaling='spectrum',
@@ -934,7 +934,7 @@ class TestCyclicSd:
             cyclic_sd(x, x, fs=fs, alpha=fs)
 
         with pytest.raises(ValueError, match='In case nperseg is defined,'):
-            cyclic_sd(x, x, fs=fs, alpha=0.4, nperseg=10)
+            cyclic_sd(x, x, fs=fs, alpha=0.3, nperseg=10)
 
 class TestSpectrogram:
     def test_average_all_segments(self):
