@@ -5,9 +5,8 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.linalg import eigh, cho_factor, cho_solve
-    import scipy.sparse
-    from scipy.sparse.linalg import lobpcg, eigsh
-    from scipy.sparse.linalg._interface import LinearOperator
+    from scipy.sparse import diags
+    from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
 
 def _sakurai_rev(n):
@@ -24,22 +23,23 @@ def _sakurai_rev(n):
         w_ex = np.sort(16.*np.power(np.cos(0.5*k*np.pi/(n+1)), 4))
         but unused in this benchmark. """
 
-    d0 = np.r_[5, 6 * np.ones(n-2), 5]
-    d1 = -4 * np.ones(n)
-    d2 = np.ones(n)
-    B = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
+    d0 = np.r_[5, 6 * np.ones(n - 2), 5]
+    d1 = -4 * np.ones(n - 1)
+    d2 = np.ones(n - 2)
+    B = diags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2],
+                           shape=(n, n))
     return B
 
 
 def _mikota_pair(n):
     # Mikota pair acts as a nice test since the eigenvalues
     # are the squares of the integers n, n=1,2,...
-    x = np.arange(1, n + 1)
-    B = np.diag(1. / x)
-    y = np.arange(n - 1, 0, -1)
+    x = 1. / np.arange(1, n + 1)
+    B = diags([x], [0], shape=(n, n))
+    y = - np.arange(n - 1, 0, -1)
     z = np.arange(2 * n - 1, 0, -2)
-    A = np.diag(z) - np.diag(y, -1) - np.diag(y, 1)
-    return A.astype(float), B.astype(float)
+    A = diags([y, z, y], [-1, 0, 1], shape=(n, n))
+    return A.A.astype(float), B.A.astype(float)
 
 
 def _as2d(ar):
@@ -82,34 +82,34 @@ class Bench(Benchmark):
 
     def setup_sakurai_rev(self, n, solver):
         self.shape = (n, n)
-        self.A, self.B, all_eigenvalues = _sakurai_rev(n)
+        self.A = _sakurai_rev(n)
         self.A_dense = self.A.A
-        self.B_dense = self.B.A
 
     def time_mikota(self, n, solver):
         m = 10
+        rng = np.random.default_rng(0)
+        X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            rng = np.random.default_rng(0)
-            X =rng.normal(size=(n, m))
             LorU, lower = cho_factor(self.A, lower=0, overwrite_a=0)
             M = LinearOperator(self.shape,
                                matvec=partial(_precond, LorU, lower),
                                matmat=partial(_precond, LorU, lower))
-            eigs, vecs = lobpcg(self.A, X, self.B, M, tol=1e-4, maxiter=40)
+            _, _ = lobpcg(self.A, X, self.B, M, tol=1e-4,
+                                maxiter=40, largest=False)
         elif solver == 'eigsh':
             _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
                                    v0=X[:, 0])
         else:
-            _, _ = eigh(self.A, self.B, eigvals=(0, m - 1))
+            _, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
 
     def time_sakurai(self, n, solver):
         m = 3
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000)
+            _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
         elif solver == 'eigsh':
             _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
                                    v0=X[:, 0])
         else:
-            _, _ = eigh(self.A, eigvals=(0, m - 1))
+            _, _ = eigh(self.A_dense, subset_by_index=(0, m - 1))
