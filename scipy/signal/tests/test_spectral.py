@@ -918,7 +918,8 @@ class TestCoherence:
 
 class TestCyclicSd:
     def test_identical_input(self):
-        x = np.random.randn(50)
+        rs = np.random.RandomState(526057773)
+        x = rs.standard_normal(50)
 
         fs, nperseg = 1, 15
         f = fftfreq(nperseg, 1/fs)
