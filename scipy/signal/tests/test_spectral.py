@@ -929,7 +929,8 @@ class TestCyclicSd:
                   noverlap=10, nfft=nperseg, detrend=False, scaling='spectrum',
                   average='median')
 
-        assert_raises(ValueError, cyclic_sd, x, x, fs=fs, alpha=fs)
+        with pytest.raises(ValueError, match='Cyclic frequency must be'):
+            cyclic_sd(x, x, fs=fs, alpha=fs)
 
 class TestSpectrogram:
     def test_average_all_segments(self):
