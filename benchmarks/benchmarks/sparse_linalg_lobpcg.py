@@ -10,9 +10,10 @@ with safe_import():
 
 
 def _sakurai_rev(n):
-    """ Example turns a generalized eigenproblem for the matrix pair A and B
-        T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
-        A moment-based method for large-scale generalized eigenvalue problems
+    """
+    Example turns a generalized eigenproblem for the matrix pair A and B
+    T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
+    A moment-based method for large-scale generalized eigenvalue problems
         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004)
         where A is the identity into an eigenpromem for the matrix B.
         The matrix B gets ill-conditioned with its size growing, leading to
