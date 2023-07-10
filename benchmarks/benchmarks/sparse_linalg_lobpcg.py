@@ -14,15 +14,15 @@ def _sakurai_rev(n):
     Example turns a generalized eigenproblem for the matrix pair A and B
     T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
     A moment-based method for large-scale generalized eigenvalue problems
-        Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004)
-        where A is the identity into an eigenpromem for the matrix B.
-        The matrix B gets ill-conditioned with its size growing, leading to
-        a lack of convergence especially for the original generalized
-        eigenproblem used in earlier versions of this benchmark. The exact
-        eigenvalues of B are given by
-        k = np.arange(1, n+1)
-        w_ex = np.sort(16.*np.power(np.cos(0.5*k*np.pi/(n+1)), 4))
-        but unused in this benchmark. """
+    Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004)
+    where A is the identity into an eigenpromem for the matrix B.
+    The matrix B gets ill-conditioned with its size growing, leading to
+    a lack of convergence especially for the original generalized
+    eigenproblem used in earlier versions of this benchmark. The exact
+    eigenvalues of B are given by
+    k = np.arange(1, n+1)
+    w_ex = np.sort(16.*np.power(np.cos(0.5*k*np.pi/(n+1)), 4))
+    but unused in this benchmark. """
 
     d0 = np.r_[5, 6 * np.ones(n - 2), 5]
     d1 = -4 * np.ones(n - 1)
@@ -33,8 +33,9 @@ def _sakurai_rev(n):
 
 
 def _mikota_pair(n):
-    # Mikota pair acts as a nice test since the eigenvalues
-    # are the squares of the integers n, n=1,2,...
+    """
+    Mikota pair acts as a nice test since the eigenvalues
+    are the squares of the integers n, n=1,2,... """
     x = 1. / np.arange(1, n + 1)
     B = diags([x], [0], shape=(n, n))
     y = - np.arange(n - 1, 0, -1)
