@@ -2229,6 +2229,39 @@ class TestYeojohnson:
         xt_box, lam_box = stats.boxcox(x + 1)
         assert_allclose(xt_yeo, xt_box, rtol=1e-6)
         assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+    
+    def test_overflow_expr(self):
+        # non-regression test for gh-18389
+        x = np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                      2009.0, 1980.0, 1999.0, 2007.0, 1991.0])
+        
+        def optimizer(fun):
+            out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
+            result = optimize.OptimizeResult()
+            result.x = out
+            return result
+
+        with np.errstate(over="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+            xt_box, lam_box = stats.boxcox(x + 1, optimizer=optimizer)
+            assert_allclose(lam_yeo, lam_box, rtol=1e-5)
+            assert_allclose(xt_yeo, xt_box, rtol=1e-5)
+    
+    def test_overflow_lam(self):
+        # non-regression test for gh-18389
+        x = np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
+
+        def optimizer(fun):
+            out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
+            result = optimize.OptimizeResult()
+            result.x = out
+            return result
+
+        with np.errstate(over="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+            xt_box, lam_box = stats.boxcox(x + 1, optimizer=optimizer)
+            assert_allclose(lam_yeo, lam_box, rtol=1e-5)
+            assert_allclose(xt_yeo, xt_box, rtol=1e-5)
 
 
 class TestYeojohnsonNormmax:
