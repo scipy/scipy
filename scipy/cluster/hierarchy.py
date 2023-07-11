@@ -181,28 +181,6 @@ def _copy_arrays_if_base_present(T):
     return [_copy_array_if_base_present(a) for a in T]
 
 
-def _randdm(pnts):
-    """
-    Generate a random distance matrix stored in condensed form.
-
-    Parameters
-    ----------
-    pnts : int
-        The number of points in the distance matrix. Has to be at least 2.
-
-    Returns
-    -------
-    D : ndarray
-        A ``pnts * (pnts - 1) / 2`` sized vector is returned.
-    """
-    if pnts >= 2:
-        D = np.random.rand(pnts * (pnts - 1) / 2)
-    else:
-        raise ValueError("The number of points in the distance matrix "
-                         "must be at least 2.")
-    return D
-
-
 def single(y):
     """
     Perform single/min/nearest linkage on the condensed distance matrix ``y``.
@@ -1042,7 +1020,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     if method not in _LINKAGE_METHODS:
         raise ValueError(f"Invalid method: {method}")
 
-    y = _convert_to_double(np.asarray(y, order='c'))
+    y = np.asarray(y, order='C', dtype=np.float64)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1535,10 +1513,10 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     array([3, 0, 2, 5, 7, 4, 8, 6, 9, 1], dtype=int32)
 
     """
-    Z = np.asarray(Z, order='c')
+    Z = np.asarray(Z, order='C')
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = _convert_to_double(np.asarray(y, order='c'))
+    y = np.asarray(y, order='C', dtype=np.float64)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
@@ -1558,22 +1536,6 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
                          "finite values.")
 
     return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
-
-
-def _convert_to_bool(X):
-    if X.dtype != bool:
-        X = X.astype(bool)
-    if not X.flags.contiguous:
-        X = X.copy()
-    return X
-
-
-def _convert_to_double(X):
-    if X.dtype != np.double:
-        X = X.astype(np.double)
-    if not X.flags.contiguous:
-        X = X.copy()
-    return X
 
 
 def cophenet(Z, Y=None):
@@ -1683,21 +1645,17 @@ def cophenet(Z, Y=None):
     corners - thus, the distance between these clusters will be larger.
 
     """
-    Z = np.asarray(Z, order='c')
+    # Ensure float64 C-contiguous array. Cython code doesn't deal with striding.
+    Z = np.asarray(Z, order='C', dtype=np.float64)
     is_valid_linkage(Z, throw=True, name='Z')
-    Zs = Z.shape
-    n = Zs[0] + 1
-
+    n = Z.shape[0] + 1
     zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
-    # Since the C code does not support striding using strides.
-    # The dimensions are used instead.
-    Z = _convert_to_double(Z)
 
     _hierarchy.cophenetic_distances(Z, zz, int(n))
     if Y is None:
         return zz
 
-    Y = np.asarray(Y, order='c')
+    Y = np.asarray(Y, order='C')
     distance.is_valid_y(Y, throw=True, name='Y')
 
     z = zz.mean()
@@ -1855,7 +1813,7 @@ def from_mlab_linkage(Z):
     (MATLAB format uses 1-indexing, whereas SciPy uses 0-indexing).
 
     """
-    Z = np.asarray(Z, dtype=np.double, order='c')
+    Z = np.asarray(Z, order='C', dtype=np.float64)
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -1954,7 +1912,7 @@ def to_mlab_linkage(Z):
     the original linkage matrix has been dropped.
 
     """
-    Z = np.asarray(Z, order='c', dtype=np.double)
+    Z = np.asarray(Z, order='C', dtype=np.float64)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
         return Z.copy()
@@ -2694,7 +2652,7 @@ def fclusterdata(X, t, criterion='inconsistent',
     default settings) is four clusters with three data points each.
 
     """
-    X = np.asarray(X, order='c', dtype=np.double)
+    X = np.asarray(X, order='C', dtype=np.float64)
 
     if type(X) != np.ndarray or len(X.shape) != 2:
         raise TypeError('The observation matrix X must be an n by m numpy '
@@ -3859,7 +3817,7 @@ def maxdists(Z):
     this case.
 
     """
-    Z = np.asarray(Z, order='c', dtype=np.double)
+    Z = np.asarray(Z, order='C', dtype=np.float64)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
