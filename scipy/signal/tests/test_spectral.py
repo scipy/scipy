@@ -920,21 +920,37 @@ class TestCyclicSd:
     def test_identical_input(self):
         rs = np.random.RandomState(526057773)
         x = rs.standard_normal(50)
+        fs, nperseg, noverlap = 1, 16, 12
 
-        fs, nperseg = 1, 16
-        f = fftfreq(nperseg, 1/fs)
+        f, Pxx = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg,
+                           noverlap=noverlap)
+        assert_allclose(f, fftfreq(nperseg, 1/fs))
+        assert_array_equal(Pxx.shape, (nperseg,))
 
-        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, noverlap=12)
-        assert_allclose(f, f1)
         cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
-                  noverlap=12, nfft=nperseg, detrend=False, scaling='spectrum',
-                  average='median')
+                  noverlap=noverlap, nfft=nperseg, windows='hamming',
+                  detrend=False, scaling='spectrum', average='median')
 
         with pytest.raises(ValueError, match='Cyclic frequency must be'):
             cyclic_sd(x, x, fs=fs, alpha=fs)
 
         with pytest.raises(ValueError, match='In case nperseg is defined,'):
             cyclic_sd(x, x, fs=fs, alpha=0.3, nperseg=10)
+
+    def test_multidim_inputs(self):
+        rs = np.random.RandomState(526057773)
+        n_dim0, n_dim1, n_dim2 = 2, 50, 60
+        x = rs.standard_normal((n_dim0, n_dim1, n_dim2))
+        y = rs.standard_normal((n_dim0, n_dim1, n_dim2))
+        nperseg, noverlap = 16, 12
+
+        _, Pxy = cyclic_sd(x, y, fs=1, alpha=0.5, axis=1,
+                           nperseg=nperseg, noverlap=noverlap)
+        assert_array_equal(Pxy.shape, (n_dim0, nperseg, n_dim2))
+
+        _, Pxy = cyclic_sd(x, y, fs=1, alpha=0.4, axis=2, sym=False,
+                           nperseg=nperseg, noverlap=noverlap)
+        assert_array_equal(Pxy.shape, (n_dim0, n_dim1, nperseg))
 
 class TestSpectrogram:
     def test_average_all_segments(self):

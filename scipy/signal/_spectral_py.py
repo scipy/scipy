@@ -1821,7 +1821,7 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
 
     # to avoid leakage, noverlap >= 3/4*nperseg, see Boustany2005
     if (nperseg is None) and (noverlap is None):
-        nperseg = min(256, x.shape[axis])
+        nperseg = np.min([256, x.shape[axis], y.shape[axis]])
         noverlap = int(3 * nperseg / 4)
     elif (nperseg is not None) and (noverlap is None):
         raise ValueError("In case nperseg is defined, set noverlap")
@@ -1830,11 +1830,14 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
         warnings.warn("To avoid leakage, overlap should be larger than 75%",
                       stacklevel=2)
 
+    dims = np.delete(np.arange(x.ndim), axis)
     if sym:
-        y = y * np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[axis]))
-        x = x * np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
+        yf = np.exp(-1j * np.pi * (alpha / fs) * np.arange(y.shape[axis]))
+        y = y * np.expand_dims(yf, axis=tuple(dims))
+        xf = np.exp(1j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
     else:
-        x = x * np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
+        xf = np.exp(2j * np.pi * (alpha / fs) * np.arange(x.shape[axis]))
+    x = x * np.expand_dims(xf, axis=tuple(dims))
 
     freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
