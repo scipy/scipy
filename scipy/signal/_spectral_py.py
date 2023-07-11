@@ -1771,6 +1771,7 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import cyclic_sd
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
