@@ -4214,7 +4214,7 @@ class halflogistic_gen(rv_continuous):
     References
     ----------
     .. [1] Asgharzadeh et al (2011). "Comparisons of Methods of Estimation for the
-           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108. 
+           Half-Logistic Distribution". Selcuk J. Appl. Math. 93-108.
 
     %(example)s
 
@@ -4438,6 +4438,12 @@ class hypsecant_gen(rv_continuous):
 
     def _ppf(self, q):
         return np.log(np.tan(np.pi*q/2.0))
+
+    def _sf(self, x):
+        return 2.0/np.pi*np.arctan(np.exp(-x))
+
+    def _isf(self, q):
+        return -np.log(np.tan(np.pi*q/2.0))
 
     def _stats(self):
         return 0, np.pi*np.pi/4, 0, 2
