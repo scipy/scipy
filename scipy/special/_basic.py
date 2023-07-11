@@ -3184,8 +3184,8 @@ def softplus(x, **kwargs):
             ``out=None``, locations within it where the condition is False will
             remain uninitialized.
         **kwargs 
-            For other keyword-only arguments, see the
-            `Ufunc documentation <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
+            For other keyword-only arguments, see 
+            :ref:`numpy:reference/ufuncs`.
 
     Returns
     -------
