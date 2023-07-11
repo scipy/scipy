@@ -1741,19 +1741,8 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
 
     Notes
     -----
-    Use analytic signal to avoid correlation between positive and negative
-    frequencies.
-
     By convention, Pxy is computed with the conjugate FFT of X
     multiplied by the FFT of Y.
-
-    If the input series differ in length, the shorter series will be
-    zero-padded to match.
-
-    An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. It is recommended to use nfft = 2*nperseg and
-    noverlap = 2/3*nperseg with a Hann window, or noverlap = 1/2*nperseg with a
-    half-sine window.
 
     .. versionadded:: 1.12
 
