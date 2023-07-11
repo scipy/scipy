@@ -30,8 +30,13 @@ before importing SciPy:
    export SCIPY_ARRAY_API=1
 
 This both enables array API standard support and the more strict input
-validation for array-like arguments. This clustering example shows usage with
-PyTorch tensors as inputs and return values:
+validation for array-like arguments. *Note that this environment variable is
+meant to be temporary, as a way to make incremental changes and merge them into
+``main`` without affecting backwards compatibility immediately. We do not
+intend to keep this environment variable around long-term.*
+
+This clustering example shows usage with PyTorch tensors as inputs and return
+values:
 
 .. code:: python
 
