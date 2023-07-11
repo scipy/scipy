@@ -8,7 +8,7 @@ Support for Array API
 This guide describes how to **use** and **add support for** the
 `Python Array API standard <https://data-apis.org/array-api/latest/index.html>`_.
 This standard allows users to use any Array API compatible array library
-without having to do anything.
+with SciPy out of the box.
 
 The `RFC`_ defines how SciPy implements support for the standard, with the main
 principle being *"array type in equals array type out"*. In addition, the
@@ -113,7 +113,9 @@ for other libraries like JAX is expected to be added in the future).
 
 When the environment variable isn't set and hence Array API support in SciPy is
 disabled, we still use the "augmented" version of the NumPy namespace, which is
-``array_api_compat.numpy`` (this should not change behavior of SciPy functions).
+``array_api_compat.numpy``. That should not change behavior of SciPy functions,
+it's effectively the existing ``numpy`` namespace with a number of aliases
+added and a handful of functions amended/added for array API standard support.
 When support is enabled, depending on the type of arrays, ``xp`` will return the
 standard-compatible namespace matching the input array type to a function (e.g.,
 if the input to ``cluster.vq.kmeans`` is a PyTorch array, then ``xp`` is
@@ -139,7 +141,8 @@ Two helper functions are available:
   of non standard features. In the end we would want to upstream our needs to
   the compatibility library.
 
-To add support to a Python-level SciPy function, what you have to change is:
+To add support to a SciPy function which is defined in a ``.py`` file, what you
+have to change is:
 
 1. Input array validation,
 2. Using ``xp`` rather ``np`` functions,
@@ -153,6 +156,11 @@ Input array validation uses the following pattern::
    # matrix, etc.) as well as the conversion to a numpy array if it's a
    # sequence, or preserve the non-numpy array type:
    arr = as_xparray(arr)
+
+Note that if one input is a non-numpy array type, all array-like inputs have to
+be of that type; trying to mix non-numpy arrays with lists, Python scalars or
+other arbitrary Python objects will raise an exception. For NumPy arrays, those
+types will continue to be accepted for backwards compatibility reasons.
 
 If a function calls into a compiled code just once, use the following pattern::
 
@@ -214,8 +222,8 @@ The following pytest markers are available:
 * ``skip_if_array_api_backend(backend)``: don't run a test for a specific
   backend
 
-Following is an example using the main decorator responsible of the namespace
-parametrization::
+The following is an example using the main decorator responsible of the
+namespace parametrization::
 
   @array_api_compatible
   def test_toto(self, xp):
@@ -228,13 +236,13 @@ Then ``dev.py`` can be used with he new option ``-b`` or
 
   python dev.py test -b numpy -b pytorch -s cluster
 
-This automatically set ``SCIPY_ARRAY_API`` appropriately. And if wanted, to
-test a different device, a second environment variable only used in the test
-suite, ``SCIPY_DEVICE``, can be manually set. Valid values depend on the array
-library under test, e.g. for PyTorch (currently the only library with
-multi-device support that is known to work) valid values are  ``"cpu", "cuda",
-"mps"``. So to run the test suite with the PyTorch MPS backend, use:
-``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
+This automatically sets ``SCIPY_ARRAY_API`` appropriately. To test a library
+that has multiple devices with a non-default device, a second environment
+variable (``SCIPY_DEVICE``, only used in the test suite) can be set. Valid
+values depend on the array library under test, e.g. for PyTorch (currently the
+only library with multi-device support that is known to work) valid values are
+``"cpu", "cuda", "mps"``. So to run the test suite with the PyTorch MPS
+backend, use: ``SCIPY_DEVICE=mps python dev.py test -b pytorch``.
 
 Note that there is a GitHub Actions workflow which runs ``pytorch-cpu``.
 
@@ -247,7 +255,7 @@ helped during the development phase:
 
 * Initial `PR <https://github.com/tupui/scipy/pull/24>`__ with some discussions
 * Quick started from this `PR <https://github.com/scipy/scipy/pull/15395>`__ and
-  take some inspiration from
+  some inspiration taken from
   `scikit-learn <https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/utils/_array_api.py>`__.
 * `PR <https://github.com/scikit-learn/scikit-learn/issues/22352>`__ adding Array
   API surpport to scikit-learn
