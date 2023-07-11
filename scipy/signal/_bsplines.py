@@ -1,3 +1,5 @@
+import warnings
+
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
 from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
@@ -154,7 +156,6 @@ The exact equivalent (for a float array `x`) is
 """
 
 
-@np.deprecate(message=msg_bspline)
 def bspline(x, n):
     """B-spline basis function of order n.
 
@@ -199,6 +200,8 @@ def bspline(x, n):
     True
 
     """
+    warnings.warn(msg_bspline, DeprecationWarning, stacklevel=2)
+
     ax = -abs(asarray(x, dtype=float))
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
@@ -269,7 +272,6 @@ The exact equivalent (for a float array `x`) is
 """
 
 
-@np.deprecate(message=msg_cubic)
 def cubic(x):
     """A cubic B-spline.
 
@@ -310,6 +312,8 @@ def cubic(x):
     True
 
     """
+    warnings.warn(msg_cubic, DeprecationWarning, stacklevel=2)
+
     ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 1)
@@ -383,6 +387,8 @@ def quadratic(x):
     True
 
     """
+    warnings.warn(msg_quadratic, DeprecationWarning, stacklevel=2)
+
     ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 0.5)
