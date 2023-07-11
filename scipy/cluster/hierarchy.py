@@ -160,23 +160,6 @@ def _warning(s):
     warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
 
 
-def _copy_array_if_base_present(a):
-    """
-    Copy the array if its base points to a parent array.
-    """
-    return a
-
-
-def _copy_arrays_if_base_present(T):
-    """
-    Accept a tuple of arrays T. Copies the array T[i] if its base array
-    points to an actual array. Otherwise, the reference is just copied.
-    This is useful if the arrays are being passed to a C function that
-    does not do proper striding.
-    """
-    return [_copy_array_if_base_present(a) for a in T]
-
-
 def int_floor(arr, xp):
     # numpy.array_api is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
@@ -1019,24 +1002,25 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     >>> dn = dendrogram(Z)
     >>> plt.show()
     """
+    xp = array_namespace(y)
+    y = as_xparray(y, order='C', dtype=xp.float64, xp=xp)
+
     if method not in _LINKAGE_METHODS:
         raise ValueError(f"Invalid method: {method}")
 
-    xp = array_namespace(y)
-    y = _convert_to_double(as_xparray(y, order='c', xp=xp), xp=xp)
+    if method in _EUCLIDEAN_METHODS and metric != 'euclidean' and y.ndim == 2:
+        msg = f"`method={method}` requires the distance metric to be Euclidean"
+        raise ValueError(msg)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        [y] = _copy_arrays_if_base_present([y])
     elif y.ndim == 2:
-        if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
-            raise ValueError("Method '{}' requires the distance metric "
-                             "to be Euclidean".format(method))
-        if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
-            if xp.all(y >= 0) and np.allclose(y, y.T):
-                _warning('The symmetric non-negative hollow observation '
-                         'matrix looks suspiciously like an uncondensed '
-                         'distance matrix')
+        if (y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0) and
+                xp.all(y >= 0) and np.allclose(y, y.T)):
+            warnings.warn('The symmetric non-negative hollow observation '
+                          'matrix looks suspiciously like an uncondensed '
+                          'distance matrix',
+                          ClusterWarning, stacklevel=2)
         y = distance.pdist(y, metric)
         y = xp.asarray(y)
     else:
@@ -1528,20 +1512,20 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
 
     """
     xp = array_namespace(Z, y)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='C', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    y = _convert_to_double(as_xparray(y, order='c', xp=xp), xp=xp)
+    y = as_xparray(y, order='C', dtype=xp.float64, xp=xp)
 
     if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        [y] = _copy_arrays_if_base_present([y])
     elif y.ndim == 2:
-        if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
-            if np.all(y >= 0) and np.allclose(y, y.T):
-                _warning('The symmetric non-negative hollow observation '
-                         'matrix looks suspiciously like an uncondensed '
-                         'distance matrix')
+        if (y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0) and
+                np.all(y >= 0) and np.allclose(y, y.T)):
+            warnings.warn('The symmetric non-negative hollow observation '
+                          'matrix looks suspiciously like an uncondensed '
+                          'distance matrix',
+                          ClusterWarning, stacklevel=2)
         y = distance.pdist(y, metric)
         y = xp.asarray(y)
     else:
@@ -1554,20 +1538,6 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Z = np.asarray(Z)
     y = np.asarray(y)
     return xp.asarray(_optimal_leaf_ordering.optimal_leaf_ordering(Z, y))
-
-
-def _convert_to_bool(X, xp):
-    if X.dtype != xp.bool:
-        X = xp.astype(X, bool)
-    X = as_xparray(X, copy=True, xp=xp)
-    return X
-
-
-def _convert_to_double(X, xp):
-    if X.dtype != xp.float64:
-        X = xp.astype(X, xp.float64)
-    X = as_xparray(X, copy=True, xp=xp)
-    return X
 
 
 def cophenet(Z, Y=None):
@@ -1678,15 +1648,11 @@ def cophenet(Z, Y=None):
 
     """
     xp = array_namespace(Z, Y)
-    Z = as_xparray(Z, order='c', xp=xp)
+    # Ensure float64 C-contiguous array. Cython code doesn't deal with striding.
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
-    Zs = Z.shape
-    n = Zs[0] + 1
-
+    n = Z.shape[0] + 1
     zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
-    # Since the C code does not support striding using strides.
-    # The dimensions are used instead.
-    Z = _convert_to_double(Z, xp=xp)
 
     Z = np.asarray(Z)
     _hierarchy.cophenetic_distances(Z, zz, int(n))
@@ -1694,7 +1660,7 @@ def cophenet(Z, Y=None):
     if Y is None:
         return zz
 
-    Y = as_xparray(Y, order='c', xp=xp)
+    Y = as_xparray(Y, order='C', xp=xp)
     distance.is_valid_y(Y, throw=True, name='Y')
 
     z = xp.mean(zz)
@@ -1764,19 +1730,14 @@ def inconsistent(Z, d=2):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
-
-    Zs = Z.shape
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
+
     if (not d == np.floor(d)) or d < 0:
         raise ValueError('The second argument d must be a nonnegative '
                          'integer value.')
 
-    # Since the C code does not support striding using strides.
-    # The dimensions are used instead.
-    [Z] = _copy_arrays_if_base_present([Z])
-
-    n = Zs[0] + 1
+    n = Z.shape[0] + 1
     R = np.zeros((n - 1, 4), dtype=np.double)
 
     Z = np.asarray(Z)
@@ -1856,7 +1817,7 @@ def from_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, dtype=xp.float64, order='c', xp=xp)
+    Z = as_xparray(Z, dtype=xp.float64, order='C', xp=xp)
     Zs = Z.shape
 
     # If it's empty, return it.
@@ -1958,7 +1919,7 @@ def to_mlab_linkage(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', dtype=xp.float64)
+    Z = as_xparray(Z, order='C', dtype=xp.float64)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
         return as_xparray(Z, copy=True, xp=xp)
@@ -2491,7 +2452,7 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         The maximum depth to perform the inconsistency calculation.
         It has no meaning for the other criteria. Default is 2.
     R : ndarray, optional
-        The inconsistency matrix to use for the 'inconsistent'
+        The inconsistency matrix to use for the ``'inconsistent'``
         criterion. This matrix is computed if not provided.
     monocrit : ndarray, optional
         An array of length n-1. `monocrit[i]` is the
@@ -2578,15 +2539,14 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
     T = np.zeros((n,), dtype='i')
 
-    # Since the C code does not support striding using strides.
-    # The dimensions are used instead.
-    [Z] = _copy_arrays_if_base_present([Z])
+    if monocrit is not None:
+        monocrit = np.asarray(monocrit, order='C', dtype=np.float64)
 
     Z = np.asarray(Z)
     monocrit = np.asarray(monocrit)
@@ -2594,11 +2554,10 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
         if R is None:
             R = inconsistent(Z, depth)
         else:
-            R = as_xparray(R, order='c', xp=xp)
+            R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
             is_valid_im(R, throw=True, name='R')
             # Since the C code does not support striding using strides.
             # The dimensions are used instead.
-            [R] = _copy_arrays_if_base_present([R])
             R = np.asarray(R)
         _hierarchy.cluster_in(Z, R, T, float(t), int(n))
     elif criterion == 'distance':
@@ -2606,11 +2565,9 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     elif criterion == 'maxclust':
         _hierarchy.cluster_maxclust_dist(Z, T, int(n), t)
     elif criterion == 'monocrit':
-        [monocrit] = _copy_arrays_if_base_present([monocrit])
         _hierarchy.cluster_monocrit(Z, monocrit, T, float(t), int(n))
     elif criterion == 'maxclust_monocrit':
-        [monocrit] = _copy_arrays_if_base_present([monocrit])
-        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), t)
+        _hierarchy.cluster_maxclust_monocrit(Z, monocrit, T, int(n), int(t))
     else:
         raise ValueError('Invalid cluster formation criterion: %s'
                          % str(criterion))
@@ -2701,7 +2658,7 @@ def fclusterdata(X, t, criterion='inconsistent',
 
     """
     xp = array_namespace(X)
-    X = as_xparray(X, order='c', dtype=xp.float64)
+    X = as_xparray(X, order='C', dtype=xp.float64)
 
     if X.ndim != 2:
         raise TypeError('The observation matrix X must be an n by m '
@@ -2767,13 +2724,12 @@ def leaves_list(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', xp=xp)
+    Z = as_xparray(Z, order='C', xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
     ML = np.zeros((n,), dtype='i')
-    [Z] = _copy_arrays_if_base_present([Z])
     Z = np.asarray(Z)
-    _hierarchy.prelist(Z, ML, int(n))
+    _hierarchy.prelist(Z, ML, n)
     return xp.asarray(ML)
 
 
@@ -3875,12 +3831,11 @@ def maxdists(Z):
 
     """
     xp = array_namespace(Z)
-    Z = as_xparray(Z, order='c', dtype=xp.float64, xp=xp)
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
     n = Z.shape[0] + 1
     MD = np.zeros((n - 1,))
-    [Z] = _copy_arrays_if_base_present([Z])
     Z = np.asarray(Z)
     _hierarchy.get_max_dist_for_each_cluster(Z, MD, int(n))
     MD = xp.asarray(MD)
@@ -3963,8 +3918,8 @@ def maxinconsts(Z, R):
 
     """
     xp = array_namespace(Z, R)
-    Z = as_xparray(Z, order='c', xp=xp)
-    R = as_xparray(R, order='c', xp=xp)
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
@@ -3973,7 +3928,6 @@ def maxinconsts(Z, R):
         raise ValueError("The inconsistency matrix and linkage matrix each "
                          "have a different number of rows.")
     MI = np.zeros((n - 1,))
-    [Z, R] = _copy_arrays_if_base_present([Z, R])
     Z = np.asarray(Z)
     R = np.asarray(R)
     _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MI, int(n), 3)
@@ -4059,12 +4013,14 @@ def maxRstat(Z, R, i):
 
     """
     xp = array_namespace(Z, R)
-    Z = as_xparray(Z, order='c', xp=xp)
-    R = as_xparray(R, order='c', xp=xp)
+    Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
+    R = as_xparray(R, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
+
     if type(i) is not int:
         raise TypeError('The third argument must be an integer.')
+
     if i < 0 or i > 3:
         raise ValueError('i must be an integer between 0 and 3 inclusive.')
 
@@ -4074,7 +4030,6 @@ def maxRstat(Z, R, i):
 
     n = Z.shape[0] + 1
     MR = np.zeros((n - 1,))
-    [Z, R] = _copy_arrays_if_base_present([Z, R])
     Z = np.asarray(Z)
     R = np.asarray(R)
     _hierarchy.get_max_Rfield_for_each_cluster(Z, R, MR, int(n), i)
@@ -4185,12 +4140,14 @@ def leaders(Z, T):
 
     """
     xp = array_namespace(Z, T)
-    Z = as_xparray(Z, order='c', xp=xp)
-    T = as_xparray(T, order='c', xp=xp)
-    if T.dtype != xp.int32:
-        raise TypeError('T must be a one-dimensional array of integers.')
+    Z = as_xparray(Z, order='C', dtype=xp.float64)
+    T = as_xparray(T, order='C')
     is_valid_linkage(Z, throw=True, name='Z')
-    if T.shape[0] != Z.shape[0] + 1:
+
+    if type(T) != np.ndarray or T.dtype != 'i':
+        raise TypeError('T must be a one-dimensional numpy array of integers.')
+
+    if len(T) != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
     Cl = np.unique(T)
@@ -4198,7 +4155,6 @@ def leaders(Z, T):
     L = np.zeros((kk,), dtype=np.int32)
     M = np.zeros((kk,), dtype=np.int32)
     n = Z.shape[0] + 1
-    [Z, T] = _copy_arrays_if_base_present([Z, T])
     Z = np.asarray(Z)
     T = np.asarray(T, dtype=np.int32)
     s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
