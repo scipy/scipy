@@ -186,7 +186,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.stats.mstats_basic',
     'scipy.stats.mstats_extras',
     'scipy.stats.mvn',
-    'scipy.stats.statlib',
     'scipy.stats.stats',
 ]
 

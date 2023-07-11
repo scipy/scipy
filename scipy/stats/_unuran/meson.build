@@ -119,7 +119,6 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/specfunct/cephes_polevl.c',
   '../../_lib/unuran/unuran/src/specfunct/cgamma.c',
   '../../_lib/unuran/unuran/src/specfunct/hypot.c',
-  '../../_lib/unuran/unuran/src/specfunct/log1p.c',
   '../../_lib/unuran/unuran/src/tests/chi2test.c',
   '../../_lib/unuran/unuran/src/tests/correlation.c',
   '../../_lib/unuran/unuran/src/tests/countpdf.c',

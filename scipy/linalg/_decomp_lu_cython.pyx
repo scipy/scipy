@@ -2,17 +2,17 @@
 
 import cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from libc.string cimport memcpy
-
 from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
-from scipy.linalg._cythonized_array_utils cimport lapack_t, swap_c_and_f_layout
+from scipy.linalg._cythonized_array_utils cimport swap_c_and_f_layout
 
 cimport numpy as cnp
 cnp.import_array()
 
-
-ctypedef double complex doubleComplex
-ctypedef float complex floatComplex
+ctypedef fused lapack_t:
+    cnp.float32_t
+    cnp.float64_t
+    cnp.complex64_t
+    cnp.complex128_t
 
 
 @cython.nonecheck(False)
@@ -24,12 +24,12 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
                        int[::1] perm,
                        bint permute_l) noexcept:
     """LU decomposition and copy operations using ?getrf routines
-    
+
     This function overwrites inputs. For interfacing LAPACK,
     it creates a memory buffer and copies into with F-order
     then swaps back to C order hence no need for dealing with
     Fortran arrays which are inconvenient.
-    
+
     After the LU factorization, to minimize the amount of data
     copied, for rectangle arrays, and depending on the size,
     the smaller portion is copied out to U and the rest becomes
@@ -59,24 +59,24 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
     dims[0] = m
     dims[1] = n
 
-    if lapack_t is float:
+    if lapack_t is cnp.float32_t:
         b = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT32)
-        bb = <float *>cnp.PyArray_DATA(b)
+        bb = <cnp.float32_t *>cnp.PyArray_DATA(b)
         swap_c_and_f_layout(aa, bb, m, n)
         sgetrf(&m, &n, bb, &m, ipiv, &info)
-    elif lapack_t is double:
+    elif lapack_t is cnp.float64_t:
         b = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-        bb = <double *>cnp.PyArray_DATA(b)
+        bb = <cnp.float64_t *>cnp.PyArray_DATA(b)
         swap_c_and_f_layout(aa, bb, m, n)
         dgetrf(&m, &n, bb, &m, ipiv, &info)
-    elif lapack_t is floatcomplex:
+    elif lapack_t is cnp.complex64_t:
         b = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX64)
-        bb = <floatComplex*>cnp.PyArray_DATA(b)
+        bb = <cnp.complex64_t *>cnp.PyArray_DATA(b)
         swap_c_and_f_layout(aa, bb, m, n)
         cgetrf(&m, &n, bb, &m, ipiv, &info)
     else:
         b = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-        bb = <doubleComplex *>cnp.PyArray_DATA(b)
+        bb = <cnp.complex128_t *>cnp.PyArray_DATA(b)
         swap_c_and_f_layout(aa, bb, m, n)
         zgetrf(&m, &n, bb, &m, ipiv, &info)
 
@@ -103,7 +103,9 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
         # as final. Solution without argsort : ipiv[perm] = np.arange(m)
         for ind1 in range(m):
             ipiv[perm[ind1]] = ind1
-        memcpy(&perm[0], ipiv, m*sizeof(int))
+        for ind1 in range(m):
+            perm[ind1] = ipiv[ind1]
+
     finally:
         PyMem_Free(ipiv)
 
@@ -117,7 +119,7 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
         for ind1 in range(mn):
             a[ind1, ind1] = 1
             a[ind1, ind1+1:mn] = 0
-            
+
     else:  # square or fat, "a" holds bigger U
 
         lu[0, 0] = 1
@@ -128,32 +130,41 @@ cdef void lu_decompose(cnp.ndarray[lapack_t, ndim=2] a,
         for ind2 in range(mn - 1):  # cols
             for ind1 in range(ind2+1, m):  # rows
                 a[ind1, ind2] = 0
-    
+
     if permute_l:
         # b still exists -> use it as temp array
         # we copy everything to b and pick back
         # rows from b as dictated by perm
-        memcpy(bb, 
-               (&a[0, 0] if m > n else &lu[0, 0]),
-               m*n*sizeof(lapack_t)
-              )
-        for ind1 in range(m):
-            if perm[ind1] == ind1:  # Row is not permuted
-                continue
-            else:
-                memcpy((&a[ind1, 0] if m > n else &lu[ind1, 0]),
-                       bb + (perm[ind1]*mn),  # stride rows
-                       mn*sizeof(lapack_t))  # copy 1 row of mem
+
+        if m > n:
+            b[:, :] = a[:, :]
+            # memcpy(bb, &a[0, 0], m*mn*sizeof(lapack_t))
+            for ind1 in range(m):
+                if perm[ind1] == ind1:
+                    continue
+                else:
+                    a[ind1, :] = b[perm[ind1], :]
+
+        else:  # same but for lu array
+            b[:mn, :mn] = lu[:, :]
+            # memcpy(bb, &lu[0, 0], mn*n*sizeof(lapack_t))
+            for ind1 in range(mn):
+                if perm[ind1] == ind1:
+                    continue
+                else:
+                    lu[ind1, :] = b[perm[ind1], :mn]
 
 
 @cython.nonecheck(False)
 @cython.initializedcheck(False)
 def lu_dispatcher(a, u, piv, permute_l):
     if a.dtype.char == 'f':
-        lu_decompose[float](a, u, piv, permute_l)
+        lu_decompose[cnp.float32_t](a, u, piv, permute_l)
     elif a.dtype.char == 'd':
-        lu_decompose[double](a, u, piv, permute_l)
+        lu_decompose[cnp.float64_t](a, u, piv, permute_l)
     elif a.dtype.char == 'F':
-        lu_decompose[floatcomplex](a, u, piv, permute_l)
+        lu_decompose[cnp.complex64_t](a, u, piv, permute_l)
+    elif a.dtype.char == 'D':
+        lu_decompose[cnp.complex128_t](a, u, piv, permute_l)
     else:
-        lu_decompose[doublecomplex](a, u, piv, permute_l)
+        raise TypeError("Unsupported type given to lu_dispatcher")
