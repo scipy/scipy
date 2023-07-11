@@ -1801,7 +1801,7 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
     >>> alphas = np.arange(1, 70)
     >>> scd = np.empty((freqs.size, alphas.size), dtype=np.complex64)
     >>> for i, alpha in enumerate(alphas):
-    >>>     scd[:, i] = cyclic_sd(x, x, fs=fs, alpha=alpha)[1]
+    ...     scd[:, i] = cyclic_sd(x, x, fs=fs, alpha=alpha)[1]
 
     The modulation is expected to occur at frequency f_sig.
 
