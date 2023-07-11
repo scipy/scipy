@@ -27,7 +27,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
-  - asv<0.5
+  - asv >=0.6
   - hypothesis
   # For type annotations
   - mypy
