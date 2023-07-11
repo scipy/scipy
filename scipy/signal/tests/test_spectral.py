@@ -921,13 +921,13 @@ class TestCyclicSd:
         rs = np.random.RandomState(526057773)
         x = rs.standard_normal(50)
 
-        fs, nperseg = 1, 15
+        fs, nperseg = 1, 16
         f = fftfreq(nperseg, 1/fs)
 
-        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, noverlap=10)
+        f1, _ = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg, noverlap=12)
         assert_allclose(f, f1)
         cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
-                  noverlap=10, nfft=nperseg, detrend=False, scaling='spectrum',
+                  noverlap=12, nfft=nperseg, detrend=False, scaling='spectrum',
                   average='median')
 
         with pytest.raises(ValueError, match='Cyclic frequency must be'):
