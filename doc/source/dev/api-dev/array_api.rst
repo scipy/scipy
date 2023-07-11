@@ -155,7 +155,7 @@ Input array validation uses the following pattern::
    # Do this for each input array, it applies all the validation steps (reject
    # matrix, etc.) as well as the conversion to a numpy array if it's a
    # sequence, or preserve the non-numpy array type:
-   arr = as_xparray(arr)
+   arr = as_xparray(arr, xp=xp)
 
 Note that if one input is a non-numpy array type, all array-like inputs have to
 be of that type; trying to mix non-numpy arrays with lists, Python scalars or
