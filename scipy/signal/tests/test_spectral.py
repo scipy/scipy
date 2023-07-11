@@ -928,7 +928,7 @@ class TestCyclicSd:
         assert_array_equal(Pxx.shape, (nperseg,))
 
         cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
-                  noverlap=noverlap, nfft=nperseg, windows='hamming',
+                  noverlap=noverlap, nfft=nperseg, window='hamming',
                   detrend=False, scaling='spectrum', average='median')
 
         with pytest.raises(ValueError, match='Cyclic frequency must be'):
