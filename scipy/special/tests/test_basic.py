@@ -3612,7 +3612,7 @@ class TestRiccati:
 
 
 class TestSoftplus:
-    @pytest.mark.parametrize("value, expected", [
+    @pytest.mark.parametrize("value, expected",[
         (0, 0.6931471805599453),
         ([-1, 0, 1], np.array([0.31326169, 0.69314718, 1.31326169])),
         (100, 100.0),
