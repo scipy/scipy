@@ -32,7 +32,7 @@ import itertools
 import warnings
 
 import numpy
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 
 from scipy import special
 from . import _ni_support

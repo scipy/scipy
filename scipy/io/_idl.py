@@ -584,7 +584,7 @@ def _replace_heap(variable, heap):
 
         return True, variable
 
-    elif isinstance(variable, np.core.records.recarray):
+    elif isinstance(variable, np.recarray):
 
         # Loop over records
         for ir, record in enumerate(variable):
@@ -596,7 +596,7 @@ def _replace_heap(variable, heap):
 
         return False, variable
 
-    elif isinstance(variable, np.core.records.record):
+    elif isinstance(variable, np.record):
 
         # Loop over values
         for iv, value in enumerate(variable):
