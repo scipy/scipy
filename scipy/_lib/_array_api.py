@@ -98,14 +98,15 @@ def array_namespace(*arrays):
 def as_xparray(
     array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False
 ):
-    """Drop-in replacement for `np.asarray`.
+    """SciPy-specific replacement for `np.asarray` with `order` and `check_finite`.
 
     Memory layout parameter `order` is not exposed in the Array API standard.
     `order` is only enforced if the input array implementation
     is NumPy based, otherwise `order` is just silently ignored.
 
-    The purpose of this helper is to make it possible to share code for data
-    container validation without memory copies for both downstream use cases.
+    `check_finite` is also not a keyword in the array API standard; included
+    here for convenience rather than that having to be a separate function
+    call inside SciPy functions.
     """
     if xp is None:
         xp = array_namespace(array)
