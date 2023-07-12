@@ -50,15 +50,15 @@ Python, it is recommended to make use of namespaces. For example, the
 function ``curve_fit`` (defined in ``scipy/optimize/_minpack_py.py``) should be
 imported like this::
 
-  import scipy as sp
-  result = sp.optimize.curve_fit(...)
+  import scipy
+  result = scipy.optimize.curve_fit(...)
 
 Or alternatively one could use the submodule as a namespace like so::
 
   from scipy import optimize
   result = optimize.curve_fit(...)
 
-.. warning:: For ``scipy.io`` prefer the use of  ``import scipy as sp``
+.. warning:: For ``scipy.io`` prefer the use of  ``import scipy``
              because ``io`` is also the name of a module in the Python
              stdlib.
 
@@ -80,10 +80,10 @@ distribution if the second form is chosen::
 In that case, the second form can be chosen **if** it is documented in the next
 section that the submodule in question is public. Of course you can still use::
 
-  import scipy as sp
-  sp.stats.lomax(...)
+  import scipy
+  scipy.stats.lomax(...)
   # or
-  sp.stats.distributions.lomax(...)
+  scipy.stats.distributions.lomax(...)
 
 .. note:: SciPy is using a lazy loading mechanism which means that modules
           are only loaded in memory when you first try to access them.
