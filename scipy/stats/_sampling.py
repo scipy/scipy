@@ -821,8 +821,8 @@ class FastGeneratorInversion:
         ppf : array_like
             Quantiles corresponding to the values in `u`.
 
-        Note
-        ----
+        Notes
+        -----
         The evaluation of the PPF is very fast but it may have a large
         relative error in the far tails. The numerical precision of the PPF
         is controlled by the u-error, that is,
