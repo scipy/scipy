@@ -86,9 +86,9 @@ section that the submodule in question is public. Of course you can still use::
 
 .. note::
 
-    The ``scipy`` namespace itself only contains functions imported from NumPy.
+    The ``scipy`` namespace itself also contains functions imported from ``numpy``.
     These functions still exist for backwards compatibility, but should be
-    imported from NumPy directly.
+    imported from ``numpy`` directly.
 
 API definition
 --------------
