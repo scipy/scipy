@@ -13,7 +13,6 @@ from scipy.sparse import (csr_matrix, coo_matrix,
                           csr_array, coo_array,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
-from scipy.sparse._sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
