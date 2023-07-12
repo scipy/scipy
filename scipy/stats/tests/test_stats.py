@@ -7870,11 +7870,11 @@ class TestQuantileTest():
         message = "`x` must be a one-dimensional array of numbers."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test([x])
-        
+
         message = "`q` must be a scalar."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, q=[1, 2])
-        
+
         message = "`p` must be a float strictly between 0 and 1."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, p=[0.5, 0.75])
@@ -7882,11 +7882,11 @@ class TestQuantileTest():
             stats.quantile_test(x, p=2)
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, p=-0.5)
-        
+
         message = "`alternative` must be one of..."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x, alternative='one-sided')
-        
+
         message = "`confidence_level` must be a number between 0 and 1."
         with pytest.raises(ValueError, match=message):
             stats.quantile_test(x).confidence_interval(1)
@@ -7894,7 +7894,7 @@ class TestQuantileTest():
     @pytest.mark.parametrize(
         'p, alpha, lb, ub, alternative',
         [[0.3, 0.95, 1.221402758160170, 1.476980793882643, 'two-sided'],
-         [0.5, 0.9, 1.506817785112854, 1.803988415397857,'two-sided'],
+         [0.5, 0.9, 1.506817785112854, 1.803988415397857, 'two-sided'],
          [0.25, 0.95, -np.inf, 1.39096812846378, 'less'],
          [0.8, 0.9, 2.117000016612675, np.inf, 'greater']]
     )
@@ -7931,13 +7931,13 @@ class TestQuantileTest():
     @pytest.mark.parametrize('alpha', [0.9, 0.95])
     def test_pval_ci_match(self, case, alternative, alpha):
         # Verify that the following statement holds:
-        #
-        # The 95% confidence interval corresponding with alternative='less' 
+
+        # The 95% confidence interval corresponding with alternative='less'
         # has -inf as its lower bound, and the upper bound `xu` is the greatest
         # element from the sample `x` such that:
         # `stats.quantile_test(x, q=xu, p=p, alternative='less').pvalue``
         # will be greater than 5%.
-        # 
+
         # And the corresponding statement for the alternative='greater' case.
 
         seed = int((7**len(case) + len(alternative))*alpha)
@@ -7976,9 +7976,9 @@ class TestQuantileTest():
         # 174, 166, 248]
         # Two-sided test of whether the upper quartile (p=0.75) equals 193
         # (q=193). Conover shows that 7 of the observations are less than or
-        # equal to 193, and "for the binomial random variable Y, P(Y<=7) = 
+        # equal to 193, and "for the binomial random variable Y, P(Y<=7) =
         # 0.0173", so the two-sided p-value is twice that, 0.0346.
-        x = [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193, 
+        x = [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
              174, 166, 248]
         pvalue_expected = 0.0346
         res = stats.quantile_test(x, q=193, p=0.75, alternative='two-sided')

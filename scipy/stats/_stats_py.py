@@ -1646,7 +1646,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         * 'propagate': returns nan
         * 'raise': throws an error
         * 'omit': performs the calculations ignoring nan values
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -9717,6 +9716,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     return SignificanceResult(statistic, pval)
 
+
 @dataclass
 class QuantileTestResult:
     r"""
@@ -9724,19 +9724,29 @@ class QuantileTestResult:
 
     Attributes
     ----------
-    statistic1: float
-        The observed number of observations less than or equal to the
-        hypothesized quantile.
-    statistic2: float
-        The observed number of observations strictly less than the
-        hypothesized quantile.
+    statistic: float
+        The statistic used to calculate the p-value; either ``T1``, the
+        number of observations less than or equal to the hypothesized quantile,
+        or ``T2``, the number of observations strictly less than the
+        hypothesized quantile. Two test statistics are required to handle the
+        possibility the data was generated from a discrete or mixed
+        distribution.
+
+    statistic_type : int
+        ``1`` or ``2`` depending on which of ``T1`` or ``T2`` was used to
+        calculate the p-value respectively. ``T1`` corresponds to the
+        ``"greater"`` alternative hypothesis and ``T2`` to the ``"less"``.  For
+        the ``"two-sided"`` case, the statistic type that leads to smallest
+        p-value is used.  For significant tests, ``statistic_type = 1`` means
+        there is evidence that the population quantile is significantly greater
+        than the hypothesized value and ``statistic_type = 2`` means there is
+        evidence that it is significantly less than the hypothesized value.
+
     pvalue : float
         The p-value of the hypothesis test.
-
     """
-
-    statistic1: float
-    statistic2: float
+    statistic: float
+    statistic_type: int
     pvalue: float
     _alternative: list[str] = field(repr=False)
     _x : np.ndarray = field(repr=False)
@@ -9838,11 +9848,11 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     Perform a quantile test and compute a confidence interval of the quantile.
 
     This function tests the null hypothesis that `q` is the value of the
-    `p`th-quantile of the population underlying sample `x`. For example, with
-    default parameters, it tests that the median of the population underlying
-    `x` is zero. The function returns an object including the test statistic,
-    a p-value, and a method for computing the confidence interval around
-    the quantile.
+    quantile associated with probability `p` of the population underlying
+    sample `x`. For example, with default parameters, it tests that the
+    median of the population underlying `x` is zero. The function returns an
+    object including the test statistic, a p-value, and a method for computing
+    the confidence interval around the quantile.
 
     Parameters
     ----------
@@ -9851,60 +9861,109 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     q : float, default: 0
         The hypothesized value of the quantile.
     p : float, default: 0.5
-        The probability associate with the quantile; i.e. the proportion of
-        the population less than `q` is `p`. Must be strictly between 0 and 1.
+        The probability associated with the quantile; i.e. the proportion of
+        the population less than `q` is `p`. Must be strictly between 0 and
+        1.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
-
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the `p`th-quantile is not `q`
-        * 'less': the `p`th-quantile is less than `q`
-        * 'greater': the `p`th-quantile is greater than `q`
+        * 'two-sided': the quantile associated with the probability `p` 
+          is not `q`.
+        * 'less': the quantile associated with the probability `p` is less
+          than `q`.
+        * 'greater': the quantile associated with the probability `p` is
+          greater than `q`.
 
     Returns
     -------
     result : QuantileTestResult
         An object with the following attributes:
 
-        statistic1 : float
-            First test statistic: the proportion of samples in `x` that are
-            less than or equal to the hypothesized quantile `q`
-        statistic2 : float
-            Second test statistic: the proportion of samples in `x` that are
-            strictly less than the hypothesized quantile `q`
+        statistic : float
+            One of two test statistics that may be used in the quantile test.
+            The first test statistic, ``T1``, is the proportion of samples in
+            `x` that are less than or equal to the hypothesized quantile
+            `q`. The second test statistic, ``T2``, is the proportion of
+            samples in `x` that are strictly less than the hypothesized
+            quantile `q`.
+
+            When ``alternative = 'greater'``, ``T1`` is used to calculate the
+            p-value and ``statistic`` is set to ``T1``.
+
+            When ``alternative = 'less'``, ``T2`` is used to calculate the
+            p-value and ``statistic`` is set to ``T2``.
+
+            When ``alternative = 'two-sided'``, both ``T1`` and ``T2`` are
+            considered, and the one that leads to the smallest p-value is used.
+
+        statistic_type : int
+            Either `1` or `2` depending on which of ``T1`` or ``T2`` was
+            used to calculate the p-value.
+
         pvalue : float
             The p-value associated with the given alternative.
 
         The object also has the following method:
 
         confidence_interval(confidence_level=0.95)
-            Computes a confidence interval around the the `p`th quantile
-            of the population. The confidence interval is returned in a
-            ``namedtuple`` with fields `low` and `high`.  Values are `nan`
-            when there are not enough samples to compute the confidence
-            interval at the desired confidence.
+            Computes a confidence interval around the the
+            population quantile associated with the probability `p`. The
+            confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.  Values are `nan` when there are
+            not enough observations to compute the confidence interval at
+            the desired confidence.
 
     Notes
     -----
     This test and its method for computing confidence intervals are
     non-parametric. They are valid if and only if the observations are i.i.d.
 
-    The implementation of the test follows Conover [1]_. The p-value of this
-    test derives from the binomial distribution but, different from the binomial
-    test, there are two different test statistics::
+    The implementation of the test follows Conover [1]_. Two test statistics
+    are considered.
 
-        k1 = (x <= q).sum()
-        k2 = (x < q).sum()
+    ``T1``: The number of observations in `x` less than or equal to `q`.
 
-    The p-value is given by::
+        ``T1 = (x <= q).sum()``
 
-        if alternative == 'less':
-            pvalue = bd.sf(k2)
-        elif alternative == 'greater':
-            pvalue = bd.cdf(k1-1)  # -1 because of the step-like CDF
-        elif alternative == 'two-sided':
-            pvalue = min(bd.cdf(k1-1), bd.sf(k2))
+    ``T2``: The number of observations in `x` strictly less than `q`.
+
+        ``T2 = (x < q).sum()``
+
+    The use of two test statistics is necessary to handle the possibility that
+    `x` was generated from a discrete or mixed distribution.
+
+    The null hypothesis for the test is:
+
+        H0: The :math:`p^{\mathrm{th}}` population quantile is `q`.
+
+    and the null distribution for each test statistic is
+    :math:`\mathrm{binom}\left(n, p\right)`. When ``alternative='less'``,
+    the alternative hypothesis is:
+
+        H1: The :math:`p^{\mathrm{th}}` population quantile is less than `q`.
+
+    and the p-value is the probability that the binomial random variable
+
+    .. math::
+        Y \sim \mathrm{binom}\left(n, p\right)
+
+    is greater than or equal to the observed value ``T2``.
+
+    When ``alternative='greater'``, the alternative hypothesis is:
+
+        H1: The :math:`p^{\mathrm{th}}` population quantile is greater than `q`
+
+    and the p-value is the probability that the binomial random variable Y
+    is less than or equal to the observed value ``T1``.
+
+    When ``alternative='two-sided'``, the alternative hypothesis is
+
+        H1: `q` is not the :math:`p^{\mathrm{th}}` population quantile.
+
+    and the p-value is twice the smaller of the p-values for the ``'less'``
+    and ``'greater'`` cases. Both of these p-values can exceed 0.5 for the same
+    data, so the value is clipped into the interval :math:`[0, 1]`.
 
     The approach for confidence intervals is attributed to Thompson [2]_ and
     later proven to be applicable to any set of i.i.d. samples [3]_. The
@@ -9964,28 +10023,28 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     is equal to 0.5. We choose a confidence level of 99%; that is, we will
     reject the null hypothesis in favor of the alternative if the p-value is
     less than 0.01.
-    
+
     When testing random variates from the standard uniform distribution, which
     has a median of 0.5, we expect the data to be consistent with the null
     hypothesis most of the time.
-    
+
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng(6981396440634228121)
     >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
     >>> stats.quantile_test(rvs, q=0.5, p=0.5)
-     QuantileTestResult(statistic1=45, statistic2=45, pvalue=0.36820161732669576)
-    
+     QuantileTestResult(statistic=45, statistic_type=1, pvalue=0.36820161732669576)
+
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
-    
+
     When testing data from the standard *normal* distribution, which has a 
     median of 0, we would expect the null hypothesis to be rejected.
-    
+
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
     >>> stats.quantile_test(rvs, q=0.5, p=0.5)
-    QuantileTestResult(statistic1=67, statistic2=67, pvalue=0.0008737198369123724)
-    
+    QuantileTestResult(statistic=67, statistic_type=2, pvalue=0.0008737198369123724)
+
     Indeed, the p-value is lower than our threshold of 0.01, so we reject the
     null hypothesis in favor of the default "two-sided" alternative: the median
     of the population is *not* equal to 0.5.
@@ -9994,38 +10053,38 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     one-sided alternative that the median of the population is *greater* than
     0.5. Since the median of the standard normal is less than 0.5, we would not
     expect the null hypothesis to be rejected.
-    
+
     >>> stats.quantile_test(rvs, q=0.5, p=0.5, alternative='greater')
-    QuantileTestResult(statistic1=67, statistic2=67, pvalue=0.9997956114162866)
-    
+    QuantileTestResult(statistic=67, statistic_type=1, pvalue=0.9997956114162866)
+
     Unsurprisingly, with a p-value greater than our threshold, we would not
     reject the null hypothesis in favor of the chosen alternative.
-    
+
     The quantile test can be used for any quantile, not only the median. For
     example, we can test whether the third quartile of the distribution
     underlying the sample is greater than 0.6.
-    
+
     >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
     >>> stats.quantile_test(rvs, q=0.6, p=0.75, alternative='greater')
-    QuantileTestResult(statistic1=64, statistic2=64, pvalue=0.00940696592998271)
-    
+    QuantileTestResult(statistic=64, statistic_type=1, pvalue=0.00940696592998271)
+
     The p-value is lower than the threshold. We reject the null hypothesis in
-    favor of the alternative: the third quartile of the uniform distribution is
-    larger than 0.6.
-    
+    favor of the alternative: the third quartile of the distribution underlying
+    our sample is greater than 0.6.
+
     `quantile_test` can also compute confidence intervals for any quantile.
-    
+
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
     >>> res = stats.quantile_test(rvs, q=0.6, p=0.75)
     >>> ci = res.confidence_interval(confidence_level=0.95)
     >>> ci
     ConfidenceInterval(low=0.284491604437432, high=0.8912531024914844)
-    
+
     When testing a one-sided alternative, the confidence interval contains
-    all observations such that if passed as `q`, the p-value of the test would
-    be greater than 0.05, and therefore the null hypothesis would not be
-    rejected. For example:
-    
+    all observations such that if passed as `q`, the p-value of the
+    test would be greater than 0.05, and therefore the null hypothesis
+    would not be rejected. For example:
+
     >>> rvs.sort()
     >>> q, p, alpha = 0.6, 0.75, 0.95
     >>> res = stats.quantile_test(rvs, q=q, p=p, alternative='less')
@@ -10040,7 +10099,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     Also, if a 95% confidence interval is repeatedly generated for random
     samples, the confidence interval will contain the true quantile value in
     approximately 95% of replications.
-    
+
     >>> dist = stats.rayleigh() # our "unknown" distribution
     >>> p = 0.2
     >>> true_stat = dist.ppf(p) # the true value of the statistic
@@ -10052,9 +10111,9 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     ...     ci = res.confidence_interval(0.95)
     ...     if ci[0] < true_stat < ci[1]:
     ...         quantile_ci_contains_true_stat += 1
-    >>> quantile_ci_contains_true_stat  # approximately 95%
-    968
-    
+    >>> quantile_ci_contains_true_stat >= 950
+    True
+
     This works with any distribution and any quantile, as long as the samples
     are i.i.d.
     """
@@ -10082,21 +10141,39 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         # "The p-value is the probability that a binomial random variable Y "
         # "is greater than *or equal to* the observed value of T2...using p=p*"
         pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
+        statistic = T2
+        statistic_type = 2
     # "H1: the p* population quantile is greater than x*"
     elif H1 == 'greater':
         # "The p-value is the probability that a binomial random variable Y "
         # "is less than or equal to the observed value of T1... using p = p*"
         pvalue = Y.cdf(T1)
+        statistic = T1
+        statistic_type = 1
     # "H1: x* is not the p*th population quantile"
     elif H1 == 'two-sided':
-        # "The p-value is twice the smaller of the probabilities that a binomial "
-        # "random variable Y is less than or equal to the observed value of T1 "
-        # "or greater than or equal to the observed value of T2...using p=p*."
-        # Note: both one-sided p-values can exceed 0.5 for the same data, so `clip`
-        pvalue = np.clip(2*min(Y.cdf(T1), Y.sf(T2-1)), 0, 1)
+        # "The p-value is twice the smaller of the probabilities that a
+        # binomial random variable Y is less than or equal to the observed
+        # value of T1 or greater than or equal to the observed value of T2
+        # using p=p*."
+        # Note: both one-sided p-values can exceed 0.5 for the same data, so
+        # `clip`
+        pvalues = [Y.cdf(T1), Y.sf(T2 - 1)]  # [greater, less]
+        sorted_idx = np.argsort(pvalues)
+        pvalue = np.clip(2*pvalues[sorted_idx[0]], 0, 1)
+        if sorted_idx[0]:
+            statistic, statistic_type = T2, 2
+        else:
+            statistic, statistic_type = T1, 1
 
-    return QuantileTestResult(statistic1=T1, statistic2=T2, pvalue=pvalue,
-                              _alternative=H1, _x=X, _p=p_star)
+    return QuantileTestResult(
+        statistic=statistic,
+        statistic_type=statistic_type,
+        pvalue=pvalue,
+        _alternative=H1,
+        _x=X,
+        _p=p_star
+    )
 
 
 #####################################
