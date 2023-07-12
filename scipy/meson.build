@@ -223,7 +223,7 @@ python_sources = [
   'conftest.py',
   'linalg.pxd',
   'optimize.pxd',
-  'special.pxd'
+  'special.pxd',
 ]
 
 py3.install_sources(
