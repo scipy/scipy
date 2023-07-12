@@ -9,9 +9,14 @@ from pytest import raises as assert_raises
 
 from scipy import signal
 from scipy.fft import fftfreq
-from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA, check_NOLA)
+from scipy.signal import (periodogram, welch, lombscargle, coherence,
+                          spectrogram, check_COLA, check_NOLA)
 from scipy.signal._spectral_py import _spectral_helper
+
+# Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
+from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
+from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 
 
 class TestPeriodogram:

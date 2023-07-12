@@ -34,6 +34,14 @@ changed_installed_path = {
         'scipy/_lib/tests/test_scipy_version.py'
 }
 
+# We do not want the following tests to be checked
+exception_list_test_files = [
+    "_lib/array_api_compat/tests/test_common.py",
+    "_lib/array_api_compat/tests/test_isdtype.py",
+    "_lib/array_api_compat/tests/test_vendoring.py",
+    "_lib/array_api_compat/tests/test_array_namespace.py",
+]
+
 
 def main(install_dir):
     INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
@@ -45,7 +53,10 @@ def main(install_dir):
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
-        if not test_file in installed_test_files.keys():
+        if test_file in exception_list_test_files:
+            continue
+
+        if test_file not in installed_test_files.keys():
             raise Exception("%s is not installed" % scipy_test_files[test_file])
 
     print("----------- All the test files were installed --------------")

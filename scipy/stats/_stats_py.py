@@ -62,6 +62,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue
+from scipy._lib._util import normalize_axis_index
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -3959,7 +3960,7 @@ def _create_f_oneway_nan_result(shape, axis):
     in certain degenerate conditions.  It creates return values that are
     all nan with the appropriate shape for the given `shape` and `axis`.
     """
-    axis = np.core.multiarray.normalize_axis_index(axis, len(shape))
+    axis = normalize_axis_index(axis, len(shape))
     shp = shape[:axis] + shape[axis+1:]
     if shp == ():
         f = np.nan
@@ -10209,8 +10210,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         if a.size == 0:
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
-            # use scipy._lib._util._normalize_axis_index when available
-            np.core.multiarray.normalize_axis_index(axis, a.ndim)
+            normalize_axis_index(axis, a.ndim)
             dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method,

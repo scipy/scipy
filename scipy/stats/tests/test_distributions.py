@@ -841,6 +841,29 @@ class TestGenHyperbolic:
             )
 
 
+class TestHypSecant:
+
+    # Reference values were computed with the mpmath expression
+    #     float((2/mp.pi)*mp.atan(mp.exp(-x)))
+    # and mp.dps = 50.
+    @pytest.mark.parametrize('x, reference',
+                             [(30, 5.957247804324683e-14),
+                              (50, 1.2278802891647964e-22)])
+    def test_sf(self, x, reference):
+        sf = stats.hypsecant.sf(x)
+        assert_allclose(sf, reference, rtol=5e-15)
+
+    # Reference values were computed with the mpmath expression
+    #     float(-mp.log(mp.tan((mp.pi/2)*p)))
+    # and mp.dps = 50.
+    @pytest.mark.parametrize('p, reference',
+                             [(1e-6, 13.363927852673998),
+                              (1e-12, 27.179438410639094)])
+    def test_isf(self, p, reference):
+        x = stats.hypsecant.isf(p)
+        assert_allclose(x, reference, rtol=5e-15)
+
+
 class TestNormInvGauss:
     def setup_method(self):
         np.random.seed(1234)
@@ -1873,14 +1896,14 @@ class TestLoggamma:
                               (1e10, -10.093986931748889),
                               (1e100, -113.71031611649761)])
     def test_entropy(self, c, ref):
-    
+
         # Reference values were calculated with mpmath
         # from mpmath import mp
         # mp.dps = 500
         # def loggamma_entropy_mpmath(c):
         #     c = mp.mpf(c)
         #     return float(mp.log(mp.gamma(c)) + c * (mp.one - mp.digamma(c)))
-        
+
         assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
 
@@ -3077,7 +3100,7 @@ class TestPowerlaw:
         data = stats.powerlaw.rvs(a=a, loc=location, scale=scale, size=100,
                                   random_state=np.random.default_rng(5))
 
-        kwds = {'fscale': data.ptp() * 2}
+        kwds = {'fscale': np.ptp(data) * 2}
 
         _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
@@ -3414,7 +3437,6 @@ class TestStudentT:
         res_ex_noinf = stats.t.entropy(df=df[~df_infmask], loc=3, scale=1)
         assert_equal(res[df_infmask], res_ex_inf)
         assert_equal(res[~df_infmask], res_ex_noinf)
-
 
     def test_logpdf_pdf(self):
         # reference values were computed via the reference distribution, e.g.
@@ -4019,6 +4041,7 @@ class TestGenExpon:
         assert_allclose(cdf, p, rtol=1e-14)
         ppf = stats.genexpon.ppf(p, a, b, c)
         assert_allclose(ppf, x, rtol=1e-14)
+
 
 class TestTruncexpon:
 
@@ -4745,7 +4768,7 @@ class TestLevyStable:
             Path(__file__).parent /
             'data/levy_stable/stable-Z1-pdf-sample-data.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        data = np.rec.fromarrays(data.T, names='x,p,alpha,beta,pct')
         return data
 
     @pytest.fixture
@@ -4789,7 +4812,7 @@ class TestLevyStable:
             Path(__file__).parent /
             'data/levy_stable/stable-Z1-cdf-sample-data.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        data = np.rec.fromarrays(data.T, names='x,p,alpha,beta,pct')
         return data
 
     @pytest.fixture
@@ -5517,6 +5540,7 @@ class TestLevyStable:
             expected,
         )
 
+
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
         np.random.seed(1234)
@@ -5734,7 +5758,7 @@ class TestFitMethod:
 
         loc, scale = stats.uniform.fit(x)
         assert_equal(loc, x.min())
-        assert_equal(scale, x.ptp())
+        assert_equal(scale, np.ptp(x))
 
         loc, scale = stats.uniform.fit(x, floc=0)
         assert_equal(loc, 0)
@@ -9199,7 +9223,7 @@ class TestRelativisticBW:
             Path(__file__).parent /
             'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        data = np.rec.fromarrays(data.T, names='x,pdf,rho,gamma')
         return data
 
     @pytest.mark.parametrize(
@@ -9323,3 +9347,37 @@ class TestTruncPareto:
                 stats.truncpareto.fit(data, **kwds)
         else:
             _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
+
+
+# Cases are (distribution name, log10 of smallest probability mass to test,
+# log10 of the complement of the largest probability mass to test, atol,
+# rtol). None uses default values.
+@pytest.mark.parametrize("case", [("loglaplace", None, None, None, None),
+                                  ("lognorm", None, None, None, None),
+                                  ("lomax", None, None, None, None),
+                                  ("pareto", None, None, None, None),])
+def test_sf_isf_overrides(case):
+    # Test that SF is the inverse of ISF. Supplements
+    # `test_continuous_basic.check_sf_isf` for distributions with overridden
+    # `sf` and `isf` methods.
+    distname, lp1, lp2, atol, rtol = case
+
+    lpm = np.log10(0.5)  # log10 of the probability mass at the median
+    lp1 = lp1 or -290
+    lp2 = lp2 or -14
+    atol = atol or 0
+    rtol = rtol or 1e-12
+    dist = getattr(stats, distname)
+    params = dict(distcont)[distname]
+    dist_frozen = dist(*params)
+
+    # Test (very deep) right tail to median. We can benchmark with random
+    # (loguniform) points, but strictly logspaced points are fine for tests.
+    ref = np.logspace(lp1, lpm)
+    res = dist_frozen.sf(dist_frozen.isf(ref))
+    assert_allclose(res, ref, atol=atol, rtol=rtol)
+
+    # test median to left tail
+    ref = 1 - np.logspace(lp2, lpm, 20)
+    res = dist_frozen.sf(dist_frozen.isf(ref))
+    assert_allclose(res, ref, atol=atol, rtol=rtol)
