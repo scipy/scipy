@@ -4214,11 +4214,9 @@ class halfcauchy_gen(rv_continuous):
             shifted_data = data - loc
             n = data.size
             shifted_data_squared = np.square(shifted_data)
-            x0 = np.median(shifted_data)
 
             def fun_to_solve(scale):
                 denominator = scale**2 + shifted_data_squared
-                f = 2 * np.sum(shifted_data_squared/denominator) - n
                 return 2 * np.sum(shifted_data_squared/denominator) - n
 
             small = np.finfo(1.0).tiny**0.5  # avoid underflow
