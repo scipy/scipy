@@ -41,10 +41,6 @@ to import modules/functions/objects from SciPy.
 Guidelines for importing functions from SciPy
 ---------------------------------------------
 
-The SciPy namespace itself only contains functions imported from NumPy. These
-functions still exist for backwards compatibility, but should be imported from
-NumPy directly.
-
 Everything in the namespaces of SciPy submodules is public. In general in
 Python, it is recommended to make use of namespaces. For example, the
 function ``curve_fit`` (defined in ``scipy/optimize/_minpack_py.py``) should be
@@ -87,6 +83,12 @@ section that the submodule in question is public. Of course you can still use::
 
 .. note:: SciPy is using a lazy loading mechanism which means that modules
           are only loaded in memory when you first try to access them.
+
+.. note::
+
+    The ``scipy`` namespace itself only contains functions imported from NumPy.
+    These functions still exist for backwards compatibility, but should be
+    imported from NumPy directly.
 
 API definition
 --------------
