@@ -116,7 +116,7 @@ def test_rvs_and_ppf(distname, args):
 
     # check ppf
     q = [0.001, 0.1, 0.5, 0.9, 0.999]
-    assert_allclose(rng1.ppf(q), rng2.ppf_fast(q), atol=1e-10)
+    assert_allclose(rng1.ppf(q), rng2.ppf(q), atol=1e-10)
 
 
 @pytest.mark.parametrize(("distname, args"), dists_with_params)
@@ -173,7 +173,7 @@ def test_rvs_ppf_loc_scale():
     r_rescaled = (r - loc) / scale
     assert stats.cramervonmises(r_rescaled, "norm").pvalue > 0.01
     q = [0.001, 0.1, 0.5, 0.9, 0.999]
-    assert_allclose(rng._ppf(q), rng.ppf_fast(q), atol=1e-10)
+    assert_allclose(rng._ppf(q), rng.ppf(q), atol=1e-10)
 
 
 def test_domain():
