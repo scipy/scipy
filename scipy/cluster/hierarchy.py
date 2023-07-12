@@ -4144,20 +4144,19 @@ def leaders(Z, T):
     T = as_xparray(T, order='C')
     is_valid_linkage(Z, throw=True, name='Z')
 
-    if type(T) != np.ndarray or T.dtype != 'i':
-        raise TypeError('T must be a one-dimensional numpy array of integers.')
+    if T.dtype != xp.int32:
+        raise TypeError('T must be a 1-D array of dtype int32.')
 
-    if len(T) != Z.shape[0] + 1:
+    if T.shape[0] != Z.shape[0] + 1:
         raise ValueError('Mismatch: len(T)!=Z.shape[0] + 1.')
 
-    Cl = np.unique(T)
-    kk = len(Cl)
-    L = np.zeros((kk,), dtype=np.int32)
-    M = np.zeros((kk,), dtype=np.int32)
-    n = Z.shape[0] + 1
+    n_clusters = int(xp.unique_values(T).shape[0])
+    n_obs = int(Z.shape[0] + 1)
+    L = np.zeros(n_clusters, dtype=np.int32)
+    M = np.zeros(n_clusters, dtype=np.int32)
     Z = np.asarray(Z)
     T = np.asarray(T, dtype=np.int32)
-    s = _hierarchy.leaders(Z, T, L, M, int(kk), int(n))
+    s = _hierarchy.leaders(Z, T, L, M, n_clusters, n_obs)
     if s >= 0:
         raise ValueError(('T is not a valid assignment vector. Error found '
                           'when examining linkage node %d (< 2n-1).') % s)
