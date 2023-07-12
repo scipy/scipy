@@ -4219,11 +4219,10 @@ class halfcauchy_gen(rv_continuous):
             def fun_to_solve(scale):
                 denominator = scale**2 + shifted_data_squared
                 f = 2 * np.sum(shifted_data_squared/denominator) - n
-                grad = - 4 * np.sum(shifted_data_squared * scale
-                                    /denominator**2)
-                return f, grad
+                return 2 * np.sum(shifted_data_squared/denominator) - n
 
-            res = root_scalar(fun_to_solve, fprime=True, x0=x0)
+            small = np.finfo(1.0).tiny**0.5  # avoid underflow
+            res = root_scalar(fun_to_solve, bracket=(small, np.max(shifted_data)))
             return res.root
 
         if fscale is not None:
