@@ -428,6 +428,8 @@ Gamma and related functions
    polygamma    -- Polygamma function n.
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
    digamma      -- psi(x[, out]).
+   trigamma     -- polygamma(1, x).
+   tetragamma   -- polygamma(2, x).
    poch         -- Rising factorial (z)_m.
 
 
