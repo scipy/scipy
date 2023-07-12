@@ -1066,7 +1066,7 @@ def _moment(a, moment, axis, *, mean=None):
 
         # Starting point for exponentiation by squares
         mean = (a.mean(axis, keepdims=True) if mean is None
-                else dtype(mean))
+                else np.asarray(mean, dtype=dtype)[()])
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
