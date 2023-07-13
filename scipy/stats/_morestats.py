@@ -2295,7 +2295,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True):
+def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2313,6 +2313,12 @@ def anderson_ksamp(samples, midrank=True):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is interpolated
+        from tabulated values.
 
     Returns
     -------
@@ -2325,13 +2331,13 @@ def anderson_ksamp(samples, midrank=True):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. The value is floored / capped
-            at 0.1% / 25%.
+            The approximate p-value of the test. If `method` is not
+            provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
     ValueError
-        If less than 2 samples are provided, a sample is empty, or no
+        If fewer than 2 samples are provided, a sample is empty, or no
         distinct observations are in the samples.
 
     See Also
@@ -2384,8 +2390,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> samples = [rng.normal(size=50), rng.normal(size=30),
+    ...            rng.normal(size=20)]
+    >>> res = stats.anderson_ksamp(samples)
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2397,7 +2404,15 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    """
+    In such cases where the p-value is capped or when sample sizes are
+    small, a permutation test may be more accurate.
+
+    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res.pvalue
+    0.5254
+
+    """  # noqa
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2416,9 +2431,17 @@ def anderson_ksamp(samples, midrank=True):
                          "observations")
 
     if midrank:
-        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_midrank
     else:
-        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_right
+    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    def statistic(*samples):
+        return A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    if method is not None:
+        res = stats.permutation_test(samples, statistic, **method._asdict(),
+                                     alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2441,18 +2464,25 @@ def anderson_ksamp(samples, midrank=True):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min():
+
+    if A2 < critical.min() and method is None:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
-    elif A2 > critical.max():
+        msg = (f"p-value capped: true value larger than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif A2 > critical.max() and method is None:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
-    else:
+        msg = (f"p-value floored: true value smaller than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif method is None:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
+    else:
+        p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
