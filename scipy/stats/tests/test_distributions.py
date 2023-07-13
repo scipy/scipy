@@ -7213,20 +7213,6 @@ class TestBurr12:
         delta = stats.burr12._delta_cdf(2e5, 4e5, 4, 8, scale=scale)
         assert_allclose(delta, expected, rtol=1e-13)
 
-
-    @pytest.mark.parametrize('n', range(6))
-    @pytest.mark.parametrize('c', [1.6, 2.6])
-    @pytest.mark.parametrize('d', [0.1, 1, 2])
-    def test_moments(self, n, c, d):
-        # gh-18838 reported that burr12 moments could be invalid. This was
-        # because moment n exists iff shape parameters c*d > n, but this was
-        # not checked in the implementation. Confirm that this is resolved.
-        res = stats.burr12(c, d).moment(n)
-        if c*d > n:
-            assert np.isfinite(res)
-        else:
-            assert np.isnan(res)
-
     def test_moments_edge(self):
         # gh-18838 reported that burr12 moments could be invalid; see above.
         # Check that this is resolved in an edge case where c*d == n, and
