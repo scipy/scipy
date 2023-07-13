@@ -4,32 +4,9 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.linalg import eigh, cho_factor, cho_solve
+    from scipy.linalg import eigh, cho_factor, cho_solve, sakurai
     from scipy.sparse import diags
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
-
-
-def _sakurai_rev(n):
-    """
-    Example turns a generalized eigenproblem for the matrix pair A and B
-    T. Sakurai, H. Tadano, Y. Inadomi and U. Nagashima
-    A moment-based method for large-scale generalized eigenvalue problems
-    Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004)
-    where A is the identity into an eigenpromem for the matrix B.
-    The matrix B gets ill-conditioned with its size growing, leading to
-    a lack of convergence especially for the original generalized
-    eigenproblem used in earlier versions of this benchmark. The exact
-    eigenvalues of B are given by
-    k = np.arange(1, n+1)
-    w_ex = np.sort(16.*np.power(np.cos(0.5*k*np.pi/(n+1)), 4))
-    but unused in this benchmark. """
-
-    d0 = np.r_[5, 6 * np.ones(n - 2), 5]
-    d1 = -4 * np.ones(n - 1)
-    d2 = np.ones(n - 2)
-    B = diags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2],
-                           shape=(n, n))
-    return B
 
 
 def _mikota_pair(n):
@@ -84,8 +61,9 @@ class Bench(Benchmark):
 
     def setup_sakurai_rev(self, n, solver):
         self.shape = (n, n)
-        self.A = _sakurai_rev(n)
-        self.A_dense = self.A.A
+        sakurai_obj = sakurai(n)
+        self.A = sakurai_obj.sparse
+        self.A_dense = sakurai_obj.array
 
     def time_mikota(self, n, solver):
         m = 10
