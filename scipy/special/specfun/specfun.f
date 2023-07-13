@@ -1616,7 +1616,7 @@ C       ==========================================================
            W1=0.0D0
            DO 25 N=1,100
               ER2=ER2+EXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
-     &            -2.0D0*X*DCOSH(N*Y)*CS+N*DSINH(N*Y)*SS)
+     &            -2.0D0*X*COSH(N*Y)*CS+N*SINH(N*Y)*SS)
               IF (DABS((ER2-W1)/ER2).LT.EPS) GO TO 30
 25            W1=ER2
 30         C0=2.0D0*EXP(-X2)/PI
@@ -1625,7 +1625,7 @@ C       ==========================================================
            W2=0.0D0
            DO 35 N=1,100
               EI2=EI2+EXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
-     &            *DCOSH(N*Y)*SS+N*DSINH(N*Y)*CS)
+     &            *COSH(N*Y)*SS+N*SINH(N*Y)*CS)
               IF (DABS((EI2-W2)/EI2).LT.EPS) GO TO 40
 35            W2=EI2
 40         ERI=EI1+C0*EI2
@@ -4384,7 +4384,7 @@ C
         DIMENSION DV(0:*),DP(0:*)
         XA=DABS(X)
         VH=V
-        V=V+DSIGN(1.0D0,V)
+        V=V+SIGN(1.0D0,V)
         NV=INT(V)
         V0=V-NV
         NA=ABS(NV)
@@ -5178,7 +5178,7 @@ C
               FAC=2.0D0*FAC
               R=R+FAC*C*C
               IF (PHI.NE.90.0D0) THEN
-                 D=D0+DATAN((B0/A0)*DTAN(D0))
+                 D=D0+DATAN((B0/A0)*TAN(D0))
                  G=G+C*DSIN(D)
                  D0=D+PI*INT(D/PI+.5D0)
               ENDIF
@@ -5309,7 +5309,7 @@ C
            CEI = CEI - (0d0,1d0)*PI
         ELSE IF (DIMAG(Z).EQ.0) THEN
            IF (DBLE(Z).GT.0) THEN
-              CEI = CEI + (0d0,1d0)*DSIGN(PI,DIMAG(Z))
+              CEI = CEI + (0d0,1d0)*SIGN(PI,DIMAG(Z))
            ENDIF
         ENDIF
         RETURN
@@ -5863,7 +5863,7 @@ C
 25            ZHF=ZC0*ZHF
            ELSE IF (A0.GE.0.90D0) THEN
               GM=0.0D0
-              MCAB=INT(C-A-B+EPS*DSIGN(1.0D0,C-A-B))
+              MCAB=INT(C-A-B+EPS*SIGN(1.0D0,C-A-B))
               IF (DABS(C-A-B-MCAB).LT.EPS) THEN
                  M=INT(C-A-B)
                  CALL GAMMA2(A,GA)
@@ -5971,7 +5971,7 @@ C
 105           ZHF=Z00*ZHF
            ENDIF
         ELSE IF (A0.GT.1.0D0) THEN
-           MAB=INT(A-B+EPS*DSIGN(1.0D0,A-B))
+           MAB=INT(A-B+EPS*SIGN(1.0D0,A-B))
            IF (DABS(A-B-MAB).LT.EPS.AND.A0.LE.1.1D0) B=B+EPS
            IF (DABS(A-B-MAB).GT.EPS) THEN
               CALL GAMMA2(A,GA)
@@ -6000,8 +6000,8 @@ C
               ENDIF
               CA=C-A
               CB=C-B
-              NCA=INT(CA+EPS*DSIGN(1.0D0,CA))
-              NCB=INT(CB+EPS*DSIGN(1.0D0,CB))
+              NCA=INT(CA+EPS*SIGN(1.0D0,CA))
+              NCB=INT(CB+EPS*SIGN(1.0D0,CB))
               IF (DABS(CA-NCA).LT.EPS.OR.DABS(CB-NCB).LT.EPS) C=C+EPS
               CALL GAMMA2(A,GA)
               CALL GAMMA2(C,GC)
@@ -6046,7 +6046,7 @@ C
                  DO 140 J=K+1,K+MAB
 140                 SJ2=SJ2+1.0D0/J
                  ZP=-2.0D0*EL-PA-PAC+SJ2-1.0D0/(K+A-C)
-     &              -PI/DTAN(PI*(K+A-C))+LOG(-Z)
+     &              -PI/TAN(PI*(K+A-C))+LOG(-Z)
                  ZF1=ZF1+RK2*ZR*ZP
                  WS=ABS(ZF1)
                  IF (DABS((WS-W0)/WS).LT.EPS) GO TO 150
@@ -7417,7 +7417,7 @@ C             DLMF 14.3.5, 15.8.10
                  PV0=-VS*R2/M*S0
               ENDIF
               CALL PSI_SPEC(V,PSV)
-              PA=2.0D0*(PSV+EL)+PI/DTAN(PI*V)+1.0D0/V
+              PA=2.0D0*(PSV+EL)+PI/TAN(PI*V)+1.0D0/V
               S1=0.0D0
               DO 45 J=1,M
 45               S1=S1+(J*J+V*V)/(J*(J*J-V*V))
@@ -7568,8 +7568,8 @@ C
         IF (X1.LT.0.0D0) THEN
            Z1=DSQRT(X*X+Y*Y)
            TH1=DATAN(Y/X)
-           SR=-DSIN(PI*X)*DCOSH(PI*Y)
-           SI=-DCOS(PI*X)*DSINH(PI*Y)
+           SR=-DSIN(PI*X)*COSH(PI*Y)
+           SI=-DCOS(PI*X)*SINH(PI*Y)
            Z2=DSQRT(SR*SR+SI*SI)
            TH2=DATAN(SI/SR)
            IF (SR.LT.0.0D0) TH2=PI+TH2
@@ -8448,8 +8448,8 @@ C
            DI(1)=0.333333333333333D0
            RETURN
         ENDIF
-        SI(0)=DSINH(X)/X
-        SI(1)=-(DSINH(X)/X-DCOSH(X))/X
+        SI(0)=SINH(X)/X
+        SI(1)=-(SINH(X)/X-COSH(X))/X
         SI0=SI(0)
         IF (N.GE.2) THEN
            M=MSTA1(X,200)
@@ -8767,7 +8767,7 @@ C          Power series
            IF (X.LE.0.0.AND.DIMAG(Z).EQ.0.0) THEN
 C     Careful on the branch cut -- use the sign of the imaginary part
 C     to get the right sign on the factor if pi.
-              CE1=-EL-LOG(-Z)+Z*CE1-DSIGN(PI,DIMAG(Z))*(0.0D0,1.0D0)
+              CE1=-EL-LOG(-Z)+Z*CE1-SIGN(PI,DIMAG(Z))*(0.0D0,1.0D0)
            ELSE
               CE1=-EL-LOG(Z)+Z*CE1
            ENDIF
@@ -11426,7 +11426,7 @@ C
         PI=3.141592653589793D0
         XA=DABS(X)
         VH=V
-        V=V+DSIGN(1.0D0,V)
+        V=V+SIGN(1.0D0,V)
         NV=INT(V)
         V0=V-NV
         NA=ABS(NV)
@@ -12219,8 +12219,8 @@ C
               PSI=PSI+RI
            ENDIF
            IF (X1.LT.0.0D0) THEN
-              TN=DTAN(PI*X)
-              TM=DTANH(PI*Y)
+              TN=TAN(PI*X)
+              TM=TANH(PI*Y)
               CT2=TN*TN+TM*TM
               PSR=PSR+X/(X*X+Y*Y)+PI*(TN-TN*TM*TM)/CT2
               PSI=PSI-Y/(X*X+Y*Y)-PI*TM*(1.0D0+TN*TN)/CT2
