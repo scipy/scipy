@@ -1276,6 +1276,10 @@ class fisk_gen(burr_gen):
 
     `fisk` is a special case of `burr` or `burr12` with ``d=1``.
 
+    Suppose ``X`` is a logistic random variable with location ``l``
+    and scale ``s``. Then ``Y = exp(X)`` is a Fisk (log-logistic)
+    random variable with ``scale = exp(l)`` and shape ``c = 1/s``.
+
     %(after_notes)s
 
     %(example)s
