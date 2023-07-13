@@ -17,9 +17,9 @@
 #endif
 #else
 #if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F##_
+#define F_FUNC(f,F) F
 #else
-#define F_FUNC(f,F) f##_
+#define F_FUNC(f,F) f
 #endif
 #endif
 

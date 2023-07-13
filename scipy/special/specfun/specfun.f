@@ -2049,7 +2049,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE AIRYZO(NT,KF,XA,XB,XC,XD)
+        SUBROUTINE AIRYZO_(NT,KF,XA,XB,XC,XD)
 C
 C       ========================================================
 C       Purpose: Compute the first NT zeros of Airy functions
