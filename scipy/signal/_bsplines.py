@@ -162,12 +162,12 @@ def bspline(x, n):
         `scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
         removed in SciPy 1.13.
 
-        The exact equivalent (for a float array `x`) is
+        The exact equivalent (for a float array `x`) is::
 
-        >>> from scipy.interpolate import BSpline
-        >>> knots = np.arange(-(n+1)/2, (n+3)/2)
-        >>> out = BSpline.basis_element(knots)(x)
-        >>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
+            >>> from scipy.interpolate import BSpline
+            >>> knots = np.arange(-(n+1)/2, (n+3)/2))
+            >>> out = BSpline.basis_element(knots)(x)
+            >>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
     
     B-spline basis function of order n.
 
@@ -291,11 +291,11 @@ def cubic(x):
         `scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
         removed in SciPy 1.13.
 
-        The exact equivalent (for a float array `x`) is
+        The exact equivalent (for a float array `x`) is::
 
-        >>> from scipy.interpolate import BSpline
-        >>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
-        >>> out[(x < -2 | (x > 2)] = 0.0
+            >>> from scipy.interpolate import BSpline
+            >>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
+            >>> out[(x < -2 | (x > 2)] = 0.0
 
     A cubic B-spline.
 
@@ -377,11 +377,11 @@ def quadratic(x):
         `scipy.signal.quadratic` is deprecated in SciPy 1.11 and
         will be removed in SciPy 1.13.
 
-        The exact equivalent (for a float array `x`) is
+        The exact equivalent (for a float array `x`) is::
 
-        >>> from scipy.interpolate import BSpline
-        >>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
-        >>> out[(x < -1.5 | (x > 1.5)] = 0.0
+            >>> from scipy.interpolate import BSpline
+            >>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
+            >>> out[(x < -1.5 | (x > 1.5)] = 0.0
 
     A quadratic B-spline.
 
