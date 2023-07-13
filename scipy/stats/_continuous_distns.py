@@ -1231,8 +1231,12 @@ class burr12_gen(rv_continuous):
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
 
     def _munp(self, n, c, d):
-        nc = 1. * n / c
-        return d * sc.beta(1.0 + nc, d - nc)
+        def moment_if_exists(n, c, d):
+            nc = 1. * n / c
+            return d * sc.beta(1.0 + nc, d - nc)
+
+        return _lazywhere(c * d > n, (n, c, d), moment_if_exists,
+                          fillvalue=np.nan)
 
 
 burr12 = burr12_gen(a=0.0, name='burr12')

@@ -7271,6 +7271,20 @@ class TestBurr12:
         delta = stats.burr12._delta_cdf(2e5, 4e5, 4, 8, scale=scale)
         assert_allclose(delta, expected, rtol=1e-13)
 
+    def test_moments_edge(self):
+        # gh-18838 reported that burr12 moments could be invalid; see above.
+        # Check that this is resolved in an edge case where c*d == n, and
+        # compare the results against those produced by Mathematica, e.g.
+        # `SinghMaddalaDistribution[2, 2, 1]` at Wolfram Alpha.
+        c, d = 2, 2
+        mean = np.pi/4
+        var = 1 - np.pi**2/16
+        skew = np.pi**3/(32*var**1.5)
+        kurtosis = np.nan
+        ref = [mean, var, skew, kurtosis]
+        res = stats.burr12(c, d).stats('mvsk')
+        assert_allclose(res, ref, rtol=1e-14)
+
 
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
