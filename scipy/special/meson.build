@@ -262,11 +262,6 @@ mach_lib = static_library('mach',
   fortran_args: [_fflag_Wno_unused_dummy_argument, _fflag_Wno_maybe_uninitialized]
 )
 
-specfun_lib = static_library('specfun',
-  'specfun/specfun.f',
-  fortran_args: _fflag_Wno_maybe_uninitialized
-)
-
 specfun_module = custom_target('specfun_module',
   output: '_specfunmodule.c',
   input: 'specfun.pyf',
@@ -278,7 +273,7 @@ py3.extension_module('_specfun',
   c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
-  link_with: specfun_lib,
+  objects: 'specfun.so',
   link_language: 'fortran',
   install: true,
   subdir: 'scipy/special'
@@ -343,8 +338,8 @@ py3.extension_module('_ufuncs',
     cdflib_lib,
     cephes_lib,
     mach_lib,
-    specfun_lib
   ],
+  objects: 'specfun.so',
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/special'
@@ -409,8 +404,8 @@ py3.extension_module('cython_special',
     cdflib_lib,
     cephes_lib,
     mach_lib,
-    specfun_lib
   ],
+  objects: 'specfun.so',
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/special'
