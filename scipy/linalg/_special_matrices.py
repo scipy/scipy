@@ -7,7 +7,9 @@ from numpy.lib.stride_tricks import as_strided
 __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-           'fiedler', 'fiedler_companion', 'convolution_matrix']
+           'fiedler', 'fiedler_companion', 'convolution_matrix',
+           'sakurai'
+          ]
 
 
 # -----------------------------------------------------------------------------
@@ -1396,3 +1398,89 @@ def convolution_matrix(a, n, mode='full'):
         col0 = az
         row0 = raz[-n:]
     return toeplitz(col0, row0)
+
+
+class sakurai:
+    """
+    Construct a Sakurai matrix in various formats and its eigenvalues.
+
+    Constructs the "Sakurai" matrix motivated by reference [1]_.
+    The matrix is square real symmetric positive definite and banded
+    with analytically known eigenvalues.
+    The matrix gets ill-conditioned with its size growing.
+    See the notes below for details.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix.
+
+    Returns
+    -------
+    sakurai_obj: custom object
+        The object containing the output
+    sakurai_obj.array : (n, n) ndarray
+        The Sakurai matrix in the ndarray format
+    sakurai_obj.sparse : (n, n) sparse matrix
+        The Sakurai matrix in a DIAgonal sparse format
+    sakurai_obj.banded : (5, n) ndarray
+        The Sakurai matrix in the format for banded solvers
+    sakurai_obj.eigenvalues : (n, ) ndarray, float
+        Eigenvalues of the Sakurai matrix ordered ascending
+
+    Notes
+    -----
+    Reference [1]_ introduces a generalized eigenproblem for the matrix pair
+    `A` and `B` where `A` is the identity so we turn it into an eigenproblem
+    just for the matrix `B` that this function outputs in various formats
+    together with its eigenvalues.
+    
+    .. versionadded:: 1.11.2
+
+    References
+    ----------
+    .. [1] T. Sakurai, H. Tadano, Y. Inadomi, and U. Nagashima,
+        "A moment-based method for large-scale generalized
+         eigenvalue problems",
+         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import sakurai
+    >>> sak = sakurai(6)
+    >>> sak.array
+    array([[ 5., -4.,  1.,  0.,  0.,  0.],
+        [-4.,  6., -4.,  1.,  0.,  0.],
+        [ 1., -4.,  6., -4.,  1.,  0.],
+        [ 0.,  1., -4.,  6., -4.,  1.],
+        [ 0.,  0.,  1., -4.,  6., -4.],
+        [ 0.,  0.,  0.,  1., -4.,  5.]])
+    >>> sak.banded
+    array([[ 1.,  1.,  1.,  1.,  1.,  1.],
+        [-4., -4., -4., -4., -4., -4.],
+        [ 5.,  6.,  6.,  6.,  6.,  5.],
+        [-4., -4., -4., -4., -4., -4.],
+        [ 1.,  1.,  1.,  1.,  1.,  1.]])
+    >>> sak.sparse
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 24 stored elements (5 diagonals) in DIAgonal format>
+    >>> np.sum(sak.sparse.A - sak.array) == 0
+    True
+    >>> sak.eigenvalues
+    array([ 0.03922866,  0.56703972,  2.41789479,  5.97822974, 10.54287655,
+        14.45473055])
+
+    """
+    def __init__(self, n):
+        d0 = np.r_[5, 6 * np.ones(n - 2), 5]
+        d1 = -4 * np.ones(n)
+        d2 = np.ones(n)
+        s = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
+        sakurai.sparse = s
+        sakurai.array = s.toarray()
+        sakurai.banded = np.array([d2, d1, d0, d1, d2])
+
+        k = np.arange(1, n+1)
+        e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
+        sakurai.eigenvalues = e
