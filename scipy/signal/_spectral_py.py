@@ -1701,11 +1701,11 @@ def cyclic_sd(x, y, /, *, fs=16., alpha=4., sym=True, window='hann',
         to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
-        tuple, is set to 256, and if window is array_like, is set to the
-        length of the window.
+        tuple, is set to the min of 256 and length of inpus, and if window is
+        array_like, is set to the length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If `None`,
-        ``noverlap = nperseg // 2``. Defaults to `None`.
+        ``noverlap = 3 * nperseg // 4``. Defaults to `None`.
     nfft : int, optional
         Length of the FFT used, if a zero padded FFT is desired. If
         `None`, the FFT length is `nperseg`. Defaults to `None`.
