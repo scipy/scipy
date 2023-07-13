@@ -2468,8 +2468,8 @@ def anderson_ksamp(samples, midrank=True, *, method=None):
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-
-    p = res.pvalue if method is not None else p
+    else:
+        p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
