@@ -1472,11 +1472,12 @@ class sakurai:
         14.45473055])
 
     """
+    from scipy.sparse import spdiags
     def __init__(self, n):
         d0 = np.r_[5, 6 * np.ones(n - 2), 5]
         d1 = -4 * np.ones(n)
         d2 = np.ones(n)
-        s = scipy.sparse.spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
+        s = spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
         sakurai.sparse = s
         sakurai.array = s.toarray()
         sakurai.banded = np.array([d2, d1, d0, d1, d2])
