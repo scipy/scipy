@@ -1472,8 +1472,8 @@ class sakurai:
         14.45473055])
 
     """
-    from scipy.sparse import spdiags
     def __init__(self, n):
+        from scipy.sparse import spdiags
         d0 = np.r_[5, 6 * np.ones(n - 2), 5]
         d1 = -4 * np.ones(n)
         d2 = np.ones(n)
