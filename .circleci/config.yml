@@ -77,7 +77,8 @@ jobs:
             pip install cython
             pip install numpy==1.23.5
             pip install -r doc_requirements.txt
-            pip install mpmath gmpy2 "git+https://github.com/airspeed-velocity/asv@d4c868e52943894688e2db6abbf1ba2ab179cb84" pythran ninja meson click rich-click doit pydevtool pooch
+            pip install mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
+            pip "git+https://github.com/airspeed-velocity/asv@d4c868e52943894688e2db6abbf1ba2ab179cb84"
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -150,7 +151,7 @@ jobs:
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time asv --config asv.conf.json dev -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
