@@ -5,6 +5,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.linalg import eigh, cho_factor, cho_solve, sakurai
+    from scipy.linalg import cholesky_banded, cho_solve_banded. eig_banded
     from scipy.sparse import diags
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
@@ -48,7 +49,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [49, 99]
+        self.time_sakurai.__func__.params[0] = [99, 999]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
     def setup_mikota(self, n, solver):
@@ -62,9 +63,9 @@ class Bench(Benchmark):
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = sakurai(n)
-        self.A = sakurai_obj.sparse
-        self.A_dense = sakurai_obj.array
+        self.A = sakurai_obj.banded
 
+    
     def time_mikota(self, n, solver):
         m = 10
         rng = np.random.default_rng(0)
@@ -87,9 +88,14 @@ class Bench(Benchmark):
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            _, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
+            c = cholesky_banded(self.A)
+            a_f = lambda x: cho_solve_banded((c, False), x)
+            _, _ = lobpcg(a_f, X, tol=1e-9, maxiter=10)
         elif solver == 'eigsh':
-            _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
+            c = cholesky_banded(self.A)
+            a_f = lambda x: cho_solve_banded((c, False), x)
+            a_l = LinearOperator((n, n), matvec=a_f, matmat=a_f, dtype='float64')
+            _, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
                                    v0=X[:, 0])
         else:
-            _, _ = eigh(self.A_dense, subset_by_index=(0, m - 1))
+            _, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
