@@ -7,6 +7,16 @@ else
   fmm_extra_args = []
 endif
 
+# macOS gained <charconv> support with macOS 10.15.
+# As of writing SciPy targets macOS 10.9 on x86 (and 12 on arm64).
+# Enable use of <charconv> only if not on macOS.
+if host_machine.system() != 'darwin'
+  fmm_extra_args += [
+    '-DFMM_FROM_CHARS_INT_SUPPORTED',
+    '-DFMM_TO_CHARS_INT_SUPPORTED'
+    ]
+endif
+
 py3.extension_module('_core',
   [
     'src/_core.hpp',
@@ -21,8 +31,6 @@ py3.extension_module('_core',
   cpp_args: [
     numpy_nodepr_api,
     '-DFMM_SCIPY_PRUNE',
-    '-DFMM_FROM_CHARS_INT_SUPPORTED',
-    '-DFMM_TO_CHARS_INT_SUPPORTED',
     '-DFMM_USE_FAST_FLOAT',
     '-DFMM_USE_RYU'
     ] + fmm_extra_args,
