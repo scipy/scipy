@@ -9,14 +9,15 @@ passing options to ``meson setup`` either manually, or via `meson-python`_.
 
 .. _meson-python: https://meson-python.readthedocs.io/en/latest/how-to-guides/meson-args.html
 
-Distributions that are known to successfully cross compile scipy are:
+Distributions that are known to successfully cross compile SciPy are:
 
 - `Void Linux <https://github.com/void-linux/void-packages/blob/master/srcpkgs/python3-scipy/template>`_ - using ``python -m build`` (``pypa/build``)
 - `Nix <https://github.com/nixos/nixpkgs/blob/master/pkgs/development/python-modules/scipy/default.nix>`_ - using ``python -m build`` as well.
+- `Conda-forge <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`_ - using ``python -m build`` as well.
 
 See also `Meson's documentation on cross compilation
 <https://mesonbuild.com/Cross-compilation.html>`__ to learn what options you
-may need to pass to meson to successfully cross compile.
+may need to pass to Meson to successfully cross compile.
 
 One common hiccup is that ``numpy`` and ``pythran`` require
 running Python code in order to obtain their include directories. This tends to
