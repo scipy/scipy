@@ -178,6 +178,7 @@ Special Matrices
    leslie - Leslie matrix
    pascal - Pascal matrix
    invpascal - Inverse Pascal matrix
+   sakurai - Sakurai matrix
    toeplitz - Toeplitz matrix
    tri - Construct a matrix filled with ones at and below a given diagonal
 
