@@ -16,7 +16,7 @@ from urllib.error import HTTPError
 OPENBLAS_V = '0.3.21.dev'
 OPENBLAS_LONG = 'v0.3.20-571-g3dec11c6'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
-BASEURL = f'{BASE_LOC}/{OPENBLAS_LONG}/download'
+
 SUPPORTED_PLATFORMS = [
     'linux-aarch64',
     'linux-x86_64',
@@ -121,6 +121,7 @@ def download_openblas(target, plat, ilp64, *, openblas_version=OPENBLAS_LONG):
 
     if not suffix:
         return None
+    BASEURL = f'{BASE_LOC}/{openblas_version}/download'
     filename = f'{BASEURL}/openblas{fnsuffix}-{openblas_version}-{suffix}'
     req = Request(url=filename, headers=headers)
 
