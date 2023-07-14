@@ -1440,9 +1440,9 @@ class sakurai:
     References
     ----------
     .. [1] T. Sakurai, H. Tadano, Y. Inadomi, and U. Nagashima,
-        "A moment-based method for large-scale generalized
-         eigenvalue problems",
-         Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
+       "A moment-based method for large-scale generalized
+       eigenvalue problems",
+       Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
 
     Examples
     --------
@@ -1451,25 +1451,25 @@ class sakurai:
     >>> sak = sakurai(6)
     >>> sak.array
     array([[ 5., -4.,  1.,  0.,  0.,  0.],
-        [-4.,  6., -4.,  1.,  0.,  0.],
-        [ 1., -4.,  6., -4.,  1.,  0.],
-        [ 0.,  1., -4.,  6., -4.,  1.],
-        [ 0.,  0.,  1., -4.,  6., -4.],
-        [ 0.,  0.,  0.,  1., -4.,  5.]])
+           [-4.,  6., -4.,  1.,  0.,  0.],
+           [ 1., -4.,  6., -4.,  1.,  0.],
+           [ 0.,  1., -4.,  6., -4.,  1.],
+           [ 0.,  0.,  1., -4.,  6., -4.],
+           [ 0.,  0.,  0.,  1., -4.,  5.]])
     >>> sak.banded
     array([[ 1.,  1.,  1.,  1.,  1.,  1.],
-        [-4., -4., -4., -4., -4., -4.],
-        [ 5.,  6.,  6.,  6.,  6.,  5.],
-        [-4., -4., -4., -4., -4., -4.],
-        [ 1.,  1.,  1.,  1.,  1.,  1.]])
+           [-4., -4., -4., -4., -4., -4.],
+           [ 5.,  6.,  6.,  6.,  6.,  5.],
+           [-4., -4., -4., -4., -4., -4.],
+           [ 1.,  1.,  1.,  1.,  1.,  1.]])
     >>> sak.sparse
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
     >>> np.sum(sak.sparse.A - sak.array) == 0
     True
     >>> sak.eigenvalues
-    array([ 0.03922866,  0.56703972,  2.41789479,  5.97822974, 10.54287655,
-        14.45473055])
+    array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
+           10.54287655, 14.45473055])
 
     """
     def __init__(self, n):
