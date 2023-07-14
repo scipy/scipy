@@ -370,7 +370,8 @@ if __name__ == '__main__':
     parser.add_argument('--check_version', nargs='?', default='',
                         help='Check provided OpenBLAS version string '
                              'against available OpenBLAS')
-    parser.add_argument('--nightly', action='store_true')
+    parser.add_argument('--nightly', action='store_true',
+                        help='If set, use nightly OpenBLAS build.')
     args = parser.parse_args()
     if args.check_version != '':
         test_version(args.check_version)
