@@ -1680,8 +1680,10 @@ def yeojohnson_normmax(x, brack=None):
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
         b = np.log(np.finfo(dtype).eps)
         max_x = 20 * np.nanmax(np.abs(x))
-        lb = (np.log(np.finfo(dtype).tiny) - b) / 2 / np.log(max_x + 1)
-        ub = (np.log(np.finfo(dtype).max) + b) / 2 / np.log(max_x + 1)
+        lb = (np.log(np.finfo(dtype).tiny) - b) / 2 / np.log1p(max_x)
+        ub = (np.log(np.finfo(dtype).max) + b) / 2 / np.log1p(max_x)
+        if np.any(x < 0):
+            lb, ub = 2 - ub, 2 - lb
         tol_brent = 1.48e-08
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
