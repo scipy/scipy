@@ -59,7 +59,7 @@ class Bench(Benchmark):
             # skip: slow, and not useful to benchmark
             raise NotImplementedError()
 
-    def setup_sakurai_rev(self, n, solver):
+    def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = sakurai(n)
         self.A = sakurai_obj.sparse
