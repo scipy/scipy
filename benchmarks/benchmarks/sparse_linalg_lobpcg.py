@@ -5,7 +5,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy.linalg import eigh, cho_factor, cho_solve, sakurai
-    from scipy.linalg import cholesky_banded, cho_solve_banded. eig_banded
+    from scipy.linalg import cholesky_banded, cho_solve_banded, eig_banded
     from scipy.sparse import diags
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
