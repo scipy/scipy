@@ -685,6 +685,7 @@ class Test(Task):
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s cluster -m full --durations 20
     $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
+    $ python dev.py test -b numpy -b pytorch -s cluster
     ```
     """  # noqa: E501
     ctx = CONTEXT
@@ -715,6 +716,13 @@ class Test(Task):
     parallel = Option(
         ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for testing"
+    )
+    array_api_backend = Option(
+        ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
+        multiple=True,
+        help=(
+            "Array API backend ('all', 'numpy', 'pytorch', 'cupy', 'numpy.array_api')."
+        )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(
@@ -755,6 +763,9 @@ class Test(Task):
             tests = args.tests
         else:
             tests = None
+
+        if len(args.array_api_backend) != 0:
+            os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice

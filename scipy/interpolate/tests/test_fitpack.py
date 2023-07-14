@@ -231,7 +231,7 @@ class TestSplder:
         self.spl = splrep(x, y)
 
         # double check that knots are non-uniform
-        assert_(np.diff(self.spl[0]).ptp() > 0)
+        assert_(np.ptp(np.diff(self.spl[0])) > 0)
 
     def test_inverse(self):
         # Check that antiderivative + derivative is identity.

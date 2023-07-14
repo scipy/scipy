@@ -32,7 +32,7 @@ import itertools
 import warnings
 
 import numpy
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 
 from scipy import special
 from . import _ni_support
@@ -923,7 +923,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
         out_bounds = rot_matrix @ [[0, 0, iy, iy],
                                    [0, ix, 0, ix]]
         # Compute the shape of the transformed input plane
-        out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
+        out_plane_shape = (numpy.ptp(out_bounds, axis=1) + 0.5).astype(int)
     else:
         out_plane_shape = img_shape[axes]
 
