@@ -113,8 +113,23 @@ class TestLinearOperator:
             assert_(isinstance(A+A, interface._SumLinearOperator))
             assert_(isinstance(-A, interface._ScaledLinearOperator))
             assert_(isinstance(A-A, interface._SumLinearOperator))
+            assert_(isinstance(A/2, interface._ScaledLinearOperator))
+            assert_(isinstance(A/2j, interface._ScaledLinearOperator))
+            assert_(((A * 3) / 3).args[0] is A)  # check for simplification
+
+            # Test that prefactor is of _ScaledLinearOperator is not mutated
+            # when the operator is multiplied by a number
+            result = A @ np.array([1, 2, 3])
+            B = A * 3
+            C = A / 5
+            assert_equal(A @ np.array([1, 2, 3]), result)
 
             assert_((2j*A).dtype == np.complex_)
+
+            # Test division by non-scalar
+            msg = "Can only divide a linear operator by a scalar."
+            with assert_raises(ValueError, match=msg):
+                A / np.array([1, 2])
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))

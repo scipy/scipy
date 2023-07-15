@@ -9,10 +9,11 @@ import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
                            ive, loggamma)
-from scipy._lib._util import check_random_state
+from scipy._lib._util import check_random_state, _lazywhere
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+from ._continuous_distns import norm
 from ._discrete_distns import binom
 from . import _mvn, _covariance, _rcont
 from ._qmvnt import _qmvt
@@ -1512,6 +1513,8 @@ class dirichlet_gen(multi_rv_generic):
         The mean of the Dirichlet distribution
     var(alpha)
         The variance of the Dirichlet distribution
+    cov(alpha)
+        The covariance of the Dirichlet distribution
     entropy(alpha)
         Compute the differential entropy of the Dirichlet distribution.
 
@@ -1704,6 +1707,26 @@ class dirichlet_gen(multi_rv_generic):
         out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
         return _squeeze_output(out)
 
+    def cov(self, alpha):
+        """Covariance matrix of the Dirichlet distribution.
+
+        Parameters
+        ----------
+        %(_dirichlet_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : ndarray
+            The covariance matrix of the distribution.
+        """
+
+        alpha = _dirichlet_check_parameters(alpha)
+        alpha0 = np.sum(alpha)
+        a = alpha / alpha0
+
+        cov = (np.diag(a) - np.outer(a, a)) / (alpha0 + 1)
+        return _squeeze_output(cov)
+
     def entropy(self, alpha):
         """
         Differential entropy of the Dirichlet distribution.
@@ -1772,6 +1795,9 @@ class dirichlet_frozen(multi_rv_frozen):
     def var(self):
         return self._dist.var(self.alpha)
 
+    def cov(self):
+        return self._dist.cov(self.alpha)
+
     def entropy(self):
         return self._dist.entropy(self.alpha)
 
@@ -1781,7 +1807,7 @@ class dirichlet_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'cov', 'entropy']:
     method = dirichlet_gen.__dict__[name]
     method_frozen = dirichlet_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(
@@ -4596,12 +4622,34 @@ class multivariate_t_gen(multi_rv_generic):
             return multivariate_normal(None, cov=shape).entropy()
 
         shape_info = _PSD(shape)
-        halfsum = 0.5 * (dim + df)
-        half_df = 0.5 * df
-        return (-gammaln(halfsum) + gammaln(half_df)
+        shape_term = 0.5 * shape_info.log_pdet
+
+        def regular(dim, df):
+            halfsum = 0.5 * (dim + df)
+            half_df = 0.5 * df
+            return (
+                -gammaln(halfsum) + gammaln(half_df)
                 + 0.5 * dim * np.log(df * np.pi) + halfsum
                 * (psi(halfsum) - psi(half_df))
-                + 0.5 * shape_info.log_pdet)
+                + shape_term
+            )
+
+        def asymptotic(dim, df):
+            # Formula from Wolfram Alpha:
+            # "asymptotic expansion -gammaln((m+d)/2) + gammaln(d/2) + (m*log(d*pi))/2
+            #  + ((m+d)/2) * (digamma((m+d)/2) - digamma(d/2))"
+            return (
+                dim * norm._entropy() + dim / df
+                - dim * (dim - 2) * df**-2.0 / 4
+                + dim**2 * (dim - 2) * df**-3.0 / 6
+                + dim * (-3 * dim**3 + 8 * dim**2 - 8) * df**-4.0 / 24
+                + dim**2 * (3 * dim**3 - 10 * dim**2 + 16) * df**-5.0 / 30
+                + shape_term
+            )[()]
+
+        # preserves ~12 digits accuracy up to at least `dim=1e5`. See gh-18465.
+        threshold = dim * 100 * 4 / (np.log(dim) + 1)
+        return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
 
     def entropy(self, loc=None, shape=1, df=1):
         """Calculate the differential entropy of a multivariate

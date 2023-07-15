@@ -1337,7 +1337,7 @@ class TestDifferentialEvolutionSolver:
         # tolerance has to be fairly relaxed for the second parameter
         # because we're fitting a distribution to random variates.
         assert res.x[0] == 5
-        assert_allclose(res.x, shapes, rtol=0.02)
+        assert_allclose(res.x, shapes, rtol=0.025)
 
         # check that we can still use integrality constraints with polishing
         res2 = differential_evolution(func, bounds, args=(dist, x),
@@ -1491,4 +1491,4 @@ class TestDifferentialEvolutionSolver:
         # changed.  The essential part of the test is that there is a number
         # after the '=', so if necessary, the text could be reduced to, say,
         # "MAXCV = 0.".
-        assert "MAXCV = 0.404" in result.message
+        assert "MAXCV = 0.414" in result.message

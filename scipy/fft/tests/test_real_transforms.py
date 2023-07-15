@@ -199,7 +199,7 @@ def test_orthogonalize_dcst2(func, norm):
     y1 = func(x, type=2, norm=norm, orthogonalize=True)
     y2 = func(x, type=2, norm=norm, orthogonalize=False)
 
-    y2[0] /= SQRT_2
+    y2[0 if func == dct else -1] /= SQRT_2
     assert_allclose(y1, y2)
 
 
@@ -208,7 +208,7 @@ def test_orthogonalize_dcst2(func, norm):
 def test_orthogonalize_dcst3(func, norm):
     x = np.random.rand(100)
     x2 = x.copy()
-    x2[0] *= SQRT_2
+    x2[0 if func == dct else -1] *= SQRT_2
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
     y2 = func(x2, type=3, norm=norm, orthogonalize=False)

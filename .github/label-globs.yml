@@ -41,7 +41,7 @@ scipy.signal:
 - scipy/signal/**/*
 
 scipy.sparse:
-- all: ["scipy/sparse/**/*", "!scipy/sparse/csgraph/**/*", "!scipy/sparse/linalg/**/*"]
+- scipy/sparse/**/*
 
 scipy.sparse.csgraph:
 - scipy/sparse/csgraph/**/*
