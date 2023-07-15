@@ -1,25 +1,15 @@
-set -xe
-
-
 NIGHTLY_FLAG=""
 
-while (( "$#" )); do
-  case "$1" in
-    --nightly)
-      NIGHTLY_FLAG="--nightly"
-      shift
-      ;;
-    --*)
-      echo "Error: Unrecognized flag $1" >&2
-      exit 1
-      ;;
-    *)
-      break
-      ;;
-  esac
-done
+if [ "$#" -eq 1 ]; then
+    PROJECT_DIR="$1"
+elif [ "$#" -eq 2 ] && [ "$1" = "--nightly" ]; then
+    NIGHTLY_FLAG="--nightly"
+    PROJECT_DIR="$2"
+else
+    echo "Usage: $0 [--nightly] <project_dir>"
+    exit 1
+fi
 
-PROJECT_DIR="$1"
 PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
 
 printenv
