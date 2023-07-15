@@ -49,7 +49,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [99, 999]
+        self.time_sakurai.__func__.params[0] = [500, 1000, 2000]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
     def setup_mikota(self, n, solver):
@@ -88,15 +88,22 @@ class Bench(Benchmark):
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 3
+        ee = sakurai_obj.eigenvalues[:m]
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
-            _, _ = lobpcg(a, X, tol=1e-9, maxiter=10)
+            el, _ = lobpcg(a, X, tol=1e-9, maxiter=10)
+            accuracy = max(abs(ee - 1. / el) / ee)
+            assert accuracy < 100 * n * n * n* np.finfo(float).eps
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
-            _, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
+            es, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
                                    v0=rng.normal(size=(n, 1)))
+            accuracy = max(abs(ee - sort(1./es)) / ee)
+            assert accuracy < 100 * n * n * n* np.finfo(float).eps
         else:
-            _, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
+            eb, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
+            accuracy = max(abs(ee - eb) / ee)
+            assert accuracy < 100 * n * n * n* np.finfo(float).eps
