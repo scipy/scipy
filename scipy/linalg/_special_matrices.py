@@ -1449,7 +1449,8 @@ class sakurai:
     --------
     >>> import numpy as np
     >>> from scipy.linalg import sakurai, eig_banded
-    >>> sak = sakurai(6)
+    >>> n = 6
+    >>> sak = sakurai(n)
     >>> sak.array
     array([[ 5., -4.,  1.,  0.,  0.,  0.],
            [-4.,  6., -4.,  1.,  0.,  0.],
