@@ -439,7 +439,7 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                     return True
             if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
-            elif state.tr_radius < xtol:
+            elif state.tr_radius < xtol and state.constr_violation < gtol:
                 state.status = 2
             elif state.nit >= maxiter:
                 state.status = 0
