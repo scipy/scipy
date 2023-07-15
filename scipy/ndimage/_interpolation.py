@@ -71,6 +71,10 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     spline_filter1d : ndarray
         The filtered input.
 
+    See Also
+    --------
+    spline_filter : Multidimensional spline filter.
+
     Notes
     -----
     All of the interpolation functions in `ndimage` do spline interpolation of
@@ -88,10 +92,6 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
     .. versionadded:: 1.6.0
         Complex-valued support added.
-
-    See Also
-    --------
-    spline_filter : Multidimensional spline filter.
 
     Examples
     --------
@@ -137,7 +137,23 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
     Multidimensional spline filter.
 
-    For more details, see `spline_filter1d`.
+    Parameters
+    ----------
+    %(input)s
+    order : int, optional
+        The order of the spline, default is 3.
+    axis : int, optional
+        The axis along which the spline filter is applied. Default is the last
+        axis.
+    output : ndarray or dtype, optional
+        The array in which to place the output, or the dtype of the returned
+        array. Default is ``numpy.float64``.
+    %(mode_interp_mirror)s
+
+    Returns
+    -------
+    spline_filter : ndarray
+        Filtered array. Has the same shape as `input`.
 
     See Also
     --------
