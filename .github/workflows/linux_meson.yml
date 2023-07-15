@@ -328,6 +328,84 @@ jobs:
         export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
         export OPENBLAS_NUM_THREADS=1
+        python dev.py test -j2 --mode full -- --cov --cov-report term-missing
+  #################################################################################
+  prerelease_deps_coverage_64bit_blas_nightly:
+    # TODO: re-enable ILP64 build.
+    name: Prerelease deps and 64-bit BLAS nightly build
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+
+        # Install OpenBLAS a la cibuildwheel.
+        chmod +x tools/wheels/cibw_before_build_linux.sh
+        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
+
+    - name: Caching Python dependencies
+      uses: actions/cache@v3
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-prerelease
+
+    - name: Install Python packages
+      run: |
+        python -m pip install "Cython>=3.0.0b3"
+        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
+        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
+        # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "dir=$CCACHE_DIR" >> $GITHUB_OUTPUT
+        NOW=$(date -u +"%F-%T")
+        echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v3
+      id:    cache-ccache
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        # Restores ccache from either a previous build on this branch or on main
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-${{ steps.prep-ccache.outputs.timestamp }}
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-prerelease-
+
+    - name: Build and install SciPy
+      run: |
+        python dev.py build --gcov
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
+
+    - name: Test SciPy
+      run: |
+        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+
+        export OPENBLAS_NUM_THREADS=1
         python dev.py test -j2 --mode full -- --cov --cov-report term-missing 
 
   #################################################################################
