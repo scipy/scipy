@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers, _rng_spawn
+from scipy.sparse.csgraph import minimum_spanning_tree
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -43,7 +44,7 @@ from ._qmc_cy import (
 )
 
 
-__all__ = ['scale', 'discrepancy', 'update_discrepancy',
+__all__ = ['scale', 'discrepancy', 'geometric_discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
@@ -304,6 +305,108 @@ def discrepancy(
     else:
         raise ValueError(f"{method!r} is not a valid method. It must be one of"
                          f" {set(methods)!r}")
+
+
+def geometric_discrepancy(
+        sample: npt.ArrayLike,
+        method: Literal["mindist", "mst"] = "mindist",
+        metric: str = "euclidean") -> float:
+    """Discrepancy of a given sample based on its geometric properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to compute the discrepancy from.
+    method: str, optional
+        The method to use. One of ``mindist`` for minimum distance
+        or ``mst`` for minimum spanning tree.
+    metric: str or callable, optional
+        The distance metric to use. See the documentation
+        for ``scipy.spatial.distance.pdist``.
+
+    Returns
+    -------
+    discrepancy : float
+        Discrepancy (higher values correspond to greater sample uniformity).
+
+    Notes
+    -----
+    The discrepancy can serve as a simple measure of quality of a random sample.
+    This measure is based on the geometric properties of the distribution of points
+    in the sample, such as the minimum distance between any pair of points, or
+    the mean edge length in a minimum spanning tree.
+
+    The higher the value is, the better the coverage of the parameter space is.
+    Note that this is different from `scipy.stats.qmc.discrepancy`, where lower
+    values correspond to higher quality of the sample.
+
+    It is possible to calculate two metrics from the minimum spanning tree:
+    the mean edge length and the standard deviation of edges lengths. Using
+    both metrics offers a better picture of uniformity than either metric alone,
+    with higher mean and lower standard deviation being preferable (see [1]
+    for a brief discussion). This function currently only calculates the mean
+    edge length.
+
+    References
+    ----------
+    .. [1] Franco J. et al. "Minimum Spanning Tree: A new approach to assess the quality
+       of the design of computer experiments." Chemometrics and Intelligent Laboratory
+       Systems, 97 (2), pp. 164-169, 2009.
+
+    Examples
+    --------
+    Calculate the quality of the sample using the minimum euclidean distance
+    (the defaults):
+
+    >>> import numpy as np
+    >>> from scipy.stats import qmc
+    >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+    >>> l_bounds = [0.5, 0.5]
+    >>> u_bounds = [6.5, 6.5]
+    >>> space = qmc.scale(space, l_bounds, u_bounds, reverse=True)
+    >>> space
+    array([[0.08333333, 0.41666667],
+           [0.25      , 0.91666667],
+           [0.41666667, 0.25      ],
+           [0.58333333, 0.75      ],
+           [0.75      , 0.08333333],
+           [0.91666667, 0.58333333]])
+    >>> qmc.geometric_discrepancy(space)
+    0.3726779962499649
+
+    Calculate the quality using the mean edge length in the minimum
+    spanning tree:
+
+    >>> qmc.geometric_discrepancy(space, method='mst')
+    0.4035516523389179
+
+    """
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+
+    # Checking that sample is within the hypercube and 2D
+    if not sample.ndim == 2:
+        raise ValueError("Sample is not a 2D array")
+
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError("Sample is not in unit hypercube")
+
+    distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
+
+    if np.any(distances == 0.0):
+        warnings.warn("The sample contains duplicate points.", stacklevel=2)
+
+    if method == "mindist":
+        return np.min(distances[distances.nonzero()])
+    elif method == "mst":
+        fully_connected_graph = distance.squareform(distances)
+        mst = minimum_spanning_tree(fully_connected_graph)
+        distances = mst[mst.nonzero()]
+        # TODO consider returning both the mean and the standard deviation
+        # see [1] for a discussion
+        return np.mean(distances)
+    else:
+        raise ValueError(f"{method!r} is not a valid method. "
+                         f"It must be one of {{'mindist', 'mst'}}")
 
 
 def update_discrepancy(
