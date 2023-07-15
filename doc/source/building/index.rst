@@ -34,9 +34,9 @@ your system.
     for macOS. All other dependencies will be installed automatically by the
     ``mamba env create -f environment.yml`` command.
 
-.. tab-set::
+.. tabs::
 
-  .. tab-item:: Linux
+  .. group-tab:: Linux
 
     If you want to use the system Python and ``pip``, you will need:
 
@@ -102,7 +102,7 @@ your system.
 
           sudo pacman -S gcc-fortran openblas pkgconf
 
-  .. tab-item:: macOS
+  .. group-tab:: macOS
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -131,7 +131,7 @@ your system.
         13.3 introduced a major upgrade to Accelerate which resolved all known
         issues.
 
-  .. tab-item:: Windows
+  .. group-tab:: Windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
     This is trickier on Windows than on other platforms, because MSVC does not
@@ -311,10 +311,30 @@ virtual environments:
     Create and activate a virtual environment in a new directory named ``venv`` (
     note that the exact activation command may be different based on your OS and shell
     - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
-    in the ``venv`` docs)::
+    in the ``venv`` docs).
 
-       python -m venv venv
-       source venv/bin/activate
+    .. tabs::
+
+      .. group-tab:: Linux
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. group-tab:: macOS
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. group-tab:: Windows
+
+        ::
+
+          python -m venv venv
+          .\venv\Scripts\activate
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
