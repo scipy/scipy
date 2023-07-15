@@ -85,8 +85,8 @@ class Bench(Benchmark):
 
 
     def time_sakurai(self, n, solver):
-            def a(x):
-                return cho_solve_banded((c, False), x)
+        def a(x):
+            return cho_solve_banded((c, False), x)
         m = 3
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
