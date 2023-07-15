@@ -10,28 +10,45 @@ __all__ = ["_deprecated"]
 # be used over 'None' as the user could parse 'None' as a positional argument
 _NoValue = object()
 
-def _sub_module_deprecation(sub_module, module, private_module, all, name):
-    if name not in all:
+def _sub_module_deprecation(*, sub_package, module, private_module, all,
+                            attribute):
+    """Helper function for deprecating modules that are public but were
+    intended to be private.
+
+    Parameters
+    ----------
+    sub_package : str
+        Subpackage the module belongs to eg. stats
+    module : str
+        Public but intended private module to deprecate
+    private_module : str
+        Private replacement for `module`
+    all : list
+        ``__all__`` belonging to `module`
+    attribute : str
+        The attribute in `module` being accessed
+    """
+    if attribute not in all:
         raise AttributeError(
-            f"`scipy.{module}.{sub_module}` has no attribute `{name}`; furthermore, "
-            f"`scipy.{module}.{sub_module}` is deprecated and will be removed in "
+            f"`scipy.{sub_package}.{module}` has no attribute `{attribute}`; furthermore, "
+            f"`scipy.{sub_package}.{module}` is deprecated and will be removed in "
             "SciPy 2.0.0.")
 
-    attr = getattr(import_module(f"scipy.{module}"), name, None)
+    attr = getattr(import_module(f"scipy.{sub_package}"), attribute, None)
 
     if attr is not None:
-        message = (f"Please import `{name}` from the `scipy.{module}` namespace; "
-                   f"the `scipy.{module}.{sub_module}` namespace is deprecated and "
+        message = (f"Please import `{attribute}` from the `scipy.{sub_package}` namespace; "
+                   f"the `scipy.{sub_package}.{module}` namespace is deprecated and "
                    "will be removed in SciPy 2.0.0.")
     else:
-        message = (f"`scipy.{module}.{sub_module}.{name}` is deprecated along with "
-                   f"the `scipy.{module}.{sub_module}` namespace. "
-                   f"`scipy.{module}.{sub_module}.{name}` will be removed in SciPy 1.13.0, and "
-                   f"the `scipy.{module}.{sub_module}` namespace will be removed in SciPy 2.0.0.")
+        message = (f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
+                   f"the `scipy.{sub_package}.{module}` namespace. "
+                   f"`scipy.{sub_package}.{module}.{attribute}` will be removed in SciPy 1.13.0, and "
+                   f"the `scipy.{sub_package}.{module}` namespace will be removed in SciPy 2.0.0.")
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 
-    return getattr(import_module(f"scipy.{module}.{private_module}"), name)
+    return getattr(import_module(f"scipy.{sub_package}.{private_module}"), attribute)
     
 
 def _deprecated(msg, stacklevel=2):
