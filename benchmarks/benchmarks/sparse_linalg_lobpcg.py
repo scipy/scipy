@@ -107,4 +107,4 @@ class Bench(Benchmark):
         else:
             eb, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
             accuracy = max(abs(ee - eb) / ee)
-            assert accuracy < 100 * n * n * n* np.finfo(float).eps
+            assert accuracy < np.finfo(float).eps
