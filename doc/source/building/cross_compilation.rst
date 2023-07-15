@@ -9,11 +9,13 @@ passing options to ``meson setup`` either manually, or via `meson-python`_.
 
 .. _meson-python: https://meson-python.readthedocs.io/en/latest/how-to-guides/meson-args.html
 
-Distributions that are known to successfully cross compile SciPy are:
+All distributions that are known to successfully cross compile SciPy are using
+``python -m build`` (``pypa/build``). Here are links to the SciPy's "build
+recipes" on those distros:
 
-- `Void Linux <https://github.com/void-linux/void-packages/blob/master/srcpkgs/python3-scipy/template>`_ - using ``python -m build`` (``pypa/build``)
-- `Nix <https://github.com/nixos/nixpkgs/blob/master/pkgs/development/python-modules/scipy/default.nix>`_ - using ``python -m build`` as well.
-- `Conda-forge <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`_ - using ``python -m build`` as well.
+- `Void Linux <https://github.com/void-linux/void-packages/blob/master/srcpkgs/python3-scipy/template>`_
+- `Nix <https://github.com/nixos/nixpkgs/blob/master/pkgs/development/python-modules/scipy/default.nix>`_
+- `Conda-forge <https://github.com/conda-forge/scipy-feedstock/blob/main/recipe/build.sh>`_
 
 See also `Meson's documentation on cross compilation
 <https://mesonbuild.com/Cross-compilation.html>`__ to learn what options you
