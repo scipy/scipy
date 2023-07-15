@@ -303,7 +303,7 @@ virtual environments:
     .. note::
 
        There are many tools to manage virtual environments, like ``venv``,
-       ``virtualenv``/``virtualenvwrapper, ``pyenv``/``pyenv-virtualenv``,
+       ``virtualenv``/``virtualenvwrapper``, ``pyenv``/``pyenv-virtualenv``,
        Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
        is part of the Python stdlib. You can use any other tool; all we need is
        an activated Python environment.
