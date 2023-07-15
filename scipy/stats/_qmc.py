@@ -17,15 +17,15 @@ from typing import (
 )
 
 import numpy as np
+import pydantic
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from scipy._lib._util import (
-        DecimalNumber, GeneratorType, IntNumber, SeedType
-    )
 
 import scipy.stats as stats
-from scipy._lib._util import rng_integers, _rng_spawn
+from scipy._lib._util import (
+    rng_integers, _rng_spawn, DecimalNumber, GeneratorType, IntNumber, SeedType
+)
 from scipy.spatial import distance, Voronoi
 from scipy.special import gammainc
 from ._sobol import (
@@ -634,6 +634,18 @@ def van_der_corput(
         return _cy_van_der_corput(n, base, start_index, workers)
 
 
+class QMCEngineModel(pydantic.BaseModel):
+    d: int = pydantic.Field(ge=0, lt=_MAXDIM)
+    seed: SeedType = None
+    optimization: Literal["random-cd", "lloyd"] | None = None
+
+    model_config = pydantic.ConfigDict(
+        arbitrary_types_allowed=True,
+        str_to_lower=True,
+        extra='forbid'
+    )
+
+
 class QMCEngine(ABC):
     """A generic Quasi-Monte Carlo sampler class meant for subclassing.
 
@@ -744,8 +756,12 @@ class QMCEngine(ABC):
         optimization: Literal["random-cd", "lloyd"] | None = None,
         seed: SeedType = None
     ) -> None:
-        if not np.issubdtype(type(d), np.integer) or d < 0:
-            raise ValueError('d must be a non-negative integer value')
+        try:
+            inputs = QMCEngineModel(d=d, seed=seed, optimization=optimization)
+        except pydantic.ValidationError as exc:
+            raise ValueError(exc) from None
+        else:
+            d, seed, optimization = inputs.d, inputs.seed, inputs.optimization
 
         self.d = d
 
@@ -1358,6 +1374,15 @@ class LatinHypercube(QMCEngine):
         return oa_lhs_sample[:, :self.d]  # type: ignore
 
 
+class SobolModel(QMCEngineModel):
+    scramble: bool = True
+    bits: int | None = pydantic.Field(gt=0, le=64, default=30)
+
+    @pydantic.field_validator('bits')
+    def default_bits(cls, v):
+        return v or 30
+
+
 class Sobol(QMCEngine):
     """Engine for generating (scrambled) Sobol' sequences.
 
@@ -1504,28 +1529,33 @@ class Sobol(QMCEngine):
         bits: IntNumber | None = None, seed: SeedType = None,
         optimization: Literal["random-cd", "lloyd"] | None = None
     ) -> None:
+        try:
+            inputs = SobolModel(
+                d=d,
+                scramble=scramble,
+                bits=bits, seed=seed, optimization=optimization
+            )
+        except pydantic.ValidationError as exc:
+            raise ValueError(exc) from None
+        else:
+            d, scramble, bits, seed, optimization = (
+                inputs.d, inputs.scramble, inputs.bits,
+                inputs.seed, inputs.optimization
+            )
+
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'scramble': True, 'bits': bits,
                            'optimization': optimization}
 
         super().__init__(d=d, optimization=optimization, seed=seed)
-        if d > self.MAXDIM:
-            raise ValueError(
-                f"Maximum supported dimensionality is {self.MAXDIM}."
-            )
 
         self.bits = bits
         self.dtype_i: type
-
-        if self.bits is None:
-            self.bits = 30
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
         elif 32 < self.bits <= 64:
             self.dtype_i = np.uint64
-        else:
-            raise ValueError("Maximum supported 'bits' is 64")
 
         self.maxn = 2**self.bits
 
@@ -2280,14 +2310,7 @@ def _select_optimizer(
 
     optimizer: partial | None
     if optimization is not None:
-        try:
-            optimization = optimization.lower()  # type: ignore[assignment]
-            optimizer_ = optimization_method[optimization]
-        except KeyError as exc:
-            message = (f"{optimization!r} is not a valid optimization"
-                       f" method. It must be one of"
-                       f" {set(optimization_method)!r}")
-            raise ValueError(message) from exc
+        optimizer_ = optimization_method[optimization]
 
         # config
         optimizer = partial(optimizer_, **config)

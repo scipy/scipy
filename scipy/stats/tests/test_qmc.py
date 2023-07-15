@@ -399,10 +399,10 @@ def test_subclassing_QMCEngine():
 
 def test_raises():
     # input validation
-    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
+    with pytest.raises(ValueError, match="should be a valid integer"):
         RandomEngine((2,))  # noqa
 
-    with pytest.raises(ValueError, match=r"d must be a non-negative integer"):
+    with pytest.raises(ValueError, match=r"should be greater than or equal to 0"):
         RandomEngine(-1)  # noqa
 
     msg = r"'u_bounds' and 'l_bounds' must be integers"
@@ -595,14 +595,14 @@ class QMCEngineTests:
         )
 
     def test_raises_optimizer(self):
-        message = r"'toto' is not a valid optimization method"
+        message = "Input should be 'random-cd' or 'lloyd'"
         with pytest.raises(ValueError, match=message):
             self.engine(d=1, scramble=False, optimization="toto")
 
     @pytest.mark.parametrize(
         "optimization,metric",
         [
-            ("random-CD", qmc.discrepancy),
+            ("random-cd", qmc.discrepancy),
             ("lloyd", lambda sample: -_l1_norm(sample))]
     )
     def test_optimizers(self, optimization, metric):
@@ -678,7 +678,7 @@ class TestLHS(QMCEngineTests):
 
     @pytest.mark.parametrize("strength", [1, 2])
     @pytest.mark.parametrize("scramble", [False, True])
-    @pytest.mark.parametrize("optimization", [None, "random-CD"])
+    @pytest.mark.parametrize("optimization", [None, "random-cd"])
     def test_sample_stratified(self, optimization, scramble, strength):
         seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
@@ -721,7 +721,7 @@ class TestLHS(QMCEngineTests):
         engine = self.engine(d=1, scramble=False)
         sample_ref = engine.random(n=64)
 
-        optimal_ = self.engine(d=1, scramble=False, optimization="random-CD")
+        optimal_ = self.engine(d=1, scramble=False, optimization="random-cd")
         sample_ = optimal_.random(n=64)
 
         assert_array_equal(sample_ref, sample_)
@@ -791,12 +791,10 @@ class TestSobol(QMCEngineTests):
             engine.random_base2(2)
 
     def test_raise(self):
-        with pytest.raises(ValueError, match=r"Maximum supported "
-                                             r"dimensionality"):
+        with pytest.raises(ValueError, match="Input should be less than 21201"):
             qmc.Sobol(qmc.Sobol.MAXDIM + 1)
 
-        with pytest.raises(ValueError, match=r"Maximum supported "
-                                             r"'bits' is 64"):
+        with pytest.raises(ValueError, match="less than or equal to 64"):
             qmc.Sobol(1, bits=65)
 
     def test_high_dim(self):
