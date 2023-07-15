@@ -83,19 +83,22 @@ class Bench(Benchmark):
         else:
             _, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
 
+
+    def a(x):
+        return cho_solve_banded((c, False), x)
+
+
     def time_sakurai(self, n, solver):
         m = 3
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
-            a_f = lambda x: cho_solve_banded((c, False), x)
-            _, _ = lobpcg(a_f, X, tol=1e-9, maxiter=10)
+            _, _ = lobpcg(a, X, tol=1e-9, maxiter=10)
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
-            a_f = lambda x: cho_solve_banded((c, False), x)
-            a_l = LinearOperator((n, n), matvec=a_f, matmat=a_f, dtype='float64')
+            a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             _, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
-                                   v0=X[:, 0])
+                                   v0=rng.normal(size=(n, 1)))
         else:
             _, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
