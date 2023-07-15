@@ -324,19 +324,19 @@ def test_private_but_present_deprecation(module_name):
     # for imports from private modules
     # were misleading. Check that this is resolved.
     module = import_module(module_name)
-    sub_module_name = module_name.split(".")[1]
-    sub_module = import_module(f"scipy.{sub_module_name}")
+    sub_package_name = module_name.split(".")[1]
+    sub_package = import_module(f"scipy.{sub_package_name}")
 
     # Attributes that were formerly in `module_name` can still be imported from
     # `module_name`, albeit with a deprecation warning. The specific message
     # depends on whether the attribute is public in `scipy.xxx` or not.
     for attr_name in module.__all__:
-        attr = getattr(sub_module, attr_name, None)
+        attr = getattr(sub_package, attr_name, None)
         if attr is None:
             message = f"`{module_name}.{attr_name}` is deprecated..."
         else:
-            message = f"Please import `{attr_name}` from the `scipy.{sub_module_name}`..."
-        with pytest.warns(DeprecationWarning, match=message):
+            message = f"Please import `{attr_name}` from the `scipy.{sub_package_name}`..."
+        with pytest.deprecated_call(match=message):
             getattr(module, attr_name)
 
     # Attributes that were not in `module_name` get an error notifying the user
