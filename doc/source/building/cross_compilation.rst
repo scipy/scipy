@@ -5,7 +5,7 @@ Cross compilation is a complex topic, we only add some hopefully helpful hints
 here (for now). As of May 2023, cross-compilation based on ``crossenv`` is
 known to work, as used (for example) in conda-forge. Cross-compilation without
 ``crossenv`` requires some manual overrides. You instruct these overrides by
-passing options to ``meson setup`` either manually, or via `meson-python`_.
+passing options to ``meson setup`` via `meson-python`_.
 
 .. _meson-python: https://meson-python.readthedocs.io/en/latest/how-to-guides/meson-args.html
 
