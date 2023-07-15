@@ -46,7 +46,6 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
-    'sphinx_tabs.tabs',
     'numpydoc',
     'sphinx_design',
     'scipyoptdoc',
