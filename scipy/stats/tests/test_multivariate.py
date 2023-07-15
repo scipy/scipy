@@ -12,8 +12,6 @@ from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
 
-import re
-
 import numpy
 import numpy as np
 
@@ -811,11 +809,14 @@ class TestMultivariateNormal:
         with pytest.raises(ValueError, match=error_msg):
             multivariate_normal.fit(data)
 
-    def test_fit_correctness(self):
-        x = np.array([[-1., -1., -1.], [0., 0., 0.], [1., 1., 1.]])
+    @pytest.mark.parametrize('dim', (3, 5))
+    def test_fit_correctness(self, dim):
+        rng = np.random.default_rng(4385269356937404)
+        x = rng.random((100, dim))
         mean_est, cov_est = multivariate_normal.fit(x)
-        assert_allclose(mean_est, np.zeros((3, )), atol=1e-15)
-        assert_allclose(cov_est, np.full((3, 3), 2/3), rtol=1e-15)
+        mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
+        assert_allclose(mean_est, mean_ref, atol=1e-15)
+        assert_allclose(cov_est, cov_ref, rtol=1e-15)
 
 
 class TestMatrixNormal:
