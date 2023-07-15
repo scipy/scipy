@@ -146,11 +146,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.margins',
     r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.trapz',   # alias for trapezoid
-    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
-    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
-    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
-    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
-    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',

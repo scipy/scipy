@@ -68,6 +68,11 @@ from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue
 from scipy._lib._util import normalize_axis_index
 
+# In __all__ but deprecated for removal in SciPy 1.13.0
+from scipy._lib._util import float_factorial  # noqa
+from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa
+                                       Ttest_relResult)  # noqa
+
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
