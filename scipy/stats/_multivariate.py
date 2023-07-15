@@ -787,7 +787,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
     def fit(self, x):
-        """Fit the multivariate normal to data `x`.
+        """Fit a multivariate normal distribution to data.
 
         Parameters
         ----------
@@ -800,15 +800,15 @@ class multivariate_normal_gen(multi_rv_generic):
         Returns
         -------
         mean : ndarray (n, )
-            Estimated mean vector
+            Maximum likelihood estimate of the mean vector
         cov : ndarray (n, n)
-            Estimated covariance matrix
+            Maximum likelihood estimate of the covariance matrix
 
         """
         # input validation
         x = np.asarray(x)
         if x.ndim != 2:
-            raise ValueError("`x` must be two-dimensional of shape (m, n).")
+            raise ValueError("`x` must be two-dimensional.")
 
         n_vectors, dim = x.shape
 

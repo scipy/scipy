@@ -807,8 +807,8 @@ class TestMultivariateNormal:
 
     def test_fit_error(self):
         data = [1, 3]
-        error_msg = "`x` must be two-dimensional of shape (m, n)."
-        with pytest.raises(ValueError, match=re.escape(error_msg)):
+        error_msg = "`x` must be two-dimensional."
+        with pytest.raises(ValueError, match=error_msg):
             multivariate_normal.fit(data)
 
     def test_fit_correctness(self):
