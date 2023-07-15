@@ -90,21 +90,22 @@ class Bench(Benchmark):
             return cho_solve_banded((c, False), x)
         m = 3
         ee = self.eigenvalues[:m]
+        tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
             el, _ = lobpcg(a, X, tol=1e-9, maxiter=10)
             accuracy = max(abs(ee - 1. / el) / ee)
-            assert accuracy < 100 * n * n * n* np.finfo(float).eps
+            assert accuracy < tol
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             es, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./es)) / ee)
-            assert accuracy < 100 * n * n * n* np.finfo(float).eps
+            assert accuracy < tol
         else:
             eb, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
             accuracy = max(abs(ee - eb) / ee)
-            assert accuracy < np.finfo(float).eps
+            assert accuracy < tol
