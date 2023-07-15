@@ -15,9 +15,11 @@ from typing import (
     overload,
     TYPE_CHECKING,
 )
+from typing_extensions import Annotated
 
 import numpy as np
 import pydantic
+from pydantic.functional_validators import BeforeValidator
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -634,14 +636,22 @@ def van_der_corput(
         return _cy_van_der_corput(n, base, start_index, workers)
 
 
+def case_insensitive(v: str):
+    return v.lower()
+
+
+optimization_validator = Annotated[
+    Literal["random-cd", "lloyd"] , BeforeValidator(case_insensitive)
+]
+
+
 class QMCEngineModel(pydantic.BaseModel):
     d: int = pydantic.Field(ge=0, lt=_MAXDIM)
     seed: SeedType = None
-    optimization: Literal["random-cd", "lloyd"] | None = None
+    optimization: optimization_validator | None = None
 
     model_config = pydantic.ConfigDict(
         arbitrary_types_allowed=True,
-        str_to_lower=True,
         extra='forbid'
     )
 

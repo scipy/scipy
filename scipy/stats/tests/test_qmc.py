@@ -602,7 +602,7 @@ class QMCEngineTests:
     @pytest.mark.parametrize(
         "optimization,metric",
         [
-            ("random-cd", qmc.discrepancy),
+            ("random-CD", qmc.discrepancy),
             ("lloyd", lambda sample: -_l1_norm(sample))]
     )
     def test_optimizers(self, optimization, metric):
@@ -678,7 +678,7 @@ class TestLHS(QMCEngineTests):
 
     @pytest.mark.parametrize("strength", [1, 2])
     @pytest.mark.parametrize("scramble", [False, True])
-    @pytest.mark.parametrize("optimization", [None, "random-cd"])
+    @pytest.mark.parametrize("optimization", [None, "random-CD"])
     def test_sample_stratified(self, optimization, scramble, strength):
         seed = np.random.default_rng(37511836202578819870665127532742111260)
         p = 5
@@ -721,7 +721,7 @@ class TestLHS(QMCEngineTests):
         engine = self.engine(d=1, scramble=False)
         sample_ref = engine.random(n=64)
 
-        optimal_ = self.engine(d=1, scramble=False, optimization="random-cd")
+        optimal_ = self.engine(d=1, scramble=False, optimization="random-CD")
         sample_ = optimal_.random(n=64)
 
         assert_array_equal(sample_ref, sample_)
