@@ -84,11 +84,9 @@ class Bench(Benchmark):
             _, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
 
 
-    def a(x):
-        return cho_solve_banded((c, False), x)
-
-
     def time_sakurai(self, n, solver):
+            def a(x):
+                return cho_solve_banded((c, False), x)
         m = 3
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
