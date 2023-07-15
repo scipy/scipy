@@ -95,7 +95,6 @@ doc = [
     "sphinx!=4.1.0",
     "pydata-sphinx-theme==0.9.0",
     "sphinx-design>=0.2.0",
-    "sphinx-tabs",
     "matplotlib>2",
     "numpydoc",
     "jupytext",

@@ -34,9 +34,10 @@ your system.
     for macOS. All other dependencies will be installed automatically by the
     ``mamba env create -f environment.yml`` command.
 
-.. tabs::
+.. tab-set::
 
-  .. group-tab:: Linux
+  .. tab-item:: Linux
+    :sync: linux
 
     If you want to use the system Python and ``pip``, you will need:
 
@@ -102,7 +103,8 @@ your system.
 
           sudo pacman -S gcc-fortran openblas pkgconf
 
-  .. group-tab:: macOS
+  .. tab-item:: macOS
+    :sync: macos
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -131,7 +133,8 @@ your system.
         13.3 introduced a major upgrade to Accelerate which resolved all known
         issues.
 
-  .. group-tab:: Windows
+  .. tab-item:: Windows
+    :sync: windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
     This is trickier on Windows than on other platforms, because MSVC does not
@@ -313,23 +316,26 @@ virtual environments:
     - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
     in the ``venv`` docs).
 
-    .. tabs::
+    .. tab-set::
 
-      .. group-tab:: Linux
-
-        ::
-
-          python -m venv venv
-          source venv/bin/activate
-
-      .. group-tab:: macOS
+      .. tab-item:: Linux
+        :sync: linux
 
         ::
 
           python -m venv venv
           source venv/bin/activate
 
-      .. group-tab:: Windows
+      .. tab-item:: macOS
+        :sync: macos
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: Windows
+        :sync: windows
 
         ::
 
@@ -346,10 +352,10 @@ virtual environments:
        python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
 
        # Doc build dependencies
-       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       python -m pip sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
 
        # Dev dependencies (static typing and linting)
-       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+       python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
 
 To build SciPy in an activated development environment, run::
 
