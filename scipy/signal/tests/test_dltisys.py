@@ -234,6 +234,39 @@ class TestDLTI:
         assert_array_equal(yout, expected)
         assert_array_equal(xout, expected)
 
+    def test_dlsim_dtypes(self):
+        # test proper handling of output dtypes, including complex values
+                
+        cases = [
+            ('f4','f4','f4','f4','f4'),
+            ('c8','f4','f4','f4','f4'),
+            ('f4','f8',float,'f4','f4'),
+            (complex,'f4','c16','f4','f4'),
+            ('c8','f4','f4','f8','f8'),
+            (int,int,int,int,int),
+        ]
+
+        t = np.arange(10)
+        u0 = np.zeros(10)
+        A0 = np.zeros((4,4))
+        B0 = np.zeros((4,1))
+        C0 = np.zeros((1,4))
+        D0 = np.zeros(1)
+        x0 = None
+    
+        for case in cases:
+            u = u0.astype(case[0])
+            A = A0.astype(case[1])
+            B = B0.astype(case[2])
+            C = C0.astype(case[3])
+            D = D0.astype(case[4])
+            system = dlti(A, B, C, D)
+            _, yout, xout = dlsim(system, u, t, x0)
+
+            out_dtype = np.result_type(*(np.dtype(c) for c in case))
+            assert yout.dtype == out_dtype
+            assert xout.dtype == out_dtype
+
     def test_more_step_and_impulse(self):
         lambda1 = 0.5
         lambda2 = 0.75
@@ -595,4 +628,3 @@ class TestTransferFunctionZConversion:
         num2, den2 = TransferFunction._zinv_to_z(num, den)
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
-

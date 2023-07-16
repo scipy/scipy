@@ -3529,9 +3529,15 @@ def dlsim(system, u, t=None, x0=None):
         stoptime = t[-1]
         out_samples = int(np.floor(stoptime / system.dt)) + 1
 
+    # determine the output data type - keep the same data type 
+    var_dtypes = (np.asanyarray(v).dtype for v 
+                    in (u, x0, system.A, system.B, system.C, system.D) 
+                    if v is not None)
+    out_dtype = np.result_type(*var_dtypes)
+    
     # Pre-build output arrays
-    xout = np.zeros((out_samples, system.A.shape[0]))
-    yout = np.zeros((out_samples, system.C.shape[0]))
+    xout = np.zeros((out_samples, system.A.shape[0]), out_dtype)
+    yout = np.zeros((out_samples, system.C.shape[0]), out_dtype)
     tout = np.linspace(0.0, stoptime, num=out_samples)
 
     # Check initial condition
