@@ -39,7 +39,7 @@ def _precond(LorU, lower, x):
 class Bench(Benchmark):
     params = [
         [],
-        ['lobpcg', 'eigsh', 'eigh']
+        ['lobpcg', 'eigsh', 'lapack']
     ]
     param_names = ['n', 'solver']
 
@@ -56,9 +56,9 @@ class Bench(Benchmark):
         self.shape = (n, n)
         self.A, self.B = _mikota_pair(n)
 
-        if solver == 'eigh' and n >= 512:
-            # skip: slow, and not useful to benchmark
-            raise NotImplementedError()
+        # if solver == 'eigh' and n >= 512:
+        #     # skip: slow, and not useful to benchmark
+        #     raise NotImplementedError()
 
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
@@ -69,6 +69,8 @@ class Bench(Benchmark):
     
     def time_mikota(self, n, solver):
         m = 10
+        ee = np.power(np.arange(m), 2)
+        tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
@@ -76,13 +78,19 @@ class Bench(Benchmark):
             M = LinearOperator(self.shape,
                                matvec=partial(_precond, LorU, lower),
                                matmat=partial(_precond, LorU, lower))
-            _, _ = lobpcg(self.A, X, self.B, M, tol=1e-4,
+            el, _ = lobpcg(self.A, X, self.B, M, tol=1e-4,
                                 maxiter=40, largest=False)
+            accuracy = max(abs(ee - el) / ee)
+            assert accuracy < tol
         elif solver == 'eigsh':
-            _, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
+            es, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
                                    v0=X[:, 0])
+            accuracy = max(abs(ee - es) / ee)
+            assert accuracy < tol
         else:
-            _, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
+            ed, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
+            accuracy = max(abs(ee - ed) / ee)
+            assert accuracy < tol
 
 
     def time_sakurai(self, n, solver):
@@ -101,11 +109,11 @@ class Bench(Benchmark):
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
-            es, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
+            ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=10,
                                    v0=rng.normal(size=(n, 1)))
-            accuracy = max(abs(ee - np.sort(1./es)) / ee)
+            accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
-            eb, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
-            accuracy = max(abs(ee - eb) / ee)
+            ed, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
+            accuracy = max(abs(ee - ed) / ee)
             assert accuracy < tol
