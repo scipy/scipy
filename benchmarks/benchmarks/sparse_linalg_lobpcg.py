@@ -49,7 +49,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [100, 200]
+        self.time_sakurai.__func__.params[0] = [50, 100]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
         self.time_sakuraii.__func__.params = list(self.params)
