@@ -99,7 +99,7 @@ class Bench(Benchmark):
         elif solver == 'eigsh':
             from scipy.linalg import inv
             Mi = inv(self.B)
-            es, _ = eigsh(self.A, k=m, M=self.B, Mi=Mi, which='SA', tol=1e-9, maxiter=5000,
+            es, _ = eigsh(self.A, k=m, M=self.B, Minv=Mi, which='SA', tol=1e-4, maxiter=500,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - es) / ee)
             assert accuracy < tol
