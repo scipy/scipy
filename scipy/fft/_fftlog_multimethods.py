@@ -3,9 +3,9 @@
 
 import numpy as np
 
-from ._basic import _dispatch
-from ._fftlog import fht as _fht
-from ._fftlog import ifht as _ifht
+from ._basic_np import _dispatch
+from ._fftlog_np import fht as _fht
+from ._fftlog_np import ifht as _ifht
 from scipy._lib.uarray import Dispatchable
 
 
