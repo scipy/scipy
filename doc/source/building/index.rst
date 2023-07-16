@@ -37,6 +37,7 @@ your system.
 .. tab-set::
 
   .. tab-item:: Linux
+    :sync: linux
 
     If you want to use the system Python and ``pip``, you will need:
 
@@ -103,6 +104,7 @@ your system.
           sudo pacman -S gcc-fortran openblas pkgconf
 
   .. tab-item:: macOS
+    :sync: macos
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -132,6 +134,7 @@ your system.
         issues.
 
   .. tab-item:: Windows
+    :sync: windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
     This is trickier on Windows than on other platforms, because MSVC does not
@@ -230,6 +233,7 @@ Building from source to use SciPy
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     If you are using a conda environment, ``pip`` is still the tool you use to
     invoke a from-source build of SciPy. It is important to always use the
@@ -253,6 +257,7 @@ Building from source to use SciPy
       pip install . --no-build-isolation
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     ::
 
@@ -291,6 +296,7 @@ virtual environments:
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     To create a ``scipy-dev`` development environment with every required and
     optional dependency installed, run::
@@ -299,11 +305,12 @@ virtual environments:
         mamba activate scipy-dev
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     .. note::
 
        There are many tools to manage virtual environments, like ``venv``,
-       ``virtualenv``/``virtualenvwrapper, ``pyenv``/``pyenv-virtualenv``,
+       ``virtualenv``/``virtualenvwrapper``, ``pyenv``/``pyenv-virtualenv``,
        Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
        is part of the Python stdlib. You can use any other tool; all we need is
        an activated Python environment.
@@ -311,10 +318,33 @@ virtual environments:
     Create and activate a virtual environment in a new directory named ``venv`` (
     note that the exact activation command may be different based on your OS and shell
     - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
-    in the ``venv`` docs)::
+    in the ``venv`` docs).
 
-       python -m venv venv
-       source venv/bin/activate
+    .. tab-set::
+
+      .. tab-item:: Linux
+        :sync: linux
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: macOS
+        :sync: macos
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: Windows
+        :sync: windows
+
+        ::
+
+          python -m venv venv
+          .\venv\Scripts\activate
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
