@@ -233,6 +233,7 @@ Building from source to use SciPy
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     If you are using a conda environment, ``pip`` is still the tool you use to
     invoke a from-source build of SciPy. It is important to always use the
@@ -256,6 +257,7 @@ Building from source to use SciPy
       pip install . --no-build-isolation
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     ::
 
@@ -294,6 +296,7 @@ virtual environments:
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     To create a ``scipy-dev`` development environment with every required and
     optional dependency installed, run::
@@ -302,6 +305,7 @@ virtual environments:
         mamba activate scipy-dev
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     .. note::
 
