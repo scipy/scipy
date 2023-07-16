@@ -654,6 +654,117 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     .. versionadded:: 1.6.0
         Complex-valued support added.
 
+    Examples
+    --------
+    A standard call to `shift` will shift ``input`` values by the specified
+    ``shift`` number of indices in along all dimensions. Fractional values
+    of ``shift`` are supported, and the output values are interpolated.
+    
+    Values in the first ``shift`` indices in each dimension will be filled 
+    by ``0`` using  the default ``constant`` ``mode`` and ``cval`` of
+    ``0.0``.
+
+    >>> from scipy import ndimage
+    >>> import numpy as np
+    >>> a = np.arange(25).reshape(5, 5)
+    >>> a
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+    >>> ndimage.shift(a, 2)
+    array([[ 0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0],
+           [ 0,  0,  0,  1,  2],
+           [ 0,  0,  5,  6,  7],
+           [ 0,  0, 10, 11, 12]])
+
+    If a sequence, e.g. a tuple, is provided to ``shift``, then each 
+    dimension is shifted according to the sequence.
+    
+    >>> ndimage.shift(a, (2, -1))
+    array([[ 0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0],
+           [ 1,  2,  3,  4,  0],
+           [ 6,  7,  8,  9,  0],
+           [11, 12, 13, 14,  0]])
+
+    The above example has been shifted by 2 rows and -1 column by passing
+    a shift value of ``(2, -1)``.
+
+    Care should be given for the required order of interpolation for the
+    intended output, particularly when using floating point values.
+
+    >>> b = np.arange(25.).reshape(5, 5)  # Same as a but floating point
+    >>> ndimage.shift(b, (2, -1))         # Default order is 3
+    array([[ 0.,  0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.,  0.],
+           [ 1.,  2.,  3.,  4.,  0.],
+           [ 6.,  7.,  8.,  9.,  0.],
+           [11., 12., 13., 14.,  0.]]) 
+    >>> ndimage.shift(b, (2, -1), order=3)[3, 0]
+    6.000000000000003
+    >>> ndimage.shift(b, (2, -1), order=5)[3, 0]
+    5.999999999999998
+    >>> ndimage.shift(b, (2, -1), order=0)[3, 0]
+    6.0   
+
+    The constant value used to fill ``mode`` values of ``constant`` and
+    ``grid-constant`` can be modified using the ``cval`` keyword argument.
+
+    >>> fill_value = np.median(a)
+    >>> ndimage.shift(a, (2, -1), cval=fill_value)
+    array([[12, 12, 12, 12, 12],
+           [12, 12, 12, 12, 12],
+           [ 1,  2,  3,  4, 12],
+           [ 6,  7,  8,  9, 12],
+           [11, 12, 13, 14, 12]])
+
+    The ``grid-constant`` ``mode`` will interpolate these grid values,
+    however, and the same considerations from ``order`` above should be
+    considered.
+
+    >>> fill_value_float = np.median(b)
+    >>> grid_shift_b = ndimage.shift(b, (2, -1), mode="grid-constant", cval=fill_value_float)
+    >>> grid_shift_b
+    array([[12., 12., 12., 12., 12.],
+           [12., 12., 12., 12., 12.],
+           [ 1.,  2.,  3.,  4., 12.],
+           [ 6.,  7.,  8.,  9., 12.],
+           [11., 12., 13., 14., 12.]])
+    >>> grid_shift_b[-1, -1] == fill_value_float
+    False
+    >>> ndimage.shift(b, (2, -1), mode="constant", cval=fill_value_float)[-1, -1] == fill_value_float
+    True
+
+    The shifts can also be set to ``reflect`` along each axis which can
+    be visualized using an image from `scipy.datasets`. On the left is the
+    original image, and on the right is a shift of half the image's width
+    to the right using the ``"reflect"`` fill mode. ``"mirror"`` behaves
+    similarly with the exception that the edge values are absent from the
+    extrapolated region as they serve as the point of reflection as
+    opposed to the array edges.
+
+    >>> from scipy import datasets
+    >>> import matplotlib.pyplot as plt
+    >>> my_img = datasets.ascent()
+    >>> f, ax = plt.subplots(1, 2)
+    >>> ax[0].imshow(my_img, cmap="Greys")
+    >>> ax[1].imshow(ndimage.shift(my_img, (0, 256), mode="reflect"), cmap="Greys")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+    ``"wrap"`` repeats the array in the extrapolated region, and the above
+    example shifting the image half to the right places the right side of
+    the image on the left instead.
+
+    >>> f, ax = plt.subplots(1, 2)
+    >>> ax[0].imshow(my_img, cmap="Greys")
+    >>> ax[1].imshow(ndimage.shift(my_img, (0, 256), mode="wrap"), cmap="Greys")
+    >>> plt.tight_layout()
+    >>> plt.show()
+
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
