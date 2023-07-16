@@ -40,8 +40,6 @@ GitHub Actions
 * ``Check the rendered docs here!``: live preview of the documentation
 * ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
   dependencies and check coverage
-* ``prerelease_deps_coverage_64bit_blas_nightly``: use pre-released version of the
-  dependencies and check coverage, using a *nightly* OpenBLAS build.
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
 
