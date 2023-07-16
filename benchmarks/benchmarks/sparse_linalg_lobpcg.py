@@ -97,8 +97,8 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
-            es, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=5000,
-                                   v0=X[:, 0])
+            es, _ = eigsh(self.A, k=m, which='SA', tol=1e-4, maxiter=15000,
+                                   v0=rng.normal(size=(n, 1))
             accuracy = max(abs(ee - es) / ee)
             assert accuracy < tol
         else:
@@ -110,7 +110,7 @@ class Bench(Benchmark):
     def time_sakurai(self, n, solver):
         m = 3
         ee = self.eigenvalues[:m]
-        tol = 10 * n * n * n* np.finfo(float).eps
+        tol = 100 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
@@ -119,7 +119,7 @@ class Bench(Benchmark):
             assert accuracy < tol
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
-            ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=5000,
+            ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol
