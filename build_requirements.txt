@@ -1,0 +1,6 @@
+meson-python>=0.10.0
+doit
+pydevtool
+rick_click
+pybind11
+pythran
