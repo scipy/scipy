@@ -1426,6 +1426,10 @@ class sakurai:
     sakurai_obj.banded : (3, n) ndarray, float
         The Sakurai matrix in the format for banded symmetric matrices,
         i.e., 3 upper diagonals with the main diagonal at the bottom
+    sakurai_obj.callable : callable object
+        The handle to a function that multiplies the Sakurai matrix
+        `s` of the shape `n`-by-`n` on the right by an input matrix `x`
+        of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
     sakurai_obj.eigenvalues : (n, ) ndarray, float
         Eigenvalues of the Sakurai matrix ordered ascending
 
@@ -1465,7 +1469,9 @@ class sakurai:
     >>> sak.sparse
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
-    >>> np.sum(sak.sparse.A - sak.array) == 0
+    >>> np.array_equal(sak.sparse.A, sak.array)
+    True
+    >>> np.array_equal(sak.callable(np.eye(n)), sak.array)
     True
     >>> sak.eigenvalues
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
@@ -1479,6 +1485,7 @@ class sakurai:
     """
     def __init__(self, n):
         from scipy.sparse import spdiags
+        self.n = n
         d0 = np.r_[5, 6 * np.ones(n - 2), 5]
         d1 = -4 * np.ones(n)
         d2 = np.ones(n)
@@ -1490,3 +1497,16 @@ class sakurai:
         k = np.arange(1, n+1)
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
         sakurai.eigenvalues = e
+
+
+    def callable(self, x):
+        n = self.n
+        assert n == x.shape[0]
+        x = x.reshape(n, -1)
+        sx = np.zeros_like(x)
+        sx[0,:] = 5*x[0,:] - 4*x[1,:] + x[2,:]
+        sx[-1,:] = 5*x[-1,:] - 4*x[-2,:] + x[-3,:]
+        sx[1:-1,:] = (6*x[1:-1,:] - 4*(x[:-2,:] + x[2:,:])
+                      + np.pad(x[:-3,:], ((1,0),(0,0)))
+                      + np.pad(x[3:,:], ((0,1),(0,0))))
+        return sx
