@@ -389,11 +389,12 @@ class interp1d(_Interpolator1D):
 
     .. legacy:: class
 
+        For a guide to the intended replacements for `interp1d` see
+        :ref:`tutorial-interpolate_interp1d`.
+
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
-    interpolation to find the value of new points. To find out more information
-    on how to use it, please refer to the
-    :ref:`legacy interp1d tutorial <tutorial-interpolate_interp1d>`.
+    interpolation to find the value of new points.
 
     Parameters
     ----------
