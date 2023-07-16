@@ -368,7 +368,7 @@ class _dok_base(_spbase, IndexMixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
-            raise ValueError("Sparse matrices do not support "
+            raise ValueError("Sparse arrays/matrices do not support "
                              "an 'axes' parameter because swapping "
                              "dimensions is the only logical permutation.")
 
@@ -475,7 +475,7 @@ class dok_matrix(spmatrix, _dok_base, dict):
         self.__dict__ = new_matrix.__dict__
 
     def get_shape(self):
-        """Get shape of a sparse array."""
+        """Get shape of a sparse matrix."""
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)

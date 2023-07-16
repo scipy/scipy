@@ -6,7 +6,7 @@ __all__ = ['csr_array', 'csr_matrix', 'isspmatrix_csr']
 
 import numpy as np
 
-from ._matrix import spmatrix, _base_doc_to_array,_base_doc_to_matrix
+from ._matrix import spmatrix, _base_doc_to_array, _base_doc_to_matrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
                            get_csr_submatrix)
@@ -141,7 +141,7 @@ class _csr_base(_cs_matrix):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
-            raise ValueError("Sparse matrices do not support "
+            raise ValueError("Sparse arrays/matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")
 

@@ -303,7 +303,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
-            raise ValueError("Sparse matrices do not support "
+            raise ValueError("Sparse array/matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")
 
@@ -330,7 +330,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
     resize.__doc__ = _spbase.resize.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `_spbase.toarray`."""
         B = self._process_toarray_args(order, out)
         fortran = int(B.flags.f_contiguous)
         if not fortran and not B.flags.c_contiguous:
@@ -340,8 +339,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     B.ravel('A'), fortran)
         return B
 
+    toarray.__doc__ = _spbase.toarray.__doc__
+
     def tocsc(self, copy=False):
-        """Convert this matrix to Compressed Sparse Column format
+        """Convert this array/matrix to Compressed Sparse Column format
 
         Duplicate entries will be summed together.
 
@@ -383,7 +384,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return x
 
     def tocsr(self, copy=False):
-        """Convert this matrix to Compressed Sparse Row format
+        """Convert this array/matrix to Compressed Sparse Row format
 
         Duplicate entries will be summed together.
 
@@ -533,7 +534,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                                    shape=self.shape, dtype=data.dtype)
 
     def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
+        """Eliminate duplicate entries by adding them together
 
         This is an *in place* operation
         """
@@ -564,7 +565,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         return row, col, data
 
     def eliminate_zeros(self):
-        """Remove zero entries from the matrix
+        """Remove zero entries from the array/matrix
 
         This is an *in place* operation
         """

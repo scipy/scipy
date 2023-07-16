@@ -1,4 +1,4 @@
-"""Indexing mixin for sparse matrix classes.
+"""Indexing mixin for sparse array/matrix classes.
 """
 import numpy as np
 from warnings import warn

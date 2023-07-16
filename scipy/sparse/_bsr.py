@@ -235,7 +235,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.check_format(full_check=False)
 
     def check_format(self, full_check=True):
-        """Check whether the matrix respects the BSR format.
+        """Check whether the array/matrix respects the BSR format.
 
         Parameters
         ----------
@@ -432,13 +432,13 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ######################
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this matrix into Block Sparse Row Format.
+        """Convert this array/matrix into Block Sparse Row Format.
 
         With copy=False, the data/indices may be shared between this
-        matrix and the resultant bsr_array.
+        array/matrix and the resultant bsr_array/bsr_matrix.
 
         If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_array.
+        block size of the bsr_array/bsr_matrix.
         """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
@@ -476,10 +476,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
-        """Convert this matrix to COOrdinate format.
+        """Convert this array/matrix to COOrdinate format.
 
         When copy=False the data array will be shared between
-        this matrix and the resultant coo_matrix.
+        this array/matrix and the resultant coo_array/coo_matrix.
         """
 
         M,N = self.shape
@@ -569,7 +569,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.prune()
 
     def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
+        """Eliminate duplicate array/matrix entries by adding them together
 
         The is an *in place* operation
         """
@@ -602,7 +602,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_canonical_format = True
 
     def sort_indices(self):
-        """Sort the indices of this matrix *in place*
+        """Sort the indices of this array/matrix *in place*
         """
         if self.has_sorted_indices:
             return
@@ -615,7 +615,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_sorted_indices = True
 
     def prune(self):
-        """ Remove empty space after all non-zero elements.
+        """Remove empty space after all non-zero elements.
         """
 
         R,C = self.blocksize
