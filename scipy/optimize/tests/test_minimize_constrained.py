@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import warnings
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -615,13 +616,13 @@ class TestTrustRegionConstr(TestCase):
         # compatibility
         assert_(result.get('niter', -1) == 1)
     
-    def test_issue_1882(self):
+    def test_issue_18882(self):
         # https://github.com/scipy/scipy/issues/18882
         # Test that success is false if the constraint is not met.
         # Previously, success was incorrectly true in the case where 
         # the initial condition had a zero gradient and did not satisfy
         # the constraint.
-        def lsf(u):
+        def lsf(u): # Hyperbola
             u1, u2 = u
 
             a, b, c, d = [0.0, 0.0, 3.0, 4.0]
@@ -634,16 +635,18 @@ class TestTrustRegionConstr(TestCase):
             d = np.sum(u**2) # sum of squares
             return d
         
-        cons = NonlinearConstraint(lsf, 0.0, 0.0, keep_feasible=False)
+        cons = NonlinearConstraint(lsf, 0.0, 0.0)
         u0 = [0.0, 0.0]
 
-
-        result = minimize(
-            of,
-            u0,
-            method="trust-constr",
-            constraints=cons,
-        )
+        with warnings.catch_warnings():
+            # Optimize throws warnings
+            warnings.simplefilter('ignore', UserWarning)
+            result = minimize(
+                of,
+                u0,
+                method="trust-constr",
+                constraints=cons,
+            )
 
         if result.success:
             # If the result is successful (not expected in this case),

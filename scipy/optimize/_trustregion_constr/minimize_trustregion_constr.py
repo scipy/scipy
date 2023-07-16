@@ -131,7 +131,9 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         Tolerance for termination by the norm of the Lagrangian gradient.
         The algorithm will terminate when both the infinity norm (i.e., max
         abs value) of the Lagrangian gradient and the constraint violation
-        are smaller than ``gtol``. Default is 1e-8.
+        are smaller than ``gtol``. Also the tolerance for the maximum
+        constraint violation at the solution if an equality constraint is
+        present. Default is 1e-8.
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
         The algorithm will terminate when ``tr_radius < xtol``, where
