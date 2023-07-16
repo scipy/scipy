@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import warnings
 from scipy.linalg import block_diag
 from scipy.sparse import csc_matrix
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -638,9 +637,9 @@ class TestTrustRegionConstr(TestCase):
         cons = NonlinearConstraint(lsf, 0.0, 0.0)
         u0 = [0.0, 0.0]
 
-        with warnings.catch_warnings():
-            # Optimize throws warnings
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            sup.filter(UserWarning, "Singular Jacobian matrix.")
             result = minimize(
                 of,
                 u0,
