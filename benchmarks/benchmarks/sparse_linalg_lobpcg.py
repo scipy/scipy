@@ -98,7 +98,7 @@ class Bench(Benchmark):
             assert accuracy < tol
         elif solver == 'eigsh':
             es, _ = eigsh(self.A, k=m, which='SA', tol=1e-4, maxiter=15000,
-                                   v0=rng.normal(size=(n, 1))
+                                   v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - es) / ee)
             assert accuracy < tol
         else:
