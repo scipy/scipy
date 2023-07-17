@@ -1,17 +1,33 @@
 set -xe
 
-
 NIGHTLY_FLAG=""
 
-if [ "$#" -eq 1 ]; then
-    PROJECT_DIR="$1"
-elif [ "$#" -eq 2 ] && [ "$1" = "--nightly" ]; then
-    NIGHTLY_FLAG="--nightly"
-    PROJECT_DIR="$2"
-else
+usage() {
     echo "Usage: $0 [--nightly] <project_dir>"
     exit 1
+}
+
+TEMP=$(getopt -o n -l nightly -- "$@")
+if [ $? != 0 ]; then
+    usage
 fi
+
+eval set -- "$TEMP"
+
+while true ; do
+    case "$1" in
+        -n|--nightly)
+            NIGHTLY_FLAG="--nightly"; shift ;;
+        --) shift ; break ;;
+    esac
+done
+
+if [ -z "$1" ]; then
+    usage
+else
+    PROJECT_DIR="$1"
+fi
+
 
 PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
 
