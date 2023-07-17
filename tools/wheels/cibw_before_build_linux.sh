@@ -1,3 +1,6 @@
+set -xe
+
+
 NIGHTLY_FLAG=""
 
 if [ "$#" -eq 1 ]; then
