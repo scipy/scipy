@@ -7,7 +7,6 @@ with safe_import():
     from scipy.linalg import (eigh, cho_factor, cho_solve,
                               sakurai, mikota_pair,
                               cholesky_banded, cho_solve_banded, eig_banded)
-    from scipy.sparse import diags
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
 
@@ -90,10 +89,10 @@ class Bench(Benchmark):
             assert accuracy < tol
         elif solver == 'eigsh':
             from scipy.linalg import inv
-            Mi = inv(self.B)
-            es, _ = eigsh(self.A, k=m, M=self.B, Minv=Mi, which='SA', tol=1e-4, maxiter=500,
+            Mi = inv(self.A)
+            ea, _ = eigsh(self.B, k=m, M=self.A, Minv=Mi, which='LA', tol=1e-4, maxiter=500,
                                    v0=rng.normal(size=(n, 1)))
-            accuracy = max(abs(ee - es) / ee)
+            accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
             ed, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
