@@ -4,22 +4,11 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.linalg import eigh, cho_factor, cho_solve, sakurai
-    from scipy.linalg import cholesky_banded, cho_solve_banded, eig_banded
+    from scipy.linalg import (eigh, cho_factor, cho_solve,
+                              sakurai, mikota_pair,
+                              cholesky_banded, cho_solve_banded, eig_banded)
     from scipy.sparse import diags
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
-
-
-def _mikota_pair(n):
-    """
-    Mikota pair acts as a nice test since the eigenvalues
-    are the squares of the integers n, n=1,2,... """
-    x = 1. / np.arange(1, n + 1)
-    B = diags([x], [0], shape=(n, n))
-    y = - np.arange(n - 1, 0, -1)
-    z = np.arange(2 * n - 1, 0, -2)
-    A = diags([y, z, y], [-1, 0, 1], shape=(n, n))
-    return A.A.astype(float), B.A.astype(float)
 
 
 def _as2d(ar):
@@ -59,7 +48,10 @@ class Bench(Benchmark):
 
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
-        self.A, self.B = _mikota_pair(n)
+        mikota_pair_obj = mikota_pair(n)
+        self.A = mikota_pair_obj.Karray
+        self.B = mikota_pair_obj.Marray
+        self.eigenvalues = mikota_pair.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
         #     # skip: slow, and not useful to benchmark
@@ -83,7 +75,7 @@ class Bench(Benchmark):
     
     def time_mikota(self, n, solver):
         m = 10
-        ee = np.power(np.arange(m) + 1., 2)
+        ee = self.eigenvalues[:m]
         tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
