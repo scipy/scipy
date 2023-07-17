@@ -4,24 +4,9 @@ import numpy as np
 from .common import Benchmark, safe_import
 
 with safe_import():
-    from scipy.linalg import (eigh, cho_factor, cho_solve,
-                              sakurai, mikota_pair,
+    from scipy.linalg import (eigh, sakurai, mikota_pair,
                               cholesky_banded, cho_solve_banded, eig_banded)
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
-
-
-def _as2d(ar):
-    if ar.ndim == 2:
-        return ar
-    else:  # Assume 1!
-        aux = np.array(ar, copy=False)
-        aux.shape = (ar.shape[0], 1)
-        return aux
-
-
-def _precond(LorU, lower, x):
-    y = cho_solve((LorU, lower), x)
-    return _as2d(y)
 
 
 class Bench(Benchmark):
@@ -48,8 +33,11 @@ class Bench(Benchmark):
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
         mikota_pair_obj = mikota_pair(n)
-        self.A = mikota_pair_obj.Karray
-        self.B = mikota_pair_obj.Marray
+        self.Ac = mikota_pair_obj.Kcallable
+        self.Aa = mikota_pair_obj.Karray
+        self.Bc = mikota_pair_obj.Mcallable
+        self.Ba = mikota_pair_obj.Marray
+        Self.Abanded = mikota_pair_obj.Kbanded
         self.eigenvalues = mikota_pair.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
@@ -73,29 +61,30 @@ class Bench(Benchmark):
 
     
     def time_mikota(self, n, solver):
+        def a(x):
+            return cho_solve_banded((c, False), x)
         m = 10
         ee = self.eigenvalues[:m]
         tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            LorU, lower = cho_factor(self.A, lower=0, overwrite_a=0)
-            M = LinearOperator(self.shape,
-                               matvec=partial(_precond, LorU, lower),
-                               matmat=partial(_precond, LorU, lower))
-            el, _ = lobpcg(self.A, X, self.B, M, tol=1e-4,
+            c = cholesky_banded(self.Ab.astype(np.float32))
+            el, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
                                 maxiter=40, largest=False)
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
-            from scipy.linalg import inv
-            Mi = inv(self.A)
-            ea, _ = eigsh(self.B, k=m, M=self.A, Minv=Mi, which='LA', tol=1e-4, maxiter=500,
+            B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
+            A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
+            c = cholesky_banded(self.Ab)
+            a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
+            ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
-            ed, _ = eigh(self.A, self.B, subset_by_index=(0, m - 1))
+            ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
             assert accuracy < tol
 
