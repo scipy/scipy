@@ -9397,10 +9397,21 @@ class TestTruncPareto:
             _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
 
 
+class TestKappa3:
+    def test_sf(self):
+        # During development of gh-18822, we found that the override of
+        # kappa3.sf could experience overflow where the version in main did
+        # not. Check that this does not happen in final implementation.
+        sf0 = 1 - stats.kappa3.cdf(0.5, 1e5)
+        sf1 = stats.kappa3.sf(0.5, 1e5)
+        assert_allclose(sf1, sf0)
+
+
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
 # rtol). None uses default values.
-@pytest.mark.parametrize("case", [("loglaplace", None, None, None, None),
+@pytest.mark.parametrize("case", [("kappa3", None, None, None, None),
+                                  ("loglaplace", None, None, None, None),
                                   ("lognorm", None, None, None, None),
                                   ("lomax", None, None, None, None),
                                   ("pareto", None, None, None, None),])

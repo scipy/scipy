@@ -6913,8 +6913,29 @@ class kappa3_gen(rv_continuous):
     def _cdf(self, x, a):
         return x*(a + x**a)**(-1.0/a)
 
+    def _sf(self, x, a):
+        x, a = np.broadcast_arrays(x, a)  # some code paths pass scalars
+        sf = super()._sf(x, a)
+
+        # When the SF is small, another formulation is typically more accurate.
+        # However, it blows up for large `a`, so use it only if it also returns
+        # a small value of the SF.
+        cutoff = 0.01
+        i = sf < cutoff
+        sf2 = -sc.expm1(sc.xlog1py(-1.0 / a[i], a[i] * x[i]**-a[i]))
+        i2 = sf2 > cutoff
+        sf2[i2] = sf[i][i2]  # replace bad values with original values
+
+        sf[i] = sf2
+        return sf
+
     def _ppf(self, q, a):
         return (a/(q**-a - 1.0))**(1.0/a)
+
+    def _isf(self, q, a):
+        lg = sc.xlog1py(-a, -q)
+        denom = sc.expm1(lg)
+        return (a / denom)**(1.0 / a)
 
     def _stats(self, a):
         outputs = [None if np.any(i < a) else np.nan for i in range(1, 5)]
