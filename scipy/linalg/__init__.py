@@ -176,6 +176,7 @@ Special Matrices
    hilbert - Hilbert matrix
    invhilbert - Inverse Hilbert matrix
    leslie - Leslie matrix
+   mikota_pair - Stiffness and mass matrices of Mikota mass-spring system 
    pascal - Pascal matrix
    invpascal - Inverse Pascal matrix
    sakurai - Sakurai matrix
