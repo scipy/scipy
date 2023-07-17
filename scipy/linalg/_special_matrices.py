@@ -8,7 +8,7 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix',
-           'sakurai'
+           'sakurai', 'mikota_pair'
           ]
 
 
@@ -1511,3 +1511,148 @@ class sakurai:
                       + np.pad(x[:-3,:], ((1,0),(0,0)))
                       + np.pad(x[3:,:], ((0,1),(0,0))))
         return sx
+
+
+class mikota_pair:
+    """
+    Construct the Mikota pair of matrices in various formats and
+    eigenvalues of the generalized eigenproblem with them.
+
+    The Mikota pair of matrices [1, 2]_ models a vibration problem
+    of a linear mass-spring system with the ends attached where
+    the stiffness of the springs and the masses increase along
+    the system length such that vibration frequencies are subsequent
+    integers 1, 2, ..., `n` where `n` is the number of the masses. Thus,
+    eigenvalues of the generalized eigenvalue problem for
+    the matrix pair `K` and `M` where `K` is he system stiffness matrix
+    and `M` is the system mass matrix are the squares of the integers,
+    i.e., 1, 4, 9, ..., ``n * n``.
+
+    The stiffness matrix `K` is square real tri-diagonal symmetric
+    positive definite. The mass matrix 'M' is diagonal with diagonal
+    entries 1, 1/2, 1/3, ...., ``1/n``. Both matrices get
+    ill-conditioned with `n` growing.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrices of the Mikota pair.
+
+    Returns
+    -------
+    mikota_obj: custom object
+        The object containing the output
+    mikota_obj.Karray : (n, n) ndarray, float
+        The stiffness matrix in the ndarray format
+    mikota_obj.Ksparse : (n, n) sparse matrix, float
+        The stiffness matrix in a DIAgonal sparse format
+    mikota_obj.Kbanded : (2, n) ndarray, int32
+        The stiffness matrix in the format for banded symmetric matrices,
+        i.e., 2 upper diagonals with the main diagonal at the bottom
+    mikota_obj.Kcallable : callable object
+        The handle to a function that multiplies the stiffness matrix
+        `S` of the shape `n`-by-`n` on the right by an input matrix `x`
+        of the shape `n`-by-`k` to output ``S @ x`` without constructing `S`
+    mikota_obj.Marray : (n, n) ndarray, float
+        The mass matrix in the ndarray format
+    mikota_obj.Msparse : (n, n) sparse matrix, float
+        The mass matrix in a DIAgonal sparse format
+    mikota_obj.Mbanded : (1, n) ndarray, float
+        The main diagonal of the mass matrix
+    mikota_obj.Mcallable : callable object
+        The handle to a function that multiplies the mass matrix
+        `M` of the shape `n`-by-`n` on the right by an input matrix `x`
+        of the shape `n`-by-`k` to output ``M @ x`` without constructing `M`
+    mikota_obj.eigenvalues : (n, ) ndarray, float
+        Eigenvalues of the Mikota matrix pair: 1, 4, 9, ..., ``n * n``
+    
+    .. versionadded:: 1.11.2
+
+    References
+    ----------
+    .. [1] J. Mikota, "Frequency tuning of chain structure multibody oscillators
+       to place the natural frequencies at omega1 and N-1 integer multiples
+       omega2,..., omegaN", Z. Angew. Math. Mech. 81 (2001), S2, S201-S202.
+       Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
+    .. [2] Peter C. Muller and Metin Gurgoze,
+       "Natural frequencies of a multi-degree-of-freedom vibration system",
+       PAMM · Proc. Appl. Math. Mech. 6, 319-320 (2006).
+       http://dx.doi.org/10.1002/pamm.200610141.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import mikota_pair,
+    >>> n = 6
+    >>> mik = mikota_pair(n)
+    >>> mik.Karray
+    array([[11., -5.,  0.,  0.,  0.,  0.],
+           [-5.,  9., -4.,  0.,  0.,  0.],
+           [ 0., -4.,  7., -3.,  0.,  0.],
+           [ 0.,  0., -3.,  5., -2.,  0.],
+           [ 0.,  0.,  0., -2.,  3., -1.],
+           [ 0.,  0.,  0.,  0., -1.,  1.]])
+    >>> mik.Kbanded
+    array([[ 0, -5, -4, -3, -2, -1],
+           [11,  9,  7,  5,  3,  1]])
+    >>> mik.Mbanded
+    array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
+        0.16666667])
+    >>> mik.Ksparse
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 16 stored elements (3 diagonals) in DIAgonal format>
+    >>> mik.Msparse
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 6 stored elements (1 diagonals) in DIAgonal format>
+    >>> np.array_equal(mik.Ksparse.A, mik.Karray)
+    True
+    >>> np.array_equal(mik.Msparse.A, mik.Marray)
+    True
+    >>> np.array_equal(mik.Kcallable(np.eye(n)), mik.Karray)
+    True
+    >>> np.array_equal(mik.Mcallable(np.eye(n)), mik.Marray)
+    True
+    >>> mik.eigenvalues
+    array([ 1.,  4.,  9., 16., 25., 36.])  
+
+    """
+    def __init__(self, n):
+        from scipy.sparse import diags
+        self.n = n
+        aranp1 = np.arange(1, n + 1)
+        aranp1_inv = 1. / aranp1
+        mikota_pair.Mbanded = aranp1_inv
+        M = diags([aranp1_inv], [0], shape=(n, n))
+        mikota_pair.Msparse = M
+        mikota_pair.Marray = M.toarray()
+
+        y = - np.arange(n - 1, 0, -1)
+        z = np.arange(2 * n - 1, 0, -2)
+        K = diags([y, z, y], [-1, 0, 1], shape=(n, n))
+        mikota_pair.Ksparse = K
+        mikota_pair.Karray = K.toarray()
+        mikota_pair.Kbanded = np.array([np.pad(y, (1, 0), 'constant'), z])
+
+        mikota_pair.eigenvalues = aranp1 * aranp1.astype(float)
+
+
+    def Mcallable(self, x):
+        n = self.n
+        assert n == x.shape[0]
+        aranp1_inv = 1. / np.arange(1, n + 1)
+        return np.multiply(aranp1_inv[:, np.newaxis], x)
+
+
+    def Kcallable(self, x):
+        n = self.n
+        assert n == x.shape[0]
+        x = x.reshape(n, -1)
+        kx = np.zeros_like(x)
+        y = - np.arange(n - 1, 0, -1)
+        z = np.arange(2 * n - 1, 0, -2)
+        kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
+        kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
+        kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
+                        + z[1: -1, None] * x[1: -1, :]
+                        + y[1:, None] * x[2:, :])
+        return kx
