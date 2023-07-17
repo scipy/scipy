@@ -23,14 +23,14 @@ def configuration(parent_package='', top_path=None):
         # GCC/Clang will use fallbacks as floating-point <charconv> methods are not available.
         # Performance will suffer. Use the meson build instead.
 
-    ext = Pybind11Extension(config.name + "." + '_core',
+    ext = Pybind11Extension(config.name + "." + '_fmm_core',
                             sources=[os.path.join(config.package_path, "src", s) for s in (
-                                '_core.cpp',
-                                '_core_read_array.cpp',
-                                '_core_read_coo.cpp',
-                                '_core_write_array.cpp',
-                                '_core_write_coo_32.cpp',
-                                '_core_write_coo_64.cpp',
+                                '_fmm_core.cpp',
+                                '_fmm_core_read_array.cpp',
+                                '_fmm_core_read_coo.cpp',
+                                '_fmm_core_write_array.cpp',
+                                '_fmm_core_write_coo_32.cpp',
+                                '_fmm_core_write_coo_64.cpp',
                             )],
                             language='c++',
                             cxx_std=17,
