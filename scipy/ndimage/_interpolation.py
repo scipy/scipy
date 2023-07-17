@@ -132,7 +132,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
-
+@docfiller
 def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
     Multidimensional spline filter.
