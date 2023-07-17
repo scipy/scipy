@@ -54,9 +54,9 @@ Or alternatively one could use the submodule as a namespace like so::
   from scipy import optimize
   result = optimize.curve_fit(...)
 
-.. warning:: For ``scipy.io`` prefer the use of  ``import scipy``
-             because ``io`` is also the name of a module in the Python
-             stdlib.
+.. note:: For ``scipy.io`` prefer the use of  ``import scipy``
+          because ``io`` is also the name of a module in the Python
+          stdlib.
 
 In some cases, the public API is one level deeper.  For example, the
 ``scipy.sparse.linalg`` module is public, and the functions it contains are not
