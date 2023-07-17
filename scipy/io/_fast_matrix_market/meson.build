@@ -17,15 +17,15 @@ if host_machine.system() != 'darwin'
     ]
 endif
 
-py3.extension_module('_core',
+py3.extension_module('_fmm_core',
   [
-    'src/_core.hpp',
-    'src/_core.cpp',
-    'src/_core_read_array.cpp',
-    'src/_core_read_coo.cpp',
-    'src/_core_write_array.cpp',
-    'src/_core_write_coo_32.cpp',
-    'src/_core_write_coo_64.cpp',
+    'src/_fmm_core.hpp',
+    'src/_fmm_core.cpp',
+    'src/_fmm_core_read_array.cpp',
+    'src/_fmm_core_read_coo.cpp',
+    'src/_fmm_core_write_array.cpp',
+    'src/_fmm_core_write_coo_32.cpp',
+    'src/_fmm_core_write_coo_64.cpp',
   ],
   override_options: ['cpp_std=c++17'],
   cpp_args: [

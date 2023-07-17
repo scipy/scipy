@@ -2,7 +2,7 @@
 // Use of this source code is governed by the BSD 2-clause license found in the LICENSE.txt file.
 // SPDX-License-Identifier: BSD-2-Clause
 
-#include "_core.hpp"
+#include "_fmm_core.hpp"
 
 /**
  * Read Matrix Market body into triplets.

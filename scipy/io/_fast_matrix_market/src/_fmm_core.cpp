@@ -15,7 +15,7 @@ namespace fast_matrix_market {
 }
 #include <fast_matrix_market/fast_matrix_market.hpp>
 
-#include "_core.hpp"
+#include "_fmm_core.hpp"
 
 ////////////////////////////////////////////////
 //// Header methods
@@ -170,11 +170,11 @@ void write_header_only(write_cursor& cursor) {
 
 ////////////////////////////////////////////////
 //// pybind11 module definition
-//// Define the _core module here, it is used by __init__.py
+//// Define the _fmm_core module here, it is used by __init__.py
 ////////////////////////////////////////////////
 
 
-PYBIND11_MODULE(_core, m) {
+PYBIND11_MODULE(_fmm_core, m) {
     m.doc() = R"pbdoc(
         fast_matrix_market
     )pbdoc";

@@ -38,8 +38,8 @@ _field_to_dtype = {
 
 
 def _fmm_version():
-    from . import _core
-    return _core.__version__
+    from . import _fmm_core
+    return _fmm_core.__version__
 
 
 class _TextToBytesWrapper(io.BufferedReader):
@@ -88,10 +88,10 @@ def _read_body_array(cursor):
     """
     Read MatrixMarket array body
     """
-    from . import _core
+    from . import _fmm_core
 
     vals = np.zeros(cursor.header.shape, dtype=_field_to_dtype.get(cursor.header.field))
-    _core.read_body_array(cursor, vals)
+    _fmm_core.read_body_array(cursor, vals)
     return vals
 
 
@@ -99,7 +99,7 @@ def _read_body_coo(cursor, generalize_symmetry=True):
     """
     Read MatrixMarket coordinate body
     """
-    from . import _core
+    from . import _fmm_core
 
     index_dtype = "int32"
     if cursor.header.nrows >= 2**31 or cursor.header.ncols >= 2**31:
@@ -110,7 +110,7 @@ def _read_body_coo(cursor, generalize_symmetry=True):
     j = np.zeros(cursor.header.nnz, dtype=index_dtype)
     data = np.zeros(cursor.header.nnz, dtype=_field_to_dtype.get(cursor.header.field))
 
-    _core.read_body_coo(cursor, i, j, data)
+    _fmm_core.read_body_coo(cursor, i, j, data)
 
     if generalize_symmetry and cursor.header.symmetry != "general":
         off_diagonal_mask = (i != j)
@@ -134,7 +134,7 @@ def _get_read_cursor(source, parallelism=None):
     """
     Open file for reading.
     """
-    from . import _core
+    from . import _fmm_core
 
     ret_stream_to_close = None
     if parallelism is None:
@@ -158,13 +158,13 @@ def _get_read_cursor(source, parallelism=None):
             source = bz2.BZ2File(path, 'rb')
             ret_stream_to_close = source
         else:
-            return _core.open_read_file(path, parallelism), ret_stream_to_close
+            return _fmm_core.open_read_file(path, parallelism), ret_stream_to_close
 
     # Stream object.
     if hasattr(source, "read"):
         if isinstance(source, io.TextIOBase):
             source = _TextToBytesWrapper(source)
-        return _core.open_read_stream(source, parallelism), ret_stream_to_close
+        return _fmm_core.open_read_stream(source, parallelism), ret_stream_to_close
     else:
         raise TypeError("Unknown source type")
 
@@ -173,7 +173,7 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
     """
     Open file for writing.
     """
-    from . import _core
+    from . import _fmm_core
 
     if parallelism is None:
         parallelism = PARALLELISM
@@ -185,12 +185,12 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
         precision = -1
 
     if not h:
-        h = _core.header(comment=comment, symmetry=symmetry)
+        h = _fmm_core.header(comment=comment, symmetry=symmetry)
 
     try:
         target = os.fspath(target)
         # It's a file path
-        return _core.open_write_file(str(target), h, parallelism, precision)
+        return _fmm_core.open_write_file(str(target), h, parallelism, precision)
     except TypeError:
         pass
 
@@ -198,7 +198,7 @@ def _get_write_cursor(target, h=None, comment=None, parallelism=None, symmetry="
         # Stream object.
         if isinstance(target, io.TextIOBase):
             raise TypeError("target stream must be open in binary mode.")
-        return _core.open_write_stream(target, h, parallelism, precision)
+        return _fmm_core.open_write_stream(target, h, parallelism, precision)
     else:
         raise TypeError("Unknown source object")
 
@@ -441,7 +441,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     2.5e+00 0.0e+00
 
     """
-    from . import _core
+    from . import _fmm_core
 
     if isinstance(a, list) or isinstance(a, tuple) or hasattr(a, "__array__"):
         a = np.asarray(a)
@@ -461,7 +461,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     if isinstance(a, np.ndarray):
         # Write dense numpy arrays
         a = _apply_field(a, field, no_pattern=True)
-        _core.write_body_array(cursor, a)
+        _fmm_core.write_body_array(cursor, a)
 
     elif scipy.sparse.issparse(a):
         # Write sparse scipy matrices
@@ -477,7 +477,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
                            a.col[lower_triangle_mask])), shape=a.shape)
 
         data = _apply_field(a.data, field)
-        _core.write_body_coo(cursor, a.shape, a.row, a.col, data)
+        _fmm_core.write_body_coo(cursor, a.shape, a.row, a.col, data)
 
     else:
         raise ValueError("unknown matrix type: %s" % type(a))
