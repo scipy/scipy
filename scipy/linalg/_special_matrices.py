@@ -1529,7 +1529,7 @@ class mikota_pair:
     i.e., 1, 4, 9, ..., ``n * n``.
 
     The stiffness matrix `K` is square real tri-diagonal symmetric
-    positive definite. The mass matrix 'M' is diagonal with diagonal
+    positive definite. The mass matrix `M` is diagonal with diagonal
     entries 1, 1/2, 1/3, ...., ``1/n``. Both matrices get
     ill-conditioned with `n` growing.
 
@@ -1582,7 +1582,7 @@ class mikota_pair:
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.linalg import mikota_pair,
+    >>> from scipy.linalg import mikota_pair
     >>> n = 6
     >>> mik = mikota_pair(n)
     >>> mik.Karray
