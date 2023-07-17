@@ -156,14 +156,6 @@ def _find_missing_index(ind, n):
         return -1
 
 
-def groupby(values):
-    diff = np.concatenate(([1], np.diff(values)))
-    idx = np.concatenate((np.where(diff)[0], [len(values)]))
-    index = np.empty(len(idx)-1, dtype='u4,u2')
-    index['f0'] = values[idx[:-1]]
-    index['f1'] = np.diff(idx)
-    return index
-
 class _minmax_mixin:
     """Mixin for min and max methods.
 
@@ -260,10 +252,6 @@ class _minmax_mixin:
                     zero_ind = _find_missing_index(indices, line_size)
                     if extreme_value == zero:
                         ret[i] = min(extreme_index, zero_ind)
-                else:
-                    zero_ind = _find_missing_index(indices, line_size)
-                    if m == zero:
-                        ret[i] = min(am, zero_ind)
                     else:
                         ret[i] = zero_ind
 
@@ -279,7 +267,7 @@ class _minmax_mixin:
         validateaxis(axis)
 
         if axis is not None:
-            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
+            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare, explicit)
 
         if 0 in self.shape:
             raise ValueError("Can't apply the operation to an empty matrix.")
@@ -296,7 +284,7 @@ class _minmax_mixin:
         mat.sum_duplicates()
         extreme_index = argmin_or_argmax(mat.data)
         if explicit:
-          return extreme_index
+            return extreme_index
         extreme_value = mat.data[extreme_index]
         num_row, num_col = mat.shape
 
@@ -340,9 +328,10 @@ class _minmax_mixin:
             for the default value, as this argument is not used.
 
         explicit : {False, True} optional
-            Indicates whether the nonzero entries of the matrix should be
+            When set to True, only the nonzero entries of the matrix will be
             considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values.
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
 
 
         Returns
@@ -378,10 +367,10 @@ class _minmax_mixin:
             the default value, as this argument is not used.
 
         explicit : {False, True} optional
-            Indicates whether the nonzero entries of the matrix should be
+            When set to True, only the nonzero entries of the matrix will be
             considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values.
-
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
         Returns
         -------
         amin : coo_matrix or scalar
@@ -413,9 +402,10 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
         explicit : {False, True} optional
-            Indicates whether the nonzero entries of the matrix should be
+            When set to True, only the nonzero entries of the matrix will be
             considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values.
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
 
         Returns
         -------
@@ -440,9 +430,10 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
         explicit : {False, True} optional
-            Indicates whether the nonzero entries of the matrix should be
+            When set to True, only the nonzero entries of the matrix will be
             considered. If a row/column is empty, a zero will be returned
-            to indicate it contains no nonzero values.
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
 
         Returns
         -------

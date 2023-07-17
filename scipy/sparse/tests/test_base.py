@@ -3614,7 +3614,8 @@ class _TestMinMax:
                          asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
             assert_equal(mat.argmin(axis=1),
                          asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
-
+            
+        mat = self.spcreator(D1)
         assert_array_equal(mat.argmax(axis=0, explicit=True).A,
                            np.array([[3, 0, 3, 3]]))
         assert_array_equal(mat.argmin(axis=0, explicit=True).A,
@@ -3641,7 +3642,7 @@ class _TestMinMax:
 
         # zero-size matrices
         D = np.zeros((0, 10))
-        mat = self.spmatrix(D)
+        mat = self.spcreator(D)
         axes_even = [0, -2]
         axes_odd = [1, -1]
         even_explicit_pairs = list(itertools.product(axes_even,
@@ -3661,7 +3662,7 @@ class _TestMinMax:
                 mat.argmax(axis=axis, explicit=explicit).A)
 
         D = np.zeros((10, 0))
-        mat = self.spmatrix(D)
+        mat = self.spcreator(D)
 
         for axis, explicit in even_explicit_pairs:
             mat.argmin(axis=axis, explicit=explicit)
@@ -3677,7 +3678,7 @@ class _TestMinMax:
             assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
 
         D = np.zeros((2, 2))
-        mat = self.spmatrix(D)
+        mat = self.spcreator(D)
         if mat.nnz != 0:
             # Noncanonical case
             assert_equal(mat.argmin(axis=None, explicit=True), 0)
