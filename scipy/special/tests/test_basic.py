@@ -3965,7 +3965,6 @@ class TestStirling2:
 
     def test_mixed_values(self):
         # negative values-of either n or k-should return 0 for the entry
-        # if there are float inputs these are *truncated*
         ans = [0, 1, 3, 25, 1050, 5880, 9330]
         n = [-1, 0, 3, 5, 8, 10, 10]
         k = [-2, 0, 2, 3, 5, 7, 3]

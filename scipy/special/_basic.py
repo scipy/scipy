@@ -3103,6 +3103,7 @@ def stirling2(N, K, *, exact=True):
     calculations.
 
     The numbers are sometimes denoted
+
     .. math::
 
         {N \brace{K}}
@@ -3154,6 +3155,7 @@ def stirling2(N, K, *, exact=True):
     array([9330, 0, 3025], dtype=object)
 
     """
+    output_is_scalar = np.isscalar(N) and np.isscalar(K)
     if exact:
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
@@ -3215,8 +3217,8 @@ def stirling2(N, K, *, exact=True):
                 it[2] = snsk_vals[(int(it[0]), int(it[1]))]
                 it.iternext()
             output = it.operands[2]
-            # If output is 0d array, convert to scalar.
-            if not output.ndim:
+            # If N and K were both scalars, convert output to scalar.
+            if output_is_scalar:
                 output = output.take(0)
             return output
     else:  # this branch will house future Temme approx
