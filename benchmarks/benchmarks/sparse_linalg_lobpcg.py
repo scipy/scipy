@@ -35,7 +35,7 @@ class Bench(Benchmark):
         self.Aa = mikota_pair_obj.Karray
         self.Bc = mikota_pair_obj.Mcallable
         self.Ba = mikota_pair_obj.Marray
-        self.Abanded = mikota_pair_obj.Kbanded
+        self.Ab = mikota_pair_obj.Kbanded
         self.eigenvalues = mikota_pair.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
