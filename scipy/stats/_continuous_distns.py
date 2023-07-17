@@ -6859,6 +6859,7 @@ class kappa3_gen(rv_continuous):
         return x*(a + x**a)**(-1.0/a)
 
     def _sf(self, x, a):
+        x, a = np.broadcast_arrays(x, a)  # some code paths pass scalars
         sf = super()._sf(x, a)
 
         # When the SF is small, another formulation is typically more accurate.
