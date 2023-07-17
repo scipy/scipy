@@ -1576,7 +1576,7 @@ class mikota_pair:
        Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
     .. [2] Peter C. Muller and Metin Gurgoze,
        "Natural frequencies of a multi-degree-of-freedom vibration system",
-       PAMM · Proc. Appl. Math. Mech. 6, 319-320 (2006).
+       Proc. Appl. Math. Mech. 6, 319-320 (2006).
        http://dx.doi.org/10.1002/pamm.200610141.
 
     Examples
