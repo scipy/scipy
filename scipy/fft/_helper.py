@@ -15,7 +15,10 @@ def _init_nd_shape_and_axes(x, shape, axes):
     """
     See the documentation in _helper_np.py.
     """
-    return nphelper._init_nd_shape_and_axes(x, shape, axes)
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = nphelper._init_nd_shape_and_axes(x, shape, axes)
+    return xp.asarray(y)
 
 
 def fftfreq(n, d=1.0, xp=np, device=None):
