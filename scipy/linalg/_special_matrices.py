@@ -1640,7 +1640,10 @@ class mikota_pair:
         n = self.n
         assert n == x.shape[0]
         aranp1_inv = 1. / np.arange(1, n + 1)
-        return np.multiply(aranp1_inv[:, np.newaxis], x)
+        # linearoperator requires 2D array
+        if len(x.shape) == 1:
+            x = x.reshape(-1, 1)
+        return aranp1_inv[:, np.newaxis] * x
 
 
     def Kcallable(self, x):
