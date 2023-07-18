@@ -2267,7 +2267,8 @@ class f_gen(rv_continuous):
 
     for :math:`x > 0` and parameters :math:`df_1, df_2 > 0` .
 
-    `f` takes ``dfn`` and ``dfd`` as shape parameters.
+    `f` takes ``dfn`` (numerator, :math:`df_1`) and ``dfd`` (denominator, :math:`df_2`)
+    as shape parameters.
 
     %(after_notes)s
 
