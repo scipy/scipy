@@ -1,6 +1,5 @@
 from scipy._lib._array_api import array_namespace
 from . import _basic_np as npbasic
-from . import _pocketfft as pfft
 import numpy as np
 
 
@@ -25,7 +24,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.fft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.fft(x, n, axis, norm)
+    y = npbasic.fft(x, n, axis, norm)
     return xp.asarray(y)
 
 
@@ -50,7 +49,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.ifft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.ifft(x, n, axis, norm)
+    y = npbasic.ifft(x, n, axis, norm)
     return xp.asarray(y)
 
 
@@ -101,7 +100,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.fftn(x, s, axes, norm)
     x = np.asarray(x)
-    y = pfft.fftn(x, s, axes, norm)
+    y = npbasic.fftn(x, s, axes, norm)
     return xp.asarray(y)
 
 
@@ -126,7 +125,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.ifftn(x, s, axes, norm)
     x = np.asarray(x)
-    y = pfft.ifftn(x, s, axes, norm)
+    y = npbasic.ifftn(x, s, axes, norm)
     return xp.asarray(y)
 
 
@@ -151,7 +150,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.rfft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.rfft(x, n, axis, norm)
+    y = npbasic.rfft(x, n, axis, norm)
     return xp.asarray(y)
 
 
@@ -176,7 +175,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.irfft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.irfft(x, n, axis, norm)
+    y = npbasic.irfft(x, n, axis, norm)
     return xp.asarray(y)
 
 
@@ -227,7 +226,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.rfftn(x, s, axes, norm)
     x = np.asarray(x)
-    y = pfft.rfftn(x, s, axes, norm)
+    y = npbasic.rfftn(x, s, axes, norm)
     return xp.asarray(y)
 
 
@@ -252,7 +251,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.irfftn(x, s, axes, norm)
     x = np.asarray(x)
-    y = pfft.irfftn(x, s, axes, norm)
+    y = npbasic.irfftn(x, s, axes, norm)
     return xp.asarray(y)
 
 
@@ -277,7 +276,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.hfft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.hfft(x, n, axis, norm)
+    y = npbasic.hfft(x, n, axis, norm)
     return xp.asarray(y)
 
 
@@ -302,7 +301,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if hasattr(xp, 'fft'):
         return xp.fft.ihfft(x, n, axis, norm)
     x = np.asarray(x)
-    y = pfft.ihfft(x, n, axis, norm)
+    y = npbasic.ihfft(x, n, axis, norm)
     return xp.asarray(y)
 
 
