@@ -3159,21 +3159,9 @@ def stirling2(N, K, *, exact=True):
     if exact:
         # make a min-heap of unique (n,k) pairs
         N, K = asarray(N), asarray(K)
-        if not (
-                np.issubdtype(N.dtype, np.integer)
-                or all(
-                    isinstance(n.take(0), int)
-                    for n in np.nditer(N, ['refs_ok'])
-                )
-        ):
+        if not np.issubdtype(N.dtype, np.integer):
             raise TypeError("Argument `N` must contain only integers")
-        if not (
-                np.issubdtype(K.dtype, np.integer)
-                or all(
-                    isinstance(k.take(0), int)
-                    for k in np.nditer(K, ['refs_ok'])
-                )
-        ):
+        if not np.issubdtype(K.dtype, np.integer):
             raise TypeError("Argument `K` must contain only integers")
         nk_pairs = list(
             set([(n.take(0), k.take(0))
