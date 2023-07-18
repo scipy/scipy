@@ -73,14 +73,12 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
-            B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
+            # B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
             A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
-            #ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
-            #                       v0=rng.normal(size=(n, 1)))
-            ea, _ = eigsh(B, k=m, which='LA', tol=1e-4, maxiter=50,
-                                   v0=rng.normal(size=(n, 1)))
+            ea, _ = eigsh(self.Ba, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
+                                  v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
