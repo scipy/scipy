@@ -1551,8 +1551,8 @@ class mikota_pair:
         i.e., 2 upper diagonals with the main diagonal at the bottom
     mikota_obj.Kcallable : callable object
         The handle to a function that multiplies the stiffness matrix
-        `S` of the shape `n`-by-`n` on the right by an input matrix `x`
-        of the shape `n`-by-`k` to output ``S @ x`` without constructing `S`
+        `K` of the shape `n`-by-`n` on the right by an input matrix `x`
+        of the shape `n`-by-`k` to output ``K @ x`` without constructing `K`
     mikota_obj.Marray : (n, n) ndarray, float
         The mass matrix in the ndarray format
     mikota_obj.Msparse : (n, n) sparse matrix, float
