@@ -1509,9 +1509,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     array([1.8932892 , 2.        , 2.09455148])
 
     """
-    res = _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+    res = _chandrupatla_iv(func, args, xatol, xrtol,
                            fatol, frtol, maxiter, callback)
-    func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
+    func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(func, (a, b),
@@ -1520,6 +1520,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     f1, f2 = fs
     status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
+    xatol = _xtol if xatol is None else xatol
+    xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
     work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
@@ -1728,22 +1730,22 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         work, res, res_work_pairs, active, shape, customize_result)
 
 
-def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
+def _chandrupatla_iv(func, args, xatol, xrtol,
                      fatol, frtol, maxiter, callback):
     # Input validation for `_chandrupatla`
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
 
-    # a and b have more complex IV that is taken care of during initialization
-
     if not np.iterable(args):
         args = (args,)
 
-    tols = np.asarray([xatol, xrtol, fatol if fatol is not None else 1, frtol])
-    if (not np.issubdtype(tols.dtype, np.number)
-            or np.any(tols < 0)
-            or tols.shape != (4,)):
+    tols = np.asarray([xatol if xatol is not None else 1,
+                       xrtol if xrtol is not None else 1,
+                       fatol if fatol is not None else 1,
+                       frtol if frtol is not None else 1])
+    if (not np.issubdtype(tols.dtype, np.number) or np.any(tols < 0)
+            or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError('Tolerances must be non-negative scalars.')
 
     maxiter_int = int(maxiter)
@@ -1753,7 +1755,7 @@ def _chandrupatla_iv(func, a, b, args, xatol, xrtol,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return func, a, b, args, xatol, xrtol, fatol, frtol, maxiter, callback
+    return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
 def _scalar_optimization_initialize(func, xs, args):
