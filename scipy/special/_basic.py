@@ -1434,6 +1434,16 @@ def erf_zeros(nt):
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of cosine Fresnel integral C(z).
 
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnelc_zeros: ndarray
+        Zeros of the cosine Fresnel integral
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1449,6 +1459,16 @@ def fresnelc_zeros(nt):
 def fresnels_zeros(nt):
     """Compute nt complex zeros of sine Fresnel integral S(z).
 
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnels_zeros: ndarray
+        Zeros of the sine Fresnel integral
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1463,6 +1483,18 @@ def fresnels_zeros(nt):
 
 def fresnel_zeros(nt):
     """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    zeros_sine: ndarray
+        Zeros of the sine Fresnel integral
+    zeros_cosine : ndarray
+        Zeros of the cosine Fresnel integral
 
     References
     ----------
@@ -1481,6 +1513,20 @@ def assoc_laguerre(x, n, k=0.0):
 
     The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
     with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+
+    Parameters
+    ----------
+    x : float or ndarray
+        Points where to evaluate the Laguerre polynomial
+    n : int
+        Degree of the Laguerre polynomial
+    k : int
+        Order of the Laguerre polynomial
+
+    Returns
+    -------
+    assoc_laguerre: float or ndarray
+        Associated laguerre polynomial values
 
     Notes
     -----
