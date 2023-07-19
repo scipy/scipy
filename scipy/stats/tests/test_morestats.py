@@ -420,6 +420,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
+    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -444,13 +445,19 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14),
-                                         midrank=False)
+        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
+
+        rng = np.random.default_rng(6989860141921615054)
+        method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+        res = stats.anderson_ksamp(samples, midrank=False, method=method)
+        assert_array_equal(res.statistic, Tk)
+        assert_array_equal(res.critical_values, tm)
+        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -2769,28 +2776,3 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
         assert_array_equal(stats.false_discovery_control(0.25), 0.25)
         assert_array_equal(stats.false_discovery_control([]), [])
-
-
-def test_morestats_deprecation():
-    # gh-18279 noted that deprecation warnings for imports from private modules
-    # were misleading. Check that this is resolved.
-    import scipy.stats.morestats as module
-
-    # Attributes that were formerly in `morestats` can still be imported from
-    # `morestats`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is public in `scipy.stats` or not.
-    for attr_name in module.__all__:
-        attr = getattr(stats, attr_name, None)
-        if attr is None:
-            message = f"`scipy.stats.morestats.{attr_name}` is deprecated..."
-        else:
-            message = f"Please import `{attr_name}` from the `scipy.stats`..."
-        with pytest.warns(DeprecationWarning, match=message):
-            getattr(module, attr_name)
-
-    # Attributes that were not in `morestats` get an error notifying the user
-    # that the attribute is not in `morestats` and that `morestats` is
-    # deprecated.
-    message = "`scipy.stats.morestats` is deprecated..."
-    with pytest.raises(AttributeError, match=message):
-        getattr(module, "ekki")

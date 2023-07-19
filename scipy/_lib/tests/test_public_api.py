@@ -7,6 +7,9 @@ import pkgutil
 import types
 import importlib
 import warnings
+from importlib import import_module
+
+import pytest
 
 import scipy
 
@@ -311,3 +314,34 @@ def test_api_importable():
         raise AssertionError("Modules that are not really public but looked "
                              "public and can not be imported: "
                              "{}".format(module_names))
+
+
+@pytest.mark.parametrize("module_name",
+                         ['scipy.stats.stats',
+                          'scipy.stats.morestats'])
+def test_private_but_present_deprecation(module_name):
+    # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
+    # for imports from private modules
+    # were misleading. Check that this is resolved.
+    module = import_module(module_name)
+    sub_package_name = module_name.split(".")[1]
+    sub_package = import_module(f"scipy.{sub_package_name}")
+
+    # Attributes that were formerly in `module_name` can still be imported from
+    # `module_name`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy.xxx` or not.
+    for attr_name in module.__all__:
+        attr = getattr(sub_package, attr_name, None)
+        if attr is None:
+            message = f"`{module_name}.{attr_name}` is deprecated..."
+        else:
+            message = f"Please import `{attr_name}` from the `scipy.{sub_package_name}`..."
+        with pytest.deprecated_call(match=message):
+            getattr(module, attr_name)
+
+    # Attributes that were not in `module_name` get an error notifying the user
+    # that the attribute is not in `module_name` and that `module_name` is
+    # deprecated.
+    message = f"`{module_name}` is deprecated..."
+    with pytest.raises(AttributeError, match=message):
+        getattr(module, "ekki")

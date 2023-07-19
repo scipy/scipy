@@ -1,6 +1,5 @@
 """Tools for spectral analysis.
 """
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import _signaltools
@@ -587,9 +586,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
-    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-                                     detrend, return_onesided, scaling, axis,
-                                     mode='psd')
+    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap,
+                                     nfft, detrend, return_onesided, scaling,
+                                     axis, mode='psd')
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
@@ -621,6 +620,14 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
+
+    .. legacy:: function
+
+        :class:`ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features also including a :meth:`~ShortTimeFFT.spectrogram` method.
+        A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of
+        the :ref:`user_guide`.
 
     Parameters
     ----------
@@ -688,6 +695,9 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method.
     csd: Cross spectral density by Welch's method.
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features,
+                  which also includes a :meth:`~ShortTimeFFT.spectrogram`
+                  method.
 
     Notes
     -----
@@ -698,6 +708,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     maintain some statistical independence between individual segments.
     It is for this reason that the default window is a Tukey window with
     1/8th of a window's length overlap at each end.
+
 
     .. versionadded:: 0.16.0
 
@@ -1043,6 +1054,13 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
 
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
+
     Parameters
     ----------
     x : array_like
@@ -1115,6 +1133,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     See Also
     --------
     istft: Inverse Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
@@ -1146,6 +1165,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     in the denomimator of the OLA reconstruction equation is nonzero. Whether a
     choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
     be tested with `check_NOLA`.
+
 
     .. versionadded:: 0.19.0
 
@@ -1222,6 +1242,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           scaling='spectrum'):
     r"""Perform the inverse Short Time Fourier transform (iSTFT).
 
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
+
     Parameters
     ----------
     Zxx : array_like
@@ -1291,6 +1318,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     See Also
     --------
     stft: Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
@@ -1317,6 +1345,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     algorithm detailed in [2]_, which produces a signal that minimizes
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
+
 
     .. versionadded:: 0.19.0
 
