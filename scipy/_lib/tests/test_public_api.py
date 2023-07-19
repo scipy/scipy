@@ -317,7 +317,13 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize("module_name",
-                         ['scipy.stats.stats',
+                          ['scipy.interpolate.fitpack',
+                          'scipy.interpolate.fitpack2',
+                          'scipy.interpolate.interpolate',
+                          'scipy.interpolate.ndgriddata',
+                          'scipy.interpolate.polyint',
+                          'scipy.interpolate.rbf',
+                          'scipy.stats.stats',
                           'scipy.stats.morestats'])
 def test_private_but_present_deprecation(module_name):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings

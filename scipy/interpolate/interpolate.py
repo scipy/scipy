@@ -2,8 +2,7 @@
 # Use the `scipy.interpolate` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _interpolate
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
@@ -11,8 +10,6 @@ __all__ = [  # noqa: F822
     'BSpline',
     'NdPPoly',
     'PPoly',
-    'RectBivariateSpline',
-    'RegularGridInterpolator',
     'array',
     'asarray',
     'atleast_1d',
@@ -21,7 +18,6 @@ __all__ = [  # noqa: F822
     'dfitpack',
     'interp1d',
     'interp2d',
-    'interpn',
     'intp',
     'itertools',
     'lagrange',
@@ -40,13 +36,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.interpolate.interpolate is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.interpolate instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.interpolate` namespace, "
-                  "the `scipy.interpolate.interpolate` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_interpolate, name)
+    return _sub_module_deprecation(sub_package="interpolate", module="interpolate",
+                                   private_module="_interpolate", all=__all__,
+                                   attribute=name)
