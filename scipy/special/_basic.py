@@ -3185,7 +3185,7 @@ def softplus(x, **kwargs):
             remain uninitialized.
         **kwargs 
             For other keyword-only arguments, see 
-            :ref:`numpy:reference/ufuncs`.
+            `Ufunc Docs <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
 
     Returns
     -------
