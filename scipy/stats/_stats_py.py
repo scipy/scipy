@@ -10033,7 +10033,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     >>> rng = np.random.default_rng(6981396440634228121)
     >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
     >>> stats.quantile_test(rvs, q=0.5, p=0.5)
-     QuantileTestResult(statistic=45, statistic_type=1, pvalue=0.36820161732669576)
+    QuantileTestResult(statistic=45, statistic_type=1, pvalue=0.36820161732669576)
 
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
