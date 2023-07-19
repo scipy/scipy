@@ -1428,13 +1428,14 @@ def _bracket_root_iv(func, a, b, min, max, factor, args):
     if not np.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
 
-    if not np.all((min < a) & (a < b) & (b < max)):
-        raise ValueError('`min < a < b < max` must be True (elementwise).')
+    if not np.all((min <= a) & (a < b) & (b <= max)):
+        raise ValueError('`min <= a < b <= max` must be True (elementwise).')
 
     return func, a, b, min, max, factor, args
 
 
-def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=()):
+def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
+                  callback=None, maxiter=1000):
     """Bracket the root of a monotonic scalar function of one variable
 
     Parameters
@@ -1487,9 +1488,11 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=()):
 
     """
     # Todo:
+    # - customize result
+    # - update tests
+    # - update documentation
     # - find bracket with sign change in specified direction
     # - Add tolerance
-    # - Vectorize (i.e. support callables with array output)
 
     temp = _bracket_root_iv(func, a, b, min, max, factor, args)
     func, a, b, min, max, factor, args = temp
@@ -1497,33 +1500,91 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=()):
     xs = (a, b)
     temp = _scalar_optimization_initialize(func, xs, args)
     xs, fs, args, shape, dtype = temp  # line split for PEP8
-    x1, x2 = xs
-    f1, f2 = fs
+    x = np.concatenate(xs)
+    f = np.concatenate(fs)
+    n = len(x) // 2
 
+    x_last = np.concatenate((x[n:], x[:n]))
+    f_last = np.concatenate((f[n:], f[:n]))
+    x0 = x_last
 
-    d = x2-x1
-    min = min.astype(dtype, copy=False).ravel()
-    max = min.astype(dtype, copy=False).ravel()
-    factor = factor.astype(dtype, copy=False).ravel()
-    status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
+    min = np.broadcast_to(min, shape).astype(dtype, copy=False).ravel()
+    max = np.broadcast_to(max, shape).astype(dtype, copy=False).ravel()
+    limit = np.concatenate((min, max))
+
+    factor = np.broadcast_to(factor, shape).astype(dtype, copy=False).ravel()
+    factor = np.concatenate((factor, factor))
+
+    active = np.arange(2*n)
+    shape = shape + (2,)
+
+    i = np.isinf(limit)
+    ni = ~i
+    d = np.zeros_like(x)
+    d[i] = (x[i] - x0[i]) * factor[i]
+    d[ni] = (limit[ni] - x[ni]) / factor[ni]
+
+    status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
 
-    work = OptimizeResult(x1=x1, f1=f1, x2=x2, f2=f2, min=min, max=max,
-                          factor=factor, nit=nit, nfev=nfev, status=status,
-                          args=args)
-    res_work_pairs = [('status', 'status'),
-                      ('xl', 'x1'), ('xr', 'x2'),
-                      ('fl', 'f1'), ('fr', 'f2')]
-
-    # sign = 1 if t < v else -1  # positive grows to the left
-    # if limit is None:
-    #     w = v - sign * d * factor ** i
-    # else:
-    #     w = limit + (t - limit) * factor ** (-i)
+    work = OptimizeResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
+                          active=active, d=d, x_last=x_last, f_last=f_last,
+                          nit=nit, nfev=nfev, status=status, args=args)
+    res_work_pairs = [('status', 'status'), ('x', 'x'), ('f', 'f'),
+                      ('nit', 'nit'), ('nfev', 'nfev')]
 
     def pre_func_eval(work):
+        work.x_last = work.x
+        work.f_last = work.f
+        i = np.isinf(work.limit)
+        x = np.zeros_like(work.x)
+
+        x[i] = work.x0[i] + work.d
+        work.d[i] *= work.factor[i]
+
+        ni = ~i
+        x[ni] = work.limit - work.d
+        work.d[ni] /= work.factor[ni]
 
         return x
+
+    def post_func_eval(x, f, work):
+        work.x = x
+        work.f = f
+
+    def check_termination(work):
+
+        stop = np.zeros_like(work.x, dtype=bool)  # termination condition met
+
+        sf = np.sign(work.f)
+        sf_last = np.sign(work.f_last)
+
+        i = (sf_last == -sf) | (sf_last == 0) | (sf == 0)
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        i = (work.x == work.limit) & ~stop
+        work.status[i] = _ECONVERR
+        stop[i] = True
+
+        i = ~(np.isfinite(work.x) & np.isfinite(work.f)) & ~stop
+        work.status[i] = _EVALUEERR
+        stop[i] = True
+
+        return stop
+
+    def post_termination_check(work):
+        pass
+
+    def customize_result(res):
+        # separate results into left and right bracket
+        pass
+
+    return _scalar_optimization_loop(work, callback, shape,
+                                     maxiter, func, args, dtype,
+                                     pre_func_eval, post_func_eval,
+                                     check_termination, post_termination_check,
+                                     customize_result, res_work_pairs)
 
 
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
