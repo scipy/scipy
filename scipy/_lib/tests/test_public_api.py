@@ -317,8 +317,13 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize("module_name",
-                         ['scipy.stats.stats',
-                          'scipy.stats.morestats'])
+                         ['scipy.stats.biasedurn',
+                          'scipy.stats.kde',
+                          'scipy.stats.morestats',
+                          'scipy.stats.mstats_basic',
+                          'scipy.stats.mstats_extras',
+                          'scipy.stats.mvn',
+                          'scipy.stats.stats'])
 def test_private_but_present_deprecation(module_name):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
