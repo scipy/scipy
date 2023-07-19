@@ -21,7 +21,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     return xp.asarray(y)
 
 
-def fftfreq(n, d=1.0, xp=np, device=None):
+def fftfreq(n, d=1.0, *, xp=np, device=None):
     """
     Implements the Array API specification of fftfreq.
     """
@@ -30,7 +30,7 @@ def fftfreq(n, d=1.0, xp=np, device=None):
     return np.fft.fftfreq(n, d, device=device)
 
 
-def rfftfreq(n, d=1.0, xp=np, device=None):
+def rfftfreq(n, d=1.0, *, xp=np, device=None):
     """
     Implements the Array API specification of rfftfreq.
     """
