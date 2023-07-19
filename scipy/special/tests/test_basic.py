@@ -4003,12 +4003,13 @@ class TestStirling2:
             special.stirling2(N, K, exact=True)
 
     def test_numpy_array_int_object_dtype(self):
-        # python integers with arbitrary precision are allowed as
-        # object type in numpy arrays
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
         ans = asarray(self.table[4][1:])
         n = asarray([4, 4, 4, 4], dtype=object)
         k = asarray([1, 2, 3, 4], dtype=object)
-        assert array_equal(stirling2(n, k), ans)
+        with pytest.raises(TypeError):
+            array_equal(stirling2(n, k), ans)
 
     def test_numpy_array_unsigned_int_dtype(self):
         # numpy unsigned integers are allowed as dtype in numpy arrays
