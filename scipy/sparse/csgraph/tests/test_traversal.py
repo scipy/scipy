@@ -71,7 +71,7 @@ def test_graph_depth_first_trivial_graph():
 
 def test_breadth_first_int64_indices():
     # See https://github.com/scipy/scipy/issues/18716
-    g = csr_array((np.array([1]), np.array([[0], [1]])), shape=(2, 2))
+    g = csr_array(([1], np.array([[0], [1]], dtype=np.int64)), shape=(2, 2))
     assert g.indices.dtype == np.int64
     for directed in [True, False]:
         bf = breadth_first_tree(g, 0, directed=directed)
@@ -80,7 +80,7 @@ def test_breadth_first_int64_indices():
 
 def test_depth_first_int64_indices():
     # See https://github.com/scipy/scipy/issues/18716
-    g = csr_array((np.array([1]), np.array([[0], [1]])), shape=(2, 2))
+    g = csr_array(([1], np.array([[0], [1]], dtype=np.int64)), shape=(2, 2))
     assert g.indices.dtype == np.int64
     for directed in [True, False]:
         df = depth_first_tree(g, 0, directed=directed)
