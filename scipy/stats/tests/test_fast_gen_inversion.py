@@ -1,6 +1,3 @@
-import platform
-import sys
-
 import pytest
 import warnings
 import numpy as np
@@ -9,9 +6,6 @@ from numpy.testing import (assert_array_equal, assert_allclose,
 from copy import deepcopy
 from scipy.stats.sampling import FastGeneratorInversion
 from scipy import stats
-
-
-win32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
 
 
 def test_bad_args():
@@ -336,10 +330,8 @@ def test_ignore_shape_range():
     u_err, _ = rng.evaluate_error(size=1000, random_state=234)
     assert u_err >= 1e-6
 
-
-@pytest.mark.skipif(
-    win32,
-    reason="NumericalInversePolynomial.qrvs fails for Win 32-bit"
+@pytest.mark.xfail_on_32bit(
+    "NumericalInversePolynomial.qrvs fails for Win 32-bit"
 )
 class TestQRVS:
     def test_input_validation(self):
