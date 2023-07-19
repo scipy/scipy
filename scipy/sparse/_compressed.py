@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array
 
-from ._base import _sparray, isspmatrix, SparseEfficiencyWarning
+from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
@@ -25,7 +25,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
-        if isspmatrix(arg1):
+        if issparse(arg1):
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
@@ -119,7 +119,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return np.diff(self.indptr)
             raise ValueError('axis out of bounds')
 
-    _getnnz.__doc__ = _sparray._getnnz.__doc__
+    _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def _set_self(self, other, copy=False):
         """take the member variables of other and assign them to self"""
@@ -133,13 +133,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
-        """check whether the matrix format is valid
+        """Check whether the matrix respects the CSR or CSC format.
 
         Parameters
         ----------
         full_check : bool, optional
-            If `True`, rigorous check, O(N) operations. Otherwise
-            basic check, O(1) operations (default True).
+            If `True`, run rigorous check, scanning arrays for valid values.
+            Note that activating those check might copy arrays for casting,
+            modifying indices and index pointers' inplace.
+            If `False`, run basic checks on attributes. O(1) operations.
+            Default is `True`.
         """
         # use _swap to determine proper bounds
         major_name, minor_name = self._swap(('row', 'column'))
@@ -152,11 +155,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if self.indices.dtype.kind != 'i':
             warn("indices array has non-integer dtype ({})"
                  "".format(self.indices.dtype.name), stacklevel=3)
-
-        idx_dtype = self._get_index_dtype((self.indptr, self.indices))
-        self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
-        self.indices = np.asarray(self.indices, dtype=idx_dtype)
-        self.data = to_native(self.data)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -191,6 +189,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                      "non-decreasing sequence")
+
+            idx_dtype = self._get_index_dtype((self.indptr, self.indices))
+            self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+            self.indices = np.asarray(self.indices, dtype=idx_dtype)
+            self.data = to_native(self.data)
 
         # if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order.  Sorting indices.')
@@ -233,7 +236,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif is_pydata_spmatrix(other):
             return NotImplemented
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             warn("Comparing sparse matrices using == is inefficient, try using"
                  " != instead.", SparseEfficiencyWarning, stacklevel=3)
             # TODO sparse broadcasting
@@ -271,7 +274,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif is_pydata_spmatrix(other):
             return NotImplemented
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 return True
@@ -298,7 +301,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif isdense(other):
             return op(self.todense(), other)
         # Sparse other.
-        elif isspmatrix(other):
+        elif issparse(other):
             # TODO sparse broadcasting
             if self.shape != other.shape:
                 raise ValueError("inconsistent shapes")
@@ -369,7 +372,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if isscalarlike(other):
             return self._mul_scalar(other)
         # Sparse matrix or vector.
-        if isspmatrix(other):
+        if issparse(other):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
@@ -550,7 +553,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            self.data, y)
         return y
 
-    diagonal.__doc__ = _sparray.diagonal.__doc__
+    diagonal.__doc__ = _spbase.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -574,7 +577,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return mat
         elif isdense(other):
             return npop(self.todense(), other)
-        elif isspmatrix(other):
+        elif issparse(other):
             return self._binopt(other, op_name)
         else:
             raise ValueError("Operands not compatible.")
@@ -583,13 +586,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._maximum_minimum(other, np.maximum,
                                      '_maximum_', lambda x: np.asarray(x) > 0)
 
-    maximum.__doc__ = _sparray.maximum.__doc__
+    maximum.__doc__ = _spbase.maximum.__doc__
 
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum,
                                      '_minimum_', lambda x: np.asarray(x) < 0)
 
-    minimum.__doc__ = _sparray.minimum.__doc__
+    minimum.__doc__ = _spbase.minimum.__doc__
 
     #####################
     # Reduce operations #
@@ -599,7 +602,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Sum the matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
-        # The _sparray base class already does axis=0 and axis=1 efficiently
+        # The _spbase base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
                 axis in self._swap(((1, -1), (0, 2)))[0]):
@@ -617,12 +620,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError('dimensions do not match')
 
             return ret.sum(axis=(), dtype=dtype, out=out)
-        # _sparray will handle the remaining situations when axis
+        # _spbase will handle the remaining situations when axis
         # is in {None, -1, 0, 1}
         else:
-            return _sparray.sum(self, axis=axis, dtype=dtype, out=out)
+            return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
-    sum.__doc__ = _sparray.sum.__doc__
+    sum.__doc__ = _spbase.sum.__doc__
 
     def _minor_reduce(self, ufunc, data=None):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
@@ -1042,7 +1045,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             dtype=self.dtype
         )
 
-    tocoo.__doc__ = _sparray.tocoo.__doc__
+    tocoo.__doc__ = _spbase.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
         if out is None and order is None:
@@ -1061,7 +1064,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_todense(M, N, x.indptr, x.indices, x.data, y)
         return out
 
-    toarray.__doc__ = _sparray.toarray.__doc__
+    toarray.__doc__ = _spbase.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
@@ -1213,7 +1216,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self._shape = shape
 
-    resize.__doc__ = _sparray.resize.__doc__
+    resize.__doc__ = _spbase.resize.__doc__
 
     ###################
     # utility methods #

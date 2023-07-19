@@ -37,6 +37,7 @@ your system.
 .. tab-set::
 
   .. tab-item:: Linux
+    :sync: linux
 
     If you want to use the system Python and ``pip``, you will need:
 
@@ -103,6 +104,7 @@ your system.
           sudo pacman -S gcc-fortran openblas pkgconf
 
   .. tab-item:: macOS
+    :sync: macos
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -132,6 +134,7 @@ your system.
         issues.
 
   .. tab-item:: Windows
+    :sync: windows
 
     A compatible set of C, C++ and Fortran compilers is needed to build SciPy.
     This is trickier on Windows than on other platforms, because MSVC does not
@@ -203,16 +206,34 @@ your system.
         invoking a Fortran compiler in the shell you use (e.g., ``gfortran
         --version`` or ``ifort --version``).
 
+    .. warning::
+
+        When using a conda environment it is possible that the environment
+        creation will not work due to an outdated Fortran compiler. If that
+        happens, remove the ``compilers`` entry from ``environment.yml`` and
+        try again. The Fortran compiler should be installed as described in
+        this section.
+
 
 Building SciPy from source
 --------------------------
 
 If you want to only install SciPy from source once and not do any development
-work, then the recommended way to build and install is to use ``pip``:
+work, then the recommended way to build and install is to use ``pip``.
+Otherwise, conda is recommended.
+
+.. note::
+
+    If you don't have a conda installation yet, we recommend using
+    Mambaforge_; any conda flavor will work though.
+
+Building from source to use SciPy
+`````````````````````````````````
 
 .. tab-set::
 
   .. tab-item:: Conda env
+    :sync: conda
 
     If you are using a conda environment, ``pip`` is still the tool you use to
     invoke a from-source build of SciPy. It is important to always use the
@@ -236,6 +257,7 @@ work, then the recommended way to build and install is to use ``pip``:
       pip install . --no-build-isolation
 
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     ::
 
@@ -273,12 +295,22 @@ virtual environments:
 
 .. tab-set::
 
+  .. tab-item:: Conda env
+    :sync: conda
+
+    To create a ``scipy-dev`` development environment with every required and
+    optional dependency installed, run::
+
+        mamba env create -f environment.yml
+        mamba activate scipy-dev
+
   .. tab-item:: Virtual env or system Python
+    :sync: pip
 
     .. note::
 
        There are many tools to manage virtual environments, like ``venv``,
-       ``virtualenv``/``virtualenvwrapper, ``pyenv``/``pyenv-virtualenv``,
+       ``virtualenv``/``virtualenvwrapper``, ``pyenv``/``pyenv-virtualenv``,
        Poetry, PDM, Hatch, and more. Here we use the basic ``venv`` tool that
        is part of the Python stdlib. You can use any other tool; all we need is
        an activated Python environment.
@@ -286,10 +318,33 @@ virtual environments:
     Create and activate a virtual environment in a new directory named ``venv`` (
     note that the exact activation command may be different based on your OS and shell
     - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
-    in the ``venv`` docs)::
+    in the ``venv`` docs).
 
-       python -m venv venv
-       source venv/bin/activate
+    .. tab-set::
+
+      .. tab-item:: Linux
+        :sync: linux
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: macOS
+        :sync: macos
+
+        ::
+
+          python -m venv venv
+          source venv/bin/activate
+
+      .. tab-item:: Windows
+        :sync: windows
+
+        ::
+
+          python -m venv venv
+          .\venv\Scripts\activate
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
@@ -301,29 +356,10 @@ virtual environments:
        python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
 
        # Doc build dependencies
-       python -m pip sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
 
        # Dev dependencies (static typing and linting)
-       python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
-
-  .. tab-item:: Conda env
-
-    If you don't have a conda installation yet, we recommend using
-    Mambaforge_; any conda flavor will work though.
-
-    To create a ``scipy-dev`` development environment with every required and
-    optional dependency installed, run::
-
-        mamba env create -f environment.yml
-        mamba activate scipy-dev
-
-    .. note::
-
-       On Windows it is possible that the environment creation will not work due
-       to an outdated Fortran compiler. If that happens, remove the ``compilers``
-       entry from ``environment.yml`` and try again. The Fortran compiler should
-       be installed as described under the *Windows* tab of the *System-level
-       dependencies* section higher up.
+       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
 
 To build SciPy in an activated development environment, run::
 

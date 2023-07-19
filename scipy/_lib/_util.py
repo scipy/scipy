@@ -16,6 +16,13 @@ from typing import (
 
 import numpy as np
 
+if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
+    from numpy.exceptions import AxisError
+else:
+    from numpy import AxisError
+
+
+
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
 
@@ -729,3 +736,14 @@ def _get_nan(*data):
     data = [np.asarray(item) for item in data]
     dtype = np.result_type(*data, np.half)  # must be a float16 at least
     return np.array(np.nan, dtype=dtype)[()]
+
+
+def normalize_axis_index(axis, ndim):
+    # Check if `axis` is in the correct range and normalize it
+    if axis < -ndim or axis >= ndim:
+        msg = f"axis {axis} is out of bounds for array of dimension {ndim}"
+        raise AxisError(msg)
+
+    if axis < 0:
+        axis = axis + ndim
+    return axis

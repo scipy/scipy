@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from ._base import _sparray, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -16,9 +16,9 @@ __all__ = []
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(_sparray):
+class _data_matrix(_spbase):
     def __init__(self):
-        _sparray.__init__(self)
+        _spbase.__init__(self)
 
     def _get_dtype(self):
         return self.data.dtype
@@ -78,7 +78,7 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    astype.__doc__ = _sparray.astype.__doc__
+    astype.__doc__ = _spbase.astype.__doc__
 
     def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
@@ -88,17 +88,17 @@ class _data_matrix(_sparray):
         else:
             return self
 
-    conjugate.__doc__ = _sparray.conjugate.__doc__
+    conjugate.__doc__ = _spbase.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = _sparray.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = _sparray.count_nonzero.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -385,6 +385,94 @@ class _minmax_mixin:
 
         """
         return self._min_or_max(axis, out, np.minimum, explicit)
+
+    def nanmax(self, axis=None, out=None, *, explicit=False):
+        """
+        Return the maximum of the matrix or maximum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the maximum is computed. The default is to
+            compute the maximum over all the matrix elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except
+            for the default value, as this argument is not used.
+
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
+
+        Returns
+        -------
+        amax : coo_matrix or scalar
+            Maximum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmin : The minimum value of a sparse matrix along a given axis,
+                 ignoring NaNs.
+        max : The maximum value of a sparse matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmax : NumPy's implementation of 'nanmax'.
+
+        """
+        return self._min_or_max(axis, out, np.fmax, explicit)
+
+    def nanmin(self, axis=None, out=None, *, explicit=False):
+        """
+        Return the minimum of the matrix or minimum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the minimum is computed. The default is to
+            compute the minimum over all the matrix elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
+
+        Returns
+        -------
+        amin : coo_matrix or scalar
+            Minimum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmax : The maximum value of a sparse matrix along a given axis,
+                 ignoring NaNs.
+        min : The minimum value of a sparse matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmin : NumPy's implementation of 'nanmin'.
+
+        """
+        return self._min_or_max(axis, out, np.fmin, explicit)
 
     def argmax(self, axis=None, out=None, *, explicit=False):
         """Return indices of maximum elements along an axis.

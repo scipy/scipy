@@ -26,16 +26,16 @@ import warnings
 
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
-from scipy.interpolate import interp1d
+from scipy.interpolate import make_interp_spline
 from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
                             freqz_zpk)
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+                             cont2discrete, _atleast_2d_or_none)
 
 import numpy
 import numpy as np
 from numpy.testing import suppress_warnings
-from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
+from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
 
@@ -1220,11 +1220,6 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     pass
 
 
-def _atleast_2d_or_none(arg):
-    if arg is not None:
-        return atleast_2d(arg)
-
-
 class StateSpace(LinearTimeInvariant):
     r"""
     Linear Time Invariant system in state-space form.
@@ -2111,10 +2106,10 @@ def lsim(system, U, T, X0=None, interp=True):
                 not np.any(U))
 
     if n_steps == 1:
-        yout = squeeze(dot(xout, transpose(C)))
+        yout = squeeze(xout @ C.T)
         if not no_input:
-            yout += squeeze(dot(U, transpose(D)))
-        return T, squeeze(yout), squeeze(xout)
+            yout += squeeze(U @ D.T)
+        return T, yout, squeeze(xout)
 
     dt = T[1] - T[0]
     if not np.allclose(np.diff(T), dt):
@@ -2123,11 +2118,11 @@ def lsim(system, U, T, X0=None, interp=True):
     if no_input:
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
-        expAT_dt = linalg.expm(transpose(A) * dt)
+        expAT_dt = linalg.expm(A.T * dt)
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], expAT_dt)
-        yout = squeeze(dot(xout, transpose(C)))
-        return T, squeeze(yout), squeeze(xout)
+            xout[i] = xout[i-1] @ expAT_dt
+        yout = squeeze(xout @ C.T)
+        return T, yout, squeeze(xout)
 
     # Nonzero input
     U = atleast_1d(U)
@@ -2153,11 +2148,11 @@ def lsim(system, U, T, X0=None, interp=True):
         M = np.vstack([np.hstack([A * dt, B * dt]),
                        np.zeros((n_inputs, n_states + n_inputs))])
         # transpose everything because the state and input are row vectors
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd
     else:
         # Linear interpolation between steps
         # Algorithm: to integrate from time 0 to time dt, with linear
@@ -2174,15 +2169,15 @@ def lsim(system, U, T, X0=None, interp=True):
                        np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
                                   np.identity(n_inputs)]),
                        np.zeros((n_inputs, n_states + 2 * n_inputs))])
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
         for i in range(1, n_steps):
-            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd0 + U[i] @ Bd1
 
-    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
-    return T, squeeze(yout), squeeze(xout)
+    yout = squeeze(xout @ C.T) + squeeze(U @ D.T)
+    return T, yout, squeeze(xout)
 
 
 def _default_response_times(A, n):
@@ -3552,8 +3547,7 @@ def dlsim(system, u, t=None, x0=None):
         if len(u.shape) == 1:
             u = u[:, np.newaxis]
 
-        u_dt_interp = interp1d(t, u.transpose(), copy=False, bounds_error=True)
-        u_dt = u_dt_interp(tout).transpose()
+        u_dt = make_interp_spline(t, u, k=1)(tout)
 
     # Simulate the system
     for i in range(0, out_samples - 1):

@@ -33,7 +33,7 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        eye, isspmatrix, SparseEfficiencyWarning)
+        eye, issparse, SparseEfficiencyWarning)
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
@@ -1528,7 +1528,7 @@ class _TestCommon:
                     assert_raises(ValueError, i.multiply, j)
                     continue
                 sp_mult = i.multiply(j)
-                if isspmatrix(sp_mult):
+                if issparse(sp_mult):
                     assert_almost_equal(sp_mult.toarray(), dense_mult)
                 else:
                     assert_almost_equal(sp_mult, dense_mult)
@@ -1596,7 +1596,7 @@ class _TestCommon:
         # test that A*x works for x with shape () (1,) (1,1) and (1,0)
         A = self.spcreator([[1],[2],[3]])
 
-        assert_(isspmatrix(A * array(1)))
+        assert_(issparse(A * array(1)))
         assert_equal((A * array(1)).toarray(), [[1], [2], [3]])
 
         assert_equal(A @ array([1]), array([1, 2, 3]))
@@ -2894,7 +2894,7 @@ class _TestFancyIndexing:
         S = self.spcreator(D)
 
         SIJ = S[I,J]
-        if isspmatrix(SIJ):
+        if issparse(SIJ):
             SIJ = SIJ.toarray()
         assert_equal(SIJ, D[I,J])
 
@@ -3142,7 +3142,7 @@ class _TestFancyMultidim:
             S = self.spcreator(D)
 
             SIJ = S[I,J]
-            if isspmatrix(SIJ):
+            if issparse(SIJ):
                 SIJ = SIJ.toarray()
             assert_equal(SIJ, D[I,J])
 
@@ -3551,6 +3551,36 @@ class _TestMinMax:
                 np.zeros((1, 0)),
                 X.max(axis=axis, explicit=explicit).toarray())
 
+    def test_nanminmax(self):
+        D = matrix(np.arange(50).reshape(5,10), dtype=float)
+        D[1, :] = 0
+        D[:, 9] = 0
+        D[3, 3] = 0
+        D[2, 2] = -1
+        D[4, 2] = np.nan
+        D[1, 4] = np.nan
+        X = self.spcreator(D)
+
+        X_nan_maximum = X.nanmax()
+        assert np.isscalar(X_nan_maximum)
+        assert X_nan_maximum == np.nanmax(D)
+
+        X_nan_minimum = X.nanmin()
+        assert np.isscalar(X_nan_minimum)
+        assert X_nan_minimum == np.nanmin(D)
+
+        axes = [-2, -1, 0, 1]
+        for axis in axes:
+            X_nan_maxima = X.nanmax(axis=axis)
+            assert isinstance(X_nan_maxima, coo_matrix)
+            assert_allclose(X_nan_maxima.toarray(),
+                            np.nanmax(D, axis=axis))
+
+            X_nan_minima = X.nanmin(axis=axis)
+            assert isinstance(X_nan_minima, coo_matrix)
+            assert_allclose(X_nan_minima.toarray(),
+                            np.nanmin(D, axis=axis))
+
     def test_minmax_invalid_params(self):
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -3943,7 +3973,7 @@ class TestCSR(sparse_test_class()):
         S = self.spcreator(D)
 
         SIJ = S[I,J]
-        if isspmatrix(SIJ):
+        if issparse(SIJ):
             SIJ = SIJ.toarray()
         assert_equal(SIJ, D[I,J])
 
@@ -4155,7 +4185,7 @@ class TestCSC(sparse_test_class()):
         S = self.spcreator(D)
 
         SIJ = S[I,J]
-        if isspmatrix(SIJ):
+        if issparse(SIJ):
             SIJ = SIJ.toarray()
         assert_equal(SIJ, D[I,J])
 
@@ -4570,6 +4600,13 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         expected = m.toarray()
         assert_array_equal(m.tocsc().toarray(), expected)
         assert_array_equal(m.tocsr().toarray(), expected)
+    
+    def test_tocoo_gh10050(self):
+        # regression test for gh-10050
+        m = dia_matrix([[1, 2], [3, 4]]).tocoo()
+        flat_inds = np.ravel_multi_index((m.row, m.col), m.shape)
+        inds_are_sorted = np.all(np.diff(flat_inds) > 0)
+        assert m.has_canonical_format == inds_are_sorted
 
 
 TestDIA.init_class()

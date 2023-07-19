@@ -488,3 +488,60 @@ def test_format_property():
         assert M._format == fmt
         with pytest.raises(AttributeError):
             M.format = "qqq"
+
+
+def test_issparse():
+    m = scipy.sparse.eye(3)
+    a = scipy.sparse.csr_array(m)
+    assert not m._is_array
+    assert a._is_array
+
+    # Both sparse arrays and sparse matrices should be sparse
+    assert scipy.sparse.issparse(a)
+    assert scipy.sparse.issparse(m)
+
+    # ndarray and array_likes are not sparse
+    assert not scipy.sparse.issparse(a.todense())
+    assert not scipy.sparse.issparse(m.todense())
+
+
+def test_isspmatrix():
+    m = scipy.sparse.eye(3)
+    a = scipy.sparse.csr_array(m)
+    assert not m._is_array
+    assert a._is_array
+
+    # Should only be true for sparse matrices, not sparse arrays
+    assert not scipy.sparse.isspmatrix(a)
+    assert scipy.sparse.isspmatrix(m)
+
+    # ndarray and array_likes are not sparse
+    assert not scipy.sparse.isspmatrix(a.todense())
+    assert not scipy.sparse.isspmatrix(m.todense())
+
+
+@pytest.mark.parametrize(
+    ("fmt", "fn"),
+    (
+        ("bsr", scipy.sparse.isspmatrix_bsr),
+        ("coo", scipy.sparse.isspmatrix_coo),
+        ("csc", scipy.sparse.isspmatrix_csc),
+        ("csr", scipy.sparse.isspmatrix_csr),
+        ("dia", scipy.sparse.isspmatrix_dia),
+        ("dok", scipy.sparse.isspmatrix_dok),
+        ("lil", scipy.sparse.isspmatrix_lil),
+    ),
+)
+def test_isspmatrix_format(fmt, fn):
+    m = scipy.sparse.eye(3, format=fmt)
+    a = scipy.sparse.csr_array(m).asformat(fmt)
+    assert not m._is_array
+    assert a._is_array
+
+    # Should only be true for sparse matrices, not sparse arrays
+    assert not fn(a)
+    assert fn(m)
+
+    # ndarray and array_likes are not sparse
+    assert not fn(a.todense())
+    assert not fn(m.todense())

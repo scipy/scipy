@@ -1290,6 +1290,12 @@ def test_opaque():
     assert isinstance(data['parabola'].item()[3].item()[3], MatlabOpaque)
 
 
+def test_opaque_simplify():
+    """Test that we can read a MatlabOpaque object when simplify_cells=True."""
+    data = loadmat(pjoin(test_data_path, 'parabola.mat'), simplify_cells=True)
+    assert isinstance(data['parabola'], MatlabFunction)
+
+
 def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import

@@ -7,7 +7,9 @@ from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
                        matrix, validateaxis,)
 
-__all__ = ['isspmatrix', 'issparse',
+from ._matrix import spmatrix
+
+__all__ = ['isspmatrix', 'issparse', 'sparray',
            'SparseWarning', 'SparseEfficiencyWarning']
 
 
@@ -57,7 +59,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class _sparray:
+class _spbase:
     """ This class provides a base class for all sparse arrays.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
@@ -105,7 +107,7 @@ class _sparray:
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
-        if self.__class__.__name__ == '_sparray':
+        if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
         self.maxprint = maxprint
@@ -711,31 +713,39 @@ class _sparray:
     def __pow__(self, *args, **kwargs):
         return self.power(*args, **kwargs)
 
-    def __getattr__(self, attr):
-        if attr == 'A':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "`.A` is deprecated and will be removed in v1.13.0. "
-                    "Use `.todense()` instead."
-                ))
-            return self.toarray()
-        elif attr == 'T':
-            return self.transpose()
-        elif attr == 'H':
-            if self._is_array:
-                warn(np.VisibleDeprecationWarning(
-                    "`.H` is deprecated and will be removed in v1.13.0. "
-                    "Please use `.conj().T` instead."
-                ))
-            return self.transpose().conjugate()
-        elif attr == 'real':
-            return self._real()
-        elif attr == 'imag':
-            return self._imag()
-        elif attr == 'size':
-            return self._getnnz()
-        else:
-            raise AttributeError(attr + " not found")
+    @property
+    def A(self) -> np.ndarray:
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.A` is deprecated and will be removed in v1.13.0. "
+                "Use `.toarray()` instead."
+            ))
+        return self.toarray()
+
+    @property
+    def T(self):
+        return self.transpose()
+
+    @property
+    def H(self):
+        if self._is_array:
+            warn(np.VisibleDeprecationWarning(
+                "`.H` is deprecated and will be removed in v1.13.0. "
+                "Please use `.T.conjugate()` instead."
+            ))
+        return self.T.conjugate()
+
+    @property
+    def real(self):
+        return self._real()
+
+    @property
+    def imag(self):
+        return self._imag()
+
+    @property
+    def size(self):
+        return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
         """
@@ -933,7 +943,7 @@ class _sparray:
         """
         return self.tocoo(copy=False).toarray(order=order, out=out)
 
-    # Any sparse array format deriving from _sparray must define one of
+    # Any sparse array format deriving from _spbase must define one of
     # tocsr or tocoo. The other conversion methods may be implemented for
     # efficiency, but are not required.
     def tocsr(self, copy=False):
@@ -1441,8 +1451,15 @@ settable. To change the array shape, use `X.reshape` instead.
     ## End 1.13.0 deprecated methods
 
 
+class sparray:
+    """A namespace class to separate sparray from spmatrix"""
+    pass
+
+sparray.__doc__ = _spbase.__doc__
+
+
 def issparse(x):
-    """Is x of a sparse array type?
+    """Is `x` of a sparse array type?
 
     Parameters
     ----------
@@ -1452,23 +1469,48 @@ def issparse(x):
     Returns
     -------
     bool
-        True if x is a sparse array, False otherwise
-
-    Notes
-    -----
-    issparse and isspmatrix are aliases for the same function.
+        True if `x` is a sparse array or a sparse matrix, False otherwise
 
     Examples
     --------
-    >>> from scipy.sparse import csr_array, issparse
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, issparse
+    >>> issparse(csr_matrix([[5]]))
+    True
     >>> issparse(csr_array([[5]]))
     True
-
-    >>> from scipy.sparse import issparse
+    >>> issparse(np.array([[5]]))
+    False
     >>> issparse(5)
     False
     """
-    return isinstance(x, _sparray)
+    return isinstance(x, _spbase)
 
 
-isspmatrix = issparse
+def isspmatrix(x):
+    """Is `x` of a sparse matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse matrix
+
+    Returns
+    -------
+    bool
+        True if `x` is a sparse matrix, False otherwise
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import csr_array, csr_matrix, isspmatrix
+    >>> isspmatrix(csr_matrix([[5]]))
+    True
+    >>> isspmatrix(csr_array([[5]]))
+    False
+    >>> isspmatrix(np.array([[5]]))
+    False
+    >>> isspmatrix(5)
+    False
+    """
+    return isinstance(x, spmatrix)

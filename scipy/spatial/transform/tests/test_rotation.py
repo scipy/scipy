@@ -37,11 +37,26 @@ def test_from_square_quat_matrix():
         [3, 0, 0, 4],
         [5, 0, 12, 0],
         [0, 0, 0, 1],
-        [0, 0, 0, -1]
+        [-1, -1, -1, 1],
+        [0, 0, 0, -1],  # Check double cover
+        [-1, -1, -1, -1]  # Check double cover
         ])
     r = Rotation.from_quat(x)
-    expected_quat = x / np.array([[5], [13], [1], [1]])
+    expected_quat = x / np.array([[5], [13], [1], [2], [1], [2]])
     assert_array_almost_equal(r.as_quat(), expected_quat)
+
+
+def test_quat_double_to_canonical_single_cover():
+    x = np.array([
+        [-1, 0, 0, 0],
+        [0, -1, 0, 0],
+        [0, 0, -1, 0],
+        [0, 0, 0, -1],
+        [-1, -1, -1, -1]
+        ])
+    r = Rotation.from_quat(x)
+    expected_quat = np.abs(x) / np.linalg.norm(x, axis=1)[:, None]
+    assert_array_almost_equal(r.as_quat(canonical=True), expected_quat)
 
 
 def test_malformed_1d_from_quat():

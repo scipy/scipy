@@ -42,6 +42,7 @@ GitHub Actions
   dependencies and check coverage
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
+* ``Array API``: test Array API support
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -95,7 +96,7 @@ Wheel builds
 ============
 
 Wheels for SciPy releases and
-`*nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_ builds are built
+`*nightly* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_ builds are built
 using cibuildwheel in a
 `Github Action <https://github.com/scipy/scipy/blob/main/.github/workflows/wheels.yml>`_.
 The Action runs:
@@ -109,7 +110,7 @@ The action does not run on forks of the main SciPy repository. The wheels that
 are created are available as artifacts associated with a successful run of the
 Action. When the Action runs on a schedule, or is manually started, the wheels
 are uploaded to the
-`*scipy-wheels-nightly* <https://anaconda.org/scipy-wheels-nightly/scipy>`_
+`*scientific-python-nightly-wheels* <https://anaconda.org/scientific-python-nightly-wheels/scipy>`_
 repository.
 
 It is not advised to use cibuildwheel to build scipy wheels on your own system
