@@ -317,7 +317,12 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize("module_name",
-                         ['scipy.stats.stats',
+                         ['scipy.integrate.odepack',
+                          'scipy.integrate.quadpack',
+                          'scipy.integrate.dop',
+                          'scipy.integrate.lsoda',
+                          'scipy.integrate.vode',
+                          'scipy.stats.stats',
                           'scipy.stats.morestats'])
 def test_private_but_present_deprecation(module_name):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
