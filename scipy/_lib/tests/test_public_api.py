@@ -317,8 +317,19 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize("module_name",
-                         ['scipy.stats.stats',
-                          'scipy.stats.morestats'])
+                        ['scipy.optimize.cobyla',
+                         'scipy.optimize.lbfgsb',
+                         'scipy.optimize.linesearch',
+                         'scipy.optimize.minpack',
+                         'scipy.optimize.minpack2',
+                         'scipy.optimize.moduleTNC',
+                         'scipy.optimize.nonlin',
+                         'scipy.optimize.optimize',
+                         'scipy.optimize.slsqp',
+                         'scipy.optimize.tnc',
+                         'scipy.optimize.zeros',
+                         'scipy.stats.stats',
+                         'scipy.stats.morestats'])
 def test_private_but_present_deprecation(module_name):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
