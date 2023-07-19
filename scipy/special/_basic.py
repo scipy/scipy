@@ -3183,7 +3183,7 @@ def softplus(x, **kwargs):
             Note that if an uninitialized `out` array is created via the default
             ``out=None``, locations within it where the condition is False will
             remain uninitialized.
-        **kwargs 
+        kwargs 
             For other keyword-only arguments, see 
             `Ufunc Docs <https://numpy.org/doc/stable/reference/ufuncs.html>`_.
 
