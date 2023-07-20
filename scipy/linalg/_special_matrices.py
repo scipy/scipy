@@ -1484,7 +1484,7 @@ class sakurai:
     True
 
     """
-    def __init__(self, n):
+    def __init__(self, n) -> None:
         from scipy.sparse import spdiags
         self.n = n
         d0 = np.r_[5, 6 * np.ones(n - 2), 5]
@@ -1616,7 +1616,7 @@ class mikota_pair:
     array([ 1.,  4.,  9., 16., 25., 36.])  
 
     """
-    def __init__(self, n):
+    def __init__(self, n) -> None:
         from scipy.sparse import diags
         self.n = n
         aranp1 = np.arange(1, n + 1)
