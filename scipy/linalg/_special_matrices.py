@@ -1479,8 +1479,8 @@ class sakurai:
 
     The banded form can be used in scipy functions for banded matrices, e.g.,
 
-    >>> e, _ = eig_banded(sakurai.banded)
-    >>> max(abs(sakurai.eigenvalues  - e)) < n * n * n * np.finfo(float).eps
+    >>> e = eig_banded(sak.banded, eigvals_only=True)
+    >>> np.allclose(sak.eigenvalues, e, atol= n * n * n * np.finfo(float).eps)
     True
 
     """
