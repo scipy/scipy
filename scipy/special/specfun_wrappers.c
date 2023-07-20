@@ -55,9 +55,9 @@ extern void F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
 extern void F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
 extern void F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
 extern void F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
-extern void F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
+extern void F_FUNC(pbdv_,PBDV_)(double*,double*,double*,double*,double*,double*);
 extern void F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
-extern void F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
+extern void F_FUNC(segv_,SEGV_)(int*,int*,double*,int*,double*,double*);
 extern void F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
 extern void F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
 extern void F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
@@ -655,7 +655,7 @@ int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
     return -1;
   }
   dp = dv + num;
-  F_FUNC(pbdv,PBDV)(&v, &x, dv, dp, pdf, pdd);
+  F_FUNC(pbdv_,PBDV_)(&v, &x, dv, dp, pdf, pdd);
   PyMem_Free(dv);
   return 0;
 }
@@ -701,7 +701,7 @@ double prolate_segv_wrap(double m, double n, double c)
     sf_error("prolate_segv", SF_ERROR_OTHER, "memory allocation error");
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   PyMem_Free(eg);
   return cv;
 }
@@ -722,7 +722,7 @@ double oblate_segv_wrap(double m, double n, double c)
     sf_error("oblate_segv", SF_ERROR_OTHER, "memory allocation error");
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   PyMem_Free(eg);
   return cv;
 }
@@ -748,7 +748,7 @@ double prolate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s
     *s1d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
   PyMem_Free(eg);
   return s1f;
@@ -775,7 +775,7 @@ double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1
     *s1d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(aswfa,ASWFA)(&int_m,&int_n,&c,&x,&kd,&cv,&s1f,s1d);
   PyMem_Free(eg);
   return s1f;
@@ -840,7 +840,7 @@ double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double 
     *r1d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
   PyMem_Free(eg);
   return r1f;
@@ -866,7 +866,7 @@ double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double 
     *r2d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfp,RSWFP)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
   PyMem_Free(eg);
   return r2f;
@@ -930,7 +930,7 @@ double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *
     *r1d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,r1d,&r2f,&r2d);
   PyMem_Free(eg);
   return r1f;
@@ -956,7 +956,7 @@ double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *
     *r2d = NAN;
     return NAN;
   }
-  F_FUNC(segv,SEGV)(&int_m,&int_n,&c,&kd,&cv,eg);
+  F_FUNC(segv_,SEGV_)(&int_m,&int_n,&c,&kd,&cv,eg);
   F_FUNC(rswfo,RSWFO)(&int_m,&int_n,&c,&x,&cv,&kf,&r1f,&r1d,&r2f,r2d);
   PyMem_Free(eg);
   return r2f;

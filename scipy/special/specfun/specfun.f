@@ -170,7 +170,7 @@ C            lower quadrant
 
 C       **********************************
 
-        SUBROUTINE LQMN(MM,M,N,X,QM,QD)
+        SUBROUTINE LQMN_(MM,M,N,X,QM,QD)
 C
 C       ==========================================================
 C       Purpose: Compute the associated Legendre functions of the
@@ -261,7 +261,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLPMN(MM,M,N,X,Y,NTYPE,CPM,CPD)
+        SUBROUTINE CLPMN_(MM,M,N,X,Y,NTYPE,CPM,CPD)
 C
 C       =========================================================
 C       Purpose: Compute the associated Legendre functions Pmn(z)
@@ -396,7 +396,7 @@ C
 
 C       **********************************
 C       SciPy: Changed P from a character array to an integer array.
-        SUBROUTINE JDZO(NT,N,M,P,ZO)
+        SUBROUTINE JDZO_(NT,N,M,P,ZO)
 C
 C       ===========================================================
 C       Purpose: Compute the zeros of Bessel functions Jn(x) and
@@ -688,7 +688,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE BERNOB(N,BN)
+        SUBROUTINE BERNOB_(N,BN)
 C
 C       ======================================
 C       Purpose: Compute Bernoulli number Bn
@@ -1988,7 +1988,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLQN(N,X,Y,CQN,CQD)
+        SUBROUTINE CLQN_(N,X,Y,CQN,CQD)
 C
 C       ==================================================
 C       Purpose: Compute the Legendre functions Qn(z) and
@@ -2265,7 +2265,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE EULERB(N,EN)
+        SUBROUTINE EULERB_(N,EN)
 C
 C       ======================================
 C       Purpose: Compute Euler number En
@@ -2466,7 +2466,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LQNB(N,X,QN,QD)
+        SUBROUTINE LQNB_(N,X,QN,QD)
 C
 C       ====================================================
 C       Purpose: Compute Legendre functions Qn(x) & Qn'(x)
@@ -2645,7 +2645,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LAMV(V,X,VM,VL,DL)
+        SUBROUTINE LAMV_(V,X,VM,VL,DL)
 C
 C       =========================================================
 C       Purpose: Compute lambda function with arbitrary order v,
@@ -4362,7 +4362,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE PBDV(V,X,DV,DP,PDF,PDD)
+        SUBROUTINE PBDV_(V,X,DV,DP,PDF,PDD)
 C
 C       ====================================================
 C       Purpose: Compute parabolic cylinder functions Dv(x)
@@ -4538,7 +4538,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CERZO(NT,ZO)
+        SUBROUTINE CERZO_(NT,ZO)
 C
 C       ===============================================================
 C       Purpose : Evaluate the complex zeros of error function erf(z)
@@ -4724,7 +4724,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LAMN(N,X,NM,BL,DL)
+        SUBROUTINE LAMN_(N,X,NM,BL,DL)
 C
 C       =========================================================
 C       Purpose: Compute lambda functions and their derivatives
@@ -4931,7 +4931,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLPN(N,X,Y,CPN,CPD)
+        SUBROUTINE CLPN_(N,X,Y,CPN,CPD)
 C
 C       ==================================================
 C       Purpose: Compute Legendre polynomials Pn(z) and
@@ -6482,7 +6482,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LPMN(MM,M,N,X,PM,PD)
+        SUBROUTINE LPMN_(MM,M,N,X,PM,PD)
 C
 C       =====================================================
 C       Purpose: Compute the associated Legendre functions
@@ -6562,7 +6562,7 @@ C       Output:  CSF --- cem(x,q) or sem(x,q)
 C                CSD --- cem'x,q) or sem'x,q)
 C       Routines called:
 C            (1) CVA2 for computing the characteristic values
-C            (2) FCOEF for computing the expansion coefficients
+C            (2) FCOEF_ for computing the expansion coefficients
 C       ===============================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
@@ -6584,7 +6584,7 @@ C
            CSD=DNAN()
            RETURN
         END IF
-        CALL FCOEF(KD,M,Q,A,FG)
+        CALL FCOEF_(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         RD=1.74532925199433D-2
         XR=X*RD
@@ -7259,7 +7259,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE FCSZO(KF,NT,ZO)
+        SUBROUTINE FCSZO_(KF,NT,ZO)
 C
 C       ===============================================================
 C       Purpose: Compute the complex zeros of Fresnel integral C(z)
@@ -7961,7 +7961,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CPBDN(N,Z,CPB,CPD)
+        SUBROUTINE CPBDN_(N,Z,CPB,CPD)
 C
 C       ==================================================
 C       Purpose: Compute the parabolic cylinder functions
@@ -8153,7 +8153,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE LPN(N,X,PN,PD)
+        SUBROUTINE LPN_(N,X,PN,PD)
 C
 C       ===============================================
 C       Purpose: Compute Legendre polynomials Pn(x)
@@ -8187,7 +8187,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE FCOEF(KD,M,Q,A,FC)
+        SUBROUTINE FCOEF_(KD,M,Q,A,FC)
 C
 C       =====================================================
 C       Purpose: Compute expansion coefficients for Mathieu
@@ -9016,7 +9016,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE RCTY(N,X,NM,RY,DY)
+        SUBROUTINE RCTY_(N,X,NM,RY,DY)
 C
 C       ========================================================
 C       Purpose: Compute Riccati-Bessel functions of the second
@@ -9379,7 +9379,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CYZO(NT,KF,KC,ZO,ZV)
+        SUBROUTINE CYZO_(NT,KF,KC,ZO,ZV)
 C
 C       ===========================================================
 C       Purpose : Compute the complex zeros of Y0(z), Y1(z) and
@@ -9807,7 +9807,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE KLVNZO(NT,KD,ZO)
+        SUBROUTINE KLVNZO_(NT,KD,ZO)
 C
 C       ====================================================
 C       Purpose: Compute the zeros of Kelvin functions
@@ -9988,7 +9988,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE JYZO(N,NT,RJ0,RJ1,RY0,RY1)
+        SUBROUTINE JYZO_(N,NT,RJ0,RJ1,RY0,RY1)
 C
 C       ======================================================
 C       Purpose: Compute the zeros of Bessel functions Jn(x),
@@ -11048,7 +11048,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE RCTJ(N,X,NM,RJ,DJ)
+        SUBROUTINE RCTJ_(N,X,NM,RJ,DJ)
 C
 C       ========================================================
 C       Purpose: Compute Riccati-Bessel functions of the first
@@ -11527,7 +11527,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CLQMN(MM,M,N,X,Y,CQM,CQD)
+        SUBROUTINE CLQMN_(MM,M,N,X,Y,CQM,CQD)
 C
 C       =======================================================
 C       Purpose: Compute the associated Legendre functions of
@@ -11625,7 +11625,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE SEGV(M,N,C,KD,CV,EG)
+        SUBROUTINE SEGV_(M,N,C,KD,CV,EG)
 C
 C       =========================================================
 C       Purpose: Compute the characteristic values of spheroidal
@@ -11934,7 +11934,7 @@ C                F2R --- Mcm(2)(x,q) or Msm(2)(x,q)
 C                D2R --- Derivative of Mcm(2)(x,q) or Msm(2)(x,q)
 C       Routines called:
 C            (1) CVA2 for computing the characteristic values
-C            (2) FCOEF for computing expansion coefficients
+C            (2) FCOEF_ for computing expansion coefficients
 C            (3) JYNB for computing Jn(x), Yn(x) and their
 C                derivatives
 C       ==============================================================
@@ -11961,7 +11961,7 @@ C
            D2R=DNAN()
            RETURN
         END IF
-        CALL FCOEF(KD,M,Q,A,FG)
+        CALL FCOEF_(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         IF (KD.EQ.4) IC=M/2
         C1=EXP(-X)
