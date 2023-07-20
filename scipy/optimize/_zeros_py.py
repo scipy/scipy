@@ -1488,7 +1488,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     """
     # Todo:
-    # - customize result
+    # - return tightest bracket
     # - update tests
     # - update documentation
     # - find bracket with sign change in specified direction
@@ -1516,6 +1516,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
     factor = np.concatenate((factor, factor))
 
     active = np.arange(2*n)
+    args = [np.concatenate((arg, arg)) for arg in args]
     shape = shape + (2,)
 
     i = np.isinf(limit)
@@ -1525,13 +1526,15 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
     d[ni] = (limit[ni] - x[ni]) / factor[ni]
 
     status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
-    nit, nfev = 0, 2  # two function evaluations performed above
+    nit, nfev = 0, 1  # one function evaluation per side performed above
 
     work = OptimizeResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
                           active=active, d=d, x_last=x_last, f_last=f_last,
-                          nit=nit, nfev=nfev, status=status, args=args)
-    res_work_pairs = [('status', 'status'), ('x', 'x'), ('f', 'f'),
-                      ('nit', 'nit'), ('nfev', 'nfev')]
+                          nit=nit, nfev=nfev, status=status, args=args,
+                          xl=None, xr=None, fl=None, fr=None, n=n)
+    res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xr', 'xr'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'),
+                      ('fr', 'fr'), ('x', 'x'), ('f', 'f')]
 
     def pre_func_eval(work):
         work.x_last = work.x
@@ -1539,11 +1542,11 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
         i = np.isinf(work.limit)
         x = np.zeros_like(work.x)
 
-        x[i] = work.x0[i] + work.d
+        x[i] = work.x0[i] + work.d[i]
         work.d[i] *= work.factor[i]
 
         ni = ~i
-        x[ni] = work.limit - work.d
+        x[ni] = work.limit[ni] - work.d[ni]
         work.d[ni] /= work.factor[ni]
 
         return x
@@ -1554,12 +1557,18 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     def check_termination(work):
 
-        stop = np.zeros_like(work.x, dtype=bool)  # termination condition met
+        stop = np.zeros_like(work.x, dtype=bool)
 
         sf = np.sign(work.f)
         sf_last = np.sign(work.f_last)
 
         i = (sf_last == -sf) | (sf_last == 0) | (sf == 0)
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        stopped = (work.active[i] + work.n) % (2*work.n)
+        j = np.searchsorted(work.active, stopped)
+        i = stopped[stopped == work.active[j]]
         work.status[i] = _ECONVERGED
         stop[i] = True
 
@@ -1576,9 +1585,19 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
     def post_termination_check(work):
         pass
 
-    def customize_result(res):
-        # separate results into left and right bracket
-        pass
+    def customize_result(res, shape):
+        n = len(res['x']) // 2
+        res['xl'] = res['x'][:n]
+        res['xr'] = res['x'][n:]
+        res['fl'] = res['f'][:n]
+        res['fr'] = res['f'][n:]
+        res['nit'] = np.maximum(res['nit'][:n], res['nit'][n:])
+        res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
+        res['status'] = np.maximum(res['status'][:n], res['status'][n:])
+        res['success'] = (res['status'] == 0)
+        del res['x']
+        del res['f']
+        return shape[:-1]
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
@@ -2070,7 +2089,7 @@ def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
     res = res.copy()
     _scalar_optimization_update_active(work, res, res_work_pairs, active)
 
-    customize_result(res)
+    shape = customize_result(res, shape)
 
     for key, val in res.items():
         res[key] = np.reshape(val, shape)[()]
