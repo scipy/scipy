@@ -1491,13 +1491,13 @@ class sakurai:
         d1 = -4 * np.ones(n)
         d2 = np.ones(n)
         s = spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
-        sakurai.sparse = s
-        sakurai.array = s.toarray()
-        sakurai.banded = np.array([d2, d1, d0])
+        self.sparse = s
+        self.array = s.toarray()
+        self.banded = np.array([d2, d1, d0])
 
         k = np.arange(1, n+1)
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
-        sakurai.eigenvalues = e
+        self.eigenvalues = e
 
 
     def callable(self, x):
@@ -1621,19 +1621,19 @@ class mikota_pair:
         self.n = n
         aranp1 = np.arange(1, n + 1)
         aranp1_inv = 1. / aranp1
-        mikota_pair.Mbanded = aranp1_inv
+        self.Mbanded = aranp1_inv
         M = diags([aranp1_inv], [0], shape=(n, n))
-        mikota_pair.Msparse = M
-        mikota_pair.Marray = M.toarray()
+        self.Msparse = M
+        self.Marray = M.toarray()
 
         y = - np.arange(n - 1, 0, -1)
         z = np.arange(2 * n - 1, 0, -2)
         K = diags([y, z, y], [-1, 0, 1], shape=(n, n))
-        mikota_pair.Ksparse = K
-        mikota_pair.Karray = K.toarray()
-        mikota_pair.Kbanded = np.array([np.pad(y, (1, 0), 'constant'), z])
+        self.Ksparse = K
+        self.Karray = K.toarray()
+        self.Kbanded = np.array([np.pad(y, (1, 0), 'constant'), z])
 
-        mikota_pair.eigenvalues = aranp1 * aranp1.astype(float)
+        self.eigenvalues = aranp1 * aranp1.astype(float)
 
 
     def Mcallable(self, x):
