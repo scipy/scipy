@@ -1901,8 +1901,9 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         steps that need to happen after the termination check and before the
         end of the iteration.
     customize_result : callable
-        A function that accepts `res`. May modify `res` according to
-        preferences (e.g. rearrange elements between attributes).
+        A function that accepts `res` and `shape` and returns `shape`. May
+        modify `res` (in-place) according to preferences (e.g. rearrange
+        elements between attributes) and modify `shape` if needed.
     res_work_pairs : list of (str, str)
         Identifies correspondence between attributes of `res` and attributes
         of `work`; i.e., attributes of active elements of `work` will be
