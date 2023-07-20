@@ -36,7 +36,7 @@ class Bench(Benchmark):
         self.Bc = mikota_pair_obj.Mcallable
         self.Ba = mikota_pair_obj.Marray
         self.Ab = mikota_pair_obj.Kbanded
-        self.eigenvalues = mikota_pair.eigenvalues
+        self.eigenvalues = mikota_pair_obj.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
         #     # skip: slow, and not useful to benchmark
