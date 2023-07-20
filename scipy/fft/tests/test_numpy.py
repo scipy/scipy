@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 from numpy.random import random
 from numpy.testing import (
-        assert_array_almost_equal, assert_array_equal, assert_allclose
-        )
+    assert_array_almost_equal, assert_array_equal, assert_allclose
+)
 from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy.conftest import (
@@ -15,7 +15,8 @@ from scipy.conftest import (
     skip_if_array_api_gpu,
     skip_if_array_api_backend,
 )
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
+from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray, array_namespace
+
 
 def fft1(x):
     L = len(x)
@@ -39,11 +40,20 @@ class TestFFT1D:
         xr = random(maxlen)
         x = xp.asarray(x)
         xr = xp.asarray(xr)
-        for i in range(1,maxlen):
-            assert_array_almost_equal(fft.ifft(fft.fft(x[0:i])), x[0:i],
-                                      decimal=12)
-            assert_array_almost_equal(fft.irfft(fft.rfft(xr[0:i]),i),
-                                      xr[0:i], decimal=12)
+        if 'cupy' in xp.__name__:
+            import cupy as cp
+            _assert_allclose = cp.testing.assert_allclose
+        else:
+            _assert_allclose = assert_allclose
+        for i in range(1, maxlen):
+            actual = fft.ifft(fft.fft(x[0:i]))
+            assert array_namespace(actual) == array_namespace(x)
+            desired = x[0:i]
+            _assert_allclose(actual, desired, rtol=1e-12)
+            actual = fft.irfft(fft.rfft(xr[0:i]), i)
+            assert array_namespace(actual) == array_namespace(xr)
+            desired = xr[0:i]
+            _assert_allclose(actual, desired, rtol=1e-12)
 
     def test_fft(self):
         x = random(30) + 1j*random(30)
