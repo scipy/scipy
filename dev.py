@@ -111,14 +111,6 @@ import math
 import traceback
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
 
-# distutils is required to infer meson install path
-# if this needs to be replaced for Python 3.12 support and there's no
-# stdlib alternative, use CmdAction and the hack discussed in gh-16058
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    from distutils import dist
-    from distutils.command.install import INSTALL_SCHEMES
-
 from pathlib import Path
 from collections import namedtuple
 from types import ModuleType as new_module
@@ -337,14 +329,22 @@ class Dirs:
         Depending on whether we have debian python or not,
         return dist_packages path or site_packages path.
         """
-        if 'deb_system' in INSTALL_SCHEMES:
-            # debian patched python in use
-            install_cmd = dist.Distribution().get_command_obj('install')
-            install_cmd.select_scheme('deb_system')
-            install_cmd.finalize_options()
-            plat_path = Path(install_cmd.install_platlib)
-        else:
+        if sys.version_info >= (3, 12):
             plat_path = Path(get_path('platlib'))
+        else:
+            # distutils is required to infer meson install path
+            # for python < 3.12 in debian patched python
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                from distutils import dist
+                from distutils.command.install import INSTALL_SCHEMES
+            if 'deb_system' in INSTALL_SCHEMES:
+                # debian patched python in use
+                install_cmd = dist.Distribution().get_command_obj('install')
+                install_cmd.finalize_options()
+                plat_path = Path(install_cmd.install_platlib)
+            else:
+                plat_path = Path(get_path('platlib'))
         return self.installed / plat_path.relative_to(sys.exec_prefix)
 
 
