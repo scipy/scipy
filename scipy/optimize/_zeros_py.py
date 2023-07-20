@@ -1488,7 +1488,6 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     """
     # Todo:
-    # - return tightest bracket
     # - update tests
     # - update documentation
     # - find bracket with sign change in specified direction
@@ -1534,7 +1533,8 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
                           xl=None, xr=None, fl=None, fr=None, n=n)
     res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xr', 'xr'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'),
-                      ('fr', 'fr'), ('x', 'x'), ('f', 'f')]
+                      ('fr', 'fr'), ('x', 'x'), ('f', 'f'),
+                      ('x_last', 'x_last'), ('f_last', 'f_last')]
 
     def pre_func_eval(work):
         work.x_last = work.x
@@ -1587,16 +1587,49 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     def customize_result(res, shape):
         n = len(res['x']) // 2
-        res['xl'] = res['x'][:n]
-        res['xr'] = res['x'][n:]
-        res['fl'] = res['f'][:n]
-        res['fr'] = res['f'][n:]
+
+        xal = res['x'][:n]
+        xar = res['x_last'][:n]
+        xbl = res['x_last'][n:]
+        xbr = res['x'][n:]
+
+        fal = res['f'][:n]
+        far = res['f_last'][:n]
+        fbl = res['f_last'][n:]
+        fbr = res['f'][n:]
+
+        sa = res['status'][:n]
+        sb = res['status'][n:]
+
+        da = xar - xal
+        db = xbr - xbl
+
+        i1 = ((da <= db) & (sa == 0)) | ((sa == 0) & (sb != 0))
+        i2 = ((db <= da) & (sb == 0)) | ((sb == 0) & (sa != 0))
+
+        xl = xal.copy()
+        fl = fal.copy()
+        xr = xbr.copy()
+        fr = fbr.copy()
+
+        xr[i1] = xar[i1]
+        fr[i1] = far[i1]
+        xl[i2] = xbl[i2]
+        fl[i2] = fbl[i2]
+
+        res['xl'] = xl
+        res['xr'] = xr
+        res['fl'] = fl
+        res['fr'] = fr
+
         res['nit'] = np.maximum(res['nit'][:n], res['nit'][n:])
         res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
-        res['status'] = np.maximum(res['status'][:n], res['status'][n:])
+        res['status'] = np.maximum(sa, sb)
         res['success'] = (res['status'] == 0)
         del res['x']
         del res['f']
+        del res['x_last']
+        del res['f_last']
         return shape[:-1]
 
     return _scalar_optimization_loop(work, callback, shape,
