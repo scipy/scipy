@@ -1567,10 +1567,23 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
         work.status[i] = _ECONVERGED
         stop[i] = True
 
-        stopped = (work.active[i] + work.n) % (2*work.n)
-        stopped = stopped[stopped < len(work.active)]
-        j = np.searchsorted(work.active, stopped)
-        i = stopped[stopped == work.active[j]]
+        # If we just found a bracket on the right, we can stop looking on the
+        # left, and vice-versa. This is a bit tricky.
+        # Get the integer indices of the elements that can also stop
+        also_stop = (work.active[i] + work.n) % (2*work.n)
+        # Check whether they are still active.
+        # To start, we need to find out whether they would be in `work.active`
+        # if they are indeed there.
+        j = np.searchsorted(work.active, also_stop)
+        # If the location exceeds the length of the `work.active`, they are
+        # not there.
+        j = j[j < len(work.active)]
+        # Check whether they are still there.
+        j = j[also_stop == work.active[j]]
+        # Now convert these to boolean indices
+        i = np.zeros_like(stop)
+        i[j] = True  # boolean indices of elements that can also stop
+        i = i & ~stop
         work.status[i] = _ESIGNERR
         stop[i] = True
 
