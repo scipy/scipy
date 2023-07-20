@@ -481,7 +481,7 @@ def kronsum(A, B, format=None):
     return (L+R).asformat(format)  # since L + R is not always same format
 
 
-def _compressed_sparse_stack(blocks, axis, container):
+def _compressed_sparse_stack(blocks, axis, return_spmatrix):
     """
     Stacking fast path for CSR/CSC matrices or arrays
     (i) vstack for CSR, (ii) hstack for CSC.
@@ -508,7 +508,7 @@ def _compressed_sparse_stack(blocks, axis, container):
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
     # TODO remove this if-structure when sparse matrices removed
-    if container is coo_matrix:
+    if return_spmatrix:
         if axis == 0:
             return csr_matrix((data, indices, indptr),
                               shape=(sum_dim, constant_dim))
@@ -613,9 +613,9 @@ def hstack(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array([blocks], format, dtype, coo_array)
+        return _block_array([blocks], format, dtype)
     else:
-        return _block_array([blocks], format, dtype, coo_matrix)
+        return _block_array([blocks], format, dtype, return_spmatrix=True)
 
 
 def vstack(blocks, format=None, dtype=None):
@@ -651,9 +651,9 @@ def vstack(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array([[b] for b in blocks], format, dtype, coo_array)
+        return _block_array([[b] for b in blocks], format, dtype)
     else:
-        return _block_array([[b] for b in blocks], format, dtype, coo_matrix)
+        return _block_array([[b] for b in blocks], format, dtype, return_spmatrix=True)
 
 
 def bmat(blocks, format=None, dtype=None):
@@ -709,9 +709,9 @@ def bmat(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array(blocks, format, dtype, coo_array)
+        return _block_array(blocks, format, dtype)
     else:
-        return _block_array(blocks, format, dtype, coo_matrix)
+        return _block_array(blocks, format, dtype, return_spmatrix=True)
 
 
 def block_array(blocks, *, format=None, dtype=None):
@@ -757,10 +757,10 @@ def block_array(blocks, *, format=None, dtype=None):
            [0, 0, 7]])
 
     """
-    return _block_array(blocks, format, dtype, coo_array)
+    return _block_array(blocks, format, dtype)
 
 
-def _block_array(blocks, format, dtype, coo_container):
+def _block_array(blocks, format, dtype, return_spmatrix=False):
     blocks = np.asarray(blocks, dtype='object')
 
     if blocks.ndim != 2:
@@ -770,7 +770,7 @@ def _block_array(blocks, format, dtype, coo_container):
 
     # check for fast path cases
     if (format in (None, 'csr') and
-        all(issparse(b) and b.format == "csr" for b in blocks.flat)
+        all(issparse(b) and b.format == 'csr' for b in blocks.flat)
     ):
         if N > 1:
             # stack along columns (axis 1): must have shape (M, 1)
@@ -778,12 +778,12 @@ def _block_array(blocks, format, dtype, coo_container):
             blocks = np.asarray(blocks, dtype='object')
 
         # stack along rows (axis 0):
-        A = _compressed_sparse_stack(blocks[:, 0], 0, coo_container)
+        A = _compressed_sparse_stack(blocks[:, 0], 0, return_spmatrix)
         if dtype is not None:
             A = A.astype(dtype)
         return A
     elif (format in (None, 'csc') and
-          all(issparse(b) and b.format == "csc" for b in blocks.flat)
+          all(issparse(b) and b.format == 'csc' for b in blocks.flat)
     ):
         if M > 1:
             # stack along rows (axis 0): must have shape (1, N)
@@ -791,7 +791,7 @@ def _block_array(blocks, format, dtype, coo_container):
             blocks = np.asarray(blocks, dtype='object')
 
         # stack along columns (axis 1):
-        A = _compressed_sparse_stack(blocks[0, :], 1, coo_container)
+        A = _compressed_sparse_stack(blocks[0, :], 1, return_spmatrix)
         if dtype is not None:
             A = A.astype(dtype)
         return A
@@ -850,7 +850,9 @@ def _block_array(blocks, format, dtype, coo_container):
         np.add(B.col, col_offsets[j], out=col[idx], dtype=idx_dtype)
         nnz += B.nnz
 
-    return coo_container((data, (row, col)), shape=shape).asformat(format)
+    if return_spmatrix:
+        return coo_matrix((data, (row, col)), shape=shape).asformat(format)
+    return coo_array((data, (row, col)), shape=shape).asformat(format)
 
 
 def block_diag(mats, format=None, dtype=None):
