@@ -1252,12 +1252,13 @@ class TestBracketRoot:
     @pytest.mark.parametrize("seed", (615655101, 3141866013, 238075752))
     @pytest.mark.parametrize("use_min", (False, True))
     @pytest.mark.parametrize("other_side", (False, True))
-    def test_basic(self, seed, use_min, other_side):
+    @pytest.mark.parametrize("fix_one_side", (False, True))
+    def test_basic(self, seed, use_min, other_side, fix_one_side):
         # Property-based test to confirm that _bracket_root is behaving correctly
         # The basic case is when root < a < b.
         # The number of times bracket expands (per side) can be found by
-        # setting the expression for the end of the bracket to zero
-        # (the root of f), solving for i, and rounding up. The corresponding
+        # setting the expression for the left endpoint of the bracket to the
+        # root of f (x=0), solving for i, and rounding up. The corresponding
         # lower and upper ends of the bracket are found by plugging this back
         # into the expression for the ends of the bracket.
         # `other_side=True` is the case that a < b < root
@@ -1270,7 +1271,7 @@ class TestBracketRoot:
 
         def f(x):
             f.count += 1
-            return x
+            return x  # root is 0
 
         if use_min:
             min = -rng.random()
@@ -1288,29 +1289,43 @@ class TestBracketRoot:
             if 'min' in kwargs:
                 kwargs['max'] = -kwargs.pop('min')
 
-        # Add 1 because function evaluations correspond with 0, 1, ..., n
-        # Multiply by two because bracket expands to the left and right
+        if fix_one_side:
+            if other_side:
+                kwargs['min'] = -b
+            else:
+                kwargs['max'] = b
+
         f.count = 0
         res = zeros._bracket_root(f, **kwargs)
-        bracket = np.asarray([res.xl, res.xr])
-        count = f.count
-        assert_equal(res.nfev, 2*(n + 1))
-        assert_allclose(bracket, (l, u))
-        signs = np.sign(f(bracket))
-        assert signs[0] == -signs[1]
 
-        if other_side:
-            kwargs['min'] = -b
+        # Compare reported number of function evaluations `nfev` against
+        # reported `nit`, actual function call count `f.count`, and theoretical
+        # number of expansions `n`.
+        # When both sides are free, these get multiplied by 2 because function
+        # is evaluated on the left and the right each iteration.
+        # When one side is fixed, however, we add one: on the right side, the
+        # function gets evaluated once at b.
+        # Add 1 to `n` and `res.nit` because function evaluations occur at
+        # iterations *0*, 1, ..., `n`. Subtract 1 from `f.count` because
+        # function is called separately for left and right in iteration 0.
+        if not fix_one_side:
+            assert res.nfev == 2*(res.nit+1) == 2*(f.count-1) == 2*(n + 1)
         else:
-            kwargs['max'] = b
+            assert res.nfev == (res.nit+1)+1 == (f.count-1)+1 == (n+1)+1
 
-        f.count = 0
-        res = zeros._bracket_root(f, **kwargs)
+        # Compare reported bracket to theoretical bracket and reported function
+        # values to function evaluated at bracket.
         bracket = np.asarray([res.xl, res.xr])
-        count = f.count
-        # Because max=b, bracket only evaluates once on the right
-        assert_equal(res.nfev, (n + 1) + 1)
         assert_allclose(bracket, (l, u))
+        f_bracket = np.asarray([res.fl, res.fr])
+        assert_allclose(f_bracket, f(bracket))
+
+        # Check that bracket is valid and that status and success are correct
+        assert res.xr > res.xl
+        signs = np.sign(f_bracket)
+        assert signs[0] == -signs[1]
+        assert res.status == 0
+        assert res.success
 
     def test_edge(self):
         # Test edge cases
