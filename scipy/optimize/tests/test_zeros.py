@@ -1291,19 +1291,13 @@ class TestBracketRoot:
         # Add 1 because function evaluations correspond with 0, 1, ..., n
         # Multiply by two because bracket expands to the left and right
         f.count = 0
-        bracket = zeros._bracket_root(f, batch=1, **kwargs)
+        res = zeros._bracket_root(f, **kwargs)
+        bracket = np.asarray([res.xl, res.xr])
         count = f.count
-        assert_equal(count, 2*(n + 1))
+        assert_equal(res.nfev, 2*(n + 1))
         assert_allclose(bracket, (l, u))
         signs = np.sign(f(bracket))
         assert signs[0] == -signs[1]
-
-        f.count = 0
-        batch = rng.integers(2, 10)
-        bracket_batch = zeros._bracket_root(f, batch=batch, **kwargs)
-        count_batch = f.count
-        assert_equal(count_batch, np.ceil(count/2/batch)*2)
-        assert_allclose(bracket_batch, bracket)
 
         if other_side:
             kwargs['min'] = -b
@@ -1311,20 +1305,14 @@ class TestBracketRoot:
             kwargs['max'] = b
 
         f.count = 0
-        bracket = zeros._bracket_root(f, batch=1, **kwargs)
+        res = zeros._bracket_root(f, **kwargs)
+        bracket = np.asarray([res.xl, res.xr])
         count = f.count
         # Because max=b, bracket only evaluates once on the right
-        assert_equal(count, (n + 1) + 1)
+        assert_equal(res.nfev, (n + 1) + 1)
         assert_allclose(bracket, (l, u))
 
-        f.count = 0
-        bracket_batch = zeros._bracket_root(f, batch=batch, **kwargs)
-        count_batch = f.count
-        assert_equal(count_batch, np.ceil((count - 1)/batch) + 1)
-        assert_allclose(bracket_batch, bracket)
-
-    @pytest.mark.parametrize('batch', (1, 10))
-    def test_edge(self, batch):
+    def test_edge(self):
         # Test edge cases
 
         def f(x):
@@ -1333,24 +1321,27 @@ class TestBracketRoot:
 
         # 1. root lies within guess of bracket
         f.count = 0
-        bracket = zeros._bracket_root(f, -10, 20, batch=batch)
+        res = zeros._bracket_root(f, -10, 20)
         assert_equal(f.count, 2)
 
         # 2. bracket endpoint hits root exactly
         f.count = 0
-        bracket = zeros._bracket_root(f, 5, 10, batch=batch, factor=2)
-        assert_equal(f.count, 4 if batch == 1 else 2)
-        assert_allclose(bracket, 0, atol=1e-15)
+        res = zeros._bracket_root(f, 5, 10, factor=2)
+        bracket = (res.xl, res.xr)
+        assert_equal(res.nfev, 4)
+        assert_allclose(bracket, (0, 5), atol=1e-15)
 
         # 3. bracket limit hits root exactly
         with np.errstate(over='ignore'):
-            bracket = zeros._bracket_root(f, 5, 10, min=0, batch=batch)
+            res = zeros._bracket_root(f, 5, 10, min=0)
+        bracket = (res.xl, res.xr)
         assert_allclose(bracket[0], 0, atol=1e-15)
         with np.errstate(over='ignore'):
-            bracket = zeros._bracket_root(f, -10, -5, max=0, batch=batch)
+            res = zeros._bracket_root(f, -10, -5, max=0)
+        bracket = (res.xl, res.xr)
         assert_allclose(bracket[1], 0, atol=1e-15)
 
         # 4. bracket not within min, max
         with np.errstate(over='ignore'):
-            bracket = zeros._bracket_root(f, 5, 10, min=1, batch=batch)
-        assert_equal(bracket, (None, None))
+            res = zeros._bracket_root(f, 5, 10, min=1)
+        assert not res.success

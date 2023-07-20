@@ -1488,7 +1488,8 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     """
     # Todo:
-    # - update tests
+    # - strengthen tests
+    # - update error codes
     # - update documentation
     # - find bracket with sign change in specified direction
     # - Add tolerance
@@ -1567,9 +1568,10 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
         stop[i] = True
 
         stopped = (work.active[i] + work.n) % (2*work.n)
+        stopped = stopped[stopped < len(work.active)]
         j = np.searchsorted(work.active, stopped)
         i = stopped[stopped == work.active[j]]
-        work.status[i] = _ECONVERGED
+        work.status[i] = _ESIGNERR
         stop[i] = True
 
         i = (work.x == work.limit) & ~stop
