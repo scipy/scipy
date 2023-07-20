@@ -485,10 +485,10 @@ def _cubic_smooth_coeff(signal, lamb):
     #     yp[n] = (cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] -
     #              rho * rho * yp[n - 2])
     zi = lfiltic(cs, r_[1, -2 * rho * cos(omega), rho * rho], r_[zi_1, zi_2])
-    zi = atleast_2d(zi)
+    zi = zi.reshape(1, -1)
 
     sos = r_[cs, 0, 0, 1, -2 * rho * cos(omega), rho * rho]
-    sos = atleast_2d(sos)
+    sos = sos.reshape(1, -1)
 
     yp, _ = sosfilt(sos, signal[2:], zi=zi)
     yp = r_[zi_2, zi_1, yp]
@@ -504,7 +504,7 @@ def _cubic_smooth_coeff(signal, lamb):
                        _hs(k + 2, cs, rho, omega)) * signal[::-1])
 
     zi = lfiltic(cs, r_[1, -2 * rho * cos(omega), rho * rho], r_[zi_1, zi_2])
-    zi = atleast_2d(zi)
+    zi = zi.reshape(1, -1)
     y, _ = sosfilt(sos, yp[-3::-1], zi=zi)
     y = r_[y[::-1], zi_1, zi_2]
     return y
