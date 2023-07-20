@@ -9,6 +9,13 @@ from numpy.testing import (
         )
 from pytest import raises as assert_raises
 import scipy.fft as fft
+from scipy.conftest import (
+    array_api_compatible,
+    skip_if_array_api,
+    skip_if_array_api_gpu,
+    skip_if_array_api_backend,
+)
+from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
 
 def fft1(x):
     L = len(x)
@@ -25,10 +32,13 @@ class TestFFTShift:
 
 class TestFFT1D:
 
-    def test_identity(self):
+    @array_api_compatible
+    def test_identity(self, xp):
         maxlen = 512
         x = random(maxlen) + 1j*random(maxlen)
         xr = random(maxlen)
+        x = xp.asarray(x)
+        xr = xp.asarray(xr)
         for i in range(1,maxlen):
             assert_array_almost_equal(fft.ifft(fft.fft(x[0:i])), x[0:i],
                                       decimal=12)
