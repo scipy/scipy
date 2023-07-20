@@ -1395,7 +1395,7 @@ def toms748(f, a, b, args=(), k=1,
     return _results_select(full_output, (x, function_calls, iterations, flag))
 
 
-def _bracket_root_iv(func, a, b, min, max, factor, args):
+def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -1404,7 +1404,7 @@ def _bracket_root_iv(func, a, b, min, max, factor, args):
         args = (args,)
 
     a = np.asarray(a)[()]
-    if not np.issubdtype(a.dtype, np.number) or np.iscomplex(a):
+    if not np.issubdtype(a.dtype, np.number) or np.iscomplex(a).any():
         raise ValueError('`a` must be numeric and real.')
 
     b = a + 1 if b is None else b
@@ -1414,28 +1414,37 @@ def _bracket_root_iv(func, a, b, min, max, factor, args):
     factor = .5 + .5*5**.5 if factor is None else factor
     a, b, min, max, factor = np.broadcast_arrays(a, b, min, max, factor)
 
-    if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b):
+    if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b).any():
         raise ValueError('`b` must be numeric and real.')
 
-    if not np.issubdtype(min.dtype, np.number) or np.iscomplex(min):
+    if not np.issubdtype(min.dtype, np.number) or np.iscomplex(min).any():
         raise ValueError('`min` must be numeric and real.')
 
-    if not np.issubdtype(max.dtype, np.number) or np.iscomplex(max):
+    if not np.issubdtype(max.dtype, np.number) or np.iscomplex(max).any():
         raise ValueError('`max` must be numeric and real.')
 
-    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor):
+    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor).any():
         raise ValueError('`factor` must be numeric and real.')
     if not np.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
 
+    maxiter = np.asarray(maxiter)
+    message = '`maxiter` must be a non-negative integer.'
+    if (not np.issubdtype(maxiter.dtype, np.number) or maxiter.shape != tuple()
+            or np.iscomplex(maxiter)):
+        raise ValueError(message)
+    maxiter_int = int(maxiter[()])
+    if not maxiter == maxiter_int or maxiter < 0:
+        raise ValueError(message)
+
     if not np.all((min <= a) & (a < b) & (b <= max)):
         raise ValueError('`min <= a < b <= max` must be True (elementwise).')
 
-    return func, a, b, min, max, factor, args
+    return func, a, b, min, max, factor, args, maxiter
 
 
-def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
-                  callback=None, maxiter=1000):
+def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
+                  args=(), maxiter=1000):
     """Bracket the root of a monotonic scalar function of one variable
 
     Parameters
@@ -1488,14 +1497,15 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None, args=(),
 
     """
     # Todo:
-    # - strengthen tests
     # - update error codes
     # - update documentation
     # - find bracket with sign change in specified direction
     # - Add tolerance
+    # - allow factor < 1?
 
-    temp = _bracket_root_iv(func, a, b, min, max, factor, args)
-    func, a, b, min, max, factor, args = temp
+    callback = None  # works; I just don't want to test it
+    temp = _bracket_root_iv(func, a, b, min, max, factor, args, maxiter)
+    func, a, b, min, max, factor, args, maxiter = temp
 
     xs = (a, b)
     temp = _scalar_optimization_initialize(func, xs, args)
@@ -2077,7 +2087,7 @@ def _scalar_optimization_initialize(func, xs, args):
 
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
-    # that time from the outset.
+    # that type from the outset.
     xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
     if not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
