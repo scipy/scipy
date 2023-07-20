@@ -476,49 +476,49 @@ class TestConstructUtils:
         excinfo.match(r'incompatible dimensions for axis 0')
 
     def test_block_array_return_type(self):
-        block = construct.block_array
+        block_array = construct.block_array
 
         Flist, Glist = [[1, 2],[3, 4]], [[7], [5]]
         Fm, Gm = csr_matrix(Flist), csr_matrix(Glist)
-        assert block([[None, Flist], [Glist, None]], format="csr")._is_array
-        assert block([[None, Fm], [Gm, None]], format="csr")._is_array
-        assert block([[Fm, Gm]], format="csr")._is_array
+        assert block_array([[None, Flist], [Glist, None]], format="csr")._is_array
+        assert block_array([[None, Fm], [Gm, None]], format="csr")._is_array
+        assert block_array([[Fm, Gm]], format="csr")._is_array
 
     def test_bmat_return_type(self):
         """This can be removed after sparse matrix is removed"""
-        block = construct.bmat
+        bmat = construct.bmat
         # check return type. if any input _is_array output array, else matrix
         Flist, Glist = [[1, 2],[3, 4]], [[7], [5]]
         Fm, Gm = csr_matrix(Flist), csr_matrix(Glist)
         Fa, Ga = csr_array(Flist), csr_array(Glist)
-        assert block([[Fa, Ga]], format="csr")._is_array
-        assert not block([[Fm, Gm]], format="csr")._is_array
-        assert block([[None, Fa], [Ga, None]], format="csr")._is_array
-        assert block([[None, Fm], [Ga, None]], format="csr")._is_array
-        assert not block([[None, Fm], [Gm, None]], format="csr")._is_array
-        assert not block([[None, Flist], [Glist, None]], format="csr")._is_array
+        assert bmat([[Fa, Ga]], format="csr")._is_array
+        assert not bmat([[Fm, Gm]], format="csr")._is_array
+        assert bmat([[None, Fa], [Ga, None]], format="csr")._is_array
+        assert bmat([[None, Fm], [Ga, None]], format="csr")._is_array
+        assert not bmat([[None, Fm], [Gm, None]], format="csr")._is_array
+        assert not bmat([[None, Flist], [Glist, None]], format="csr")._is_array
 
         # type returned by _compressed_sparse_stack (all csr)
-        assert block([[Ga, Ga]], format="csr")._is_array
-        assert block([[Gm, Ga]], format="csr")._is_array
-        assert block([[Ga, Gm]], format="csr")._is_array
-        assert not block([[Gm, Gm]], format="csr")._is_array
+        assert bmat([[Ga, Ga]], format="csr")._is_array
+        assert bmat([[Gm, Ga]], format="csr")._is_array
+        assert bmat([[Ga, Gm]], format="csr")._is_array
+        assert not bmat([[Gm, Gm]], format="csr")._is_array
         # shape is 2x2 so no _stack_along_minor_axis
-        assert block([[Fa, Fm]], format="csr")._is_array
-        assert not block([[Fm, Fm]], format="csr")._is_array
+        assert bmat([[Fa, Fm]], format="csr")._is_array
+        assert not bmat([[Fm, Fm]], format="csr")._is_array
 
         # type returned by _compressed_sparse_stack (all csc)
-        assert block([[Gm.tocsc(), Ga.tocsc()]], format="csc")._is_array
-        assert not block([[Gm.tocsc(), Gm.tocsc()]], format="csc")._is_array
+        assert bmat([[Gm.tocsc(), Ga.tocsc()]], format="csc")._is_array
+        assert not bmat([[Gm.tocsc(), Gm.tocsc()]], format="csc")._is_array
         # shape is 2x2 so no _stack_along_minor_axis
-        assert block([[Fa.tocsc(), Fm.tocsc()]], format="csr")._is_array
-        assert not block([[Fm.tocsc(), Fm.tocsc()]], format="csr")._is_array
+        assert bmat([[Fa.tocsc(), Fm.tocsc()]], format="csr")._is_array
+        assert not bmat([[Fm.tocsc(), Fm.tocsc()]], format="csr")._is_array
 
         # type returned when mixed input
-        assert block([[Glist, Ga]], format="csr")._is_array
-        assert block([[Gm.tocsc(), Ga]], format="csr")._is_array
-        assert not block([[Gm.tocsc(), Gm]], format="csr")._is_array
-        assert not block([[Gm, Gm]], format="csc")._is_array
+        assert bmat([[Glist, Ga]], format="csr")._is_array
+        assert bmat([[Gm.tocsc(), Ga]], format="csr")._is_array
+        assert not bmat([[Gm.tocsc(), Gm]], format="csr")._is_array
+        assert not bmat([[Gm, Gm]], format="csc")._is_array
 
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
