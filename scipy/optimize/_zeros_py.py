@@ -1841,13 +1841,14 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         tl = 0.5 * work.tol / work.dx
         work.t = np.clip(t, tl, 1 - tl)
 
-    def customize_result(res):
+    def customize_result(res, shape):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
         i = res['xl'] < res['xr']
         res['xl'] = np.choose(i, (xr, xl))
         res['xr'] = np.choose(i, (xl, xr))
         res['fl'] = np.choose(i, (fr, fl))
         res['fr'] = np.choose(i, (fl, fr))
+        return shape
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
