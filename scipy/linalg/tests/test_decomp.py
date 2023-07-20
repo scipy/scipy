@@ -794,14 +794,12 @@ class TestEigh:
         assert_raises(ValueError, eigh, np.ones([3, 3]), None, driver='gvx')
         # Standard driver with b
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='evr', turbo=False)
+                      driver='evr')
         # Subset request from invalid driver
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='gvd', subset_by_index=[1, 2], turbo=False)
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          driver='gvd', subset_by_index=[1, 2], turbo=False)
+                      driver='gvd', subset_by_index=[1, 2])
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      driver='gvd', subset_by_index=[1, 2])
 
     def test_nonpositive_b(self):
         assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))

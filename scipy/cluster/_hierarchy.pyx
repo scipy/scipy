@@ -380,7 +380,8 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     R : ndarray
         The R matrix.
     max_rfs : ndarray
-        The array to store the result.
+        The array to store the result. Note that this input arrays gets
+        modified in-place.
     n : int
         The number of observations.
     rf : int
@@ -440,7 +441,8 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n) noexcep
     Z : ndarray
         The linkage matrix.
     MD : ndarray
-        The array to store the result.
+        The array to store the result (hence this input array gets modified
+        in-place).
     n : int
         The number of observations.
     """
@@ -498,11 +500,13 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
     Z : ndarray
         The linkage matrix.
     R : ndarray
-        A (n - 1) x 4 matrix to store the result. The inconsistency statistics
-        `R[i]` are calculated over `d` levels below cluster i. `R[i, 0]` is the
-        mean of distances. `R[i, 1]` is the standard deviation of distances.
-        `R[i, 2]` is the number of clusters included. `R[i, 3]` is the
-        inconsistency coefficient.
+        A (n - 1) x 4 matrix to store the result (hence this input array is
+        modified in-place). The inconsistency statistics ``R[i]`` are calculated
+        over `d` levels below cluster ``i``.
+        ``R[i, 0]`` is the mean of distances.
+        ``R[i, 1]`` is the standard deviation of distances.
+        ``R[i, 2]`` is the number of clusters included.
+        ``R[i, 3]`` is the inconsistency coefficient.
 
         .. math:: \\frac{\\mathtt{Z[i,2]}-\\mathtt{R[i,0]}} {R[i,1]}
 
@@ -580,12 +584,9 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
         The linkage matrix.
     T : ndarray
         The flat clusters assignment returned by `fcluster` or `fclusterdata`.
-    L : ndarray
-        `L` and `M` store the result. The leader of flat cluster `L[i]` is
-        node `M[i]`.
-    M : ndarray
-        `L` and `M` store the result. The leader of flat cluster `L[i]` is
-        node `M[i]`.
+    L, M : ndarray
+        `L` and `M` store the result (i.e., these inputs are modified
+        in-place). The leader of flat cluster ``L[i]`` is node ``M[i]``.
     nc : int
         The number of flat clusters.
     n : int
@@ -1124,7 +1125,8 @@ def prelist(double[:, :] Z, int[:] members, int n):
     Z : ndarray
         The linkage matrix.
     members : ndarray
-        The array to store the result.
+        The array to store the result. Note that this input array will be
+        modified in-place.
     n : int
         The number of observations.
     """

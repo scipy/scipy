@@ -244,6 +244,7 @@ py3.install_sources(
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_chandrupatla.py',
   '_cobyla_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
