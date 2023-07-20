@@ -59,6 +59,9 @@ def maximum_bipartite_matching(graph, perm_type='row'):
     matching existed. As such, code written against 1.4.0 will not necessarily
     work on older versions.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     References
     ----------
     .. [1] John E. Hopcroft and Richard M. Karp. "An n^{5 / 2} Algorithm for
@@ -348,6 +351,9 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     of explicit zeros when converting between different sparse representations.
     Zero weights can be handled by adding a constant to all weights, so that
     the resulting matrix contains no zeros.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     References
     ----------
