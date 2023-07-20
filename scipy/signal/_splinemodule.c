@@ -298,6 +298,133 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
+
+static char doc_IIRsymorder1_ic[] = "out = symiirorder1_ic(input, z1, precision=-1.0)\n"
+"\n"
+"    Compute the (forward) mirror-symmetric boundary conditions for a smoothing\n"
+"    IIR filter that is composed of cascaded first-order sections.\n"
+"\n"
+"    The starting condition returned by this function is computed based on\n"
+"    the following transfer function::\n"
+"\n"
+"                       1         \n"
+"           H(z) = ------------   \n"
+"                   (1 - z1/z)    \n"
+"\n"
+"\n"
+"    Parameters\n"
+"    ----------\n"
+"    input : ndarray\n"
+"        The input signal.\n"
+"    z1 : scalar\n"
+"        Parameter in the transfer function.\n"
+"    precision :\n"
+"        Specifies the precision for calculating initial conditions\n"
+"        of the recursive filter based on mirror-symmetric input.\n"
+"\n"
+"    Returns\n"
+"    -------\n"
+"    z_0 : ndarray\n"
+"        The mirror-symmetric initial condition for the forward IIR filter.";
+
+static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
+{
+  PyObject *sig=NULL;
+  PyArrayObject *a_sig=NULL, *out=NULL;
+
+  Py_complex z1;
+  double precision = -1.0;
+  int thetype, ret;
+  npy_int M, N;
+  npy_intp in_size, outstrides, instrides;
+
+  if (!PyArg_ParseTuple(args, "OD|d", &sig, &z1, &precision))
+    return NULL;
+
+  thetype = PyArray_ObjectType(sig, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
+  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
+
+  if (a_sig == NULL) goto fail;
+
+  in_size = PyArray_DIMS(a_sig);
+
+  M = 1;
+  N = PyArray_DIMS(a_sig)[0];
+
+  if(PyArray_NDIM(a_sig) > 1) {
+    M = PyArray_DIMS(a_sig)[0];
+    N = PyArray_DIMS(a_sig)[1];
+  }
+
+  out = (PyArrayObject *)PyArray_Empty(1, &M, thetype, 0);
+  if (out == NULL) goto fail;
+
+  switch (thetype) {
+  case NPY_FLOAT:
+    {
+      float rz1 = z1.real;
+
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
+      ret = S_SYM_IIR1_initial(rz1, (float *)PyArray_DATA(a_sig),
+                               (float *)PyArray_DATA(out), M, N,
+                               (float )precision);
+    }
+    break;
+  case NPY_DOUBLE:
+    {
+      double rz1 = z1.real;
+
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
+      ret = D_SYM_IIR1_initial(rz1, (double *)PyArray_DATA(a_sig),
+                               (double *)PyArray_DATA(out), M, N,
+                               precision);
+    }
+    break;
+#ifdef __GNUC__
+  case NPY_CFLOAT:
+    {
+      __complex__ float zz1 = z1.real + 1.0i*z1.imag;
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
+      ret = C_SYM_IIR1_initial (zz1, (__complex__ float *)PyArray_DATA(a_sig),
+			    (__complex__ float *)PyArray_DATA(out), M, N,
+			    (float )precision);
+    }
+    break;
+  case NPY_CDOUBLE:
+    {
+      __complex__ double zz1 = z1.real + 1.0i*z1.imag;
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
+      ret = Z_SYM_IIR1_initial (zz1, (__complex__ double *)PyArray_DATA(a_sig),
+			    (__complex__ double *)PyArray_DATA(out), M, N,
+			    precision);
+    }
+    break;
+#endif
+  default:
+    PYERR("Incorrect type.");
+  }
+
+  if (ret == 0) {
+    Py_DECREF(a_sig);
+    return PyArray_Return(out);
+  }
+
+  if (ret == -1) PYERR("Could not allocate enough memory.");
+  if (ret == -2) PYERR("|z1| must be less than 1.0");
+  if (ret == -3) PYERR("Sum to find symmetric boundary conditions did not converge.");
+
+  PYERR("Unknown error.");
+
+
+ fail:
+  Py_XDECREF(a_sig);
+  Py_XDECREF(out);
+  return NULL;
+
+}
+
+
 static char doc_IIRsymorder1[] = "out = symiirorder1(input, c0, z1, precision=-1.0)\n"
 "\n"
 "    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
@@ -511,6 +638,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
     {"symiirorder1", IIRsymorder1, METH_VARARGS, doc_IIRsymorder1},
     {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2},
+    {"symiirorder1_ic", IIRsymorder1_ic, METH_VARARGS, doc_IIRsymorder1_ic},
     {NULL, NULL, 0, NULL}		/* sentinel */
 };
 

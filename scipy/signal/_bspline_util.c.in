@@ -227,6 +227,55 @@ int {{SUB}}_IIR_forback1({{TYP}} c0, {{TYP}} z1, {{TYP}} *x, {{TYP}} *y,
 {{endif}}
 {{endfor}}
 
+
+{{for SUB, TYP, RTYP in zip(NAMES, TYPES, RTYPES)}}
+{{if SUB in CNAME}}
+#ifdef __GNUC__
+{{endif}}
+int {{SUB}}_SYM_IIR1_initial({{TYP}} z1, {{TYP}} *x, {{TYP}} *yp0,
+                             int M, int N, {{RTYP}} precision)
+{
+    {{TYP}} *cur_yp0 = NULL;
+    {{TYP}} powz1, diff;
+    {{RTYP}} err;
+    int k;
+
+    if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
+
+    if ((cur_yp0 = malloc(M*sizeof({{TYP}})))==NULL) return -1;
+
+   /* Fix starting value assuming mirror-symmetric boundary conditions. */
+    for(int i = 0; i < M; i++) {
+        cur_yp0[i] = x[N * i];
+    }
+
+    powz1 = 1.0;
+    k = 0;
+    precision *= precision;
+    do {
+        memcpy(yp0, cur_yp0, M * sizeof({{TYP}}));
+    	powz1 *= z1;
+        for(int i = 0; i < M; i++) {
+            cur_yp0[i] += powz1 * x[N * i + k];
+        }
+    	diff = powz1;
+    	err = ABSQ(diff);
+    	k++;
+    } while((err > precision) && (k < N));
+    if (k >= N){
+        /* sum did not converge */
+        return -3;
+    }
+    memcpy(yp0, cur_yp0, M * sizeof({{TYP}}));
+    free(cur_yp0);
+    return 0;
+}
+{{if SUB in CNAME}}
+#endif
+{{endif}}
+{{endfor}}
+
+
 /* h must be odd length */
 /* strides in units of sizeof(DATA TYPE) bytes */
 
@@ -524,7 +573,6 @@ int {{SUB}}_IIR_forback2 (double r, double omega, {{TYP}} *x, {{TYP}} *y,
 }
 
 {{endfor}}
-
 
 /* Find the cubic spline coefficients of an image
    image is M rows by N columns stored rowise in memory (vary column number
