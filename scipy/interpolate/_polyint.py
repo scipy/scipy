@@ -161,8 +161,8 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Array with derivatives; `d[j]` contains the jth derivative.
-            Shape of `d[j]` is determined by replacing the interpolation
+            Array with derivatives; ``d[j]`` contains the jth derivative.
+            Shape of ``d[j]`` is determined by replacing the interpolation
             axis in the original array with the shape of `x`.
 
         Examples
@@ -235,7 +235,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
         Returns
         -------
         d : ndarray
-            Array of shape `(der, x.size, self.yi.shape[1])` containing
+            Array of shape ``(der, x.size, self.yi.shape[1])`` containing
             the derivatives from 0 to der-1
         """
         raise NotImplementedError()
@@ -245,7 +245,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
     """
     Interpolating polynomial for a set of points.
 
-    The polynomial passes through all the pairs `(xi, yi)`. One may
+    The polynomial passes through all the pairs ``(xi, yi)``. One may
     additionally specify a number of derivatives at each point `xi`;
     this is done by repeating the value `xi` and specifying the
     derivatives as successive `yi` values.
@@ -398,7 +398,7 @@ def krogh_interpolate(xi, yi, x, der=0, axis=0):
     xi : array_like
         Interpolation points (known x-coordinates).
     yi : array_like
-        Known y-coordinates, of shape `(xi.size, R)`. Interpreted as
+        Known y-coordinates, of shape ``(xi.size, R)``. Interpreted as
         vectors of length R, or scalars if R=1.
     x : array_like
         Point or points at which to evaluate the derivatives.
