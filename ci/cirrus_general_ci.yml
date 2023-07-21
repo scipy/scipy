@@ -60,7 +60,7 @@ linux_aarch64_test_task:
 
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
-    python -m pip install pytest pooch
+    python -m pip install pytest pooch hypothesis
     
     python dev.py test
 
@@ -99,7 +99,7 @@ musllinux_amd64_test_task:
     cd $_CWD
     python -m pip install cython
     pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-    python -m pip install meson ninja pybind11 pythran pytest
+    python -m pip install meson ninja pybind11 pythran pytest hypothesis
     python -m pip install click rich_click doit pydevtool pooch
 
   build_script: |
@@ -138,6 +138,6 @@ macos_arm64_test_task:
 
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
-    python -m pip install pytest pooch
+    python -m pip install pytest pooch hypothesis
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
     python dev.py test

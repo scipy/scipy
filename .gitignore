@@ -105,6 +105,10 @@ build-install/*
 .cache/*
 .pytest_cache/*
 
+# hypothesis cache #
+####################
+**/.hypothesis
+
 # mypy cache #
 ##############
 .mypy_cache/*
