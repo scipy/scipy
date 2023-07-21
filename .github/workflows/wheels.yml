@@ -83,7 +83,7 @@ jobs:
         - [macos-11, macosx, x86_64]
         - [windows-2019, win, AMD64]
 
-        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11"], ["cp312"]]
+        python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
         # python[0] is used to specify the python versions made by cibuildwheel
 
     env:
@@ -103,6 +103,11 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: 3.9
+
+      - name: preliminary setup
+        run: |
+          echo "CIBW_BEFORE_BUILD='pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy'" >> $GITHUB_ENV
+        if: ${{ matrix.python[0] == 'cp312' }}
 
       - name: win_amd64 - install rtools
         run: |
