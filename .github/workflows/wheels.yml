@@ -37,7 +37,7 @@ jobs:
   get_commit_message:
     name: Get commit message
     runs-on: ubuntu-latest
-    if: github.repository == 'andyfaff/scipy'
+    if: github.repository == 'lesteve/scipy'
     outputs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
@@ -107,8 +107,9 @@ jobs:
 
       - name: preliminary setup
         run: |
-          echo "CIBW_BEFORE_BUILD=pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy" >> $GITHUB_ENV
-          echo "PIP_NO_BUILD_ISOLATION=1" >> $GITHUB_ENV
+          echo bla
+          # echo "CIBW_BEFORE_BUILD=pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy" >> $GITHUB_ENV
+          # echo "PIP_NO_BUILD_ISOLATION=1" >> $GITHUB_ENV
         if: ${{ matrix.python[0] == 'cp312' }}
 
       - name: win_amd64 - install rtools
@@ -138,6 +139,7 @@ jobs:
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
           CIBW_PRERELEASE_PYTHONS: True
+          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.myorg.com/simple PIP_PRE=1
 
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
