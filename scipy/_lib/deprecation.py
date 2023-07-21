@@ -11,7 +11,7 @@ __all__ = ["_deprecated"]
 _NoValue = object()
 
 def _sub_module_deprecation(*, sub_package, module, private_module, all,
-                            attribute):
+                            attribute, correct_module=None):
     """Helper function for deprecating modules that are public but were
     intended to be private.
 
@@ -27,17 +27,25 @@ def _sub_module_deprecation(*, sub_package, module, private_module, all,
         ``__all__`` belonging to `module`
     attribute : str
         The attribute in `module` being accessed
+    correct_module : str, optional
+        Module in `sub_package` that `attribute` should be imported from.
+        Default is that `attribute` should be imported from ``scipy.sub_package``.
     """
+    if correct_module is not None:
+        correct_import = f"scipy.{sub_package}.{correct_module}"
+    else:
+        correct_import = f"scipy.{sub_package}"
+
     if attribute not in all:
         raise AttributeError(
             f"`scipy.{sub_package}.{module}` has no attribute `{attribute}`; furthermore, "
             f"`scipy.{sub_package}.{module}` is deprecated and will be removed in "
             "SciPy 2.0.0.")
 
-    attr = getattr(import_module(f"scipy.{sub_package}"), attribute, None)
+    attr = getattr(import_module(correct_import), attribute, None)
 
     if attr is not None:
-        message = (f"Please import `{attribute}` from the `scipy.{sub_package}` namespace; "
+        message = (f"Please import `{attribute}` from the `{correct_import}` namespace; "
                    f"the `scipy.{sub_package}.{module}` namespace is deprecated and "
                    "will be removed in SciPy 2.0.0.")
     else:

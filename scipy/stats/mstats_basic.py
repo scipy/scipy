@@ -47,4 +47,4 @@ def __dir__():
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="stats", module="mstats_basic",
                                    private_module="_mstats_basic", all=__all__,
-                                   attribute=name)
+                                   attribute=name, correct_module="mstats")
