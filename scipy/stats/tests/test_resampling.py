@@ -164,17 +164,26 @@ def test_bootstrap_vectorized(method, axis, paired):
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
-    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
+    rng = np.random.default_rng(2442101192988600726)
+    data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=rng)
     alpha = 0.95
     dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
     expected_interval = dist.interval(confidence=alpha)
     expected_se = dist.std()
 
-    res = bootstrap((data,), np.mean, n_resamples=5000,
-                    confidence_level=alpha, method=method,
-                    random_state=0)
+    config = dict(data=(data,), statistic=np.mean, n_resamples=5000,
+                  method=method, random_state=rng)
+    res = bootstrap(**config, confidence_level=alpha)
     assert_allclose(res.confidence_interval, expected_interval, rtol=5e-4)
     assert_allclose(res.standard_error, expected_se, atol=3e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='less')
+    assert_allclose(res.confidence_interval.high, dist.ppf(alpha), rtol=5e-4)
+
+    config.update(dict(n_resamples=0, bootstrap_result=res))
+    res = bootstrap(**config, confidence_level=alpha, alternative='greater')
+    assert_allclose(res.confidence_interval.low, dist.ppf(1-alpha), rtol=5e-4)
 
 
 tests_R = {"basic": (23.77, 79.12),
@@ -488,7 +497,7 @@ def test_bootstrap_min():
 
 
 @pytest.mark.parametrize("additional_resamples", [0, 1000])
-def test_re_boostrap(additional_resamples):
+def test_re_bootstrap(additional_resamples):
     # Test behavior of parameter `bootstrap_result`
     rng = np.random.default_rng(8958153316228384)
     x = rng.random(size=100)
@@ -511,6 +520,29 @@ def test_re_boostrap(additional_resamples):
     assert_allclose(res.standard_error, ref.standard_error, rtol=1e-14)
     assert_allclose(res.confidence_interval, ref.confidence_interval,
                     rtol=1e-14)
+
+
+@pytest.mark.xfail_on_32bit("Sensible to machine precision")
+@pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
+def test_bootstrap_alternative(method):
+    rng = np.random.default_rng(5894822712842015040)
+    dist = stats.norm(loc=2, scale=4)
+    data = (dist.rvs(size=(100), random_state=rng),)
+
+    config = dict(data=data, statistic=np.std, random_state=rng, axis=-1)
+    t = stats.bootstrap(**config, confidence_level=0.9)
+
+    config.update(dict(n_resamples=0, bootstrap_result=t))
+    l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
+    g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
+
+    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
+    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert np.isneginf(l.confidence_interval.low)
+    assert np.isposinf(g.confidence_interval.high)
+
+    with pytest.raises(ValueError, match='`alternative` must be one of'):
+        stats.bootstrap(**config, alternative='ekki-ekki')
 
 
 def test_jackknife_resample():
@@ -702,6 +734,12 @@ class TestMonteCarloHypothesisTest:
         def stat(x):
             return stats.skewnorm(x).statistic
 
+        message = "Array shapes are incompatible for broadcasting."
+        data = (np.zeros((2, 5)), np.zeros((3, 5)))
+        rvs = (stats.norm.rvs, stats.norm.rvs)
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test(data, rvs, lambda x, y: 1, axis=-1)
+
         message = "`axis` must be an integer."
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
@@ -710,9 +748,15 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
 
-        message = "`rvs` must be callable."
+        message = "`rvs` must be callable or sequence of callables."
         with pytest.raises(TypeError, match=message):
             monte_carlo_test([1, 2, 3], None, stat)
+        with pytest.raises(TypeError, match=message):
+            monte_carlo_test([[1, 2], [3, 4]], [lambda x: x, None], stat)
+
+        message = "If `rvs` is a sequence..."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([[1, 2, 3]], [lambda x: x, lambda x: x], stat)
 
         message = "`statistic` must be callable."
         with pytest.raises(TypeError, match=message):
@@ -740,6 +784,7 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
+
 
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
@@ -932,6 +977,36 @@ class TestMonteCarloHypothesisTest:
         res = monte_carlo_test(x, rng.random, np.mean,
                                vectorized=True, alternative='less')
         assert res.pvalue == 0.0001
+
+    def test_against_ttest_ind(self):
+        # test that `monte_carlo_test` can reproduce results of `ttest_ind`.
+        rng = np.random.default_rng(219017667302737545)
+        data = rng.random(size=(2, 5)), rng.random(size=7)  # broadcastable
+        rvs = rng.normal, rng.normal
+        def statistic(x, y, axis):
+            return stats.ttest_ind(x, y, axis).statistic
+
+        res = stats.monte_carlo_test(data, rvs, statistic, axis=-1)
+        ref = stats.ttest_ind(data[0], [data[1]], axis=-1)
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=2e-2)
+
+    def test_against_f_oneway(self):
+        # test that `monte_carlo_test` can reproduce results of `f_oneway`.
+        rng = np.random.default_rng(219017667302737545)
+        data = (rng.random(size=(2, 100)), rng.random(size=(2, 101)),
+                rng.random(size=(2, 102)), rng.random(size=(2, 103)))
+        rvs = rng.normal, rng.normal, rng.normal, rng.normal
+
+        def statistic(*args, axis):
+            return stats.f_oneway(*args, axis=axis).statistic
+
+        res = stats.monte_carlo_test(data, rvs, statistic, axis=-1,
+                                     alternative='greater')
+        ref = stats.f_oneway(*data, axis=-1)
+
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
 
 
 class TestPermutationTest:

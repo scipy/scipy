@@ -1,37 +1,28 @@
 # Platform detection
 is_mingw = is_windows and cc.get_id() == 'gcc'
+if is_mingw and ff.get_id() != 'gcc'
+  error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
+endif
 
 cython_c_args = []
-if is_windows
+if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
-  if is_mingw
-    add_project_link_arguments(gcc_link_args, language: ['c', 'cpp'])
-    # Force gcc to float64 long doubles for compatibility with MSVC
-    # builds, for C only.
-    add_project_arguments('-mlong-double-64', language: 'c')
-    # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
-    add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
-    # Manual add of MS_WIN64 macro when not using MSVC.
-    # https://bugs.python.org/issue28267
-    bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
-    if bitness == '64'
-      add_project_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
-    endif
-    # Silence warnings emitted by PyOS_snprintf for (%zd), see
-    # https://github.com/rgommers/scipy/issues/118.
-    # Use as c_args for extensions containing Cython code
-    cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
-  endif
-  if meson.get_compiler('fortran').get_id() == 'gcc'
-    add_project_link_arguments(gcc_link_args, language: ['fortran'])
-    # Flag needed to work around BLAS and LAPACK Gfortran dependence on
-    # undocumented C feature when passing single character string
-    # arguments.
-    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
-    # https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
-    add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
-  endif
+  add_project_link_arguments(gcc_link_args, language: ['c', 'cpp', 'fortran'])
+  # Force gcc to float64 long doubles for compatibility with MSVC
+  # builds, for C only.
+  add_project_arguments('-mlong-double-64', language: 'c')
+  # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
+  add_project_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
+  # Silence warnings emitted by PyOS_snprintf for (%zd), see
+  # https://github.com/rgommers/scipy/issues/118.
+  # Use as c_args for extensions containing Cython code
+  cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
+  # Flag needed to work around BLAS and LAPACK Gfortran dependence on
+  # undocumented C feature when passing single character string arguments. See:
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
+  #   https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
+  add_project_arguments('-fno-optimize-sibling-calls', language: ['fortran'])
 endif
 
 thread_dep = dependency('threads', required: false)
@@ -90,33 +81,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-# pybind11 include directory - needed in several submodules
-#
-# first check if the user specified a path in a cross file
-incdir_pybind11 = meson.get_external_property('pybind11-include-dir', 'not-given')
-if incdir_pybind11 == 'not-given'
-  # in meson 1.1.0, this will find the pyproject.toml build-requires version
-  pybind11_dep = dependency('pybind11', version: '>=2.10.0', required: false, allow_fallback: true)
-  if not pybind11_dep.found()
-    incdir_pybind11 = run_command(py3,
-      [
-        '-c',
-        '''from os.path import relpath
-import pybind11
-try:
-  incdir = relpath(pybind11.get_include())
-except Exception:
-  incdir = pybind11.get_include()
-print(incdir)
-'''
-      ],
-      check: true
-    ).stdout().strip()
-    pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-  endif
-else
-  pybind11_dep = declare_dependency(include_directories: incdir_pybind11)
-endif
+pybind11_dep = dependency('pybind11', version: '>=2.10.4')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -140,7 +105,10 @@ print(incdir)
       check: true
     ).stdout().strip()
   endif
-  pythran_dep = declare_dependency(include_directories: incdir_pythran)
+  pythran_dep = declare_dependency(
+    include_directories: incdir_pythran,
+    dependencies: xsimd_dep,
+  )
 else
   pythran_dep = []
 endif
@@ -188,18 +156,31 @@ lapack_name = get_option('lapack')
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
-  blas_name = ['openblas', 'OpenBLAS']
+  blas = dependency(['openblas', 'OpenBLAS'])
+else
+  blas = dependency(blas_name)
 endif
-if lapack_name == 'openblas'
-  lapack_name = ['openblas', 'OpenBLAS']
+if blas_name == 'blas'
+  # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
+  # ABI wrappers, so detect it and error out if we cannot find it.
+  # In the future, this should be done automatically for:
+  #   `dependency('blas', modules: cblas)`
+  # see https://github.com/mesonbuild/meson/pull/10921.
+  cblas = dependency('cblas')
+else
+  cblas = []
 endif
-blas = dependency(blas_name)
-lapack = dependency(lapack_name)
 
-# TODO: Add `pybind11` when available as a dependency
+if lapack_name == 'openblas'
+  lapack = dependency(['openblas', 'OpenBLAS'])
+else
+  lapack = dependency(lapack_name)
+endif
+
 dependency_map = {
   'BLAS': blas,
   'LAPACK': lapack,
+  'PYBIND11': pybind11_dep,
 }
 
 # FIXME: conda-forge sets MKL_INTERFACE_LAYER=LP64,GNU, see gh-11812.
@@ -207,13 +188,20 @@ dependency_map = {
 #        requesting `mkl-dynamic-lp64-seq` here. And then there's work needed
 #        in general to enable the ILP64 interface (also for OpenBLAS).
 uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().startswith('mkl')
-if uses_mkl or get_option('use-g77-abi')
-  g77_abi_wrappers = files([
-    '_build_utils/src/wrap_g77_abi_f.f',
-    '_build_utils/src/wrap_g77_abi_c.c'
-    ])
+uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
+use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
+if use_g77_abi
+  g77_abi_wrappers = declare_dependency(
+    sources:
+      [
+        '_build_utils/src/wrap_g77_abi_f.f',
+        '_build_utils/src/wrap_g77_abi_c.c'
+      ],
+    include_directories: inc_np,
+    dependencies: [py3_dep, cblas],
+  )
 else
-  g77_abi_wrappers = files('_build_utils/src/wrap_dummy_g77_abi.f')
+  g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
@@ -235,7 +223,7 @@ python_sources = [
   'conftest.py',
   'linalg.pxd',
   'optimize.pxd',
-  'special.pxd'
+  'special.pxd',
 ]
 
 py3.install_sources(
@@ -294,6 +282,7 @@ Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
+Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
@@ -342,6 +331,17 @@ fortran_ignore_warnings = ff.get_supported_arguments(
  _fflag_Wno_unused_variable,
  _fflag_Wno_tabs,
 )
+
+# Intel Fortran (ifort) does not run the preprocessor by default, if Fortran
+# code uses preprocessor statements, add this compile flag to it.
+_fflag_fpp = []
+if ff.get_id() == 'intel-cl'
+  if is_windows
+    _fflag_fpp = ff.get_supported_arguments('/fpp')
+  else
+    _fflag_fpp = ff.get_supported_arguments('-fpp')
+  endif
+endif
 
 # Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
 # Cython doesn't always get this right itself (see, e.g., gh-16800), so
@@ -413,12 +413,18 @@ conf_data = configuration_data()
 
 # Set compiler information
 foreach name, compiler : compilers
-  # conf_data.set(name + '_COMP_CMD_ARRAY', compiler.cmd_array())
-  conf_data.set(name + '_COMP_CMD_ARRAY', compiler.get_id())
   conf_data.set(name + '_COMP', compiler.get_id())
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
+    )
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
+    )
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran

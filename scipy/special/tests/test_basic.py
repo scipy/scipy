@@ -17,7 +17,9 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import functools
 import itertools
+import operator
 import platform
 import sys
 
@@ -37,7 +39,10 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy._lib.deprecation import _NoValue
 
+from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
+    _FACTORIALK_LIMITS_32BITS
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
@@ -1321,12 +1326,12 @@ class TestCombinatorics:
         assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, None])
+    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
     @pytest.mark.parametrize("k", [3.5, 3])
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy is not None:
+        if legacy is not _NoValue:
             with pytest.warns(
                 DeprecationWarning,
                 match=r"Using 'legacy' keyword is deprecated"
@@ -1348,7 +1353,7 @@ class TestCombinatorics:
                 N, k = int(N), int(k)
         # expected result is the same as with exact=False
         with suppress_warnings() as sup:
-            if legacy is not None:
+            if legacy is not _NoValue:
                 sup.filter(DeprecationWarning)
             expected = special.comb(N, k, legacy=legacy, repetition=repetition)
         assert_equal(result, expected)
@@ -1954,107 +1959,378 @@ class TestExp:
 
 
 class TestFactorialFunctions:
-    def test_factorial(self):
-        # Some known values, float math
-        assert_array_almost_equal(special.factorial(0), 1)
-        assert_array_almost_equal(special.factorial(1), 1)
-        assert_array_almost_equal(special.factorial(2), 2)
-        assert_array_almost_equal([6., 24., 120.],
-                                  special.factorial([3, 4, 5], exact=False))
-        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
-                                  [[120, 6], [24, 6]])
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_scalar_return_type(self, exact):
+        assert np.isscalar(special.factorial(1, exact=exact))
+        assert np.isscalar(special.factorial2(1, exact=exact))
+        assert np.isscalar(special.factorialk(1, 3, exact=True))
 
-        # Some known values, integer math
-        assert_equal(special.factorial(0, exact=True), 1)
-        assert_equal(special.factorial(1, exact=True), 1)
-        assert_equal(special.factorial(2, exact=True), 2)
-        assert_equal(special.factorial(5, exact=True), 120)
-        assert_equal(special.factorial(15, exact=True), 1307674368000)
+    @pytest.mark.parametrize("n", [-1, -2, -3])
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative(self, exact, n):
+        assert_equal(special.factorial(n, exact=exact), 0)
+        assert_equal(special.factorial2(n, exact=exact), 0)
+        assert_equal(special.factorialk(n, 3, exact=True), 0)
 
-        # ndarray shape is maintained
-        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
-                     [5040, 24, 1307674368000, 3628800])
-
-        assert_equal(special.factorial([[5, 3], [4, 3]], True),
-                     [[120, 6], [24, 6]])
-
-        # object arrays
-        assert_equal(special.factorial(np.arange(-3, 22), True),
-                     special.factorial(np.arange(-3, 22), False))
-
-        # int64 array
-        assert_equal(special.factorial(np.arange(-3, 15), True),
-                     special.factorial(np.arange(-3, 15), False))
-
-        # int32 array
-        assert_equal(special.factorial(np.arange(-3, 5), True),
-                     special.factorial(np.arange(-3, 5), False))
-
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative_array(self, exact):
+        assert_func = assert_array_equal if exact else assert_allclose
         # Consistent output for n < 0
-        for exact in (True, False):
-            assert_array_equal(0, special.factorial(-3, exact))
-            assert_array_equal([1, 2, 0, 0],
-                               special.factorial([1, 2, -5, -4], exact))
+        assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
+                    [0, 0, 1, 1])
 
-        for n in range(0, 22):
-            # Compare all with math.factorial
-            correct = math.factorial(n)
-            assert_array_equal(correct, special.factorial(n, True))
-            assert_array_equal(correct, special.factorial([n], True)[0])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("content", [np.nan, None, np.datetime64('nat')],
+                             ids=["NaN", "None", "NaT"])
+    def test_factorialx_nan(self, content, exact):
+        # scalar
+        assert special.factorial(content, exact=exact) is np.nan
+        assert special.factorial2(content, exact=exact) is np.nan
+        assert special.factorialk(content, 3, exact=True) is np.nan
+        # array-like (initializes np.array with default dtype)
+        if content is not np.nan:
+            # None causes object dtype, which is not supported; as is datetime
+            with pytest.raises(ValueError, match="Unsupported datatype.*"):
+                special.factorial([content], exact=exact)
+        elif exact:
+            # cannot use `is np.nan` see https://stackoverflow.com/a/52124109
+            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
+                assert np.isnan(special.factorial([content], exact=exact)[0])
+        else:
+            assert np.isnan(special.factorial([content], exact=exact)[0])
+        # factorial{2,k} don't support array case due to dtype constraints
+        with pytest.raises(ValueError, match="factorial2 does not support.*"):
+            special.factorial2([content], exact=exact)
+        with pytest.raises(ValueError, match="factorialk does not support.*"):
+            special.factorialk([content], 3, exact=True)
+        # array-case also tested in test_factorial{,2,k}_corner_cases
 
-            assert_allclose(float(correct), special.factorial(n, False))
-            assert_allclose(float(correct), special.factorial([n], False)[0])
+    @pytest.mark.parametrize("levels", range(1, 5))
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_array_shape(self, levels, exact):
+        def _nest_me(x, k=1):
+            """
+            Double x and nest it k times
 
-            # Compare exact=True vs False, scalar vs array
-            assert_array_equal(special.factorial(n, True),
-                               special.factorial(n, False))
+            For example:
+            >>> _nest_me([3, 4], 2)
+            [[[3, 4], [3, 4]], [[3, 4], [3, 4]]]
+            """
+            if k == 0:
+                return x
+            else:
+                return _nest_me([x, x], k-1)
 
-            assert_array_equal(special.factorial([n], True),
-                               special.factorial([n], False))
+        def _check(res, nucleus):
+            exp = np.array(_nest_me(nucleus, k=levels), dtype=object)
+            # test that ndarray shape is maintained
+            # need to cast to float due to numpy/numpy#21220
+            assert_allclose(res.astype(np.float64), exp.astype(np.float64))
 
-    @pytest.mark.parametrize('x, exact', [
-        (1, True),
-        (1, False),
-        (np.array(1), True),
-        (np.array(1), False),
-    ])
-    def test_factorial_0d_return_type(self, x, exact):
-        assert np.isscalar(special.factorial(x, exact=exact))
+        n = np.array(_nest_me([5, 25], k=levels))
+        exp_nucleus = {1: [120, math.factorial(25)],
+                       # correctness of factorial2() is tested elsewhere
+                       2: [15, special.factorial2(25, exact=True)],
+                       3: [10, special.factorialk(25, 3)]}
 
-    def test_factorial2(self):
-        assert_array_almost_equal([105., 384., 945.],
-                                  special.factorial2([7, 8, 9], exact=False))
-        assert_equal(special.factorial2(7, exact=True), 105)
+        _check(special.factorial(n, exact=exact), exp_nucleus[1])
+        _check(special.factorial2(n, exact=exact), exp_nucleus[2])
+        _check(special.factorialk(n, 3, exact=True), exp_nucleus[3])
 
-    def test_factorialk(self):
-        assert_equal(special.factorialk(5, 1, exact=True), 120)
-        assert_equal(special.factorialk(5, 3, exact=True), 10)
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    def test_factorialx_array_dimension(self, dim, exact):
+        n = np.array(5, ndmin=dim)
+        exp = {1: 120, 2: 15, 3: 10}
+        assert_allclose(special.factorial(n, exact=exact),
+                        np.array(exp[1], ndmin=dim))
+        assert_allclose(special.factorial2(n, exact=exact),
+                        np.array(exp[2], ndmin=dim))
+        assert_allclose(special.factorialk(n, 3, exact=True),
+                        np.array(exp[3], ndmin=dim))
 
-    @pytest.mark.parametrize('x, exact', [
-        (np.nan, True),
-        (np.nan, False),
-        (np.array([np.nan]), True),
-        (np.array([np.nan]), False),
-    ])
-    def test_nan_inputs(self, x, exact):
-        result = special.factorial(x, exact=exact)
-        assert_(np.isnan(result))
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("level", range(1, 5))
+    def test_factorialx_array_like(self, level, exact):
+        def _nest_me(x, k=1):
+            if k == 0:
+                return x
+            else:
+                return _nest_me([x], k-1)
 
-    # GH-13122: special.factorial() argument should be an array of integers.
-    # On Python 3.10, math.factorial() reject float.
-    # On Python 3.9, a DeprecationWarning is emitted.
-    # A numpy array casts all integers to float if the array contains a
-    # single NaN.
-    @pytest.mark.skipif(sys.version_info >= (3, 10),
-                        reason="Python 3.10+ math.factorial() requires int")
-    def test_mixed_nan_inputs(self):
+        n = _nest_me([5], k=level-1)  # nested list
+        exp_nucleus = {1: 120, 2: 15, 3: 10}
+        assert_func = assert_array_equal if exact else assert_allclose
+        assert_func(special.factorial(n, exact=exact),
+                    np.array(exp_nucleus[1], ndmin=level))
+        assert_func(special.factorial2(n, exact=exact),
+                    np.array(exp_nucleus[2], ndmin=level))
+        assert_func(special.factorialk(n, 3, exact=True),
+                    np.array(exp_nucleus[3], ndmin=level))
+
+    # note that n=170 is the last integer such that factorial(n) fits float64
+    @pytest.mark.parametrize('n', range(30, 180, 10))
+    def test_factorial_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial(n, exact=True)),
+                        special.factorial(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial([n], exact=True).astype(float),
+                        special.factorial([n], exact=False), rtol=rtol)
+
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 10)))
+    def test_factorial_int_reference(self, n):
+        # Compare all with math.factorial
+        correct = math.factorial(n)
+        assert_array_equal(correct, special.factorial(n, True))
+        assert_array_equal(correct, special.factorial([n], True)[0])
+
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        assert_allclose(float(correct), special.factorial(n, False),
+                        rtol=rtol)
+        assert_allclose(float(correct), special.factorial([n], False)[0],
+                        rtol=rtol)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorial_float_reference(self, exact):
+        def _check(n, expected):
+            # support for exact=True with scalar floats grandfathered in
+            assert_allclose(special.factorial(n, exact=exact), expected)
+            # non-integer types in arrays only allowed with exact=False
+            assert_allclose(special.factorial([n])[0], expected)
+
+        # Reference values from mpmath for gamma(n+1)
+        _check(0.01, 0.994325851191506032181932988)
+        _check(1.11, 1.051609009483625091514147465)
+        _check(5.55, 314.9503192327208241614959052)
+        _check(11.1, 50983227.84411615655137170553)
+        _check(33.3, 2.493363339642036352229215273e+37)
+        _check(55.5, 9.479934358436729043289162027e+73)
+        _check(77.7, 3.060540559059579022358692625e+114)
+        _check(99.9, 5.885840419492871504575693337e+157)
+        # close to maximum for float64
+        _check(170.6243, 1.79698185749571048960082e+308)
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content",
+                             [[], [1], [1.1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[1.1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        result = None
+        if not content:
+            result = special.factorial(n, exact=exact)
+        elif not (np.issubdtype(n.dtype, np.integer)
+                  or np.issubdtype(n.dtype, np.floating)):
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
+        elif (exact and not np.issubdtype(n.dtype, np.integer) and n.size and
+              np.allclose(n[~np.isnan(n)], n[~np.isnan(n)].astype(np.int64))):
+            # using integers but in array with wrong dtype (e.g. due to NaNs)
+            with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
+                result = special.factorial(n, exact=exact)
+                # expected dtype is integer, unless there are NaNs
+                dtype = np.float_ if np.any(np.isnan(n)) else np.int_
+        elif exact and not np.issubdtype(n.dtype, np.integer):
+            with pytest.raises(ValueError, match="factorial with exact=.*"):
+                special.factorial(n, exact=exact)
+        else:
+            # no error
+            result = special.factorial(n, exact=exact)
+
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
+        # https://github.com/numpy/numpy/issues/24050
+        def assert_really_equal(x, y):
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert_equal(x, y)
+
+        if result is not None:
+            # expected result is empty if and only if n is empty,
+            # and has the same dtype & dimension as n
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+                n_flat = n.ravel() if n.ndim else n
+                r = special.factorial(n_flat, exact=exact) if n.size else []
+            expected = np.array(r, ndmin=dim, dtype=dtype)
+            assert_really_equal(result, expected)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial_scalar_corner_cases(self, n, exact):
+        if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
+                or np.issubdtype(type(n), np.floating)):
+            # no error
+            result = special.factorial(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
+
+    # use odd increment to make sure both odd & even numbers are tested!
+    @pytest.mark.parametrize('n', range(30, 180, 11))
+    def test_factorial2_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 2e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial2(n, exact=True)),
+                        special.factorial2(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial2([n], exact=True).astype(float),
+                        special.factorial2([n], exact=False), rtol=rtol)
+
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 11)))
+    def test_factorial2_int_reference(self, n):
+        # Compare all with correct value
+
+        # Cannot use np.product due to overflow
+        correct = functools.reduce(operator.mul, list(range(n, 0, -2)), 1)
+
+        assert_array_equal(correct, special.factorial2(n, True))
+        assert_array_equal(correct, special.factorial2([n], True)[0])
+
+        assert_allclose(float(correct), special.factorial2(n, False))
+        assert_allclose(float(correct), special.factorial2([n], False)[0])
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            # expected result is identical to n for exact=True resp. empty
+            # arrays (assert_allclose chokes on object), otherwise up to tol
+            func = assert_equal if exact or (not content) else assert_allclose
+            func(result, n)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorial2_scalar_corner_cases(self, n, exact):
+        if n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            exp = np.nan if n is np.nan or n is None else special.factorial(n)
+            assert_equal(result, exp)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, exact=exact)
+
+    @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(22, 100, 11)))
+    def test_factorialk_int_reference(self, n, k):
+        # Compare all with correct value
+
+        # Would be nice to use np.product here, but that's
+        # broken on windows, see numpy/numpy#21219
+        correct = functools.reduce(operator.mul, list(range(n, 0, -k)), 1)
+
+        assert_array_equal(correct, special.factorialk(n, k, True))
+        assert_array_equal(correct, special.factorialk([n], k, True)[0])
+
+        # exact=False not yet supported
+        # assert_allclose(float(correct), special.factorialk(n, k, False))
+        # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
+
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorialk_array_corner_cases(self, content, dim, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error; expected result is identical to n
+            assert_equal(special.factorialk(n, 3), n)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, 3)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("k", range(1, 5))
+    @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
+                             ids=["1", "1.1", "2+2j", "NaN", "None"])
+    def test_factorialk_scalar_corner_cases(self, n, k, exact):
+        if not exact:
+            with pytest.raises(NotImplementedError):
+                special.factorialk(n, k=k, exact=exact)
+        elif n is None or n is np.nan or np.issubdtype(type(n), np.integer):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            nan_cond = n is np.nan or n is None
+            expected = np.nan if nan_cond else special.factorialk(n, k=k)
+            assert_equal(result, expected)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, k=k, exact=exact)
+
+    @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
+    def test_factorialk_raises_k(self, k):
+        with pytest.raises(ValueError, match="k must be a positive integer*"):
+            special.factorialk(1, k)
+
+    @pytest.mark.parametrize("k", range(1, 12))
+    def test_factorialk_dtype(self, k):
+        if k in _FACTORIALK_LIMITS_64BITS.keys():
+            n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int_)
+            assert_equal(special.factorialk(n + 1, k).dtype, np.int64)
+            # assert maximality of limits for given dtype
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int32).max
+
+            n = np.array([_FACTORIALK_LIMITS_64BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int64)
+            assert_equal(special.factorialk(n + 1, k).dtype, object)
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int64).max
+        else:
+            # for k >= 10, we always return object
+            assert_equal(special.factorialk(np.array([1]), k).dtype, object)
+
+    def test_factorial_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Using factorial\\(\\) with floats is deprecated")
-            result = special.factorial(x, exact=True)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
-            result = special.factorial(x, exact=False)
-            assert_equal(np.array([np.nan, 1, 2, 6, np.nan]), result)
+        expected = np.array([np.nan, 1, 2, 6, np.nan])
+        assert_equal(special.factorial(x, exact=False), expected)
+        with pytest.warns(DeprecationWarning, match=r"Non-integer array.*"):
+            assert_equal(special.factorial(x, exact=True), expected)
 
 
 class TestFresnel:

@@ -257,14 +257,16 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array_like, length N
-        Interpolation points (known x-coordinates). Must be sorted
-        in increasing order.
-    yi : array_like
-        Known y-coordinates. When an `xi` occurs two or more times in
-        a row, the corresponding `yi`'s represent derivative values.
+    xi : array_like, shape (npoints, )
+        Known x-coordinates. Must be sorted in increasing order.
+    yi : array_like, shape (..., npoints, ...)
+        Known y-coordinates. When an xi occurs two or more times in
+        a row, the corresponding yi's represent derivative values. The length of `yi`
+        along the interpolation axis must be equal to the length of `xi`. Use the
+        `axis` parameter to select the correct axis.
     axis : int, optional
-        Axis in the `yi` array corresponding to the x-coordinate values.
+        Axis in the `yi` array corresponding to the x-coordinate values. Defaults to
+        ``axis=0``.
 
     Notes
     -----
@@ -546,14 +548,17 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
     Parameters
     ----------
-    xi : array_like
-        Interpolation points; a 1-D array of the x-coordinates of the points
-        the polynomial will pass through.
-    yi : array_like, optional
-        The y-coordinates of the points the polynomial will pass through.
+    xi : array_like, shape (npoints, )
+        1-D array of x coordinates of the points the polynomial
+        should pass through
+    yi : array_like, shape (..., npoints, ...), optional
+        N-D array of y coordinates of the points the polynomial should pass through.
         If None, the y values will be supplied later via the `set_y` method.
+        The length of `yi` along the interpolation axis must be equal to the length
+        of `xi`. Use the ``axis`` parameter to select correct axis.
     axis : int, optional
-        Axis in the `yi` array corresponding to the x-coordinate values.
+        Axis in the yi array corresponding to the x-coordinate values. Defaults
+        to ``axis=0``.
     wi : array_like, optional
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).

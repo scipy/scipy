@@ -261,7 +261,9 @@ def morlet(M, w=5.0, s=1.0, complete=True):
     >>> s = 4.0
     >>> w = 2.0
     >>> wavelet = signal.morlet(M, s, w)
-    >>> plt.plot(wavelet)
+    >>> plt.plot(wavelet.real, label="real")
+    >>> plt.plot(wavelet.imag, label="imag")
+    >>> plt.legend()
     >>> plt.show()
 
     """

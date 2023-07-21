@@ -4,9 +4,9 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.11.0.dev0',
+  version: '1.12.0.dev0',
   license: 'BSD-3',
-  meson_version: '>= 0.64.0',
+  meson_version: '>= 1.1.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
@@ -35,6 +35,9 @@ endif
 
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
+cy = meson.get_compiler('cython')
+# generator() doesn't accept compilers, only found programs - cast it.
+cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
@@ -47,15 +50,15 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
+if not cy.version().version_compare('>=0.29.35')
+  error('SciPy requires Cython >= 0.29.35')
+endif
 
-# TODO: the below -Wno flags are all needed to silence warnings in
-# f2py-generated code. This should be fixed in f2py itself.
 _global_c_args = cc.get_supported_arguments(
   '-Wno-unused-but-set-variable',
   '-Wno-unused-function',
   '-Wno-conversion',
   '-Wno-misleading-indentation',
-  '-Wno-incompatible-pointer-types',
 )
 add_project_arguments(_global_c_args, language : 'c')
 
@@ -126,14 +129,16 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
   version_link_args = []
 endif
 
-# generator() doesn't accept compilers, only found programs. Cast it.
-cython = find_program(meson.get_compiler('cython').cmd_array()[0])
 generate_f2pymod = files('tools/generate_f2pymod.py')
 tempita = files('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
   pythran = find_program('pythran', native: true)
+  # xsimd is unvendored from pythran by conda-forge, and due to a compiler
+  # activation bug the default <prefix>/include/ may not be visible (see
+  # gh-15698). Hence look for xsimd explicitly.
+  xsimd_dep = dependency('xsimd', required: false)
 endif
 
 subdir('scipy')

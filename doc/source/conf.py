@@ -51,6 +51,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'myst_nb',
 ]
 
 
@@ -74,8 +75,8 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
-version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
-release = scipy.__version__
+version = re.sub(r'\.dev.*$', r'.dev', scipy.__version__)
+release = version
 
 if os.environ.get('CIRCLE_JOB', False) and \
         os.environ.get('CIRCLE_BRANCH', '') != 'main':
@@ -165,6 +166,23 @@ for key in (
         ):
     warnings.filterwarnings(
         'once', message='.*' + key)
+# docutils warnings when using notebooks (see gh-17322)
+# these will hopefully be removed in the near future
+for key in (
+    r"The frontend.OptionParser class will be replaced",
+    r"The frontend.Option class will be removed",
+    ):
+    warnings.filterwarnings('ignore', message=key, category=DeprecationWarning)
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*is obsoleted by Node.findall()',
+    category=PendingDeprecationWarning,
+)
+warnings.filterwarnings(
+    'ignore',
+    message=r'There is no current event loop',
+    category=DeprecationWarning,
+)
 
 # -----------------------------------------------------------------------------
 # HTML output
@@ -186,7 +204,7 @@ html_theme_options = {
 }
 
 if 'dev' in version:
-    html_theme_options["switcher"]["version_match"] = "dev"
+    html_theme_options["switcher"]["version_match"] = "development"
 
 if 'versionwarning' in tags:  # noqa
     # Specific to docs.scipy.org deployment.
@@ -194,7 +212,7 @@ if 'versionwarning' in tags:  # noqa
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
-           'document.head.appendChild(script);');
+           'document.head.appendChild(script);')
     html_context = {
         'VERSIONCHECK_JS': src
     }
@@ -298,7 +316,12 @@ coverage_ignore_c_items = {}
 plot_pre_code = """
 import warnings
 for key in (
-        'scipy.misc'  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'lsim2 is deprecated',  # Deprecation of scipy.signal.lsim2
+        'impulse2 is deprecated',  # Deprecation of scipy.signal.impulse2
+        'step2 is deprecated',  # Deprecation of scipy.signal.step2
+        'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
+        'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
+        'kurtosistest only valid',  # intentionally "bad" excample in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 
@@ -329,6 +352,12 @@ plot_rcparams = {
     'figure.subplot.wspace': 0.4,
     'text.usetex': False,
 }
+
+# -----------------------------------------------------------------------------
+# Notebook tutorials with MyST-NB
+# -----------------------------------------------------------------------------
+
+nb_execution_mode = "auto"
 
 # -----------------------------------------------------------------------------
 # Source code links

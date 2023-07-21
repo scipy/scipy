@@ -1,8 +1,8 @@
 import sys
 import math
 import numpy as np
-from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_equal,
+from numpy import sqrt, cos, sin, arctan, exp, log, pi
+from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
@@ -117,7 +117,7 @@ class TestMultivariateCtypesQuad:
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, np.inf),
                     0.577215664901532860606512)
 
     def test_threadsafety(self):
@@ -138,7 +138,7 @@ class TestQuad:
         # 2) Infinite integration limits --- Euler's constant
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
-        assert_quad(quad(myfunc, 0, Inf), 0.577215664901532860606512)
+        assert_quad(quad(myfunc, 0, np.inf), 0.577215664901532860606512)
 
     def test_singular(self):
         # 3) Singular points in region of integration.
@@ -169,7 +169,7 @@ class TestQuad:
 
         a = 4.0
         ome = 3.0
-        assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
+        assert_quad(quad(myfunc, 0, np.inf, args=a, weight='sin', wvar=ome),
                     ome/(a**2 + ome**2))
 
     def test_cosine_weighted_infinite(self):
@@ -179,7 +179,7 @@ class TestQuad:
 
         a = 2.5
         ome = 2.3
-        assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
+        assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
     def test_algebraic_log_weight(self):
@@ -550,9 +550,9 @@ class TestNQuad:
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}])
-        assert_quad(res, 1.5267454070738635)
-        assert res.neval > 0 and res.neval < 4e5
+                    opts=[opts_basic, {}, {}, {}], full_output=True)
+        assert_quad(res[:-1], 1.5267454070738635)
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
 
     def test_variable_limits(self):
         scale = .1
@@ -675,23 +675,3 @@ class TestNQuad:
         except TypeError:
             assert False
 
-    def test_result_object(self):
-        # Check that result object contains attributes `integral`, `abserr`,
-        # and `neval`. During the `full_output` deprecation period, also check
-        # that specifying `full_output` produces a warning and that values
-        # are the same whether `full_output` is True, False, or unspecified.
-        def func(x):
-            return x**2 + 1
-
-        res = nquad(func, ranges=[[0, 4]])
-        with np.testing.assert_warns(DeprecationWarning):
-            res2 = nquad(func, ranges=[[0, 4]], full_output=False)
-        with np.testing.assert_warns(DeprecationWarning):
-            res3 = nquad(func, ranges=[[0, 4]], full_output=True)
-
-        assert_equal(res, res2)
-        assert res.integral == res2.integral
-        assert res.abserr == res2.abserr
-
-        assert_equal(res, res3[:2])
-        assert_equal(res.neval, res3[2]['neval'])

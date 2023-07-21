@@ -2,7 +2,7 @@ from warnings import warn
 
 import numpy as np
 from numpy import asarray
-from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
+from scipy.sparse import (issparse,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
 from scipy.sparse._sputils import is_pydata_spmatrix
 from scipy.linalg import LinAlgError
@@ -101,8 +101,12 @@ def _get_umf_family(A):
         (np.complex128, np.int64): 'zl'
     }
 
-    f_type = np.sctypeDict[A.dtype.name]
-    i_type = np.sctypeDict[A.indices.dtype.name]
+    # A.dtype.name can only be "float64" or
+    # "complex128" in control flow
+    f_type = getattr(np, A.dtype.name)
+    # control flow may allow for more index
+    # types to get through here
+    i_type = getattr(np, A.indices.dtype.name)
 
     try:
         family = _families[(f_type, i_type)]
@@ -122,6 +126,21 @@ def _get_umf_family(A):
     A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
 
     return family, A_new
+
+def _safe_downcast_indices(A):
+    # check for safe downcasting
+    max_value = np.iinfo(np.intc).max
+
+    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
+        raise ValueError("indptr values too large for SuperLU")
+
+    if max(*A.shape) > max_value:  # only check large enough arrays
+        if np.any(A.indices > max_value):
+            raise ValueError("indices values too large for SuperLU")
+
+    indices = A.indices.astype(np.intc, copy=False)
+    indptr = A.indptr.astype(np.intc, copy=False)
+    return indices, indptr
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -209,20 +228,20 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     if is_pydata_spmatrix(A):
         A = A.to_scipy_sparse().tocsc()
 
-    if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
+    if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
                 SparseEfficiencyWarning)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = isspmatrix(b) or is_pydata_spmatrix(b)
+    b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
     result_dtype = np.promote_types(A.dtype, b.dtype)
     if A.dtype != result_dtype:
         A = A.astype(result_dtype)
@@ -264,13 +283,15 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             b_is_sparse = False
 
         if not b_is_sparse:
-            if isspmatrix_csc(A):
+            if A.format == "csc":
                 flag = 1  # CSC format
             else:
                 flag = 0  # CSR format
 
+            indices = A.indices.astype(np.intc, copy=False)
+            indptr = A.indptr.astype(np.intc, copy=False)
             options = dict(ColPerm=permc_spec)
-            x, info = _superlu.gssv(N, A.nnz, A.data, A.indices, A.indptr,
+            x, info = _superlu.gssv(N, A.nnz, A.data, indices, indptr,
                                     b, flag, options=options)
             if info != 0:
                 warn("Matrix is exactly singular", MatrixRankWarning)
@@ -281,7 +302,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             # b is sparse
             Afactsolve = factorized(A)
 
-            if not (isspmatrix_csc(b) or is_pydata_spmatrix(b)):
+            if not (b.format == "csc" or is_pydata_spmatrix(b)):
                 warn('spsolve is more efficient when sparse b '
                      'is in the CSC matrix format', SparseEfficiencyWarning)
                 b = csc_matrix(b)
@@ -390,17 +411,19 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     else:
         csc_construct_func = csc_matrix
 
-    if not isspmatrix_csc(A):
+    if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
         warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
+
+    indices, indptr = _safe_downcast_indices(A)
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -411,7 +434,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=False, options=_options)
 
@@ -482,18 +505,20 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     else:
         csc_construct_func = csc_matrix
 
-    if not isspmatrix_csc(A):
+    if not (issparse(A) and A.format == "csc"):
         A = csc_matrix(A)
         warn('spilu converted its input to CSC format',
              SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
 
     M, N = A.shape
     if (M != N):
         raise ValueError("can only factor square matrices")  # is this true?
+
+    indices, indptr = _safe_downcast_indices(A)
 
     _options = dict(ILU_DropRule=drop_rule, ILU_DropTol=drop_tol,
                     ILU_FillFactor=fill_factor,
@@ -506,7 +531,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+    return _superlu.gstrf(N, A.nnz, A.data, indices, indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=True, options=_options)
 
@@ -547,12 +572,12 @@ def factorized(A):
         if noScikit:
             raise RuntimeError('Scikits.umfpack not installed.')
 
-        if not isspmatrix_csc(A):
+        if not (issparse(A) and A.format == "csc"):
             A = csc_matrix(A)
             warn('splu converted its input to CSC format',
                  SparseEfficiencyWarning)
 
-        A = A.asfptype()  # upcast to a floating point format
+        A = A._asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':
             raise ValueError("convert matrix data to double, please, using"
@@ -638,7 +663,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         A = A.to_scipy_sparse().tocsr()
 
     # Check the input for correct type and format.
-    if not isspmatrix_csr(A):
+    if not (issparse(A) and A.format == "csr"):
         warn('CSR matrix format is required. Converting to CSR matrix.',
              SparseEfficiencyWarning)
         A = csr_matrix(A)

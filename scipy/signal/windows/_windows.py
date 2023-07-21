@@ -344,7 +344,7 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
@@ -1620,7 +1620,7 @@ def cosine(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)

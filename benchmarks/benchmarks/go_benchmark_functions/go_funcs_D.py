@@ -112,7 +112,7 @@ class Deb03(Benchmark):
 
     .. math::
 
-        f_{\text{Deb02}}(x) = - \frac{1}{N} \sum_{i=1}^n \sin^6 \left[ 5 \pi
+        f_{\text{Deb03}}(x) = - \frac{1}{N} \sum_{i=1}^n \sin^6 \left[ 5 \pi
         \left ( x_i^{3/4} - 0.05 \right) \right ]
 
 
@@ -133,7 +133,8 @@ class Deb03(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
+        # lower limit changed to zero because of fractional power
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0

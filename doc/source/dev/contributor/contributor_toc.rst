@@ -9,34 +9,32 @@ SciPy development after you've reviewed the introductory material in
 :ref:`hacking` or :ref:`dev-quickstart`.
 
 You can also watch `SciPy Development Workflow`_, a five-minute video example of
-fixing a bug and submitting a pull request.
+fixing a bug and submitting a pull request (*note: this video is from 2018, so
+the build steps are different by now - the overall workflow is still the same
+though*).
 
-- :ref:`dev-env` - how to set up and maintain a development environment, including installing compilers and SciPy dependencies, creating a personal fork of the SciPy repository on GitHub, using git to manage a local repository with development branches, performing an in-place build of SciPy, and creating a virtual environment that adds this development version of SciPy to the Python path
-- :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
-- :ref:`unit-tests` - how to write and run unit tests for SciPy with the pytest framework
-- :ref:`docs` - how to write reStructuredText documentation that complies with docstring standards, build documentation locally with Sphinx, and view documentation built during continuous integration checks
+- :ref:`building-from-source` - how to set up a development environment,
+  including installing compilers and SciPy dependencies, cloning the SciPy
+  repository on GitHub and updating git submodules, and using the ``dev.py``
+  interface for building and running tests.
+- :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding
+  which module contains SciPy functionality to be edited, adding new modules to
+  SciPy, and complying with PEP8 style standards
+- :ref:`unit-tests` - how to write and run unit tests for SciPy with the pytest
+  framework
+- :ref:`docs` - how to write reStructuredText documentation that complies with
+  docstring standards, build documentation locally with Sphinx, and view
+  documentation built during continuous integration checks
 - :ref:`toc-benchmarking` - how to benchmark code with airspeed velocity
-- :ref:`toc-cython` - how to add fast, compiled code to SciPy
-- :ref:`continuous-integration` - how does our continuous integration system works and how to debug your PR
-
-.. _dev-env:
-
-Development environment
------------------------
-
-- :ref:`system-level` shows how to install system-level dependencies for Linux, Mac or Windows (needed if you're not using conda).
-- :ref:`conda-guide` presents a step-by-step process for setting up a convenient SciPy development environment with conda *(recommended)*.
-- :ref:`ubuntu-guide` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu Linux.
-- :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
-- :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
+- :ref:`compiled-code` - how to add fast, compiled code to SciPy
+- :ref:`continuous-integration` - how does our continuous integration system
+  works and how to debug your PR
 
 .. _editing-scipy:
 
 Editing SciPy
 -------------
 - :ref:`development-workflow` lays out what to do after your development environment is set up
-- :ref:`building` has details on building from sources on Linux, Mac and Windows
-- :ref:`meson` for how to use the Meson build system
 - :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API; if you are going to import other SciPy code, read this first
@@ -69,8 +67,6 @@ Benchmarks
 - :ref:`benchmarking-with-asv` explains how to add benchmarks to SciPy using `airspeed velocity`_
 
 
-.. _toc-cython:
-
 .. _compiled-code:
 
 Compiled code
@@ -92,13 +88,7 @@ Compiled code
 .. toctree::
     :hidden:
 
-    conda_guide
-    ubuntu_guide
-    quickstart_docker
-    quickstart_gitpod
     development_workflow
-    building
-    meson
     pep8
     ../gitwash/gitwash
     ../../reference/index

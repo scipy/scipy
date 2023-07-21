@@ -10,9 +10,9 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.9.0",
-    "Cython>=0.29.33",
-    "pybind11>=2.10.0",
+    "meson-python>=0.12.1",
+    "Cython>=0.29.35",  # when updating version, also update check in meson.build
+    "pybind11>=2.10.4",
     "pythran>=0.12.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
     # doesn't list it as a runtime requirement (at least in 0.5.0)
@@ -25,21 +25,9 @@ requires = [
 
     # now matches minimum supported version, keep here as separate requirement
     # to be able to sync more easily with oldest-supported-numpy
-    # loongarch64 requires numpy>=1.22.0
-    "numpy==1.22.0; platform_machine=='loongarch64'",
-
-    # On Windows we need to avoid 1.21.6, 1.22.0 and 1.22.1 because they were
-    # built with vc142. 1.22.3 is the first version that has 32-bit Windows
-    # wheels *and* was built with vc141. So use that:
-    "numpy==1.22.3; python_version=='3.9' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
-    "numpy==1.22.3; python_version=='3.10' and platform_system=='Windows' and platform_python_implementation != 'PyPy'",
 
     # default numpy requirements
-    "numpy==1.21.6; python_version=='3.9' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
-    # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
-    # however macOS was broken and it's safe C API/ABI-wise to build against 1.21.6
-    # (see oldest-supported-numpy issues gh-28 and gh-45)
-    "numpy==1.21.6; python_version=='3.10' and (platform_system!='Windows' and platform_machine!='loongarch64') and platform_python_implementation != 'PyPy'",
+    "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
@@ -65,8 +53,8 @@ maintainers = [
 requires-python = ">=3.9"
 dependencies = [
     # TODO: update to "pin-compatible" once possible, see
-    # https://github.com/FFY00/meson-python/issues/29
-    "numpy>=1.21.6",
+    # https://github.com/mesonbuild/meson-python/issues/29
+    "numpy>=1.22.4",
 ]
 readme = "README.rst"
 classifiers = [
@@ -109,6 +97,8 @@ doc = [
     "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
+    "jupytext",
+    "myst-nb",
     "pooch",
 ]
 dev = [

@@ -45,7 +45,7 @@ manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
 For the installation instructions, see `our install
-guide <https://docs.scipy.org/doc/scipy/getting_started.html#installation>`__.
+guide <https://scipy.org/install/>`__.
 
 
 Call for Contributions

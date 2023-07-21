@@ -5,16 +5,15 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, atleast_1d, sqrt, array,
+                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa
                    compress, pi, exp, ravel, count_nonzero, sin, cos,
                    arctan2, hypot)
 
-from scipy import optimize
-from scipy import special
+from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
-from scipy._lib._util import _rename_parameter, _contains_nan
+from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
-from . import _statlib
+from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
 from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
@@ -23,15 +22,12 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
-from .._lib.deprecation import _deprecated
-from scipy import stats, interpolate
-from ._resampling import permutation_test
 
 
 __all__ = ['mvsdist',
            'bayes_mvs', 'kstat', 'kstatvar', 'probplot', 'ppcc_max', 'ppcc_plot',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
-           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
+           'shapiro', 'anderson', 'ansari', 'bartlett', 'levene',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
@@ -1122,7 +1118,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     Parameters
     ----------
     x : array_like
-        Input array.
+        Input array. All entries must be positive, finite, real numbers.
     brack : 2-tuple, optional, default (-2.0, 2.0)
          The starting interval for a downhill bracket search for the default
          `optimize.brent` solver. Note that this is in most cases not
@@ -1138,7 +1134,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
             normally-distributed.
 
         'mle'
-            Minimizes the log-likelihood `boxcox_llf`.  This is the method used
+            Maximizes the log-likelihood `boxcox_llf`.  This is the method used
             in `boxcox`.
 
         'all'
@@ -1148,10 +1144,11 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         `optimizer` is a callable that accepts one argument:
 
         fun : callable
-            The objective function to be optimized. `fun` accepts one argument,
-            the Box-Cox transform parameter `lmbda`, and returns the negative
-            log-likelihood function at the provided value. The job of `optimizer`
-            is to find the value of `lmbda` that minimizes `fun`.
+            The objective function to be minimized. `fun` accepts one argument,
+            the Box-Cox transform parameter `lmbda`, and returns the value of
+            the function (e.g., the negative log-likelihood) at the provided
+            argument. The job of `optimizer` is to find the value of `lmbda`
+            that *minimizes* `fun`.
 
         and returns an object, such as an instance of
         `scipy.optimize.OptimizeResult`, which holds the optimal value of
@@ -1276,10 +1273,20 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         raise ValueError("Method %s not recognized." % method)
 
     optimfunc = methods[method]
-    res = optimfunc(x)
+
+    try:
+        res = optimfunc(x)
+    except ValueError as e:
+        if "infs or NaNs" in str(e):
+            message = ("The `x` argument of `boxcox_normmax` must contain "
+                       "only positive, finite, real numbers.")
+            raise ValueError(message) from e
+        else:
+            raise e
+
     if res is None:
-        message = ("`optimizer` must return an object containing the optimal "
-                   "`lmbda` in attribute `x`")
+        message = ("The `optimizer` argument of `boxcox_normmax` must return "
+                   "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
     return res
 
@@ -1774,18 +1781,23 @@ def shapiro(x):
     References
     ----------
     .. [1] https://www.itl.nist.gov/div898/handbook/prc/section2/prc213.htm
-    .. [2] Shapiro, S. S. & Wilk, M.B (1965). An analysis of variance test for
-           normality (complete samples), Biometrika, Vol. 52, pp. 591-611.
-    .. [3] Razali, N. M. & Wah, Y. B. (2011) Power comparisons of Shapiro-Wilk,
-           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests, Journal of
-           Statistical Modeling and Analytics, Vol. 2, pp. 21-33.
-    .. [4] ALGORITHM AS R94 APPL. STATIST. (1995) VOL. 44, NO. 4.
-    .. [5] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+           :doi:`10.18434/M32189`
+    .. [2] Shapiro, S. S. & Wilk, M.B, "An analysis of variance test for
+           normality (complete samples)", Biometrika, 1965, Vol. 52,
+           pp. 591-611, :doi:`10.2307/2333709`
+    .. [3] Razali, N. M. & Wah, Y. B., "Power comparisons of Shapiro-Wilk,
+           Kolmogorov-Smirnov, Lilliefors and Anderson-Darling tests", Journal
+           of Statistical Modeling and Analytics, 2011, Vol. 2, pp. 21-33.
+    .. [4] Royston P., "Remark AS R94: A Remark on Algorithm AS 181: The
+           W-test for Normality", 1995, Applied Statistics, Vol. 44,
+           :doi:`10.2307/2986146`
+    .. [5] Phipson B., and Smyth, G. K., "Permutation P-values Should Never Be
            Zero: Calculating Exact P-values When Permutations Are Randomly
-           Drawn." Statistical Applications in Genetics and Molecular Biology
-           9.1 (2010).
-    .. [6] Panagiotakos, D. B. (2008). The value of p-value in biomedical
-           research. The open cardiovascular medicine journal, 2, 97.
+           Drawn", Statistical Applications in Genetics and Molecular Biology,
+           2010, Vol.9, :doi:`10.2202/1544-6115.1585`
+    .. [6] Panagiotakos, D. B., "The value of p-value in biomedical
+           research", The Open Cardiovascular Medicine Journal, 2008, Vol.2,
+           pp. 97-99, :doi:`10.2174/1874192400802010097`
 
     Examples
     --------
@@ -1865,24 +1877,26 @@ def shapiro(x):
       and false negatives (failure to reject a false null hypothesis).
 
     """
-    x = np.ravel(x)
+    x = np.ravel(x).astype(np.float64)
 
     N = len(x)
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x = x - np.median(x)
-
-    a = zeros(N, 'f')
+    a = zeros(N//2, dtype=np.float64)
     init = 0
 
     y = sort(x)
-    a, w, pw, ifault = _statlib.swilk(y, a[:N//2], init)
+    y -= x[N//2]  # subtract the median (or a nearby value); see gh-15777
+
+    w, pw, ifault = swilk(y, a, init)
     if ifault not in [0, 2]:
-        warnings.warn("Input data for shapiro has range zero. The results "
-                      "may not be accurate.")
+        warnings.warn("scipy.stats.shapiro: Input data has range zero. The"
+                      " results may not be accurate.", stacklevel=2)
     if N > 5000:
-        warnings.warn("p-value may not be accurate for N > 5000.")
+        warnings.warn("scipy.stats.shapiro: For N > 5000, computed p-value "
+                      f"may not be accurate. Current N is {N}.",
+                      stacklevel=2)
 
     return ShapiroResult(w, pw)
 
@@ -2281,7 +2295,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
+def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2299,20 +2313,12 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
-    n_resamples : int, default: 0
-        If positive, perform a permutation test to determine the p-value
-        rather than interpolating between tabulated values. Typically 9999 is
-        sufficient for at least two digits of accuracy.
-    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate resamples.
-
-        If `random_state` is ``None`` (or `np.random`), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is interpolated
+        from tabulated values.
 
     Returns
     -------
@@ -2325,13 +2331,13 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. If `n_resamples` is not
+            The approximate p-value of the test. If `method` is not
             provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
     ValueError
-        If less than 2 samples are provided, a sample is empty, or no
+        If fewer than 2 samples are provided, a sample is empty, or no
         distinct observations are in the samples.
 
     See Also
@@ -2401,7 +2407,8 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     In such cases where the p-value is capped or when sample sizes are
     small, a permutation test may be more accurate.
 
-    >>> res = stats.anderson_ksamp(samples, n_resamples=9999, random_state=rng)
+    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> res = stats.anderson_ksamp(samples, method=method)
     >>> res.pvalue
     0.5254
 
@@ -2432,10 +2439,9 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     def statistic(*samples):
         return A2kN_fun(samples, Z, Zstar, k, n, N)
 
-    if n_resamples:
-        res = permutation_test(samples, statistic, n_resamples=n_resamples,
-                               random_state=random_state,
-                               alternative='greater')
+    if method is not None:
+        res = stats.permutation_test(samples, statistic, **method._asdict(),
+                                     alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2458,22 +2464,25 @@ def anderson_ksamp(samples, midrank=True, *, n_resamples=0, random_state=None):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min() and not n_resamples:
+
+    if A2 < critical.min() and method is None:
         p = sig.max()
-        message = (f"p-value capped: true value larger than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif A2 > critical.max() and not n_resamples:
+        msg = (f"p-value capped: true value larger than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif A2 > critical.max() and method is None:
         p = sig.min()
-        message = (f"p-value floored: true value smaller than {p}. Consider "
-                   "setting `n_resamples` to a positive integer (e.g. 9999).")
-        warnings.warn(message, stacklevel=2)
-    elif not n_resamples:
+        msg = (f"p-value floored: true value smaller than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif method is None:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
-
-    p = res.pvalue if n_resamples else p
+    else:
+        p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
@@ -2504,7 +2513,7 @@ class _ABW:
             self.n, self.m = n, m
             # distribution is NOT symmetric when m + n is odd
             # n is len(x), m is len(y), and ratio of scales is defined x/y
-            astart, a1, _ = _statlib.gscale(n, m)
+            astart, a1, _ = gscale(n, m)
             self.astart = astart  # minimum value of statistic
             # Exact distribution of test statistic under null hypothesis
             # expressed as frequencies/counts/integers to maintain precision.
@@ -3223,106 +3232,6 @@ def levene(*samples, center='median', proportiontocut=0.05):
     W = numer / denom
     pval = distributions.f.sf(W, k-1, Ntot-k)  # 1 - cdf
     return LeveneResult(W, pval)
-
-
-@_deprecated("'binom_test' is deprecated in favour of"
-             " 'binomtest' from version 1.7.0 and will"
-             " be removed in Scipy 1.12.0.")
-def binom_test(x, n=None, p=0.5, alternative='two-sided'):
-    """Perform a test that the probability of success is p.
-
-    This is an exact, two-sided test of the null hypothesis
-    that the probability of success in a Bernoulli experiment
-    is `p`.
-
-    .. deprecated:: 1.10.0
-        `binom_test` is deprecated in favour of `binomtest` and will
-        be removed in Scipy 1.12.0.
-
-    Parameters
-    ----------
-    x : int or array_like
-        The number of successes, or if x has length 2, it is the
-        number of successes and the number of failures.
-    n : int
-        The number of trials.  This is ignored if x gives both the
-        number of successes and failures.
-    p : float, optional
-        The hypothesized probability of success.  ``0 <= p <= 1``. The
-        default value is ``p = 0.5``.
-    alternative : {'two-sided', 'greater', 'less'}, optional
-        Indicates the alternative hypothesis. The default value is
-        'two-sided'.
-
-    Returns
-    -------
-    p-value : float
-        The p-value of the hypothesis test.
-
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Binomial_test
-
-    Examples
-    --------
-    >>> from scipy import stats
-
-    A car manufacturer claims that no more than 10% of their cars are unsafe.
-    15 cars are inspected for safety, 3 were found to be unsafe. Test the
-    manufacturer's claim:
-
-    >>> stats.binom_test(3, n=15, p=0.1, alternative='greater')
-    0.18406106910639114
-
-    The null hypothesis cannot be rejected at the 5% level of significance
-    because the returned p-value is greater than the critical value of 5%.
-
-    """
-    x = atleast_1d(x).astype(np.int_)
-    if len(x) == 2:
-        n = x[1] + x[0]
-        x = x[0]
-    elif len(x) == 1:
-        x = x[0]
-        if n is None or n < x:
-            raise ValueError("n must be >= x")
-        n = np.int_(n)
-    else:
-        raise ValueError("Incorrect length for x.")
-
-    if (p > 1.0) or (p < 0.0):
-        raise ValueError("p must be in range [0,1]")
-
-    if alternative not in ('two-sided', 'less', 'greater'):
-        raise ValueError("alternative not recognized\n"
-                         "should be 'two-sided', 'less' or 'greater'")
-
-    if alternative == 'less':
-        pval = distributions.binom.cdf(x, n, p)
-        return pval
-
-    if alternative == 'greater':
-        pval = distributions.binom.sf(x-1, n, p)
-        return pval
-
-    # if alternative was neither 'less' nor 'greater', then it's 'two-sided'
-    d = distributions.binom.pmf(x, n, p)
-    rerr = 1 + 1e-7
-    if x == p * n:
-        # special case as shortcut, would also be handled by `else` below
-        pval = 1.
-    elif x < p * n:
-        i = np.arange(np.ceil(p * n), n+1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(x, n, p) +
-                distributions.binom.sf(n - y, n, p))
-    else:
-        i = np.arange(np.floor(p*n) + 1)
-        y = np.sum(distributions.binom.pmf(i, n, p) <= d*rerr, axis=0)
-        pval = (distributions.binom.cdf(y-1, n, p) +
-                distributions.binom.sf(x-1, n, p))
-
-    return min(1.0, pval)
 
 
 def _apply_func(x, g, func):
@@ -4104,9 +4013,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        res = WilcoxonResult(np.nan, np.nan)
+        NaN = _get_nan(d)
+        res = WilcoxonResult(NaN, NaN)
         if method == 'approx':
-            res.zstatistic = np.nan
+            res.zstatistic = NaN
         return res
 
     if mode == "auto":
