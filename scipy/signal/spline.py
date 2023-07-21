@@ -7,7 +7,7 @@ import warnings
 from . import _spline
 
 __all__ = [  # noqa: F822
-    'cspline2d', 'qspline2d', 'sepfir2d', 'symiirorder1', 'symiirorder2']
+    'cspline2d', 'qspline2d', 'sepfir2d', 'symiirorder2']
 
 
 def __dir__():
