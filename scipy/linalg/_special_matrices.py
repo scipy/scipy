@@ -8,7 +8,7 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix',
-           'sakurai', 'mikota_pair'
+           'sakurai', 'mikota_pair', 'laplacian'
           ]
 
 
@@ -1659,3 +1659,156 @@ class mikota_pair:
                         + z[1: -1, None] * x[1: -1, :]
                         + y[1:, None] * x[2:, :])
         return kx
+
+
+class laplacian:
+    """
+    Construct a sparse matrix and a callable associated with the Laplacian
+    on a uniform rectangular grid in 'N'>1 dimensions given by tuple 'shape'
+    and output its eigenvalues.
+
+    The Laplacian matrix `L` is square real symmetric negative definite.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the grid for the 'N' dimensional Laplacian of length `N`
+        where the shape 'n' of the Laplacian matrix 'L' is ''np.prod(shape)''
+    bc: 'D' or 'N'
+        The type of the boundary conditions on the boundaries of the grid
+
+    Returns
+    -------
+    laplacian_obj: custom object
+        The object containing the output
+    laplacian_obj.sparse : (n, n) sparse matrix, float
+        The Laplacian matrix in a Compressed Sparse Row sparse format
+    laplacian_obj.callable : callable object
+        The handle to a function that multiplies the Laplacian matrix
+        `L` of the shape `n`-by-`n` on the right by an input matrix `x`
+        of the shape `n`-by-`k` to output ``L @ x`` without constructing `L`
+    laplacian_obj.eigenvalues : (n, ) ndarray, float
+        Eigenvalues of the laplacian matrix (pair) ordered ascending
+    
+    .. versionadded:: 1.11.2
+
+    Notes
+    -----
+    Compared to the MATLAB/Octave implementation [1] of 1-, 2-, and 3-D
+    Laplacian, this code allows the arbitrary N-D case and the matrix-free
+    callable option, but is currently limited to pure Dirichlet or
+    Neumann boundary conditions only and outputs just the eigenvalues,
+    no eigenvectors.
+
+    The Laplacian matrix of a graph [2] of a rectangular grid corresponds to
+    the negative Laplacian with the Neumann conditions, i.e., ``bc = `N```.
+
+
+    References
+    ----------
+    .. [1] https://github.com/lobpcg/blopex/blob/master/blopex_tools/matlab/laplacian/laplacian.m
+    .. [2] https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csgraph.laplacian.html
+ 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import laplacian
+    >>> from scipy.linalg import eigh
+    >>> shape = (2, 3)
+    >>> bc = 'D'
+    >>> lap = laplacian(shape, bc)
+    >>> n = np.prod(shape)
+    >>> L = lap.sparse
+    >>> L
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 20 stored elements in Compressed Sparse Row format>
+    >>> L.A
+    array([[-4.,  1.,  0.,  1.,  0.,  0.],
+           [ 1., -4.,  1.,  0.,  1.,  0.],
+           [ 0.,  1., -4.,  0.,  0.,  1.],
+           [ 1.,  0.,  0., -4.,  1.,  0.],
+           [ 0.,  1.,  0.,  1., -4.,  1.],
+           [ 0.,  0.,  1.,  0.,  1., -4.]])
+    >>> np.array_equal(lap.callable(np.eye(n)), L.A)
+    True
+    >>> lap.eigenvalues
+    array([-6.41421356, -5.        , -4.41421356, -3.58578644, -3.        ,
+           -1.58578644])  
+    >>> eigvals = np.sort(eigh(L.A, eigvals_only=True))
+    >>> np.allclose(lap.eigenvalues, eigvals)
+    True
+
+    """
+    def __init__(self, shape, bc) -> None:
+        
+
+        def lsm(_shape, _bc):
+            from scipy.sparse import spdiags, kron, eye
+            N = len(_shape)
+            L = 0
+            for i in range(N):
+                diagonals = np.array([np.ones(_shape[i]),
+                                      -2*np.ones(_shape[i]),
+                                      np.ones(_shape[i])]
+                                     )
+                if _bc == 'N':
+                    diagonals[1,0] = -1.
+                    diagonals[1,-1] = -1.
+                else:
+                    pass
+                offsets = np.array([-1, 0, 1])
+                L_i = spdiags(diagonals, offsets, _shape[i], _shape[i])
+                for j in range(i):
+                    L_i = kron(eye(_shape[j]), L_i)
+                for j in range(i+1, N):
+                    L_i = kron(L_i, eye(_shape[j]))
+                L += L_i
+            return L
+
+
+        if len(shape) == 1:
+            raise NotImplementedError(
+                f"1D Laplacian given by shape={shape} is not implemented."
+                )
+        self.shape = shape
+        self.bc = bc
+        self.sparse = lsm(shape, bc)
+
+        # All eigenvalues of the discrete Laplacian operator for
+        # an ``N``-dimensional  regular grid of shape `shape` with ``h=1``.
+        # https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors_of_the_second_derivative
+
+        indices = np.indices(shape)
+        l = np.zeros(shape)
+        if bc == 'D': # pure Dirichlet boundary conditions
+            for j, n in zip(indices, shape):
+                l += -4 * np.sin(np.pi * (j + 1) / (2 * (n + 1)))**2
+        elif bc == 'N': # pure Neumann boundary conditions
+            l = -4 * np.sum(
+                np.sin(np.pi * indices / (2 * (np.array(shape)[:, None, None] + 1))) ** 2,
+                axis=0
+            )
+        else:
+            raise NotImplementedError(f"Boundary condition {bc} is not implemented.")
+        self.eigenvalues = np.sort(l.ravel())
+
+
+    def callable(self, x):
+        shape = self.shape
+        bc = self.bc
+        if bc == 'N':
+            raise NotImplementedError(
+                f"Neumann boundary condition {bc} is not yet implemented for callable."
+                )
+        else:
+            pass
+        assert np.prod(shape) == x.shape[0]
+        N = len(shape)
+        X = x.reshape(shape + (-1,))
+        Y = -2*N*X
+        for i in range(N):
+            Y += np.roll(X, 1, axis=i)
+            Y += np.roll(X, -1, axis=i)
+            Y[(slice(None),)*i+(0,)+(slice(None),)*(N-i-1)] -= np.roll(X, 1, axis=i)[(slice(None),)*i+(0,)+(slice(None),)*(N-i-1)]
+            Y[(slice(None),)*i+(-1,)+(slice(None),)*(N-i-1)] -= np.roll(X, -1, axis=i)[(slice(None),)*i+(-1,)+(slice(None),)*(N-i-1)]
+        return Y.reshape(-1, X.shape[-1])
