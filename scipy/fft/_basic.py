@@ -3,6 +3,10 @@ from . import _basic_np as npbasic
 import numpy as np
 
 
+def arg_err_msg(param):
+    return f'Providing {param!r} is only supported for numpy arrays'
+
+
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         plan=None):
     """
@@ -15,11 +19,11 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.fft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                            workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.fft(x, n, axis, norm)
@@ -40,11 +44,11 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.ifft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.ifft(x, n, axis, norm)
@@ -91,11 +95,11 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.fftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.fftn(x, s, axes, norm)
@@ -116,11 +120,11 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.ifftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.ifftn(x, s, axes, norm)
@@ -141,11 +145,11 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.rfft(x, n, axis, norm)
@@ -166,11 +170,11 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.irfft(x, n, axis, norm)
@@ -217,11 +221,11 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.rfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.rfftn(x, s, axes, norm)
@@ -242,11 +246,11 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.irfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                               workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.irfftn(x, s, axes, norm)
@@ -267,11 +271,11 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.hfft(x, n, axis, norm)
@@ -292,11 +296,11 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         return npbasic.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x is not False:
-        Exception
+        raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
-        Exception
+        raise ValueError(arg_err_msg("workers"))
     if plan is not None:
-        Exception
+        raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         return xp.fft.ihfft(x, n, axis, norm)
