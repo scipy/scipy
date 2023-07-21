@@ -341,6 +341,7 @@ class Dirs:
             if 'deb_system' in INSTALL_SCHEMES:
                 # debian patched python in use
                 install_cmd = dist.Distribution().get_command_obj('install')
+                install_cmd.select_scheme('deb_system')
                 install_cmd.finalize_options()
                 plat_path = Path(install_cmd.install_platlib)
             else:
