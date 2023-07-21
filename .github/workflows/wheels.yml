@@ -129,6 +129,7 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+          CIBW_PRERELEASE_PYTHONS: True
 
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
