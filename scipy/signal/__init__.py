@@ -317,6 +317,7 @@ from ._spline import (
     symiirorder2,
 )
 
+from ._splines import *
 from ._bsplines import *
 from ._filter_design import *
 from ._fir_filter_design import *
