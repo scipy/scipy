@@ -807,16 +807,11 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         if self._diff_cij is None:
             # c[i,j] = xi[i] - xi[j]
             c = self.xi[..., np.newaxis] - self.xi
-            # avoid division by 0 (diagonal entries are so far zero by construction)
-            np.fill_diagonal(c, 1)
-            # c[i,j] = w[j] / (xi[i] - xi[j])
-            c = self.wi / c
-
             # c[i,j] = (w[j] / w[i]) / (xi[i] - xi[j])
-            c = c / self.wi[..., np.newaxis]
+            c = np.divide(self.wi, c * self.wi[..., np.newaxis],
+                          out=np.zeros_like(c), where=c != 0)
 
-            # fill in correct diagonal entries: each column sums to 0
-            np.fill_diagonal(c, 0)
+            # calculate diagonal
             # c[j,j] = -sum_{i != j} c[i,j]
             d = -c.sum(axis=1)
             # c[i,j] = l_j(x_i)
