@@ -18,7 +18,7 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.fft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                            workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -45,7 +45,7 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.ifft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -98,7 +98,7 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.fftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -125,7 +125,7 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.ifftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -152,7 +152,7 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -179,7 +179,7 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -232,7 +232,7 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.rfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -259,7 +259,7 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.irfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                               workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -286,7 +286,7 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
@@ -313,7 +313,7 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     if isinstance(x, np.ndarray):
         return npbasic.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
-    if overwrite_x is not False:
+    if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
