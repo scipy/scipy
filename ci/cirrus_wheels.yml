@@ -61,6 +61,7 @@ cirrus_wheels_macos_arm64_task:
       _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"             
       PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
       PIP_PRE=1
+    CIBW_PRERELEASE_PYTHONS: True
     PKG_CONFIG_PATH: /opt/arm64-builds/lib/pkgconfig
     # assumes that the cmake config is in /usr/local/lib/cmake
     CMAKE_PREFIX_PATH: /opt/arm64-builds/
