@@ -4384,7 +4384,7 @@ def cheb2ap(N, rs):
     The returned filter prototype has attenuation of at least ``rs`` decibels in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first drops below ``-rs``.
+    defined as the point at which the attenuation first reaches ``rs``.
 
     See Also
     --------
