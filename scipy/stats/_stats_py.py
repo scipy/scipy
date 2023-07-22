@@ -65,7 +65,7 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -5594,7 +5594,8 @@ def pointbiserialr(x, y):
     return res
 
 
-def kendalltau(x, y, initial_lexsort=_NoValue, nan_policy='propagate',
+@_deprecate_positional_args(version="1.14")
+def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
