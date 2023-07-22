@@ -106,8 +106,10 @@ jobs:
 
       - name: preliminary setup
         run: |
-          # allows cibuildwheel to install an unreleased numpy nightly wheel for cp312
+          # allows cibuildwheel to install an unreleased numpy nightly wheel
+          # an unrelease cp312
           echo CIBW_ENVIRONMENT="PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1" >> $GITHUB_ENV
+          echo "CIBW_PRERELEASE_PYTHONS=True" >> $GITHUB_ENV
         if: ${{ matrix.python[0] == 'cp312' }}
 
       - name: win_amd64 - install rtools
@@ -135,10 +137,6 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
-
-          # allows unreleased Python versions (cp312) to be used for building
-          # wheels
-          CIBW_PRERELEASE_PYTHONS: True
 
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
