@@ -12,7 +12,7 @@ import warnings
 from collections import namedtuple
 from itertools import product
 import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies
+from hypothesis import given, strategies, assume
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -3273,18 +3273,6 @@ class TestMoments:
             stats.kurtosis([])
 
 
-def _moment_warns(data):
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        for axis in range(len(data.shape)):
-            try:
-                var = stats.moment(data, moment=2, axis=axis)
-                assert var > 0
-                return True
-            except Exception:
-                return False
-
-
 class TestStudentTest:
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
@@ -3383,16 +3371,32 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
-    shape = npst.array_shapes(min_dims=1, min_side=2)
-    alpha = strategies.floats(1e-8, 1-1e-8, allow_nan=False)
-    data = npst.arrays(dtype=npst.floating_dtypes(),
-                       shape=shape).filter(_moment_warns)
-    @given(data=data, alpha=alpha)
+    @staticmethod
+    def pvalue_ci_test_strategy():
+        alpha = strategies.floats(1e-8, 1-1e-8, allow_nan=False)
+        dtype = npst.floating_dtypes()
+        elements = dict(allow_nan=False, allow_infinity=False)
+        shape = npst.array_shapes(min_dims=1, min_side=2)
+        data = npst.arrays(dtype=dtype, elements=elements, shape=shape)
+        return dict(alpha=alpha, data=data)
+
+    @given(**pvalue_ci_test_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
     def test_pvalue_ci(self, data, alpha, alternative):
         # test the relationship between one-sided p-values and confidence intervals
         rng = np.random.default_rng(435892655436)
         axis = rng.integers(0, len(data.shape))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            try:
+                var = stats.moment(data, moment=2, axis=axis)
+                assert var > 0
+                valid_variance = True
+            except Exception:
+                valid_variance = False
+
+        assume(valid_variance)
         res = stats.ttest_1samp(data, 0, alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
         popmean = l if alternative == 'greater' else u
