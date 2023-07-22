@@ -597,6 +597,16 @@ def hstack(blocks, format=None, dtype=None):
         The data-type of the output matrix. If not given, the dtype is
         determined from that of `blocks`.
 
+    Returns
+    -------
+    new_array : sparse matrix or array
+        If any block in blocks is a sparse array, return a sparse array.
+        Otherwise return a sparse matrix.
+
+        If you want a sparse array built from blocks that are not sparse
+        arrays, use `block_array(hstack(blocks))` or convert one block
+        e.g. `blocks[0] = csr_array(blocks[0])`.
+
     See Also
     --------
     vstack : stack sparse matrices vertically (row wise)
@@ -633,6 +643,16 @@ def vstack(blocks, format=None, dtype=None):
     dtype : dtype, optional
         The data-type of the output array. If not given, the dtype is
         determined from that of `blocks`.
+
+    Returns
+    -------
+    new_array : sparse matrix or array
+        If any block in blocks is a sparse array, return a sparse array.
+        Otherwise return a sparse matrix.
+
+        If you want a sparse array built from blocks that are not sparse
+        arrays, use `block_array(vstack(blocks))` or convert one block
+        e.g. `blocks[0] = csr_array(blocks[0])`.
 
     See Also
     --------
