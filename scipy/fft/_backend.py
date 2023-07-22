@@ -1,5 +1,5 @@
 import scipy._lib.uarray as ua
-from . import _fftlog
+from . import _fftlog_np
 from . import _pocketfft
 
 
@@ -19,7 +19,7 @@ class _ScipyBackend:
 
         fn = getattr(_pocketfft, method.__name__, None)
         if fn is None:
-            fn = getattr(_fftlog, method.__name__, None)
+            fn = getattr(_fftlog_np, method.__name__, None)
         if fn is None:
             return NotImplemented
         return fn(*args, **kwargs)
