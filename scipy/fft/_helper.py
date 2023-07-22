@@ -25,18 +25,26 @@ def fftfreq(n, d=1.0, *, xp=np, device=None):
     """
     Implements the array API specification of fftfreq.
     """
+    # device is currently not supported in numpy, cupy or array-api-compat
+    if device is not None:
+        raise ValueError(
+            "Providing the 'device' parameter is not yet supported.")
     if hasattr(xp, 'fft'):
-        return xp.fft.fftfreq(n, d, device=device)
-    return np.fft.fftfreq(n, d, device=device)
+        return xp.fft.fftfreq(n, d=d)
+    return np.fft.fftfreq(n, d=d)
 
 
 def rfftfreq(n, d=1.0, *, xp=np, device=None):
     """
     Implements the array API specification of rfftfreq.
     """
+    # device is currently not supported in numpy, cupy or array-api-compat
+    if device is not None:
+        raise ValueError(
+            "Providing the 'device' parameter is not yet supported.")
     if hasattr(xp, 'fft'):
-        return xp.fft.rfftfreq(n, d, device=device)
-    return np.fft.rfftfreq(n, d, device=device)
+        return xp.fft.rfftfreq(n, d=d)
+    return np.fft.rfftfreq(n, d=d)
 
 
 def fftshift(x, axes=None):
