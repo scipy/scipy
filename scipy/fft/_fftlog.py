@@ -1,8 +1,5 @@
 import numpy as np
-from warnings import warn
 from scipy._lib._array_api import array_namespace
-from ._basic import rfft, irfft
-from ..special import loggamma, poch
 from . import _fftlog_multimethods as npfft_log_mm
 from . import _fftlog_np as npfft_log
 

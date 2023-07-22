@@ -1,6 +1,5 @@
 import numpy as np
 from scipy._lib._array_api import array_namespace
-from ._pocketfft import helper as _helper
 from . import _helper_np as nphelper
 
 
