@@ -107,8 +107,7 @@ jobs:
 
       - name: preliminary setup
         run: |
-          echo "CIBW_BEFORE_BUILD=pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy" >> $GITHUB_ENV
-          echo "PIP_NO_BUILD_ISOLATION=1" >> $GITHUB_ENV
+          echo CIBW_ENVIRONMENT="PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1" >> $GITHUB_ENV
         if: ${{ matrix.python[0] == 'cp312' }}
 
       - name: win_amd64 - install rtools
@@ -133,7 +132,6 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.14.1
         env:
-          CIBW_BUILD_FRONTEND: "build"
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
