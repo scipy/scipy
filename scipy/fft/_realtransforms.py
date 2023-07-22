@@ -106,5 +106,4 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     x = np.asarray(x)
     y = nprt.idst(x, type=type, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                   workers=workers, orthogonalize=orthogonalize)
-
     return xp.asarray(y)

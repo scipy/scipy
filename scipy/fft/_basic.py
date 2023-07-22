@@ -26,9 +26,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.fft(x, n, axis, norm)
+        return xp.fft.fft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.fft(x, n, axis, norm)
+    y = npbasic.fft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -51,9 +51,9 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.ifft(x, n, axis, norm)
+        return xp.fft.ifft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.ifft(x, n, axis, norm)
+    y = npbasic.ifft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -102,9 +102,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.fftn(x, s, axes, norm)
+        return xp.fft.fftn(x, s=s, axes=axes, norm=norm)
     x = np.asarray(x)
-    y = npbasic.fftn(x, s, axes, norm)
+    y = npbasic.fftn(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
 
 
@@ -127,9 +127,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.ifftn(x, s, axes, norm)
+        return xp.fft.ifftn(x, s=s, axes=axes, norm=norm)
     x = np.asarray(x)
-    y = npbasic.ifftn(x, s, axes, norm)
+    y = npbasic.ifftn(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
 
 
@@ -152,9 +152,9 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.rfft(x, n, axis, norm)
+        return xp.fft.rfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.rfft(x, n, axis, norm)
+    y = npbasic.rfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -177,9 +177,9 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.irfft(x, n, axis, norm)
+        return xp.fft.irfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.irfft(x, n, axis, norm)
+    y = npbasic.irfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -228,9 +228,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.rfftn(x, s, axes, norm)
+        return xp.fft.rfftn(x, s=s, axes=axes, norm=norm)
     x = np.asarray(x)
-    y = npbasic.rfftn(x, s, axes, norm)
+    y = npbasic.rfftn(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
 
 
@@ -253,9 +253,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.irfftn(x, s, axes, norm)
+        return xp.fft.irfftn(x, s=s, axes=axes, norm=norm)
     x = np.asarray(x)
-    y = npbasic.irfftn(x, s, axes, norm)
+    y = npbasic.irfftn(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
 
 
@@ -278,9 +278,9 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.hfft(x, n, axis, norm)
+        return xp.fft.hfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.hfft(x, n, axis, norm)
+    y = npbasic.hfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -303,9 +303,9 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("plan"))
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.ihfft(x, n, axis, norm)
+        return xp.fft.ihfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = npbasic.ihfft(x, n, axis, norm)
+    y = npbasic.ihfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 

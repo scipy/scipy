@@ -52,9 +52,9 @@ def fftshift(x, axes=None):
     """
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.fftshift(x, axes)
+        return xp.fft.fftshift(x, axes=axes)
     x = np.asarray(x)
-    y = np.fft.fftshift(x, axes)
+    y = np.fft.fftshift(x, axes=axes)
     return xp.asarray(y)
 
 
@@ -64,7 +64,7 @@ def ifftshift(x, axes=None):
     """
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
-        return xp.fft.ifftshift(x, axes)
+        return xp.fft.ifftshift(x, axes=axes)
     x = np.asarray(x)
-    y = np.fft.ifftshift(x, axes)
+    y = np.fft.ifftshift(x, axes=axes)
     return xp.asarray(y)
