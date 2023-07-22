@@ -10,9 +10,9 @@ def arg_err_msg(param):
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of fft.
+    For non-numpy arrays, this implements the array API specification of fft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -35,9 +35,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of ifft.
+    For non-numpy arrays, this implements the array API specification of ifft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -86,9 +86,9 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of fftn.
+    For non-numpy arrays, this implements the array API specification of fftn.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -111,9 +111,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of ifftn.
+    For non-numpy arrays, this implements the array API specification of ifftn.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -136,9 +136,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of rfft.
+    For non-numpy arrays, this implements the array API specification of rfft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -161,9 +161,9 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of irfft.
+    For non-numpy arrays, this implements the array API specification of irfft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -212,9 +212,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of rfftn.
+    For non-numpy arrays, this implements the array API specification of rfftn.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -237,9 +237,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of irfftn.
+    For non-numpy arrays, this implements the array API specification of irfftn.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -262,9 +262,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of hfft.
+    For non-numpy arrays, this implements the array API specification of hfft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):
@@ -287,9 +287,9 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    For non-numpy arrays, this implements the Array API specification of ihfft.
+    For non-numpy arrays, this implements the array API specification of ihfft.
     For numpy arrays, see the documentation in _basic_np.py.
-    Note that if arguments outside of those in the Array API specification
+    Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
     if isinstance(x, np.ndarray):

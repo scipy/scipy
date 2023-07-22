@@ -23,7 +23,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
 def fftfreq(n, d=1.0, *, xp=np, device=None):
     """
-    Implements the Array API specification of fftfreq.
+    Implements the array API specification of fftfreq.
     """
     if hasattr(xp, 'fft'):
         return xp.fft.fftfreq(n, d, device=device)
@@ -32,7 +32,7 @@ def fftfreq(n, d=1.0, *, xp=np, device=None):
 
 def rfftfreq(n, d=1.0, *, xp=np, device=None):
     """
-    Implements the Array API specification of rfftfreq.
+    Implements the array API specification of rfftfreq.
     """
     if hasattr(xp, 'fft'):
         return xp.fft.rfftfreq(n, d, device=device)
@@ -41,7 +41,7 @@ def rfftfreq(n, d=1.0, *, xp=np, device=None):
 
 def fftshift(x, axes=None):
     """
-    Implements the Array API specification of fftshift.
+    Implements the array API specification of fftshift.
     """
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
@@ -53,7 +53,7 @@ def fftshift(x, axes=None):
 
 def ifftshift(x, axes=None):
     """
-    Implements the Array API specification of ifftshift.
+    Implements the array API specification of ifftshift.
     """
     xp = array_namespace(x)
     if hasattr(xp, 'fft'):
