@@ -107,9 +107,8 @@ jobs:
       - name: preliminary setup
         run: |
           # allows cibuildwheel to install an unreleased numpy nightly wheel
-          # an unrelease cp312
+          # on an unreleased cp312
           echo CIBW_ENVIRONMENT="PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1" >> $GITHUB_ENV
-          echo "CIBW_PRERELEASE_PYTHONS=True" >> $GITHUB_ENV
         if: ${{ matrix.python[0] == 'cp312' }}
 
       - name: win_amd64 - install rtools
@@ -137,6 +136,10 @@ jobs:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+          CIBW_PRERELEASE_PYTHONS: True
+
+          # required so that cp312 can grab a nightly wheel
+          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1
 
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
@@ -150,6 +153,9 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=10.9
             MACOS_DEPLOYMENT_TARGET=10.9
             _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
+            PIP_PRE=1
+            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&
             DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
