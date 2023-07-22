@@ -17,7 +17,7 @@ def main(ctx):
     # - commit message containing [wheel build]
     ######################################################################
 
-    if env.get("CIRRUS_REPO_FULL_NAME") != "scipy/scipy":
+    if env.get("CIRRUS_REPO_FULL_NAME") != "andyfaff/scipy":
         return []
 
     if env.get("CIRRUS_CRON", "") == "nightly":
