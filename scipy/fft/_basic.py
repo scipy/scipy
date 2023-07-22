@@ -4,7 +4,7 @@ import numpy as np
 
 
 def arg_err_msg(param):
-    return f'Providing {param!r} is only supported for numpy arrays'
+    return f'Providing {param!r} is only supported for numpy arrays.'
 
 
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
