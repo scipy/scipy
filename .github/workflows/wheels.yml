@@ -136,7 +136,7 @@ jobs:
           CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1
 
           CIBW_ENVIRONMENT_WINDOWS: >
-            PKG_CONFIG_PATH: c:/opt/64/lib/pkgconfig
+            PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
             PIP_PRE=1
             PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 
