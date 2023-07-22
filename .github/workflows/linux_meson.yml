@@ -278,7 +278,7 @@ jobs:
 
         # Install OpenBLAS a la cibuildwheel.
         chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh .        
+        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
 
     - name: Caching Python dependencies
       uses: actions/cache@v3
