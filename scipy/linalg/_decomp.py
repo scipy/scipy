@@ -26,7 +26,7 @@ from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
 from scipy._lib._util import _asarray_validated
 from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 _I = cast['F'](1j)
@@ -267,7 +267,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     return w, vr
 
 
-def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
+@_deprecate_positional_args(version="1.14.0")
+def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
          check_finite=True, subset_by_index=None, subset_by_value=None,
          driver=None):
@@ -898,7 +899,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
                homogeneous_eigvals=homogeneous_eigvals)
 
 
-def eigvalsh(a, b=None, lower=True, overwrite_a=False,
+@_deprecate_positional_args(version="1.14.0")
+def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
              overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
              check_finite=True, subset_by_index=None, subset_by_value=None,
              driver=None):
