@@ -15,7 +15,10 @@ from urllib.error import HTTPError
 
 OPENBLAS_V = '0.3.21.dev'
 OPENBLAS_LONG = 'v0.3.20-571-g3dec11c6'
-BASE_LOC = 'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
+BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
+NIGHTLY_BASE_LOC = (
+    'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
+)
 
 SUPPORTED_PLATFORMS = [
     'linux-aarch64',
@@ -95,7 +98,9 @@ def get_linux(arch):
         return get_musllinux(arch)
 
 
-def download_openblas(target, plat, ilp64, *, openblas_version=OPENBLAS_LONG):
+def download_openblas(
+        target, plat, ilp64, *, openblas_version=OPENBLAS_LONG, base_loc=BASE_LOC
+):
     osname, arch = plat.split("-")
     fnsuffix = {None: "", "64_": "64_"}[ilp64]
     filename = ''
@@ -121,7 +126,7 @@ def download_openblas(target, plat, ilp64, *, openblas_version=OPENBLAS_LONG):
 
     if not suffix:
         return None
-    BASEURL = f'{BASE_LOC}/{openblas_version}/download'
+    BASEURL = f'{base_loc}/{openblas_version}/download'
     filename = f'{BASEURL}/openblas{fnsuffix}-{openblas_version}-{suffix}'
     req = Request(url=filename, headers=headers)
 
@@ -161,8 +166,9 @@ def setup_openblas(plat=get_plat(), ilp64=get_ilp64(), nightly=False):
     if not plat:
         raise ValueError('unknown platform')
     openblas_version = "HEAD" if nightly else OPENBLAS_LONG
+    base_loc = NIGHTLY_BASE_LOC if nightly else BASE_LOC
     typ = download_openblas(
-        tmp, plat, ilp64, openblas_version=openblas_version
+        tmp, plat, ilp64, openblas_version=openblas_version, base_loc=base_loc
     )
     if not typ:
         return ''
