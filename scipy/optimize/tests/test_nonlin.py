@@ -335,11 +335,11 @@ class TestLinear:
 
         sol = nonlin.nonlin_solve(func, np.zeros(b.shape[0]), jac, maxiter=2,
                                   f_tol=1e-6, line_search=None, verbose=0)
-        assert_(np.allclose(A @ sol, b, atol=1e-6))
+        np.testing.assert_allclose(A @ sol, b, atol=1e-6)
         # test jac input as array -- not a function
         sol = nonlin.nonlin_solve(func, np.zeros(b.shape[0]), A, maxiter=2,
                                   f_tol=1e-6, line_search=None, verbose=0)
-        assert_(np.allclose(A @ sol, b, atol=1e-6))
+        np.testing.assert_allclose(A @ sol, b, atol=1e-6)
 
     def test_jac_sparse(self):
         A = csr_array([[1, 2], [2, 1]])
