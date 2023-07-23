@@ -305,11 +305,44 @@ class _lil_base(_spbase, IndexMixin):
                                     self.rows, self.data,
                                     i, j, x)
 
-    def _set_arrayXarray_sparse(self, row, col, x):
-        # Fall back to densifying x
+    def _clear_cells(self, row, col):
+        # the indexing result of self[row, col] is 1D, so the call to nonzero
+        # is performed on a 1D sparse matrix, therefore nonzero rows are
+        # irrelevant
+        _, nnz_cols = self[row, col].nonzero()
+        mapped_nnz_rows = row[nnz_cols]
+        mapped_nnz_cols = col[nnz_cols]
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data,
+                                           mapped_nnz_rows, mapped_nnz_cols,
+                                           np.zeros_like(mapped_nnz_rows))
+
+    def _densify_set(self, row, col, x):
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
+
+    def _set_arrayXarray_sparse(self, row, col, x):
+        x_nrows, x_ncols = x.shape
+        if x_nrows == x_ncols == 1:
+            self._densify_set(row, col, x)
+            return
+        elif (not isinstance(row, np.ndarray) or row.ndim != 2 or
+              not isinstance(col, np.ndarray) or col.ndim != 2):
+            self._densify_set(row, col, x)
+            return
+
+        # clear the block
+        self._clear_cells(row.flatten(), col.flatten())
+
+        # extract sparsity structure from x
+        x_nnz_rows, x_nnz_cols = x.nonzero()
+        row = row[x_nnz_rows, x_nnz_cols].flatten()
+        col = col[x_nnz_rows, x_nnz_cols].flatten()
+        # write in the locations specified by the sparsity structure
+        _csparsetools.lil_fancy_linear_set(self.shape[0], self.shape[1],
+                                           self.rows, self.data, row, col,
+                                           x.data)
 
     def __setitem__(self, key, x):
         if isinstance(key, tuple) and len(key) == 2:
@@ -519,6 +552,13 @@ def _prepare_index_for_memoryview(i, j, x=None):
         return i, j, x
     else:
         return i, j
+
+
+def _nd_slice_to_indexes(n_rows, n_cols, row_slice, col_slice):
+    row_slices = np.arange(n_rows)[row_slice]
+    col_slices = np.arange(n_cols)[col_slice]
+    rows, cols = np.meshgrid(row_slices, col_slices)
+    return rows, cols
 
 
 def isspmatrix_lil(x):
