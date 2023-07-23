@@ -20,12 +20,18 @@ class TestIsotonicRegression:
         # Only first 3 elements of r are changed.
         assert_almost_equal(r, [0, 6, 7, -1, -1, -1, -1, -1])
 
-    @pytest.mark.parametrize("w", [None, np.ones(7)])
-    def test_simple_isotonic_regression(self, w):
+    @pytest.mark.parametrize("y_dtype", [np.float64, np.float32, np.int64, np.int32])
+    @pytest.mark.parametrize("w_dtype", [np.float64, np.float32, np.int64, np.int32])
+    @pytest.mark.parametrize("w", [None, "ones"])
+    def test_simple_isotonic_regression(self, w, w_dtype, y_dtype):
         # Test case of Busing 2020
         # https://doi.org/10.18637/jss.v102.c01
-        y = np.array([8, 4, 8, 2, 2, 0, 8], dtype=np.float64)
+        y = np.array([8, 4, 8, 2, 2, 0, 8], dtype=y_dtype)
+        if w is not None:
+            w = np.ones_like(y, dtype=w_dtype)
         x, w, r = isotonic_regression(y, weights=w)
+        assert x.dtype == np.float64
+        assert w.dtype == np.float64
         assert_almost_equal(x, [4, 4, 4, 4, 4, 4, 8])
         assert_almost_equal(w, [6, 1])
         assert_almost_equal(r, [0, 6, 7])
