@@ -15,7 +15,7 @@ from urllib.error import HTTPError
 
 OPENBLAS_V = '0.3.21.dev'
 OPENBLAS_LONG = 'v0.3.20-571-g3dec11c6'
-BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
+BASE_LOC = 'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
 
 SUPPORTED_PLATFORMS = [
     'linux-aarch64',
