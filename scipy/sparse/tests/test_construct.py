@@ -248,9 +248,29 @@ class TestConstructUtils:
         for m in [3, 5]:
             for n in [3, 5]:
                 for k in range(-5,6):
-                    assert_equal(construct.eye(m, n, k=k).toarray(), np.eye(m, n, k=k))
-                    if m == n:
-                        assert_equal(construct.eye(m, k=k).toarray(), np.eye(m, n, k=k))
+                    # scipy.sparse.eye deviates from np.eye here. np.eye will
+                    # create arrays of all 0's when the diagonal offset is
+                    # greater than the size of the array. For sparse arrays
+                    # this makes less sense, especially as it results in dia
+                    # arrays with negative diagonals. Therefore sp.sparse.eye
+                    # validates that diagonal offsets fall within the shape of
+                    # the array. See gh-18555.
+                    if (k > 0 and k > n) or (k < 0 and abs(k) > m):
+                        with pytest.raises(
+                            ValueError, match="Offset.*out of bounds"
+                        ):
+                            construct.eye(m, n, k=k)
+
+                    else:
+                        assert_equal(
+                            construct.eye(m, n, k=k).toarray(),
+                            np.eye(m, n, k=k)
+                        )
+                        if m == n:
+                            assert_equal(
+                                construct.eye(m, k=k).toarray(),
+                                np.eye(m, n, k=k)
+                            )
 
     def test_eye_one(self):
         assert_equal(construct.eye(1).toarray(), [[1]])

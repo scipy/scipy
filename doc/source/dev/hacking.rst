@@ -290,7 +290,7 @@ improvements, and submit your first PR!
 
 .. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
 
-.. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
+.. _bsd pitch: https://web.archive.org/web/20130922065958/https://nipy.sourceforge.net/software/license/johns_bsd_pitch.html
 
 .. _Pytest: https://pytest.org/
 

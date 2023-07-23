@@ -3042,7 +3042,7 @@ class rv_discrete(rv_generic):
     values : tuple of two array_like, optional
         ``(xk, pk)`` where ``xk`` are integers and ``pk`` are the non-zero
         probabilities between 0 and 1 with ``sum(pk) = 1``. ``xk``
-        and ``pk`` must have the same shape.
+        and ``pk`` must have the same shape, and ``xk`` must be unique.
     inc : integer, optional
         Increment for the support of the distribution.
         Default is 1. (other values have not been tested)
@@ -3889,6 +3889,8 @@ class rv_sample(rv_discrete):
             raise ValueError("All elements of pk must be non-negative.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
+        if not len(set(np.ravel(xk))) == np.size(xk):
+            raise ValueError("xk may not contain duplicate values.")
 
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)

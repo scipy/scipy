@@ -2,7 +2,7 @@ import operator
 from math import prod
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)

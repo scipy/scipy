@@ -6,6 +6,8 @@ import operator
 import numpy as np
 import math
 import warnings
+from collections import defaultdict
+from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -14,6 +16,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
 from ._comb import _comb_int
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = [
@@ -68,6 +71,7 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'stirling2',
     'y0_zeros',
     'y1_zeros',
     'y1p_zeros',
@@ -919,14 +923,14 @@ def yvp(v, z, n=1):
     n : int, default 1
         Order of derivative. For 0 returns the BEssel function `yv`
 
-    See Also
-    --------
-    yv
-
     Returns
     -------
     scalar or ndarray
         nth derivative of the Bessel function.
+
+    See Also
+    --------
+    yv : Bessel functions of the second kind
 
     Notes
     -----
@@ -1407,6 +1411,12 @@ def erf_zeros(nt):
     The locations of the zeros of erf : ndarray (complex)
         Complex values at which zeros of erf(z)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -1418,12 +1428,6 @@ def erf_zeros(nt):
     >>> special.erf(special.erf_zeros(1))
     array([4.95159469e-14-1.16407394e-16j])
 
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
@@ -1432,6 +1436,16 @@ def erf_zeros(nt):
 
 def fresnelc_zeros(nt):
     """Compute nt complex zeros of cosine Fresnel integral C(z).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnelc_zeros: ndarray
+        Zeros of the cosine Fresnel integral
 
     References
     ----------
@@ -1448,6 +1462,16 @@ def fresnelc_zeros(nt):
 def fresnels_zeros(nt):
     """Compute nt complex zeros of sine Fresnel integral S(z).
 
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    fresnels_zeros: ndarray
+        Zeros of the sine Fresnel integral
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -1462,6 +1486,18 @@ def fresnels_zeros(nt):
 
 def fresnel_zeros(nt):
     """Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
+
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute
+
+    Returns
+    -------
+    zeros_sine: ndarray
+        Zeros of the sine Fresnel integral
+    zeros_cosine : ndarray
+        Zeros of the cosine Fresnel integral
 
     References
     ----------
@@ -1480,6 +1516,20 @@ def assoc_laguerre(x, n, k=0.0):
 
     The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
     with weighting function ``exp(-x) * x**k`` with ``k > -1``.
+
+    Parameters
+    ----------
+    x : float or ndarray
+        Points where to evaluate the Laguerre polynomial
+    n : int
+        Degree of the Laguerre polynomial
+    k : int
+        Order of the Laguerre polynomial
+
+    Returns
+    -------
+    assoc_laguerre: float or ndarray
+        Associated laguerre polynomial values
 
     Notes
     -----
@@ -2046,6 +2096,12 @@ def ai_zeros(nt):
     aip : ndarray
         Values of Ai'(x) evaluated at first `nt` zeros of Ai(x)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -2058,12 +2114,6 @@ def ai_zeros(nt):
     array([ 0.53565666, -0.41901548,  0.38040647])
     >>> aip
     array([ 0.70121082, -0.80311137,  0.86520403])
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
     kf = 1
@@ -2097,6 +2147,12 @@ def bi_zeros(nt):
     bip : ndarray
         Values of Bi'(x) evaluated at first `nt` zeros of Bi(x)
 
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
     Examples
     --------
     >>> from scipy import special
@@ -2109,12 +2165,6 @@ def bi_zeros(nt):
     array([-0.45494438,  0.39652284, -0.36796916])
     >>> bip
     array([ 0.60195789, -0.76031014,  0.83699101])
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
     kf = 2
@@ -2588,7 +2638,8 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=None):
+@_deprecate_positional_args(version="1.14")
+def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2613,7 +2664,7 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
 
         .. deprecated:: 1.9.0
             Using `legacy` is deprecated and will removed by
-            Scipy 1.13.0. If you want to keep the legacy behaviour, cast
+            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
             your inputs directly, e.g.
             ``comb(int(your_N), int(your_k), exact=True)``.
 
@@ -2647,17 +2698,17 @@ def comb(N, k, exact=False, repetition=False, legacy=None):
     220
 
     """
-    if legacy is not None:
+    if legacy is not _NoValue:
         warnings.warn(
             "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.13.0. If you want to keep the legacy behaviour, cast "
+            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
             "your inputs directly, e.g. "
             "'comb(int(your_N), int(your_k), exact=True)'.",
             DeprecationWarning,
             stacklevel=2
         )
     if repetition:
-        return comb(N + k - 1, k, exact, legacy=legacy)
+        return comb(N + k - 1, k, exact=exact, legacy=legacy)
     if exact:
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here
@@ -2930,7 +2981,11 @@ def factorial(n, exact=False):
         return _exact_factorialx_array(n)
     # we do not raise for non-integers with exact=True due to
     # historical reasons, though deprecation would be possible
-    return _ufuncs._factorial(n)
+    res = _ufuncs._factorial(n)
+    if isinstance(n, np.ndarray):
+        # _ufuncs._factorial does not maintain 0-dim arrays
+        return np.array(res)
+    return res
 
 
 def factorial2(n, exact=False):
@@ -3086,6 +3141,129 @@ def factorialk(n, k, exact=True):
     return _exact_factorialx_array(n, k=k)
 
 
+def stirling2(N, K, *, exact=True):
+    r"""Generate Stirling number(s) of the second kind.
+
+    Stirling numbers of the second kind count the number of ways to
+    partition a set with N elements into K non-empty subsets.
+
+    The values this function returns are calculated using a dynamic
+    program which avoids redundant computation across the subproblems
+    in the solution. For array-like input, this implementation also 
+    avoids redundant computation across the different Stirling number
+    calculations.
+
+    The numbers are sometimes denoted
+
+    .. math::
+
+        {N \brace{K}}
+
+    see [1]_ for details. This is often expressed-verbally-as
+    "N subset K".
+
+    Parameters
+    ----------
+    N : int, ndarray
+        Number of things.
+    K : int, ndarray
+        Number of non-empty subsets taken.
+    exact : bool, optional
+        This keyword is reserved for a planned future implementation
+        that allows trading speed for accuracy.
+
+    Returns
+    -------
+    val : int, float, ndarray
+        The number of partitions.
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+
+    Notes
+    -----
+    - If N < 0, or K < 0, then 0 is returned.
+    - If K > N, then 0 is returned.
+
+    The output type will always be `int` or ndarray of `object`.
+    The input must contain either numpy or python integers otherwise a
+    TypeError is raised.
+
+    References
+    ----------
+    .. [1] R. L. Graham, D. E. Knuth and O. Patashnik, "Concrete
+        Mathematics: A Foundation for Computer Science," Addison-Wesley
+        Publishing Company, Boston, 1989. Chapter 6, page 258.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import stirling2
+    >>> k = np.array([3, -1, 3])
+    >>> n = np.array([10, 10, 9])
+    >>> stirling2(n, k)
+    array([9330, 0, 3025], dtype=object)
+
+    """
+    output_is_scalar = np.isscalar(N) and np.isscalar(K)
+    if exact:
+        # make a min-heap of unique (n,k) pairs
+        N, K = asarray(N), asarray(K)
+        if not np.issubdtype(N.dtype, np.integer):
+            raise TypeError("Argument `N` must contain only integers")
+        if not np.issubdtype(K.dtype, np.integer):
+            raise TypeError("Argument `K` must contain only integers")
+        nk_pairs = list(
+            set([(n.take(0), k.take(0))
+                 for n, k in np.nditer([N, K], ['refs_ok'])])
+        )
+        heapify(nk_pairs)
+        # base mapping for small values
+        snsk_vals = defaultdict(int)
+        for pair in [(0, 0), (1, 1), (2, 1), (2, 2)]:
+            snsk_vals[pair] = 1
+        n_old, n_row = 2, [0, 1, 1]
+        # for each pair in the min-heap, calculate the value, store for later
+        while nk_pairs:
+            n, k = heappop(nk_pairs)
+            if n < 2 or k > n or k <= 0:
+                continue
+            elif k == n or k == 1:
+                snsk_vals[(n, k)] = 1
+                continue
+            elif n != n_old:
+                num_iters = n - n_old
+                while num_iters > 0:
+                    n_row.append(1)
+                    # traverse from back to remove second row
+                    for j in range(len(n_row)-2, 1, -1):
+                        n_row[j] = n_row[j]*j + n_row[j-1]
+                    num_iters -= 1
+                snsk_vals[(n, k)] = n_row[k]
+            else:
+                snsk_vals[(n, k)] = n_row[k]
+            n_old, n_row = n, n_row
+        # for each pair in the map, fetch the value, and populate the array
+        it = np.nditer(
+            [N, K, None],
+            ['buffered', 'refs_ok'],
+            [['readonly'], ['readonly'], ['writeonly', 'allocate']],
+            op_dtypes=[object, object, object],
+        )
+        with it:
+            while not it.finished:
+                it[2] = snsk_vals[(int(it[0]), int(it[1]))]
+                it.iternext()
+            output = it.operands[2]
+            # If N and K were both scalars, convert output to scalar.
+            if output_is_scalar:
+                output = output.take(0)
+            return output
+    else:  # this branch will house future Temme approx
+        raise NotImplementedError()
+
+
 def zeta(x, q=None, out=None):
     r"""
     Riemann or Hurwitz zeta function.
@@ -3104,6 +3282,10 @@ def zeta(x, q=None, out=None):
     out : array_like
         Values of zeta(x).
 
+    See Also
+    --------
+    zetac
+
     Notes
     -----
     The two-argument version is the Hurwitz zeta function
@@ -3114,10 +3296,6 @@ def zeta(x, q=None, out=None):
 
     see [dlmf]_ for details. The Riemann zeta function corresponds to
     the case when ``q = 1``.
-
-    See Also
-    --------
-    zetac
 
     References
     ----------

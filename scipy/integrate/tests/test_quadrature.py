@@ -231,11 +231,13 @@ class TestQuadrature:
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
-    def test_simpson_even_is_deprecated(self):
+    def test_simpson_deprecations(self):
         x = np.linspace(0, 3, 4)
         y = x**2
-        with pytest.deprecated_call():
+        with pytest.deprecated_call(match="The 'even' keyword is deprecated"):
             simpson(y, x=x, even='first')
+        with pytest.deprecated_call(match="use keyword arguments"):
+            simpson(y, x)
 
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):
@@ -253,10 +255,11 @@ class TestQuadrature:
         # Basic coverage test for the alias
         y = np.arange(5)
         x = 2**y
-        assert_allclose(
-            simpson(y, x=x, dx=0.5),
-            simps(y, x=x, dx=0.5)
-        )
+        with pytest.deprecated_call(match="simpson"):
+            assert_allclose(
+                simpson(y, x=x, dx=0.5),
+                simps(y, x=x, dx=0.5)
+            )
 
 
 class TestCumulative_trapezoid:
@@ -286,7 +289,7 @@ class TestCumulative_trapezoid:
         # Try with all axes
         shapes = [(2, 2, 4), (3, 1, 4), (3, 2, 3)]
         for axis, shape in zip([0, 1, 2], shapes):
-            y_int = cumulative_trapezoid(y, x, initial=3.45, axis=axis)
+            y_int = cumulative_trapezoid(y, x, initial=0, axis=axis)
             assert_equal(y_int.shape, (3, 2, 4))
             y_int = cumulative_trapezoid(y, x, initial=None, axis=axis)
             assert_equal(y_int.shape, shape)
@@ -322,25 +325,36 @@ class TestCumulative_trapezoid:
         y_expected = [-1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, initial=1.23)
-        y_expected = [1.23, -1.5, -2., -1.5, 0.]
+        y_int = cumulative_trapezoid(y, initial=0)
+        y_expected = [0, -1.5, -2., -1.5, 0.]
         assert_allclose(y_int, y_expected)
 
         y_int = cumulative_trapezoid(y, dx=3)
         y_expected = [-4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-        y_int = cumulative_trapezoid(y, dx=3, initial=1.23)
-        y_expected = [1.23, -4.5, -6., -4.5, 0.]
+        y_int = cumulative_trapezoid(y, dx=3, initial=0)
+        y_expected = [0, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
+
+    @pytest.mark.parametrize(
+        "initial", [1, 0.5]
+    )
+    def test_initial_warning(self, initial):
+        """If initial is not None or 0, a ValueError is raised."""
+        y = np.linspace(0, 10, num=10)
+        with pytest.deprecated_call(match="`initial`"):
+            res = cumulative_trapezoid(y, initial=initial)
+        assert_allclose(res, [initial, *np.cumsum(y[1:] + y[:-1])/2]) 
 
     def test_cumtrapz(self):
         # Basic coverage test for the alias
         x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
         y = x
-        assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
-                        cumtrapz(y, x, dx=0.5, axis=0, initial=0),
-                        rtol=1e-14)
+        with pytest.deprecated_call(match="cumulative_trapezoid"):
+            assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
+                            cumtrapz(y, x, dx=0.5, axis=0, initial=0),
+                            rtol=1e-14)
 
 
 class TestTrapezoid:
@@ -360,8 +374,9 @@ class TestTrapezoid:
         # Basic coverage test for the alias
         y = np.arange(4)
         x = 2**y
-        assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
-                     trapz(y, x=x, dx=0.5, axis=0))
+        with pytest.deprecated_call(match="trapezoid"):
+            assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
+                         trapz(y, x=x, dx=0.5, axis=0))
 
 
 class TestQMCQuad:

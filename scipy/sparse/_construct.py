@@ -348,8 +348,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data, (row, col)), (n, n))
 
-    diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return spdiags(diags, k, m, n).asformat(format)
+    data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
+    return diags(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
 
 
 def kron(A, B, format=None):
@@ -850,6 +850,15 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
+    .. warning::
+
+        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
+        ``np.random.default_rng``) for ``random_state`` will lead to much
+        faster execution times.
+
+        A much slower implementation is used by default for backwards
+        compatibility.
+
     Parameters
     ----------
     m, n : int
@@ -864,15 +873,16 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        This random state will be used
-        for sampling the sparsity structure, but not necessarily for sampling
-        the values of the structurally nonzero entries of the matrix.
+        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `seed` is an int, a new ``RandomState`` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        This random state will be used for sampling the sparsity structure, but
+        not necessarily for sampling the values of the structurally nonzero
+        entries of the matrix.
     data_rvs : callable, optional
         Samples a requested number of random values.
         This function should take a single argument specifying the length
@@ -886,16 +896,19 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     -------
     res : sparse matrix
 
-    Notes
-    -----
-    Only float types are supported for now.
-
     Examples
     --------
+
+    Passing a ``np.random.Generator`` instance for better performance:
+
     >>> from scipy.sparse import random
     >>> from scipy import stats
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
+    >>> S = random(3, 4, density=0.25, random_state=rng)
+
+    Proving a sampler for the values:
+
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
@@ -903,9 +916,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
-    >>> from scipy.sparse import random
-    >>> from scipy.stats import rv_continuous
-    >>> class CustomDistribution(rv_continuous):
+    Using a custom distribution:
+
+    >>> class CustomDistribution(stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
@@ -915,7 +928,6 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
-
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")

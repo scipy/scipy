@@ -233,13 +233,16 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.check_format(full_check=False)
 
     def check_format(self, full_check=True):
-        """check whether the matrix format is valid
+        """Check whether the matrix respects the BSR format.
 
-            *Parameters*:
-                full_check:
-                    True  - rigorous check, O(N) operations : default
-                    False - basic check, O(1) operations
-
+        Parameters
+        ----------
+        full_check : bool, optional
+            If `True`, run rigorous check, scanning arrays for valid values.
+            Note that activating those check might copy arrays for casting,
+            modifying indices and index pointers' inplace.
+            If `False`, run basic checks on attributes. O(1) operations.
+            Default is `True`.
         """
         M,N = self.shape
         R,C = self.blocksize
@@ -251,11 +254,6 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         if self.indices.dtype.kind != 'i':
             warn("indices array has non-integer dtype (%s)"
                     % self.indices.dtype.name)
-
-        idx_dtype = self._get_index_dtype((self.indices, self.indptr))
-        self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
-        self.indices = np.asarray(self.indices, dtype=idx_dtype)
-        self.data = to_native(self.data)
 
         # check array shapes
         if self.indices.ndim != 1 or self.indptr.ndim != 1:
@@ -290,6 +288,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     raise ValueError("index pointer values must form a "
                                         "non-decreasing sequence")
 
+            idx_dtype = self._get_index_dtype((self.indices, self.indptr))
+            self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+            self.indices = np.asarray(self.indices, dtype=idx_dtype)
+            self.data = to_native(self.data)
         # if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order. Sorting indices.')
         #    self.sort_indices(check_first=False)

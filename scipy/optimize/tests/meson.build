@@ -9,6 +9,7 @@ py3.install_sources([
     'test__root.py',
     'test__shgo.py',
     'test__spectral.py',
+    'test_chandrupatla.py',
     'test_cobyla.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
