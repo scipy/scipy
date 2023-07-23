@@ -9,12 +9,15 @@ import numpy as np
 from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises, deprecated_call
+import hypothesis.extra.numpy as npst
+from hypothesis import given, strategies
+from scipy.conftest import array_api_compatible
 
 import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
-                              _contains_nan, _rng_html_rewrite)
+                              _contains_nan, _rng_html_rewrite, _lazywhere)
 
 
 def test__aligned_zeros():
@@ -399,3 +402,35 @@ def test__rng_html_rewrite():
     ]
 
     assert res == ref
+
+
+class TestLazywhere:
+    arrays = npst.arrays(dtype=npst.floating_dtypes(), shape=npst.array_shapes())
+    fillvalue = npst.arrays(dtype=npst.floating_dtypes(), shape=tuple())
+    p = strategies.floats(min_value=0, max_value=1)
+
+    @array_api_compatible
+    @given(arrays=arrays, fillvalue=fillvalue, p=p)
+    def test_basic(self, arrays, fillvalue, p, xp):
+        arrays = xp.asarray(arrays)
+        fillvalue = xp.asarray(fillvalue)
+
+        def f(*args):
+            return args[0]
+
+        def f2(*args):
+            return args[0]*0.5
+
+        if arrays.ndim <= 1:
+            arrays = (arrays,)
+
+        rng = np.random.default_rng(84268954369357456)
+        cond = rng.random(size=arrays[0].shape) > p
+
+        res = _lazywhere(cond, arrays, f, fillvalue)
+        ref = np.where(cond, f(*arrays), fillvalue)
+        assert_equal(res, ref)
+
+        res = _lazywhere(cond, arrays, f, f2=f2)
+        ref = np.where(cond, f(*arrays), f2(*arrays))
+        assert_equal(res, ref)

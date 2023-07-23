@@ -225,6 +225,8 @@ The following pytest markers are available:
 The following is an example using the main decorator responsible of the
 namespace parametrization::
 
+  from scipy.conftest import array_api_compatible
+  ...
   @array_api_compatible
   def test_toto(self, xp):
       a = xp.asarray([1, 2, 3])
