@@ -2163,27 +2163,28 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     def __pow__(Rotation self, float n, modulus):
-        """Compose this rotation with itself ``n`` times.
+        """Compose this rotation with itself `n` times.
 
         Composition of a rotation ``p`` with itself can be extended to
         non-integer ``n`` by considering the power ``n`` to be a scale factor
         applied to the angle of rotation about the rotation's fixed axis. The
         expression ``q = p ** n`` can also be expressed as
-        ``q = Rotation.from_rotvec(n * p.as_rotvec())``
+        ``q = Rotation.from_rotvec(n * p.as_rotvec())``.
+
+        If ``n`` is negative, then the rotation is inverted before the power
+        is applied. In other words, ``p ** -abs(n) == p.inv() ** abs(n)``.
 
         Parameters
         ----------
         n : float
-            The number of times to compose the rotation with itself. If ``n``
-            is negative, then this is equivalent to
-            ``self ** -n == self.inv() ** n``.
+            The number of times to compose the rotation with itself.
         modulus : None
             This overridden argument is not applicable to Rotations and must be
             ``None``.
 
         Returns
         -------
-        composition : `Rotation` instance
+        power : `Rotation` instance
             If the input Rotation ``p`` contains ``N`` multiple rotations, then
             the output will contain ``N`` rotations where the ``i`` th rotation
             is equal to ``p[i] ** n``
@@ -2231,15 +2232,11 @@ cdef class Rotation:
         # Exact short-cuts
         if n == 0:
             return Rotation.identity(len(self._quat))
-
         elif n == -1:
             return self.inv()
-
         elif n == 1:
             return self.__class__(self._quat.copy())
-
-        # general scaling of rotation angle
-        else:
+        else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
     @cython.embedsignature(True)
