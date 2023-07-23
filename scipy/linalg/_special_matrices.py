@@ -1716,6 +1716,21 @@ class laplacian:
     >>> from scipy.linalg import eigh
     >>> shape = (2, 3)
     >>> n = np.prod(shape)
+
+    Numeration of grid points is as follows.
+
+    >>> np.arange(n).reshape(shape + (-1,))
+    array([[[0],
+            [1],
+            [2]],
+
+            [[3],
+            [4],
+            [5]]])
+
+    Each of the boundary conditions ``'D'``, ``'P'``, and ``'N'``
+    is illustrated separately.
+
     >>> bc = 'D'
     >>> lap = laplacian(shape, bc)
     >>> L = lap.sparse
@@ -1770,8 +1785,8 @@ class laplacian:
            [ 1.,  0.,  0., -2.,  1.,  0.],
            [ 0.,  1.,  0.,  1., -3.,  1.],
            [ 0.,  0.,  1.,  0.,  1., -2.]])
-    ## >>> np.array_equal(lap.callable(np.eye(n)), L.A)
-    ## True
+    >>> np.array_equal(lap.callable(np.eye(n)), L.A)
+    True
     >>> lap.eigenvalues
     array([-5., -3., -3., -2., -1.,  0.])
     >>> eigvals = np.sort(eigh(L.A, eigvals_only=True))
@@ -1779,7 +1794,6 @@ class laplacian:
     True
 
     """
-
 
     def __init__(self, shape, bc) -> None:
         def lsm(_shape, _bc):
@@ -1810,8 +1824,8 @@ class laplacian:
                 L_i = spdiags(diagonals, offsets, shape_i, shape_i)
                 if _bc == "P":
                     t = dia_array((shape_i, shape_i))
-                    t.setdiag([1.], k=-shape_i + 1)
-                    t.setdiag([1.], k=shape_i - 1)
+                    t.setdiag([1.0], k=-shape_i + 1)
+                    t.setdiag([1.0], k=shape_i - 1)
                     L_i += t
                 else:
                     pass
@@ -1851,22 +1865,16 @@ class laplacian:
         self.eigenvalues = np.sort(l.ravel())
 
     def callable(self, x):
-        shape = self.shape
-        bc = self.bc
-        if bc == "N":
-            raise NotImplementedError(
-                f"Neumann boundary condition {bc} is not yet implemented for callable."
-            )
-        else:
-            pass
-        assert np.prod(shape) == x.shape[0]
-        N = len(shape)
-        X = x.reshape(shape + (-1,))
+        _shape = self.shape
+        _bc = self.bc
+        assert np.prod(_shape) == x.shape[0]
+        N = len(_shape)
+        X = x.reshape(_shape + (-1,))
         Y = -2 * N * X
         for i in range(N):
             Y += np.roll(X, 1, axis=i)
             Y += np.roll(X, -1, axis=i)
-            if bc == "D":
+            if _bc == "D" or "N":
                 Y[
                     (slice(None),) * i + (0,) + (slice(None),) * (N - i - 1)
                 ] -= np.roll(X, 1, axis=i)[
@@ -1877,7 +1885,30 @@ class laplacian:
                 ] -= np.roll(X, -1, axis=i)[
                     (slice(None),) * i + (-1,) + (slice(None),) * (N - i - 1)
                 ]
-            elif bc == "P":
+                if _bc == "N":
+                    Y[
+                        (slice(None),) * i
+                        + (0,)
+                        + (slice(None),) * (N - i - 1)
+                    ] += np.roll(X, 0, axis=i)[
+                        (slice(None),) * i
+                        + (0,)
+                        + (slice(None),) * (N - i - 1)
+                    ]
+                    Y[
+                        (slice(None),) * i
+                        + (-1,)
+                        + (slice(None),) * (N - i - 1)
+                    ] += np.roll(X, 0, axis=i)[
+                        (slice(None),) * i
+                        + (-1,)
+                        + (slice(None),) * (N - i - 1)
+                    ]
+            elif _bc == "P":
                 pass
-        return Y.reshape(-1, X.shape[-1])
+            else:
+                raise NotImplementedError(
+                    f"Boundary condition {_bc} is not implemented."
+                )
 
+        return Y.reshape(-1, X.shape[-1])
