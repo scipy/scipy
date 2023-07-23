@@ -1674,7 +1674,7 @@ class laplacian:
     shape : tuple of int
         The shape of the grid for the `N` dimensional Laplacian of length `N`
         where the shape `n` of the Laplacian matrix `L` is ``np.prod(shape)``
-    bc: ``'D'`` or ``'N'``
+    bc: ``'D'`` or ``'N'`` or ``'P'``
         The type of the boundary conditions on the boundaries of the grid
 
     Returns
@@ -1696,8 +1696,8 @@ class laplacian:
     -----
     Compared to the MATLAB/Octave implementation [1] of 1-, 2-, and 3-D
     Laplacian, this code allows the arbitrary N-D case and the matrix-free
-    callable option, but is currently limited to pure Dirichlet or
-    Neumann boundary conditions only and outputs just the eigenvalues,
+    callable option, but is currently limited to pure Dirichlet, Neumann or
+    periodic boundary conditions only and outputs just the eigenvalues,
     no eigenvectors.
 
     The Laplacian matrix of a graph [2] of a rectangular grid corresponds to
@@ -1715,9 +1715,9 @@ class laplacian:
     >>> from scipy.linalg import laplacian
     >>> from scipy.linalg import eigh
     >>> shape = (2, 3)
+    >>> n = np.prod(shape)
     >>> bc = 'D'
     >>> lap = laplacian(shape, bc)
-    >>> n = np.prod(shape)
     >>> L = lap.sparse
     >>> L
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
@@ -1737,29 +1737,69 @@ class laplacian:
     >>> eigvals = np.sort(eigh(L.A, eigvals_only=True))
     >>> np.allclose(lap.eigenvalues, eigvals)
     True
+    >>> bc = 'P'
+    >>> lap = laplacian(shape, bc)
+    >>> L = lap.sparse
+    >>> L
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 24 stored elements in Compressed Sparse Row format>
+    >>> L.A
+    array([[-4.,  1.,  1.,  2.,  0.,  0.],
+           [ 1., -4.,  1.,  0.,  2.,  0.],
+           [ 1.,  1., -4.,  0.,  0.,  2.],
+           [ 2.,  0.,  0., -4.,  1.,  1.],
+           [ 0.,  2.,  0.,  1., -4.,  1.],
+           [ 0.,  0.,  2.,  1.,  1., -4.]])
+    >>> np.array_equal(lap.callable(np.eye(n)), L.A)
+    True
+    >>> lap.eigenvalues
+    array([-7., -7., -4., -3., -3.,  0.])
+    >>> eigvals = np.sort(eigh(L.A, eigvals_only=True))
+    >>> np.allclose(lap.eigenvalues, eigvals)
+    True
+    >>> bc = 'N'
+    >>> lap = laplacian(shape, bc)
+    >>> L = lap.sparse
+    >>> L
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 20 stored elements in Compressed Sparse Row format>
+    >>> L.A
+    array([[-2.,  1.,  0.,  1.,  0.,  0.],
+           [ 1., -3.,  1.,  0.,  1.,  0.],
+           [ 0.,  1., -2.,  0.,  0.,  1.],
+           [ 1.,  0.,  0., -2.,  1.,  0.],
+           [ 0.,  1.,  0.,  1., -3.,  1.],
+           [ 0.,  0.,  1.,  0.,  1., -2.]])
+    ## >>> np.array_equal(lap.callable(np.eye(n)), L.A)
+    ## True
+    >>> lap.eigenvalues
+    array([-5., -3., -3., -2., -1.,  0.])
+    >>> eigvals = np.sort(eigh(L.A, eigvals_only=True))
+    >>> np.allclose(lap.eigenvalues, eigvals)
+    True
 
     """
 
+
     def __init__(self, shape, bc) -> None:
         def lsm(_shape, _bc):
-            from scipy.sparse import spdiags, kron, eye
+            from scipy.sparse import spdiags, kron, eye, dia_array
 
             N = len(_shape)
             L = 0
             for i in range(N):
+                shape_i = _shape[i]
                 diagonals = np.array(
                     [
-                        np.ones(_shape[i]),
-                        -2 * np.ones(_shape[i]),
-                        np.ones(_shape[i]),
+                        np.ones(shape_i),
+                        -2 * np.ones(shape_i),
+                        np.ones(shape_i),
                     ]
                 )
                 if _bc == "N":
                     diagonals[1, 0] = -1.0
                     diagonals[1, -1] = -1.0
-                elif bc == "P":
-                    pass  # this is wrong
-                elif bc == "D":
+                elif bc == "P" or "D":
                     pass
                 else:
                     raise NotImplementedError(
@@ -1767,7 +1807,14 @@ class laplacian:
                     )
 
                 offsets = np.array([-1, 0, 1])
-                L_i = spdiags(diagonals, offsets, _shape[i], _shape[i])
+                L_i = spdiags(diagonals, offsets, shape_i, shape_i)
+                if _bc == "P":
+                    t = dia_array((shape_i, shape_i))
+                    t.setdiag([1.], k=-shape_i + 1)
+                    t.setdiag([1.], k=shape_i - 1)
+                    L_i += t
+                else:
+                    pass
                 for j in range(i):
                     L_i = kron(eye(_shape[j]), L_i)
                 for j in range(i + 1, N):
@@ -1833,3 +1880,4 @@ class laplacian:
             elif bc == "P":
                 pass
         return Y.reshape(-1, X.shape[-1])
+
