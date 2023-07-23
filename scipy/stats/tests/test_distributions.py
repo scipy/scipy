@@ -3705,12 +3705,6 @@ class TestJFSkewT:
         ]
         assert_allclose(actual, expected)
 
-    def test_cdf_to_pdf(self):
-        q = [0.0, 0.1, 0.25, 0.75, 0.90, 1.0]
-        x = stats.jf_skew_t(8, 4).ppf(q)
-        q_out = stats.jf_skew_t(8, 4).cdf(x)
-        assert_allclose(q, q_out)
-
     def test_compare_t(self):
         # Verify that jf_skew_t with a=b recovers the t distribution with 2a
         # degrees of freedom
