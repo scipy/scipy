@@ -5335,6 +5335,100 @@ class invweibull_gen(rv_continuous):
 invweibull = invweibull_gen(a=0, name='invweibull')
 
 
+class jf_skew_t_gen(rv_continuous):
+    r"""Jones and Faddy skew-t distribution [1]_.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    For real parameters :math:`a>0` and :math:`b>0`, the probability density
+    function for `jf_skew_t` is:
+    The probability density function for `jf_skew_t` is:
+
+    .. math::
+
+        f(t; a, b) = C_{a,b}^{-1}
+                    \left(1+\frac{t}{\left(a+b+t^2\right)^{1/2}}\right)^{a+1/2}
+                    \left(1-\frac{t}{\left(a+b+t^2\right)^{1/2}}\right)^{b+1/2}
+
+    for real numbers :math:`a>0` and :math:`b>0`, where
+    :math:`C_{a,b} = 2^{a+b-1}B(a,b)(a+b)^{1/2}`, and :math:`B` denotes the
+    beta function (`scipy.special.beta`).
+
+    When :math:`a=b` this reduces to the Student-t distribution on :math:`2a`
+    degrees of freedom. When `a < b` or `a > b`, the distribution is negatively
+    or positively skewed respectively. In fact, :math:`f(t;b,a)=f(-t;a,b)`.
+
+    `jf_skew_t` takes :math:`a` and :math:`b` as shape parameters.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] M.C. Jones and M.J. Faddy. "A skew extension of the t distribution,
+           with applications" *Journal of the Royal Statistical Society*.
+           Series B (Statistical Methodology) 65, no. 1 (2003): 159-174.
+           doi: 10.1111/1467-9868.00378
+
+    %(example)s
+
+    """
+    def _pdf(self, x, a, b):
+        c = 2 ** (a + b - 1) * sc.beta(a, b) * np.sqrt(a + b)
+        d1 = (1 + x / np.sqrt(a + b + x ** 2)) ** (a + 0.5)
+        d2 = (1 - x / np.sqrt(a + b + x ** 2)) ** (b + 0.5)
+        return d1 * d2 / c
+
+    def _rvs(self, a, b, size=None, random_state=None):
+        d1 = beta.rvs(a, b, size=size, random_state=random_state)
+        d2 = (2 * d1 - 1) * np.sqrt(a + b)
+        d3 = 2 * np.sqrt(d1 * (1 - d1))
+        return d2 / d3
+
+    def _cdf(self, x, a, b):
+        y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
+        return sc.betainc(a, b, y)
+
+    def _ppf(self, q, a, b):
+        d1 = beta.ppf(q, a, b)
+        d2 = (2 * d1 - 1) * np.sqrt(a + b)
+        d3 = 2 * np.sqrt(d1 * (1 - d1))
+        return d2 / d3
+
+    def _munp(self, n, a, b):
+        """Returns the n-th moment(s) where all the following hold:
+            - n >= 0
+            - a > n / 2
+            - b > n / 2
+        The result is np.nan in all other cases.
+        """
+        def nth_moment(n_k, a_k, b_k):
+            """Computes E[T^(n_k)] where T is skew-t distributed with
+            parameters a_k and b_k.
+            """
+            num = (a_k + b_k) ** (0.5 * n_k)
+            denom = 2 ** n_k * sc.beta(a_k, b_k)
+
+            indices = np.arange(n_k + 1)
+            sgn = np.where(indices % 2 > 0, -1, 1)
+            d = sc.beta(a_k + 0.5 * n_k - indices, b_k - 0.5 * n_k + indices)
+            sum_terms = sc.comb(n_k, indices) * sgn * d
+
+            return num / denom * sum_terms.sum()
+
+        nth_moment_valid = (a > 0.5 * n) & (b > 0.5 * n) & (n >= 0)
+        return _lazywhere(
+            nth_moment_valid,
+            (n, a, b),
+            np.vectorize(nth_moment, otypes=[np.float64]),
+            np.nan,
+        )
+
+
+jf_skew_t = jf_skew_t_gen(name='jf_skew_t')
+
+
 class johnsonsb_gen(rv_continuous):
     r"""A Johnson SB continuous random variable.
 

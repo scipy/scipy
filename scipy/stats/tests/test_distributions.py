@@ -3694,6 +3694,40 @@ class TestSkewCauchy:
         assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
+class TestJFSkewT:
+    def test_stats(self):
+        actual = stats.jf_skew_t(8, 4).stats('mvsk')
+        expected = [
+            1.4247801402401363,
+            1.684287266263012,
+            0.7983625393780869,
+            2.3345439210504404,
+        ]
+        assert_allclose(actual, expected)
+
+    def test_cdf_to_pdf(self):
+        q = [0.0, 0.1, 0.25, 0.75, 0.90, 1.0]
+        x = stats.jf_skew_t(8, 4).ppf(q)
+        q_out = stats.jf_skew_t(8, 4).cdf(x)
+        assert_allclose(q, q_out)
+
+    def test_compare_t(self):
+        # Verify that jf_skew_t with a=b recovers the t distribution with 2a
+        # degrees of freedom
+        a = b = 5
+        df = a * 2
+        x = [-1.0, 0.0, 1.0, 2.0]
+        q = [0.0, 0.1, 0.25, 0.75, 0.90, 1.0]
+
+        jf = stats.jf_skew_t(a, b)
+        t = stats.t(df)
+
+        assert_allclose(jf.pdf(x), t.pdf(x))
+        assert_allclose(jf.cdf(x), t.cdf(x))
+        assert_allclose(jf.ppf(q), t.ppf(q))
+        assert_allclose(jf.stats('mvsk'), t.stats('mvsk'))
+
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter

@@ -97,6 +97,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter

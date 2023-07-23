@@ -219,9 +219,9 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'arcsine'}
+    skip_basic_fit = {'argus', 'foldnorm', 'jf_skew_t', 'truncpareto',
+                      'truncweibull_min', 'ksone', 'levy_stable',
+                      'studentized_range', 'kstwo', 'arcsine'}
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha',
@@ -279,8 +279,8 @@ def cases_test_fit_mse():
                       'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
                       'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
                       'genlogistic', 'genpareto', 'gompertz',
-                      'hypergeom', 'invweibull', 'johnsonsb', 'johnsonsu',
-                      'kappa3', 'kstwobign',
+                      'hypergeom', 'invweibull', 'jf_skew_t', 'johnsonsb',
+                      'johnsonsu', 'kappa3', 'kstwobign',
                       'laplace_asymmetric', 'loggamma', 'loglaplace',
                       'lognorm', 'lomax',
                       'maxwell', 'mielke', 'nakagami', 'nhypergeom',
