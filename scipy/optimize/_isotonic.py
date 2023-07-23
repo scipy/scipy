@@ -123,7 +123,9 @@ def isotonic_regression(
     else:
         warr = np.asarray(weights)
 
-        if not (yarr.ndim == warr.ndim and yarr.shape[0] == warr.shape[0]):
+        if not (
+            yarr.ndim == 1 and yarr.ndim == warr.ndim and yarr.shape[0] == warr.shape[0]
+        ):
             raise ValueError(
                 "Input arrays y and w must have one dimension of equal length."
             )
