@@ -117,3 +117,28 @@ class TestIsotonicRegression:
         x, wx, rinv = isotonic_regression(-y, increasing=False)
         assert_almost_equal(-x, res)
         assert_equal(rinv, r)
+
+    def test_readonly(self):
+        x = np.arange(3, dtype=float)
+        w = np.ones(3, dtype=float)
+
+        x.flags.writeable = False
+        w.flags.writeable = False
+
+        x, wx, r = isotonic_regression(x, weights=w)
+        assert np.all(np.isfinite(x))
+        assert np.all(np.isfinite(wx))
+        assert np.all(np.isfinite(r))
+
+    def test_non_contiguous_arrays(self):
+        x = np.arange(10, dtype=float)[::3]
+        w = np.ones(10, dtype=float)[::3]
+        assert not x.flags.c_contiguous
+        assert not x.flags.f_contiguous
+        assert not w.flags.c_contiguous
+        assert not w.flags.f_contiguous
+
+        x, wx, r = isotonic_regression(x, weights=w)
+        assert np.all(np.isfinite(x))
+        assert np.all(np.isfinite(wx))
+        assert np.all(np.isfinite(r))
