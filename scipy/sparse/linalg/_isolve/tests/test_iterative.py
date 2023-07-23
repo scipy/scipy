@@ -550,9 +550,6 @@ def test_show(case, capsys):
 
 
 def test_positional_deprecation(solver):
-    if solver in (gcrotmk, lgmres, minres, tfqmr):
-        pytest.skip("positional arguments not yet deprecated")
-
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10

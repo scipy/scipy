@@ -3,11 +3,13 @@ from numpy.linalg import norm
 from math import sqrt
 
 from .utils import make_system
+from scipy._lib.deprecation import _deprecate_positional_args
 
 __all__ = ['minres']
 
 
-def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
+@_deprecate_positional_args(version="1.14.0")
+def minres(A, b, *, x0=None, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
     Use MINimum RESidual iteration to solve Ax=b
