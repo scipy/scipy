@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from scipy.fft._fftlog import fht, ifht, fhtoffset
+from scipy.fft._fftlog_np import fht, ifht, fhtoffset
 from scipy.special import poch
 
 
