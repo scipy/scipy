@@ -87,7 +87,8 @@ from ._basic import (
     rfft, irfft, rfft2, irfft2, rfftn, irfftn,
     hfft, ihfft, hfft2, ihfft2, hfftn, ihfftn)
 from ._realtransforms import dct, idct, dst, idst, dctn, idctn, dstn, idstn
-from ._fftlog import fhtoffset, fht, ifht
+from ._fftlog_np import fhtoffset
+from ._fftlog import fht, ifht
 from ._helper import next_fast_len, fftfreq, rfftfreq, fftshift, ifftshift
 from ._backend import (set_backend, skip_backend, set_global_backend,
                        register_backend)
