@@ -155,7 +155,7 @@ class FitResult:
         >>> data = stats.nbinom(5, 0.5).rvs(size=1000, random_state=rng)
         >>> bounds = [(0, 30), (0, 1)]
         >>> res = stats.fit(stats.nbinom, data, bounds)
-        >>> ax = res.plot()  # save Matplotlib Axes object
+        >>> ax = res.plot()  # save matplotlib Axes object
 
         The `matplotlib.axes.Axes` object can be used to customize the plot.
         See `matplotlib.axes.Axes` documentation for details.
