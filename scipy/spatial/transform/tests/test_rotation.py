@@ -59,6 +59,38 @@ def test_quat_double_to_canonical_single_cover():
     assert_array_almost_equal(r.as_quat(canonical=True), expected_quat)
 
 
+def test_quat_double_cover():
+    # See the Rotation.from_quat() docstring for scope of the quaternion
+    # double cover property.
+    # Check from_quat and as_quat(canonical=False)
+    q = np.array([0, 0, 0, -1])
+    r = Rotation.from_quat(q)
+    assert all(q == r.as_quat(canonical=False))
+
+    # Check composition and inverse
+    q = np.array([1, 0, 0, 1])/np.sqrt(2)
+    r = Rotation.from_quat(q)
+    r3 = r*r*r
+    assert_array_almost_equal(r.as_quat(canonical=False)*np.sqrt(2),
+                              [1, 0, 0, 1])
+    assert_array_almost_equal(r.inv().as_quat(canonical=False)*np.sqrt(2),
+                              [-1, 0, 0, 1])
+    assert_array_almost_equal(r3.as_quat(canonical=False)*np.sqrt(2),
+                              [1, 0, 0, -1])
+    assert_array_almost_equal(r3.inv().as_quat(canonical=False)*np.sqrt(2),
+                              [-1, 0, 0, -1])
+
+    # More sanity checks
+    assert_array_almost_equal((r*r.inv()).as_quat(canonical=False),
+                              [0, 0, 0, 1])
+    assert_array_almost_equal((r3*r3.inv()).as_quat(canonical=False),
+                              [0, 0, 0, 1])
+    assert_array_almost_equal((r*r3).as_quat(canonical=False),
+                              [0, 0, 0, -1])
+    assert_array_almost_equal((r.inv()*r3.inv()).as_quat(canonical=False),
+                              [0, 0, 0, -1])
+
+
 def test_malformed_1d_from_quat():
     with pytest.raises(ValueError):
         Rotation.from_quat(np.array([1, 2, 3]))

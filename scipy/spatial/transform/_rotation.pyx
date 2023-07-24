@@ -785,6 +785,17 @@ cdef class Rotation:
 
         3D rotations can be represented using unit-norm quaternions [1]_.
 
+        Advanced users may be interested in the "double cover" of 3D space by
+        the quaternion representation [2]_. As of version 1.11.0, the
+        following subset (and only this subset) of operations on a `Rotation`
+        ``r`` corresponding to a quaternion ``q`` are guaranteed to preserve
+        the double cover property: ``r = Rotation.from_quat(q)``,
+        ``r.as_quat(canonical=False)``, ``r.inv()``, and composition using the
+        ``*`` operator such as ``r*r``.
+
+    References
+    ----------
+
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
@@ -800,6 +811,8 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        .. [2] Hanson, Andrew J. "Visualizing quaternions."
+            Morgan Kaufmann Publishers Inc., San Francisco, CA. 2006.
 
         Examples
         --------
