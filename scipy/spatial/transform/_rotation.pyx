@@ -793,9 +793,6 @@ cdef class Rotation:
         ``r.as_quat(canonical=False)``, ``r.inv()``, and composition using the
         ``*`` operator such as ``r*r``.
 
-    References
-    ----------
-
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
