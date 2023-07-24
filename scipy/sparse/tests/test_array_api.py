@@ -191,7 +191,7 @@ def test_inv(B):
 
     C = spla.inv(B)
 
-    assert C._is_array
+    assert isinstance(C, scipy.sparse.sparray)
     npt.assert_allclose(C.todense(), np.linalg.inv(B.todense()))
 
 
@@ -204,7 +204,7 @@ def test_expm(B):
 
     C = spla.expm(B)
 
-    assert C._is_array
+    assert isinstance(C, scipy.sparse.sparray)
     npt.assert_allclose(
         C.todense(),
         spla.expm(Bmat).todense()
@@ -405,53 +405,53 @@ def test_index_dtype_compressed(cls, indices_attrs, expected_dtype):
 
 def test_default_is_matrix_diags():
     m = scipy.sparse.diags([0, 1, 2])
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_eye():
     m = scipy.sparse.eye(3)
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_spdiags():
     m = scipy.sparse.spdiags([1, 2, 3], 0, 3, 3)
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_identity():
     m = scipy.sparse.identity(3)
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_kron_dense():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]])
     )
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_kron_sparse():
     m = scipy.sparse.kron(
         np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]])
     )
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_kronsum():
     m = scipy.sparse.kronsum(
         np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]])
     )
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_random():
     m = scipy.sparse.random(3, 3)
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_default_is_matrix_rand():
     m = scipy.sparse.rand(3, 3)
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 @pytest.mark.parametrize("fn", (scipy.sparse.hstack, scipy.sparse.vstack))
@@ -461,7 +461,7 @@ def test_default_is_matrix_stacks(fn):
     A = scipy.sparse.coo_matrix(np.eye(2))
     B = scipy.sparse.coo_matrix([[0, 1], [1, 0]])
     m = fn([A, B])
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_blocks_default_construction_fn_matrices():
@@ -473,11 +473,11 @@ def test_blocks_default_construction_fn_matrices():
 
     # block diag
     m = scipy.sparse.block_diag((A, B, C))
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
     # bmat
     m = scipy.sparse.bmat([[A, None], [None, C]])
-    assert not m._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
 
 
 def test_format_property():
@@ -493,8 +493,8 @@ def test_format_property():
 def test_issparse():
     m = scipy.sparse.eye(3)
     a = scipy.sparse.csr_array(m)
-    assert not m._is_array
-    assert a._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(a, scipy.sparse.sparray)
 
     # Both sparse arrays and sparse matrices should be sparse
     assert scipy.sparse.issparse(a)
@@ -508,8 +508,8 @@ def test_issparse():
 def test_isspmatrix():
     m = scipy.sparse.eye(3)
     a = scipy.sparse.csr_array(m)
-    assert not m._is_array
-    assert a._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(a, scipy.sparse.sparray)
 
     # Should only be true for sparse matrices, not sparse arrays
     assert not scipy.sparse.isspmatrix(a)
@@ -535,8 +535,8 @@ def test_isspmatrix():
 def test_isspmatrix_format(fmt, fn):
     m = scipy.sparse.eye(3, format=fmt)
     a = scipy.sparse.csr_array(m).asformat(fmt)
-    assert not m._is_array
-    assert a._is_array
+    assert not isinstance(m, scipy.sparse.sparray)
+    assert isinstance(a, scipy.sparse.sparray)
 
     # Should only be true for sparse matrices, not sparse arrays
     assert not fn(a)

@@ -33,7 +33,7 @@ import scipy.linalg
 import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
-        eye, issparse, SparseEfficiencyWarning)
+        eye, issparse, SparseEfficiencyWarning, sparray)
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
@@ -250,9 +250,9 @@ class _TestCommon:
         cls.datsp = cls.spcreator(cls.dat)
 
         # set array/matrix testing mode for this class based on the class attribute
-        # Could use spcreator._is_array except that some test classes (e.g. TextCSR)
+        # Could use isinstance(spcreator, sparray) except that some test classes (e.g. TextCSR)
         # use a method to filter warnings produced when creating the sparse object.
-        cls._is_array = cls.datsp._is_array
+        cls._is_array = isinstance(cls.datsp, sparray)
 
         # Some sparse and dense matrices with data for every supported dtype.
         # This set union is a workaround for numpy#6295, which means that
@@ -1608,7 +1608,7 @@ class _TestCommon:
         # test that * is matmul for spmatrix and mul for sparray
         A = self.spcreator([[1],[2],[3]])
 
-        if A._is_array:
+        if isinstance(A, sparray):
             assert_array_almost_equal(A * np.ones((3,1)), A)
             assert_array_almost_equal(A * array([[1]]), A)
             assert_array_almost_equal(A * np.ones((3,1)), A)
@@ -1668,7 +1668,7 @@ class _TestCommon:
         assert_array_almost_equal(matmul(M, B).toarray(), (M @ B).toarray())
         assert_array_almost_equal(matmul(M.toarray(), B), (M @ B).toarray())
         assert_array_almost_equal(matmul(M, B.toarray()), (M @ B).toarray())
-        if not M._is_array:
+        if not isinstance(M, sparray):
             assert_array_almost_equal(matmul(M, B).toarray(), (M * B).toarray())
             assert_array_almost_equal(matmul(M.toarray(), B), (M * B).toarray())
             assert_array_almost_equal(matmul(M, B.toarray()), (M * B).toarray())
@@ -1760,7 +1760,7 @@ class _TestCommon:
         A = self.spcreator([[1,2],[3,4]])
         B = self.spcreator([[1,2],[3,4],[5,6]])
         assert_raises(ValueError, A.__matmul__, B)
-        if A._is_array:
+        if isinstance(A, sparray):
             assert_raises(ValueError, A.__mul__, B)
 
     def test_matmat_dense(self):
@@ -2157,7 +2157,7 @@ class _TestInplaceArithmetic:
 
         x = a.copy()
         y = a.copy()
-        if b._is_array:
+        if isinstance(b, sparray):
             assert_raises(ValueError, operator.imul, x, b.T)
             x = x * a
             y *= b
