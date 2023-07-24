@@ -268,6 +268,31 @@ class mikota_pair:
         return kx
 
 
+class Bench(Benchmark):
+    params = [
+        [],
+        ['lobpcg', 'eigsh', 'lapack']
+    ]
+    param_names = ['n', 'solver']
+
+    def __init__(self):
+        self.time_mikota.__func__.params = list(self.params)
+        self.time_mikota.__func__.params[0] = [128, 256, 512, 1024, 2048]
+        self.time_mikota.__func__.setup = self.setup_mikota
+
+        self.time_sakurai.__func__.params = list(self.params)
+        self.time_sakurai.__func__.params[0] = [50, 100]
+        self.time_sakurai.__func__.setup = self.setup_sakurai
+
+        self.time_sakuraii.__func__.params = list(self.params)
+        self.time_sakuraii.__func__.params[0] = [500, 1000, 2000]
+        self.time_sakuraii.__func__.setup = self.setup_sakuraii
+
+        self.time_laplacian.__func__.params = list(self.params)
+        self.time_laplacian.__func__.params[0] = [[9, 10, 11], [14, 15, 16]]
+        self.time_laplacian.__func__.setup = self.setup_laplacian
+
+
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
         mikota_pair_obj = mikota_pair(n)
