@@ -5,7 +5,7 @@ __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
            'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
-           'diags_array', 'block_array']
+           'diags_array', 'block']
 
 import numbers
 from functools import partial
@@ -604,7 +604,7 @@ def hstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block_array(hstack(blocks))` or convert one block
+        arrays, use `block(hstack(blocks))` or convert one block
         e.g. `blocks[0] = csr_array(blocks[0])`.
 
     See Also
@@ -623,9 +623,9 @@ def hstack(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array([blocks], format, dtype)
+        return _block([blocks], format, dtype)
     else:
-        return _block_array([blocks], format, dtype, return_spmatrix=True)
+        return _block([blocks], format, dtype, return_spmatrix=True)
 
 
 def vstack(blocks, format=None, dtype=None):
@@ -651,7 +651,7 @@ def vstack(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block_array(vstack(blocks))` or convert one block
+        arrays, use `block(vstack(blocks))` or convert one block
         e.g. `blocks[0] = csr_array(blocks[0])`.
 
     See Also
@@ -671,16 +671,16 @@ def vstack(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array([[b] for b in blocks], format, dtype)
+        return _block([[b] for b in blocks], format, dtype)
     else:
-        return _block_array([[b] for b in blocks], format, dtype, return_spmatrix=True)
+        return _block([[b] for b in blocks], format, dtype, return_spmatrix=True)
 
 
 def bmat(blocks, format=None, dtype=None):
     """
     Build a sparse array or matrix from sparse sub-blocks
 
-    Note: `block_array` is preferred over `bmat`. They are the same function
+    Note: `block` is preferred over `bmat`. They are the same function
     except that `bmat` can return a deprecated sparse matrix.
     `bmat` returns a coo_matrix if none of the inputs are a sparse array.
 
@@ -704,11 +704,11 @@ def bmat(blocks, format=None, dtype=None):
         Otherwise return a sparse matrix.
 
         If you want a sparse array built from blocks that are not sparse
-        arrays, use `block_array()`.
+        arrays, use `block()`.
 
     See Also
     --------
-    block_array
+    block
 
     Examples
     --------
@@ -729,12 +729,12 @@ def bmat(blocks, format=None, dtype=None):
     """
     blocks = np.asarray(blocks, dtype='object')
     if any(isinstance(b, sparray) for b in blocks.flat):
-        return _block_array(blocks, format, dtype)
+        return _block(blocks, format, dtype)
     else:
-        return _block_array(blocks, format, dtype, return_spmatrix=True)
+        return _block(blocks, format, dtype, return_spmatrix=True)
 
 
-def block_array(blocks, *, format=None, dtype=None):
+def block(blocks, *, format=None, dtype=None):
     """
     Build a sparse array from sparse sub-blocks
 
@@ -753,7 +753,7 @@ def block_array(blocks, *, format=None, dtype=None):
 
     Returns
     -------
-    block_array : sparse array
+    block : sparse array
 
     See Also
     --------
@@ -762,25 +762,25 @@ def block_array(blocks, *, format=None, dtype=None):
 
     Examples
     --------
-    >>> from scipy.sparse import coo_array, block_array
+    >>> from scipy.sparse import coo_array, block
     >>> A = coo_array([[1, 2], [3, 4]])
     >>> B = coo_array([[5], [6]])
     >>> C = coo_array([[7]])
-    >>> block_array([[A, B], [None, C]]).toarray()
+    >>> block([[A, B], [None, C]]).toarray()
     array([[1, 2, 5],
            [3, 4, 6],
            [0, 0, 7]])
 
-    >>> block_array([[A, None], [None, C]]).toarray()
+    >>> block([[A, None], [None, C]]).toarray()
     array([[1, 2, 0],
            [3, 4, 0],
            [0, 0, 7]])
 
     """
-    return _block_array(blocks, format, dtype)
+    return _block(blocks, format, dtype)
 
 
-def _block_array(blocks, format, dtype, return_spmatrix=False):
+def _block(blocks, format, dtype, return_spmatrix=False):
     blocks = np.asarray(blocks, dtype='object')
 
     if blocks.ndim != 2:
@@ -902,7 +902,7 @@ def block_diag(mats, format=None, dtype=None):
 
     See Also
     --------
-    block_array, diags
+    block, diags
 
     Examples
     --------

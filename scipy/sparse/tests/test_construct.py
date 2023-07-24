@@ -396,8 +396,8 @@ class TestConstructUtils:
         assert isinstance(construct.hstack([A, coo_matrix(B)]), sparray)
         assert isinstance(construct.hstack([coo_matrix(A), B]), sparray)
 
-    @pytest.mark.parametrize("block_array", (construct.bmat, construct.block_array))
-    def test_block_creation(self, block_array):
+    @pytest.mark.parametrize("block", (construct.bmat, construct.block))
+    def test_block_creation(self, block):
 
         A = coo_array([[1, 2], [3, 4]])
         B = coo_array([[5],[6]])
@@ -407,24 +407,24 @@ class TestConstructUtils:
         expected = array([[1, 2, 5],
                           [3, 4, 6],
                           [0, 0, 7]])
-        assert_equal(block_array([[A, B], [None, C]]).toarray(), expected)
+        assert_equal(block([[A, B], [None, C]]).toarray(), expected)
         E = csr_array((1, 2), dtype=np.int32)
-        assert_equal(block_array([[A.tocsr(), B.tocsr()],
+        assert_equal(block([[A.tocsr(), B.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(block_array([[A.tocsc(), B.tocsc()],
+        assert_equal(block([[A.tocsc(), B.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
         expected = array([[1, 2, 0],
                           [3, 4, 0],
                           [0, 0, 7]])
-        assert_equal(block_array([[A, None], [None, C]]).toarray(),
+        assert_equal(block([[A, None], [None, C]]).toarray(),
                      expected)
-        assert_equal(block_array([[A.tocsr(), E.T.tocsr()],
+        assert_equal(block([[A.tocsr(), E.T.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(block_array([[A.tocsc(), E.T.tocsc()],
+        assert_equal(block([[A.tocsc(), E.T.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
@@ -432,58 +432,58 @@ class TestConstructUtils:
         expected = array([[0, 5],
                           [0, 6],
                           [7, 0]])
-        assert_equal(block_array([[None, B], [C, None]]).toarray(),
+        assert_equal(block([[None, B], [C, None]]).toarray(),
                      expected)
-        assert_equal(block_array([[E.T.tocsr(), B.tocsr()],
+        assert_equal(block([[E.T.tocsr(), B.tocsr()],
                                      [C.tocsr(), Z]]).toarray(),
                      expected)
-        assert_equal(block_array([[E.T.tocsc(), B.tocsc()],
+        assert_equal(block([[E.T.tocsc(), B.tocsc()],
                                      [C.tocsc(), Z.tocsc()]]).toarray(),
                      expected)
 
         expected = np.empty((0, 0))
-        assert_equal(block_array([[None, None]]).toarray(), expected)
-        assert_equal(block_array([[None, D], [D, None]]).toarray(),
+        assert_equal(block([[None, None]]).toarray(), expected)
+        assert_equal(block([[None, D], [D, None]]).toarray(),
                      expected)
 
         # test bug reported in gh-5976
         expected = array([[7]])
-        assert_equal(block_array([[None, D], [C, None]]).toarray(),
+        assert_equal(block([[None, D], [C, None]]).toarray(),
                      expected)
 
         # test failure cases
         with assert_raises(ValueError) as excinfo:
-            block_array([[A], [B]])
+            block([[A], [B]])
         excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            block_array([[A.tocsr()], [B.tocsr()]])
+            block([[A.tocsr()], [B.tocsr()]])
         excinfo.match(r'incompatible dimensions for axis 1')
 
         with assert_raises(ValueError) as excinfo:
-            block_array([[A.tocsc()], [B.tocsc()]])
+            block([[A.tocsc()], [B.tocsc()]])
         excinfo.match(r'Mismatching dimensions along axis 1: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            block_array([[A, C]])
+            block([[A, C]])
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            block_array([[A.tocsr(), C.tocsr()]])
+            block([[A.tocsr(), C.tocsr()]])
         excinfo.match(r'Mismatching dimensions along axis 0: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            block_array([[A.tocsc(), C.tocsc()]])
+            block([[A.tocsc(), C.tocsc()]])
         excinfo.match(r'incompatible dimensions for axis 0')
 
-    def test_block_array_return_type(self):
-        block_array = construct.block_array
+    def test_block_return_type(self):
+        block = construct.block
 
         Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
         Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
-        assert isinstance(block_array([[None, Fl], [Gl, None]], format="csr"), sparray)
-        assert isinstance(block_array([[None, Fm], [Gm, None]], format="csr"), sparray)
-        assert isinstance(block_array([[Fm, Gm]], format="csr"), sparray)
+        assert isinstance(block([[None, Fl], [Gl, None]], format="csr"), sparray)
+        assert isinstance(block([[None, Fm], [Gm, None]], format="csr"), sparray)
+        assert isinstance(block([[Fm, Gm]], format="csr"), sparray)
 
     def test_bmat_return_type(self):
         """This can be removed after sparse matrix is removed"""
