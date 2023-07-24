@@ -288,10 +288,6 @@ class Bench(Benchmark):
         self.time_sakuraii.__func__.params[0] = [500, 1000, 2000]
         self.time_sakuraii.__func__.setup = self.setup_sakuraii
 
-        self.time_laplacian.__func__.params = list(self.params)
-        self.time_laplacian.__func__.params[0] = [[9, 10, 11], [14, 15, 16]]
-        self.time_laplacian.__func__.setup = self.setup_laplacian
-
 
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
