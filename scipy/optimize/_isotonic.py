@@ -117,15 +117,13 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    yarr = np.asarray(y)
+    yarr = np.asarray(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
     if weights is None:
         warr = np.ones_like(yarr)
     else:
         warr = np.asarray(weights)
 
-        if not (
-            yarr.ndim == 1 and yarr.ndim == warr.ndim and yarr.shape[0] == warr.shape[0]
-        ):
+        if not (yarr.ndim == warr.ndim == 1 and yarr.shape[0] == warr.shape[0]):
             raise ValueError(
                 "Input arrays y and w must have one dimension of equal length."
             )
