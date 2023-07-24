@@ -146,8 +146,8 @@ class FitResult:
         ax : `matplotlib.axes.Axes`
             The matplotlib Axes object on which the plot was drawn.
 
-        Example
-        -------
+        Examples
+        --------
         >>> import numpy as np
         >>> from scipy import stats
         >>> import matplotlib.pyplot as plt  # matplotlib must be installed
