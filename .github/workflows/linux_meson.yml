@@ -153,7 +153,7 @@ jobs:
         cd ..
         python -c "import scipy"
         python -c "import scipy.linalg"
-        python -m pip install pytest
+        python -m pip install pytest hypothesis
         python -c "from scipy import cluster; cluster.test()"
 
     - name: Create venv inside source tree
@@ -164,7 +164,7 @@ jobs:
         # Install build dependencies. Use meson-python from its main branch,
         # most convenient to test in this job because we're using pip without
         # build isolation here.
-        python -m pip install numpy pybind11 pythran cython pytest ninja
+        python -m pip install numpy pybind11 pythran cython pytest ninja hypothesis
         python -m pip install git+https://github.com/mesonbuild/meson-python.git
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
@@ -200,7 +200,7 @@ jobs:
       - name: Testing SciPy
         run: |
           cd doc
-          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch
+          python3-dbg -m pip install pytest pytest-xdist pytest-timeout mpmath gmpy2 threadpoolctl pooch hypothesis
           python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
 
   #################################################################################
@@ -232,7 +232,7 @@ jobs:
           # build deps
           pip install build meson-python ninja pythran pybind11 cython wheel
           # test deps
-          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
+          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
 
       - name: Build wheel and install
         run: |
@@ -294,7 +294,7 @@ jobs:
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
-        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib hypothesis
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -356,6 +356,6 @@ jobs:
         python3.9 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
-        python -m pip install numpy==1.22.4 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson && \
+        python -m pip install numpy==1.22.4 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
