@@ -183,7 +183,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
 
 @_deprecate_positional_args(version="1.14.0")
-def gcrotmk(A, b, *, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
+def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest',
             atol=None):
     """

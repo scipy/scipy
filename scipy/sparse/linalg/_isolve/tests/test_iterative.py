@@ -558,7 +558,7 @@ def test_positional_deprecation(solver):
     b = rng.random(n)
     x0 = rng.random(n)
     with pytest.deprecated_call(match="use keyword arguments"):
-        solver(A, b, x0)
+        solver(A, b, x0, 1e-5)
 
 
 class TestQMR:

@@ -9,7 +9,7 @@ __all__ = ['minres']
 
 
 @_deprecate_positional_args(version="1.14.0")
-def minres(A, b, *, x0=None, shift=0.0, tol=1e-5, maxiter=None,
+def minres(A, b, x0=None, *, shift=0.0, tol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
     Use MINimum RESidual iteration to solve Ax=b

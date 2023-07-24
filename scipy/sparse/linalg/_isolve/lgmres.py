@@ -14,7 +14,7 @@ __all__ = ['lgmres']
 
 
 @_deprecate_positional_args(version="1.14.0")
-def lgmres(A, b, *, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
+def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
            prepend_outer_v=False, atol=None):
     """
