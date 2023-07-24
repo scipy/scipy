@@ -1,4 +1,4 @@
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, is_numpy
 from . import _basic_np as npbasic
 import numpy as np
 
@@ -15,7 +15,8 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.fft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                            workers=workers, plan=plan)
     if overwrite_x:
@@ -24,7 +25,6 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -42,7 +42,8 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.ifft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x:
@@ -51,7 +52,6 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -95,7 +95,8 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.fftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x:
@@ -104,7 +105,6 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -122,7 +122,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.ifftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x:
@@ -131,7 +132,6 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -149,7 +149,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x:
@@ -158,7 +159,6 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -176,7 +176,8 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x:
@@ -185,7 +186,6 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -229,7 +229,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.rfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x:
@@ -238,7 +239,6 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -256,7 +256,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.irfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                               workers=workers, plan=plan)
     if overwrite_x:
@@ -265,7 +266,6 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -283,7 +283,8 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                             workers=workers, plan=plan)
     if overwrite_x:
@@ -292,7 +293,6 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
@@ -310,7 +310,8 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Note that if parameters outside of those in the array API specification
     are provided with a non-numpy array, an exception is raised.
     """
-    if isinstance(x, np.ndarray):
+    xp = array_namespace(x)
+    if is_numpy(xp):
         return npbasic.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
                              workers=workers, plan=plan)
     if overwrite_x:
@@ -319,7 +320,6 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
-    xp = array_namespace(x)
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
