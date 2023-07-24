@@ -162,42 +162,46 @@ def _transform_to_limits(xjc, wj, a, b):
     return xj, wj
 
 
-def _euler_maclaurin_sum(f, xj, wj, h, last_terms, log):
+def _euler_maclaurin_sum(fj, work):
     # Perform the Euler-Maclaurin Sum, [1] Section 4
-    with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
-        # Warnings due to any endpoints singularities are not cause for
-        # concern; the resulting values will be replaced.
-        fj = f(xj)
 
     # The error estimate needs to know the magnitude of the last term
     # omitted from the Euler-Maclaurin sum. This is a bit involved because
     # it may have been computed at a previous level. I sure hope it's worth
     # all the trouble.
-    xl0, fl0, wr0, xr0, fr0, wl0, d4 = last_terms  # incumbent last terms
+    xl0, fl0, wr0, xr0, fr0, wl0, d4 = work.xl0, work.fl0, work.wr0, work.xr0, work.fr0, work.wl0, work.d4  # incumbent last terms
 
     # Find the most extreme abscissae corresponding with terms that are
     # included in the sum in this level.
-    invalid = ~np.isfinite(fj) | (wj == 0)  # these terms aren't in the sum
-    invalid_r, invalid_l = invalid.reshape(2, -1)
-    xr, xl = xj.reshape(2, -1).copy()  # this gets modified
+    invalid = ~np.isfinite(fj) | (work.wj == 0)  # these terms aren't in the sum
+    invalid_rl = invalid.reshape(len(fj), 2, -1)
+    invalid_r, invalid_l = invalid_rl[:, 0], invalid_rl[:, 1]
+    xrl = work.xj.reshape(len(fj), 2, -1).copy()  # this gets modified
+    xr, xl = xrl[:, 0], xrl[:, 1]
     xr[invalid_r], xl[invalid_l] = -np.inf, np.inf
-    ir, il = np.argmax(xr), np.argmin(xl)
+    ir, il = np.argmax(xr, axis=-1), np.argmin(xl, axis=-1)
 
     # Determine whether the most extreme abscissae are from this level or
     # a previous level. Update the record of the corresponding weights and
     # function values.
-    fr, fl = fj.reshape(2, -1)
-    wr, wl = wj.reshape(2, -1)
-    xr0, fr0, wr0 = ((xr[ir], fr[ir], wr[ir]) if xr[ir] > xr0
-                     else (xr0, fr0, wr0))
-    xl0, fl0, wl0 = ((xl[il], fl[il], wl[il]) if xl[il] < xl0
-                     else (xl0, fl0, wl0))
+    frl = fj.reshape(len(fj), 2, -1)
+    fr, fl = frl[:, 0], frl[:, 1]
+    wrl = work.wj.reshape(len(work.wj), 2, -1)
+    wr, wl = wrl[:, 0], wrl[:, 1]
+    j = np.take_along_axis(xr, ir[:, np.newaxis], axis=-1).squeeze() > xr0  # xr[:, ir] > xr0
+    xr0[j] = np.take_along_axis(xr[j], ir[j, np.newaxis], axis=-1).squeeze()
+    fr0[j] = np.take_along_axis(fr[j], ir[j, np.newaxis], axis=-1).squeeze()
+    wr0[j] = np.take_along_axis(wr[j], ir[j, np.newaxis], axis=-1).squeeze()
+    j = np.take_along_axis(xl, il[:, np.newaxis], axis=-1).squeeze() < xl0  # xl[:, il] < xl0
+    xl0[j] = np.take_along_axis(xl[j], il[j, np.newaxis], axis=-1).squeeze()
+    fl0[j] = np.take_along_axis(fl[j], il[j, np.newaxis], axis=-1).squeeze()
+    wl0[j] = np.take_along_axis(wl[j], il[j, np.newaxis], axis=-1).squeeze()
 
     # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
-    flwl0 = fl0 + np.log(wl0) if log else fl0 * wl0  # leftmost term
-    frwr0 = fr0 + np.log(wr0) if log else fr0 * wr0  # rightmost term
-    magnitude = np.real if log else np.abs
+    flwl0 = fl0 + np.log(wl0) if work.log else fl0 * wl0  # leftmost term
+    frwr0 = fr0 + np.log(wr0) if work.log else fr0 * wr0  # rightmost term
+    magnitude = np.real if work.log else np.abs
     d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
     last_terms = xl0, fl0, wl0, xr0, fr0, wr0, d4
 
@@ -211,13 +215,14 @@ def _euler_maclaurin_sum(f, xj, wj, h, last_terms, log):
 
     # When wj is zero, log emits a warning
     with np.errstate(divide='ignore'):
-        fjwj = fj + np.log(wj) if log else fj * wj
+        fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
 
     # update integral estimate
-    Sn = (special.logsumexp(fjwj + np.log(h), axis=-1) if log
-          else np.sum(fjwj, axis=-1) * h)
+    Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if work.log
+          else np.sum(fjwj, axis=-1) * work.h)
 
-    return fjwj, Sn, last_terms
+    work.xl0, work.fl0, work.wr0, work.xr0, work.fr0, work.wl0, work.d4 = xl0, fl0, wr0, xr0, fr0, wl0, d4
+    return fjwj, Sn
 
 
 def _estimate_error(work):
@@ -405,13 +410,22 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     h0 = _get_base_step(dtype=dtype)
     maxiter = maxlevel - minlevel + 1
 
+    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
+    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
+    wl0 = np.zeros(shape, dtype=dtype).ravel()
+    xr0 = np.full(shape, -np.inf, dtype=dtype).ravel()
+    fr0 = np.full(shape, np.nan, dtype=dtype).ravel()
+    wr0 = np.zeros(shape, dtype=dtype).ravel()
+    d4 = np.zeros(shape, dtype=dtype).ravel()
+
     nit, nfev = 0, 2  # one function evaluations performed above
 
     work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
                           status=status, dtype=dtype, minlevel=minlevel,
                           a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
-                          n = minlevel)
+                          n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
+                          fr0=fr0, wr0=wr0, d4=d4)
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepanded automatically.
@@ -425,6 +439,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return work.xj
 
     def post_func_eval(x, fj, work):
+        # _euler_maclaurin_sum(fj, work)
         fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
         Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if log
               else np.sum(fjwj, axis=-1) * work.h)
