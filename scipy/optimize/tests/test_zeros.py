@@ -6,11 +6,12 @@ from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal,
                            assert_array_equal,
+                           assert_array_less,
                            suppress_warnings)
 import numpy as np
 from numpy import finfo, power, nan, isclose, sqrt, exp, sin, cos
 
-
+from scipy import stats, optimize
 from scipy.optimize import (_zeros_py as zeros, newton, root_scalar,
                             OptimizeResult)
 
@@ -203,6 +204,347 @@ class TestBracketMethods(TestScalarRootFinders):
         root, r = method(f_lrucached, a, b, full_output=True)
         assert r.converged
         assert_allclose(root, 0)
+
+
+class TestChandrupatla(TestScalarRootFinders):
+
+    def f(self, q, p):
+        return stats.norm.cdf(q) - p
+
+    @pytest.mark.parametrize('p', [0.6, np.linspace(-0.05, 1.05, 10)])
+    def test_basic(self, p):
+        # Invert distribution CDF and compare against distrtibution `ppf`
+        res = zeros._chandrupatla(self.f, -5, 5, args=(p,))
+        ref = stats.norm().ppf(p)
+        np.testing.assert_allclose(res.x, ref)
+        assert res.x.shape == ref.shape
+
+    @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, shape):
+        # Test for correct functionality, output shapes, and dtypes for various
+        # input shapes.
+        p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        args = (p,)
+
+        @np.vectorize
+        def chandrupatla_single(p):
+            return zeros._chandrupatla(self.f, -5, 5, args=(p,))
+
+        def f(*args, **kwargs):
+            f.f_evals += 1
+            return self.f(*args, **kwargs)
+        f.f_evals = 0
+
+        res = zeros._chandrupatla(f, -5, 5, args=args)
+        refs = chandrupatla_single(p).ravel()
+
+        ref_x = [ref.x for ref in refs]
+        assert_allclose(res.x.ravel(), ref_x)
+        assert_equal(res.x.shape, shape)
+
+        ref_fun = [ref.fun for ref in refs]
+        assert_allclose(res.fun.ravel(), ref_fun)
+        assert_equal(res.fun.shape, shape)
+        assert_equal(res.fun, self.f(res.x, *args))
+
+        ref_success = [ref.success for ref in refs]
+        assert_equal(res.success.ravel(), ref_success)
+        assert_equal(res.success.shape, shape)
+        assert np.issubdtype(res.success.dtype, np.bool_)
+
+        ref_flag = [ref.status for ref in refs]
+        assert_equal(res.status.ravel(), ref_flag)
+        assert_equal(res.status.shape, shape)
+        assert np.issubdtype(res.status.dtype, np.integer)
+
+        ref_nfev = [ref.nfev for ref in refs]
+        assert_equal(res.nfev.ravel(), ref_nfev)
+        assert_equal(np.max(res.nfev), f.f_evals)
+        assert_equal(res.nfev.shape, res.fun.shape)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+
+        ref_nit = [ref.nit for ref in refs]
+        assert_equal(res.nit.ravel(), ref_nit)
+        assert_equal(np.max(res.nit), f.f_evals-2)
+        assert_equal(res.nit.shape, res.fun.shape)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+
+        ref_xl = [ref.xl for ref in refs]
+        assert_allclose(res.xl.ravel(), ref_xl)
+        assert_equal(res.xl.shape, shape)
+
+        ref_xr = [ref.xr for ref in refs]
+        assert_allclose(res.xr.ravel(), ref_xr)
+        assert_equal(res.xr.shape, shape)
+
+        assert_array_less(res.xl, res.xr)
+        finite = np.isfinite(res.x)
+        assert np.all((res.x[finite] == res.xl[finite])
+                      | (res.x[finite] == res.xr[finite]))
+
+        ref_fl = [ref.fl for ref in refs]
+        assert_allclose(res.fl.ravel(), ref_fl)
+        assert_equal(res.fl.shape, shape)
+        assert_allclose(res.fl, self.f(res.xl, *args))
+
+        ref_fr = [ref.fr for ref in refs]
+        assert_allclose(res.fr.ravel(), ref_fr)
+        assert_equal(res.fr.shape, shape)
+        assert_allclose(res.fr, self.f(res.xr, *args))
+
+        assert np.all(np.abs(res.fun[finite]) ==
+                      np.minimum(np.abs(res.fl[finite]),
+                                 np.abs(res.fr[finite])))
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(xs, js):
+            funcs = [lambda x: x - 2.5,
+                     lambda x: x - 10,
+                     lambda x: (x - 0.1)**3,
+                     lambda x: np.nan]
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._chandrupatla(f, [0]*4, [np.pi]*4, args=args, maxiter=2)
+
+        ref_flags = np.array([zeros._ECONVERGED, zeros._ESIGNERR,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
+
+    def test_convergence(self):
+        # Test that the convergence tolerances behave as expected
+        rng = np.random.default_rng(2585255913088665241)
+        p = rng.random(size=3)
+        bracket = (-5, 5)
+        args = (p,)
+        kwargs0 = dict(args=args, xatol=0, xrtol=0, fatol=0, frtol=0)
+
+        kwargs = kwargs0.copy()
+        kwargs['xatol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res1.xr - res1.xl, 1e-3)
+        kwargs['xatol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res2.xr - res2.xl, 1e-6)
+        assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
+
+        kwargs = kwargs0.copy()
+        kwargs['xrtol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res1.xr - res1.xl, 1e-3 * np.abs(res1.x))
+        kwargs['xrtol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(res2.xr - res2.xl, 1e-6 * np.abs(res2.x))
+        assert_array_less(res2.xr - res2.xl, res1.xr - res1.xl)
+
+        kwargs = kwargs0.copy()
+        kwargs['fatol'] = 1e-3
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res1.fun), 1e-3)
+        kwargs['fatol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res2.fun), 1e-6)
+        assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
+
+        kwargs = kwargs0.copy()
+        kwargs['frtol'] = 1e-3
+        x1, x2 = bracket
+        f0 = np.minimum(abs(self.f(x1, *args)), abs(self.f(x2, *args)))
+        res1 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res1.fun), 1e-3*f0)
+        kwargs['frtol'] = 1e-6
+        res2 = zeros._chandrupatla(self.f, *bracket, **kwargs)
+        assert_array_less(np.abs(res2.fun), 1e-6*f0)
+        assert_array_less(np.abs(res2.fun), np.abs(res1.fun))
+
+    def test_maxiter_callback(self):
+        # Test behavior of `maxiter` parameter and `callback` interface
+        p = 0.612814
+        bracket = (-5, 5)
+        maxiter = 5
+
+        def f(q, p):
+            res = stats.norm().cdf(q) - p
+            f.x = q
+            f.fun = res
+            return res
+        f.x = None
+        f.fun = None
+
+        res = zeros._chandrupatla(f, *bracket, args=(p,),
+                                  maxiter=maxiter)
+        assert not np.any(res.success)
+        assert np.all(res.nfev == maxiter+2)
+        assert np.all(res.nit == maxiter)
+
+        def callback(res):
+            callback.iter += 1
+            callback.res = res
+            assert hasattr(res, 'x')
+            if callback.iter == 0:
+                # callback is called once with initial bracket
+                assert res.xl, res.xr == bracket
+            else:
+                # Ensure that attributes are updating each iteration
+                assert f.x[0] in {res.xl, res.xr}
+                assert f.fun[0] in {res.fl, res.fr}
+            assert res.status == zeros._EINPROGRESS
+            if callback.iter == maxiter:
+                raise StopIteration
+        callback.iter = -1  # callback called once before first iteration
+        callback.res = None
+
+        res2 = zeros._chandrupatla(f, *bracket, args=(p,),
+                                   callback=callback)
+
+        # terminating with callback is identical to terminating due to maxiter
+        # (except for `status`)
+        for key in res.keys():
+            if key == 'status':
+                assert res[key] == zeros._ECONVERR
+                assert callback.res[key] == zeros._EINPROGRESS
+                assert res2[key] == zeros._ECALLBACK
+            else:
+                assert res2[key] == callback.res[key] == res[key]
+
+    @pytest.mark.parametrize('case', optimize._tstutils._CHANDRUPATLA_TESTS)
+    def test_nit_expected(self, case):
+        # Test that `_chandrupatla` implements Chandrupatla's algorithm:
+        # in all 40 test cases, the number of iterations performed
+        # matches the number reported in the original paper.
+        f, bracket, root, nfeval, id = case
+        # Chandrupatla's criterion is equivalent to
+        # abs(x2-x1) < 4*abs(xmin)*xrtol + xatol, but we use the more standard
+        # abs(x2-x1) < abs(xmin)*xrtol + xatol. Therefore, set xrtol to 4x
+        # that used by Chandrupatla in tests.
+        res = zeros._chandrupatla(f, *bracket, xrtol=4e-10, xatol=1e-5)
+        assert_allclose(res.fun, f(root), rtol=1e-8, atol=2e-3)
+        assert_equal(res.nfev, nfeval)
+
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    def test_dtype(self, dtype):
+        # Test that dtypes are preserved
+
+        root = 0.622
+        def f(x):
+            return ((x - root) ** 3).astype(dtype)
+
+        res = zeros._chandrupatla(f, dtype(-3), dtype(5), xatol=1e-3)
+        assert res.x.dtype == dtype
+        assert_allclose(res.x, root, atol=1e-3)
+
+    def test_input_validation(self):
+        # Test input validation for appropriate error messages
+
+        message = '`func` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(None, -4, 4)
+
+        message = 'Abscissae and function output must be real numbers.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4+1j, 4)
+
+        message = "shape mismatch: objects cannot be broadcast"
+        # raised by `np.broadcast, but the traceback is readable IMO
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, [-2, -3], [3, 4, 5])
+
+        message = "The shape of the array returned by `func`..."
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: [x[0], x[1], x[1]], [-3, -3], [5, 5])
+
+        message = 'Tolerances must be non-negative scalars.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, xatol=-1)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, xrtol=None)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, fatol='ekki')
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, frtol=None)
+
+        message = '`maxiter` must be a non-negative integer.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=1.5)
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, maxiter=-1)
+
+        message = '`callback` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._chandrupatla(lambda x: x, -4, 4, callback='shrubbery')
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            # assert np.issubdtype(x.dtype, np.floating)
+            return x ** 99 - 1
+
+        res = zeros._chandrupatla(f, -7, 5)
+        assert res.success
+        assert_allclose(res.x, 1)
+
+        # Test that if both ends of bracket equal root, algorithm reports
+        # convergence
+        def f(x):
+            return x**2 - 1
+
+        res = zeros._chandrupatla(f, 1, 1)
+        assert res.success
+        assert_equal(res.x, 1)
+
+        def f(x):
+            return 1/x
+
+        with np.errstate(invalid='ignore'):
+            res = zeros._chandrupatla(f, np.inf, np.inf)
+        assert res.success
+        assert_equal(res.x, np.inf)
+
+        # Test maxiter = 0. Should do nothing to bracket.
+        def f(x):
+            return x**3 - 1
+
+        bracket = (-3, 5)
+        res = zeros._chandrupatla(f, *bracket, maxiter=0)
+        assert res.xl, res.xr == bracket
+        assert res.nit == 0
+        assert res.nfev == 2
+        assert res.status == -2
+        assert res.x == -3  # best so far
+
+        # Test maxiter = 1
+        res = zeros._chandrupatla(f, *bracket, maxiter=1)
+        assert res.success
+        assert res.status == 0
+        assert res.nit == 1
+        assert res.nfev == 3
+        assert_allclose(res.x, 1)
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return c*x - 1
+
+        res = zeros._chandrupatla(f, -1, 1, args=3)
+        assert_allclose(res.x, 1/3)
+
+        # # TODO: Test zero tolerance
+        # # ~~What's going on here - why are iterations repeated?~~
+        # # tl goes to zero when xatol=xrtol=0. When function is nearly linear,
+        # # this causes convergence issues.
+        # def f(x):
+        #     return np.cos(x)
+        #
+        # res = zeros._chandrupatla(f, 0, np.pi, xatol=0, xrtol=0)
+        # assert res.nit < 100
+        # xp = np.nextafter(res.x, np.inf)
+        # xm = np.nextafter(res.x, -np.inf)
+        # assert np.abs(res.fun) < np.abs(f(xp))
+        # assert np.abs(res.fun) < np.abs(f(xm))
 
 
 class TestNewton(TestScalarRootFinders):
@@ -905,3 +1247,342 @@ def test_maxiter_int_check_gh10236(method):
     message = "'float' object cannot be interpreted as an integer"
     with pytest.raises(TypeError, match=message):
         method(f1, 0.0, 1.0, maxiter=72.45)
+
+
+class TestDifferentiate():
+
+    def f(self, x):
+        return stats.norm().cdf(x)
+
+    @pytest.mark.parametrize('x', [0.6, np.linspace(-0.05, 1.05, 10)])
+    def test_basic(self, x):
+        # Invert distribution CDF and compare against distribution `ppf`
+        res = zeros._differentiate(self.f, x)
+        ref = stats.norm().pdf(x)
+        np.testing.assert_allclose(res.df, ref)
+        # This would be nice, but doesn't always work out. `error` is an
+        # estimate, not a bound.
+        assert_array_less(abs(res.df - ref), res.error)
+        assert res.x.shape == ref.shape
+
+    @pytest.mark.parametrize('case', stats._distr_params.distcont)
+    def test_accuracy(self, case):
+        distname, params = case
+        dist = getattr(stats, distname)(*params)
+        x = dist.median() + 0.1
+        res = zeros._differentiate(dist.cdf, x)
+        ref = dist.pdf(x)
+        assert_allclose(res.df, ref, atol=1e-10)
+
+    @pytest.mark.parametrize('order', [1, 6])
+    @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, order, shape):
+        # Test for correct functionality, output shapes, and dtypes for various
+        # input shapes.
+        x = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        n = np.size(x)
+
+        @np.vectorize
+        def _differentiate_single(x):
+            return zeros._differentiate(self.f, x, order=order)
+
+        def f(x, *args, **kwargs):
+            f.nit += 1
+            f.feval += 1 if (x.size == n or x.ndim <=1) else x.shape[-1]
+            return self.f(x, *args, **kwargs)
+        f.nit = -1
+        f.feval = 0
+
+        res = zeros._differentiate(f, x, order=order)
+        refs = _differentiate_single(x).ravel()
+
+        ref_x = [ref.x for ref in refs]
+        assert_allclose(res.x.ravel(), ref_x)
+        assert_equal(res.x.shape, shape)
+
+        ref_df = [ref.df for ref in refs]
+        assert_allclose(res.df.ravel(), ref_df)
+        assert_equal(res.df.shape, shape)
+
+        ref_error = [ref.error for ref in refs]
+        assert_allclose(res.error.ravel(), ref_error, atol=5e-15)
+        assert_equal(res.error.shape, shape)
+
+        ref_success = [ref.success for ref in refs]
+        assert_equal(res.success.ravel(), ref_success)
+        assert_equal(res.success.shape, shape)
+        assert np.issubdtype(res.success.dtype, np.bool_)
+
+        ref_flag = [ref.status for ref in refs]
+        assert_equal(res.status.ravel(), ref_flag)
+        assert_equal(res.status.shape, shape)
+        assert np.issubdtype(res.status.dtype, np.integer)
+
+        ref_nfev = [ref.nfev for ref in refs]
+        assert_equal(res.nfev.ravel(), ref_nfev)
+        assert_equal(np.max(res.nfev), f.feval)
+        assert_equal(res.nfev.shape, res.x.shape)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+
+        ref_nit = [ref.nit for ref in refs]
+        assert_equal(res.nit.ravel(), ref_nit)
+        assert_equal(np.max(res.nit), f.nit)
+        assert_equal(res.nit.shape, res.x.shape)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        rng = np.random.default_rng(5651219684984213)
+        def f(xs, js):
+            f.nit += 1
+            funcs = [lambda x: x - 2.5,  # converges
+                     lambda x: np.exp(x)*rng.random(),  # error increases
+                     lambda x: np.exp(x),  # reaches maxiter due to order=2
+                     lambda x: np.full_like(x, np.nan)[()]]  # stops due to NaN
+            res = [funcs[j](x) for x, j in zip(xs, js.ravel())]
+            return res
+        f.nit = 0
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._differentiate(f, [1]*4, rtol=1e-14, order=2, args=args)
+
+        ref_flags = np.array([zeros._ECONVERGED, zeros._EERRORINCREASE,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
+
+    def test_convergence(self):
+        # Test that the convergence tolerances behave as expected
+        dist = stats.norm()
+        x = 1
+        f = dist.cdf
+        ref = dist.pdf(x)
+        kwargs0 = dict(atol=0, rtol=0, order=4)
+
+        kwargs = kwargs0.copy()
+        kwargs['atol'] = 1e-3
+        res1 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res1.df - ref), 1e-3)
+        kwargs['atol'] = 1e-6
+        res2 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res2.df - ref), 1e-6)
+        assert_array_less(abs(res2.df - ref), abs(res1.df - ref))
+
+        kwargs = kwargs0.copy()
+        kwargs['rtol'] = 1e-3
+        res1 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res1.df - ref), 1e-3 * np.abs(ref))
+        kwargs['rtol'] = 1e-6
+        res2 = zeros._differentiate(f, x, **kwargs)
+        assert_array_less(abs(res2.df - ref), 1e-6 * np.abs(ref))
+        assert_array_less(abs(res2.df - ref), abs(res1.df - ref))
+
+    def test_step_parameters(self):
+        # Test that step factors have the expected effect on accuracy
+        dist = stats.norm()
+        x = 1
+        f = dist.cdf
+        ref = dist.pdf(x)
+
+        res1 = zeros._differentiate(f, x, initial_step=0.5, maxiter=1)
+        res2 = zeros._differentiate(f, x, initial_step=0.05, maxiter=1)
+        assert abs(res2.df - ref) < abs(res1.df - ref)
+
+        res1 = zeros._differentiate(f, x, step_factor=2, maxiter=1)
+        res2 = zeros._differentiate(f, x, step_factor=20, maxiter=1)
+        assert abs(res2.df - ref) < abs(res1.df - ref)
+
+        # `step_factor` can be less than 1: `initial_step` is the minimum step
+        kwargs = dict(order=4, maxiter=1, step_direction=0)
+        res = zeros._differentiate(f, x, initial_step=0.5, step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        assert_allclose(res.df, ref.df, rtol=5e-15)
+
+        # This is a similar test for one-sided difference
+        kwargs = dict(order=2, maxiter=1, step_direction=1)
+        res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        assert_allclose(res.df, ref.df, rtol=5e-15)
+
+        kwargs['step_direction'] = -1
+        res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        assert_allclose(res.df, ref.df, rtol=5e-15)
+
+    def test_step_direction(self):
+        # test that `step_direction` works as expected
+        def f(x):
+            y = np.exp(x)
+            y[(x < 0) + (x > 2)] = np.nan
+            return y
+
+        x = np.linspace(0, 2, 10)
+        step_direction = np.zeros_like(x)
+        step_direction[x < 0.6], step_direction[x > 1.4] = 1, -1
+        res = zeros._differentiate(f, x, step_direction=step_direction)
+        assert_allclose(res.df, np.exp(x))
+        assert np.all(res.success)
+
+    def test_vectorized_step_direction_args(self):
+        # test that `step_direction` and `args` are vectorized properly
+        def f(x, p):
+            return x ** p
+
+        def df(x, p):
+            return p * x ** (p - 1)
+
+        x = np.array([1, 2, 3, 4]).reshape(-1, 1, 1)
+        hdir = np.array([-1, 0, 1]).reshape(1, -1, 1)
+        p = np.array([2, 3]).reshape(1, 1, -1)
+        res = zeros._differentiate(f, x, step_direction=hdir, args=(p,))
+        ref = np.broadcast_to(df(x, p), res.df.shape)
+        assert_allclose(res.df, ref)
+
+    def test_maxiter_callback(self):
+        # Test behavior of `maxiter` parameter and `callback` interface
+        x = 0.612814
+        dist = stats.norm()
+        maxiter = 3
+
+        def f(x):
+            res = dist.cdf(x)
+            return res
+
+        default_order = 8
+        res = zeros._differentiate(f, x, maxiter=maxiter, rtol=1e-15)
+        assert not np.any(res.success)
+        assert np.all(res.nfev == default_order + 1 + (maxiter - 1)*2)
+        assert np.all(res.nit == maxiter)
+
+        def callback(res):
+            callback.iter += 1
+            callback.res = res
+            assert hasattr(res, 'x')
+            assert res.df not in callback.dfs
+            callback.dfs.add(res.df)
+            assert res.status == zeros._EINPROGRESS
+            if callback.iter == maxiter:
+                raise StopIteration
+        callback.iter = -1  # callback called once before first iteration
+        callback.res = None
+        callback.dfs = set()
+
+        res2 = zeros._differentiate(f, x, callback=callback, rtol=1e-15)
+        # terminating with callback is identical to terminating due to maxiter
+        # (except for `status`)
+        for key in res.keys():
+            if key == 'status':
+                assert res[key] == zeros._ECONVERR
+                assert callback.res[key] == zeros._EINPROGRESS
+                assert res2[key] == zeros._ECALLBACK
+            else:
+                assert res2[key] == callback.res[key] == res[key]
+
+    @pytest.mark.parametrize("hdir", (-1, 0, 1))
+    @pytest.mark.parametrize("x", (0.65, [0.65, 0.7]))
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    def test_dtype(self, hdir, x, dtype):
+        # Test that dtypes are preserved
+        x = np.asarray(x, dtype=dtype)[()]
+
+        def f(x):
+            assert x.dtype == dtype
+            return np.exp(x)
+
+        def callback(res):
+            assert res.x.dtype == dtype
+            assert res.df.dtype == dtype
+            assert res.error.dtype == dtype
+
+        res = zeros._differentiate(f, x, order=4, step_direction=hdir,
+                                   callback=callback)
+        assert res.x.dtype == dtype
+        assert res.df.dtype == dtype
+        assert res.error.dtype == dtype
+        eps = np.finfo(dtype).eps
+        assert_allclose(res.df, np.exp(res.x), rtol=np.sqrt(eps))
+
+    def test_input_validation(self):
+        # Test input validation for appropriate error messages
+
+        message = '`func` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(None, 1)
+
+        message = 'Abscissae and function output must be real numbers.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, -4+1j)
+
+        message = "The shape of the array returned by `func`"
+        # raised by `np.broadcast, but the traceback is readable IMO
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: [1, 2, 3], [-2, -3])
+
+        message = 'Tolerances and step parameters must be non-negative...'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, atol=-1)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, rtol='ekki')
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, initial_step=None)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, step_factor=object())
+
+        message = '`maxiter` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, maxiter=1.5)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, maxiter=0)
+
+        message = '`order` must be a positive integer'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, order=1.5)
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, order=0)
+
+        message = '`callback` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            zeros._differentiate(lambda x: x, 1, callback='shrubbery')
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            assert np.issubdtype(x.dtype, np.floating)
+            return x ** 99 - 1
+
+        res = zeros._differentiate(f, 7, rtol=1e-10)
+        assert res.success
+        assert_allclose(res.df, 99*7.**98)
+
+        # Test that if success is achieved in the correct number
+        # of iterations if function is a polynomial. Ideally, all polynomials
+        # of order 0-2 would get exact result with 0 refinement iterations,
+        # all polynomials of order 3-4 would be differentiated exactly after
+        # 1 iteration, etc. However, it seems that _differentiate needs an
+        # extra iteration to detect convergence based on the error estimate.
+
+        for n in range(6):
+            x = 1.5
+            def f(x):
+                return 2*x**n
+
+            ref = 2*n*x**(n-1)
+
+            res = zeros._differentiate(f, x, maxiter=1, order=max(1, n))
+            assert_allclose(res.df, ref, rtol=1e-15)
+            assert_equal(res.error, np.nan)
+
+            res = zeros._differentiate(f, x, order=max(1, n))
+            assert res.success
+            assert res.nit == 2
+            assert_allclose(res.df, ref, rtol=1e-15)
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return c*x - 1
+
+        res = zeros._differentiate(f, 2, args=3)
+        assert_allclose(res.df, 3)

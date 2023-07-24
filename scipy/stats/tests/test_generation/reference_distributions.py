@@ -320,6 +320,21 @@ class BetaPrime(ReferenceDistribution):
         return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
 
 
+class Burr(ReferenceDistribution):
+
+    def __init__(self, *, c, d):
+        super().__init__(c=c, d=d)
+
+    def _support(self, c, d):
+        return 0, mp.inf
+
+    def _pdf(self, x, c, d):
+        return c * d * x ** (-c - 1) * (1 + x ** (-c)) ** (-d - 1)
+
+    def _ppf(self, p, guess, c, d):
+        return (p**(-1.0/d) - 1)**(-1.0/c)
+
+
 class LogLaplace(ReferenceDistribution):
 
     def __init__(self, *, c):
