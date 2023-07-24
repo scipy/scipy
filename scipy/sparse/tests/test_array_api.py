@@ -98,10 +98,10 @@ def test_indexing(A):
     with pytest.raises(NotImplementedError):
         A[[1, 2], 1]
 
-    assert A[[0]]._is_array, "Expected sparse array, got sparse matrix"
-    assert A[1, [[1, 2]]]._is_array, "Expected ndarray, got sparse array"
-    assert A[[[1, 2]], 1]._is_array, "Expected ndarray, got sparse array"
-    assert A[:, [1, 2]]._is_array, "Expected sparse array, got something else"
+    assert isinstance(A[[0]], scipy.sparse.sparray), "Expected sparse array, got sparse matrix"
+    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), "Expected ndarray, got sparse array"
+    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), "Expected ndarray, got sparse array"
+    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), "Expected sparse array, got something else"
 
 
 @parametrize_sparrays
@@ -112,7 +112,7 @@ def test_dense_addition(A):
 
 @parametrize_sparrays
 def test_sparse_addition(A):
-    assert (A + A)._is_array, "Expected array, got matrix"
+    assert isinstance((A + A), scipy.sparse.sparray), "Expected array, got matrix"
 
 
 @parametrize_sparrays
@@ -140,8 +140,8 @@ def test_matmul(A):
 
 @parametrize_square_sparrays
 def test_pow(B):
-    assert (B**0)._is_array, "Expected array, got matrix"
-    assert (B**2)._is_array, "Expected array, got matrix"
+    assert isinstance((B**0), scipy.sparse.sparray), "Expected array, got matrix"
+    assert isinstance((B**2), scipy.sparse.sparray), "Expected array, got matrix"
 
 
 @parametrize_sparrays
@@ -151,11 +151,11 @@ def test_sparse_divide(A):
 @parametrize_sparrays
 def test_sparse_dense_divide(A):
     with pytest.warns(RuntimeWarning):
-        assert (A / A.todense())._is_array
+        assert isinstance((A / A.todense()), scipy.sparse.sparray)
 
 @parametrize_sparrays
 def test_dense_divide(A):
-    assert (A / 2)._is_array, "Expected array, got matrix"
+    assert isinstance((A / 2), scipy.sparse.sparray), "Expected array, got matrix"
 
 
 @parametrize_sparrays
@@ -172,8 +172,8 @@ def test_no_H_attr(A):
 
 @parametrize_sparrays
 def test_getrow_getcol(A):
-    assert A._getcol(0)._is_array
-    assert A._getrow(0)._is_array
+    assert isinstance(A._getcol(0), scipy.sparse.sparray)
+    assert isinstance(A._getrow(0), scipy.sparse.sparray)
 
 
 # -- linalg --

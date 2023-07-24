@@ -103,8 +103,6 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    _is_array = True
-
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
