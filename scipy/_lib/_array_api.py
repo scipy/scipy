@@ -110,7 +110,7 @@ def as_xparray(
     """
     if xp is None:
         xp = array_namespace(array)
-    if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.array_api_compat.numpy"}:
+    if is_numpy(xp):
         # Use NumPy API to support order
         if copy is True:
             array = np.array(array, order=order, dtype=dtype)
@@ -136,3 +136,8 @@ def atleast_nd(x, *, ndim, xp):
         x = xp.expand_dims(x, axis=0)
         x = atleast_nd(x, ndim=ndim, xp=xp)
     return x
+
+
+def is_numpy(xp):
+    """Returns True if and only if the namespace `xp` is a numpy namespace."""
+    return xp.__name__ in {"numpy", "scipy._lib.array_api_compat.array_api_compat.numpy"}
