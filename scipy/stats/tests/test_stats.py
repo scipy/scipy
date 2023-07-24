@@ -3273,6 +3273,29 @@ class TestMoments:
             stats.kurtosis([])
 
 
+@strategies.composite
+def pvalue_ci_data_axis_strategy(draw):
+    # draw an array under shape and value constraints
+    dtype = npst.floating_dtypes()
+    elements = dict(allow_nan=False, allow_infinity=False)
+    shape = npst.array_shapes(min_dims=1, min_side=2)
+    data = draw(npst.arrays(dtype=dtype, elements=elements, shape=shape))
+
+    # determine axes over which nonzero variance can be computed accurately
+    ok_axes = []
+    for axis in range(len(data.shape)):
+        with contextlib.suppress(RuntimeWarning):
+            var = stats.moment(data, moment=2, axis=axis)
+            if np.all(var > 0):
+                ok_axes.append(axis)
+    assume(ok_axes)  # if there are no valid axes, let hypothesis know
+
+    # draw one of the valid axes
+    axis = draw(strategies.sampled_from(ok_axes))
+
+    return data, axis
+
+
 class TestStudentTest:
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
@@ -3439,29 +3462,6 @@ class TestStudentTest:
     #     popmean = np.expand_dims(popmean, axis=axis)
     #     res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
     #     np.testing.assert_allclose(res.pvalue, 1 - alpha)
-
-    @strategies.composite
-    @staticmethod
-    def pvalue_ci_data_axis_strategy(draw):
-        # draw an array under shape and value constraints
-        dtype = npst.floating_dtypes()
-        elements = dict(allow_nan=False, allow_infinity=False)
-        shape = npst.array_shapes(min_dims=1, min_side=2)
-        data = draw(npst.arrays(dtype=dtype, elements=elements, shape=shape))
-
-        # determine axes over which nonzero variance can be computed accurately
-        ok_axes = []
-        for axis in range(len(data.shape)):
-            with contextlib.suppress(RuntimeWarning):
-                var = stats.moment(data, moment=2, axis=axis)
-                if np.all(var > 0):
-                    ok_axes.append(axis)
-        assume(ok_axes)  # if there are no valid axes, let hypothesis know
-
-        # draw one of the valid axes
-        axis = draw(strategies.sampled_from(ok_axes))
-
-        return data, axis
 
     @given(alpha=strategies.floats(1e-15, 1-1e-15),
            data_axis=pvalue_ci_data_axis_strategy())
