@@ -1,10 +1,8 @@
-from functools import partial
-
 import numpy as np
-from .common import Benchmark, safe_import
+from .common import safe_import
 
 with safe_import():
-    from scipy.linalg import (eigh, sakurai, mikota_pair,
+    from scipy.linalg import (eigh,
                               cholesky_banded, cho_solve_banded, eig_banded)
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
