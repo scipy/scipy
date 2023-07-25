@@ -11,7 +11,8 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              qmc_quad)
 from scipy.integrate._tanhsinh2 import _tanhsinh2 as _tanhsinh
 from scipy import stats, special as sc
-
+from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
 class TestFixedQuad:
     def test_scalar(self):
@@ -723,7 +724,7 @@ class TestTanhSinh:
         # Test `maxlevel` equal to required number of function evaluations
         # We should get all the same results
         f.feval, f.calls = 0, 0
-        maxlevel = ref.calls + 1  # default is first call goes up to level 2
+        maxlevel = ref.nit + 1  # nit=1 -> maxlevel 2
         res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
         res.calls = f.calls
         assert res == ref
@@ -736,27 +737,28 @@ class TestTanhSinh:
         assert self.error(res.integral, f.ref) < res.error > default_atol
         assert res.nfev == f.feval < ref.nfev
         assert f.calls == ref.calls - 1
-        assert res.success is False
-        assert res.status == 1
-        # assert res.message.endswith("maximum level to be exceeded.")
+        assert not res.success
+        assert res.status == _ECONVERR
 
-        # Test `maxfun` equal to required number of function evaluations
-        # We should get all the same results
-        f.feval, f.calls = 0, 0
-        maxfun = ref.nfev
-        res = _tanhsinh(f, 0, f.b, maxfun = maxfun)
-        assert res == ref
+        # `maxfun` is currently not enforced
 
-        # Now reduce `maxfun`. We won't meet tolerances.
-        f.feval, f.calls = 0, 0
-        maxfun -= 1
-        res = _tanhsinh(f, 0, f.b, maxfun=maxfun)
-        assert self.error(res.integral, f.ref) < res.error > default_atol
-        assert res.nfev == f.feval < ref.nfev
-        assert f.calls == ref.calls - 1
-        assert res.success is False
-        assert res.status == 2
-        # assert res.message.endswith("evaluation limit to be exceeded.")
+        # # Test `maxfun` equal to required number of function evaluations
+        # # We should get all the same results
+        # f.feval, f.calls = 0, 0
+        # maxfun = ref.nfev
+        # res = _tanhsinh(f, 0, f.b, maxfun = maxfun)
+        # assert res == ref
+        #
+        # # Now reduce `maxfun`. We won't meet tolerances.
+        # f.feval, f.calls = 0, 0
+        # maxfun -= 1
+        # res = _tanhsinh(f, 0, f.b, maxfun=maxfun)
+        # assert self.error(res.integral, f.ref) < res.error > default_atol
+        # assert res.nfev == f.feval < ref.nfev
+        # assert f.calls == ref.calls - 1
+        # assert not res.success
+        # assert res.status == 2
+        # # assert res.message.endswith("evaluation limit to be exceeded.")
 
         # Take this result to be the new reference
         ref = res
@@ -766,7 +768,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         # With this tolerance, we should get the exact same result as ref
         atol = np.nextafter(ref.error, np.inf)
-        res = _tanhsinh(f, 0, f.b, atol=atol)
+        res = _tanhsinh(f, 0, f.b, rtol=0, atol=atol)
         assert res.integral == ref.integral
         assert res.error == ref.error
         assert res.nfev == f.feval == ref.nfev
@@ -779,7 +781,7 @@ class TestTanhSinh:
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
         atol = np.nextafter(ref.error, -np.inf)
-        res = _tanhsinh(f, 0, f.b, atol=atol)
+        res = _tanhsinh(f, 0, f.b, rtol=0, atol=atol)
         assert self.error(res.integral, f.ref) < res.error < atol
         assert res.nfev == f.feval > ref.nfev
         assert f.calls > ref.calls

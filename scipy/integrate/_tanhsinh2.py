@@ -3,16 +3,15 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import special
 from scipy.optimize import OptimizeResult
-from scipy.optimize._zeros_py import (_scalar_optimization_loop,
-                                      _scalar_optimization_initialize)
+from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
+                                      _scalar_optimization_loop,
+                                      _ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
+                                      _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
 # todo:
-#  update tests
+#  add vectorization and other tests inspired by `_differentiate`
 #  figure out warning situtation
-#  allow func to produce complex number
-#  fix test_options_and_result_attributes
-#  make sure we don't return complex results unnecessarily
-#  check function evaluation limit
+#  respect function evaluation limit
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
@@ -37,20 +36,6 @@ class QuadratureResult:
     status: int
     message: str
 
-
-_status_messages = {-1: "Iteration in progress.",
-                    0: ("The algorithm completed successfully, and the error "
-                        "estimate meets the requested tolerance."),
-                    1: ("The error estimate does not meet the specified "
-                        "tolerance, but performing an additional iteration "
-                        "would cause the maximum level to be exceeded."),
-                    2: ("The error estimate does not meet the specified "
-                        "tolerance, but performing an additional iteration "
-                        "cause the function evaluation limit to be exceeded."),
-                    3: ("An invalid value (e.g. overflow, NaN) was "
-                        "encountered within the integration interval. See "
-                        "documentation notes for more information.")
-                    }
 
 def _get_base_step(dtype=np.float64):
     # Compute the base step length for the provided dtype. Theoretically, the
@@ -417,7 +402,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     Sn = np.full(shape, zero, dtype=dtype).ravel()
     Sk = np.empty_like(Sn)[:, np.newaxis][:, 0:0]  # add zero length new axis
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()
-    status = np.full(shape, 1, dtype=int).ravel()  # in progress - STANDARDIZE
+    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
     h0 = _get_base_step(dtype=dtype)
     maxiter = maxlevel - minlevel + 1
 
@@ -482,18 +467,18 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
             zero = -np.inf if log else 0
             work.Sn[i] = zero
             work.aerr[i] = zero
-            work.status[i] = 0
+            work.status[i] = _ECONVERGED
             stop[i] = True
             return stop
 
         work.rerr, work.aerr, work.Sk = _estimate_error(work)
         i = ((work.rerr < work.rtol) | (work.rerr + np.real(work.Sn) < work.atol) if log
              else (work.rerr < work.rtol) | (work.rerr * abs(work.Sn) < work.atol))
-        work.status[i] = 0
+        work.status[i] = _ECONVERGED
         stop[i] = True
 
         i = ~np.isfinite(work.Sn) & ~stop
-        work.status[i] = 3
+        work.status[i] = _EVALUEERR
         stop[i] = True
 
         return stop
