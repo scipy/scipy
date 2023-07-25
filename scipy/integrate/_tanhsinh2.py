@@ -8,6 +8,10 @@ from scipy.optimize._zeros_py import (_scalar_optimization_loop,
 
 # todo:
 #  update tests
+#  figure out warning situtation
+#  allow func to produce complex number
+#  fix test_options_and_result_attributes
+#  make sure we don't return complex results unnecessarily
 #  check function evaluation limit
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
@@ -91,10 +95,10 @@ def _compute_pair(k, h0):
     u1 = pi_2*np.cosh(jh)
     u2 = pi_2*np.sinh(jh)
     # Denominators get big here. Overflow then underflow doesn't need warning.
-    with np.errstate(under='ignore', over='ignore'):
-        wj = u1 / np.cosh(u2)**2
-        # "We actually store 1-xj = 1/(...)."
-        xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
+    # with np.errstate(under='ignore', over='ignore'):
+    wj = u1 / np.cosh(u2)**2
+    # "We actually store 1-xj = 1/(...)."
+    xjc = 1 / (np.exp(u2) * np.cosh(u2))  # complement of xj = np.tanh(u2)
 
     # When level k == 0, the zeroth xj corresponds with xj = 0. To simplify
     # code, the function will be evaluated there twice; each gets half weight.
@@ -215,8 +219,8 @@ def _euler_maclaurin_sum(fj, work):
     fl[invalid_l] = fl0b[invalid_l]
 
     # When wj is zero, log emits a warning
-    with np.errstate(divide='ignore'):
-        fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
+    # with np.errstate(divide='ignore'):
+    fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
 
     # update integral estimate
     Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if work.log
@@ -298,8 +302,8 @@ def _estimate_error(work):
         d3 = e1 * np.max(fjwj, axis=-1)
         d4 = work.d4
         # If `d1` is 0, no need to warn. This does the right thing.
-        with np.errstate(divide='ignore'):
-            aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4], axis=0)
+        # with np.errstate(divide='ignore'):
+        aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4], axis=0)
         rerr = np.maximum(e1, aerr/np.abs(Sn))
     return rerr, aerr.reshape(Sn.shape), Sk
 
@@ -343,31 +347,37 @@ def _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
         rtol = np.log(1e-12) if log else 1e-12
 
     params = np.asarray([atol, rtol, 0.])
+    message = "`atol` and `rtol` must be real numbers."
+    if not np.issubdtype(params.dtype, np.floating):
+        raise ValueError(message)
+
     if log:
         message = '`atol` and `rtol` may not be positive infinity.'
-        if np.any(np.isposinf(params[-3:-1])):
+        if np.any(np.isposinf(params)):
             raise ValueError(message)
     else:
         message = '`atol` and `rtol` must be non-negative and finite.'
-        if np.any(params[-3:-1] < 0) or np.any(np.isinf(params[-3:-1])):
+        if np.any(params < 0) or np.any(np.isinf(params)):
             raise ValueError(message)
     atol, rtol, _ = params
 
-    BIGINT = int(2**63-2)  # -2 to avoid overflow when this is incremented
+    BIGINT = float(2**62)
     if maxfun is None and maxlevel is None:
         maxlevel = 10
-    # `np.isposinf` errors for objects other than numbers.
-    maxfun = BIGINT if (maxfun is None or maxfun > BIGINT) else maxfun
-    maxlevel = BIGINT if (maxlevel is None or maxlevel > BIGINT) else maxlevel
+
+    maxfun = BIGINT if maxfun is None else maxfun
+    maxlevel = BIGINT if maxlevel is None else maxlevel
 
     message = '`maxfun`, `maxlevel`, and `minlevel` must be integers.'
     params = np.asarray([maxfun, maxlevel, minlevel])
-    if not np.issubdtype(params.dtype, np.integer):
+    if not (np.issubdtype(params.dtype, np.number)
+            and np.all(np.isreal(params))
+            and np.all(params.astype(np.int64) == params)):
         raise ValueError(message)
     message = '`maxfun`, `maxlevel`, and `minlevel` must be non-negative.'
     if np.any(params < 0):
         raise ValueError(message)
-    maxfun, maxlevel, minlevel = params
+    maxfun, maxlevel, minlevel = params.astype(np.int64)
 
     if not np.iterable(args):
         args = (args,)
@@ -392,7 +402,8 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     # broadcast correctly and are of consistent types. Integration usually
     # takes at least 100 function evaluations, so this is unlikely to be a
     # bottleneck.
-    xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args)
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args)
     a, b = xs
 
     # Transform improper integrals
@@ -494,9 +505,11 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         else:
             res['integral'][negative] *= -1
 
-
-    return _scalar_optimization_loop(work, callback, shape,
-                                     maxiter, f, args, dtype,
-                                     pre_func_eval, post_func_eval,
-                                     check_termination, post_termination_check,
-                                     customize_result, res_work_pairs)
+    # suppress all warnings initially; we'll address this later
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        res = _scalar_optimization_loop(work, callback, shape,
+                                        maxiter, f, args, dtype,
+                                        pre_func_eval, post_func_eval,
+                                        check_termination, post_termination_check,
+                                        customize_result, res_work_pairs)
+    return res

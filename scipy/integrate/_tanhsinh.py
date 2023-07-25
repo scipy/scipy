@@ -26,7 +26,7 @@ from scipy import special
 class QuadratureResult:
     integral: float
     error: float
-    feval: int
+    nfev: int
     success: bool
     status: int
     message: str
@@ -120,7 +120,7 @@ def _tanhsinh(f, a, b, *, log=False, maxfun=None, maxlevel=None, minlevel=2,
         error : float
             An estimate of the error. Only available if level two or higher
             has been evaluated; otherwise NaN.
-        feval : int
+        nfev : int
             The number of function evaluations, i.e., the number of
             points at which the integrand was evaluated.
         success : bool
@@ -274,7 +274,7 @@ def _tanhsinh_noiv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
         status = 1  # Iteration limit
 
     message = _status_messages[status]
-    return QuadratureResult(integral=Sn, error=aerr, feval=feval,
+    return QuadratureResult(integral=Sn, error=aerr, nfev=feval,
                             success=status==0, status=status, message=message)
 
 
