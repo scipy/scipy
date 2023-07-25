@@ -14,6 +14,7 @@ from scipy.conftest import (
     skip_if_array_api,
     skip_if_array_api_gpu,
     skip_if_array_api_backend,
+    set_assert_allclose
 )
 from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray, array_namespace
 
@@ -41,11 +42,7 @@ class TestFFT1D:
         xr = random(maxlen)
         x = xp.asarray(x)
         xr = xp.asarray(xr)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         for i in range(1, maxlen):
             _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-11)
             _assert_allclose(
@@ -56,11 +53,7 @@ class TestFFT1D:
         x = random(30) + 1j*random(30)
         x = xp.asarray(x)
         expect = fft1(x, xp)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(expect, fft.fft(x))
         _assert_allclose(expect, fft.fft(x, norm="backward"))
         _assert_allclose(expect / xp.sqrt(30), fft.fft(x, norm="ortho"))
@@ -70,11 +63,7 @@ class TestFFT1D:
     def test_ifft(self, xp):
         x = random(30) + 1j*random(30)
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.ifft(fft.fft(x)))
         for norm in ["backward", "ortho", "forward"]:
             _assert_allclose(x, fft.ifft(fft.fft(x, norm=norm), norm=norm))
@@ -105,11 +94,7 @@ class TestFFT1D:
     def test_fftn(self, xp):
         x = random((30, 20, 10)) + 1j*random((30, 20, 10))
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.fftn(x))
         _assert_allclose(expect, fft.fftn(x, norm="backward"))
@@ -121,11 +106,7 @@ class TestFFT1D:
     def test_ifftn(self, xp):
         x = random((30, 20, 10)) + 1j*random((30, 20, 10))
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.ifftn(x))
         _assert_allclose(expect, fft.ifftn(x, norm="backward"))
@@ -138,11 +119,7 @@ class TestFFT1D:
     def test_rfft(self, xp):
         x = random(29)
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         for n in [x.size, 2*x.size]:
             for norm in [None, "backward", "ortho", "forward"]:
                 _assert_allclose(
@@ -155,11 +132,7 @@ class TestFFT1D:
     def test_irfft(self, xp):
         x = random(30)
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.irfft(fft.rfft(x)))
         for norm in ["backward", "ortho", "forward"]:
             _assert_allclose(x, fft.irfft(fft.rfft(x, norm=norm), norm=norm))
@@ -187,11 +160,7 @@ class TestFFT1D:
     def test_rfftn(self, xp):
         x = random((30, 20, 10))
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         expect = fft.fftn(x)[:, :, :6]
         _assert_allclose(expect, fft.rfftn(x))
         _assert_allclose(expect, fft.rfftn(x, norm="backward"))
@@ -204,11 +173,7 @@ class TestFFT1D:
     def test_irfftn(self, xp):
         x = random((30, 20, 10))
         x = xp.asarray(x)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.irfftn(fft.rfftn(x)))
         for norm in ["backward", "ortho", "forward"]:
             _assert_allclose(x, fft.irfftn(fft.rfftn(x, norm=norm), norm=norm))
@@ -220,11 +185,7 @@ class TestFFT1D:
         x = np.concatenate((x_herm, x[::-1].conj()))
         x = xp.asarray(x)
         x_herm = xp.asarray(x_herm)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(x)
         _assert_allclose(expect, fft.hfft(x_herm))
         _assert_allclose(expect, fft.hfft(x_herm, norm="backward"))
@@ -240,11 +201,7 @@ class TestFFT1D:
         x = np.concatenate((x_herm, x[::-1].conj()))
         x = xp.asarray(x)
         x_herm = xp.asarray(x_herm)
-        if 'cupy' in xp.__name__:
-            import cupy as cp
-            _assert_allclose = cp.testing.assert_allclose
-        else:
-            _assert_allclose = assert_allclose
+        _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x_herm, fft.ihfft(fft.hfft(x_herm)))
         for norm in ["backward", "ortho", "forward"]:
             _assert_allclose(x_herm,
