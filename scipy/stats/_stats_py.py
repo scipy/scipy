@@ -963,7 +963,7 @@ def rms(a, *, axis=0):
     if np.ndim(a) == 0:
         axis = None
 
-    return np.sqrt(np.mean(np.abs(a) ** 2, axis=axis))
+    return np.sqrt((np.abs(a) ** 2).mean(axis=axis))
 
 
 #####################################
