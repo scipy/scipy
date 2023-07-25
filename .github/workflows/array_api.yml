@@ -23,7 +23,7 @@ concurrency:
 jobs:
   pytorch_cpu:
     name: Linux PyTorch CPU
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     strategy:
       matrix:

@@ -24,7 +24,7 @@ jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     strategy:
       matrix:
@@ -124,7 +124,7 @@ jobs:
   #################################################################################
   test_venv_install:
     name: Pip install into venv
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -180,7 +180,7 @@ jobs:
   python_debug:
     # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
       - uses: actions/checkout@v3
@@ -207,7 +207,7 @@ jobs:
   gcc8:
     # Purpose is to examine builds with oldest-supported gcc.
     name: Build with gcc-8
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
     steps:
       - uses: actions/checkout@v3
@@ -255,7 +255,7 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps and 64-bit BLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -333,7 +333,7 @@ jobs:
   #################################################################################
   linux_32bit:
     name: Linux - 32 bit
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    # if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
