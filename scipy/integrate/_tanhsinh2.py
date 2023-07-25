@@ -327,12 +327,16 @@ def _transform_integrals(f, a, b, log):
     return f, a, b, None, negative, abinf, ainf, binf
 
 
-def _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
+def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
                  atol, rtol, args, callback):
     # Input validation and standardization
 
     message = '`f` must be callable.'
     if not callable(f):
+        raise ValueError(message)
+
+    message = 'All elements of `a` and `b` must be real numbers.'
+    if np.any(np.iscomplex(a)) or np.any(np.iscomplex(b)):
         raise ValueError(message)
 
     message = '`log` must be True or False.'
@@ -385,15 +389,15 @@ def _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return f, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
+    return f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
 
 
 def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                minlevel=2, atol=None, rtol=None, args=(), callback=None):
 
-    res = _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
+    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
                        atol, rtol, args, callback)
-    (f, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback) = res
+    (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback) = res
 
     # Initialization
     # No, the function does not really need to be evaluated at `a` and `b`, but
@@ -403,7 +407,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     # takes at least 100 function evaluations, so this is unlikely to be a
     # bottleneck.
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args)
+        xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args, complex_ok=True)
     a, b = xs
 
     # Transform improper integrals
