@@ -348,8 +348,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data, (row, col)), (n, n))
 
-    diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return spdiags(diags, k, m, n).asformat(format)
+    data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
+    return diags(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
 
 
 def kron(A, B, format=None):

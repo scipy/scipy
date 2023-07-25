@@ -85,7 +85,7 @@ class NDInterpolatorBase:
             # scale to unit cube centered at 0
             self.offset = np.mean(points, axis=0)
             self.points = points - self.offset
-            self.scale = self.points.ptp(axis=0)
+            self.scale = np.ptp(points, axis=0)
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
         

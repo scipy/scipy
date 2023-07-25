@@ -5,6 +5,8 @@ import operator
 import math
 from math import prod as _prod
 import timeit
+import warnings
+
 from scipy.spatial import cKDTree
 from . import _sigtools
 from ._ltisys import dlti
@@ -19,7 +21,6 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-import warnings
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -2469,8 +2470,8 @@ in SciPy 1.14. The exact equivalent for a numpy array argument is
 ...    return np.take(p, idx, 0), idx
 """
 
-@np.deprecate(message=_msg_cplx_sort)
 def cmplx_sort(p):
+    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
     return _cmplx_sort(p)
 
 

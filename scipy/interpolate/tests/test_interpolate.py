@@ -300,7 +300,10 @@ class TestInterp1D:
         # regression test for gh-5898, where 1D linear interpolation has been
         # delegated to numpy.interp for all float dtypes, and the latter was
         # not handling e.g. np.float128.
-        for dtyp in np.sctypes["float"]:
+        for dtyp in [np.float16,
+                     np.float32,
+                     np.float64,
+                     np.longdouble]:
             x = np.arange(8, dtype=dtyp)
             y = x
             yp = interp1d(x, y, kind='linear')(x)

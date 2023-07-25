@@ -42,6 +42,7 @@ GitHub Actions
   dependencies and check coverage
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
+* ``Array API``: test Array API support
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
