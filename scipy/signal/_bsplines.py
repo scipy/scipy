@@ -2,7 +2,7 @@ import warnings
 
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, ones, arange, floor,
-                   r_, atleast_2d, atleast_1d)
+                   r_, atleast_1d)
 from numpy import (sqrt, exp, greater, less, cos, add, sin, less_equal,
                    greater_equal)
 
