@@ -28,9 +28,10 @@ def fft1(x, xp):
 
 class TestFFTShift:
 
-    @skip_if_array_api
-    def test_fft_n(self):
-        assert_raises(ValueError, fft.fft, [1, 2, 3], 0)
+    @array_api_compatible
+    def test_fft_n(self, xp):
+        x = xp.asarray([1, 2, 3])
+        assert_raises(ValueError, fft.fft, x, 0)
 
 
 class TestFFT1D:
