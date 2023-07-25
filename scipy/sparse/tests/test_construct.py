@@ -339,10 +339,10 @@ class TestConstructUtils:
                         np.kron(b, np.eye(len(a)))
                 assert_array_equal(result,expected)
 
-    def test_vstack(self):
-
-        A = coo_array([[1,2],[3,4]])
-        B = coo_array([[5,6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_vstack(self, coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5,6]])
 
         expected = array([[1, 2],
                           [3, 4],
@@ -365,15 +365,18 @@ class TestConstructUtils:
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
-        assert isinstance(construct.vstack([A, B]), sparray)
+    def test_vstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5,6]]
+        assert isinstance(construct.vstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
         assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
-        assert isinstance(construct.vstack([A, coo_matrix(B)]), sparray)
-        assert isinstance(construct.vstack([coo_matrix(A), B]), sparray)
 
-    def test_hstack(self):
-
-        A = coo_array([[1,2],[3,4]])
-        B = coo_array([[5],[6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_hstack(self,coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5],[6]])
 
         expected = array([[1, 2, 5],
                           [3, 4, 6]])
@@ -391,10 +394,13 @@ class TestConstructUtils:
                                       dtype=np.float32).dtype,
                      np.float32)
 
-        assert isinstance(construct.hstack([A, B]), sparray)
+    def test_hstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5],[6]]
+        assert isinstance(construct.hstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.hstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.hstack([coo_matrix(A), coo_array(B)]), sparray)
         assert isinstance(construct.hstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
-        assert isinstance(construct.hstack([A, coo_matrix(B)]), sparray)
-        assert isinstance(construct.hstack([coo_matrix(A), B]), sparray)
 
     @pytest.mark.parametrize("block", (construct.bmat, construct.block))
     def test_block_creation(self, block):
