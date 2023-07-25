@@ -819,11 +819,13 @@ class TestTanhSinh:
         # Test equivalence of log-integration and regular integration
         dist = stats.norm()
 
+        test_tols = dict(atol=1e-18, rtol=1e-15)
+
         # Problem with positive integrand/real log-integrand)
         res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
         ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
-        assert_allclose(np.exp(res.integral), ref.integral)
-        assert_allclose(np.exp(res.error), ref.error)
+        assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
+        assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
         # Problem with real integrand/complex log-integrand
@@ -835,8 +837,8 @@ class TestTanhSinh:
 
         res = _tanhsinh(logf, -np.inf, np.inf, log=True)
         ref = _tanhsinh(f, -np.inf, np.inf)
-        assert_allclose(np.exp(res.integral), ref.integral)
-        assert_allclose(np.exp(res.error), ref.error)
+        assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
+        assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
     def test_complex(self):

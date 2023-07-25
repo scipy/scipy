@@ -10,9 +10,8 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 
 # todo:
 #  add vectorization and other tests inspired by `_differentiate`
-#  figure out warning situtation
+#  figure out warning situatation
 #  respect function evaluation limit
-#  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
