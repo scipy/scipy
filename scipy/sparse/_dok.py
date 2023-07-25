@@ -128,6 +128,12 @@ class _dok_base(_spbase, IndexMixin):
     def __contains__(self, key):
         return key in self._dict
 
+    def setdefault(self, key, default=None, /):
+        return self._dict.setdefault(key, default)
+
+    def __delitem__(self, key, /):
+        del self._dict[key]
+
     def clear(self):
         return self._dict.clear()
 
@@ -471,14 +477,5 @@ class dok_matrix(spmatrix, _dok_base, dict):
 
     shape = property(fget=get_shape, fset=set_shape)
 
-    #######
-    # It is not clear that these should be defined -- not part of sparse array api
-    # but they are included for backward compatibility
-    def setdefault(self, key, default=None, /):
-        return self._dict.setdefault(key, default)
-
-    def __delitem__(self, key, /):
-        del self._dict[key]
-    #######
 
 dok_matrix.__doc__ = _array_doc_to_matrix(_dok_base.__doc__)
