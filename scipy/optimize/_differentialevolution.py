@@ -700,7 +700,7 @@ class DifferentialEvolutionSolver:
 
         if (np.size(self.limits, 0) != 2 or not
                 np.all(np.isfinite(self.limits))):
-            raise ValueError('bounds should be a sequence containing '
+            raise ValueError('bounds should be a sequence containing finite '
                              'real valued (min, max) pairs for each value'
                              ' in x')
 

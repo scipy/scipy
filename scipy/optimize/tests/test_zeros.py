@@ -386,16 +386,24 @@ class TestChandrupatla(TestScalarRootFinders):
             assert hasattr(res, 'x')
             if callback.iter == 0:
                 # callback is called once with initial bracket
-                assert res.xl, res.xr == bracket
+                assert (res.xl, res.xr) == bracket
             else:
-                # Ensure that attributes are updating each iteration
-                assert f.x[0] in {res.xl, res.xr}
-                assert f.fun[0] in {res.fl, res.fr}
+                changed = (((res.xl == callback.xl) & (res.xr != callback.xr))
+                           | ((res.xl != callback.xl) & (res.xr == callback.xr)))
+                assert np.all(changed)
+
+            callback.xl = res.xl
+            callback.xr = res.xr
             assert res.status == zeros._EINPROGRESS
+            assert_equal(self.f(res.xl, p), res.fl)
+            assert_equal(self.f(res.xr, p), res.fr)
+            assert_equal(self.f(res.x, p), res.fun)
             if callback.iter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
         callback.res = None
+        callback.xl = None
+        callback.xr = None
 
         res2 = zeros._chandrupatla(f, *bracket, args=(p,),
                                    callback=callback)
@@ -424,17 +432,19 @@ class TestChandrupatla(TestScalarRootFinders):
         assert_allclose(res.fun, f(root), rtol=1e-8, atol=2e-3)
         assert_equal(res.nfev, nfeval)
 
+    @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
-    def test_dtype(self, dtype):
+    def test_dtype(self, root, dtype):
         # Test that dtypes are preserved
 
-        root = 0.622
-        def f(x):
+        root = dtype(root)
+        def f(x, root):
             return ((x - root) ** 3).astype(dtype)
 
-        res = zeros._chandrupatla(f, dtype(-3), dtype(5), xatol=1e-3)
+        res = zeros._chandrupatla(f, dtype(-3), dtype(5),
+                                  args=(root,), xatol=1e-3)
         assert res.x.dtype == dtype
-        assert_allclose(res.x, root, atol=1e-3)
+        assert np.allclose(res.x, root, atol=1e-3) or np.all(res.fun == 0)
 
     def test_input_validation(self):
         # Test input validation for appropriate error messages
@@ -458,11 +468,11 @@ class TestChandrupatla(TestScalarRootFinders):
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(lambda x: x, -4, 4, xatol=-1)
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, xrtol=None)
+            zeros._chandrupatla(lambda x: x, -4, 4, xrtol=np.nan)
         with pytest.raises(ValueError, match=message):
             zeros._chandrupatla(lambda x: x, -4, 4, fatol='ekki')
         with pytest.raises(ValueError, match=message):
-            zeros._chandrupatla(lambda x: x, -4, 4, frtol=None)
+            zeros._chandrupatla(lambda x: x, -4, 4, frtol=np.nan)
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
@@ -480,7 +490,7 @@ class TestChandrupatla(TestScalarRootFinders):
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
-            # assert np.issubdtype(x.dtype, np.floating)
+            assert np.issubdtype(x.dtype, np.floating)
             return x ** 99 - 1
 
         res = zeros._chandrupatla(f, -7, 5)

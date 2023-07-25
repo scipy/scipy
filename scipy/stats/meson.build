@@ -168,6 +168,7 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
+    '_bws_test.py',
     '_censored_data.py',
     '_common.py',
     '_constants.py',

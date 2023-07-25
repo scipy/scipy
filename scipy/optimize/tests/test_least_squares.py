@@ -809,3 +809,16 @@ def test_fp32_gh12991():
     # used a step size for FP64 when the working space was FP32.
     assert res.nfev > 2
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)
+
+
+def test_gh_18793():
+    answer = 1e-12
+    initial_guess = 1.1e-12
+
+    def chi2(x):
+        return (x-answer)**2
+
+    res = least_squares(chi2, x0=initial_guess, bounds=(0, np.inf))
+    # if we choose an initial condition that is close to the solution
+    # we shouldn't return an answer that is further away from the solution
+    assert_allclose(res.x, answer, atol=initial_guess-answer)

@@ -423,8 +423,7 @@ def optimal_leaf_ordering(Z, D):
             v_r = original_order_to_sorted_order[int(v_r)]
 
         sorted_Z.append([v_l, v_r, v_size])
-    sorted_Z = np.array(sorted_Z).astype(np.int32).copy(order='C')
-
+    sorted_Z = np.array(sorted_Z, dtype=np.int32)
 
     # Sort distance matrix D by the leaf order
     sorted_D = sorted_D[sorted_leaves, :]
