@@ -1674,16 +1674,30 @@ def yeojohnson_normmax(x, brack=None):
         return -llf
 
     with np.errstate(invalid='ignore'):
+        if not np.all(np.isfinite(x)):
+            raise ValueError('Yeo-Johnson input must be finite.')
         if brack is not None:
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
         x = np.asarray(x)
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        b = np.log(np.finfo(dtype).eps)
-        max_x = 20 * np.nanmax(np.abs(x))
-        lb = (np.log(np.finfo(dtype).tiny) - b) / 2 / np.log1p(max_x)
-        ub = (np.log(np.finfo(dtype).max) + b) / 2 / np.log1p(max_x)
+        # Allow values up to 20x the maximum observed value to be safely
+        # transformed without over- or underflow.
+        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
+        # Use half of floating point's exponent range to allow safe computation
+        # of the variance of the transformed data.
+        log_eps = np.log(np.finfo(dtype).eps)
+        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
+        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
+        # Compute the bounds by approximating the inverse of the Yeo-Johnson
+        # transform on the smallest and largest floating point exponents, given
+        # the largest data we expect to observe. See [1] for further details.
+        # [1] https://github.com/scipy/scipy/pull/18852
+        lb = log_tiny_float / log1p_max_x
+        ub = log_max_float / log1p_max_x
+        # Convert the bounds if the data is negative.
         if np.any(x < 0):
             lb, ub = 2 - ub, 2 - lb
+        # Match `optimize.brent`'s tolerance.
         tol_brent = 1.48e-08
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 

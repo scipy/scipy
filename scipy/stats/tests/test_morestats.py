@@ -2231,13 +2231,23 @@ class TestYeojohnson:
         assert_allclose(lam_yeo, lam_box, rtol=1e-6)
 
     @pytest.mark.parametrize('x', [
+        np.array([1.0, float("nan"), 2.0]),
+        np.array([1.0, float("inf"), 2.0]),
+        np.array([1.0, -float("inf"), 2.0]),
+        np.array([-1.0, float("nan"), float("inf"), -float("inf"), 1.0])
+    ])
+    def test_nonfinite_input(self, x):
+        # non-regression test for gh-18389
+        with pytest.raises(ValueError, match='finite'):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+
+    @pytest.mark.parametrize('x', [
         # Attempt to trigger overflow in power expressions.
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
                   2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
         # Attempt to trigger overflow with a large optimal lambda.
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
         # Attempt to trigger overflow with large data.
-        np.array([2003.0e32, 1950.0e32, 1997.0e32, 2000.0e32, 2009.0e32]),
         np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
     ])
     def test_overflow(self, x):
@@ -2262,26 +2272,13 @@ class TestYeojohnson:
                   2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
     ])
-    @pytest.mark.parametrize('scale', [1e-12, 1e-32, 1e-150])
-    def test_underflow(self, x, scale):
-        # non-regression test for gh-18389
-        with np.errstate(over="raise", under="raise"):
-            xt_yeo, lam_yeo = stats.yeojohnson(x * scale)
-            assert np.all(xt_yeo > 0)
-            assert np.isfinite(lam_yeo)
-            assert np.isfinite(np.var(xt_yeo))
-
-    @pytest.mark.parametrize('x', [
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
-                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
-    ])
     @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
-    def test_overflow_underflow_negative_data(self, x, scale):
+    @pytest.mark.parametrize('sign', [1, -1])
+    def test_overflow_underflow_signed_data(self, x, scale, sign):
         # non-regression test for gh-18389
         with np.errstate(over="raise", under="raise"):
-            xt_yeo, lam_yeo = stats.yeojohnson(-x * scale)
-            assert np.all(xt_yeo < 0)
+            xt_yeo, lam_yeo = stats.yeojohnson(sign * x * scale)
+            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
             assert np.isfinite(lam_yeo)
             assert np.isfinite(np.var(xt_yeo))
 
