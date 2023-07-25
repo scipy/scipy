@@ -310,33 +310,31 @@ def _transform_integrals(f, a, b, log):
     # Transform integrals as needed for infinite limits
     # There are more efficient ways of doing this to avoid function call
     # overhead, but let's stick with the simplest for now.
-    if b < a:
-        def f(x, f=f):
-            return (f(x) + np.pi*1j if log
-                    else -f(x))
-        a, b = b, a
+    negative = b < a
+    a[negative], b[negative] = b[negative], a[negative]
 
-    if np.isinf(a) and np.isinf(b):
-        def f(x, f=f):
-            return (special.logsumexp([f(x), f(-x)], axis=0) if log
-                    else f(x) + f(-x))
-        a, b = 0, np.inf
-        feval_factor = 2  # user function evaluated twice each call
-    elif np.isinf(a):
-        def f(x, f=f):
-            return f(-x)
-        a, b = -b, -a
-        feval_factor = 1
-    else:
-        feval_factor = 1
+    feval_factor = None
+    # if np.isinf(a) and np.isinf(b):
+    #     def f(x, f=f):
+    #         return (special.logsumexp([f(x), f(-x)], axis=0) if log
+    #                 else f(x) + f(-x))
+    #     a, b = 0, np.inf
+    #     feval_factor = 2  # user function evaluated twice each call
+    # elif np.isinf(a):
+    #     def f(x, f=f):
+    #         return f(-x)
+    #     a, b = -b, -a
+    #     feval_factor = 1
+    # else:
+    #     feval_factor = 1
+    #
+    # if np.isinf(b):
+    #     def f(x, f=f, a=a):
+    #         return (f(1/x - 1 + a) - 2*np.log(abs(x)) if log
+    #                 else f(1/x - 1 + a)*x**-2)
+    #     a, b = 0, 1
 
-    if np.isinf(b):
-        def f(x, f=f, a=a):
-            return (f(1/x - 1 + a) - 2*np.log(abs(x)) if log
-                    else f(1/x - 1 + a)*x**-2)
-        a, b = 0, 1
-
-    return f, a, b, feval_factor
+    return f, a, b, feval_factor, negative
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
@@ -399,8 +397,8 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol) = res
 
     # Transform improper integrals
-    # func, a, b, feval_factor = _transform_integrals(f, a, b, log)
-    func = f
+    func, a, b, feval_factor, negative = _transform_integrals(f, a, b, log)
+    # func = f
 
     # Initialization
     # func(a/b) is not used. Can we get avoid doing this?
@@ -484,7 +482,11 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return
 
     def customize_result(res):
-        return
+        if log:
+            res['integral'] = res['integral'] + negative*np.pi*1j
+        else:
+            res['integral'][negative] *= -1
+
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
