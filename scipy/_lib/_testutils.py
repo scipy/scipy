@@ -9,7 +9,6 @@ import sys
 import numpy as np
 import inspect
 import sysconfig
-import array_api_compat
 
 
 __all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc', 'IS_MUSL']
