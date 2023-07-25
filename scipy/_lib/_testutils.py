@@ -257,14 +257,3 @@ def _get_mem_available():
             return info['memfree'] + info['cached']
 
     return None
-
-
-def _assert_matching_namespace(actual, expected):
-    expected_space = array_api_compat.array_namespace(expected)
-    if isinstance(actual, tuple):
-        for arr in actual:
-            arr_space = array_api_compat.array_namespace(arr)
-            assert arr_space == expected_space
-    else:
-        actual_space = array_api_compat.array_namespace(actual)
-        assert actual_space == expected_space
