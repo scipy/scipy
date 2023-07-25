@@ -602,7 +602,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     return x
 
 
-def solve_toeplitz(c_or_cr, b, check_finite=True):
+def solve_toeplitz(c_or_cr, b, check_finite=True, return_reflection=False):
     """Solve a Toeplitz system using Levinson Recursion
 
     The Toeplitz matrix has constant diagonals, with c as its first column
@@ -624,12 +624,20 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (result entirely NaNs) if the inputs do contain infinities or NaNs.
+    return_reflection : bool, optional
+        Whether to return the Toeplitz reflection coefficients.
 
     Returns
     -------
     x : (M,) or (M, K) ndarray
         The solution to the system ``T x = b``. Shape of return matches shape
         of `b`.
+    reflection_coeff : (M+1,) or (M+1, K) ndarray
+        Toeplitz reflection coefficients. When the matrix formed by c is
+        symmetric Toeplitz and ``b`` is ``c[n:]``, as in the solution of
+        autoregressive systems, then ``reflection_coeff`` also correspond to
+        the partial autocorrelation function. Only returned when
+        return_reflection is True.
 
     See Also
     --------
@@ -684,12 +692,17 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         raise ValueError('illegal value, `b` is a required argument')
 
     if b.ndim == 1:
-        x, _ = levinson(vals, np.ascontiguousarray(b))
+        x, refl = levinson(vals, np.ascontiguousarray(b))
     else:
-        x = np.column_stack([levinson(vals, np.ascontiguousarray(b[:, i]))[0]
-                             for i in range(b.shape[1])])
-        x = x.reshape(*b_shape)
+        x, refl = zip(*(
+            levinson(vals, np.ascontiguousarray(b[:, i]))
+            for i in range(b.shape[1])
+        ))
+        x = np.column_stack(x).reshape(*b_shape)
+        refl = np.column_stack(refl)
 
+    if return_reflection:
+        return x, refl
     return x
 
 
