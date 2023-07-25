@@ -185,8 +185,7 @@ class _dok_base(_spbase, IndexMixin):
             j, rj = divmod(int(key[1]) - col_start, col_step)
             if rj != 0 or j < 0 or j >= shape[1]:
                 continue
-            x = self._dict[key]
-            newdok[i, j] = x
+            newdok._dict[i, j] = self._dict[key]
         return newdok
 
     def _get_intXarray(self, row, col):
@@ -213,7 +212,7 @@ class _dok_base(_spbase, IndexMixin):
             for j, c in enumerate(col):
                 v = self._dict.get((r, c), 0)
                 if v:
-                    newdok[i, j] = v
+                    newdok._dict[i, j] = v
         return newdok
 
     def _get_arrayXarray(self, row, col):
@@ -224,7 +223,7 @@ class _dok_base(_spbase, IndexMixin):
         for key in itertools.product(range(i.shape[0]), range(i.shape[1])):
             v = self._dict.get((i[key], j[key]), 0)
             if v:
-                newdok[key] = v
+                newdok._dict[key] = v
         return newdok
 
     def _set_intXint(self, row, col, x):
