@@ -13,6 +13,7 @@ from collections import namedtuple
 from itertools import product
 import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, assume
+import hypothesis
 import contextlib
 
 from numpy.testing import (assert_, assert_equal,
@@ -3274,7 +3275,7 @@ class TestMoments:
 
 
 @strategies.composite
-def pvalue_ci_data_axis_strategy(draw):
+def ttest_data_axis_strategy(draw):
     # draw an array under shape and value constraints
     dtype = npst.floating_dtypes()
     elements = dict(allow_nan=False, allow_infinity=False)
@@ -3286,7 +3287,7 @@ def pvalue_ci_data_axis_strategy(draw):
     for axis in range(len(data.shape)):
         with contextlib.suppress(RuntimeWarning):
             var = stats.moment(data, moment=2, axis=axis)
-            if np.all(var > 0):
+            if np.all(var > 0) and np.all(np.isfinite(var)):
                 ok_axes.append(axis)
     assume(ok_axes)  # if there are no valid axes, let hypothesis know
 
@@ -3394,77 +3395,8 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
-    # @staticmethod
-    # @strategies.composite
-    # def pvalue_ci_test_strategy(draw, ):
-    #     def _ok_moment_axes(arr):
-    #         ok_axes = []
-    #         with warnings.catch_warnings():
-    #             warnings.simplefilter("error")
-    #             for axis in range(len(arr.shape)):
-    #                 with contextlib.suppress(RuntimeWarning):
-    #                     var = stats.moment(arr, moment=2, axis=axis)
-    #                     if var > 0:
-    #                         ok_axes.append(axis)
-    #         return ok_axes
-    #
-    # @given(
-    #     alpha=strategies.floats(1e-15, 1-1e-15),
-    #     arr=npst.arrays(
-    #         dtype=npst.floating_dtypes(),
-    #         shape=npst.array_shapes(min_dims=1, min_side=2),
-    #         elements=dict(allow_nan=False, allow_infinity=False)
-    #     ).filter(_ok_moment_axes),
-    #     data=strategies.data(),  # to choose an ok axis inside the test
-    # )
-    # @pytest.mark.parametrize("alternative", ["less", "greater"])
-    # def test_pvalue_ci(self, data, alpha, arr, alternative):
-    #     # Pick an allowed axis along which to compute
-    #     axis = data.draw(strategies.sampled_from(_ok_moment_axes(arr)))
-    #     # test the relationship between one-sided p-values and confidence intervals
-    #     res = stats.ttest_1samp(arr, 0, alternative=alternative, axis=axis)
-    #     l, u = res.confidence_interval(confidence_level=alpha)
-    #     popmean = np.expand_dims(l if alternative == "greater" else u,
-    #                              axis=axis)
-    #     res = stats.ttest_1samp(arr, popmean, alternative=alternative,
-    #                             axis=axis)
-    #     np.testing.assert_allclose(res.pvalue, 1 - alpha)
-
-    # @staticmethod
-    # def pvalue_ci_test_strategy():
-    #     alpha = strategies.floats(1e-15, 1-1e-15)
-    #     dtype = npst.floating_dtypes()
-    #     elements = dict(allow_nan=False, allow_infinity=False)
-    #     shape = npst.array_shapes(min_dims=1, min_side=2)
-    #     data = npst.arrays(dtype=dtype, elements=elements, shape=shape)
-    #     return dict(alpha=alpha, data=data)
-    #
-    # @given(**pvalue_ci_test_strategy())
-    # @pytest.mark.parametrize('alternative', ['less', 'greater'])
-    # def test_pvalue_ci(self, data, alpha, alternative):
-    #     # test the relationship between one-sided p-values and confidence intervals
-    #     rng = np.random.default_rng(435892655436)
-    #     axis = rng.integers(0, len(data.shape))
-    #
-    #     with warnings.catch_warnings():
-    #         warnings.simplefilter("error")
-    #         try:
-    #             var = stats.moment(data, moment=2, axis=axis)
-    #             assert var > 0
-    #             valid_variance = True
-    #         except Exception:
-    #             valid_variance = False
-    #
-    #     assume(valid_variance)
-    #     res = stats.ttest_1samp(data, 0, alternative=alternative, axis=axis)
-    #     l, u = res.confidence_interval(confidence_level=alpha)
-    #     popmean = l if alternative == 'greater' else u
-    #     popmean = np.expand_dims(popmean, axis=axis)
-    #     res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
-    #     np.testing.assert_allclose(res.pvalue, 1 - alpha)
-
     @given(alpha=strategies.floats(1e-15, 1-1e-15),
-           data_axis=pvalue_ci_data_axis_strategy())
+           data_axis=ttest_data_axis_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
     def test_pvalue_ci(self, alpha, data_axis, alternative):
         # test the relationship between one-sided p-values and confidence intervals
