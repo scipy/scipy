@@ -2,8 +2,6 @@
 # Use the `scipy.stats` namespace for importing the functions
 # included below.
 
-import warnings
-
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
@@ -42,10 +40,6 @@ __all__ = [  # noqa: F822
     'Ks_2sampResult', 'RanksumsResult', 'KruskalResult',
     'FriedmanchisquareResult', 'BrunnerMunzelResult', 'RepeatedResults'
 ]
-
-
-warnings.warn("scipy.stats.stats is deprecated and will be removed "
-              "in SciPy 2.0.0", DeprecationWarning, stacklevel=2)
 
 
 def __dir__():
