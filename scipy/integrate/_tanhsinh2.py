@@ -9,20 +9,17 @@ from scipy.optimize._zeros_py import (_scalar_optimization_loop,
 # todo:
 #  improper integral transformations
 #  update input validation
-#  check for infinities/NaNs in Sn
 #  check function evaluation limit
+#  update tests
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
 #  Add heuristic to stop when improvement is too slow
-#  special case for equal limits of integration?
 #  callback - test results at lower levels with higher maxlevel against
 #             final results at lower maxlevel
-#  accept args, kwargs?
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
-#  vectorize, respecting data type
 #  When doing log-integration, should the tolerances control the error of the
 #    log-integral or the error of the integral?  The trouble is that `log`
 #    inherently looses some precision so it may not be possible to refine
@@ -458,30 +455,26 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         """Terminate due to convergence, non-finite values, or error increase"""
         stop = np.zeros_like(work.Sn).astype(bool)
 
+        if work.nit == 0:
+            # The only way we can terminate on the zeroth iteration is if
+            # the integration limits are equal.
+            i = (work.a == work.b).ravel()  # these are guaranteed to be 1d
+            zero = -np.inf if log else 0
+            work.Sn[i] = zero
+            work.aerr[i] = zero
+            work.status[i] = 0
+            stop[i] = True
+            return stop
+
         work.rerr, work.aerr, work.Sk = _estimate_error(work)
         i = ((work.rerr < work.rtol) | (work.rerr + np.real(work.Sn) < work.atol) if log
              else (work.rerr < work.rtol) | (work.rerr * abs(work.Sn) < work.atol))
         work.status[i] = 0
         stop[i] = True
 
-        # i = work.error < work.atol + work.rtol*abs(work.df)
-        # work.status[i] = _ECONVERGED
-        # stop[i] = True
-        #
-        # if work.nit > 0:
-        #     i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
-        #     work.df[i], work.status[i] = np.nan, _EVALUEERR
-        #     stop[i] = True
-        #
-        # # With infinite precision, there is a step size below which
-        # # all smaller step sizes will reduce the error. But in floating point
-        # # arithmetic, catastrophic cancellation will begin to cause the error
-        # # to increase again. This heuristic tries to avoid step sizes that are
-        # # too small. Note that there are more theoretically sound approache,
-        # # but this was simple and effective.
-        # i = (work.error > work.error_last*10) & ~stop
-        # work.status[i] = _EERRORINCREASE
-        # stop[i] = True
+        i = ~np.isfinite(work.Sn) & ~stop
+        work.status[i] = 3
+        stop[i] = True
 
         return stop
 
