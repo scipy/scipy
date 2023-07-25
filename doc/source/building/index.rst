@@ -326,10 +326,10 @@ virtual environments:
        python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
 
        # Doc build dependencies
-       python -m pip sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
 
        # Dev dependencies (static typing and linting)
-       python -m pip mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
 
 To build SciPy in an activated development environment, run::
 
