@@ -313,33 +313,16 @@ def _transform_integrals(f, a, b, log):
     negative = b < a
     a[negative], b[negative] = b[negative], a[negative]
 
-    feval_factor = None
-    # if np.isinf(a) and np.isinf(b):
-    #     def f(x, f=f):
-    #         return (special.logsumexp([f(x), f(-x)], axis=0) if log
-    #                 else f(x) + f(-x))
-    #     a, b = 0, np.inf
-    #     feval_factor = 2  # user function evaluated twice each call
-    # elif np.isinf(a):
-    #     def f(x, f=f):
-    #         return f(-x)
-    #     a, b = -b, -a
-    #     feval_factor = 1
-    # else:
-    #     feval_factor = 1
-    #
-    # if np.isinf(b):
-    #     def f(x, f=f, a=a):
-    #         return (f(1/x - 1 + a) - 2*np.log(abs(x)) if log
-    #                 else f(1/x - 1 + a)*x**-2)
-    #     a, b = 0, 1
+    abinf = np.isinf(a) & np.isinf(b)
+    a[abinf], b[abinf] = -1, 1
+
     ainf = np.isinf(a)
     a[ainf], b[ainf] = -b[ainf], -a[ainf]
 
     binf = np.isinf(b)
     a[binf], b[binf] = 0, 1
 
-    return f, a, b, feval_factor, negative, ainf, binf
+    return f, a, b, None, negative, abinf, ainf, binf
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
@@ -407,7 +390,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     a, b = xs
 
     # Transform improper integrals
-    f, a, b, feval_factor, negative, ainf, binf = _transform_integrals(f, a, b, log)
+    f, a, b, feval_factor, negative, abinf, ainf, binf = _transform_integrals(f, a, b, log)
 
     zero = -np.inf if log else 0
     Sn = np.full(shape, zero, dtype=dtype).ravel()
@@ -432,7 +415,8 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                           status=status, dtype=dtype, minlevel=minlevel,
                           a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
                           n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
-                          fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf)
+                          fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
+                          abinf=abinf)
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepanded automatically.
@@ -445,11 +429,13 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
 
         xj = work.xj.copy()
+        xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
         xj[work.binf] = 1/xj[work.binf] - 1 + work.a[work.binf]
         xj[work.ainf] *= -1
         return xj
 
     def post_func_eval(x, fj, work):
+        fj[work.abinf] *= (1 + work.xj[work.abinf]**2) / (1 - work.xj[work.abinf]**2)**2
         fj[work.binf] *= work.xj[work.binf]**-2.
         fjwj, Sn = _euler_maclaurin_sum(fj, work)
         if work.Sk.shape[-1]:
