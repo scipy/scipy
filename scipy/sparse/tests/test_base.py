@@ -249,11 +249,6 @@ class _TestCommon:
         cls.dat = array([[1, 0, 0, 2], [3, 0, 1, 0], [0, 2, 0, 0]], 'd')
         cls.datsp = cls.spcreator(cls.dat)
 
-        # set array/matrix testing mode for this class based on the class attribute
-        # Could use isinstance(spcreator, sparray) except that some test classes (e.g. TextCSR)
-        # use a method to filter warnings produced when creating the sparse object.
-        cls._is_array = isinstance(cls.datsp, sparray)
-
         # Some sparse and dense matrices with data for every supported dtype.
         # This set union is a workaround for numpy#6295, which means that
         # two np.int64 dtypes don't hash to the same value.
