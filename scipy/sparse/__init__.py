@@ -95,7 +95,7 @@ Building sparse matrices:
    block_diag - Build a block diagonal sparse matrix
    tril - Lower triangular portion of a matrix in sparse format
    triu - Upper triangular portion of a matrix in sparse format
-   block_array - Build a sparse array from sub-blocks
+   block - Build a sparse array from sub-blocks
    bmat - Build a sparse matrix from sub-blocks
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
