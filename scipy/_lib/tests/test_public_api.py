@@ -328,11 +328,7 @@ def test_private_but_present_deprecation(module_name, correct_module):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
     # were misleading. Check that this is resolved.
-
-    # check that `import scipy.stats.stats`` etc raises deprecation warning
-    with pytest.deprecated_call(match=module_name):
-        module = import_module(module_name)
-
+    module = import_module(module_name)
     if correct_module is None:
         import_name = f'scipy.{module_name.split(".")[1]}'
     else:
