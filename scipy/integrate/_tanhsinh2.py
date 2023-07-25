@@ -7,10 +7,8 @@ from scipy.optimize._zeros_py import (_scalar_optimization_loop,
                                       _scalar_optimization_initialize)
 
 # todo:
-#  improper integral transformations
-#  update input validation
-#  check function evaluation limit
 #  update tests
+#  check function evaluation limit
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
@@ -325,7 +323,8 @@ def _transform_integrals(f, a, b, log):
     return f, a, b, None, negative, abinf, ainf, binf
 
 
-def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
+def _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
+                 atol, rtol, args, callback):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -343,9 +342,6 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
     if rtol is None:
         rtol = np.log(1e-12) if log else 1e-12
 
-    # these need input validation
-    a, b = np.broadcast_arrays(a, b)
-
     params = np.asarray([atol, rtol, 0.])
     if log:
         message = '`atol` and `rtol` may not be positive infinity.'
@@ -357,13 +353,12 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
             raise ValueError(message)
     atol, rtol, _ = params
 
-    BIGINT = int(2**63-2)  # avoid overflow when this is incremented
+    BIGINT = int(2**63-2)  # -2 to avoid overflow when this is incremented
     if maxfun is None and maxlevel is None:
         maxlevel = 10
-    # `np.isposinf` errors for objects other than numbers. This seems to work
-    # for any common representation of infinity.
-    maxfun = BIGINT if (maxfun is None or maxfun == np.inf) else maxfun
-    maxlevel = BIGINT if (maxlevel is None or maxlevel == np.inf) else maxlevel
+    # `np.isposinf` errors for objects other than numbers.
+    maxfun = BIGINT if (maxfun is None or maxfun > BIGINT) else maxfun
+    maxlevel = BIGINT if (maxlevel is None or maxlevel > BIGINT) else maxlevel
 
     message = '`maxfun`, `maxlevel`, and `minlevel` must be integers.'
     params = np.asarray([maxfun, maxlevel, minlevel])
@@ -374,18 +369,29 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol):
         raise ValueError(message)
     maxfun, maxlevel, minlevel = params
 
-    return (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol)
+    if not np.iterable(args):
+        args = (args,)
+
+    if callback is not None and not callable(callback):
+        raise ValueError('`callback` must be callable.')
+
+    return f, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
 
 
 def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                minlevel=2, atol=None, rtol=None, args=(), callback=None):
 
-    # need IV for callback, args
-    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol)
-    (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol) = res
+    res = _tanhsinh_iv(f, log, maxfun, maxlevel, minlevel,
+                       atol, rtol, args, callback)
+    (f, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback) = res
 
     # Initialization
-    # func(a/b) is not used. Can we get avoid doing this?
+    # No, the function does not really need to be evaluated at `a` and `b`, but
+    # `_scalar_optimization_initialize` does several important jobs, including
+    # ensuring that `a`, `b`, each of the `args`, and the output of `f`
+    # broadcast correctly and are of consistent types. Integration usually
+    # takes at least 100 function evaluations, so this is unlikely to be a
+    # bottleneck.
     xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args)
     a, b = xs
 
@@ -435,8 +441,13 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return xj
 
     def post_func_eval(x, fj, work):
-        fj[work.abinf] *= (1 + work.xj[work.abinf]**2) / (1 - work.xj[work.abinf]**2)**2
-        fj[work.binf] *= work.xj[work.binf]**-2.
+        if work.log:
+            fj[work.abinf] += np.log(1 + work.xj[work.abinf] ** 2) - 2*np.log(1 - work.xj[work.abinf] ** 2)
+            fj[work.binf] -= 2 * np.log(work.xj[work.binf])
+        else:
+            fj[work.abinf] *= (1 + work.xj[work.abinf]**2) / (1 - work.xj[work.abinf]**2)**2
+            fj[work.binf] *= work.xj[work.binf]**-2.
+
         fjwj, Sn = _euler_maclaurin_sum(fj, work)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
