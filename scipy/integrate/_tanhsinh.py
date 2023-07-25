@@ -404,7 +404,7 @@ def _euler_maclaurin_sum(f, xj, wj, h, last_terms, log):
     # omitted from the Euler-Maclaurin sum. This is a bit involved because
     # it may have been computed at a previous level. I sure hope it's worth
     # all the trouble.
-    xl0, fl0, wr0, xr0, fr0, wl0, d4 = last_terms  # incumbent last terms
+    xl0, fl0, wl0, xr0, fr0, wr0, d4 = last_terms  # incumbent last terms
 
     # Find the most extreme abscissae corresponding with terms that are
     # included in the sum in this level.

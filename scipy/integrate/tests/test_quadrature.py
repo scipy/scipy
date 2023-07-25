@@ -657,11 +657,11 @@ class TestTanhSinh:
         rtol = 2e-8
         res = _tanhsinh(f, 0, f.b, rtol = rtol)
         assert_allclose(res.integral, f.ref, rtol=rtol)
-        if f_number not in {12, 14}:  # mildly underestimates error here
+        if f_number not in {14}:  # mildly underestimates error here
             true_error = abs(self.error(res.integral, f.ref)/res.integral)
             assert true_error < res.error
 
-        if f_number in {7, 10}:  # succeeds, but doesn't know it
+        if f_number in {7, 10, 12}:  # succeeds, but doesn't know it
             return
 
         assert res.success
