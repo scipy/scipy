@@ -7,6 +7,10 @@ from scipy.optimize._zeros_py import (_scalar_optimization_loop,
                                       _scalar_optimization_initialize)
 
 # todo:
+#  improper integral transformations
+#  update input validation
+#  check for infinities/NaNs in Sn
+#  check function evaluation limit
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1232935669
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
@@ -210,8 +214,10 @@ def _euler_maclaurin_sum(fj, work):
     # replace them with the function value at the nearest non-infinite point.
     # [3] pg. 22 suggests the latter, so let's do that given that we have the
     # information.
-    fr[invalid_r] = fr0
-    fl[invalid_l] = fl0
+    fr0b = np.broadcast_to(fr0[:, np.newaxis], fr.shape)
+    fl0b = np.broadcast_to(fl0[:, np.newaxis], fl.shape)
+    fr[invalid_r] = fr0b[invalid_r]
+    fl[invalid_l] = fl0b[invalid_l]
 
     # When wj is zero, log emits a warning
     with np.errstate(divide='ignore'):
@@ -222,6 +228,7 @@ def _euler_maclaurin_sum(fj, work):
           else np.sum(fjwj, axis=-1) * work.h)
 
     work.xl0, work.fl0, work.wr0, work.xr0, work.fr0, work.wl0, work.d4 = xl0, fl0, wr0, xr0, fr0, wl0, d4
+
     return fjwj, Sn
 
 
@@ -285,8 +292,8 @@ def _estimate_error(work):
         d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j], axis=0))
         d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j], axis=0))
         d3 = log_e1 + np.max(fjwj, axis=-1)
-        # d4 = last_terms[-1]
-        aerr = np.max([d1 ** 2 / d2, 2 * d1, d3], axis=0)
+        d4 = work.d4
+        aerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4], axis=0)
         rerr = np.maximum(log_e1, aerr - np.real(Sn))
     else:
         # Note: explicit computation of log10 of each of these is unnecessary.
@@ -294,10 +301,10 @@ def _estimate_error(work):
         d1 = np.abs(Sn - Snm1)
         d2 = np.abs(Sn - Snm2)
         d3 = e1 * np.max(fjwj, axis=-1)
-        # d4 = last_terms[-1]
+        d4 = work.d4
         # If `d1` is 0, no need to warn. This does the right thing.
         with np.errstate(divide='ignore'):
-            aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3], axis=0)
+            aerr = np.max([d1**(np.log(d1)/np.log(d2)), d1**2, d3, d4], axis=0)
         rerr = np.maximum(e1, aerr/np.abs(Sn))
     return rerr, aerr.reshape(Sn.shape), Sk
 
@@ -439,10 +446,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return work.xj
 
     def post_func_eval(x, fj, work):
-        # _euler_maclaurin_sum(fj, work)
-        fjwj = fj + np.log(work.wj) if work.log else fj * work.wj
-        Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if log
-              else np.sum(fjwj, axis=-1) * work.h)
+        fjwj, Sn = _euler_maclaurin_sum(fj, work)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
             Sn = (special.logsumexp([Snm1 - np.log(2), Sn], axis=0) if log
