@@ -10,8 +10,9 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 
 # todo:
 #  add vectorization and other tests inspired by `_differentiate`
-#  figure out warning situatation
-#  respect function evaluation limit
+#  refactor and comment
+#  figure out warning situation
+#  respect function evaluation limit?
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
@@ -26,34 +27,25 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 #    the integral further. Example: 7th moment of stats.f(15, 20)
 #  make public?
 
-@dataclass
-class QuadratureResult:
-    integral: float
-    error: float
-    feval: int
-    success: bool
-    status: int
-    message: str
-
 
 def _get_base_step(dtype=np.float64):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
     # weights underflow or the abscissae cannot be distinguished from the
     # limits of integration. The latter happens to occur first for float32 and
-    # float64, and it occurs when`xjc` (the abscissa complement)
-    # in `_compute_pair` underflows. We can solve for the argument at which
-    # it will underflow `tmax` using [2] Eq. 13.
-    fmin = np.finfo(dtype).tiny*4  # stay a little away from the limit
-    tmax = np.arcsinh(np.log(2/fmin - 1)/np.pi)
+    # float64, and it occurs when `xjc` (the abscissa complement)
+    # in `_compute_pair` underflows. We can solve for the argument `tmax` at
+    # which it will underflow using [2] Eq. 13.
+    fmin = 4*np.finfo(dtype).tiny  # stay a little away from the limit
+    tmax = np.arcsinh(np.log(2/fmin - 1) / np.pi)
 
     # Based on this, we can choose a base step size `h` for level 0.
     # The number of function evaluations will be `2 + m*2^(k+1)`, where `k` is
-    # the level and `m` is an integer we get to choose. I choose `8` somewhat
-    # arbitrarily, but a rationale is that a power of 2 makes floating point
-    # arithmetic more predictable. It also results in a base step size close
-    # to `1`, which is what [1] uses (and I used here until I found [2] and
-    # these ideas settled).
+    # the level and `m` is an integer we get to choose. I choose
+    # m = _N_BASE_STEPS = `8` somewhat arbitrarily, but a rationale is that a
+    # power of 2 makes floating point arithmetic more predictable. It also
+    # results in a base step size close to `1`, which is what [1] uses (and I
+    # used here until I found [2] and these ideas settled).
     h0 = tmax / _N_BASE_STEPS
     return h0.astype(dtype)
 
@@ -63,6 +55,12 @@ _N_BASE_STEPS = 8
 
 def _compute_pair(k, h0):
     # Compute the abscissa-weight pairs for each level k. See [1] page 9.
+
+    # For now, we compute and store in 64-bit precision. If higher-precision
+    # data types become better supported, it would be good to compute these
+    # using the highest precision available. Or, once there is an Array API-
+    # compatible arbitrary precision array, we can compute at the required
+    # precision.
 
     # "....each level k of abscissa-weight pairs uses h = 2 **-k"
     # We adapt to floating point arithmetic using ideas of [2].
@@ -88,13 +86,13 @@ def _compute_pair(k, h0):
     # code, the function will be evaluated there twice; each gets half weight.
     wj[0] = wj[0] / 2 if k == 0 else wj[0]
 
-    return xjc, wj
+    return xjc, wj  # store at full precision
 
 
 def _pair_cache(k, h0):
-    # Cache the ascissa-weight pairs up to a specified level.
-    # Abscissae and weights of consecutive levels are concatenated in separate
-    # 1D arrays. `index` records the indices that correspond with each level;
+    # Cache the abscissa-weight pairs up to a specified level.
+    # Abscissae and weights of consecutive levels are concatenated.
+    # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
     xjcs = [_pair_cache.xjc]
     wjs = [_pair_cache.wj]
@@ -142,7 +140,7 @@ def _transform_to_limits(xjc, wj, a, b):
     # Points at the boundaries can be generated due to finite precision
     # arithmetic, but these function values aren't supposed to be included in
     # the Euler-Maclaurin sum. Ideally we wouldn't evaluate the function at
-    # these points; however, we can't easily filter out points when this
+    # these points; however, we can't easily filter out points since this
     # function is vectorized. Instead, zero the weights.
     invalid = (xj <= a) | (xj >= b)
     wj[invalid] = 0
@@ -216,13 +214,14 @@ def _euler_maclaurin_sum(fj, work):
 
 
 def _estimate_error(work):
+    # Estimate the error according to [1] Section 5
+
     n = work.n
     Sn = work.Sn
     Sk = work.Sk
     h = work.h
     log = work.log
     last_terms = None
-    # Estimate the error according to [1] Section 5
 
     if work.n == 0 or work.nit == 0:
         # The paper says to use "one" as the error before it can be calculated.
@@ -292,10 +291,13 @@ def _estimate_error(work):
     return rerr, aerr.reshape(Sn.shape), Sk
 
 
-def _transform_integrals(f, a, b, log):
-    # Transform integrals as needed for infinite limits
-    # There are more efficient ways of doing this to avoid function call
-    # overhead, but let's stick with the simplest for now.
+def _transform_integrals(a, b):
+    # Transform integrals to a form with finite a < b
+    # For b < a, we reverse the limits and will multiply the final result by -1
+    # For infinite limit on the right, we use the substitution x = 1/t - 1 + a
+    # For infinite limit on the left, we substitute x = -x and treat as above
+    # For infinite limits, we substitute x = t / (1-t**2)
+
     negative = b < a
     a[negative], b[negative] = b[negative], a[negative]
 
@@ -308,7 +310,7 @@ def _transform_integrals(f, a, b, log):
     binf = np.isinf(b)
     a[binf], b[binf] = 0, 1
 
-    return f, a, b, None, negative, abinf, ainf, binf
+    return a, b, negative, abinf, ainf, binf
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
@@ -395,7 +397,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     a, b = xs
 
     # Transform improper integrals
-    f, a, b, feval_factor, negative, abinf, ainf, binf = _transform_integrals(f, a, b, log)
+    a, b, negative, abinf, ainf, binf = _transform_integrals(a, b)
 
     zero = -np.inf if log else 0
     Sn = np.full(shape, zero, dtype=dtype).ravel()
@@ -414,7 +416,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     wr0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
-    nit, nfev = 0, 2  # one function evaluations performed above
+    nit, nfev = 0, 2  # two function evaluations performed above
 
     work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
@@ -423,9 +425,8 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                           n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
                           fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
                           abinf=abinf, pi=pi)
-    # This is the correspondence between terms in the `work` object and the
-    # final result. In this case, the mapping is trivial. Note that `success`
-    # is prepanded automatically.
+
+    # Correspondence between terms in the `work` object and the
     res_work_pairs = [('status', 'status'), ('integral', 'Sn'),
                       ('error', 'aerr'), ('nit', 'nit'), ('nfev', 'nfev')]
 
@@ -434,8 +435,10 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         xjc, wj = _get_pairs(work.n, work.h0,
                              inclusive=(work.n == work.minlevel),
                              dtype=work.dtype)
+
         work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
 
+        # Abscissae substitutions for infinite limits of integration
         xj = work.xj.copy()
         xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
         xj[work.binf] = 1/xj[work.binf] - 1 + work.a[work.binf]
@@ -443,11 +446,14 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return xj
 
     def post_func_eval(x, fj, work):
+        # weight integrand as required by substitutions for infinite limits
         if work.log:
-            fj[work.abinf] += np.log(1 + work.xj[work.abinf] ** 2) - 2*np.log(1 - work.xj[work.abinf] ** 2)
+            fj[work.abinf] += (np.log(1 + work.xj[work.abinf] ** 2)
+                               - 2*np.log(1 - work.xj[work.abinf] ** 2))
             fj[work.binf] -= 2 * np.log(work.xj[work.binf])
         else:
-            fj[work.abinf] *= (1 + work.xj[work.abinf]**2) / (1 - work.xj[work.abinf]**2)**2
+            fj[work.abinf] *= ((1 + work.xj[work.abinf]**2) /
+                               (1 - work.xj[work.abinf]**2)**2)
             fj[work.binf] *= work.xj[work.binf]**-2.
 
         fjwj, Sn = _euler_maclaurin_sum(fj, work)
@@ -455,6 +461,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
             Snm1 = work.Sk[:, -1]
             Sn = (special.logsumexp([Snm1 - np.log(2), Sn], axis=0) if log
                   else Snm1 / 2 + Sn)
+
         work.fjwj = fjwj
         work.Sn = Sn
 
@@ -500,9 +507,9 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
 
     # suppress all warnings initially; we'll address this later
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        res = _scalar_optimization_loop(work, callback, shape,
-                                        maxiter, f, args, dtype,
-                                        pre_func_eval, post_func_eval,
-                                        check_termination, post_termination_check,
+        res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
+                                        args, dtype, pre_func_eval,
+                                        post_func_eval, check_termination,
+                                        post_termination_check,
                                         customize_result, res_work_pairs)
     return res
