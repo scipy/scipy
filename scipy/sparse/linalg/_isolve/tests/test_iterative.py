@@ -549,6 +549,21 @@ def test_show(case, capsys):
     assert err == ""
 
 
+def test_positional_deprecation(solver):
+    if solver in (gcrotmk, lgmres, minres, tfqmr):
+        pytest.skip("positional arguments not yet deprecated")
+
+    # from test_x0_working
+    rng = np.random.default_rng(1685363802304750)
+    n = 10
+    A = rng.random(size=[n, n])
+    A = A @ A.T
+    b = rng.random(n)
+    x0 = rng.random(n)
+    with pytest.deprecated_call(match="use keyword arguments"):
+        solver(A, b, x0)
+
+
 class TestQMR:
     @pytest.mark.filterwarnings('ignore::scipy.sparse.SparseEfficiencyWarning')
     def test_leftright_precond(self):
