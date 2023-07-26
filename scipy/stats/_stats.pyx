@@ -687,34 +687,6 @@ cdef double _genhyperbolic_logpdf_kernel(
     return t1 + t3 + t4 + t5
 
 
-cpdef double gausshyper_pdf(double x, double a, double b, double c, double z) noexcept nogil:
-    return _gausshyper_pdf_kernel(x, a, b, c, z)
-
-
-cdef double _gausshyper_pdf(double x, void *user_data) except * nogil:
-    # destined to be used in a LowLevelCallable
-    cdef double a, b, c, z
-
-    a = (<double *>user_data)[0]
-    b = (<double *>user_data)[1]
-    c = (<double *>user_data)[2]
-    z = (<double *>user_data)[3]
-
-    return _gausshyper_pdf_kernel(x, a, b, c, z)
-
-
-cdef double _gausshyper_pdf_kernel(
-        double x, double a, double b, double c, double z
-        ) noexcept nogil:
-    cdef double normalization_constant
-    cdef double numerator
-
-    numerator = x**(a-1.0) * (1.0 - x)**(b-1.0) / (1.0 + z*x)**c
-    normalization_constant = cs.beta(a, b) * cs.hyp2f1(c, a, a + b, -z)
-
-    return numerator/normalization_constant
-
-
 cdef double _log_norming_constant(double p, double a, double b) noexcept nogil:
     cdef double t1, t2, t3, t4, t5, t6
 

@@ -541,22 +541,6 @@ class TestNBinom:
         assert_allclose(vals, ref)
 
 
-class TestGaussHyper:
-    # reference values were computed via the ReferenceDistribution
-    # e. g. GaussHyper(a=a, b=b, c=c, z=z).cdf(x=x)
-    @pytest.mark.parametrize('x, a, b, c, z, cdf_ref, sf_ref',
-                             [(1e-3, 5.5, 25., 2, -0.5,
-                               6.9012263077066474e-12, 0.9999999999930987),
-                              (0.8, 15., 25., 5., 1.,
-                               0.9999999993771566, 6.228434475357731e-10),
-                              (0.999999, 1.5, 2.5, 2., -0.5,
-                               0.9999999999999949, 5.06735572621975e-15)])
-    def test_cdf_sf(self, x, a, b, c, z, cdf_ref, sf_ref):
-        gausshyper_dist = stats.gausshyper(a=a, b=b, c=c, z=z)
-        assert_allclose(gausshyper_dist.cdf(x), cdf_ref, rtol=1e-8)
-        assert_allclose(gausshyper_dist.sf(x), sf_ref, rtol=1e-8)
-
-
 class TestGenInvGauss:
     def setup_method(self):
         np.random.seed(1234)
