@@ -9,18 +9,14 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
 
 # todo:
-#  add vectorization and other tests inspired by `_differentiate`
 #  refactor and comment
-#  maybe report maxlevel, not maxiter?
 #  figure out warning situation
 #  respect function evaluation limit?
 #  add documentation back - also note that minlevel is min(maxlevel, 2)
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
-#  Add heuristic to stop when improvement is too slow
-#  callback - test results at lower levels with higher maxlevel against
-#             final results at lower maxlevel
+#  Add heuristic to stop when improvement is too slow / antithrashing
 #  support singularities? interval subdivision? this feature will be added
 #    eventually, but do we adjust the interface now?
 #  When doing log-integration, should the tolerances control the error of the
@@ -158,6 +154,9 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
             res['integral'] = res['integral'] + negative*pi*j
         else:
             res['integral'][negative] *= -1
+        res['maxlevel'] = minlevel + res['nit'] - 1
+        res['maxlevel'][res['nit'] == 0] = -1
+        del res['nit']
 
     # suppress all warnings initially; we'll address this later
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):

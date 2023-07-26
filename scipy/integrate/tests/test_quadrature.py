@@ -694,10 +694,10 @@ class TestTanhSinh:
         n = np.prod(shape)
 
         def f(x, p):
-            f.nit += 1
+            f.ncall += 1
             f.feval += 1 if (x.size == n or x.ndim <=1) else x.shape[-1]
             return x**p
-        f.nit = 0
+        f.ncall = 0
         f.feval = 0
 
         @np.vectorize
@@ -707,7 +707,7 @@ class TestTanhSinh:
         res = _tanhsinh(f, a, b, args=(p,))
         refs = _tanhsinh_single(a, b, p).ravel()
 
-        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'nit']
+        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
         for attr in attrs:
             ref_attr = [getattr(ref, attr) for ref in refs]
             res_attr = getattr(res, attr)
@@ -717,9 +717,11 @@ class TestTanhSinh:
         assert np.issubdtype(res.success.dtype, np.bool_)
         assert np.issubdtype(res.status.dtype, np.integer)
         assert np.issubdtype(res.nfev.dtype, np.integer)
-        assert np.issubdtype(res.nit.dtype, np.integer)
+        assert np.issubdtype(res.maxlevel.dtype, np.integer)
         assert_equal(np.max(res.nfev), f.feval)
-        assert_equal(np.max(res.nit), f.nit-2)
+        # maxlevel = 2 -> 3 function calls (2 initialization, 1 work)
+        assert np.max(res.maxlevel) >= 2
+        assert_equal(np.max(res.maxlevel)+1, f.ncall)
 
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
@@ -769,10 +771,10 @@ class TestTanhSinh:
         assert ref.success
         assert ref.status == 0
 
-        # Test `maxlevel` equal to required number of function evaluations
+        # Test `maxlevel` equal to required max level
         # We should get all the same results
         f.feval, f.calls = 0, 0
-        maxlevel = ref.nit + 1  # nit=1 -> maxlevel 2
+        maxlevel = ref.maxlevel
         res = _tanhsinh(f, 0, f.b, maxlevel=maxlevel)
         res.calls = f.calls
         assert res == ref
@@ -969,7 +971,7 @@ class TestTanhSinh:
         kwargs = dict(minlevel=minlevel, maxlevel=maxlevel, rtol=1e-15)
         res = _tanhsinh(f, a, b, **kwargs)
         assert not res.success
-        assert res.nit == maxiter
+        assert res.maxlevel == maxlevel
 
         def callback(res):
             callback.iter += 1
@@ -992,6 +994,32 @@ class TestTanhSinh:
                 assert res2[key] == -4
             else:
                 assert res2[key] == callback.res[key] == res[key]
+
+    def test_jumpstart(self):
+        # The intermediate results at each level i should be the same as the
+        # final results when jumpstarting at level i; i.e. minlevel=maxlevel=i
+        a, b = -np.inf, np.inf
+        def f(x):
+            return np.exp(-x*x)
+
+        def callback(res):
+            callback.integrals.append(res.integral)
+            callback.errors.append(res.error)
+        callback.integrals = []
+        callback.errors = []
+
+        maxlevel = 4
+        _tanhsinh(f, a, b, minlevel=0, maxlevel=maxlevel, callback=callback)
+
+        integrals = []
+        errors = []
+        for i in range(maxlevel + 1):
+            res = _tanhsinh(f, a, b, minlevel=i, maxlevel=i)
+            integrals.append(res.integral)
+            errors.append(res.error)
+
+        assert_allclose(callback.integrals[1:], integrals, rtol=1e-15)
+        assert_allclose(callback.errors[1:], errors, rtol=1e-15, atol=1e-16)
 
     def test_special_cases(self):
         # Test edge cases and other special cases
@@ -1017,7 +1045,7 @@ class TestTanhSinh:
         # Tes equal left and right integration limits
         res = _tanhsinh(f, 1, 1)
         assert res.success
-        assert res.nit == 0
+        assert res.maxlevel == -1
         assert_allclose(res.integral, 0)
 
         # Test scalar `args` (not in tuple)
