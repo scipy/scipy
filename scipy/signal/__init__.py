@@ -283,8 +283,11 @@ Spectral analysis
    spectrogram    -- Compute the spectrogram.
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
-   stft           -- Compute the Short Time Fourier Transform.
-   istft          -- Compute the Inverse Short Time Fourier Transform.
+   ShortTimeFFT   -- Interface for calculating the \
+                     :ref:`Short Time Fourier Transform <tutorial_stft>` and \
+                     its inverse.
+   stft           -- Compute the Short Time Fourier Transform (legacy).
+   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
@@ -329,6 +332,7 @@ from ._lti_conversion import *
 from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
+from ._short_time_fft import *
 from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *

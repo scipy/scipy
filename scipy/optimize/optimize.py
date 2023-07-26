@@ -9,7 +9,6 @@ from . import _optimize
 __all__ = [  # noqa: F822
     'Brent',
     'FD_METHODS',
-    'Inf',
     'LineSearchWarning',
     'MapWrapper',
     'MemoizeJac',

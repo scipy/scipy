@@ -2106,10 +2106,10 @@ def lsim(system, U, T, X0=None, interp=True):
                 not np.any(U))
 
     if n_steps == 1:
-        yout = squeeze(dot(xout, transpose(C)))
+        yout = squeeze(xout @ C.T)
         if not no_input:
-            yout += squeeze(dot(U, transpose(D)))
-        return T, squeeze(yout), squeeze(xout)
+            yout += squeeze(U @ D.T)
+        return T, yout, squeeze(xout)
 
     dt = T[1] - T[0]
     if not np.allclose(np.diff(T), dt):
@@ -2118,11 +2118,11 @@ def lsim(system, U, T, X0=None, interp=True):
     if no_input:
         # Zero input: just use matrix exponential
         # take transpose because state is a row vector
-        expAT_dt = linalg.expm(transpose(A) * dt)
+        expAT_dt = linalg.expm(A.T * dt)
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], expAT_dt)
-        yout = squeeze(dot(xout, transpose(C)))
-        return T, squeeze(yout), squeeze(xout)
+            xout[i] = xout[i-1] @ expAT_dt
+        yout = squeeze(xout @ C.T)
+        return T, yout, squeeze(xout)
 
     # Nonzero input
     U = atleast_1d(U)
@@ -2148,11 +2148,11 @@ def lsim(system, U, T, X0=None, interp=True):
         M = np.vstack([np.hstack([A * dt, B * dt]),
                        np.zeros((n_inputs, n_states + n_inputs))])
         # transpose everything because the state and input are row vectors
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd = expMT[n_states:, :n_states]
         for i in range(1, n_steps):
-            xout[i] = dot(xout[i-1], Ad) + dot(U[i-1], Bd)
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd
     else:
         # Linear interpolation between steps
         # Algorithm: to integrate from time 0 to time dt, with linear
@@ -2169,15 +2169,15 @@ def lsim(system, U, T, X0=None, interp=True):
                        np.hstack([np.zeros((n_inputs, n_states + n_inputs)),
                                   np.identity(n_inputs)]),
                        np.zeros((n_inputs, n_states + 2 * n_inputs))])
-        expMT = linalg.expm(transpose(M))
+        expMT = linalg.expm(M.T)
         Ad = expMT[:n_states, :n_states]
         Bd1 = expMT[n_states+n_inputs:, :n_states]
         Bd0 = expMT[n_states:n_states + n_inputs, :n_states] - Bd1
         for i in range(1, n_steps):
-            xout[i] = (dot(xout[i-1], Ad) + dot(U[i-1], Bd0) + dot(U[i], Bd1))
+            xout[i] = xout[i-1] @ Ad + U[i-1] @ Bd0 + U[i] @ Bd1
 
-    yout = (squeeze(dot(xout, transpose(C))) + squeeze(dot(U, transpose(D))))
-    return T, squeeze(yout), squeeze(xout)
+    yout = squeeze(xout @ C.T) + squeeze(U @ D.T)
+    return T, yout, squeeze(xout)
 
 
 def _default_response_times(A, n):

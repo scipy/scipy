@@ -705,6 +705,7 @@ Combinatorics
 
    comb -- The number of combinations of N things taken k at a time.
    perm -- Permutations of N things taken k at a time, i.e., k-permutations of N.
+   stirling2 -- Stirling numbers of the second kind.
 
 Lambert W and related functions
 -------------------------------
