@@ -11,8 +11,10 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 # todo:
 #  add vectorization and other tests inspired by `_differentiate`
 #  refactor and comment
+#  maybe report maxlevel, not maxiter?
 #  figure out warning situation
 #  respect function evaluation limit?
+#  add documentation back - also note that minlevel is min(maxlevel, 2)
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
@@ -49,7 +51,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     a, b = xs
 
     # Transform improper integrals
-    a, b, negative, abinf, ainf, binf = _transform_integrals(a, b)
+    a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
 
     zero = -np.inf if log else 0
     Sn = np.full(shape, zero, dtype=dtype).ravel()
@@ -76,7 +78,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                           a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
                           n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
                           fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
-                          abinf=abinf, pi=pi)
+                          abinf=abinf, pi=pi, a0=a0[:, np.newaxis])
 
     # Correspondence between terms in the `work` object and the
     res_work_pairs = [('status', 'status'), ('integral', 'Sn'),
@@ -93,7 +95,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         # Abscissae substitutions for infinite limits of integration
         xj = work.xj.copy()
         xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
-        xj[work.binf] = 1/xj[work.binf] - 1 + work.a[work.binf]
+        xj[work.binf] = 1/xj[work.binf] - 1 + work.a0[work.binf]
         xj[work.ainf] *= -1
         return xj
 
@@ -233,6 +235,11 @@ def _pair_cache(k, h0):
     # Abscissae and weights of consecutive levels are concatenated.
     # `index` records the indices that correspond with each level:
     # `xjc[index[k]:index[k+1]` extracts the level `k` abscissae.
+    if h0 != _pair_cache.h0:
+        _pair_cache.xjc = np.empty(0)
+        _pair_cache.wj = np.empty(0)
+        _pair_cache.indices = [0]
+
     xjcs = [_pair_cache.xjc]
     wjs = [_pair_cache.wj]
 
@@ -244,16 +251,18 @@ def _pair_cache(k, h0):
 
     _pair_cache.xjc = np.concatenate(xjcs)
     _pair_cache.wj = np.concatenate(wjs)
+    _pair_cache.h0 = h0
 
 _pair_cache.xjc = np.empty(0)
 _pair_cache.wj = np.empty(0)
 _pair_cache.indices = [0]
+_pair_cache.h0 = None
 
 
 def _get_pairs(k, h0, inclusive=False, dtype=np.float64):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
-    if len(_pair_cache.indices) <= k+2:
+    if len(_pair_cache.indices) <= k+2 or h0 != _pair_cache.h0:
         _pair_cache(k, h0)
 
     xjc = _pair_cache.xjc
@@ -447,9 +456,10 @@ def _transform_integrals(a, b):
     a[ainf], b[ainf] = -b[ainf], -a[ainf]
 
     binf = np.isinf(b)
+    a0 = a.copy()
     a[binf], b[binf] = 0, 1
 
-    return a, b, negative, abinf, ainf, binf
+    return a, b, a0, negative, abinf, ainf, binf
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
@@ -507,6 +517,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     if np.any(params < 0):
         raise ValueError(message)
     maxfun, maxlevel, minlevel = params.astype(np.int64)
+    minlevel = min(minlevel, maxlevel)
 
     if not np.iterable(args):
         args = (args,)

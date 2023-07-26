@@ -671,6 +671,73 @@ class TestTanhSinh:
         assert res.success
         assert res.status == 0
 
+    @pytest.mark.parametrize('ref', (0.5, [0.4, 0.6]))
+    @pytest.mark.parametrize('case', stats._distr_params.distcont)
+    def test_accuracy(self, ref, case):
+        distname, params = case
+        if distname in {'dgamma', 'dweibull', 'laplace', 'kstwo'}:
+            # should split up interval at first-derivative discontinuity
+            pytest.skip('tanh-sinh is not great for non-smooth integrands')
+        dist = getattr(stats, distname)(*params)
+        x = dist.interval(ref)
+        res = _tanhsinh(dist.pdf, *x)
+        assert_allclose(res.integral, ref)
+
+    @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, shape):
+        # Test for correct functionality, output shapes, and dtypes for various
+        # input shapes.
+        rng = np.random.default_rng(82456839535679456794)
+        a = rng.random(shape)
+        b = rng.random(shape)
+        p = rng.random(shape)
+        n = np.prod(shape)
+
+        def f(x, p):
+            f.nit += 1
+            f.feval += 1 if (x.size == n or x.ndim <=1) else x.shape[-1]
+            return x**p
+        f.nit = 0
+        f.feval = 0
+
+        @np.vectorize
+        def _tanhsinh_single(a, b, p):
+            return _tanhsinh(lambda x: x**p, a, b)
+
+        res = _tanhsinh(f, a, b, args=(p,))
+        refs = _tanhsinh_single(a, b, p).ravel()
+
+        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'nit']
+        for attr in attrs:
+            ref_attr = [getattr(ref, attr) for ref in refs]
+            res_attr = getattr(res, attr)
+            assert_allclose(res_attr.ravel(), ref_attr, rtol=1e-15)
+            assert_equal(res_attr.shape, shape)
+
+        assert np.issubdtype(res.success.dtype, np.bool_)
+        assert np.issubdtype(res.status.dtype, np.integer)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+        assert_equal(np.max(res.nfev), f.feval)
+        assert_equal(np.max(res.nit), f.nit-2)
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(xs, js):
+            f.nit += 1
+            funcs = [lambda x: np.exp(-x**2),  # converges
+                     lambda x: np.exp(x),  # reaches maxiter due to order=2
+                     lambda x: np.full_like(x, np.nan)[()]]  # stops due to NaN
+            res = [funcs[j](x) for x, j in zip(xs, js.ravel())]
+            return res
+        f.nit = 0
+
+        args = (np.arange(3, dtype=np.int64),)
+        res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, args=args)
+        ref_flags = np.array([0, -2, -3])
+        assert_equal(res.status, ref_flags)
+
     def test_convergence(self):
         # demonstrate that number of accurate digits doubles each iteration
         f = self.f1
@@ -680,23 +747,6 @@ class TestTanhSinh:
             logerr = self.error(res.integral, f.ref, log=True)
             assert (logerr < last_logerr * 2 or logerr < -15.5)
             last_logerr = logerr
-
-    def test_feval(self):
-        # Test function evaluation count
-        dist = stats.norm()
-        def f(x):
-            f.feval += np.size(x)
-            return dist.pdf(x)
-
-        f.feval = 0
-        res = _tanhsinh(f, 0, np.inf)
-        assert_allclose(res.integral, 0.5)
-        assert res.nfev == f.feval
-
-        f.feval = 0
-        res = _tanhsinh(f, -np.inf, np.inf)
-        assert_allclose(res.integral, 1)
-        assert res.nfev == f.feval
 
     def test_options_and_result_attributes(self):
         # demonstrate that options are behaving as advertised and status
@@ -880,3 +930,99 @@ class TestTanhSinh:
             assert f.calls == maxlevel - minlevel + 1 + 2  # 2 validation calls
             assert res.status == ref.status
             assert_equal(ref_x, np.sort(f.x))
+
+    def test_improper_integrals(self):
+        # Test handling of infinite limits of integration (mixed with finite limits)
+        def f(x):
+            return np.exp(-x**2)
+        a = [-np.inf, 0, -np.inf, np.inf, -20, -np.inf, -20]
+        b = [np.inf, np.inf, 0, -np.inf, 20, 20, np.inf]
+        ref = np.sqrt(np.pi)
+        res = _tanhsinh(f, a, b)
+        assert_allclose(res.integral, [ref, ref/2, ref/2, -ref, ref, ref, ref])
+
+    @pytest.mark.parametrize("limits", ((0, 3), ([-np.inf, 0], [3, 3])))
+    @pytest.mark.parametrize("dtype", (np.float32, np.float64))
+    def test_dtype(self, limits, dtype):
+        # Test that dtypes are preserved
+        a, b = np.asarray(limits, dtype=dtype)[()]
+
+        def f(x):
+            assert x.dtype == dtype
+            return np.exp(x)
+
+        rtol = 1e-12 if dtype == np.float64 else 1e-5
+        res = _tanhsinh(f, a, b, rtol=rtol)
+        assert res.integral.dtype == dtype
+        assert res.error.dtype == dtype
+        assert np.all(res.success)
+        assert_allclose(res.integral, np.exp(b)-np.exp(a), rtol=rtol)
+
+    def test_maxiter_callback(self):
+        # Test behavior of `maxiter` parameter and `callback` interface
+        a, b = -np.inf, np.inf
+        def f(x):
+            return np.exp(-x*x)
+
+        minlevel, maxlevel = 0, 2
+        maxiter = maxlevel - minlevel + 1
+        kwargs = dict(minlevel=minlevel, maxlevel=maxlevel, rtol=1e-15)
+        res = _tanhsinh(f, a, b, **kwargs)
+        assert not res.success
+        assert res.nit == maxiter
+
+        def callback(res):
+            callback.iter += 1
+            callback.res = res
+            assert hasattr(res, 'integral')
+            assert res.status == 1
+            if callback.iter == maxiter:
+                raise StopIteration
+        callback.iter = -1  # callback called once before first iteration
+        callback.res = None
+
+        del kwargs['maxlevel']
+        res2 = _tanhsinh(f, a, b, **kwargs, callback=callback)
+        # terminating with callback is identical to terminating due to maxiter
+        # (except for `status`)
+        for key in res.keys():
+            if key == 'status':
+                assert callback.res[key] == 1
+                assert res[key] == -2
+                assert res2[key] == -4
+            else:
+                assert res2[key] == callback.res[key] == res[key]
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            assert np.issubdtype(x.dtype, np.floating)
+            return x ** 99
+
+        res = _tanhsinh(f, 0, 1)
+        assert res.success
+        assert_allclose(res.integral, 1/100)
+
+        # Test levels 0 and 1; error is NaN
+        res = _tanhsinh(f, 0, 1, maxlevel=0)
+        assert res.integral > 0
+        assert_equal(res.error, np.nan)
+        res = _tanhsinh(f, 0, 1, maxlevel=1)
+        assert res.integral > 0
+        assert_equal(res.error, np.nan)
+
+        # Tes equal left and right integration limits
+        res = _tanhsinh(f, 1, 1)
+        assert res.success
+        assert res.nit == 0
+        assert_allclose(res.integral, 0)
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return x**c
+
+        res = _tanhsinh(f, 0, 1, args=99)
+        assert_allclose(res.integral, 1/100)
