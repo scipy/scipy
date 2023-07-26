@@ -1,5 +1,7 @@
 #include "_splinemodule.h"
 
+#define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
+
 static void
 convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 {
@@ -57,7 +59,7 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -137,7 +139,7 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (lambda != 0.0) PYERR("Smoothing spline not yet implemented.");
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -216,7 +218,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_CDOUBLE, NULL);
+  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -337,7 +339,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_CDOUBLE, NULL);
+  thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
 
   if (a_sig == NULL) goto fail;
@@ -461,7 +463,7 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
 
   if (a_sig == NULL) goto fail;

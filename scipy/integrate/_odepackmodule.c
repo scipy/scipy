@@ -32,6 +32,8 @@ the result tuple when the full_output argument is non-zero.
 
 #include "numpy/arrayobject.h"
 
+#define PyArray_MAX(a,b) (((a)>(b))?(a):(b))
+
 #ifdef HAVE_BLAS_ILP64
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64
@@ -474,7 +476,7 @@ compute_lrw_liw(F_INT *lrw, F_INT *liw, F_INT neq, F_INT jt, F_INT ml, F_INT mu,
     lrn = 20 + nyh*(mxordn+1) + 3*neq;
     lrs = 20 + nyh*(mxords+1) + 3*neq + lmat;
 
-    *lrw = (PyArrayObject*)PyArray_Max(lrn,lrs,NULL);
+    *lrw = PyArray_MAX(lrn,lrs);
     *liw = 20 + neq;
     return 0;
 
