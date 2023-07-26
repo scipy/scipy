@@ -639,8 +639,8 @@ class TestTanhSinh:
         [(1, -1), stats.norm.cdf(-1) -  stats.norm.cdf(1)],  # flipped limits
     ])
     def test_integral_transforms(self, limits, ref):
-        # Check that the integral transforms are behaving for both log and
-        # normal integration
+        # Check that the integral transforms are behaving for both normal and
+        # log integration
         dist = stats.norm()
 
         res = _tanhsinh(dist.pdf, *limits)
@@ -659,7 +659,7 @@ class TestTanhSinh:
     def test_basic(self, f_number):
         f = getattr(self, f"f{f_number}")
         rtol = 2e-8
-        res = _tanhsinh(f, 0, f.b, rtol = rtol)
+        res = _tanhsinh(f, 0, f.b, rtol=rtol)
         assert_allclose(res.integral, f.ref, rtol=rtol)
         if f_number not in {14}:  # mildly underestimates error here
             true_error = abs(self.error(res.integral, f.ref)/res.integral)
@@ -670,7 +670,6 @@ class TestTanhSinh:
 
         assert res.success
         assert res.status == 0
-        # assert res.message.startswith("The algorithm completed successfully")
 
     def test_convergence(self):
         # demonstrate that number of accurate digits doubles each iteration
@@ -719,7 +718,6 @@ class TestTanhSinh:
         ref.calls = f.calls  # reference number of function calls
         assert ref.success
         assert ref.status == 0
-        # assert ref.message.startswith("The algorithm completed successfully")
 
         # Test `maxlevel` equal to required number of function evaluations
         # We should get all the same results
@@ -758,7 +756,6 @@ class TestTanhSinh:
         # assert f.calls == ref.calls - 1
         # assert not res.success
         # assert res.status == 2
-        # # assert res.message.endswith("evaluation limit to be exceeded.")
 
         # Take this result to be the new reference
         ref = res
@@ -776,7 +773,6 @@ class TestTanhSinh:
         # Except the result is considered to be successful
         assert res.success
         assert res.status == 0
-        # assert res.message.startswith("The algorithm completed successfully")
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
@@ -787,7 +783,6 @@ class TestTanhSinh:
         assert f.calls > ref.calls
         assert res.success
         assert res.status == 0
-        # assert res.message.startswith("The algorithm completed successfully")
 
         # Test `rtol`
         f.feval, f.calls = 0, 0
@@ -801,7 +796,6 @@ class TestTanhSinh:
         # Except the result is considered to be successful
         assert res.success
         assert res.status == 0
-        # assert res.message.startswith("The algorithm completed successfully")
 
         f.feval, f.calls = 0, 0
         # With a tighter tolerance, we should get a more accurate result
@@ -812,7 +806,6 @@ class TestTanhSinh:
         assert f.calls > ref.calls
         assert res.success
         assert res.status == 0
-        # assert res.message.startswith("The algorithm completed successfully")
 
     @pytest.mark.parametrize('rtol', [1e-4, 1e-14])
     def test_log(self, rtol):
@@ -821,14 +814,14 @@ class TestTanhSinh:
 
         test_tols = dict(atol=1e-18, rtol=1e-15)
 
-        # Problem with positive integrand/real log-integrand)
+        # Positive integrand (real log-integrand)
         res = _tanhsinh(dist.logpdf, -1, 2, log=True, rtol=np.log(rtol))
         ref = _tanhsinh(dist.pdf, -1, 2, rtol=rtol)
         assert_allclose(np.exp(res.integral), ref.integral, **test_tols)
         assert_allclose(np.exp(res.error), ref.error, **test_tols)
         assert res.nfev == ref.nfev
 
-        # Problem with real integrand/complex log-integrand
+        # Real integrand (complex log-integrand)
         def f(x):
             return -dist.logpdf(x)*dist.pdf(x)
 
@@ -842,7 +835,8 @@ class TestTanhSinh:
         assert res.nfev == ref.nfev
 
     def test_complex(self):
-        # Test case with finite limits
+        # Test integration of complex integrand
+        # Finite limits
         def f(x):
             return np.exp(1j * x)
 
@@ -850,7 +844,7 @@ class TestTanhSinh:
         ref = np.sqrt(2)/2 + (1-np.sqrt(2)/2)*1j
         assert_allclose(res.integral, ref)
 
-        # Test case involving a few transformations
+        # Infinite limits
         dist1 = stats.norm(scale=1)
         dist2 = stats.norm(scale=2)
         def f(x):

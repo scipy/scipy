@@ -28,6 +28,145 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 #  make public?
 
 
+def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
+               minlevel=2, atol=None, rtol=None, args=(), callback=None):
+
+    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
+                       atol, rtol, args, callback)
+    (f, a, b, log, maxfun, maxlevel, minlevel,
+     atol, rtol, args, callback) = res
+
+    # Initialization
+    # No, the function does not really need to be evaluated at `a` and `b`, but
+    # `_scalar_optimization_initialize` does several important jobs, including
+    # ensuring that `a`, `b`, each of the `args`, and the output of `f`
+    # broadcast correctly and are of consistent types. Integration usually
+    # takes at least 100 function evaluations, so this is unlikely to be a
+    # bottleneck.
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        tmp = _scalar_optimization_initialize(f, (a, b), args, complex_ok=True)
+    xs, fs, args, shape, dtype = tmp
+    a, b = xs
+
+    # Transform improper integrals
+    a, b, negative, abinf, ainf, binf = _transform_integrals(a, b)
+
+    zero = -np.inf if log else 0
+    Sn = np.full(shape, zero, dtype=dtype).ravel()
+    Sk = np.empty_like(Sn)[:, np.newaxis][:, 0:0]  # add zero length new axis
+    aerr = np.full(shape, np.nan, dtype=dtype).ravel()
+    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
+    h0 = _get_base_step(dtype=dtype)
+    maxiter = maxlevel - minlevel + 1
+    pi = np.asarray(np.pi, dtype=dtype)[()]
+
+    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
+    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
+    wl0 = np.zeros(shape, dtype=dtype).ravel()
+    xr0 = np.full(shape, -np.inf, dtype=dtype).ravel()
+    fr0 = np.full(shape, np.nan, dtype=dtype).ravel()
+    wr0 = np.zeros(shape, dtype=dtype).ravel()
+    d4 = np.zeros(shape, dtype=dtype).ravel()
+
+    nit, nfev = 0, 2  # two function evaluations performed above
+
+    work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
+                          atol=atol, rtol=rtol, nit=nit, nfev=nfev,
+                          status=status, dtype=dtype, minlevel=minlevel,
+                          a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
+                          n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
+                          fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
+                          abinf=abinf, pi=pi)
+
+    # Correspondence between terms in the `work` object and the
+    res_work_pairs = [('status', 'status'), ('integral', 'Sn'),
+                      ('error', 'aerr'), ('nit', 'nit'), ('nfev', 'nfev')]
+
+    def pre_func_eval(work):
+        work.h = work.h0 / 2**work.n
+        xjc, wj = _get_pairs(work.n, work.h0,
+                             inclusive=(work.n == work.minlevel),
+                             dtype=work.dtype)
+
+        work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
+
+        # Abscissae substitutions for infinite limits of integration
+        xj = work.xj.copy()
+        xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
+        xj[work.binf] = 1/xj[work.binf] - 1 + work.a[work.binf]
+        xj[work.ainf] *= -1
+        return xj
+
+    def post_func_eval(x, fj, work):
+        # weight integrand as required by substitutions for infinite limits
+        if work.log:
+            fj[work.abinf] += (np.log(1 + work.xj[work.abinf] ** 2)
+                               - 2*np.log(1 - work.xj[work.abinf] ** 2))
+            fj[work.binf] -= 2 * np.log(work.xj[work.binf])
+        else:
+            fj[work.abinf] *= ((1 + work.xj[work.abinf]**2) /
+                               (1 - work.xj[work.abinf]**2)**2)
+            fj[work.binf] *= work.xj[work.binf]**-2.
+
+        fjwj, Sn = _euler_maclaurin_sum(fj, work)
+        if work.Sk.shape[-1]:
+            Snm1 = work.Sk[:, -1]
+            Sn = (special.logsumexp([Snm1 - np.log(2), Sn], axis=0) if log
+                  else Snm1 / 2 + Sn)
+
+        work.fjwj = fjwj
+        work.Sn = Sn
+
+    def check_termination(work):
+        """Terminate due to convergence, non-finite values, or error increase"""
+        stop = np.zeros(work.Sn.shape, dtype=bool)
+
+        if work.nit == 0:
+            # The only way we can terminate on the zeroth iteration is if
+            # the integration limits are equal.
+            i = (work.a == work.b).ravel()  # these are guaranteed to be 1d
+            zero = -np.inf if log else 0
+            work.Sn[i] = zero
+            work.aerr[i] = zero
+            work.status[i] = _ECONVERGED
+            stop[i] = True
+            return stop
+
+        work.rerr, work.aerr, work.Sk = _estimate_error(work)
+        i = ((work.rerr < work.rtol) | (work.rerr + np.real(work.Sn) < work.atol) if log
+             else (work.rerr < work.rtol) | (work.rerr * abs(work.Sn) < work.atol))
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        i = ~np.isfinite(work.Sn) & ~stop
+        work.status[i] = _EVALUEERR
+        stop[i] = True
+
+        return stop
+
+    def post_termination_check(work):
+        work.n += 1
+        work.Sk = np.concatenate((work.Sk, work.Sn[:, np.newaxis]), axis=-1)
+        return
+
+    def customize_result(res):
+        if log and np.any(negative):
+            pi = res['integral'].dtype.type(np.pi)
+            j = np.complex64(1j)  # minimum complex type
+            res['integral'] = res['integral'] + negative*pi*j
+        else:
+            res['integral'][negative] *= -1
+
+    # suppress all warnings initially; we'll address this later
+    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
+        res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
+                                        args, dtype, pre_func_eval,
+                                        post_func_eval, check_termination,
+                                        post_termination_check,
+                                        customize_result, res_work_pairs)
+    return res
+
+
 def _get_base_step(dtype=np.float64):
     # Compute the base step length for the provided dtype. Theoretically, the
     # Euler-Maclaurin sum is infinite, but it gets cut off when either the
@@ -376,140 +515,3 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         raise ValueError('`callback` must be callable.')
 
     return f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
-
-
-def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
-               minlevel=2, atol=None, rtol=None, args=(), callback=None):
-
-    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
-                       atol, rtol, args, callback)
-    (f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback) = res
-
-    # Initialization
-    # No, the function does not really need to be evaluated at `a` and `b`, but
-    # `_scalar_optimization_initialize` does several important jobs, including
-    # ensuring that `a`, `b`, each of the `args`, and the output of `f`
-    # broadcast correctly and are of consistent types. Integration usually
-    # takes at least 100 function evaluations, so this is unlikely to be a
-    # bottleneck.
-    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        xs, fs, args, shape, dtype = _scalar_optimization_initialize(f, (a, b), args, complex_ok=True)
-    a, b = xs
-
-    # Transform improper integrals
-    a, b, negative, abinf, ainf, binf = _transform_integrals(a, b)
-
-    zero = -np.inf if log else 0
-    Sn = np.full(shape, zero, dtype=dtype).ravel()
-    Sk = np.empty_like(Sn)[:, np.newaxis][:, 0:0]  # add zero length new axis
-    aerr = np.full(shape, np.nan, dtype=dtype).ravel()
-    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
-    h0 = _get_base_step(dtype=dtype)
-    maxiter = maxlevel - minlevel + 1
-    pi = np.asarray(np.pi, dtype=dtype)[()]
-
-    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
-    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
-    wl0 = np.zeros(shape, dtype=dtype).ravel()
-    xr0 = np.full(shape, -np.inf, dtype=dtype).ravel()
-    fr0 = np.full(shape, np.nan, dtype=dtype).ravel()
-    wr0 = np.zeros(shape, dtype=dtype).ravel()
-    d4 = np.zeros(shape, dtype=dtype).ravel()
-
-    nit, nfev = 0, 2  # two function evaluations performed above
-
-    work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
-                          atol=atol, rtol=rtol, nit=nit, nfev=nfev,
-                          status=status, dtype=dtype, minlevel=minlevel,
-                          a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
-                          n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
-                          fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
-                          abinf=abinf, pi=pi)
-
-    # Correspondence between terms in the `work` object and the
-    res_work_pairs = [('status', 'status'), ('integral', 'Sn'),
-                      ('error', 'aerr'), ('nit', 'nit'), ('nfev', 'nfev')]
-
-    def pre_func_eval(work):
-        work.h = work.h0 / 2**work.n
-        xjc, wj = _get_pairs(work.n, work.h0,
-                             inclusive=(work.n == work.minlevel),
-                             dtype=work.dtype)
-
-        work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
-
-        # Abscissae substitutions for infinite limits of integration
-        xj = work.xj.copy()
-        xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
-        xj[work.binf] = 1/xj[work.binf] - 1 + work.a[work.binf]
-        xj[work.ainf] *= -1
-        return xj
-
-    def post_func_eval(x, fj, work):
-        # weight integrand as required by substitutions for infinite limits
-        if work.log:
-            fj[work.abinf] += (np.log(1 + work.xj[work.abinf] ** 2)
-                               - 2*np.log(1 - work.xj[work.abinf] ** 2))
-            fj[work.binf] -= 2 * np.log(work.xj[work.binf])
-        else:
-            fj[work.abinf] *= ((1 + work.xj[work.abinf]**2) /
-                               (1 - work.xj[work.abinf]**2)**2)
-            fj[work.binf] *= work.xj[work.binf]**-2.
-
-        fjwj, Sn = _euler_maclaurin_sum(fj, work)
-        if work.Sk.shape[-1]:
-            Snm1 = work.Sk[:, -1]
-            Sn = (special.logsumexp([Snm1 - np.log(2), Sn], axis=0) if log
-                  else Snm1 / 2 + Sn)
-
-        work.fjwj = fjwj
-        work.Sn = Sn
-
-    def check_termination(work):
-        """Terminate due to convergence, non-finite values, or error increase"""
-        stop = np.zeros(work.Sn.shape, dtype=bool)
-
-        if work.nit == 0:
-            # The only way we can terminate on the zeroth iteration is if
-            # the integration limits are equal.
-            i = (work.a == work.b).ravel()  # these are guaranteed to be 1d
-            zero = -np.inf if log else 0
-            work.Sn[i] = zero
-            work.aerr[i] = zero
-            work.status[i] = _ECONVERGED
-            stop[i] = True
-            return stop
-
-        work.rerr, work.aerr, work.Sk = _estimate_error(work)
-        i = ((work.rerr < work.rtol) | (work.rerr + np.real(work.Sn) < work.atol) if log
-             else (work.rerr < work.rtol) | (work.rerr * abs(work.Sn) < work.atol))
-        work.status[i] = _ECONVERGED
-        stop[i] = True
-
-        i = ~np.isfinite(work.Sn) & ~stop
-        work.status[i] = _EVALUEERR
-        stop[i] = True
-
-        return stop
-
-    def post_termination_check(work):
-        work.n += 1
-        work.Sk = np.concatenate((work.Sk, work.Sn[:, np.newaxis]), axis=-1)
-        return
-
-    def customize_result(res):
-        if log and np.any(negative):
-            pi = res['integral'].dtype.type(np.pi)
-            j = np.complex64(1j)  # minimum complex type
-            res['integral'] = res['integral'] + negative*pi*j
-        else:
-            res['integral'][negative] *= -1
-
-    # suppress all warnings initially; we'll address this later
-    with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
-                                        args, dtype, pre_func_eval,
-                                        post_func_eval, check_termination,
-                                        post_termination_check,
-                                        customize_result, res_work_pairs)
-    return res
