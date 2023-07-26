@@ -6,7 +6,7 @@ from scipy.sparse import issparse
 from scipy.sparse.linalg import svds
 import scipy.sparse as sp
 
-from numpy import Inf, sqrt, abs
+from numpy import sqrt, abs
 
 __all__ = ['norm']
 
@@ -149,11 +149,11 @@ def norm(x, ord=None, axis=None):
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
         elif ord == 1:
             return abs(x).sum(axis=row_axis).max(axis=col_axis)[0,0]
-        elif ord == Inf:
+        elif ord == np.inf:
             return abs(x).sum(axis=col_axis).max(axis=row_axis)[0,0]
         elif ord == -1:
             return abs(x).sum(axis=row_axis).min(axis=col_axis)[0,0]
-        elif ord == -Inf:
+        elif ord == -np.inf:
             return abs(x).sum(axis=col_axis).min(axis=row_axis)[0,0]
         elif ord in (None, 'f', 'fro'):
             # The axis order does not matter for this norm.
@@ -165,9 +165,9 @@ def norm(x, ord=None, axis=None):
         if not (-nd <= a < nd):
             raise ValueError('Invalid axis %r for an array with shape %r' %
                              (axis, x.shape))
-        if ord == Inf:
+        if ord == np.inf:
             M = abs(x).max(axis=a)
-        elif ord == -Inf:
+        elif ord == -np.inf:
             M = abs(x).min(axis=a)
         elif ord == 0:
             # Zero norm

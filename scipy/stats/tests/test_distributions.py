@@ -221,40 +221,14 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
-    @pytest.mark.parametrize('kappa_tol', [(1e-1, 5e-2), (1e2, 1e-2),
-                                           (1e5, 1e-2)])
-    def test_vonmises_fit_all(self, kappa_tol, loc):
-        rng = np.random.default_rng(6762668991392531563)
-        kappa, tol = kappa_tol
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000,
-                                                        random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
-        assert scale_fit == 1
-        loc_vec = np.array([np.cos(loc), np.sin(loc)])
-        loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
-        angle = np.arccos(loc_vec.dot(loc_fit_vec))
-        assert_allclose(angle, 0, atol=tol, rtol=0)
-        assert_allclose(kappa, kappa_fit, rtol=tol)
-
-    def test_vonmises_fit_shape(self):
-        rng = np.random.default_rng(6762668991392531563)
-        loc = 0.25*np.pi
-        kappa = 10
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
-        assert loc_fit == loc
-        assert scale_fit == 1
-        assert_allclose(kappa, kappa_fit, rtol=1e-2)
-
     @pytest.mark.xslow
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
-    def test_vonmises_fit_bad_floc(self, loc):
+    def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
                 3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
                 -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
         data = np.asarray(data)
+        loc = -0.5 * np.pi
         kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
         assert kappa_fit == np.finfo(float).tiny
         _assert_less_or_close_loglike(stats.vonmises, data,
@@ -841,6 +815,29 @@ class TestGenHyperbolic:
             )
 
 
+class TestHypSecant:
+
+    # Reference values were computed with the mpmath expression
+    #     float((2/mp.pi)*mp.atan(mp.exp(-x)))
+    # and mp.dps = 50.
+    @pytest.mark.parametrize('x, reference',
+                             [(30, 5.957247804324683e-14),
+                              (50, 1.2278802891647964e-22)])
+    def test_sf(self, x, reference):
+        sf = stats.hypsecant.sf(x)
+        assert_allclose(sf, reference, rtol=5e-15)
+
+    # Reference values were computed with the mpmath expression
+    #     float(-mp.log(mp.tan((mp.pi/2)*p)))
+    # and mp.dps = 50.
+    @pytest.mark.parametrize('p, reference',
+                             [(1e-6, 13.363927852673998),
+                              (1e-12, 27.179438410639094)])
+    def test_isf(self, p, reference):
+        x = stats.hypsecant.isf(p)
+        assert_allclose(x, reference, rtol=5e-15)
+
+
 class TestNormInvGauss:
     def setup_method(self):
         np.random.seed(1234)
@@ -1177,6 +1174,40 @@ class TestHalfNorm:
         # `floc` bigger than the minimal data point
         with pytest.raises(FitDataError):
             stats.halfnorm.fit([1, 2, 3], floc=2)
+
+
+class TestHalfCauchy:
+
+    @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
+    @pytest.mark.parametrize("rvs_scale", [1e-2, 1e8])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale,
+                                    fix_loc, fix_scale):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.halfnorm.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
+                                  random_state=rng)
+
+        if fix_loc and fix_scale:
+            error_msg = ("All parameters fixed. There is nothing to "
+                         "optimize.")
+            with pytest.raises(RuntimeError, match=error_msg):
+                stats.halfcauchy.fit(data, floc=rvs_loc, fscale=rvs_scale)
+            return
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.halfcauchy, data, **kwds)
+
+    def test_fit_error(self):
+        # `floc` bigger than the minimal data point
+        with pytest.raises(FitDataError):
+            stats.halfcauchy.fit([1, 2, 3], floc=2)
 
 
 class TestHalfLogistic:
@@ -1873,14 +1904,14 @@ class TestLoggamma:
                               (1e10, -10.093986931748889),
                               (1e100, -113.71031611649761)])
     def test_entropy(self, c, ref):
-    
+
         # Reference values were calculated with mpmath
         # from mpmath import mp
         # mp.dps = 500
         # def loggamma_entropy_mpmath(c):
         #     c = mp.mpf(c)
         #     return float(mp.log(mp.gamma(c)) + c * (mp.one - mp.digamma(c)))
-        
+
         assert_allclose(stats.loggamma.entropy(c), ref, rtol=1e-14)
 
 
@@ -3077,7 +3108,7 @@ class TestPowerlaw:
         data = stats.powerlaw.rvs(a=a, loc=location, scale=scale, size=100,
                                   random_state=np.random.default_rng(5))
 
-        kwds = {'fscale': data.ptp() * 2}
+        kwds = {'fscale': np.ptp(data) * 2}
 
         _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
 
@@ -3414,7 +3445,6 @@ class TestStudentT:
         res_ex_noinf = stats.t.entropy(df=df[~df_infmask], loc=3, scale=1)
         assert_equal(res[df_infmask], res_ex_inf)
         assert_equal(res[~df_infmask], res_ex_noinf)
-
 
     def test_logpdf_pdf(self):
         # reference values were computed via the reference distribution, e.g.
@@ -4019,6 +4049,7 @@ class TestGenExpon:
         assert_allclose(cdf, p, rtol=1e-14)
         ppf = stats.genexpon.ppf(p, a, b, c)
         assert_allclose(ppf, x, rtol=1e-14)
+
 
 class TestTruncexpon:
 
@@ -4745,7 +4776,7 @@ class TestLevyStable:
             Path(__file__).parent /
             'data/levy_stable/stable-Z1-pdf-sample-data.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        data = np.rec.fromarrays(data.T, names='x,p,alpha,beta,pct')
         return data
 
     @pytest.fixture
@@ -4789,7 +4820,7 @@ class TestLevyStable:
             Path(__file__).parent /
             'data/levy_stable/stable-Z1-cdf-sample-data.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,p,alpha,beta,pct')
+        data = np.rec.fromarrays(data.T, names='x,p,alpha,beta,pct')
         return data
 
     @pytest.fixture
@@ -5517,6 +5548,7 @@ class TestLevyStable:
             expected,
         )
 
+
 class TestArrayArgument:  # test for ticket:992
     def setup_method(self):
         np.random.seed(1234)
@@ -5734,7 +5766,7 @@ class TestFitMethod:
 
         loc, scale = stats.uniform.fit(x)
         assert_equal(loc, x.min())
-        assert_equal(scale, x.ptp())
+        assert_equal(scale, np.ptp(x))
 
         loc, scale = stats.uniform.fit(x, floc=0)
         assert_equal(loc, 0)
@@ -7212,6 +7244,20 @@ class TestBurr12:
         #
         delta = stats.burr12._delta_cdf(2e5, 4e5, 4, 8, scale=scale)
         assert_allclose(delta, expected, rtol=1e-13)
+
+    def test_moments_edge(self):
+        # gh-18838 reported that burr12 moments could be invalid; see above.
+        # Check that this is resolved in an edge case where c*d == n, and
+        # compare the results against those produced by Mathematica, e.g.
+        # `SinghMaddalaDistribution[2, 2, 1]` at Wolfram Alpha.
+        c, d = 2, 2
+        mean = np.pi/4
+        var = 1 - np.pi**2/16
+        skew = np.pi**3/(32*var**1.5)
+        kurtosis = np.nan
+        ref = [mean, var, skew, kurtosis]
+        res = stats.burr12(c, d).stats('mvsk')
+        assert_allclose(res, ref, rtol=1e-14)
 
 
 class TestStudentizedRange:
@@ -9199,7 +9245,7 @@ class TestRelativisticBW:
             Path(__file__).parent /
             'data/rel_breitwigner_pdf_sample_data_ROOT.npy'
         )
-        data = np.core.records.fromarrays(data.T, names='x,pdf,rho,gamma')
+        data = np.rec.fromarrays(data.T, names='x,pdf,rho,gamma')
         return data
 
     @pytest.mark.parametrize(
@@ -9323,3 +9369,48 @@ class TestTruncPareto:
                 stats.truncpareto.fit(data, **kwds)
         else:
             _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
+
+
+class TestKappa3:
+    def test_sf(self):
+        # During development of gh-18822, we found that the override of
+        # kappa3.sf could experience overflow where the version in main did
+        # not. Check that this does not happen in final implementation.
+        sf0 = 1 - stats.kappa3.cdf(0.5, 1e5)
+        sf1 = stats.kappa3.sf(0.5, 1e5)
+        assert_allclose(sf1, sf0)
+
+
+# Cases are (distribution name, log10 of smallest probability mass to test,
+# log10 of the complement of the largest probability mass to test, atol,
+# rtol). None uses default values.
+@pytest.mark.parametrize("case", [("kappa3", None, None, None, None),
+                                  ("loglaplace", None, None, None, None),
+                                  ("lognorm", None, None, None, None),
+                                  ("lomax", None, None, None, None),
+                                  ("pareto", None, None, None, None),])
+def test_sf_isf_overrides(case):
+    # Test that SF is the inverse of ISF. Supplements
+    # `test_continuous_basic.check_sf_isf` for distributions with overridden
+    # `sf` and `isf` methods.
+    distname, lp1, lp2, atol, rtol = case
+
+    lpm = np.log10(0.5)  # log10 of the probability mass at the median
+    lp1 = lp1 or -290
+    lp2 = lp2 or -14
+    atol = atol or 0
+    rtol = rtol or 1e-12
+    dist = getattr(stats, distname)
+    params = dict(distcont)[distname]
+    dist_frozen = dist(*params)
+
+    # Test (very deep) right tail to median. We can benchmark with random
+    # (loguniform) points, but strictly logspaced points are fine for tests.
+    ref = np.logspace(lp1, lpm)
+    res = dist_frozen.sf(dist_frozen.isf(ref))
+    assert_allclose(res, ref, atol=atol, rtol=rtol)
+
+    # test median to left tail
+    ref = 1 - np.logspace(lp2, lpm, 20)
+    res = dist_frozen.sf(dist_frozen.isf(ref))
+    assert_allclose(res, ref, atol=atol, rtol=rtol)

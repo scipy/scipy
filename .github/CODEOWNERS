@@ -46,7 +46,6 @@ scipy/stats/.unuran/*  @tirthasheshpatel
 ci/*  @larsoner @andyfaff
 tools/refguide_check.py  @ev-br
 tools/*  @larsoner @rgommers
-runtests.py  @larsoner
 pytest.ini  @larsoner
 tox.ini  @larsoner
 .coveragerc  @larsoner

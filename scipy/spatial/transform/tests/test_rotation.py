@@ -1421,6 +1421,42 @@ def test_multiplication_stability():
         assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
 
 
+def test_pow():
+    atol = 1e-14
+    p = Rotation.random(10, random_state=0)
+    p_inv = p.inv()
+    # Test the short-cuts and other integers
+    for n in [-5, -2, -1, 0, 1, 2, 5]:
+        q = p ** n
+        r = Rotation.identity(10)
+        for _ in range(abs(n)):
+            if n > 0:
+                r = r * p
+            else:
+                r = r * p_inv
+        ang = (q * r.inv()).magnitude()
+        assert np.all(ang < atol)
+
+    # Large angle fractional
+    for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:
+        q = p ** n
+        r = Rotation.from_rotvec(n * p.as_rotvec())
+        assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+    # Small angle
+    p = Rotation.from_rotvec([1e-12, 0, 0])
+    n = 3
+    q = p ** n
+    r = Rotation.from_rotvec(n * p.as_rotvec())
+    assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+
+def test_pow_errors():
+    p = Rotation.random(random_state=0)
+    with pytest.raises(NotImplementedError, match='modulus not supported'):
+        pow(p, 1, 1)
+
+
 def test_rotation_within_numpy_array():
     single = Rotation.random(random_state=0)
     multiple = Rotation.random(2, random_state=1)

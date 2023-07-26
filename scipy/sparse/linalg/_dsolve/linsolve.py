@@ -101,8 +101,12 @@ def _get_umf_family(A):
         (np.complex128, np.int64): 'zl'
     }
 
-    f_type = np.sctypeDict[A.dtype.name]
-    i_type = np.sctypeDict[A.indices.dtype.name]
+    # A.dtype.name can only be "float64" or
+    # "complex128" in control flow
+    f_type = getattr(np, A.dtype.name)
+    # control flow may allow for more index
+    # types to get through here
+    i_type = getattr(np, A.indices.dtype.name)
 
     try:
         family = _families[(f_type, i_type)]
