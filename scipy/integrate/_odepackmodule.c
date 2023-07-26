@@ -474,7 +474,7 @@ compute_lrw_liw(F_INT *lrw, F_INT *liw, F_INT neq, F_INT jt, F_INT ml, F_INT mu,
     lrn = 20 + nyh*(mxordn+1) + 3*neq;
     lrs = 20 + nyh*(mxords+1) + 3*neq + lmat;
 
-    *lrw = PyArray_Max(lrn,lrs);
+    *lrw = (PyArrayObject*)PyArray_Max(lrn,lrs,NULL);
     *liw = 20 + neq;
     return 0;
 

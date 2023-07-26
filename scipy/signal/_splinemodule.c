@@ -57,7 +57,7 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = PyArray_Min(thetype, NPY_DOUBLE);
+  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -137,7 +137,7 @@ static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (lambda != 0.0) PYERR("Smoothing spline not yet implemented.");
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = PyArray_Min(thetype, NPY_DOUBLE);
+  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -216,7 +216,7 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (!PyArg_ParseTuple(args, "OOO", &image, &hrow, &hcol)) return NULL;
 
   thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = PyArray_Min(thetype, NPY_CDOUBLE);
+  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_CDOUBLE, NULL);
   a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
   if (a_image == NULL) goto fail;
 
@@ -337,7 +337,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = PyArray_Min(thetype, NPY_CDOUBLE);
+  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_CDOUBLE, NULL);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
 
   if (a_sig == NULL) goto fail;
@@ -461,7 +461,7 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
     return NULL;
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
-  thetype = PyArray_Min(thetype, NPY_DOUBLE);
+  thetype = (PyArrayObject*)PyArray_Min(thetype, NPY_DOUBLE, NULL);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
 
   if (a_sig == NULL) goto fail;
