@@ -196,8 +196,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
             'callback': callback,
             'maxls': maxls}
 
-    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac,
-                           bounds=bounds, **opts)
+    res = _minimize_lbfgsb(fun, x0, args=args, jac=jac, bounds=bounds,
+                           **opts)
     d = {'grad': res['jac'],
          'task': res['message'],
          'funcalls': res['nfev'],
@@ -348,7 +348,9 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_iterations = 0
 
     while 1:
-        # convert gradient to double precision for Fortran
+        # g may become float32 if a user provides a function that calculates
+        # the Jacobian in float32 (see gh-18730). The underlying Fortran code
+        # expects float64, so upcast it
         g = g.astype(np.float64)
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
