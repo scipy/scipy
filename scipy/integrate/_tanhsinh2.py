@@ -491,7 +491,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
         return
 
     def customize_result(res):
-        if log:
+        if log and np.any(negative):
             pi = res['integral'].dtype.type(np.pi)
             j = np.complex64(1j)  # minimum complex type
             res['integral'] = res['integral'] + negative*pi*j

@@ -649,8 +649,8 @@ class TestTanhSinh:
         logres = _tanhsinh(dist.logpdf, *limits, log=True)
         assert_allclose(np.exp(logres.integral), ref)
         # Transformation should not make the result complex unnecessarily
-        assert (np.isreal(logres.integral) if ref > 0
-                else np.iscomplex(logres.integral))
+        assert (np.issubdtype(logres.integral.dtype, np.floating) if ref > 0
+                else np.issubdtype(logres.integral.dtype, np.complexfloating))
 
         assert_allclose(np.exp(logres.error), res.error, atol=1e-16)
 
