@@ -55,7 +55,7 @@ def _get_base_step(dtype=np.float64):
     # to `1`, which is what [1] uses (and I used here until I found [2] and
     # these ideas settled).
     h0 = tmax / _N_BASE_STEPS
-    return h0
+    return h0.astype(dtype)
 
 
 _N_BASE_STEPS = 8
@@ -113,7 +113,7 @@ _pair_cache.wj = np.empty(0)
 _pair_cache.indices = [0]
 
 
-def _get_pairs(k, h0, inclusive=False):
+def _get_pairs(k, h0, inclusive=False, dtype=np.float64):
     # Retrieve the specified abscissa-weight pairs from the cache
     # If `inclusive`, return all up to and including the specified level
     if len(_pair_cache.indices) <= k+2:
@@ -126,7 +126,7 @@ def _get_pairs(k, h0, inclusive=False):
     start = 0 if inclusive else indices[k]
     end = indices[k+1]
 
-    return xjc[start:end], wj[start:end]
+    return xjc[start:end].astype(dtype), wj[start:end].astype(dtype)
 
 
 def _transform_to_limits(xjc, wj, a, b):
@@ -263,7 +263,7 @@ def _estimate_error(work):
     Snm2 = Sk[..., -2]
     Snm1 = Sk[..., -1]
 
-    e1 = np.finfo(np.float64).eps
+    e1 = np.finfo(work.dtype).eps
 
     if log:
         log_e1 = np.log(e1)
@@ -272,8 +272,8 @@ def _estimate_error(work):
         # carries sign information of the original integral, so use of
         # `np.real` here is equivalent to absolute value in real scale.
         fjwj = np.real(fjwj)
-        d1 = np.real(special.logsumexp([Sn, Snm1 + np.pi*1j], axis=0))
-        d2 = np.real(special.logsumexp([Sn, Snm2 + np.pi*1j], axis=0))
+        d1 = np.real(special.logsumexp([Sn, Snm1 + work.pi*1j], axis=0))
+        d2 = np.real(special.logsumexp([Sn, Snm2 + work.pi*1j], axis=0))
         d3 = log_e1 + np.max(fjwj, axis=-1)
         d4 = work.d4
         aerr = np.max([d1 ** 2 / d2, 2 * d1, d3, d4], axis=0)
@@ -331,7 +331,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     if atol is None:
         atol = -np.inf if log else 0
 
-    if rtol is None:
+    if rtol is None:  # consider changing depending on dtype?
         rtol = np.log(1e-12) if log else 1e-12
 
     params = np.asarray([atol, rtol, 0.])
@@ -404,6 +404,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
     h0 = _get_base_step(dtype=dtype)
     maxiter = maxlevel - minlevel + 1
+    pi = np.asarray(np.pi, dtype=dtype)[()]
 
     xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
     fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
@@ -421,7 +422,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
                           a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
                           n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
                           fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
-                          abinf=abinf)
+                          abinf=abinf, pi=pi)
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
     # is prepanded automatically.
@@ -430,7 +431,9 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
 
     def pre_func_eval(work):
         work.h = work.h0 / 2**work.n
-        xjc, wj = _get_pairs(work.n, work.h0, inclusive=(work.n == work.minlevel))
+        xjc, wj = _get_pairs(work.n, work.h0,
+                             inclusive=(work.n == work.minlevel),
+                             dtype=work.dtype)
         work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
 
         xj = work.xj.copy()
@@ -457,7 +460,7 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
 
     def check_termination(work):
         """Terminate due to convergence, non-finite values, or error increase"""
-        stop = np.zeros_like(work.Sn).astype(bool)
+        stop = np.zeros(work.Sn.shape, dtype=bool)
 
         if work.nit == 0:
             # The only way we can terminate on the zeroth iteration is if
@@ -489,7 +492,9 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
 
     def customize_result(res):
         if log:
-            res['integral'] = res['integral'] + negative*np.pi*1j
+            pi = res['integral'].dtype.type(np.pi)
+            j = np.complex64(1j)  # minimum complex type
+            res['integral'] = res['integral'] + negative*pi*j
         else:
             res['integral'][negative] *= -1
 
