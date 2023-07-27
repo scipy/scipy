@@ -511,49 +511,67 @@ def _euler_maclaurin_sum(fj, work):
     # omitted from the Euler-Maclaurin sum. This is a bit involved because
     # it may have been computed at a previous level. I sure hope it's worth
     # all the trouble.
-    xl0, fl0, wr0, xr0, fr0, wl0, d4 = work.xl0, work.fl0, work.wr0, work.xr0, work.fr0, work.wl0, work.d4  # incumbent last terms
+    xl0, fl0, wr0 = work.xl0, work.fl0, work.wr0
+    xr0, fr0, wl0 = work.xr0, work.fr0, work.wl0
 
-    # Find the most extreme abscissae corresponding with terms that are
-    # included in the sum in this level.
-    invalid = ~np.isfinite(fj) | (work.wj == 0)  # these terms aren't in the sum
-    invalid_rl = invalid.reshape(len(fj), 2, -1)
-    invalid_r, invalid_l = invalid_rl[:, 0], invalid_rl[:, 1]
-    xrl = work.xj.reshape(len(fj), 2, -1).copy()  # this gets modified
-    xr, xl = xrl[:, 0], xrl[:, 1]
-    xr[invalid_r], xl[invalid_l] = -np.inf, np.inf
-    ir, il = np.argmax(xr, axis=-1), np.argmin(xl, axis=-1)
+    # It is much more convenient to work with the transposes of our work
+    # variables here.
+    xj, fj, wj = work.xj.T, fj.T, work.wj.T
+    n_x, n_active = xj.shape  # number of abscissae, number of active elements
 
-    # Determine whether the most extreme abscissae are from this level or
-    # a previous level. Update the record of the corresponding weights and
-    # function values.
-    frl = fj.reshape(len(fj), 2, -1)
-    fr, fl = frl[:, 0], frl[:, 1]
-    wrl = work.wj.reshape(len(work.wj), 2, -1)
-    wr, wl = wrl[:, 0], wrl[:, 1]
-    j = np.take_along_axis(xr, ir[:, np.newaxis], axis=-1).squeeze() > xr0  # xr[:, ir] > xr0
-    xr0[j] = np.take_along_axis(xr[j], ir[j, np.newaxis], axis=-1).squeeze()
-    fr0[j] = np.take_along_axis(fr[j], ir[j, np.newaxis], axis=-1).squeeze()
-    wr0[j] = np.take_along_axis(wr[j], ir[j, np.newaxis], axis=-1).squeeze()
-    j = np.take_along_axis(xl, il[:, np.newaxis], axis=-1).squeeze() < xl0  # xl[:, il] < xl0
-    xl0[j] = np.take_along_axis(xl[j], il[j, np.newaxis], axis=-1).squeeze()
-    fl0[j] = np.take_along_axis(fl[j], il[j, np.newaxis], axis=-1).squeeze()
-    wl0[j] = np.take_along_axis(wl[j], il[j, np.newaxis], axis=-1).squeeze()
+    # We'll work with the left and right sides separately
+    xr, xl = xj.reshape(2, n_x // 2, n_active).copy()  # this gets modified
+    fr, fl = fj.reshape(2, n_x // 2, n_active)
+    wr, wl = wj.reshape(2, n_x // 2, n_active)
+
+    invalid_r = ~np.isfinite(fr) | (wr == 0)
+    invalid_l = ~np.isfinite(fl) | (wl == 0)
+
+    # integer index of the maximum abscissa at this level
+    xr[invalid_r] = -np.inf
+    ir = np.argmax(xr, axis=0, keepdims=True)
+    # abscissa, function value, and weight at this index
+    xr_max = np.take_along_axis(xr, ir, axis=0)[0]
+    fr_max = np.take_along_axis(fr, ir, axis=0)[0]
+    wr_max = np.take_along_axis(wr, ir, axis=0)[0]
+    # boolean indices at which greatest abscissa at this level exceeds
+    # the incumbent greatest abscissa from all previous levels
+    j = xr_max > xr0
+    # Update record of the incumbent abscissa, function value, and weight
+    xr0[j] = xr_max[j]
+    fr0[j] = fr_max[j]
+    wr0[j] = wr_max[j]
+
+    # integer index of the minimum abscissa at this level
+    xl[invalid_l] = np.inf
+    il = np.argmin(xl, axis=0, keepdims=True)
+    # abscissa, function value, and weight at this index
+    xl_min = np.take_along_axis(xl, il, axis=0)[0]
+    fl_min = np.take_along_axis(fl, il, axis=0)[0]
+    wl_min = np.take_along_axis(wl, il, axis=0)[0]
+    # boolean indices at which greatest abscissa at this level exceeds
+    # the incumbent greatest abscissa from all previous levels
+    j = xl_min < xl0
+    # Update record of the incumbent abscissa, function value, and weight
+    xl0[j] = xl_min[j]
+    fl0[j] = fl_min[j]
+    wl0[j] = wl_min[j]
+    fj = fj.T
 
     # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
     flwl0 = fl0 + np.log(wl0) if work.log else fl0 * wl0  # leftmost term
     frwr0 = fr0 + np.log(wr0) if work.log else fr0 * wr0  # rightmost term
     magnitude = np.real if work.log else np.abs
-    d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
-    last_terms = xl0, fl0, wl0, xr0, fr0, wr0, d4
+    work.d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
 
     # There are two approaches to dealing with function values that are
     # numerically infinite due to approaching a singularity - zero them, or
     # replace them with the function value at the nearest non-infinite point.
     # [3] pg. 22 suggests the latter, so let's do that given that we have the
     # information.
-    fr0b = np.broadcast_to(fr0[:, np.newaxis], fr.shape)
-    fl0b = np.broadcast_to(fl0[:, np.newaxis], fl.shape)
+    fr0b = np.broadcast_to(fr0[np.newaxis, :], fr.shape)
+    fl0b = np.broadcast_to(fl0[np.newaxis, :], fl.shape)
     fr[invalid_r] = fr0b[invalid_r]
     fl[invalid_l] = fl0b[invalid_l]
 
@@ -565,7 +583,8 @@ def _euler_maclaurin_sum(fj, work):
     Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if work.log
           else np.sum(fjwj, axis=-1) * work.h)
 
-    work.xl0, work.fl0, work.wr0, work.xr0, work.fr0, work.wl0, work.d4 = xl0, fl0, wr0, xr0, fr0, wl0, d4
+    work.xl0, work.fl0, work.wr0 = xl0, fl0, wr0
+    work.xr0, work.fr0, work.wl0 = xr0, fr0, wl0
 
     return fjwj, Sn
 
