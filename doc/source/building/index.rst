@@ -315,7 +315,7 @@ virtual environments:
        is part of the Python stdlib. You can use any other tool; all we need is
        an activated Python environment.
 
-    Create and activate a virtual environment in a new directory named ``venv`` (
+    Create and activate a virtual environment in a new directory named ``.venv`` (
     note that the exact activation command may be different based on your OS and shell
     - see `"How venvs work" <https://docs.python.org/3/library/venv.html#how-venvs-work>`__
     in the ``venv`` docs).
@@ -327,24 +327,24 @@ virtual environments:
 
         ::
 
-          python -m venv venv
-          source venv/bin/activate
+          python -m venv .venv
+          source .venv/bin/activate
 
       .. tab-item:: macOS
         :sync: macos
 
         ::
 
-          python -m venv venv
-          source venv/bin/activate
+          python -m venv .venv
+          source .venv/bin/activate
 
       .. tab-item:: Windows
         :sync: windows
 
         ::
 
-          python -m venv venv
-          .\venv\Scripts\activate
+          python -m venv .venv
+          .\.venv\Scripts\activate
 
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
