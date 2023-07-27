@@ -1,7 +1,6 @@
 import numpy as np
 from scipy._lib._array_api import array_namespace
 from . import _fftlog_multimethods as npfft_log_mm
-from . import _fftlog_np as npfft_log
 
 __all__ = [
     'fht', 'ifht'
