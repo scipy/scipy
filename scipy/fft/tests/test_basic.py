@@ -17,11 +17,11 @@ from scipy.conftest import (
 from scipy._lib._array_api import _assert_matching_namespace
 
 
-def fft1(x, xp):
+def fft1(x):
     L = len(x)
-    phase = -2j*xp.pi*(xp.arange(L)/float(L))
-    phase = xp.arange(L).reshape(-1, 1) * phase
-    return xp.sum(x*xp.exp(phase), axis=1)
+    phase = -2j*np.pi*(np.arange(L)/float(L))
+    phase = np.arange(L).reshape(-1, 1) * phase
+    return np.sum(x*np.exp(phase), axis=1)
 
 
 class TestFFTShift:
@@ -50,8 +50,8 @@ class TestFFT1D:
     @array_api_compatible
     def test_fft(self, xp):
         x = random(30) + 1j*random(30)
+        expect = xp.asarray(fft1(x))
         x = xp.asarray(x)
-        expect = fft1(x, xp)
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(expect, fft.fft(x))
         _assert_allclose(expect, fft.fft(x, norm="backward"))
