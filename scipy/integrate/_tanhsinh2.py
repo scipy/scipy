@@ -262,20 +262,25 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
     # sum. Here, we initialize these variables.
-    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
-    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
-    wl0 = np.zeros(shape, dtype=dtype).ravel()
     xr0 = np.full(shape, -np.inf, dtype=dtype).ravel()
     fr0 = np.full(shape, np.nan, dtype=dtype).ravel()
     wr0 = np.zeros(shape, dtype=dtype).ravel()
+    xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
+    fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
+    wl0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
+
+    xfwr0 = np.vstack((xr0, fr0, wr0)).T
+    xfwl0 = np.vstack((xl0, fl0, wl0)).T
+
 
     work = OptimizeResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi,
         a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
-        xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0, fr0=fr0, wr0=wr0, d4=d4,  # err est
-        ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1))  # transforms
+        xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
+        ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1),  # transforms
+        xfwr0=xfwr0, xfwl0=xfwl0)
     # Constant scalars don't need to be put in `work` unless they need to be
     # passed outside `_tanhsinh2`. Examples: atol, rtol, h0, minlevel.
 
@@ -511,8 +516,11 @@ def _euler_maclaurin_sum(fj, work):
     # omitted from the Euler-Maclaurin sum. This is a bit involved because
     # it may have been computed at a previous level. I sure hope it's worth
     # all the trouble.
-    xl0, fl0, wr0 = work.xl0, work.fl0, work.wr0
-    xr0, fr0, wl0 = work.xr0, work.fr0, work.wl0
+
+    xl0, fl0, wl0 = work.xl0, work.fl0, work.wl0
+
+    xfwr0 = work.xfwr0.T
+    xr0, fr0, wr0 = xfwr0
 
     # It is much more convenient to work with the transposes of our work
     # variables here.
@@ -520,27 +528,35 @@ def _euler_maclaurin_sum(fj, work):
     n_x, n_active = xj.shape  # number of abscissae, number of active elements
 
     # We'll work with the left and right sides separately
-    xr, xl = xj.reshape(2, n_x // 2, n_active).copy()  # this gets modified
-    fr, fl = fj.reshape(2, n_x // 2, n_active)
-    wr, wl = wj.reshape(2, n_x // 2, n_active)
+    _, xl = xj.reshape(2, n_x // 2, n_active)  # this gets modified
+    _, fl = fj.reshape(2, n_x // 2, n_active)
+    _, wl = wj.reshape(2, n_x // 2, n_active)
 
-    invalid_r = ~np.isfinite(fr) | (wr == 0)
-    invalid_l = ~np.isfinite(fl) | (wl == 0)
+    xrl = xj.reshape(2, n_x // 2, 1, n_active)
+    frl = fj.reshape(2, n_x // 2, 1, n_active)
+    wrl = wj.reshape(2, n_x // 2, 1, n_active)
+
+    xfwrl = np.concatenate((xrl, frl, wrl), axis=2)
+    xfwr, xfwl = xfwrl
+
+    xr = xrl[0]
+    fr = frl[0]
+
+    invalid_r, invalid_l = ~np.isfinite(frl) | (wrl == 0)
+    invalid_l = invalid_l.squeeze()
 
     # integer index of the maximum abscissa at this level
     xr[invalid_r] = -np.inf
     ir = np.argmax(xr, axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xr_max = np.take_along_axis(xr, ir, axis=0)[0]
-    fr_max = np.take_along_axis(fr, ir, axis=0)[0]
-    wr_max = np.take_along_axis(wr, ir, axis=0)[0]
+    xfwr_max = np.take_along_axis(xfwr, ir, axis=0)[0]
+    xr_max = xfwr_max[0]
     # boolean indices at which greatest abscissa at this level exceeds
     # the incumbent greatest abscissa from all previous levels
     j = xr_max > xr0
-    # Update record of the incumbent abscissa, function value, and weight
-    xr0[j] = xr_max[j]
-    fr0[j] = fr_max[j]
-    wr0[j] = wr_max[j]
+    # # Update record of the incumbent abscissa, function value, and weight
+    xfwr0[:, j] = xfwr_max[:, j]
+    work.xfwr0 = xfwr0.T
 
     # integer index of the minimum abscissa at this level
     xl[invalid_l] = np.inf
@@ -582,9 +598,6 @@ def _euler_maclaurin_sum(fj, work):
     # update integral estimate
     Sn = (special.logsumexp(fjwj + np.log(work.h), axis=-1) if work.log
           else np.sum(fjwj, axis=-1) * work.h)
-
-    work.xl0, work.fl0, work.wr0 = xl0, fl0, wr0
-    work.xr0, work.fr0, work.wl0 = xr0, fr0, wl0
 
     return fjwj, Sn
 
