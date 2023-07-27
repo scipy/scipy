@@ -63,7 +63,6 @@ class PytestTester:
         1. Default is 1.
 
     """
-
     def __init__(self, module_name):
         self.module_name = module_name
 
