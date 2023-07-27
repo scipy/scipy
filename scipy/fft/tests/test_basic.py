@@ -55,7 +55,8 @@ class TestFFT1D:
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(expect, fft.fft(x))
         _assert_allclose(expect, fft.fft(x, norm="backward"))
-        _assert_allclose(expect / xp.sqrt(30), fft.fft(x, norm="ortho"))
+        _assert_allclose(expect / xp.sqrt(xp.asarray(30)),
+                         fft.fft(x, norm="ortho"))
         _assert_allclose(expect / 30, fft.fft(x, norm="forward"))
 
     @array_api_compatible
@@ -97,7 +98,7 @@ class TestFFT1D:
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.fftn(x))
         _assert_allclose(expect, fft.fftn(x, norm="backward"))
-        _assert_allclose(expect / xp.sqrt(30 * 20 * 10),
+        _assert_allclose(expect / xp.sqrt(xp.asarray(30 * 20 * 10)),
                          fft.fftn(x, norm="ortho"))
         _assert_allclose(expect / (30 * 20 * 10), fft.fftn(x, norm="forward"))
 
@@ -109,7 +110,7 @@ class TestFFT1D:
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.ifftn(x))
         _assert_allclose(expect, fft.ifftn(x, norm="backward"))
-        _assert_allclose(fft.ifftn(x) * xp.sqrt(30 * 20 * 10),
+        _assert_allclose(fft.ifftn(x) * xp.sqrt(xp.asarray(30 * 20 * 10)),
                          fft.ifftn(x, norm="ortho"))
         _assert_allclose(expect * (30 * 20 * 10),
                          fft.ifftn(x, norm="forward"))
@@ -124,7 +125,7 @@ class TestFFT1D:
                 _assert_allclose(
                     fft.fft(x, n=n, norm=norm)[:(n//2 + 1)],
                     fft.rfft(x, n=n, norm=norm))
-            _assert_allclose(fft.rfft(x, n=n) / xp.sqrt(n),
+            _assert_allclose(fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n)),
                              fft.rfft(x, n=n, norm="ortho"))
 
     @array_api_compatible
@@ -163,7 +164,7 @@ class TestFFT1D:
         expect = fft.fftn(x)[:, :, :6]
         _assert_allclose(expect, fft.rfftn(x))
         _assert_allclose(expect, fft.rfftn(x, norm="backward"))
-        _assert_allclose(expect / xp.sqrt(30 * 20 * 10),
+        _assert_allclose(expect / xp.sqrt(xp.asarray((30 * 20 * 10))),
                          fft.rfftn(x, norm="ortho"))
         _assert_allclose(expect / (30 * 20 * 10),
                          fft.rfftn(x, norm="forward"))
@@ -188,7 +189,7 @@ class TestFFT1D:
         expect = fft.fft(x)
         _assert_allclose(expect, fft.hfft(x_herm))
         _assert_allclose(expect, fft.hfft(x_herm, norm="backward"))
-        _assert_allclose(expect / np.sqrt(30),
+        _assert_allclose(expect / xp.sqrt(xp.asarray(30)),
                          fft.hfft(x_herm, norm="ortho"))
         _assert_allclose(expect / 30,
                          fft.hfft(x_herm, norm="forward"))
