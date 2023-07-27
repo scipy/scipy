@@ -146,12 +146,9 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     fixed-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
 
-    Before the first iteration of the algorithm, the integrand is evaluated
-    at each limit of integration in a separate call to `f` for input validation
-    and for determining a common dtype to be used for variables. Also, due to
-    floating-point error in the abscissae, the function may be evaluated
-    at the endpoints of the interval during iterations. In either case, the
-    values returned by the function at the endpoints will be ignored.
+    Due floating-point error in the abscissae, the function may be evaluated
+    at the endpoints of the interval during iterations. The values returned by
+    the function at the endpoints will be ignored.
 
     References
     ----------
@@ -227,22 +224,25 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> np.allclose(res.integral, ref)
 
     """
-    res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
-                       atol, rtol, args, callback)
-    (f, a, b, log, maxfun, maxlevel, minlevel,
-     atol, rtol, args, callback) = res
+    tmp = f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
+    tmp = _tanhsinh_iv(*tmp)
+    f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback = tmp
 
     # Initialization
-    # No, the function does not really need to be evaluated at `a` and `b`, but
     # `_scalar_optimization_initialize` does several important jobs, including
-    # ensuring that `a`, `b`, each of the `args`, and the output of `f`
-    # broadcast correctly and are of consistent types. Integration usually
-    # takes at least 100 function evaluations, so this is unlikely to be a
-    # bottleneck.
+    # ensuring that limits, each of the `args`, and the output of `f`
+    # broadcast correctly and are of consistent types. To save a function
+    # evaluation, I pass the midpoint of the integration interval. This comes
+    # at a cost of some gymnastics to ensure that the midpoint has the right
+    # shape and dtype. Did you know that 0d and >0d arrays follow different
+    # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        tmp = _scalar_optimization_initialize(f, (a, b), args, complex_ok=True)
+        c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
+        c[np.isnan(c)] = 0
+        tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
-    a, b = xs
+    a = a.astype(dtype).ravel()  # yes, copy, because they may be modified
+    b = b.astype(dtype).ravel()
 
     # Transform improper integrals
     a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
@@ -266,7 +266,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     wr0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
-    nit, nfev = 0, 2  # two function evaluations performed above
+    nit, nfev = 0, 1  # one function evaluations performed above
 
     work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
                           atol=atol, rtol=rtol, nit=nit, nfev=nfev,
@@ -670,6 +670,7 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         raise ValueError(message)
 
     message = 'All elements of `a` and `b` must be real numbers.'
+    a, b = np.broadcast_arrays(a, b)
     if np.any(np.iscomplex(a)) or np.any(np.iscomplex(b)):
         raise ValueError(message)
 

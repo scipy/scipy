@@ -721,7 +721,7 @@ class TestTanhSinh:
         assert_equal(np.max(res.nfev), f.feval)
         # maxlevel = 2 -> 3 function calls (2 initialization, 1 work)
         assert np.max(res.maxlevel) >= 2
-        assert_equal(np.max(res.maxlevel)+1, f.ncall)
+        assert_equal(np.max(res.maxlevel), f.ncall)
 
     def test_flags(self):
         # Test cases that should produce different status flags; show that all
@@ -929,7 +929,7 @@ class TestTanhSinh:
             # Difference in absolute errors << magnitude of integral
             assert_allclose(res.error, ref.error, atol=4e-16 * ref.integral)
             assert res.nfev == f.feval == len(f.x)
-            assert f.calls == maxlevel - minlevel + 1 + 2  # 2 validation calls
+            assert f.calls == maxlevel - minlevel + 1 + 1  # 1 validation call
             assert res.status == ref.status
             assert_equal(ref_x, np.sort(f.x))
 
