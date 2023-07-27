@@ -111,27 +111,3 @@ class spmatrix:
         matrix (row vector).
         """
         return self._getrow(i)
-
-
-def _base_doc_to_array(docstr):
-    # For optimized builds with stripped docstrings
-    if docstr is None:
-        return None
-    return (
-        docstr.replace('{array|matrix}', 'array')
-              .replace('{Array|Matrix}', 'Array')
-              .replace('{arrays|matrices}', 'arrays')
-              .replace('{an|a}', 'an')
-    )
-
-
-def _base_doc_to_matrix(docstr):
-    # For optimized builds with stripped docstrings
-    if docstr is None:
-        return None
-    return (
-        docstr.replace('{array|matrix}', 'matrix')
-              .replace('{Array|Matrix}', 'Matrix')
-              .replace('{arrays|matrices}', 'matrices')
-              .replace('{an|a}', 'a')
-    )
