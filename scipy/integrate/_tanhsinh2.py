@@ -238,16 +238,17 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
-        c[np.isnan(c)] = 0
+        c[np.isnan(c)] = 0  # infinite left and right limits
         tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
-    a = a.astype(dtype).ravel()  # yes, copy, because they may be modified
+    a = a.astype(dtype).ravel()  # yes, copy, because it may be modified
     b = b.astype(dtype).ravel()
 
     # Transform improper integrals
     a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
 
-    nit, nfev = 0, 1  # one function evaluations performed above
+    # Define variables we'll need
+    nit, nfev = 0, 1  # one function evaluation performed above
     zero = -np.inf if log else 0
     pi = dtype.type(np.pi)
     maxiter = maxlevel - minlevel + 1
@@ -331,12 +332,14 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             stop[i] = True
             return stop
 
+        # Terminate if convergence criterion is met
         work.rerr, work.aerr, work.Sk = _estimate_error(work)
         i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
              else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
         work.status[i] = _ECONVERGED
         stop[i] = True
 
+        # Terminate if integral estimate becomes invalid
         i = ~np.isfinite(work.Sn) & ~stop
         work.status[i] = _EVALUEERR
         stop[i] = True
@@ -349,17 +352,23 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         return
 
     def customize_result(res):
+        # If the integration limits were such that b < a, we reversed them
+        # to perform the calculation, and the final result needs to be negated.
         if log and np.any(negative):
             pi = res['integral'].dtype.type(np.pi)
             j = np.complex64(1j)  # minimum complex type
             res['integral'] = res['integral'] + negative*pi*j
         else:
             res['integral'][negative] *= -1
+
+        # For this algorithm, it seems more appropriate to report the maximum
+        # level rather than the number of iterations in which it was performed.
         res['maxlevel'] = minlevel + res['nit'] - 1
         res['maxlevel'][res['nit'] == 0] = -1
         del res['nit']
 
-    # suppress all warnings initially; we'll address this later
+    # Suppress all warnings initially, since there are many places in the code
+    # for which this is expected behavior.
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
                                         args, dtype, pre_func_eval,
@@ -482,7 +491,7 @@ def _transform_to_limits(xjc, wj, a, b):
     # xj = alpha * xj + beta, where beta = (a + b)/2
     alpha = (b - a) / 2
     xj = np.concatenate((-alpha * xjc + b, alpha * xjc + a), axis=-1)
-    wj = wj*alpha  # these need to get broadcasted, so no *=
+    wj = wj*alpha  # arguments get broadcasted, so we can't use *=
     wj = np.concatenate((wj, wj), axis=-1)
 
     # Points at the boundaries can be generated due to finite precision
