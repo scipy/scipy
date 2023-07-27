@@ -210,7 +210,7 @@ py3.install_sources([
     '_quadrature.py',
     '_odepack_py.py',
     '_quadpack_py.py',
-    '_tanhsinh2.py',
+    '_tanhsinh.py',
     'dop.py',
     'lsoda.py',
     'odepack.py',
