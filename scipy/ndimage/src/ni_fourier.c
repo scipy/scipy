@@ -36,6 +36,7 @@
 #include <assert.h>
 
 #include <numpy/npy_math.h>
+#include "npy_2_complexcompat.h"
 
 #if !defined(M_PI)
 #define M_PI 3.14159265358979323846
@@ -162,14 +163,14 @@ case _TYPE:                                          \
 
 #define CASE_FOURIER_OUT_RC(_TYPE, _type, _t, _po, _tmp) \
 case _TYPE:                                          \
-    npy_csetreal##_t((_type *)_po, tmp);                      \
-    npy_csetimag##_t((_type *)_po, 0.0);                      \
+    NPY_CSETREAL##_t((_type *)_po, tmp);                      \
+    NPY_CSETIMAG##_t((_type *)_po, 0.0);                      \
     break
 
 #define CASE_FOURIER_OUT_CC(_TYPE, _type, _t, _po, _tmp_r, _tmp_i) \
 case _TYPE:                                                    \
-    npy_csetreal##_t((_type *)_po, _tmp_r);                             \
-    npy_csetimag##_t((_type *)_po, _tmp_i);                             \
+    NPY_CSETREAL##_t((_type *)_po, _tmp_r);                             \
+    NPY_CSETIMAG##_t((_type *)_po, _tmp_i);                             \
     break
 
 #define CASE_FOURIER_FILTER_RC(_TYPE, _type, _t, _pi, _tmp, _tmp_r, _tmp_i) \
