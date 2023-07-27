@@ -37,10 +37,8 @@ class TestFFT1D:
     @array_api_compatible
     def test_identity(self, xp):
         maxlen = 512
-        x = random(maxlen) + 1j*random(maxlen)
-        xr = random(maxlen)
-        x = xp.asarray(x)
-        xr = xp.asarray(xr)
+        x = xp.asarray(random(maxlen) + 1j*random(maxlen))
+        xr = xp.asarray(random(maxlen))
         _assert_allclose = set_assert_allclose(xp)
         for i in range(1, maxlen):
             _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-11)
@@ -61,8 +59,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_ifft(self, xp):
-        x = random(30) + 1j*random(30)
-        x = xp.asarray(x)
+        x = xp.asarray(random(30) + 1j*random(30))
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.ifft(fft.fft(x)))
         for norm in ["backward", "ortho", "forward"]:
@@ -92,8 +89,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_fftn(self, xp):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.fftn(x))
@@ -104,8 +100,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_ifftn(self, xp):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.ifftn(x))
@@ -117,8 +112,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_rfft(self, xp):
-        x = random(29)
-        x = xp.asarray(x)
+        x = xp.asarray(random(29))
         _assert_allclose = set_assert_allclose(xp)
         for n in [x.size, 2*x.size]:
             for norm in [None, "backward", "ortho", "forward"]:
@@ -130,8 +124,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_irfft(self, xp):
-        x = random(30)
-        x = xp.asarray(x)
+        x = xp.asarray(random(30))
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.irfft(fft.rfft(x)))
         for norm in ["backward", "ortho", "forward"]:
@@ -158,8 +151,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_rfftn(self, xp):
-        x = random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.fftn(x)[:, :, :6]
         _assert_allclose(expect, fft.rfftn(x))
@@ -171,8 +163,7 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_irfftn(self, xp):
-        x = random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x, fft.irfftn(fft.rfftn(x)))
         for norm in ["backward", "ortho", "forward"]:
@@ -432,41 +423,35 @@ class TestNamespaces:
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.fft, fft.ifft])
     def test_fft_ifft(self, func, xp):
-        x = random(30) + 1j*random(30)
-        x = xp.asarray(x)
+        x = xp.asarray(random(30) + 1j*random(30))
         _assert_matching_namespace(func(x), x)
 
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
-        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
     @array_api_compatible
     def test_rfft(self, xp):
-        x = random(29)
-        x = xp.asarray(x)
+        x = xp.asarray(random(29))
         _assert_matching_namespace(fft.rfft(x), x)
 
     @array_api_compatible
     def test_irfft(self, xp):
-        x = random(30)
-        x = xp.asarray(x)
+        x = xp.asarray(random(30))
         _assert_matching_namespace(fft.irfft(x), x)
 
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
     def test_rfftn_irfftn(self, func, xp):
-        x = random((30, 20, 10))
-        x = xp.asarray(x)
+        x = xp.asarray(random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
     @array_api_compatible
