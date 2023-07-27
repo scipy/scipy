@@ -11,8 +11,6 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 # todo:
 #  refactor and comment
 #  figure out warning situation
-#  respect function evaluation limit?
-#  add documentation back - also note that minlevel is min(maxlevel, 2)
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
 #  without `minweight`, we are also suppressing infinities within the interval.
 #    Is that OK? If so, we can probably get rid of `status=3`.
@@ -23,12 +21,212 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 #    log-integral or the error of the integral?  The trouble is that `log`
 #    inherently looses some precision so it may not be possible to refine
 #    the integral further. Example: 7th moment of stats.f(15, 20)
+#  avoid input validation calls to function?
+#  respect function evaluation limit?
 #  make public?
 
 
-def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
-               minlevel=2, atol=None, rtol=None, args=(), callback=None):
+def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
+               minlevel=2, atol=None, rtol=None, callback=None):
+    """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
+    In practice, tanh-sinh quadrature achieves quadratic convergence for
+    many integrands: the number of accurate *digits* scales roughly linearly
+    with the number of function evaluations [1]_.
+
+    Either or both of the limits of integration may be infinite, and
+    singularities at the endpoints are acceptable. Divergent integrals and
+    integrands with non-finite derivatives or singularities within an interval
+    are out of scope, but the latter may be evaluated be calling `_tanhsinh` on
+    each sub-interval separately.
+
+    Parameters
+    ----------
+    f : callable
+        The function to be integrated. The signature must be::
+            func(x: ndarray, *args) -> ndarray
+         where each element of ``x`` is a finite real and ``args`` is a tuple,
+         which may contain an arbitrary number of arrays that are broadcastable
+         with `x`. ``func`` must be an elementwise function: each element
+         ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
+         If ``func`` returns a value with complex dtype when evaluated at
+         either endpoint, subsequent arguments ``x`` will have complex dtype
+         (but zero imaginary part).
+    a, b : array_like
+        Real lower and upper limits of integration. Must be broadcastable.
+        Elements may be infinite.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`. Must be arrays
+        broadcastable with `a` and `b`. If the callable to be integrated
+        requires arguments that are not broadcastable with `a` and `b`, wrap
+        that callable with `f`. See Examples.
+    log : bool, default: False
+        Setting to True indicates that `f` returns the log of the integrand
+        and that `atol` and `rtol` are expressed as the logs of the absolute
+        and relative errors. In this case, the result object will contain the
+        log of the integral and error. This is useful for integrands for which
+        numerical underflow or overflow would lead to inaccuracies.
+        When ``log=True``, the integrand (the exponential of `f`) must be real,
+        but it may be negative, in which case the log of the integrand is a
+        complex number with an imaginary part that is an odd multiple of π.
+    maxlevel : int, default: 10
+        The maximum refinement level of the algorithm.
+
+        At the zeroth level, `f` is called once, performing 16 function
+        evaluations. At each subsequent level, `f` is called once more,
+        approximately doubling the number of function evaluations that have
+        been performed. Accordingly, for many integrands, each successive level
+        will double the number of accurate digits in the result (up to the
+        limits of floating point precision).
+
+        The algorithm will terminate after completing level `maxlevel` or after
+        another termination condition is satisfied, whichever comes first.
+    minlevel : int, default: 2
+        The level at which to begin iteration (default: 2). This does not
+        change the total number of function evaluations or the abscissae at
+        which the function is evaluated; it changes only the *number of times*
+        `f` is called. If ``minlevel=k``, then the integrand is evaluated at
+        all abscissae from levels ``0`` through ``k`` in a single call.
+        Note that if `minlevel` exceeds `maxlevel`, the provided `minlevel` is
+        ignored, and `minlevel` is set equal to `maxlevel`.
+    atol, rtol : float, optional
+        Absolute termination tolerance (default: 0) and relative termination
+        tolerance (default: 1e-12), respectively. The error estimate is as
+        described in [1]_ Section 5. While not theoretically rigorous or
+        conservative, it is said to work well in practice. Must be non-negative
+        and finite if `log` is False, and must be expressed as the log of a
+        non-negative and finite number if `log` is True.
+        Note that the default tolerance is inappropriate for floating point
+        types with precision less than ``float64``. A tolerance of ``1e-5``
+        may be appropriate for ``float32``; use of ``float16`` is not
+        recommended.
+    callback : callable, optional
+        An optional user-supplied function to be called before the first
+        iteration and after each iteration.
+        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        similar to that returned by `_differentiate` (but containing the
+        current iterate's values of all variables). If `callback` raises a
+        ``StopIteration``, the algorithm will terminate immediately and
+        `_tanhsinh2` will return a result object.
+
+    Returns
+    -------
+    res : OptimizeResult
+        An instance of `scipy.optimize.OptimizeResult` with the following
+        attributes. (The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+        arrays of the same shape.)
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm converged to the specified tolerances.
+            ``-1`` : (unused)
+            ``-2`` : The maximum number of iterations was reached.
+            ``-3`` : A non-finite value was encountered.
+            ``-4`` : Iteration was terminated by `callback`.
+            ``1`` : The algorithm is proceeding normally (in `callback` only).
+        integral : float
+            An estimate of the integral
+        error : float
+            An estimate of the error. Only available if level two or higher
+            has been completed; otherwise NaN.
+        nit : int
+            The number of iterations performed.
+        nfev : int
+            The number of points at which `func` was evaluated.
+
+    See Also
+    --------
+    quad, quadrature
+
+    Notes
+    -----
+    Implements the algorithm as described in [1]_ with minor adaptations for
+    fixed-precision arithmetic, including some described by [2]_ and [3]_. The
+    tanh-sinh scheme was originally introduced in [4]_.
+
+    Before the first iteration of the algorithm, the integrand is evaluated
+    at each limit of integration in a separate call to `f` for input validation
+    and for determining a common dtype to be used for variables. Also, due to
+    floating-point error in the abscissae, the function may be evaluated
+    at the endpoints of the interval during iterations. In either case, the
+    values returned by the function at the endpoints will be ignored.
+
+    References
+    ----------
+    [1] Bailey, David H., Karthik Jeyabalan, and Xiaoye S. Li. "A comparison of
+        three high-precision quadrature schemes." Experimental Mathematics 14.3
+        (2005): 317-329.
+    [2] Vanherck, Joren, Bart Sorée, and Wim Magnus. "Tanh-sinh quadrature for
+        single and multiple integration using floating-point arithmetic."
+        arXiv preprint arXiv:2007.15057 (2020).
+    [3] van Engelen, Robert A.  "Improving the Double Exponential Quadrature
+        Tanh-Sinh, Sinh-Sinh and Exp-Sinh Formulas."
+        https://www.genivia.com/files/qthsh.pdf
+    [4] Takahasi, Hidetosi, and Masatake Mori. "Double exponential formulas for
+        numerical integration." Publications of the Research Institute for
+        Mathematical Sciences 9.3 (1974): 721-741.
+
+    Example
+    -------
+    Evaluate the Gaussian integral:
+
+    >>> import numpy as np
+    >>> from scipy.integrate._tanhsinh2 import _tanhsinh2 as _tanhsinh
+    >>> def f(x):
+    ...     return np.exp(-x**2)
+    >>> res = _tanhsinh(f, -np.inf, np.inf)
+    >>> res.integral  # true value is np.sqrt(np.pi), 1.7724538509055159
+     1.7724538509055159
+    >>> res.error  # actual error is 0
+    4.0007963937534104e-16
+
+    The value of the Gaussian function (bell curve) is nearly zero for
+    arguments sufficiently far from zero, so the value of the integral
+    over a finite interval is nearly the same.
+
+    >>> _tanhsinh(f, -20, 20).integral
+    1.772453850905518
+
+    However, with unfavorable integration limits, the integration scheme
+    may not be able to find the important region.
+
+    >>> _tanhsinh(f, -np.inf, 1000).integral
+    4.500490856620352
+
+    In such cases, or when there are singularities within the interval,
+    break the integral into parts with endpoints at the important points.
+
+    >>> _tanhsinh(f, -np.inf, 0).integral + _tanhsinh(f, 0, 1000).integral
+    1.772453850905404
+
+    For integration involving very large or very small magnitudes, use
+    log-integration. (For illustrative purposes, the following example shows a
+    case in which both regular and log-integration work, but for more extreme
+    limits of integration, log-integration would avoid the underflow
+    experienced when evaluating the integral normally.)
+
+    >>> res = _tanhsinh(f, 20, 30, rtol=1e-10)
+    >>> res.integral, res.error
+    4.7819613911309014e-176, 4.670364401645202e-187
+    >>> def log_f(x):
+    ...     return -x**2
+    >>> np.exp(res.integral), np.exp(res.error)
+    4.7819613911306924e-176, 4.670364401645093e-187
+
+    The limits of integration and elements of `args` may be broadcastable
+    arrays, and integration is performed elementwise.
+
+    >>> from scipy import stats
+    >>> dist = stats.gausshyper(13.8, 3.12, 2.51, 5.18)
+    >>> a, b = dist.support()
+    >>> x = np.linspace(a, b, 100)
+    >>> res = _tanhsinh(dist.pdf, a, x)
+    >>> ref = dist.cdf(x)
+    >>> np.allclose(res.integral, ref)
+
+    """
     res = _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
                        atol, rtol, args, callback)
     (f, a, b, log, maxfun, maxlevel, minlevel,
@@ -58,6 +256,8 @@ def _tanhsinh2(f, a, b, *, log=False, maxfun=None, maxlevel=None,
     maxiter = maxlevel - minlevel + 1
     pi = np.asarray(np.pi, dtype=dtype)[()]
 
+    # Most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
+    # sum. These are dummy values that will be replaced in the first iteration.
     xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
     fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
     wl0 = np.zeros(shape, dtype=dtype).ravel()
