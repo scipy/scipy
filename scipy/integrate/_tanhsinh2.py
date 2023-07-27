@@ -247,17 +247,20 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # Transform improper integrals
     a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
 
+    nit, nfev = 0, 1  # one function evaluations performed above
     zero = -np.inf if log else 0
-    Sn = np.full(shape, zero, dtype=dtype).ravel()
-    Sk = np.empty_like(Sn)[:, np.newaxis][:, 0:0]  # add zero length new axis
-    aerr = np.full(shape, np.nan, dtype=dtype).ravel()
-    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
-    h0 = _get_base_step(dtype=dtype)
+    pi = dtype.type(np.pi)
     maxiter = maxlevel - minlevel + 1
-    pi = np.asarray(np.pi, dtype=dtype)[()]
 
-    # Most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
-    # sum. These are dummy values that will be replaced in the first iteration.
+    Sn = np.full(shape, zero, dtype=dtype).ravel()  # latest integral estimate
+    Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
+    aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
+    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
+    h0 = _get_base_step(dtype=dtype)  # base step
+
+    # For term `d4` of error estimate ([1] Section 5), we need to keep the
+    # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
+    # sum. Here, we initialize these variables.
     xl0 = np.full(shape, np.inf, dtype=dtype).ravel()
     fl0 = np.full(shape, np.nan, dtype=dtype).ravel()
     wl0 = np.zeros(shape, dtype=dtype).ravel()
@@ -266,29 +269,27 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     wr0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
-    nit, nfev = 0, 1  # one function evaluations performed above
+    work = OptimizeResult(
+        Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi,
+        a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
+        n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
+        xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0, fr0=fr0, wr0=wr0, d4=d4,  # err est
+        ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1))  # transforms
+    # Constant scalars don't need to be put in `work` unless they need to be
+    # passed outside `_tanhsinh2`. Examples: atol, rtol, h0, minlevel.
 
-    work = OptimizeResult(Sn=Sn, Sk=Sk, aerr=aerr, h0=h0, h=h0,
-                          atol=atol, rtol=rtol, nit=nit, nfev=nfev,
-                          status=status, dtype=dtype, minlevel=minlevel,
-                          a=a[:, np.newaxis], b=b[:, np.newaxis], log=log,
-                          n = minlevel, xl0=xl0, fl0=fl0, wl0=wl0, xr0=xr0,
-                          fr0=fr0, wr0=wr0, d4=d4, ainf=ainf, binf=binf,
-                          abinf=abinf, pi=pi, a0=a0[:, np.newaxis])
-
-    # Correspondence between terms in the `work` object and the
+    # Correspondence between terms in the `work` object and the result
     res_work_pairs = [('status', 'status'), ('integral', 'Sn'),
                       ('error', 'aerr'), ('nit', 'nit'), ('nfev', 'nfev')]
 
     def pre_func_eval(work):
-        work.h = work.h0 / 2**work.n
-        xjc, wj = _get_pairs(work.n, work.h0,
-                             inclusive=(work.n == work.minlevel),
-                             dtype=work.dtype)
-
+        # Determine abscissae at which to evaluate `f`
+        work.h = h0 / 2**work.n
+        xjc, wj = _get_pairs(work.n, h0, dtype=work.dtype,
+                             inclusive=(work.n == minlevel))
         work.xj, work.wj = _transform_to_limits(xjc, wj, work.a, work.b)
 
-        # Abscissae substitutions for infinite limits of integration
+        # Perform abscissae substitutions for infinite limits of integration
         xj = work.xj.copy()
         xj[work.abinf] = xj[work.abinf] / (1 - xj[work.abinf]**2)
         xj[work.binf] = 1/xj[work.binf] - 1 + work.a0[work.binf]
@@ -296,7 +297,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         return xj
 
     def post_func_eval(x, fj, work):
-        # weight integrand as required by substitutions for infinite limits
+        # Weight integrand as required by substitutions for infinite limits
         if work.log:
             fj[work.abinf] += (np.log(1 + work.xj[work.abinf] ** 2)
                                - 2*np.log(1 - work.xj[work.abinf] ** 2))
@@ -306,6 +307,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
                                (1 - work.xj[work.abinf]**2)**2)
             fj[work.binf] *= work.xj[work.binf]**-2.
 
+        # Estimate integral with Euler-Maclaurin Sum
         fjwj, Sn = _euler_maclaurin_sum(fj, work)
         if work.Sk.shape[-1]:
             Snm1 = work.Sk[:, -1]
@@ -316,13 +318,12 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         work.Sn = Sn
 
     def check_termination(work):
-        """Terminate due to convergence, non-finite values, or error increase"""
+        """Terminate due to convergence or encountering non-finite values"""
         stop = np.zeros(work.Sn.shape, dtype=bool)
 
+        # Terminate before first iteration if integration limits are equal
         if work.nit == 0:
-            # The only way we can terminate on the zeroth iteration is if
-            # the integration limits are equal.
-            i = (work.a == work.b).ravel()  # these are guaranteed to be 1d
+            i = (work.a == work.b).ravel()  # ravel singleton dimension
             zero = -np.inf if log else 0
             work.Sn[i] = zero
             work.aerr[i] = zero
@@ -331,8 +332,8 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             return stop
 
         work.rerr, work.aerr, work.Sk = _estimate_error(work)
-        i = ((work.rerr < work.rtol) | (work.rerr + np.real(work.Sn) < work.atol) if log
-             else (work.rerr < work.rtol) | (work.rerr * abs(work.Sn) < work.atol))
+        i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
+             else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
         work.status[i] = _ECONVERGED
         stop[i] = True
 
@@ -589,8 +590,8 @@ def _estimate_error(work):
         hm1 = 2 * work.h
         fjwjm1_rl = fjwj_rl[..., :indices[n]]
         Snm1 = (special.logsumexp(fjwjm1_rl + np.log(hm1), axis=(-1, -2)) if log
-                else np.sum(fjwjm1_rl, axis=(-1, -2)) * hm1)
-        Sk = np.concatenate((Snm1[:, np.newaxis], Sk), axis=-1)
+                else np.sum(fjwjm1_rl, axis=(-1, -2)) * hm1).reshape(-1, 1)
+        Sk = np.concatenate((Snm1, Sk), axis=-1)
 
     if n == 1:
         nan = np.full_like(Sn, np.nan)
