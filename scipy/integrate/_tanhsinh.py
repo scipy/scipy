@@ -1,5 +1,4 @@
 # mypy: disable-error-code="attr-defined"
-from dataclasses import dataclass
 import numpy as np
 from scipy import special
 from scipy.optimize import OptimizeResult
