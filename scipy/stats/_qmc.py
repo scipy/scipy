@@ -196,6 +196,10 @@ def discrepancy(
     discrepancy : float
         Discrepancy.
 
+    See Also
+    --------
+    geometric_discrepancy
+
     Notes
     -----
     The discrepancy is a uniformity criterion used to assess the space filling
@@ -329,6 +333,10 @@ def geometric_discrepancy(
     discrepancy : float
         Discrepancy (higher values correspond to greater sample uniformity).
 
+    See Also
+    --------
+    discrepancy
+
     Notes
     -----
     The discrepancy can serve as a simple measure of quality of a random sample.
@@ -343,7 +351,7 @@ def geometric_discrepancy(
     It is possible to calculate two metrics from the minimum spanning tree:
     the mean edge length and the standard deviation of edges lengths. Using
     both metrics offers a better picture of uniformity than either metric alone,
-    with higher mean and lower standard deviation being preferable (see [1]
+    with higher mean and lower standard deviation being preferable (see [1]_
     for a brief discussion). This function currently only calculates the mean
     edge length.
 
@@ -360,25 +368,44 @@ def geometric_discrepancy(
 
     >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
-    >>> l_bounds = [0.5, 0.5]
-    >>> u_bounds = [6.5, 6.5]
-    >>> space = qmc.scale(space, l_bounds, u_bounds, reverse=True)
-    >>> space
-    array([[0.08333333, 0.41666667],
-           [0.25      , 0.91666667],
-           [0.41666667, 0.25      ],
-           [0.58333333, 0.75      ],
-           [0.75      , 0.08333333],
-           [0.91666667, 0.58333333]])
-    >>> qmc.geometric_discrepancy(space)
-    0.3726779962499649
+    >>> np.random.seed(12345)
+    >>> sample = np.random.random_sample((50, 2))
+    >>> qmc.geometric_discrepancy(sample)
+    0.018894832717486352
 
     Calculate the quality using the mean edge length in the minimum
     spanning tree:
 
-    >>> qmc.geometric_discrepancy(space, method='mst')
-    0.4035516523389179
+    >>> qmc.geometric_discrepancy(sample, method='mst')
+    0.0938161477108559
+
+    Display the minimum spanning tree and the points with
+    the smallest distance:
+
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib.lines import Line2D
+    >>> from scipy.sparse.csgraph import minimum_spanning_tree
+    >>> from scipy.spatial.distance import cdist, pdist, squareform
+    >>> dist = pdist(sample)
+    >>> mst = minimum_spanning_tree(squareform(dist))
+    >>> edges = np.where(mst.toarray() > 0)
+    >>> edges = np.array(edges).T
+    >>> min_dist = np.min(dist)
+    >>> min_idx = np.argwhere(squareform(dist) == min_dist)[0]
+    >>> fig, ax = plt.subplots()
+    >>> plt.gca().set_aspect('equal')
+    >>> for edge in edges:
+    ...     ax.plot(sample[edge, 0], sample[edge, 1], c='k')
+    >>> ax.scatter(sample[:, 0], sample[:, 1])
+    >>> ax.add_patch(plt.Circle(sample[min_idx[0]], min_dist, color='red', fill=False))
+    >>> markers = [
+    ...     Line2D([0], [0], marker='o', lw=0, label='Sample points'),
+    ...     Line2D([0], [0], color='k', label='Minimum spanning tree'),
+    ...     Line2D([0], [0], marker='o', lw=0, markerfacecolor='w', markeredgecolor='r',
+    ...            label='Minimum point-to-point distance'),
+    ... ]
+    >>> ax.legend(handles=markers, loc='center left', bbox_to_anchor=(1, 0.5));
+    >>> plt.show()
 
     """
     sample = np.asarray(sample, dtype=np.float64, order="C")
