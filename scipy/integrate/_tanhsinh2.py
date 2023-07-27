@@ -278,7 +278,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi,
         a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
-        xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
+        d4=d4,  # err est
         ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1),  # transforms
         xfwr0=xfwr0, xfwl0=xfwl0)
     # Constant scalars don't need to be put in `work` unless they need to be
@@ -517,33 +517,28 @@ def _euler_maclaurin_sum(fj, work):
     # it may have been computed at a previous level. I sure hope it's worth
     # all the trouble.
 
-    xl0, fl0, wl0 = work.xl0, work.fl0, work.wl0
-
     xfwr0 = work.xfwr0.T
     xr0, fr0, wr0 = xfwr0
+
+    xfwl0 = work.xfwl0.T
+    xl0, fl0, wl0 = xfwl0
 
     # It is much more convenient to work with the transposes of our work
     # variables here.
     xj, fj, wj = work.xj.T, fj.T, work.wj.T
     n_x, n_active = xj.shape  # number of abscissae, number of active elements
 
-    # We'll work with the left and right sides separately
-    _, xl = xj.reshape(2, n_x // 2, n_active)  # this gets modified
-    _, fl = fj.reshape(2, n_x // 2, n_active)
-    _, wl = wj.reshape(2, n_x // 2, n_active)
-
+    # # We'll work with the left and right sides separately
     xrl = xj.reshape(2, n_x // 2, 1, n_active)
     frl = fj.reshape(2, n_x // 2, 1, n_active)
     wrl = wj.reshape(2, n_x // 2, 1, n_active)
-
     xfwrl = np.concatenate((xrl, frl, wrl), axis=2)
     xfwr, xfwl = xfwrl
 
-    xr = xrl[0]
-    fr = frl[0]
+    xr, xl = xrl
+    fr, fl = frl
 
     invalid_r, invalid_l = ~np.isfinite(frl) | (wrl == 0)
-    invalid_l = invalid_l.squeeze()
 
     # integer index of the maximum abscissa at this level
     xr[invalid_r] = -np.inf
@@ -562,24 +557,23 @@ def _euler_maclaurin_sum(fj, work):
     xl[invalid_l] = np.inf
     il = np.argmin(xl, axis=0, keepdims=True)
     # abscissa, function value, and weight at this index
-    xl_min = np.take_along_axis(xl, il, axis=0)[0]
-    fl_min = np.take_along_axis(fl, il, axis=0)[0]
-    wl_min = np.take_along_axis(wl, il, axis=0)[0]
-    # boolean indices at which greatest abscissa at this level exceeds
-    # the incumbent greatest abscissa from all previous levels
+    xfwl_min = np.take_along_axis(xfwl, il, axis=0)[0]
+    xl_min = xfwl_min[0]
+    # boolean indices at which minimum abscissa at this level is less than
+    # the incumbent minimum abscissa from all previous levels
     j = xl_min < xl0
-    # Update record of the incumbent abscissa, function value, and weight
-    xl0[j] = xl_min[j]
-    fl0[j] = fl_min[j]
-    wl0[j] = wl_min[j]
+    # # Update record of the incumbent abscissa, function value, and weight
+    xfwl0[:, j] = xfwl_min[:, j]
+    work.xfwl0 = xfwl0.T
+
     fj = fj.T
 
     # Compute the error estimate `d4` - the magnitude of the leftmost or
     # rightmost term, whichever is greater.
-    flwl0 = fl0 + np.log(wl0) if work.log else fl0 * wl0  # leftmost term
-    frwr0 = fr0 + np.log(wr0) if work.log else fr0 * wr0  # rightmost term
+    fwl0 = fl0 + np.log(wl0) if work.log else fl0 * wl0  # leftmost term
+    fwr0 = fr0 + np.log(wr0) if work.log else fr0 * wr0  # rightmost term
     magnitude = np.real if work.log else np.abs
-    work.d4 = np.maximum(magnitude(flwl0), magnitude(frwr0))
+    work.d4 = np.maximum(magnitude(fwl0), magnitude(fwr0))
 
     # There are two approaches to dealing with function values that are
     # numerically infinite due to approaching a singularity - zero them, or
