@@ -1677,6 +1677,8 @@ def yeojohnson_normmax(x, brack=None):
     with np.errstate(invalid='ignore'):
         if not np.all(np.isfinite(x)):
             raise ValueError('Yeo-Johnson input must be finite.')
+        if np.all(x == 0):
+            return 1.0
         if brack is not None:
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
         x = np.asarray(x)

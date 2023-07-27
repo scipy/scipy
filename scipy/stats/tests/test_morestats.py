@@ -2269,7 +2269,8 @@ class TestYeojohnson:
     @pytest.mark.parametrize('x', [
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
                   2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        np.array([0, 0, 0])
     ])
     @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
     @pytest.mark.parametrize('sign', [1, -1])
