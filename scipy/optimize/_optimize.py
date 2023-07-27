@@ -1244,7 +1244,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0, c1=1e-4, c2=.1):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=.9):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1283,7 +1283,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         parameter vector.
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
-    c2 : float, default: .1
+    c2 : float, default: .9
         Parameter for curvature condition rule.
 
     Returns
@@ -1381,7 +1381,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, c1=1e-4, c2=.1, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=.9, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1414,7 +1414,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
-    c2 : float, default: .1
+    c2 : float, default: .9
         Parameter for curvature condition rule.
 
     """
