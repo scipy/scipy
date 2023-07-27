@@ -12,11 +12,9 @@ import scipy.fft as fft
 from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api,
-    skip_if_array_api_gpu,
-    skip_if_array_api_backend,
     set_assert_allclose
 )
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray, array_namespace
+from scipy._lib._array_api import _assert_matching_namespace
 
 
 def fft1(x, xp):
@@ -426,3 +424,55 @@ class TestIRFFTN:
 
         # Should not raise error
         fft.irfftn(a, axes=axes)
+
+
+class TestNamespaces:
+
+    @array_api_compatible
+    @pytest.mark.parametrize("func", [fft.fft, fft.ifft])
+    def test_fft_ifft(self, func, xp):
+        x = random(30) + 1j*random(30)
+        x = xp.asarray(x)
+        _assert_matching_namespace(func(x), x)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
+    def test_fftn_ifftn(self, func, xp):
+        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
+        x = xp.asarray(x)
+        _assert_matching_namespace(func(x), x)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
+    def test_fftn_ifftn(self, func, xp):
+        x = random((30, 20, 10)) + 1j*random((30, 20, 10))
+        x = xp.asarray(x)
+        _assert_matching_namespace(func(x), x)
+
+    @array_api_compatible
+    def test_rfft(self, xp):
+        x = random(29)
+        x = xp.asarray(x)
+        _assert_matching_namespace(fft.rfft(x), x)
+
+    @array_api_compatible
+    def test_irfft(self, xp):
+        x = random(30)
+        x = xp.asarray(x)
+        _assert_matching_namespace(fft.irfft(x), x)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
+    def test_rfftn_irfftn(self, func, xp):
+        x = random((30, 20, 10))
+        x = xp.asarray(x)
+        _assert_matching_namespace(func(x), x)
+
+    @array_api_compatible
+    def test_hfft_ihfft(self, xp):
+        x = random(14) + 1j*random(14)
+        x_herm = np.concatenate((random(1), x, random(1)))
+        x_herm = xp.asarray(x_herm)
+        y = fft.hfft(x_herm)
+        _assert_matching_namespace(y, x_herm)
+        _assert_matching_namespace(fft.ihfft(y), y)
