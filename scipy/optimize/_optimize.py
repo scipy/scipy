@@ -1244,7 +1244,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=.1):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1281,6 +1281,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Relative tolerance for `x`. Terminate successfully if step
         size is less than ``xk * xrtol`` where ``xk`` is the current
         parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: .1
+        Parameter for curvature condition rule.
 
     Returns
     -------
@@ -1347,14 +1351,16 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             Function evaluations: 8
             Gradient evaluations: 8
     array([ 2.85916637e-06, -4.54371951e-07])
-
     """
     opts = {'gtol': gtol,
             'norm': norm,
             'eps': epsilon,
             'disp': disp,
             'maxiter': maxiter,
-            'return_all': retall}
+            'return_all': retall,
+            'c1': c1,
+            'c2': c2,
+    }
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
@@ -1375,7 +1381,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=.1, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1406,8 +1412,17 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step size is
         less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: .1
+        Parameter for curvature condition rule.
+
     """
     _check_unknown_options(unknown_options)
+    kwargs = {
+        'c1': c1,
+        'c2': c2,
+    }
     retall = return_all
 
     x0 = asarray(x0).flatten()
@@ -1443,7 +1458,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
+                                          old_fval, old_old_fval, amin=1e-100, amax=1e100, **kwargs)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
