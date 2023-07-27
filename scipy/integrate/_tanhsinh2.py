@@ -24,7 +24,7 @@ from scipy.optimize._zeros_py import (_scalar_optimization_initialize,
 #  make public?
 
 
-def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
+def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
                minlevel=2, atol=None, rtol=None, callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
@@ -105,7 +105,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `_tanhsinh2` will return a result object.
+        `_tanhsinh` will return a result object.
 
     Returns
     -------
@@ -168,7 +168,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Evaluate the Gaussian integral:
 
     >>> import numpy as np
-    >>> from scipy.integrate._tanhsinh2 import _tanhsinh2 as _tanhsinh
+    >>> from scipy.integrate._tanhsinh import _tanhsinh
     >>> def f(x):
     ...     return np.exp(-x**2)
     >>> res = _tanhsinh(f, -np.inf, np.inf)
@@ -275,7 +275,7 @@ def _tanhsinh2(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         xr0=xr0, fr0=fr0, wr0=wr0, xl0=xl0, fl0=fl0, wl0=wl0, d4=d4,  # err est
         ainf=ainf, binf=binf, abinf=abinf, a0=a0.reshape(-1, 1))  # transforms
     # Constant scalars don't need to be put in `work` unless they need to be
-    # passed outside `_tanhsinh2`. Examples: atol, rtol, h0, minlevel.
+    # passed outside `tanhsinh`. Examples: atol, rtol, h0, minlevel.
 
     # Correspondence between terms in the `work` object and the result
     res_work_pairs = [('status', 'status'), ('integral', 'Sn'),

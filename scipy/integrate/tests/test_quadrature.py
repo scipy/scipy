@@ -9,7 +9,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
-from scipy.integrate._tanhsinh2 import _tanhsinh2 as _tanhsinh
+from scipy.integrate._tanhsinh2 import _tanhsinh
 from scipy import stats, special as sc
 from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
