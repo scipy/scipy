@@ -1503,6 +1503,7 @@ def _yeojohnson_transform(x, lmbda):
     if abs(lmbda) < np.spacing(1.):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
+        # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
         out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
 
     # when x < 0
@@ -1680,7 +1681,7 @@ def yeojohnson_normmax(x, brack=None):
             return optimize.brent(_neg_llf, brack=brack, args=(x,))
         x = np.asarray(x)
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        # Allow values up to 20x the maximum observed value to be safely
+        # Allow values up to 20 times the maximum observed value to be safely
         # transformed without over- or underflow.
         log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
         # Use half of floating point's exponent range to allow safe computation

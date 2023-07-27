@@ -2237,8 +2237,7 @@ class TestYeojohnson:
         np.array([-1.0, float("nan"), float("inf"), -float("inf"), 1.0])
     ])
     def test_nonfinite_input(self, x):
-        # non-regression test for gh-18389
-        with pytest.raises(ValueError, match='finite'):
+        with pytest.raises(ValueError, match='Yeo-Johnson input must be finite'):
             xt_yeo, lam_yeo = stats.yeojohnson(x)
 
     @pytest.mark.parametrize('x', [
