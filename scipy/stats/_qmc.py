@@ -416,7 +416,7 @@ def geometric_discrepancy(
     >>> edges = np.asarray(edges).T
     >>> min_dist = np.min(dist)
     >>> min_idx = np.argwhere(squareform(dist) == min_dist)[0]
-    >>> fig, ax = plt.subplots()
+    >>> fig, ax = plt.subplots(figsize=(10, 5))
     >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
     ...            xlim=[0, 1], ylim=[0, 1])
     >>> for edge in edges:
@@ -424,10 +424,10 @@ def geometric_discrepancy(
     >>> ax.scatter(sample[:, 0], sample[:, 1])
     >>> ax.add_patch(plt.Circle(sample[min_idx[0]], min_dist, color='red', fill=False))
     >>> markers = [
-    ...     Line2D([0], [0], marker='o', lw=0, label='Sample'),
-    ...     Line2D([0], [0], color='k', label='MST'),
+    ...     Line2D([0], [0], marker='o', lw=0, label='Sample points'),
+    ...     Line2D([0], [0], color='k', label='Minimum spanning tree'),
     ...     Line2D([0], [0], marker='o', lw=0, markerfacecolor='w', markeredgecolor='r',
-    ...            label='mindist'),
+    ...            label='Minimum point-to-point distance'),
     ... ]
     >>> ax.legend(handles=markers, loc='center left', bbox_to_anchor=(1, 0.5));
     >>> plt.show()
