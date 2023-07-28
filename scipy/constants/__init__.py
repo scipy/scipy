@@ -36,8 +36,8 @@ Physical constants
 ``elementary_charge``        elementary charge in C
 ``R``                        molar gas constant in J mol^-1 K^-1
 ``gas_constant``             molar gas constant in J mol^-1 K^-1
-``alpha``                    fine-structure constant
-``fine_structure``           fine-structure constant
+``alpha``                    fine-structure constant (unitless)
+``fine_structure``           fine-structure constant (unitless)
 ``N_A``                      Avogadro constant in mol^-1
 ``Avogadro``                 Avogadro constant in mol^-1
 ``k``                        Boltzmann constant in J K^-1
