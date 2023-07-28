@@ -19,7 +19,7 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
 import warnings
 
 import numpy
-from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
+from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
 # Local imports
@@ -29,7 +29,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue
 
 
-_I = cast['F'](1j)
+_I = numpy.array(1j, dtype='F')
 
 
 def _make_complex_eigvecs(w, vin, dtype):
