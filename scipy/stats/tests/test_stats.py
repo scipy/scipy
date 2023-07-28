@@ -12,7 +12,6 @@ import warnings
 from collections import namedtuple
 from itertools import product
 import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies, assume
 import hypothesis
 import contextlib
 
@@ -3274,7 +3273,7 @@ class TestMoments:
             stats.kurtosis([])
 
 
-@strategies.composite
+@hypothesis.strategies.composite
 def ttest_data_axis_strategy(draw):
     # draw an array under shape and value constraints
     dtype = npst.floating_dtypes()
@@ -3284,15 +3283,20 @@ def ttest_data_axis_strategy(draw):
 
     # determine axes over which nonzero variance can be computed accurately
     ok_axes = []
-    for axis in range(len(data.shape)):
-        with contextlib.suppress(RuntimeWarning):
-            var = stats.moment(data, moment=2, axis=axis)
-            if np.all(var > 0) and np.all(np.isfinite(var)):
-                ok_axes.append(axis)
-    assume(ok_axes)  # if there are no valid axes, let hypothesis know
+    # Locally, I don't need catch_warnings or simplefilter, and I can just
+    # suppress RuntimeWarning. I include all that in hope of getting the same
+    # behavior on CI.
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        for axis in range(len(data.shape)):
+            with contextlib.suppress(Exception):
+                var = stats.moment(data, moment=2, axis=axis)
+                if np.all(var > 0) and np.all(np.isfinite(var)):
+                    ok_axes.append(axis)
+    hypothesis.assume(ok_axes)  # if there are no valid axes, let hypothesis know
 
     # draw one of the valid axes
-    axis = draw(strategies.sampled_from(ok_axes))
+    axis = draw(hypothesis.strategies.sampled_from(ok_axes))
 
     return data, axis
 
@@ -3395,17 +3399,19 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
-    @given(alpha=strategies.floats(1e-15, 1-1e-15),
-           data_axis=ttest_data_axis_strategy())
+    @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
+                      data_axis=ttest_data_axis_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
     def test_pvalue_ci(self, alpha, data_axis, alternative):
-        # test the relationship between one-sided p-values and confidence intervals
+        # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        res = stats.ttest_1samp(data, 0, alternative=alternative, axis=axis)
+        res = stats.ttest_1samp(data, 0,
+                                alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
         popmean = l if alternative == 'greater' else u
         popmean = np.expand_dims(popmean, axis=axis)
-        res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
+        res = stats.ttest_1samp(data, popmean,
+                                alternative=alternative, axis=axis)
         np.testing.assert_allclose(res.pvalue, 1-alpha)
 
 
