@@ -169,6 +169,36 @@ def scale(
         return (sample - lower) / (upper - lower)
 
 
+def _ensure_in_unit_hypercube(sample: npt.ArrayLike) -> np.ndarray:
+    """Ensure that sample is a 2D array and is within a unit hypercube
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        A 2D array of points.
+
+    Returns
+    -------
+    np.ndarray
+        The array interpretation of the input sample
+
+    Raises
+    ------
+    ValueError
+        If the input is not a 2D array or contains points outside of
+        a unit hypercube.
+    """
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+
+    if not sample.ndim == 2:
+        raise ValueError("Sample is not a 2D array")
+
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError("Sample is not in unit hypercube")
+
+    return sample
+
+
 def discrepancy(
         sample: npt.ArrayLike,
         *,
@@ -286,14 +316,7 @@ def discrepancy(
     0.008142039609053513
 
     """
-    sample = np.asarray(sample, dtype=np.float64, order="C")
-
-    # Checking that sample is within the hypercube and 2D
-    if not sample.ndim == 2:
-        raise ValueError("Sample is not a 2D array")
-
-    if (sample.max() > 1.) or (sample.min() < 0.):
-        raise ValueError("Sample is not in unit hypercube")
+    sample = _ensure_in_unit_hypercube(sample)
 
     workers = _validate_workers(workers)
 
@@ -321,12 +344,13 @@ def geometric_discrepancy(
     ----------
     sample : array_like (n, d)
         The sample to compute the discrepancy from.
-    method: str, optional
-        The method to use. One of ``mindist`` for minimum distance
+    method : {"mindist", "mst"}, optional
+        The method to use. One of ``mindist`` for minimum distance (default)
         or ``mst`` for minimum spanning tree.
-    metric: str or callable, optional
+    metric : str or callable, optional
         The distance metric to use. See the documentation
-        for ``scipy.spatial.distance.pdist``.
+        for `scipy.spatial.distance.pdist` for the available metrics and
+        the default.
 
     Returns
     -------
@@ -368,8 +392,8 @@ def geometric_discrepancy(
 
     >>> import numpy as np
     >>> from scipy.stats import qmc
-    >>> np.random.seed(12345)
-    >>> sample = np.random.random_sample((50, 2))
+    >>> rng = np.random.default_rng(191468432622931918890291693003068437394)
+    >>> sample = qmc.LatinHypercube(d=2).random(50)
     >>> qmc.geometric_discrepancy(sample)
     0.018894832717486352
 
@@ -385,37 +409,31 @@ def geometric_discrepancy(
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.lines import Line2D
     >>> from scipy.sparse.csgraph import minimum_spanning_tree
-    >>> from scipy.spatial.distance import cdist, pdist, squareform
+    >>> from scipy.spatial.distance import pdist, squareform
     >>> dist = pdist(sample)
     >>> mst = minimum_spanning_tree(squareform(dist))
     >>> edges = np.where(mst.toarray() > 0)
-    >>> edges = np.array(edges).T
+    >>> edges = np.asarray(edges).T
     >>> min_dist = np.min(dist)
     >>> min_idx = np.argwhere(squareform(dist) == min_dist)[0]
     >>> fig, ax = plt.subplots()
-    >>> plt.gca().set_aspect('equal')
+    >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...            xlim=[0, 1], ylim=[0, 1])
     >>> for edge in edges:
     ...     ax.plot(sample[edge, 0], sample[edge, 1], c='k')
     >>> ax.scatter(sample[:, 0], sample[:, 1])
     >>> ax.add_patch(plt.Circle(sample[min_idx[0]], min_dist, color='red', fill=False))
     >>> markers = [
-    ...     Line2D([0], [0], marker='o', lw=0, label='Sample points'),
-    ...     Line2D([0], [0], color='k', label='Minimum spanning tree'),
+    ...     Line2D([0], [0], marker='o', lw=0, label='Sample'),
+    ...     Line2D([0], [0], color='k', label='MST'),
     ...     Line2D([0], [0], marker='o', lw=0, markerfacecolor='w', markeredgecolor='r',
-    ...            label='Minimum point-to-point distance'),
+    ...            label='mindist'),
     ... ]
     >>> ax.legend(handles=markers, loc='center left', bbox_to_anchor=(1, 0.5));
     >>> plt.show()
 
     """
-    sample = np.asarray(sample, dtype=np.float64, order="C")
-
-    # Checking that sample is within the hypercube and 2D
-    if not sample.ndim == 2:
-        raise ValueError("Sample is not a 2D array")
-
-    if (sample.max() > 1.) or (sample.min() < 0.):
-        raise ValueError("Sample is not in unit hypercube")
+    sample = _ensure_in_unit_hypercube(sample)
 
     distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
 
