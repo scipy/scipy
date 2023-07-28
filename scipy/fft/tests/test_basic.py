@@ -370,7 +370,7 @@ class TestFFTThreadSafe:
     threads = 16
     input_shape = (800, 200)
 
-    def _test_mtsame(self, func, *args):
+    def _test_mtsame(self, func, *args, xp=None):
         def worker(args, q):
             q.put(func(*args))
 
@@ -383,46 +383,49 @@ class TestFFTThreadSafe:
         [x.start() for x in t]
 
         [x.join() for x in t]
+
+        if xp is None:
+            _assert_array_equal = assert_array_equal
+        elif 'cupy' in xp.__name__:
+            import cupy as cp
+            _assert_array_equal = cp.testing.assert_array_equal
+        else:
+            _assert_array_equal = assert_array_equal
+
         # Make sure all threads returned the correct value
         for i in range(self.threads):
-            assert_array_equal(q.get(timeout=5), expected,
+            _assert_array_equal(q.get(timeout=5), expected,
                                'Function returned wrong value in multithreaded context')
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_fft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex128)
-        self._test_mtsame(fft.fft, a)
+        self._test_mtsame(fft.fft, a, xp=xp)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_ifft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
-        self._test_mtsame(fft.ifft, a)
+        self._test_mtsame(fft.ifft, a, xp=xp)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_rfft(self, xp):
         a = xp.ones(self.input_shape)
-        self._test_mtsame(fft.rfft, a)
+        self._test_mtsame(fft.rfft, a, xp=xp)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_irfft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
-        self._test_mtsame(fft.irfft, a)
+        self._test_mtsame(fft.irfft, a, xp=xp)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_hfft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex64)
-        self._test_mtsame(fft.hfft, a)
+        self._test_mtsame(fft.hfft, a, xp=xp)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_ihfft(self, xp):
         a = xp.ones(self.input_shape)
-        self._test_mtsame(fft.ihfft, a)
+        self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
 @skip_if_array_api
