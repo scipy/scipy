@@ -443,7 +443,6 @@ def test_multiprocess(func):
 
 class TestIRFFTN:
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_not_last_axis_success(self, xp):
         ar, ai = np.random.random((2, 16, 8, 32))
