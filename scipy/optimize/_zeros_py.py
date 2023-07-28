@@ -1903,12 +1903,6 @@ def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
     return OptimizeResult(**res)
 
 
-def _scalar_optimization_compress_work(work, mask):
-    # Compress the array elements of the work object; keep only masked elements
-    for key, val in work.items():
-        work[key] = val[mask] if isinstance(val, np.ndarray) else val
-
-
 def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
                       initial_step, step_factor, step_direction, callback):
     # Input validation for `_differentiate`
@@ -2159,7 +2153,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     2
 
     """
-    # TODO:
+    # TODO (followup):
+    #  - investigate behavior at saddle points
+    #  - array initial_step / step_factor?
     #  - multivariate functions?
     #  - vector-valued functions?
 

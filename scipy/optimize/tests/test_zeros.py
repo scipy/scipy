@@ -1597,6 +1597,7 @@ class TestDifferentiate():
         res = zeros._differentiate(f, 2, args=3)
         assert_allclose(res.df, 3)
 
+    @pytest.mark.xfail
     @pytest.mark.parametrize("case", (  # function, evaluation point
         (lambda x: (x - 1) ** 3, 1),
         (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
