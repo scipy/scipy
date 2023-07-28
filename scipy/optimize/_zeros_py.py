@@ -1903,12 +1903,6 @@ def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
     return OptimizeResult(**res)
 
 
-def _scalar_optimization_compress_work(work, mask):
-    # Compress the array elements of the work object; keep only masked elements
-    for key, val in work.items():
-        work[key] = val[mask] if isinstance(val, np.ndarray) else val
-
-
 def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
                       initial_step, step_factor, step_direction, callback):
     # Input validation for `_differentiate`
@@ -2074,6 +2068,11 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     default initial step size of ``0.5`` cannot be resolved. Accordingly,
     consider using larger initial step sizes for large magnitudes of `x`.
 
+    The default tolerances are challenging to satisfy at points where the
+    true derivative is exactly zero. If the derivative may be exactly zero,
+    consider specifying an absolute tolerance (e.g. ``atol=1e-16``) to
+    improve convergence.
+
     References
     ----------
     [1]_ Hans Dembinski (@HDembinski). jacobi.
@@ -2154,7 +2153,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     2
 
     """
-    # TODO:
+    # TODO (followup):
+    #  - investigate behavior at saddle points
+    #  - array initial_step / step_factor?
     #  - multivariate functions?
     #  - vector-valued functions?
 
@@ -2198,7 +2199,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                           hdir=hdir, il=il, ic=ic, ir=ir, io=io)
     # This is the correspondence between terms in the `work` object and the
     # final result. In this case, the mapping is trivial. Note that `success`
-    # is prepanded automatically.
+    # is prepended automatically.
     res_work_pairs = [('status', 'status'), ('df', 'df'), ('error', 'error'),
                       ('nit', 'nit'), ('nfev', 'nfev'), ('x', 'x')]
 
@@ -2332,8 +2333,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         # all smaller step sizes will reduce the error. But in floating point
         # arithmetic, catastrophic cancellation will begin to cause the error
         # to increase again. This heuristic tries to avoid step sizes that are
-        # too small. Note that there are more theoretically sound approache,
-        # but this was simple and effective.
+        # too small. There may be more theoretically sound approaches for
+        # detecting a step size that minimizes the total error, but this
+        # heuristic seems simple and effective.
         i = (work.error > work.error_last*10) & ~stop
         work.status[i] = _EERRORINCREASE
         stop[i] = True

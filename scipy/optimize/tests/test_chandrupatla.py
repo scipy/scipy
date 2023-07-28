@@ -380,7 +380,7 @@ class TestChandrupatlaMinimize:
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(lambda x: x, [-2, -3], [0, 0], [3, 4, 5])
 
-        message = "The shape of the array returned by `func`..."
+        message = "The shape of the array returned by `func` must be the same"
         with pytest.raises(ValueError, match=message):
             _chandrupatla_minimize(lambda x: [x[0], x[1], x[1]], [-3, -3],
                                    [0, 0], [5, 5])

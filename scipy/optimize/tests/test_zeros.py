@@ -1596,3 +1596,17 @@ class TestDifferentiate():
 
         res = zeros._differentiate(f, 2, args=3)
         assert_allclose(res.df, 3)
+
+    @pytest.mark.xfail
+    @pytest.mark.parametrize("case", (  # function, evaluation point
+        (lambda x: (x - 1) ** 3, 1),
+        (lambda x: np.where(x > 1, (x - 1) ** 5, (x - 1) ** 3), 1)
+    ))
+    def test_saddle_gh18811(self, case):
+        # With default settings, _differentiate will not always converge when
+        # the true derivative is exactly zero. This tests that specifying a
+        # (tight) `atol` alleviates the problem. See discussion in gh-18811.
+        atol = 1e-16
+        res = zeros._differentiate(*case, step_direction=[-1, 0, 1], atol=atol)
+        assert np.all(res.success)
+        assert_allclose(res.df, 0, atol=atol)
