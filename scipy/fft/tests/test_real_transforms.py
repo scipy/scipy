@@ -5,6 +5,7 @@ import pytest
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
+from scipy.conftest import skip_if_array_api
 
 import math
 SQRT_2 = math.sqrt(2)
@@ -14,6 +15,7 @@ SQRT_2 = math.sqrt(2)
 # fftpack/test_real_transforms.py
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 10, 16])
@@ -36,6 +38,7 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize):
     assert_allclose(z2, x)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
@@ -60,6 +63,7 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
         assert_allclose(z, x_orig, rtol=1e-6, atol=1e-6)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
@@ -105,6 +109,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
     assert_allclose(z2, x)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
@@ -138,6 +143,7 @@ def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
         assert_array_equal(y, y_orig)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("func", ['dct', 'dst', 'dctn', 'dstn'])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
@@ -149,6 +155,7 @@ def test_fftpack_equivalience(func, type, norm):
     assert_allclose(fft_res, fftpack_res)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("func", [dct, dst, dctn, dstn])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 def test_orthogonalize_default(func, type):
@@ -165,6 +172,7 @@ def test_orthogonalize_default(func, type):
         assert_allclose(a, b)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func, type", [
     (dct, 4), (dst, 1), (dst, 4)])
@@ -176,6 +184,7 @@ def test_orthogonalize_noop(func, type, norm):
     assert_allclose(y1, y2)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm):
     x = np.random.rand(100)
@@ -192,6 +201,7 @@ def test_orthogonalize_dct1(norm):
     assert_allclose(y1, y2)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm):
@@ -203,6 +213,7 @@ def test_orthogonalize_dcst2(func, norm):
     assert_allclose(y1, y2)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm):
