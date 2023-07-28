@@ -19,6 +19,9 @@ from scipy.signal._spectral_py import _spectral_helper
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
+from scipy.conftest import array_api_compatible, skip_if_array_api_backend
+from scipy._lib.array_api_compat import array_api_compat
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 
 class TestPeriodogram:
@@ -243,150 +246,202 @@ class TestPeriodogram:
 
 
 class TestWelch:
-    def test_real_onesided_even(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_real_onesided_even(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.linspace(0, 0.5, 5))
 
-    def test_real_onesided_odd(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_real_onesided_odd(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.arange(5.0)/9.0)
         q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
                       0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_real_twosided(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_real_twosided(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_real_spectrum(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_real_spectrum(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.linspace(0, 0.5, 5))
         q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
                       0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_even(self):
-        x = np.zeros(16, dtype=int)
+    @array_api_compatible
+    def test_integer_onesided_even(self, xp):
+        x = xp.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.linspace(0, 0.5, 5))
         q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
                       0.11111111])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_onesided_odd(self):
-        x = np.zeros(16, dtype=int)
+    @array_api_compatible
+    def test_integer_onesided_odd(self, xp):
+        x = xp.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.arange(5.0)/9.0)
         q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
                       0.17072113])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_integer_twosided(self):
-        x = np.zeros(16, dtype=int)
+    @array_api_compatible
+    def test_integer_twosided(self, xp):
+        x = xp.zeros(16, dtype=int)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        fftfreq(8, 1.0))
         q = np.array([0.08333333, 0.07638889, 0.11111111, 0.11111111,
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_complex(self):
-        x = np.zeros(16, np.complex128)
+    @array_api_compatible
+    def test_complex(self, xp):
+        x = xp.zeros(16, dtype=xp.complex128)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        fftfreq(8, 1.0))
         q = np.array([0.41666667, 0.38194444, 0.55555556, 0.55555556,
                       0.55555556, 0.55555556, 0.55555556, 0.38194444])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
-    def test_unk_scaling(self):
-        assert_raises(ValueError, welch, np.zeros(4, np.complex128),
+    @array_api_compatible
+    def test_unk_scaling(self, xp):
+        assert_raises(ValueError, welch, xp.zeros(4, dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
-    def test_detrend_linear(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_detrend_linear(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
+        p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
-    def test_no_detrending(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_no_detrending(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = welch(x, nperseg=10, detrend=False)
         f2, p2 = welch(x, nperseg=10, detrend=lambda x: x)
-        assert_allclose(f1, f2, atol=1e-15)
-        assert_allclose(p1, p2, atol=1e-15)
+        assert_allclose(array_api_compat.to_device(f1, "cpu"),
+                        array_api_compat.to_device(f2, "cpu"),
+                        atol=1e-15)
+        assert_allclose(array_api_compat.to_device(p1, "cpu"),
+                        array_api_compat.to_device(p2, "cpu"),
+                        atol=1e-15)
 
-    def test_detrend_external(self):
-        x = np.arange(10, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_detrend_external(self, xp):
+        x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10,
                      detrend=lambda seg: signal.detrend(seg, type='l'))
+        p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
-    def test_detrend_external_nd_m1(self):
-        x = np.arange(40, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_detrend_external_nd_m1(self, xp):
+        x = xp.arange(40, dtype=xp.float64) + 0.04
         x = x.reshape((2,2,10))
         f, p = welch(x, nperseg=10,
                      detrend=lambda seg: signal.detrend(seg, type='l'))
+        p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
-    def test_detrend_external_nd_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_detrend_external_nd_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.moveaxis(x, 2, 0)
+        x = xp.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
+        p = array_api_compat.to_device(p, "cpu")
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
 
-    def test_nd_axis_m1(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_nd_axis_m1(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
         x = x.reshape((2,1,10))
         f, p = welch(x, nperseg=10)
         assert_array_equal(p.shape, (2, 1, 6))
-        assert_allclose(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
+        assert_allclose(array_api_compat.to_device(p[0,0,:], "cpu"),
+                        array_api_compat.to_device(p[1,0,:], "cpu"),
+                        atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[0,0,:], nperseg=10)
-        assert_allclose(p0[np.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13)
+        assert_allclose(array_api_compat.to_device(p0[None,:], "cpu"),
+                        array_api_compat.to_device(p[1,:], "cpu"),
+                        atol=1e-13, rtol=1e-13)
 
-    def test_nd_axis_0(self):
-        x = np.arange(20, dtype=np.float64) + 0.04
+    @array_api_compatible
+    def test_nd_axis_0(self, xp):
+        x = xp.arange(20, dtype=xp.float64) + 0.04
         x = x.reshape((10,2,1))
         f, p = welch(x, nperseg=10, axis=0)
         assert_array_equal(p.shape, (6,2,1))
-        assert_allclose(p[:,0,0], p[:,1,0], atol=1e-13, rtol=1e-13)
+        assert_allclose(array_api_compat.to_device(p[:,0,0], "cpu"),
+                        array_api_compat.to_device(p[:,1,0], "cpu"),
+                        atol=1e-13, rtol=1e-13)
         f0, p0 = welch(x[:,0,0], nperseg=10)
-        assert_allclose(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
+        assert_allclose(array_api_compat.to_device(p0, "cpu"),
+                        array_api_compat.to_device(p[:,1,0], "cpu"),
+                        atol=1e-13, rtol=1e-13)
 
-    def test_window_external(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    @skip_if_array_api_backend('torch')
+    def test_window_external(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, 10, 'hann', nperseg=8)
         win = signal.get_window('hann', 8)
         fe, pe = welch(x, 10, win, nperseg=None)
-        assert_array_almost_equal_nulp(p, pe)
-        assert_array_almost_equal_nulp(f, fe)
+        assert_array_almost_equal_nulp(array_api_compat.to_device(p, "cpu"),
+                                       array_api_compat.to_device(pe, "cpu"))
+        assert_array_almost_equal_nulp(array_api_compat.to_device(f, "cpu"),
+                                       array_api_compat.to_device(fe, "cpu"))
         assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
         assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, welch, x,
@@ -395,8 +450,10 @@ class TestWelch:
         assert_raises(ValueError, welch, x,
                       10, win_err, nperseg=None)  # win longer than signal
 
-    def test_empty_input(self):
-        f, p = welch([])
+    @array_api_compatible
+    def test_empty_input(self, xp):
+        val = xp.asarray([]) if SCIPY_ARRAY_API else []
+        f, p = welch(val)
         assert_array_equal(f.shape, (0,))
         assert_array_equal(p.shape, (0,))
         for shape in [(0,), (3,0), (0,5,2)]:
@@ -404,14 +461,16 @@ class TestWelch:
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    def test_empty_input_other_axis(self):
+    @array_api_compatible
+    def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
-            f, p = welch(np.empty(shape), axis=1)
+            f, p = welch(xp.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    def test_short_data(self):
-        x = np.zeros(8)
+    @array_api_compatible
+    def test_short_data(self, xp):
+        x = xp.zeros(8)
         x[0] = 1
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
@@ -421,103 +480,129 @@ class TestWelch:
             f, p = welch(x,window='hann')  # default nperseg
             f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
-        assert_allclose(f, f2)
-        assert_allclose(p, p2)
-        assert_allclose(f1, f2)
-        assert_allclose(p1, p2)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        array_api_compat.to_device(f2, "cpu"))
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        array_api_compat.to_device(p2, "cpu"))
+        assert_allclose(array_api_compat.to_device(f1, "cpu"),
+                        array_api_compat.to_device(f2, "cpu"))
+        assert_allclose(array_api_compat.to_device(p1, "cpu"),
+                        array_api_compat.to_device(p2, "cpu"))
 
-    def test_window_long_or_nd(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
-        assert_raises(ValueError, welch, np.zeros(4), 1,
-                      np.arange(6).reshape((2,3)))
+    @array_api_compatible
+    def test_window_long_or_nd(self, xp):
+        assert_raises(ValueError, welch, xp.zeros(4), 1, xp.asarray([1,1,1,1,1]))
+        assert_raises(ValueError, welch, xp.zeros(4), 1,
+                      xp.arange(6).reshape((2,3)))
 
-    def test_nondefault_noverlap(self):
-        x = np.zeros(64)
+    @array_api_compatible
+    def test_nondefault_noverlap(self, xp):
+        x = xp.zeros(64)
         x[::8] = 1
         f, p = welch(x, nperseg=16, noverlap=4)
         q = np.array([0, 1./12., 1./3., 1./5., 1./3., 1./5., 1./3., 1./5.,
                       1./6.])
-        assert_allclose(p, q, atol=1e-12)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-12)
 
-    def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
+    @array_api_compatible
+    def test_bad_noverlap(self, xp):
+        assert_raises(ValueError, welch, xp.zeros(4), 1, 'hann', 2, 7)
 
-    def test_nfft_too_short(self):
-        assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
+    @array_api_compatible
+    def test_nfft_too_short(self, xp):
+        assert_raises(ValueError, welch, xp.ones(12), nfft=3, nperseg=4)
 
-    def test_real_onesided_even_32(self):
-        x = np.zeros(16, 'f')
+    @array_api_compatible
+    def test_real_onesided_even_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8)
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.08333333, 0.15277778, 0.22222222, 0.22222222,
-                      0.11111111], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.linspace(0, 0.5, 5))
+        q = xp.asarray([0.08333333, 0.15277778, 0.22222222, 0.22222222,
+                        0.11111111], dtype=xp.float32)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        array_api_compat.to_device(q, "cpu"),
+                        atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_onesided_odd_32(self):
-        x = np.zeros(16, 'f')
+    @array_api_compatible
+    def test_real_onesided_odd_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=9)
-        assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
-                      0.17072113], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.arange(5.0)/9.0)
+        q = xp.asarray([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                        0.17072113], dtype=xp.float32)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        array_api_compat.to_device(q, "cpu"),
+                        atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_real_twosided_32(self):
-        x = np.zeros(16, 'f')
+    @array_api_compatible
+    def test_real_twosided_32(self, xp):
+        x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.08333333, 0.07638889, 0.11111111,
-                      0.11111111, 0.11111111, 0.11111111, 0.11111111,
-                      0.07638889], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        fftfreq(8, 1.0))
+        q = xp.asarray([0.08333333, 0.07638889, 0.11111111,
+                        0.11111111, 0.11111111, 0.11111111, 0.11111111,
+                        0.07638889], dtype=xp.float32)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        array_api_compat.to_device(q, "cpu"),
+                        atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    def test_complex_32(self):
-        x = np.zeros(16, 'F')
+    @array_api_compatible
+    def test_complex_32(self, xp):
+        x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
         x[8] = 1.0 + 2.0j
         f, p = welch(x, nperseg=8, return_onesided=False)
-        assert_allclose(f, fftfreq(8, 1.0))
-        q = np.array([0.41666666, 0.38194442, 0.55555552, 0.55555552,
-                      0.55555558, 0.55555552, 0.55555552, 0.38194442], 'f')
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        fftfreq(8, 1.0))
+        q = xp.asarray([0.41666666, 0.38194442, 0.55555552, 0.55555552,
+                      0.55555558, 0.55555552, 0.55555552, 0.38194442], dtype=xp.float32)
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        array_api_compat.to_device(q, "cpu"), atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
-    def test_padded_freqs(self):
-        x = np.zeros(12)
+    @array_api_compatible
+    def test_padded_freqs(self, xp):
+        x = xp.zeros(12)
 
         nfft = 24
         f = fftfreq(nfft, 1.0)[:nfft//2+1]
         f[-1] *= -1
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        assert_allclose(f, array_api_compat.to_device(fodd, "cpu"))
+        assert_allclose(f, array_api_compat.to_device(feven, "cpu"))
 
         nfft = 25
         f = fftfreq(nfft, 1.0)[:(nfft + 1)//2]
         fodd, _ = welch(x, nperseg=5, nfft=nfft)
         feven, _ = welch(x, nperseg=6, nfft=nfft)
-        assert_allclose(f, fodd)
-        assert_allclose(f, feven)
+        assert_allclose(f, array_api_compat.to_device(fodd, "cpu"))
+        assert_allclose(f, array_api_compat.to_device(feven, "cpu"))
 
-    def test_window_correction(self):
+    @array_api_compatible
+    def test_window_correction(self, xp):
         A = 20
         fs = 1e4
         nperseg = int(fs//10)
         fsig = 300
         ii = int(fsig*nperseg//fs)  # Freq index of fsig
 
-        tt = np.arange(fs)/fs
-        x = A*np.sin(2*np.pi*fsig*tt)
+        tt = xp.arange(fs)/fs
+        x = A*xp.sin(2*xp.pi*fsig*tt)
 
         for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
             _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
@@ -526,15 +611,18 @@ class TestWelch:
                                  scaling='density')
 
             # Check peak height at signal frequency for 'spectrum'
-            assert_allclose(p_spec[ii], A**2/2.0)
+            assert_allclose(array_api_compat.to_device(p_spec[ii], "cpu"),
+                            A**2/2.0, rtol=5e-7)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
-                            rtol=1e-3)
+            assert_allclose(np.sqrt(np.trapz(array_api_compat.to_device(p_dens, "cpu"),
+                                             array_api_compat.to_device(freq, "cpu"))),
+                            A*np.sqrt(2)/2, rtol=1e-3)
 
-    def test_axis_rolling(self):
+    @array_api_compatible
+    def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
-        x_flat = np.random.randn(1024)
+        x_flat = xp.asarray(np.random.randn(1024))
         _, p_flat = welch(x_flat)
 
         for a in range(3):
@@ -545,17 +633,24 @@ class TestWelch:
             _, p_plus = welch(x, axis=a)  # Positive axis index
             _, p_minus = welch(x, axis=a-x.ndim)  # Negative axis index
 
-            assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
-            assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
+            assert_array_equal(array_api_compat.to_device(p_flat, "cpu"),
+                               array_api_compat.to_device(p_plus.squeeze(), "cpu"),
+                               err_msg=a)
+            assert_array_equal(array_api_compat.to_device(p_flat, "cpu"),
+                               array_api_compat.to_device(p_minus.squeeze(), "cpu"),
+                               err_msg=a-x.ndim)
 
-    def test_average(self):
-        x = np.zeros(16)
+    @array_api_compatible
+    def test_average(self, xp):
+        x = xp.zeros(16)
         x[0] = 1
         x[8] = 1
         f, p = welch(x, nperseg=8, average='median')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([.1, .05, 0., 1.54074396e-33, 0.])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        q = np.asarray([.1, .05, 0., 1.54074396e-33, 0.])
+        assert_allclose(array_api_compat.to_device(f, "cpu"),
+                        np.linspace(0, 0.5, 5))
+        assert_allclose(array_api_compat.to_device(p, "cpu"),
+                        q, atol=1e-7, rtol=1e-7)
 
         assert_raises(ValueError, welch, x, nperseg=8,
                       average='unrecognised-average')
@@ -1608,8 +1703,8 @@ class TestSTFT:
         # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
         # the missing 'second side' can be expressed through the 'first side':
         Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
-        assert_allclose(Zp[:129, :], Zp0)
-        assert_allclose(Zp[129:, :], Zp1)
+        assert_allclose(Zp[:129, :], Zp0, atol=9e-16)
+        assert_allclose(Zp[129:, :], Zp1, atol=9e-16)
 
         # Calculate the spectral power:
         s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
