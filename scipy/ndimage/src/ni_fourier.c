@@ -161,16 +161,16 @@ case _TYPE:                                          \
     *(_type *)_po = _tmp;                            \
     break
 
-#define CASE_FOURIER_OUT_RC(_TYPE, _type, _t, _po, _tmp) \
+#define CASE_FOURIER_OUT_RC(_TYPE, _type, _T, _po, _tmp) \
 case _TYPE:                                          \
-    NPY_CSETREAL##_t((_type *)_po, tmp);                      \
-    NPY_CSETIMAG##_t((_type *)_po, 0.0);                      \
+    NPY_CSETREAL##_T((_type *)_po, tmp);                      \
+    NPY_CSETIMAG##_T((_type *)_po, 0.0);                      \
     break
 
-#define CASE_FOURIER_OUT_CC(_TYPE, _type, _t, _po, _tmp_r, _tmp_i) \
+#define CASE_FOURIER_OUT_CC(_TYPE, _type, _T, _po, _tmp_r, _tmp_i) \
 case _TYPE:                                                    \
-    NPY_CSETREAL##_t((_type *)_po, _tmp_r);                             \
-    NPY_CSETIMAG##_t((_type *)_po, _tmp_i);                             \
+    NPY_CSETREAL##_T((_type *)_po, _tmp_r);                             \
+    NPY_CSETIMAG##_T((_type *)_po, _tmp_i);                             \
     break
 
 #define CASE_FOURIER_FILTER_RC(_TYPE, _type, _t, _pi, _tmp, _tmp_r, _tmp_i) \
@@ -397,7 +397,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 goto exit;
             }
             switch (PyArray_TYPE(output)) {
-                CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, f, po, tmp_r, tmp_i);
+                CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, F, po, tmp_r, tmp_i);
                 CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble,, po, tmp_r, tmp_i);
             default:
                 NPY_END_THREADS;
@@ -428,7 +428,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             switch (PyArray_TYPE(output)) {
                 CASE_FOURIER_OUT_RR(NPY_FLOAT, npy_float, po, tmp);
                 CASE_FOURIER_OUT_RR(NPY_DOUBLE, npy_double, po, tmp);
-                CASE_FOURIER_OUT_RC(NPY_CFLOAT, npy_cfloat, f, po, tmp);
+                CASE_FOURIER_OUT_RC(NPY_CFLOAT, npy_cfloat, F, po, tmp);
                 CASE_FOURIER_OUT_RC(NPY_CDOUBLE, npy_cdouble,, po, tmp);
             default:
                 NPY_END_THREADS;
@@ -582,7 +582,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, f, po, r, i);
+            CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, F, po, r, i);
             CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble,, po, r, i);
         default:
             NPY_END_THREADS;
