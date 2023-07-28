@@ -41,6 +41,9 @@ from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import asfarray  # noqa
+
 
 # standard status messages of optimizers
 _status_message = {'success': 'Optimization terminated successfully.',

@@ -17,6 +17,10 @@ from scipy.optimize._minimize import Bounds
 
 error = _minpack.error
 
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import dot, eye, take  # noqa
+from numpy.linalg import inv  # noqa
+
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
 
