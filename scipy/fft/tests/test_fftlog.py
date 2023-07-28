@@ -3,10 +3,13 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from scipy.fft._fftlog_np import fht, ifht, fhtoffset
+from scipy.fft._fftlog import fht, ifht
+from scipy.fft._fftlog_np import fhtoffset
 from scipy.special import poch
+from scipy.conftest import skip_if_array_api
 
 
+@skip_if_array_api
 def test_fht_agrees_with_fftlog():
     # check that fht numerically agrees with the output from Fortran FFTLog,
     # the results were generated with the provided `fftlogtest` program,
@@ -79,6 +82,7 @@ def test_fht_agrees_with_fftlog():
     assert_allclose(ours, theirs)
 
 
+@skip_if_array_api
 @pytest.mark.parametrize('optimal', [True, False])
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
@@ -99,6 +103,7 @@ def test_fht_identity(n, bias, offset, optimal):
     assert_allclose(a, a_)
 
 
+@skip_if_array_api
 def test_fht_special_cases():
     rng = np.random.RandomState(3491349965)
 
@@ -132,6 +137,7 @@ def test_fht_special_cases():
         assert record, 'ifht did not warn about a singular transform'
 
 
+@skip_if_array_api
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_exact(n):
     rng = np.random.RandomState(3491349965)
