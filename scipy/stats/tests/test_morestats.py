@@ -4,6 +4,7 @@
 #
 import warnings
 import sys
+from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
@@ -2252,15 +2253,16 @@ class TestYeojohnson:
     def test_overflow(self, x):
         # non-regression test for gh-18389
 
-        def optimizer(fun):
+        def optimizer(fun, lam_yeo):
             out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
             result = optimize.OptimizeResult()
             result.x = out
             return result
 
-        with np.errstate(over="raise", under="raise"):
+        with np.errstate(all="raise"):
             xt_yeo, lam_yeo = stats.yeojohnson(x)
-            xt_box, lam_box = stats.boxcox(x + 1, optimizer=optimizer)
+            xt_box, lam_box = stats.boxcox(
+                x + 1, optimizer=partial(optimizer, lam_yeo=lam_yeo))
             assert np.isfinite(np.var(xt_yeo))
             assert np.isfinite(np.var(xt_box))
             assert_allclose(lam_yeo, lam_box, rtol=1e-6)
@@ -2269,15 +2271,29 @@ class TestYeojohnson:
     @pytest.mark.parametrize('x', [
         np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
                   2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
-        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
-        np.array([0, 0, 0])
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
     ])
     @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
     @pytest.mark.parametrize('sign', [1, -1])
     def test_overflow_underflow_signed_data(self, x, scale, sign):
         # non-regression test for gh-18389
-        with np.errstate(over="raise", under="raise"):
+        with np.errstate(all="raise"):
             xt_yeo, lam_yeo = stats.yeojohnson(sign * x * scale)
+            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
+            assert np.isfinite(lam_yeo)
+            assert np.isfinite(np.var(xt_yeo))
+
+    @pytest.mark.parametrize('x', [
+        np.array([0, 1, 2, 3]),
+        np.array([0, -1, 2, -3]),
+        np.array([0, 0, 0])
+    ])
+    @pytest.mark.parametrize('sign', [1, -1])
+    @pytest.mark.parametrize('brack', [None, (-2, 2)])
+    def test_integer_signed_data(self, x, sign, brack):
+        with np.errstate(all="raise"):
+            lam_yeo = stats.yeojohnson_normmax(sign * x, brack=brack)
+            xt_yeo = stats.yeojohnson(sign * x, lmbda=lam_yeo)
             assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
             assert np.isfinite(lam_yeo)
             assert np.isfinite(np.var(xt_yeo))
