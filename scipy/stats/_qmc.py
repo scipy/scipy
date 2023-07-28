@@ -393,15 +393,15 @@ def geometric_discrepancy(
     >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> rng = np.random.default_rng(191468432622931918890291693003068437394)
-    >>> sample = qmc.LatinHypercube(d=2).random(50)
+    >>> sample = qmc.LatinHypercube(d=2, seed=rng).random(50)
     >>> qmc.geometric_discrepancy(sample)
-    0.011724748256533985
+    0.03708161435687876
 
     Calculate the quality using the mean edge length in the minimum
     spanning tree:
 
     >>> qmc.geometric_discrepancy(sample, method='mst')
-    0.10812425279670088
+    0.1105149978798376
 
     Display the minimum spanning tree and the points with
     the smallest distance:
