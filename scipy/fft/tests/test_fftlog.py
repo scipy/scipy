@@ -6,11 +6,15 @@ import pytest
 from scipy.fft._fftlog import fht, ifht
 from scipy.fft._fftlog_np import fhtoffset
 from scipy.special import poch
-from scipy.conftest import skip_if_array_api
+from scipy.conftest import (
+    array_api_compatible,
+    skip_if_array_api_gpu
+)
 
 
-@skip_if_array_api
-def test_fht_agrees_with_fftlog():
+@skip_if_array_api_gpu
+@array_api_compatible
+def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
     # the results were generated with the provided `fftlogtest` program,
     # after fixing how the k array is generated (divide range by n-1, not n)
@@ -26,7 +30,7 @@ def test_fht_agrees_with_fftlog():
     offset = 0.0
     bias = 0.0
 
-    a = f(r, mu)
+    a = xp.asarray(f(r, mu))
 
     # test 1: compute as given
     ours = fht(a, dln, mu, offset=offset, bias=bias)
@@ -81,16 +85,16 @@ def test_fht_agrees_with_fftlog():
               +2.7593607182401860E+00, 10.5251075070045800E+00]
     assert_allclose(ours, theirs)
 
-
-@skip_if_array_api
+@skip_if_array_api_gpu
+@array_api_compatible
 @pytest.mark.parametrize('optimal', [True, False])
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
 @pytest.mark.parametrize('n', [64, 63])
-def test_fht_identity(n, bias, offset, optimal):
+def test_fht_identity(n, bias, offset, optimal, xp):
     rng = np.random.RandomState(3491349965)
 
-    a = rng.standard_normal(n)
+    a = xp.asarray(rng.standard_normal(n))
     dln = rng.uniform(-1, 1)
     mu = rng.uniform(-2, 2)
 
@@ -103,12 +107,15 @@ def test_fht_identity(n, bias, offset, optimal):
     assert_allclose(a, a_)
 
 
-@skip_if_array_api
-def test_fht_special_cases():
+@skip_if_array_api_gpu
+@array_api_compatible
+def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
-    a = rng.standard_normal(64)
+    a = xp.asarray(rng.standard_normal(64))
     dln = rng.uniform(-1, 1)
+
+    # TODO change 'xp' in comments below to avoid confusion with param
 
     # let xp = (mu+1+q)/2, xm = (mu+1-q)/2, M = {0, -1, -2, ...}
 
@@ -137,9 +144,10 @@ def test_fht_special_cases():
         assert record, 'ifht did not warn about a singular transform'
 
 
-@skip_if_array_api
+@skip_if_array_api_gpu
+@array_api_compatible
 @pytest.mark.parametrize('n', [64, 63])
-def test_fht_exact(n):
+def test_fht_exact(n, xp):
     rng = np.random.RandomState(3491349965)
 
     # for a(r) a power law r^\gamma, the fast Hankel transform produces the
@@ -151,7 +159,7 @@ def test_fht_exact(n):
     gamma = rng.uniform(-1-mu, 1/2)
 
     r = np.logspace(-2, 2, n)
-    a = r**gamma
+    a = xp.asarray(r**gamma)
 
     dln = np.log(r[1]/r[0])
 
