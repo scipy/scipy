@@ -51,7 +51,7 @@ class spmatrix:
     def __pow__(self, power):
         from .linalg import matrix_power
 
-        return matrix_power(self, other)
+        return matrix_power(self, power)
 
     ## Backward compatibility
 
