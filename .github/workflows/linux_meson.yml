@@ -254,7 +254,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps and 64-bit BLAS
+    name: Prerelease deps, coverage, and 64-bit BLAS
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
@@ -278,7 +278,7 @@ jobs:
 
         # Install OpenBLAS a la cibuildwheel.
         chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh .        
+        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
 
     - name: Caching Python dependencies
       uses: actions/cache@v3

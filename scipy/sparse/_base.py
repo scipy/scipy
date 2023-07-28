@@ -103,8 +103,6 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    _is_array = True
-
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
@@ -220,14 +218,14 @@ class _spbase:
 
     @classmethod
     def _ascontainer(cls, X, **kwargs):
-        if cls._is_array:
+        if issubclass(cls, sparray):
             return np.asarray(X, **kwargs)
         else:
             return asmatrix(X, **kwargs)
 
     @classmethod
     def _container(cls, X, **kwargs):
-        if cls._is_array:
+        if issubclass(cls, sparray):
             return np.array(X, **kwargs)
         else:
             return matrix(X, **kwargs)
@@ -299,7 +297,7 @@ class _spbase:
 
     def __repr__(self):
         _, format_name = _formats[self.format]
-        sparse_cls = 'array' if self._is_array else 'matrix'
+        sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
                (self.shape + (self.dtype.type, self.nnz, format_name))
@@ -715,7 +713,7 @@ class _spbase:
 
     @property
     def A(self) -> np.ndarray:
-        if self._is_array:
+        if isinstance(self, sparray):
             warn(np.VisibleDeprecationWarning(
                 "`.A` is deprecated and will be removed in v1.13.0. "
                 "Use `.toarray()` instead."
@@ -728,7 +726,7 @@ class _spbase:
 
     @property
     def H(self):
-        if self._is_array:
+        if isinstance(self, sparray):
             warn(np.VisibleDeprecationWarning(
                 "`.H` is deprecated and will be removed in v1.13.0. "
                 "Please use `.T.conjugate()` instead."
@@ -1286,7 +1284,7 @@ class _spbase:
         from ._sputils import get_index_dtype
 
         # Don't check contents for array API
-        return get_index_dtype(arrays, maxval, (check_contents and not self._is_array))
+        return get_index_dtype(arrays, maxval, (check_contents and not isinstance(self, sparray)))
 
 
     ## All methods below are deprecated and should be removed in

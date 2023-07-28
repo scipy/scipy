@@ -1389,6 +1389,11 @@ class TestCombinatorics:
         assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 720.])
 
+    def test_positional_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_comb
+            special.comb([10, 10], [3, 4], False, False)
+
 
 class TestTrigonometric:
     def test_cbrt(self):
