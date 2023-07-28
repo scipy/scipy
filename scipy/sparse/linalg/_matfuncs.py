@@ -891,7 +891,7 @@ def matrix_power(A, power, structure=None):
     if isintlike(power):
         power = int(power)
         if power < 0:
-            raise ValueError('exponent must be >= 0')
+            raise ValueError(f"{power=} but power must be >= 0")
 
         if power == 0:
             return eye(M, dtype=A.dtype)
