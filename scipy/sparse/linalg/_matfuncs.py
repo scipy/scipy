@@ -875,7 +875,7 @@ def matrix_power(A, power, structure=None):
     A : (M, M) square sparse array or matrix
         sparse array that will be raised to power `power`
     power : int
-        Exponent used to raise sparse array `A`
+        Non-negative integer exponent used to raise sparse array `A`
 
     Returns
     -------
