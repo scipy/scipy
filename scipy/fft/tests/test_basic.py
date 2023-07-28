@@ -15,7 +15,7 @@ from scipy.conftest import (
     skip_if_array_api_gpu,
     set_assert_allclose
 )
-from scipy._lib._array_api import _assert_matching_namespace
+from scipy._lib._array_api import _assert_matching_namespace, array_namespace
 
 
 def fft1(x):
@@ -240,37 +240,68 @@ class TestFFT1D:
                          fft.ihfftn(x, norm="ortho"))
         _assert_allclose(expect * (30 * 20 * 10), fft.ihfftn(x, norm="forward"))
 
-    @skip_if_array_api
+    @array_api_compatible
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn,
-                                    fft.hfftn, fft.ihfftn])
-    def test_axes(self, op):
-        x = random((30, 20, 10))
+                                    fft.rfftn, fft.irfftn])
+    def test_axes_standard(self, op, xp):
+        x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
                 (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        _assert_allclose = set_assert_allclose(xp)
+        xp_test = array_namespace(x)
         for a in axes:
-            op_tr = op(np.transpose(x, a))
-            tr_op = np.transpose(op(x, axes=a), a)
-            assert_array_almost_equal(op_tr, tr_op)
+            op_tr = op(xp_test.permute_dims(x, axes=a))
+            tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
+            _assert_allclose(op_tr, tr_op)
 
-    @skip_if_array_api
-    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
-                                    fft.rfft2, fft.irfft2,
-                                    fft.hfft2, fft.ihfft2,
-                                    fft.fftn, fft.ifftn,
-                                    fft.rfftn, fft.irfftn,
-                                    fft.hfftn, fft.ihfftn])
-    def test_axes_subset_with_shape(self, op):
-        x = random((16, 8, 4))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
+    def test_axes_non_standard(self, op, xp):
+        x = xp.asarray(random((30, 20, 10)))
+        axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
+                (1, 2, 0), (2, 0, 1), (2, 1, 0)]
+        xp_test = array_namespace(x)
+        for a in axes:
+            op_tr = op(xp_test.permute_dims(x, axes=a))
+            tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
+            assert_allclose(op_tr, tr_op)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
+                                    fft.rfftn, fft.irfftn])
+    def test_axes_subset_with_shape_standard(self, op, xp):
+        x = xp.asarray(random((16, 8, 4)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
+        _assert_allclose = set_assert_allclose(xp)
+        xp_test = array_namespace(x)
         for a in axes:
             # different shape on the first two axes
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(np.transpose(x, a), s=shape[:2], axes=(0, 1))
-            tr_op = np.transpose(op(x, s=shape[:2], axes=a[:2]), a)
-            assert_array_almost_equal(op_tr, tr_op)
+            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            _assert_allclose(op_tr, tr_op)
+
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
+                                    fft.rfft2, fft.irfft2,
+                                    fft.hfft2, fft.ihfft2,
+                                    fft.hfftn, fft.ihfftn])
+    def test_axes_subset_with_shape_non_standard(self, op, xp):
+        x = xp.asarray(random((16, 8, 4)))
+        axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
+        xp_test = array_namespace(x)
+        for a in axes:
+            # different shape on the first two axes
+            shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
+                           for ax in range(x.ndim)])
+            # transform only the first two axes
+            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            assert_allclose(op_tr, tr_op)
 
     @skip_if_array_api_gpu
     @array_api_compatible
