@@ -48,7 +48,7 @@ class spmatrix:
         return self._rmul_dispatch(other)
 
     # Restore matrix power
-    def __pow__(self, other):
+    def __pow__(self, power):
         from .linalg import matrix_power
 
         return matrix_power(self, other)
