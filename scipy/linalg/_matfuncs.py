@@ -4,7 +4,7 @@
 from itertools import product
 
 import numpy as np
-from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
+from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 from numpy.lib.scimath import sqrt as csqrt
 
@@ -727,7 +727,7 @@ def funm(A, func, disp=True):
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
     if prod(ravel(logical_not(isfinite(F))),axis=0):
-        err = Inf
+        err = np.inf
     if disp:
         if err > 1000*tol:
             print("funm result may be inaccurate, approximate err =", err)

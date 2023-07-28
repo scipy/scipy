@@ -181,16 +181,12 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
-        types = sum([t for _, t in np.sctypes.items()], [])
-        types = {np.dtype(t).name for t in types}
-
-        # These types include 'bool' and all precisions (int8, float32, etc)
-        # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'complex192', 'float128', 'float96',
-                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
-            if dtype in types:
-                types.remove(dtype)
-
+        # this types data structure was manually encoded instead of
+        # using custom filters on the soon-to-be-removed np.sctypes
+        types = {'uint16', 'uint64', 'int64', 'int32',
+                 'complex128', 'float64', 'float16',
+                 'complex64', 'float32', 'int16',
+                 'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 

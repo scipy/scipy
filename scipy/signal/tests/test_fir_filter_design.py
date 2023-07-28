@@ -274,11 +274,11 @@ class TestFirWinMore:
             with assert_raises(ValueError, match='must have at least two'):
                 firwin(41, [0.5], pass_zero=pass_zero)
 
-    def test_nyq_deprecation(self):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'nyq' is deprecated in "
-                          ):
+    def test_firwin_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
             firwin(1, 1, nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            firwin(58, 0.1, 0.03)
 
 class TestFirwin2:
 
@@ -430,11 +430,12 @@ class TestFirwin2:
         firwin2(80, freq1, [1.0, 1.0, 0.0, 0.0])
         assert_equal(freq1, freq2)
 
-    def test_nyq_deprecation(self):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'nyq' is deprecated in "
-                          ):
+    def test_firwin2_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
             firwin2(1, [0, 10], [1, 1], nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test04
+            firwin2(5, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0], 8193, None)
 
 
 class TestRemez:
@@ -496,11 +497,12 @@ class TestRemez:
             assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.), h)
 
-    def test_Hz_deprecation(self):
-        with pytest.warns(DeprecationWarning,
-                          match="'remez' keyword argument 'Hz'"
-                          ):
+    def test_remez_deprecations(self):
+        with pytest.deprecated_call(match="'remez' keyword argument 'Hz'"):
             remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_hilbert
+            remez(11, [0.1, 0.4], [1], None)
 
 class TestFirls:
 
@@ -519,9 +521,9 @@ class TestFirls:
         # negative desired
         assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1, 1])
         # len(weight) != len(pairs)
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [1, 2])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], weight=[1, 2])
         # negative weight
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [-1])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], weight=[-1])
 
     def test_firls(self):
         N = 11  # number of taps in the filter
@@ -560,7 +562,7 @@ class TestFirls:
 
     def test_compare(self):
         # compare to OCTAVE output
-        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], [1, 2])
+        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], weight=[1, 2])
         # >> taps = firls(8, [0 0.5 0.55 1], [1 1 0 0], [1, 2]);
         known_taps = [-6.26930101730182e-04, -1.03354450635036e-01,
                       -9.81576747564301e-03, 3.17271686090449e-01,
@@ -570,7 +572,7 @@ class TestFirls:
         assert_allclose(taps, known_taps)
 
         # compare to MATLAB output
-        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], [1, 2])
+        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], weight=[1, 2])
         # >> taps = firls(10, [0 0.5 0.5 1], [1 1 0 0], [1, 2]);
         known_taps = [
             0.058545300496815, -0.014233383714318, -0.104688258464392,
@@ -614,11 +616,12 @@ class TestFirls:
         assert mask.sum() > 3
         assert_allclose(np.abs(h[mask]), 0., atol=1e-4)
 
-    def test_nyq_deprecation(self):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'nyq' is deprecated in "
-                          ):
+    def test_firls_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
             firls(1, (0, 1), (0, 0), nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_firls
+            firls(11, [0, 0.1, 0.4, 0.5], [1, 1, 0, 0], None)
 
 
 class TestMinimumPhase:

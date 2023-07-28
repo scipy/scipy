@@ -206,10 +206,16 @@ endif
 
 _dummy_init_optimize = fs.copyfile('__init__.py')
 
+# Copying this .pxd file is only needed because of a Cython bug, see
+# discussion on SciPy PR gh-18810.
+cython_optimize_pxd = [
+  fs.copyfile('cython_optimize.pxd'),
+]
+
 opt_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, cython_blas_pxd, _dummy_init_optimize])
+  depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
 _bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
 
@@ -238,6 +244,7 @@ py3.install_sources(
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_chandrupatla.py',
   '_cobyla_py.py',
   '_constraints.py',
   '_differentiable_functions.py',

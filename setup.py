@@ -340,8 +340,8 @@ def parse_setuppy_commands():
             `setup.py test` is not supported.  Use one of the following
             instead:
 
-              - `python runtests.py`              (to build and test)
-              - `python runtests.py --no-build`   (to test installed scipy)
+              - `python dev.py test`              (to build and test)
+              - `python dev.py --no-build`   (to test installed scipy)
               - `>>> scipy.test()`           (run tests for installed scipy
                                               from within an interpreter)
             """,
