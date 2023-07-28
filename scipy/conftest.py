@@ -174,8 +174,9 @@ def skip_if_array_api_backend(backend):
 
 
 def set_assert_allclose(xp=None):
+    if xp is None:
+        return npt.assert_allclose
     if 'cupy' in xp.__name__:
         import cupy as cp
         return cp.testing.assert_allclose
-    else:
-        return npt.assert_allclose
+    return npt.assert_allclose
