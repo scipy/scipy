@@ -239,7 +239,7 @@ ufuncs_cxx_sources = [
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
-  include_directories: ['../_lib', '../_build_utils/src', '../complexcompat/src'],
+  include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, np_dep],
 )
 
@@ -331,7 +331,7 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: ['../_lib', '../_build_utils/src', '../complexcompat/src'],
+  include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
     npymath_lib,
@@ -401,7 +401,7 @@ py3.extension_module('cython_special',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: ['../_lib', '../_build_utils/src', '../complexcompat/src', 'cephes'],
+  include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
   link_args: version_link_args,
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
