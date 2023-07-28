@@ -905,4 +905,4 @@ def matrix_power(A, power, structure=None):
         else:
             return tmp @ tmp
     else:
-        raise ValueError("exponent must be an integer")
+        raise ValueError(f"power is a {type(power)} must be an integer")
