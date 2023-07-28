@@ -1697,9 +1697,11 @@ def yeojohnson_normmax(x, brack=None):
         # [1] https://github.com/scipy/scipy/pull/18852
         lb = log_tiny_float / log1p_max_x
         ub = log_max_float / log1p_max_x
-        # Convert the bounds if the data is negative.
-        if np.any(x < 0):
+        # Convert the bounds if all or some of the data is negative.
+        if np.all(x < 0):
             lb, ub = 2 - ub, 2 - lb
+        elif np.any(x < 0):
+            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
         # Match `optimize.brent`'s tolerance.
         tol_brent = 1.48e-08
         return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
