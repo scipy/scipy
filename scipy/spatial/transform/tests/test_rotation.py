@@ -927,15 +927,6 @@ def test_single_identity_invariance():
     assert_array_almost_equal(result.magnitude(), np.zeros(n))
 
 
-def test_rotation_to():
-    n = 10
-    p = Rotation.random(n, random_state=0)
-    r = Rotation.random(n, random_state=1)
-    q = r * p
-    r_test = p.rotation_to(q)
-    assert_array_almost_equal((r * r_test.inv()).as_rotvec(), np.zeros([n, 3]))
-
-
 def test_magnitude():
     r = Rotation.from_quat(np.eye(4))
     result = r.magnitude()
@@ -955,23 +946,6 @@ def test_magnitude_single_rotation():
     assert_allclose(result2, 0)
 
 
-def test_angle_to():
-    rng = np.random.RandomState(0)
-    p = Rotation.random(10, random_state=rng)
-    q = Rotation.random(10, random_state=rng)
-    r = p * q.inv()
-    assert_allclose(p.angle_to(q), r.magnitude())
-
-
-def test_angle_to_single_rotation():
-    r = Rotation.from_quat(np.eye(4))
-    result1 = r[0].angle_to(Rotation.identity())
-    assert_allclose(result1, np.pi)
-
-    result2 = r[3].angle_to(Rotation.identity())
-    assert_allclose(result2, 0)
-
-
 def test_approx_equal():
     rng = np.random.RandomState(0)
     p = Rotation.random(10, random_state=rng)
@@ -984,10 +958,16 @@ def test_approx_equal():
 
 def test_approx_equal_single_rotation():
     # also tests passing single argument to approx_equal
-    p = Rotation.from_rotvec([0, 0, 1e-13])  # less than default atol of 1e-12
+    p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
     q = Rotation.from_quat(np.eye(4))
     assert p.approx_equal(q[3])
     assert not p.approx_equal(q[0])
+
+    # test passing atol and using degrees
+    assert not p.approx_equal(q[3], atol=1e-10)
+    assert p.approx_equal(q[3], atol=1e-10, degrees=True)
+    with pytest.warns(UserWarning, match="atol must be set"):
+        assert p.approx_equal(q[3], degrees=True)
 
 
 def test_mean():

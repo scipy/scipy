@@ -488,9 +488,7 @@ cdef class Rotation:
     __mul__
     __pow__
     inv
-    rotation_to
     magnitude
-    angle_to
     approx_equal
     mean
     reduce
@@ -2301,41 +2299,6 @@ cdef class Rotation:
             quat = quat[0]
         return self.__class__(quat, copy=False)
 
-
-    @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def rotation_to(Rotation self, Rotation other):
-        """Get the shortest rotation from this Rotation to another.
-
-        For two rotations ``p`` and ``q``, ``p.rotation_to(q) * p = q``.
-        Equivalently, ``p.rotation_to(q)`` is the same as ``q * p.inv()``.
-
-        Parameters
-        ----------
-        other : `Rotation` instance
-            Object containing the rotations to calculate the rotations to.
-
-        Returns
-        -------
-        rotations : `Rotation` instance
-            The rotation(s) from `self` to `other`.
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> p = R.from_euler('zyx', [1, 0, 0])
-        >>> q = R.from_euler('zyx', [0.75, 0, 0])
-        >>> p.rotation_to(q).as_euler('zyx')
-        array([-0.25,  0.  ,  0.  ])
-
-        >>> q2 = p.rotation_to(q) * p
-        >>> q2.as_euler('zyx')
-        array([0.75,  0.  ,  0.  ])
-
-        """
-        return other * self.inv()
-
     @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
@@ -2374,49 +2337,11 @@ cdef class Rotation:
         else:
             return np.asarray(angles)
 
-    @cython.embedsignature(True)
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def angle_to(Rotation self, Rotation other):
-        """Get the smallest angular distance(s) to another rotation.
-
-        For two rotations ``p`` and ``q``, the angular distance
-        ``p.angle_to(q)`` is equivalent to calculating
-        ``(q * p.inv()).magnitude()``.
-
-        Parameters
-        ----------
-        other : `Rotation` instance
-            Object containing the rotations to measure the angle to.
-
-        Returns
-        -------
-        angle : ndarray or float
-            Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations. The angle
-            will always be in the range [0, pi].
-
-        Examples
-        --------
-        >>> from scipy.spatial.transform import Rotation as R
-        >>> import numpy as np
-        >>> p = R.from_quat([0, 0, 0, 1])
-        >>> q = R.from_quat(np.eye(4))
-        >>> p.angle_to(q)
-        array([3.14159265, 3.14159265, 3.14159265, 0.        ])
-
-        Angle to a single rotation:
-
-        >>> p.angle_to(q[0])
-        3.141592653589793
-        """
-        return self.rotation_to(other).magnitude()
-
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def approx_equal(Rotation self, Rotation other, double atol=1e-8):
+    def approx_equal(Rotation self, Rotation other, atol=None, degrees=False):
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
@@ -2426,9 +2351,13 @@ cdef class Rotation:
         ----------
         other : `Rotation` instance
             Object containing the rotations to measure against this one.
-        atol : float
-            The absolute tolerance in radians, below which the rotations are
-            considered equal. If not given, then set to 1e-8 by default.
+        atol : float, optional
+            The absolute angular tolerance, below which the rotations are
+            considered equal. If not given, then atol is set to 1e-8 radians by
+            default.
+        degrees : bool, optional
+            If True and atol is given, then atol is measured in degrees. If
+            False (default), then atol is measured in radians.
 
         Returns
         -------
@@ -2451,7 +2380,15 @@ cdef class Rotation:
         >>> p.approx_equal(q[0])
         False
         """
-        angles = self.angle_to(other)
+        if atol is None:
+            if degrees:
+                warnings.warn("atol must be set to use the degrees flag, "
+                              "defaulting to 1e-8 radians.")
+            atol = 1e-8  # radians
+        elif degrees:
+            atol = np.deg2rad(atol)
+
+        angles = (other * self.inv()).magnitude()
         return angles < atol
 
     @cython.embedsignature(True)
