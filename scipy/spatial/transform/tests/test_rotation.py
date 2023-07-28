@@ -953,7 +953,7 @@ def test_approx_equal():
     r = p * q.inv()
     r_mag = r.magnitude()
     atol = np.median(r_mag)  # ensure we get mix of Trues and Falses
-    assert np.all(p.approx_equal(q, atol) == ((0 <= r_mag) & (r_mag < atol)))
+    assert_equal(p.approx_equal(q, atol), (r_mag < atol))
 
 
 def test_approx_equal_single_rotation():
@@ -965,7 +965,7 @@ def test_approx_equal_single_rotation():
 
     # test passing atol and using degrees
     assert not p.approx_equal(q[3], atol=1e-10)
-    assert p.approx_equal(q[3], atol=1e-10, degrees=True)
+    assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
     with pytest.warns(UserWarning, match="atol must be set"):
         assert p.approx_equal(q[3], degrees=True)
 

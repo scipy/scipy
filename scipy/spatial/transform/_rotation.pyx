@@ -363,17 +363,9 @@ cdef double[:, :] _compute_euler_from_quat(
 
     return angles
 
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline double _quat_magnitude(const double[:] q):
-    # this is higher precision than `2 * acos(abs(quat[3]))`
-    return 2 * atan2(_norm3(q[:3]), abs(q[3]))
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef inline void _compose_quat_single(  # calculate p * q into r
+cdef inline void _compose_quat_single( # calculate p * q into r
     const double[:] p, const double[:] q, double[:] r
 ) noexcept:
     cdef double[:] cross = _cross3(p[:3], q[:3])
@@ -1639,7 +1631,7 @@ cdef class Rotation:
             quat = self._quat[ind, :].copy()
             _quat_canonical_single(quat)  # w > 0 ensures that 0 <= angle <= pi
 
-            angle = _quat_magnitude(quat)
+            angle = 2 * atan2(_norm3(quat), quat[3])
 
             if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
@@ -2330,7 +2322,7 @@ cdef class Rotation:
         cdef double[:] angles = _empty1(num_rotations)
 
         for ind in range(num_rotations):
-            angles[ind] = _quat_magnitude(quat[ind])
+            angles[ind] = 2 * atan2(_norm3(quat[ind, :3]), abs(quat[ind, 3]))
 
         if self._single:
             return angles[0]
@@ -2345,7 +2337,7 @@ cdef class Rotation:
         """Determine if another rotation is approximately equal to this one.
 
         Equality is measured by calculating the smallest angle between the
-        rotations, and checking to see if it is smaller than atol.
+        rotations, and checking to see if it is smaller than `atol`.
 
         Parameters
         ----------
@@ -2353,10 +2345,10 @@ cdef class Rotation:
             Object containing the rotations to measure against this one.
         atol : float, optional
             The absolute angular tolerance, below which the rotations are
-            considered equal. If not given, then atol is set to 1e-8 radians by
+            considered equal. If not given, then set to 1e-8 radians by
             default.
         degrees : bool, optional
-            If True and atol is given, then atol is measured in degrees. If
+            If True and `atol` is given, then `atol` is measured in degrees. If
             False (default), then atol is measured in radians.
 
         Returns
