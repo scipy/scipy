@@ -4,6 +4,7 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
+from scipy.conftest import array_api_compatible, skip_if_array_api_gpu
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -115,146 +116,165 @@ class TestNextFastLen:
 
 class Test_init_nd_shape_and_axes:
 
-    def test_py_0d_defaults(self):
-        x = np.array(4)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_py_0d_defaults(self, xp):
+        x = xp.asarray(4)
         shape = None
         axes = None
 
-        shape_expected = np.array([])
-        axes_expected = np.array([])
-
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res.size == 0
+        assert axes_res.size == 0
 
-    def test_np_0d_defaults(self):
-        x = np.array(7.)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_0d_defaults(self, xp):
+        x = xp.asarray(7.)
         shape = None
         axes = None
 
-        shape_expected = np.array([])
-        axes_expected = np.array([])
-
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res.size == 0
+        assert axes_res.size == 0
 
-    def test_py_1d_defaults(self):
-        x = np.array([1, 2, 3])
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_py_1d_defaults(self, xp):
+        x = xp.asarray([1, 2, 3])
         shape = None
         axes = None
 
-        shape_expected = np.array([3])
-        axes_expected = np.array([0])
+        shape_expected = xp.asarray([3])
+        axes_expected = xp.asarray([0])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_1d_defaults(self):
-        x = np.arange(0, 1, .1)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_1d_defaults(self, xp):
+        x = xp.arange(0, 1, .1)
         shape = None
         axes = None
 
-        shape_expected = np.array([10])
-        axes_expected = np.array([0])
+        shape_expected = xp.asarray([10])
+        axes_expected = xp.asarray([0])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_py_2d_defaults(self):
-        x = np.array([[1, 2, 3, 4],
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_py_2d_defaults(self, xp):
+        x = xp.asarray([[1, 2, 3, 4],
                       [5, 6, 7, 8]])
         shape = None
         axes = None
 
-        shape_expected = np.array([2, 4])
-        axes_expected = np.array([0, 1])
+        shape_expected = xp.asarray([2, 4])
+        axes_expected = xp.asarray([0, 1])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_2d_defaults(self):
-        x = np.arange(0, 1, .1).reshape(5, 2)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_2d_defaults(self, xp):
+        x = xp.arange(0, 1, .1)
+        x = xp.reshape(x, (5, 2))
         shape = None
         axes = None
 
-        shape_expected = np.array([5, 2])
-        axes_expected = np.array([0, 1])
+        shape_expected = xp.asarray([5, 2])
+        axes_expected = xp.asarray([0, 1])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_5d_defaults(self):
-        x = np.zeros([6, 2, 5, 3, 4])
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_5d_defaults(self, xp):
+        x = xp.zeros([6, 2, 5, 3, 4])
         shape = None
         axes = None
 
-        shape_expected = np.array([6, 2, 5, 3, 4])
-        axes_expected = np.array([0, 1, 2, 3, 4])
+        shape_expected = xp.asarray([6, 2, 5, 3, 4])
+        axes_expected = xp.asarray([0, 1, 2, 3, 4])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_5d_set_shape(self):
-        x = np.zeros([6, 2, 5, 3, 4])
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_5d_set_shape(self, xp):
+        x = xp.zeros([6, 2, 5, 3, 4])
         shape = [10, -1, -1, 1, 4]
         axes = None
 
-        shape_expected = np.array([10, 2, 5, 1, 4])
-        axes_expected = np.array([0, 1, 2, 3, 4])
+        shape_expected = xp.asarray([10, 2, 5, 1, 4])
+        axes_expected = xp.asarray([0, 1, 2, 3, 4])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_5d_set_axes(self):
-        x = np.zeros([6, 2, 5, 3, 4])
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_5d_set_axes(self, xp):
+        x = xp.zeros([6, 2, 5, 3, 4])
         shape = None
         axes = [4, 1, 2]
 
-        shape_expected = np.array([4, 2, 5])
-        axes_expected = np.array([4, 1, 2])
+        shape_expected = xp.asarray([4, 2, 5])
+        axes_expected = xp.asarray([4, 1, 2])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_np_5d_set_shape_axes(self):
-        x = np.zeros([6, 2, 5, 3, 4])
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_xp_5d_set_shape_axes(self, xp):
+        x = xp.zeros([6, 2, 5, 3, 4])
         shape = [10, -1, 2]
         axes = [1, 0, 3]
 
-        shape_expected = np.array([10, 6, 2])
-        axes_expected = np.array([1, 0, 3])
+        shape_expected = xp.asarray([10, 6, 2])
+        axes_expected = xp.asarray([1, 0, 3])
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert_array_equal(shape_res, shape_expected)
+        assert_array_equal(axes_res, axes_expected)
 
-    def test_shape_axes_subset(self):
-        x = np.zeros((2, 3, 4, 5))
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_shape_axes_subset(self, xp):
+        x = xp.zeros((2, 3, 4, 5))
         shape, axes = _init_nd_shape_and_axes(x, shape=(5, 5, 5), axes=None)
 
         assert_array_equal(shape, [5, 5, 5])
         assert_array_equal(axes, [1, 2, 3])
 
-    def test_errors(self):
-        x = np.zeros(1)
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_errors(self, xp):
+        x = xp.zeros(1)
         with assert_raises(ValueError, match="axes must be a scalar or "
                            "iterable of integers"):
             _init_nd_shape_and_axes(x, shape=None, axes=[[1, 2], [3, 4]])
@@ -286,7 +306,7 @@ class Test_init_nd_shape_and_axes:
         with assert_raises(ValueError,
                            match="when given, axes and shape arguments"
                            " have to be of the same length"):
-            _init_nd_shape_and_axes(np.zeros([1, 1, 1, 1]),
+            _init_nd_shape_and_axes(xp.zeros([1, 1, 1, 1]),
                                     shape=[1, 2, 3], axes=[1])
 
         with assert_raises(ValueError,
