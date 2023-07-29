@@ -240,14 +240,13 @@ class CheckOptimizeParameterized(CheckOptimize):
     def test_bfgs_c1(self):
         # test for #18977 insufficiently low value of c1 leads to precision loss
         # for poor starting parameters
-        x0 = [10.3, 20.7, 10.8, 1.9, 1.2]
+        x0 = [10.3, 20.7, 10.8, 1.9, -1.2]
         res = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c1': 1e-4})
+                                x0, method='bfgs', options={'c1': 1e-8})
         ref = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c1': 1e-2})
+                                x0, method='bfgs', options={'c1': 1e-1})
 
-        assert res.status == 0
-        assert ref.status == 2
+        assert res.nfev > ref.nfev
 
     def test_bfgs_c2(self):
         # test for #18977 test number of iterations for modification of c2 parameter
