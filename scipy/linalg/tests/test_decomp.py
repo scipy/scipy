@@ -877,6 +877,8 @@ class TestEigh:
         with pytest.warns(DeprecationWarning,
                           match="Keyword argument 'eigvals'"):
             method(np.zeros((2, 2)), eigvals=[0, 1])
+        with pytest.deprecated_call(match="use keyword arguments"):
+            method(np.zeros((2,2)), np.eye(2, 2), True)
 
     def test_deprecation_results(self):
         a = _random_hermitian_matrix(3)
