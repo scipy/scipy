@@ -237,6 +237,25 @@ class CheckOptimizeParameterized(CheckOptimize):
                                 x0, method='bfgs', options={'gtol': 1e-3})
         assert res.nit != ref.nit
 
+    def test_bfgs_c1(self):
+        # test for #18977 invariance of parameter results to different c1
+        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        res = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'c1': 1e-12})
+        ref = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'c1': 1e-1})
+
+        assert np.all(res.x == ref.x)
+
+    def test_bfgs_c2(self):
+        # test for #18977 test number of iterations for modification of c2 parameter
+        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        res = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'c2': .9})
+        ref = optimize.minimize(optimize.rosen,
+                                x0, method='bfgs', options={'c2': 1e-2})
+        assert res.nit > ref.nit
+
     def test_powell(self):
         # Powell (direction set) optimization routine
         if self.use_wrapper:
