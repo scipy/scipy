@@ -2292,11 +2292,17 @@ class TestYeojohnson:
     @pytest.mark.parametrize('brack', [None, (-2, 2)])
     def test_integer_signed_data(self, x, sign, brack):
         with np.errstate(all="raise"):
-            lam_yeo = stats.yeojohnson_normmax(sign * x, brack=brack)
-            xt_yeo = stats.yeojohnson(sign * x, lmbda=lam_yeo)
-            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
-            assert np.isfinite(lam_yeo)
-            assert np.isfinite(np.var(xt_yeo))
+            x_int = sign * x
+            x_float = x_int.astype(np.float64)
+            lam_yeo_int = stats.yeojohnson_normmax(x_int, brack=brack)
+            xt_yeo_int = stats.yeojohnson(x_int, lmbda=lam_yeo_int)
+            lam_yeo_float = stats.yeojohnson_normmax(x_float, brack=brack)
+            xt_yeo_float = stats.yeojohnson(x_float, lmbda=lam_yeo_float)
+            assert np.all(np.sign(x_int) == np.sign(xt_yeo_int))
+            assert np.isfinite(lam_yeo_int)
+            assert np.isfinite(np.var(xt_yeo_int))
+            assert lam_yeo_int == lam_yeo_float
+            assert np.all(xt_yeo_int == xt_yeo_float)
 
 
 class TestYeojohnsonNormmax:

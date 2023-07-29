@@ -1496,7 +1496,8 @@ def _yeojohnson_transform(x, lmbda):
     """Returns `x` transformed by the Yeo-Johnson power transform with given
     parameter `lmbda`.
     """
-    out = np.zeros_like(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+    out = np.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
     # when x >= 0
@@ -1694,7 +1695,7 @@ def yeojohnson_normmax(x, brack=None):
         # Compute the bounds by approximating the inverse of the Yeo-Johnson
         # transform on the smallest and largest floating point exponents, given
         # the largest data we expect to observe. See [1] for further details.
-        # [1] https://github.com/scipy/scipy/pull/18852
+        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
         lb = log_tiny_float / log1p_max_x
         ub = log_max_float / log1p_max_x
         # Convert the bounds if all or some of the data is negative.
