@@ -251,11 +251,11 @@ class CheckOptimizeParameterized(CheckOptimize):
     def test_bfgs_c2(self):
         # test that modification of c2 parameter results in different number of iterations
         x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
-        res = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c2': .9})
-        ref = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c2': 1e-2})
-        assert res.nit > ref.nit
+        res_default = optimize.minimize(optimize.rosen,
+                                        x0, method='bfgs', options={'c2': .9})
+        res_mod = optimize.minimize(optimize.rosen,
+                                    x0, method='bfgs', options={'c2': 1e-2})
+        assert res_default.nit > res_mod.nit
 
     def test_powell(self):
         # Powell (direction set) optimization routine
