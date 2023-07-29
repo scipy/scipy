@@ -238,14 +238,16 @@ class CheckOptimizeParameterized(CheckOptimize):
         assert res.nit != ref.nit
 
     def test_bfgs_c1(self):
-        # test for #18977 invariance of parameter results to different c1
-        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        # test for #18977 insufficiently low value of c1 leads to precision loss
+        # for poor starting parameters
+        x0 = [10.3, 20.7, 10.8, 1.9, 1.2]
         res = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c1': 1e-12})
+                                x0, method='bfgs', options={'c1': 1e-4})
         ref = optimize.minimize(optimize.rosen,
-                                x0, method='bfgs', options={'c1': 1e-1})
+                                x0, method='bfgs', options={'c1': 1e-2})
 
-        assert np.all(res.x == ref.x)
+        assert res.status == 0
+        assert ref.status == 2
 
     def test_bfgs_c2(self):
         # test for #18977 test number of iterations for modification of c2 parameter
