@@ -1244,7 +1244,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0, c1=1e-4, c2=.9):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9):
     """
     Minimize a function using the BFGS algorithm.
 
