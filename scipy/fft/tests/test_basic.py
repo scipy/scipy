@@ -31,7 +31,10 @@ class TestFFTShift:
     @array_api_compatible
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3])
-        assert_raises(ValueError, fft.fft, x, 0)
+        if xp.__name__ in 'torch':
+            assert_raises(RuntimeError, fft.fft, x, 0)
+        else:
+            assert_raises(ValueError, fft.fft, x, 0)
 
 
 class TestFFT1D:
