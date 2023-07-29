@@ -180,11 +180,14 @@ class TestFFT1D:
         x_herm = xp.asarray(x_herm)
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(x)
-        _assert_allclose(expect, fft.hfft(x_herm))
-        _assert_allclose(expect, fft.hfft(x_herm, norm="backward"))
+        xp_test = array_namespace(x)
+        _assert_allclose(expect, xp_test.asarray(fft.hfft(x_herm), dtype=xp.complex128))
+        _assert_allclose(expect,
+                         xp_test.asarray(fft.hfft(x_herm, norm="backward"), dtype=xp.complex128))
         _assert_allclose(expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),
-                         fft.hfft(x_herm, norm="ortho"))
-        _assert_allclose(expect / 30, fft.hfft(x_herm, norm="forward"))
+                         xp_test.asarray(fft.hfft(x_herm, norm="ortho"), dtype=xp.complex128))
+        _assert_allclose(expect / 30,
+                         xp_test.asarray(fft.hfft(x_herm, norm="forward"), dtype=xp.complex128))
 
     @array_api_compatible
     def test_ihfft(self, xp):
