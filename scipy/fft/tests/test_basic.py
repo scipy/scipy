@@ -396,13 +396,19 @@ class TestFFTThreadSafe:
         elif 'cupy' in xp.__name__:
             import cupy as cp
             _assert_array_equal = cp.testing.assert_array_equal
+        elif 'torch' in xp.__name__:
+            import torch
+            for i in range(self.threads):
+                torch.testing.assert_close(q.get(timeout=5), expected,
+                                msg='Function returned wrong value in multithreaded context')
+            return
         else:
             _assert_array_equal = assert_array_equal
 
         # Make sure all threads returned the correct value
         for i in range(self.threads):
             _assert_array_equal(q.get(timeout=5), expected,
-                               'Function returned wrong value in multithreaded context')
+                               err_msg='Function returned wrong value in multithreaded context')
 
     @array_api_compatible
     def test_fft(self, xp):
