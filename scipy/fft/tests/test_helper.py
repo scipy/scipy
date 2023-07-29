@@ -5,6 +5,8 @@ import pytest
 import numpy as np
 import sys
 from scipy.conftest import array_api_compatible, skip_if_array_api_gpu
+from scipy._lib._array_api import array_namespace
+from scipy._lib.array_api_compat.array_api_compat import size
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -125,8 +127,10 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert shape_res.size == 0
-        assert axes_res.size == 0
+        xp_test = array_namespace(shape_res, axes_res)
+
+        assert size(xp_test.asarray(shape_res)) == 0
+        assert size(xp_test.asarray(axes_res)) == 0
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -137,8 +141,10 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert shape_res.size == 0
-        assert axes_res.size == 0
+        xp_test = array_namespace(shape_res, axes_res)
+
+        assert size(xp_test.asarray(shape_res)) == 0
+        assert size(xp_test.asarray(axes_res)) == 0
 
     @skip_if_array_api_gpu
     @array_api_compatible

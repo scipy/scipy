@@ -16,6 +16,7 @@ from scipy.conftest import (
     set_assert_allclose
 )
 from scipy._lib._array_api import _assert_matching_namespace, array_namespace
+from scipy._lib.array_api_compat.array_api_compat import size
 
 
 def fft1(x):
@@ -114,7 +115,7 @@ class TestFFT1D:
     def test_rfft(self, xp):
         x = xp.asarray(random(29))
         _assert_allclose = set_assert_allclose(xp)
-        for n in [x.size, 2*x.size]:
+        for n in [size(x), 2*size(x)]:
             for norm in [None, "backward", "ortho", "forward"]:
                 _assert_allclose(fft.fft(x, n=n, norm=norm)[:(n//2 + 1)],
                                  fft.rfft(x, n=n, norm=norm))
@@ -302,7 +303,7 @@ class TestFFT1D:
         x = random(30)
         x_norm = np.linalg.norm(x)
         x = xp.asarray(x)
-        n = x.size * 2
+        n = size(x) * 2
         func_pairs = [(fft.fft, fft.ifft),
                       (fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
@@ -310,7 +311,7 @@ class TestFFT1D:
                       (fft.ihfft, fft.hfft),
                       ]
         for forw, back in func_pairs:
-            for n in [x.size, 2*x.size]:
+            for n in [size(x), 2*size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
