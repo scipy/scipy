@@ -223,7 +223,7 @@ class TestFFT1D:
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_hfftn(self, xp):
-        x = random((30, 20, 10))
+        x = xp.asarray(random((30, 20, 10)))
         assert_allclose(x, fft.hfftn(fft.ihfftn(x)))
         for norm in ["backward", "ortho", "forward"]:
             assert_allclose(x, fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm))
@@ -231,7 +231,7 @@ class TestFFT1D:
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_ihfftn(self, xp):
-        x = random((30, 20, 10))
+        x = xp.asarray(random((30, 20, 10)))
         expect = fft.ifftn(x)[:, :, :6]
         assert_allclose(expect, fft.ihfftn(x))
         assert_allclose(expect, fft.ihfftn(x, norm="backward"))
