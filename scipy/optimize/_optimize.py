@@ -1381,7 +1381,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, c1=1e-4, c2=.9, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=0.9, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
