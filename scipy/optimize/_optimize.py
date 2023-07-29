@@ -1283,7 +1283,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         parameter vector.
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
-    c2 : float, default: .9
+    c2 : float, default: 0.9
         Parameter for curvature condition rule.
 
     Returns
