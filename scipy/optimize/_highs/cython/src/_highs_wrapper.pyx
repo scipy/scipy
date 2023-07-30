@@ -649,7 +649,16 @@ def _highs_wrapper(
             }
 
     # Solve the LP
-    cdef HighsStatus run_status = highs.run()
+    cdef HighsStatus run_status = HighsStatusOK
+    try:
+        run_status = highs.run()
+    except Exception as e:
+        print(f"The problem is too large to be solved. Details: {e}")
+        return {
+            'status': -1,  # Probably should be something else
+            'message': "The problem is too large to be solved.",
+        }
+
     if run_status == HighsStatusError:
         return {
             'status': <int> highs.getModelStatus(),
