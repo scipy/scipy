@@ -15,8 +15,7 @@ from scipy.conftest import (
     skip_if_array_api_gpu,
     set_assert_allclose
 )
-from scipy._lib._array_api import _assert_matching_namespace, array_namespace
-from scipy._lib.array_api_compat.array_api_compat import size
+from scipy._lib._array_api import _assert_matching_namespace, array_namespace, size
 
 
 def fft1(x):
