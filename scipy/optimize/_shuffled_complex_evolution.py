@@ -80,6 +80,9 @@ History
     * Rename sce to shuffled_complex_evolution and SCESolver to
       ShuffledComplexEvolutionSolver, May 2023, Matthias Cuntz
     * Exit if initial population failed twice, May 2023, Matthias Cuntz
+    * random_sample(1)[0] to assure scalar, Jul 2023, Matthias Cuntz
+    * call_func method to assure scalar output and max or min,
+      Jul 2023, Matthias Cuntz
 
 """
 import warnings
@@ -362,6 +365,7 @@ def shuffled_complex_evolution(
     """
     # using a context manager means that any created Pool objects are
     # cleared up.
+    ret = None
     with ShuffledComplexEvolutionSolver(
             func, x0, lb, ub=ub,
             mask=mask, args=args, kwargs=kwargs, sampling=sampling,
@@ -586,8 +590,7 @@ class ShuffledComplexEvolutionSolver:
             self.icall = 0
             self.xf = np.zeros(self.npt)
             for i in range(self.npt):
-                fuc = self.func(self.x[i, :])
-                self.xf[i] = -fuc if self.maxit else fuc
+                self.xf[i] = self.call_func(self.x[i, :])
                 self.icall += 1
                 if self.printit == 1:
                     print('  i, f, X: ', self.icall, self.xf[i], self.x[i, :])
@@ -600,8 +603,7 @@ class ShuffledComplexEvolutionSolver:
                 for i in range(self.npt):
                     self.x[i, :] = np.where(self.mask, self.x[i, :], x0)
                 for i in range(self.npt):
-                    fuc = self.func(self.x[i, :])
-                    self.xf[i] = -fuc if self.maxit else fuc
+                    self.xf[i] = self.call_func(self.x[i, :])
                     self.icall += 1
                     if self.printit == 1:
                         print('  i, f, X: ', self.icall, self.xf[i],
@@ -676,7 +678,7 @@ class ShuffledComplexEvolutionSolver:
                             self.npg + 0.5 -
                             np.sqrt((self.npg + 0.5)**2 -
                                     self.npg * (self.npg + 1) *
-                                    self.rnd.random_sample(1)) ))
+                                    self.rnd.random_sample(1)[0]) ))
                         # check if element was already chosen
                         idx = (lcs[0:k3] == lpos).nonzero()
                         if idx[0].size == 0:
@@ -749,6 +751,21 @@ class ShuffledComplexEvolutionSolver:
 
         return gnrng
 
+    def call_func(self, x):
+        """
+        Call function `func` asserting scalar output and maximum or minimum
+
+        """
+        fuc = self.func(x)
+        if isinstance(fuc, np.ndarray):
+            if fuc.size > 1:
+                raise RuntimeError(
+                    'func(x, *args, **kwargs) must return a'
+                    ' scalar value.')
+            fuc = fuc[0]
+        fuc = -fuc if self.maxit else fuc
+        return fuc
+
     def cce(self, s, sf):
         """
         Generate a new point in a simplex
@@ -793,8 +810,7 @@ class ShuffledComplexEvolutionSolver:
 
         icall = 0
         # calc function for reflection point
-        fuc = self.func(snew)
-        fnew = -fuc if self.maxit else fuc
+        fnew = self.call_func(snew)
         icall += 1
         if self.printit == 1:
             print('  i, f, X: ', self.icall + icall, fnew, snew)
@@ -803,8 +819,7 @@ class ShuffledComplexEvolutionSolver:
         if fnew > fw:
             snew = sw + self.beta * (ce - sw)
             snew = np.where(self.mask, snew, sb)
-            fuc = self.func(snew)
-            fnew = -fuc if self.maxit else fuc
+            fnew = self.call_func(snew)
             icall += 1
             if self.printit == 1:
                 print('  i, f, X: ', self.icall + icall, fnew, snew)
@@ -813,8 +828,7 @@ class ShuffledComplexEvolutionSolver:
         if fnew > fw:
             snew = self.sample_input_matrix(1)[0, :]
             snew = np.where(self.mask, snew, sb)
-            fuc = self.func(snew)
-            fnew = -fuc if self.maxit else fuc
+            fnew = self.call_func(snew)
             icall += 1
             if self.printit == 1:
                 print('  i, f, X: ', self.icall + icall, fnew, snew)
@@ -957,7 +971,7 @@ class ShuffledComplexEvolutionSolver:
                 elif opt == 'open':
                     iirnd = irnd[j]
                     while not (iirnd > 0.):
-                        iirnd = self.rnd.random_sample(1)
+                        iirnd = self.rnd.random_sample(1)[0]
                     x[i, j] = self.lb[j] + iirnd * bound[j]
                 elif opt == 'log':
                     # x must be > 0. for ln(x)
