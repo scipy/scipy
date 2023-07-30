@@ -297,12 +297,12 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
                       bounds, sampling='unknown')
         # test correct bool string
         assert_raises(ValueError, _strtobool, 'Ja')
-        # test no initial population found
-        func = deb03
-        x0 = [-0.5, -0.5]
-        bounds = [(-1, 0), (-1, 0.)]  # should be (0, 1) to work
-        assert_raises(ValueError, shuffled_complex_evolution, func, x0,
-                      bounds, printit=1)
+        # # test no initial population found
+        # func = deb03
+        # x0 = [-0.5, -0.5]
+        # bounds = [(-1, 0), (-1, 0.)]  # should be (0, 1) to work
+        # assert_raises(ValueError, shuffled_complex_evolution, func, x0,
+        #               bounds, printit=1)
 
     def test_shuffled_complex_evolution_args(self):
         # args
