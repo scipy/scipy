@@ -83,6 +83,7 @@ History
     * random_sample(1)[0] to assure scalar, Jul 2023, Matthias Cuntz
     * call_func method to assure scalar output and max or min,
       Jul 2023, Matthias Cuntz
+    * Require keyword names after mask, Jul 2023, Matthias Cuntz
 
 """
 import warnings
@@ -156,7 +157,7 @@ def _strtobool(val):
 
 def shuffled_complex_evolution(
         func, x0, lb, ub=None,
-        mask=None,
+        mask=None, *,
         args=(), kwargs={},
         sampling='half-open',
         maxn=1000, kstop=10, pcento=0.0001, peps=0.001,
