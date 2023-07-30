@@ -30,7 +30,7 @@ jobs:
 
 
     steps:
-    - name: setup
+    - name: Get source
       run: |    
         apk update --quiet
 
@@ -52,11 +52,12 @@ jobs:
         git submodule update --init
 
 
-    - name: prep venv
+    - name: prep build environment
       run: |    
         cd $RUNNER_TEMP
         python -m venv test_env
         source test_env/bin/activate
+        cd $GITHUB_WORKSPACE
 
         python -m pip install cython numpy
         # python -m pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
