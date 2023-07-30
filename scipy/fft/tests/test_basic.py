@@ -306,7 +306,8 @@ class TestFFT1D:
     def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
         x = xp.asarray(random(30))
-        x_norm = xp.linalg.norm(x)
+        xp_test = array_namespace(x)
+        x_norm = xp_test.linalg.vector_norm(x)
         n = size(x) * 2
         func_pairs = [(fft.fft, fft.ifft),
                       (fft.rfft, fft.irfft),
@@ -319,7 +320,7 @@ class TestFFT1D:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
-                    assert_allclose(x_norm, xp.linalg.norm(tmp))
+                    assert_allclose(x_norm, xp_test.linalg.vector_norm(tmp))
 
     @skip_if_array_api
     @pytest.mark.parametrize("dtype", [np.half, np.single, np.double,
