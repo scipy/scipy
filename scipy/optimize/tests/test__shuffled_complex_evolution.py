@@ -9,7 +9,7 @@ from scipy.optimize._constraints import Bounds
 from scipy.optimize import rosen
 
 from pytest import raises as assert_raises, warns
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy.optimize._shuffled_complex_evolution import (
     ShuffledComplexEvolutionSolver, _strtobool)
@@ -182,19 +182,19 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
 
         # bounds
         result = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub)
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0,
                                             list(zip(self.lb, self.ub)))
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0,
                                             Bounds(self.lb, self.ub))
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0, self.lb[0],
                                             self.ub[0])
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0, self.lb[0:1],
                                             self.ub[0:1])
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         # degenerated bounds
         x0 = [0.999, 0.5, 0.1]
         lb = [2., 0., 0.]
@@ -202,13 +202,14 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         rosenx = [x0[0], 1., 1.]
         result = shuffled_complex_evolution(rosen, x0, lb, ub)
         assert_almost_equal(result.x, rosenx, decimal=2)
+        assert_allclose(result.x, rosenx, atol=1e-2)
         x0 = [0.999, 0.5, 0.1]
         lb = [3., 0., 0.]
         ub = [2., 2., 2.]
         rosenx = [x0[0], 1., 1.]
         with warns(UserWarning):
             result = shuffled_complex_evolution(rosen, x0, lb, ub)
-        assert_almost_equal(result.x, rosenx, decimal=2)
+        assert_allclose(result.x, rosenx, atol=1e-2)
 
         # seed
         result = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub,
@@ -264,21 +265,21 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         result = shuffled_complex_evolution(
             rosen, self.x0, self.lb, self.ub,
             sampling=['half-open'] * len(self.lb))
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         smpls = ['half-open', 'right-half-open', 'left-half-open', 'open',
                  'log']
         for sm in smpls:
             result = shuffled_complex_evolution(rosen, self.x0, self.lb,
                                                 self.ub, sampling=sm)
-            assert_almost_equal(result.x, self.rosenx, decimal=3)
+            assert_allclose(result.x, self.rosenx, atol=1e-3)
         lb = [-1, -1.]
         result = shuffled_complex_evolution(rosen, self.x0, lb, self.ub,
                                             sampling='log')
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
         lb = [0., 0.]
         result = shuffled_complex_evolution(rosen, self.x0, lb, self.ub,
                                             sampling='log')
-        assert_almost_equal(result.x, self.rosenx, decimal=3)
+        assert_allclose(result.x, self.rosenx, atol=1e-3)
 
         # maxit
         result = shuffled_complex_evolution(self.negative_rosen, self.x0,
@@ -291,18 +292,21 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         func = rosen
         x0 = [1.]
         bounds = [(-3)]
-        assert_raises(TypeError, shuffled_complex_evolution, func, x0, bounds)
+        with assert_raises(TypeError, match='object is not iterable'):
+            shuffled_complex_evolution(func, x0, bounds)
         bounds = [(-1, 1), (-1, 1)]
-        assert_raises(ValueError, shuffled_complex_evolution, func, x0,
-                      bounds, sampling='unknown')
+        with assert_raises(ValueError, match='unknown sampling option'):
+            shuffled_complex_evolution(func, x0, bounds, sampling='unknown')
         # test correct bool string
-        assert_raises(ValueError, _strtobool, 'Ja')
+        with assert_raises(ValueError, match='invalid truth value'):
+            _strtobool('Ja')
         # # test no initial population found
         # func = deb03
         # x0 = [-0.5, -0.5]
         # bounds = [(-1, 0), (-1, 0.)]  # should be (0, 1) to work
-        # assert_raises(ValueError, shuffled_complex_evolution, func, x0,
-        #               bounds, printit=1)
+        # with assert_raises(ValueError,
+        #                    match='Did not succeed to produce initial'):
+        #     shuffled_complex_evolution(func, x0, bounds, printit=1)
 
     def test_shuffled_complex_evolution_args(self):
         # args
@@ -311,7 +315,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
                                             self.lb, self.ub,
                                             args=(a,))
         assert_equal(result.fun, rosenbrock_args(result.x, a))
-        assert_almost_equal(result.x, (a, a**2), decimal=3)
+        assert_allclose(result.x, (a, a**2), atol=1e-3)
         # args and kwargs
         a = 0.5
         b = 200
@@ -319,7 +323,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
                                             self.lb, self.ub,
                                             args=(a,), kwargs={'b': b})
         assert_equal(result.fun, rosenbrock_args(result.x, a, b=b))
-        assert_almost_equal(result.x, (a, a**2), decimal=3)
+        assert_allclose(result.x, (a, a**2), atol=1e-3)
         # kwargs
         a = 0.5
         b = 200
@@ -327,7 +331,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
                                             self.lb, self.ub,
                                             kwargs={'a': a, 'b': b})
         assert_equal(result.fun, rosenbrock_kwargs(result.x, a=a, b=b))
-        assert_almost_equal(result.x, (a, a**2), decimal=3)
+        assert_allclose(result.x, (a, a**2), atol=1e-3)
 
 
 if __name__ == "__main__":
