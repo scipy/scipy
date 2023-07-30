@@ -322,8 +322,6 @@ class Mishra03(Benchmark):
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
-        # self.global_optimum = [[-9.99378322, -9.99918927]]
-        # self.fglob = -0.19990562
         self.global_optimum = [[-9.99659511, -9.99637811]]
         self.fglob = -0.19992963
 
@@ -495,7 +493,7 @@ class Mishra07(Benchmark):
     def fun(self, x, *args):
         self.nfev += 1
 
-        return (prod(x) - factorial(self.N)) ** 2
+        return (prod(x) - factorial(self.N)) ** 2.0
 
 
 class Mishra08(Benchmark):
@@ -636,7 +634,7 @@ class Mishra10(Benchmark):
         x1, x2 = int(x[0]), int(x[1])
         f1 = x1 + x2
         f2 = x1 * x2
-        return (f1 - f2) ** 2
+        return (f1 - f2) ** 2.0
 
 
 class Mishra11(Benchmark):
@@ -679,7 +677,7 @@ class Mishra11(Benchmark):
         self.nfev += 1
 
         N = self.N
-        return ((1.0 / N) * sum(abs(x)) - (prod(abs(x))) ** 1.0 / N) ** 2
+        return ((1.0 / N) * sum(abs(x)) - (prod(abs(x))) ** 1.0 / N) ** 2.0
 
 
 class MultiModal(Benchmark):
