@@ -327,9 +327,9 @@ class TestFFT1D:
     def test_dtypes(self, dtype):
         # make sure that all input precisions are accepted
         x = random(30).astype(dtype)
-        assert_allclose(fft.ifft(fft.fft(x)), x)
-        assert_allclose(fft.irfft(fft.rfft(x)), x)
-        assert_allclose(fft.hfft(fft.ihfft(x), len(x)), x)
+        assert_array_almost_equal(fft.ifft(fft.fft(x)), x)
+        assert_array_almost_equal(fft.irfft(fft.rfft(x)), x)
+        assert_array_almost_equal(fft.hfft(fft.ihfft(x), len(x)), x)
 
 
 @skip_if_array_api
