@@ -32,8 +32,8 @@ linux_aarch64_test_task:
     image: family/docker-builder-arm64
     architecture: arm64
     platform: linux
-    cpu: 4
-    memory: 16G
+    cpu: 2
+    memory: 8G
 
   <<: *MODIFIED_CLONE
 
