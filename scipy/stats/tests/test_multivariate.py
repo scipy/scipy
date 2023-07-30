@@ -803,7 +803,7 @@ class TestMultivariateNormal:
         ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
         assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
-    def test_fit_error(self):
+    def test_fit_wrong_fit_data_shape(self):
         data = [1, 3]
         error_msg = "`x` must be two-dimensional."
         with pytest.raises(ValueError, match=error_msg):
@@ -817,6 +817,69 @@ class TestMultivariateNormal:
         mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
         assert_allclose(mean_est, mean_ref, atol=1e-15)
         assert_allclose(cov_est, cov_ref, rtol=1e-15)
+
+    def test_fit_both_parameters_fixed(self):
+        error_msg = "Both parameters are fixed. There is nothing to fit."
+        with pytest.raises(ValueError, match=error_msg):
+            multivariate_normal.fit(np.ones((2, 1)), fix_mean=1, fix_cov=1)
+
+    def test_fit_fix_mean_wrong_dimension(self):
+        error_msg = "`fix_mean` must be one-dimensional."
+        with pytest.raises(ValueError, match=error_msg):
+            multivariate_normal.fit(np.eye(2), fix_mean=np.zeros((2, 2)))
+
+    def test_fit_fix_mean_dimension_mismatch(self):
+        msg = "`fix_mean` must be of the same length as the vectors `x`."
+        with pytest.raises(ValueError, match=msg):
+            multivariate_normal.fit(np.eye(3), fix_mean=np.zeros((2, )))
+
+    def test_fit_fix_cov_wrong_dimension(self):
+        error_msg = "`fix_cov` must be two-dimensional."
+        with pytest.raises(ValueError, match=error_msg):
+            multivariate_normal.fit(np.eye(2), fix_cov=np.zeros((2, 2, 2)))
+
+    def test_fit_fix_cov_dimension_mismatch(self):
+        msg = ("`fix_cov` must be a square matrix of the same "
+               "side length as the vectors `x`.")
+        with pytest.raises(ValueError, match=msg):
+            multivariate_normal.fit(np.eye(3), fix_cov=np.zeros((2, 2)))
+
+    def test_fit_fix_cov_not_square(self):
+        msg = "`fix_cov` must be a square matrix."
+        with pytest.raises(ValueError, match=msg):
+            multivariate_normal.fit(np.eye(3), fix_cov=np.zeros((1, 3)))
+
+    def test_fit_fix_mean(self):
+        rng = np.random.default_rng(4385269356937404)
+        loc = np.zeros((3, ))
+        samples = multivariate_normal.rvs(mean=loc, cov=np.eye(3), size=100,
+                                          random_state=rng)
+        mean_free, cov_free = multivariate_normal.fit(samples)
+        logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
+                                               cov=cov_free).sum()
+        mean_fix, cov_fix = multivariate_normal.fit(samples, fix_mean=loc)
+        assert_allclose(mean_fix, loc, rtol=0, atol=0)
+        logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
+                                              cov=cov_fix).sum()
+        # test that fixed parameters result in lower likelihood than free
+        # parameters
+        assert logp_fix < logp_free
+
+    def test_fit_fix_cov(self):
+        rng = np.random.default_rng(4385269356937404)
+        cov = np.eye(3)
+        samples = multivariate_normal.rvs(mean=np.zeros((3, )), cov=cov,
+                                          size=100, random_state=rng)
+        mean_free, cov_free = multivariate_normal.fit(samples)
+        logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
+                                               cov=cov_free).sum()
+        mean_fix, cov_fix = multivariate_normal.fit(samples, fix_cov=cov)
+        assert_allclose(cov_fix, cov, rtol=0, atol=0)
+        logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
+                                              cov=cov_fix).sum()
+        # test that fixed parameters result in lower likelihood than free
+        # parameters
+        assert logp_fix < logp_free
 
 
 class TestMatrixNormal:

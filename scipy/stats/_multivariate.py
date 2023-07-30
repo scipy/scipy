@@ -787,7 +787,7 @@ class multivariate_normal_gen(multi_rv_generic):
         dim, mean, cov_object = self._process_parameters(mean, cov)
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
-    def fit(self, x):
+    def fit(self, x, fix_mean=None, fix_cov=None):
         """Fit a multivariate normal distribution to data.
 
         Parameters
@@ -797,6 +797,10 @@ class multivariate_normal_gen(multi_rv_generic):
             The first axis of length `m` represents the number of vectors
             the distribution is fitted to. The second axis of length `n`
             determines the dimensionality of the fitted distribution.
+        fix_mean : ndarray(n, )
+            Fixed mean vector. Must have length `n`.
+        fix_cov: ndarray (n, n)
+            Fixed covariance matrix. Must have shape `(n, n)`.
 
         Returns
         -------
@@ -806,18 +810,52 @@ class multivariate_normal_gen(multi_rv_generic):
             Maximum likelihood estimate of the covariance matrix
 
         """
-        # input validation
+        # input validation for data to be fitted
         x = np.asarray(x)
         if x.ndim != 2:
             raise ValueError("`x` must be two-dimensional.")
 
         n_vectors, dim = x.shape
 
+        # convenience variables for checking if parameters are fixed
+        mean_fixed = fix_mean is not None
+        cov_fixed = fix_cov is not None
+
+        # if both parameters are fixed, there is nothing to fit
+        if mean_fixed and cov_fixed:
+            error_msg = "Both parameters are fixed. There is nothing to fit."
+            raise ValueError(error_msg)
+
         # parameter estimation
         # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
-        mean = x.mean(axis=0)
-        centered_data = x - mean
-        cov = centered_data.T @ centered_data / n_vectors
+        if mean_fixed:
+            # input validation for `fix_mean`
+            fix_mean = np.asarray(fix_mean)
+            if fix_mean.ndim != 1:
+                raise ValueError("`fix_mean` must be one-dimensional.")
+            if fix_mean.shape[0] != dim:
+                msg = ("`fix_mean` must be of the same length as "
+                       "the vectors `x`.")
+                raise ValueError(msg)
+            mean = fix_mean
+        else:
+            mean = x.mean(axis=0)
+        if cov_fixed:
+            # input validation for `fix_cov`
+            fix_cov = np.asarray(fix_cov)
+            if fix_cov.ndim != 2:
+                raise ValueError("`fix_cov` must be two-dimensional.")
+            cov_rows, cov_cols = fix_cov.shape
+            if cov_rows != cov_cols:
+                raise ValueError("`fix_cov` must be a square matrix.")
+            if cov_rows != dim:
+                msg = ("`fix_cov` must be a square matrix of the same "
+                       "side length as the vectors `x`.")
+                raise ValueError(msg)
+            cov = fix_cov
+        else:
+            centered_data = x - mean
+            cov = centered_data.T @ centered_data / n_vectors
         return mean, cov
 
 
