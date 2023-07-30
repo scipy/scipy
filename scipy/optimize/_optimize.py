@@ -1419,10 +1419,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
     """
     _check_unknown_options(unknown_options)
-    kwargs = {
-        'c1': c1,
-        'c2': c2,
-    }
     retall = return_all
 
     x0 = asarray(x0).flatten()
