@@ -519,8 +519,8 @@ class TestNamespaces:
 def test_non_standard_params(func, xp):
     if xp.__name__ not in 'numpy':
         x = xp.asarray([1, 2, 3])
-        # func(x) shouldn't raise an exception.
+        # func(x) should not raise an exception
         func(x)
         assert_raises(ValueError, func, x, overwrite_x=True)
         assert_raises(ValueError, func, x, workers=2)
-        # TODO test `plan` param.
+        # TODO test `plan` param
