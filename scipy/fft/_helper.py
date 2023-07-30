@@ -24,6 +24,7 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
     """
     Implements the array API specification of fftfreq.
     """
+    xp = np if xp is None else xp
     if hasattr(xp, 'fft'):
         return xp.fft.fftfreq(n, d=d, device=device)
     return np.fft.fftfreq(n, d=d)
@@ -33,6 +34,7 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
     """
     Implements the array API specification of rfftfreq.
     """
+    xp = np if xp is None else xp
     if hasattr(xp, 'fft'):
         return xp.fft.rfftfreq(n, d=d, device=device)
     return np.fft.rfftfreq(n, d=d)
