@@ -36,7 +36,7 @@ History
     * Possibility to exclude (mask) parameters from optimisation,
       Nov 2016, Matthias Cuntz
     * Added restart possibility, Nov 2016, Matthias Cuntz
-    * Return also function value of best parameter set if maxit==True,
+    * Return also function value of best parameter set if maximize==True,
       Nov 2016, Matthias Cuntz
     * Removed functionality to call external executable,
       Dec 2017, Matthias Cuntz
@@ -75,15 +75,24 @@ History
     * Rewrite into class SCESolver, Dec 2022, Matthias Cuntz
     * Output OptimizeResult class, Dec 2022, Matthias Cuntz
     * Polish results with L-BFGS-B, Dec 2022, Matthias Cuntz
-    * Warn only if lb > ub, simply set mask if lb == ub,
-      May 2023, Matthias Cuntz
+    * Warn only if lower_bounds > upper_bounds, simply set mask if
+      lower_bounds == upper_bounds, May 2023, Matthias Cuntz
     * Rename sce to shuffled_complex_evolution and SCESolver to
       ShuffledComplexEvolutionSolver, May 2023, Matthias Cuntz
     * Exit if initial population failed twice, May 2023, Matthias Cuntz
     * random_sample(1)[0] to assure scalar, Jul 2023, Matthias Cuntz
-    * call_func method to assure scalar output and max or min,
+    * call_func method to assure scalar output,
       Jul 2023, Matthias Cuntz
     * Require keyword names after mask, Jul 2023, Matthias Cuntz
+    * Set default polish=False, Jul 2023, Matthias Cuntz
+    * Renamed keywords to more talkative names:
+      lb -> lower_bounds, ub -> upper_bounds,
+      maxn -> maxfev, kstop -> n_check, pcento -> f_tol, peps -> p_tol,
+      ngs -> n_complex, npg -> n_point_complex, nps -> n_point_subcomplex,
+      mings -> min_n_complex, nspl -> n_eval_complex_per_shuffle,
+      iniflg -> x0_in_pop, maxit -> maximize,
+      Jul 2023, Matthias Cuntz
+    * Removed restart capability, Jul 2023, Matthias Cuntz
 
 """
 import warnings
@@ -92,8 +101,6 @@ from scipy.optimize import OptimizeResult, minimize
 from scipy._lib._util import check_random_state
 from scipy.optimize._constraints import Bounds
 
-# ToDo:
-# - write tmp/population files (of Fortran code)
 
 __all__ = ['shuffled_complex_evolution']
 
@@ -156,17 +163,16 @@ def _strtobool(val):
 
 
 def shuffled_complex_evolution(
-        func, x0, lb, ub=None,
+        func, x0, lower_bounds, upper_bounds=None,
         mask=None, *,
         args=(), kwargs={},
         sampling='half-open',
-        maxn=1000, kstop=10, pcento=0.0001, peps=0.001,
-        ngs=2, npg=0, nps=0, nspl=0, mings=0,
-        seed=None, iniflg=True,
-        alpha=0.8, beta=0.45, maxit=False, printit=2,
-        polish=True,
-        restart=False, restartfile1='',
-        restartfile2=''):
+        maxfev=1000, n_check=10, f_tol=0.0001, p_tol=0.001,
+        n_complex=2, n_point_complex=0, n_point_subcomplex=0,
+        n_eval_complex_per_shuffle=0, min_n_complex=0,
+        seed=None, x0_in_pop=True,
+        alpha=0.8, beta=0.45, maximize=False, printit=2,
+        polish=False):
     """
     Shuffled Complex Evolution algorithm for finding the minimum of a
     multivariate function
@@ -189,14 +195,14 @@ def shuffled_complex_evolution(
         unpacking operators.
     x0 : array_like
         Parameter values with `mask==1` used in initial complex if
-        `iniflg==1`.
-    lb : array_like, sequence or `Bounds`
-        Lower bounds of parameters if ``ub`` given.
-        If `ub` is not given, then `lb` are the bounds of the parameters,
-        either 1) as an instance of the `Bounds` class, or 2) as ``(min, max)``
-        pairs for each element in ``x``, defining the finite lower and upper
-        bounds for the parameters of `func`.
-    ub : array_like, optional
+        `x0_in_pop==True`.
+    lower_bounds : array_like, sequence, or `Bounds`
+        Lower bounds of parameters if ``upper_bounds`` is given.
+        If `upper_bounds` is not given, then `lower_bounds` are the bounds of
+        the parameters, either as an instance of the `Bounds` class, or as
+        ``(min, max)`` pairs for each element in ``x``, defining the finite
+        lower and upper bounds for the parameters of `func`.
+    upper_bounds : array_like, optional
         Upper bounds of parameters.
     mask : array_like, optional
         Include (1, True) or exclude (0, False) parameters in minimization
@@ -204,45 +210,51 @@ def shuffled_complex_evolution(
         ``sum(mask)``.
     args : tuple, optional
         Extra arguments passed to the function *func*. Note that ``args`` must
-        be iterable. `args=int`and `args=(int)` are not valid (with int being
-        any scalar variable) but should be `args=(int,)`.
+        be iterable. `args=scalar` and `args=(scalar)` are not valid but should
+        be, for example, `args=(scalar,)`.
     kwargs : dict, optional
         Extra keyword arguments passed to the function `func`.
     sampling : string or array_like of strings, optional
-        Options for sampling random numbers. Options can be on of:
+        Options for sampling random numbers. Options can be one of:
 
-            - 'half-open': same as 'right-half-open' [lb, ub)
+            - 'half-open': same as 'right-half-open'
+              [lower_bounds, upper_bounds)
             - 'left-half-open': sample random floats in half-open
-              interval (lb, ub]
+              interval (lower_bounds, upper_bounds]
             - 'right-half-open': sample random floats in half-open
-              interval [lb, ub)
-            - 'open': sample random floats in open interval (lb, ub)
-            - 'log': sample half-open interval [log(lb), log(ub)), which
-              samples better intervals spanning orders or magnitude such as
-              `lb=1e-9` and `ub=1e-4`
+              interval [lower_bounds, upper_bounds)
+            - 'open': sample random floats in open interval
+              (lower_bounds, upper_bounds)
+            - 'log': sample half-open interval
+              [log(lower_bounds), log(upper_bounds)), which
+              samples should be used for lower and upper boundaries
+              spanning orders or magnitude such as `lower_bounds=1e-9`
+              and `upper_bounds=1e-4`
 
         The default is 'half-open'.
-    maxn : int, optional
+    maxfev : int, optional
         Maximum number of function evaluations allowed during minimization
         (without polishing) (default: 1000).
-    kstop : int, optional
-        Maximum number of evolution loops before convergence (default: 10).
-    pcento : float, optional
-        Percentage change allowed in kstop loops before convergence
-        (default: 0.0001).
-    peps : float, optional
-        Value of normalised geometric range needed for convergence
+    n_check : int, optional
+        Number of evolution loops checked for percentage change (`f_tol`)
+        of function `func` (default: 10).
+    f_tol : float, optional
+        Terminate optimization if result has improved by less then `f_tol`
+        percent in the last `n_check` evolution loops (default: 0.0001).
+    p_tol : float, optional
+        Terminate optimization if parameters have converged to a small space,
+        expressed as the normalised geometric range of the parameters
         (default: 0.001).
-    ngs : int, optional
+    n_complex : int, optional
         Number of complexes (default: 2).
-    npg : int, optional
+    n_point_complex : int, optional
         Number of points in each complex (default: `2*nopt+1`).
-    nps : int, optional
+    n_point_subcomplex : int, optional
         Number of points in each sub-complex (default: `nopt+1`).
-    mings : int, optional
+    min_n_complex : int, optional
         Minimum number of complexes required if the number of complexes is
-        allowed to reduce as the optimization proceeds (default: `ngs`).
-    nspl : int, optional
+        allowed to reduce as the optimization proceeds (default: `n_complex`).
+    n_eval_complex_per_shuffle : int, optional
         Number of evolution steps allowed for each complex before complex
         shuffling (default: `2*nopt+1`).
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
@@ -253,14 +265,14 @@ def shuffled_complex_evolution(
         If `seed` is already a `Generator` or `RandomState` instance then
         that instance is used.
         Specify `seed` for repeatable results.
-    iniflg : bool, optional
+    x0_in_pop : bool, optional
         If True: include initial parameters ``x0`` in initial population
         (default: True).
     alpha : float, optional
         Parameter for reflection of points in complex (default: 0.8).
     beta : float, optional
         Parameter for contraction of points in complex (default: 0.45).
-    maxit : bool, optional
+    maximize : bool, optional
         If True: maximize instead of minimize `func` (default: False).
     printit : int, optional
         Controlling print-out (default: 2):
@@ -271,21 +283,10 @@ def shuffled_complex_evolution(
 
         The default is 2.
     polish : bool, optional
-        If True (default), then `scipy.optimize.minimize` is used with the
+        If True, then `scipy.optimize.minimize` is used with the
         `L-BFGS-B` method to polish the result at the end, which
         can improve the minimization slightly. For large problems, polishing
         can take a long time due to the computation of the Jacobian.
-    restart : bool, optional
-        If True, continue from saved state in `restartfile1` and
-        `restartfile2` (default: False).
-    restartfile1 : str, optional
-        Filename for saving state of array variables of optimizer
-        (default: '').
-        If `restart==True` and `restartfile1==''` then
-        `restartfile1='sce.restart.npz'` will be taken.
-    restartfile2 : int, optional
-        Filename for saving state of non-array variables of optimizer
-        (default: `restartfile1 + '.txt'`).
 
     Returns
     -------
@@ -337,11 +338,11 @@ def shuffled_complex_evolution(
     parameters, and the lower and upper limits of the parameters.
     The 2D version is:
 
-    >>> lb = np.array([-5., -2.])
-    >>> ub = np.array([5., 8.])
+    >>> lower_bounds = np.array([-5., -2.])
+    >>> upper_bounds = np.array([5., 8.])
     >>> x0 = np.array([-2., 7.])
-    >>> res = shuffled_complex_evolution(rosen, x0, lb, ub, seed=1, maxn=1000,
-    ...     printit=2)
+    >>> res = shuffled_complex_evolution(rosen, x0, lower_bounds,
+    ...     upper_bounds, seed=1, maxfev=1000, printit=2)
     >>> print(res.nfev)
     298
     >>> print('{:.3f}'.format(res.fun))
@@ -351,13 +352,15 @@ def shuffled_complex_evolution(
     as well as setting a number of keyword parameters for the SCE algorithm is:
 
     >>> nopt = 10
-    >>> lb = np.full(10, -5.)
-    >>> ub = np.full(10, 5.)
+    >>> lower_bounds = np.full(10, -5.)
+    >>> upper_bounds = np.full(10, 5.)
     >>> x0 = np.full(10, 0.5)
-    >>> res = shuffled_complex_evolution(rosen, x0, zip(lb, ub), maxn=30000,
-    ...     kstop=10, pcento=0.0001,
-    ...     seed=12358, ngs=5, npg=5*nopt+1, nps=nopt+1, nspl=5*nopt+1,
-    ...     mings=2, iniflg=True, printit=2, alpha=0.8, beta=0.45)
+    >>> res = shuffled_complex_evolution(rosen, x0,
+    ...     zip(lower_bounds, upper_bounds), maxfev=30000,
+    ...     n_check=10, f_tol=0.0001, seed=12358, n_complex=5,
+    ...     n_point_complex=5*nopt+1, n_point_subcomplex=nopt+1,
+    ...     n_eval_complex_per_shuffle=5*nopt+1, min_n_complex=2,
+    ...     x0_in_pop=True, printit=2, alpha=0.8, beta=0.45)
     >>> print(res.nfev)
     30228
     >>> print('{:.3g}'.format(res.fun))
@@ -368,15 +371,16 @@ def shuffled_complex_evolution(
     # cleared up.
     ret = None
     with ShuffledComplexEvolutionSolver(
-            func, x0, lb, ub=ub,
+            func, x0, lower_bounds, upper_bounds=upper_bounds,
             mask=mask, args=args, kwargs=kwargs, sampling=sampling,
-            maxn=maxn, kstop=kstop, pcento=pcento,
-            ngs=ngs, npg=npg, nps=nps, nspl=nspl, mings=mings,
-            peps=peps, seed=seed, iniflg=iniflg,
-            alpha=alpha, beta=beta, maxit=maxit, printit=printit,
-            polish=polish,
-            restart=restart, restartfile1=restartfile1,
-            restartfile2=restartfile2) as solver:
+            maxfev=maxfev, n_check=n_check, f_tol=f_tol,
+            n_complex=n_complex, n_point_complex=n_point_complex,
+            n_point_subcomplex=n_point_subcomplex,
+            n_eval_complex_per_shuffle=n_eval_complex_per_shuffle,
+            min_n_complex=min_n_complex,
+            p_tol=p_tol, seed=seed, x0_in_pop=x0_in_pop,
+            alpha=alpha, beta=beta, maximize=maximize, printit=printit,
+            polish=polish) as solver:
         ret = solver.solve()
 
     return ret
@@ -388,261 +392,154 @@ class ShuffledComplexEvolutionSolver:
 
     Parameters
     ----------
-    func : callable
-        Function in the form ``func(x, *args, **kwargs)``, where ``x`` are
-        the parameters in the form of an iterable.
-        ``args`` and ``kwargs`` are passed to the function via the usual
-        unpacking operators.
-    x0 : array_like
-        Parameter values with `mask==1` used in initial complex if
-        `iniflg==1`.
-    lb : array_like, sequence or `Bounds`
-        Lower bounds of parameters if ``ub`` given.
-        If `ub` is not given, then `lb` are the bounds of the parameters,
-        either 1) as an instance of the `Bounds` class, or 2) as ``(min, max)``
-        pairs for each element in ``x``, defining the finite lower and upper
-        bounds for the parameters of `func`.
-    ub : array_like
-        Upper bounds of parameters.
-    mask : array_like, optional
-        Include (1, True) or exclude (0, False) parameters in minimization
-        (default: include all parameters). The number of parameters ``nopt`` is
-        ``sum(mask)``.
-    args : tuple, optional
-        Extra arguments passed to the function *func*.
-    kwargs : dict, optional
-        Extra keyword arguments passed to the function `func`.
-    sampling : string or array_like of strings, optional
-        Options for sampling random numbers. Options can be on of:
-
-            - 'half-open': same as 'right-half-open' [lb, ub)
-            - 'left-half-open': sample random floats in half-open
-              interval (lb, ub]
-            - 'right-half-open': sample random floats in half-open
-              interval [lb, ub)
-            - 'open': sample random floats in open interval (lb, ub)
-            - 'log': sample half-open interval [log(lb), log(ub)), which
-              samples better intervals spanning orders or magnitude such as
-              `lb=1e-9` and `ub=1e-4`
-
-        The default is 'half-open'.
-    maxn : int, optional
-        Maximum number of function evaluations allowed during minimization
-        (without polishing) (default: 1000).
-    kstop : int, optional
-        Maximum number of evolution loops before convergence (default: 10).
-    pcento : float, optional
-        Percentage change allowed in kstop loops before convergence
-        (default: 0.0001).
-    peps : float, optional
-        Value of normalised geometric range needed for convergence
-        (default: 0.001).
-    ngs : int, optional
-        Number of complexes (default: 2).
-    npg : int, optional
-        Number of points in each complex (default: `2*nopt+1`).
-    nps : int, optional
-        Number of points in each sub-complex (default: `nopt+1`).
-    mings : int, optional
-        Minimum number of complexes required if the number of complexes is
-        allowed to reduce as the optimization proceeds (default: `ngs`).
-    nspl : int, optional
-        Number of evolution steps allowed for each complex before complex
-        shuffling (default: `2*nopt+1`).
-    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
-        If `seed` is None (or `numpy.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new `RandomState` instance is used,
-        seeded with `seed`.
-        If `seed` is already a `Generator` or `RandomState` instance then
-        that instance is used.
-        Specify `seed` for repeatable results.
-    iniflg : bool, optional
-        If True: include initial parameters ``x0`` in initial population
-        (default: True).
-    alpha : float, optional
-        Parameter for reflection of points in complex (default: 0.8).
-    beta : float, optional
-        Parameter for contraction of points in complex (default: 0.45).
-    maxit : bool, optional
-        If True: maximize instead of minimize `func` (default: False).
-    printit : int, optional
-        Controlling print-out (default: 2):
-
-            - 0: print information for the best point of the population
-            - 1: print information for each function evaluation
-            - 2: no printing.
-
-        The default is 2.
-    polish : bool, optional
-        If True (default), then `scipy.optimize.minimize` is used with the
-        `L-BFGS-B` method to polish the result at the end, which
-        can improve the minimization slightly. For large problems, polishing
-        can take a long time due to the computation of the Jacobian.
-    restart : bool, optional
-        If True, continue from saved state in `restartfile1` and
-        `restartfile2` (default: False).
-    restartfile1 : str, optional
-        Filename for saving state of array variables of optimizer
-        (default: '').
-        If `restart==True` and `restartfile1==''` then
-        `restartfile1='sce.restart.npz'` will be taken.
-    restartfile2 : int, optional
-        Filename for saving state of non-array variables of optimizer
-        (default: `restartfile1 + '.txt'`).
 
     """
 
-    def __init__(self, func, x0, lb, ub=None,
+    def __init__(self, func, x0, lower_bounds, upper_bounds=None,
                  mask=None, args=(), kwargs={},
                  sampling='half-open',
-                 maxn=1000, kstop=10, pcento=0.0001,
-                 ngs=2, npg=0, nps=0, nspl=0, mings=0,
-                 peps=0.001, seed=None, iniflg=True,
-                 alpha=0.8, beta=0.45, maxit=False, printit=2,
-                 polish=True,
-                 restart=False, restartfile1='',
-                 restartfile2=''):
+                 maxfev=1000, n_check=10, f_tol=0.0001,
+                 n_complex=2, n_point_complex=0, n_point_subcomplex=0,
+                 n_eval_complex_per_shuffle=0, min_n_complex=0,
+                 p_tol=0.001, seed=None, x0_in_pop=True,
+                 alpha=0.8, beta=0.45, maximize=False, printit=2,
+                 polish=False):
 
         # function to minimize
         self.func = _FunctionWrapper(func, *args, **kwargs)
-        # seed random number generator - will be overwritten by restart
+        # seed random number generator
         # self.rnd = np.random.RandomState(seed=seed)
         self.rnd = check_random_state(seed)
-        # parameters for initial run and for restart
+        # parameters for initial run
         self.sampling = sampling
-        self.maxn = maxn
-        self.kstop = kstop
-        self.pcento = pcento
-        self.peps = peps
+        self.maxfev = maxfev
+        self.n_check = n_check
+        self.f_tol = f_tol
+        self.p_tol = p_tol
         self.alpha = alpha
         self.beta = beta
-        self.maxit = maxit
+        self.maximize = maximize
         self.printit = printit
         self.polish = polish
-        self.restartfile1 = restartfile1
-        self.restartfile2 = restartfile2
-        if restart and (not self.restartfile1):
-            self.restartfile1 = 'sce.restart.npz'
-        if self.restartfile1 and (not self.restartfile2):
-            self.restartfile2 = self.restartfile1 + '.txt'
-        if not restart:
-            # initialize SCE parameters
-            self.nn    = len(x0)
-            self.mask  = np.ones(self.nn, dtype=bool) if mask is None else mask
-            self.nopt  = np.sum(self.mask)
-            self.ngs   = ngs if ngs > 0 else 2
-            self.npg   = npg if npg > 0 else 2 * self.nopt + 1
-            self.nps   = nps if nps > 0 else self.nopt + 1
-            self.nspl  = nspl if nspl > 0 else 2 * self.nopt + 1
-            self.mings = mings if mings > 0 else self.ngs
-            self.npt   = self.npg * self.ngs
 
-            # assure lb and ub are numpy arrays
-            if ub is None:
-                if isinstance(lb, Bounds):
-                    self.lb = lb.lb
-                    self.ub = lb.ub
-                else:
-                    self.lb, self.ub = zip(*lb)
+        # initialize SCE parameters
+        self.nn    = len(x0)
+        self.mask  = np.ones(self.nn, dtype=bool) if mask is None else mask
+        self.nopt  = np.sum(self.mask)
+        self.n_complex   = n_complex if n_complex > 0 else 2
+        self.n_point_complex = (n_point_complex
+                                if n_point_complex > 0
+                                else 2 * self.nopt + 1)
+        self.n_point_subcomplex = (n_point_subcomplex
+                                   if n_point_subcomplex > 0
+                                   else self.nopt + 1)
+        self.n_eval_complex_per_shuffle = (n_eval_complex_per_shuffle
+                                           if n_eval_complex_per_shuffle > 0
+                                           else 2 * self.nopt + 1)
+        self.min_n_complex = (min_n_complex
+                              if min_n_complex > 0
+                              else self.n_complex)
+        self.npt   = self.n_point_complex * self.n_complex
+
+        # assure lower_bounds and upper_bounds are numpy arrays
+        if upper_bounds is None:
+            if isinstance(lower_bounds, Bounds):
+                self.lower_bounds = lower_bounds.lb
+                self.upper_bounds = lower_bounds.ub
             else:
-                self.lb = lb
-                self.ub = ub
-            self.lb = np.array(self.lb)
-            self.ub = np.array(self.ub)
+                self.lower_bounds, self.upper_bounds = zip(*lower_bounds)
+        else:
+            self.lower_bounds = lower_bounds
+            self.upper_bounds = upper_bounds
+        self.lower_bounds = np.array(self.lower_bounds)
+        self.upper_bounds = np.array(self.upper_bounds)
 
-            # same bounds for all parameters
-            try:
-                if len(self.lb) == 1:
-                    self.lb = np.full(self.nn, self.lb[0])
-            except TypeError:  # could be size 0 array if lb was a scalar
-                self.lb = np.full(self.nn, self.lb)
-            try:
-                if len(self.ub) == 1:
-                    self.ub = np.full(self.nn, self.ub[0])
-            except TypeError:
-                self.ub = np.full(self.nn, self.ub)
-            bound = self.ub - self.lb
-            # degenerated bounds
-            if np.any(bound == 0.):
-                ii = np.where(bound == 0.)[0]
-                self.mask[ii] = False
-            if np.any(bound < 0.):
-                ii = np.where(bound < 0.)[0]
-                warnings.warn(
-                    f'shuffled_complex_evolution: found lower bound lb >'
-                    f' upper bound ub for parameter(s) {ii} with'
-                    f' lb={self.lb[ii]} and ub={self.ub[ii]} => masking'
-                    f' the parameter(s).',
-                    UserWarning, stacklevel=2)
-                self.mask[ii] = False
-                self.ub[ii] = self.lb[ii]
+        # same bounds for all parameters
+        try:
+            if len(self.lower_bounds) == 1:
+                self.lower_bounds = np.full(self.nn, self.lower_bounds[0])
+        except TypeError:  # could be size 0 array if lower_bounds was a scalar
+            self.lower_bounds = np.full(self.nn, self.lower_bounds)
+        try:
+            if len(self.upper_bounds) == 1:
+                self.upper_bounds = np.full(self.nn, self.upper_bounds[0])
+        except TypeError:
+            self.upper_bounds = np.full(self.nn, self.upper_bounds)
+        bound = self.upper_bounds - self.lower_bounds
+        # degenerated bounds
+        if np.any(bound == 0.):
+            ii = np.where(bound == 0.)[0]
+            self.mask[ii] = False
+        if np.any(bound < 0.):
+            ii = np.where(bound < 0.)[0]
+            warnings.warn(
+                f'shuffled_complex_evolution: found lower_bounds >'
+                f' upper_bounds for parameter(s) {ii} with'
+                f' lower_bounds={self.lower_bounds[ii]} and '
+                f' upper_bounds={self.upper_bounds[ii]} => masking'
+                f' the parameter(s).',
+                UserWarning, stacklevel=2)
+            self.mask[ii] = False
+            self.upper_bounds[ii] = self.lower_bounds[ii]
 
-            # set 'large' for function runs that return NaN
-            self.large = 0.5 * np.finfo(float).max
+        # set 'large' for function runs that return NaN
+        self.large = 0.5 * np.finfo(float).max
 
-            # create an initial population to fill array x(npt, nparams)
+        # create an initial population to fill array x(npt, nparams)
+        self.x = self.sample_input_matrix(self.npt)
+        for i in range(self.npt):
+            self.x[i, :] = np.where(self.mask, self.x[i, :], x0)
+        if x0_in_pop:
+            self.x[0, :] = x0
+
+        self.icall = 0
+        self.xf = np.zeros(self.npt)
+        for i in range(self.npt):
+            self.xf[i] = self.call_func(self.x[i, :])
+            self.icall += 1
+            if self.printit == 1:
+                print('  i, f, X: ', self.icall, self.xf[i], self.x[i, :])
+
+        # redo an initial population if all runs failed
+        if not np.any(np.isfinite(self.xf)):
+            if self.printit < 2:
+                print('Redo initial population because all failed')
             self.x = self.sample_input_matrix(self.npt)
             for i in range(self.npt):
                 self.x[i, :] = np.where(self.mask, self.x[i, :], x0)
-            if iniflg == 1:
-                self.x[0, :] = x0
-
-            self.icall = 0
-            self.xf = np.zeros(self.npt)
             for i in range(self.npt):
                 self.xf[i] = self.call_func(self.x[i, :])
                 self.icall += 1
                 if self.printit == 1:
-                    print('  i, f, X: ', self.icall, self.xf[i], self.x[i, :])
+                    print('  i, f, X: ', self.icall, self.xf[i],
+                          self.x[i, :])
+        if not np.any(np.isfinite(self.xf)):
+            raise ValueError(
+                'Did not succeed to produce initial population:'
+                ' all function evaluations failed. Give an initial'
+                ' value x0 that works and set x0_in_pop=True (default).')
 
-            # redo an initial population if all runs failed
-            if not np.any(np.isfinite(self.xf)):
-                if self.printit < 2:
-                    print('Redo initial population because all failed')
-                self.x = self.sample_input_matrix(self.npt)
-                for i in range(self.npt):
-                    self.x[i, :] = np.where(self.mask, self.x[i, :], x0)
-                for i in range(self.npt):
-                    self.xf[i] = self.call_func(self.x[i, :])
-                    self.icall += 1
-                    if self.printit == 1:
-                        print('  i, f, X: ', self.icall, self.xf[i],
-                              self.x[i, :])
-            if not np.any(np.isfinite(self.xf)):
-                raise ValueError(
-                    'Did not succeed to produce initial population:'
-                    ' all function evaluations failed. Give an initial'
-                    ' value x0 that works and set iniflg=True (default).')
+        # remember large for treating of NaNs
+        self.large = self.xf[np.isfinite(self.xf)].max()
+        self.large = (1.1 * self.large if self.large > 0. else
+                      0.9 * self.large)
 
-            # remember large for treating of NaNs
-            self.large = self.xf[np.isfinite(self.xf)].max()
-            self.large = (1.1 * self.large if self.large > 0. else
-                          0.9 * self.large)
+        # sort the population in order of increasing function values
+        # and report best point
+        self.xf = np.where(np.isfinite(self.xf), self.xf, self.large)
+        idx = np.argsort(self.xf)
+        self.xf = self.xf[idx]
+        self.x  = self.x[idx, :]
+        self.bestx  = self.x[0, :]
+        self.bestf  = self.xf[0]
 
-            # sort the population in order of increasing function values
-            # and report best point
-            self.xf = np.where(np.isfinite(self.xf), self.xf, self.large)
-            idx = np.argsort(self.xf)
-            self.xf = self.xf[idx]
-            self.x  = self.x[idx, :]
-            self.bestx  = self.x[0, :]
-            self.bestf  = self.xf[0]
+        # compute the normalized geometric range of the parameters
+        self.gnrng = self.calc_gnrng()
 
-            # compute the normalized geometric range of the parameters
-            self.gnrng = self.calc_gnrng()
-
-            # initialise evolution loops
-            self.nloop = 0
-            self.criter = []
-            self.criter_change = 1e+5
-
-            # save restart
-            self.write_restartfiles()
-
-        else:  # if not restart
-            self.nn = len(x0)
-            self.read_restartfiles()
+        # initialise evolution loops
+        self.nloop = 0
+        self.criter = []
+        self.criter_change = 1e+5
 
     def __enter__(self):
         return self
@@ -655,30 +552,31 @@ class ShuffledComplexEvolutionSolver:
 
     def __next__(self):
         # loop on complexes (sub-populations)
-        for igs in range(self.ngs):
-            k1 = np.array(range(self.npg))
-            k2 = k1 * self.ngs + igs
+        for igs in range(self.n_complex):
+            k1 = np.array(range(self.n_point_complex))
+            k2 = k1 * self.n_complex + igs
 
             # partition the population into complexes (sub-populations)
-            cx = np.zeros((self.npg, self.nn))
-            cf = np.zeros((self.npg))
-            k1 = np.array(range(self.npg))
-            k2 = k1 * self.ngs + igs
+            cx = np.zeros((self.n_point_complex, self.nn))
+            cf = np.zeros((self.n_point_complex))
+            k1 = np.array(range(self.n_point_complex))
+            k2 = k1 * self.n_complex + igs
             cx[k1, :] = self.x[k2, :]
             cf[k1]    = self.xf[k2]
 
-            # evolve sub-population igs for nspl steps:
-            for loop in range(self.nspl):
+            # evolve sub-population igs for n_eval_complex_per_shuffle steps:
+            for loop in range(self.n_eval_complex_per_shuffle):
                 # select simplex by sampling the complex according to a
                 # linear probability distribution
-                lcs = np.zeros(self.nps, dtype=int)
+                lcs = np.zeros(self.n_point_subcomplex, dtype=int)
                 lcs[0] = 1
-                for k3 in range(1, self.nps):
+                for k3 in range(1, self.n_point_subcomplex):
                     for i in range(1000):
                         lpos = int(np.floor(
-                            self.npg + 0.5 -
-                            np.sqrt((self.npg + 0.5)**2 -
-                                    self.npg * (self.npg + 1) *
+                            self.n_point_complex + 0.5 -
+                            np.sqrt((self.n_point_complex + 0.5)**2 -
+                                    self.n_point_complex *
+                                    (self.n_point_complex + 1) *
                                     self.rnd.random_sample(1)[0]) ))
                         # check if element was already chosen
                         idx = (lcs[0:k3] == lpos).nonzero()
@@ -688,7 +586,7 @@ class ShuffledComplexEvolutionSolver:
                 lcs.sort()
 
                 # construct the simplex
-                s  = np.zeros((self.nps, self.nn))
+                s  = np.zeros((self.n_point_subcomplex, self.nn))
                 s  = cx[lcs, :]
                 sf = cf[lcs]
 
@@ -714,8 +612,9 @@ class ShuffledComplexEvolutionSolver:
                 cf  = cf[idx]
                 cx  = cx[idx, :]
                 # end of inner loop for competitive evolution of simplexes:
-                #     for loop in range(self.nspl):
-                # i.e. end of evolve sub-population igs for nspl steps
+                #     for loop in range(self.n_eval_complex_per_shuffle):
+                # i.e. end of evolve sub-population igs for
+                # n_eval_complex_per_shuffle steps
 
             self.x[k2, :] = cx[k1, :]
             self.xf[k2]   = cf[k1]
@@ -727,15 +626,17 @@ class ShuffledComplexEvolutionSolver:
         Computes the percentage change in function output
 
         """
-        if self.nloop >= self.kstop:
+        if self.nloop >= self.n_check:
             criter_change = np.abs(self.criter[self.nloop - 1] -
-                                   self.criter[self.nloop - self.kstop])
+                                   self.criter[self.nloop - self.n_check])
             criter_change = (
                 criter_change /
                 np.maximum( 1e-15, np.mean( np.abs(
-                    self.criter[self.nloop - self.kstop:self.nloop]) ) ) )
+                    self.criter[self.nloop - self.n_check:self.nloop]) ) ) )
         else:
             criter_change = self.criter_change
+        if isinstance(criter_change, np.ndarray):
+            criter_change = criter_change[0]
 
         return criter_change
 
@@ -744,11 +645,13 @@ class ShuffledComplexEvolutionSolver:
         Computes the normalized geometric range of the parameters
 
         """
-        bound = self.ub - self.lb
+        bound = self.upper_bounds - self.lower_bounds
         rrange = (np.ma.array(self.x.max(axis=0) - self.x.min(axis=0),
                               mask=~self.mask) /
                   np.ma.array(bound, mask=~self.mask))
         gnrng = np.ma.exp(np.ma.mean(np.ma.log(rrange)))
+        if isinstance(gnrng, np.ndarray):
+            gnrng = gnrng[0]
 
         return gnrng
 
@@ -758,13 +661,14 @@ class ShuffledComplexEvolutionSolver:
 
         """
         fuc = self.func(x)
+        print(x, fuc)
         if isinstance(fuc, np.ndarray):
             if fuc.size > 1:
                 raise RuntimeError(
                     'func(x, *args, **kwargs) must return a'
                     ' scalar value.')
             fuc = fuc[0]
-        fuc = -fuc if self.maxit else fuc
+        fuc = -fuc if self.maximize else fuc
         return fuc
 
     def cce(self, s, sf):
@@ -801,9 +705,11 @@ class ShuffledComplexEvolutionSolver:
 
         # check if new point is outside bounds
         ibound = 0
-        if np.ma.any(np.ma.array(snew - self.lb, mask=~self.mask) < 0.):
+        if np.ma.any(np.ma.array(snew - self.lower_bounds, mask=~self.mask)
+                     < 0.):
             ibound = 1
-        if np.ma.any(np.ma.array(self.ub - snew, mask=~self.mask) < 0.):
+        if np.ma.any(np.ma.array(self.upper_bounds - snew, mask=~self.mask)
+                     < 0.):
             ibound = 2
         if ibound >= 1:
             snew = self.sample_input_matrix(1)[0, :]
@@ -842,106 +748,47 @@ class ShuffledComplexEvolutionSolver:
         Check for maximum number of function calls reached
 
         """
-        if self.icall < self.maxn:
+        if self.icall < self.maxfev:
             return True
         else:
             if self.printit < 2:
                 print(f'Optimisation terminated because trial number'
-                      f' {self.maxn} reached maximum number of trials'
+                      f' {self.maxfev} reached maximum number of trials'
                       f' {self.icall}.')
             return False
 
     def check_criter_change(self):
         """
-        Check if percentage change in function output is below pcento
+        Check if percentage change in function output is below f_tol
 
         """
-        if self.criter_change < self.pcento:
+        if self.criter_change < self.f_tol:
             if self.printit < 2:
-                print(f'The best point has improved by less then {self.pcento}'
-                      f' in the last {self.kstop} loops.')
+                print(f'The best point has improved by less then {self.f_tol}'
+                      f' in the last {self.n_check} loops.')
             return True
         else:
             return False
 
     def check_geometric_range(self):
         """
-        Check if normalized geometric range of the parameters is below peps
+        Check if normalized geometric range of the parameters is below p_tol
 
         """
         self.gnrng = self.calc_gnrng()
-        if self.gnrng < self.peps:
+        if self.gnrng < self.p_tol:
             if self.printit < 2:
                 print(f'The population has converged to a small parameter'
-                      f' space {self.gnrng} (<{self.peps}).')
+                      f' space {self.gnrng} (<{self.p_tol}).')
             return True
         else:
             return False
 
-    def read_restartfiles(self):
-        """
-        Read from restart files
-
-        """
-        with open(self.restartfile1, 'rb') as p1:
-            pp = np.load(p1)
-            self.lb       = pp['lb']
-            self.ub       = pp['ub']
-            self.mask     = pp['mask']
-            self.criter   = pp['criter']
-            self.x        = pp['x']
-            self.xf       = pp['xf']
-            rs2           = pp['rs2']
-
-        with open(self.restartfile2, 'r') as p2:
-            (self.ngs, self.nopt, self.npg, self.nps, self.nspl,
-             self.mings, self.npt, self.nloop, self.icall, rs3, rs4) = [
-                 int(inn) for inn in p2.readline().rstrip().split(',') ]
-            (self.gnrng, self.criter_change, self.bestf, rs5) = [
-                float(inn) for inn in p2.readline().rstrip().split(',') ]
-            self.maxit = bool(_strtobool(p2.readline().rstrip()))
-            rs1 = p2.readline().rstrip()
-
-        self.rnd.set_state((rs1, rs2, rs3, rs4, rs5))
-
-    def write_restartfiles(self):
-        """
-        Write restart files if demanded
-
-        """
-        if self.restartfile1:
-            # compute the normalized geometric range of the parameters
-            self.gnrng = self.calc_gnrng()
-            # compute percentage change in function output
-            self.criter_change = self.calc_criter_change()
-            # get the current state of the random number generator
-            rs1, rs2, rs3, rs4, rs5 = self.rnd.get_state()
-
-            # only arrays into savez_compressed - restartfile1
-            np.savez_compressed(self.restartfile1, lb=self.lb, ub=self.ub,
-                                mask=self.mask,
-                                criter=self.criter, x=self.x, xf=self.xf,
-                                bestx=self.bestx, rs2=rs2)
-
-            # scalars into text file - restartfile2
-            with open(self.restartfile2, 'w') as p:
-                iout = [self.ngs, self.nopt, self.npg, self.nps, self.nspl,
-                        self.mings, self.npt, self.nloop, self.icall,
-                        rs3, rs4]
-                iform = '{:d},' * (len(iout) - 1) + '{:d}'
-                print(iform.format(*iout), file=p)
-                fout = [self.gnrng, self.criter_change, self.bestf, rs5]
-                fform = '{:.15g},' * (len(fout) - 1) + '{:.15g}'
-                print(fform.format(*fout), file=p)
-                print(self.maxit, file=p)
-                print(rs1, file=p)
-
-        return
-
     def sample_input_matrix(self, npt=0):
         """
         Create input parameter matrix (npt, npars) for
-        npt simulations and npars parameters with bounds lb and ub
+        npt simulations and npars parameters with bounds lower_bounds and
+        upper_bounds
 
         Returns
         -------
@@ -950,7 +797,7 @@ class ShuffledComplexEvolutionSolver:
         """
         if npt < 1:
             npt = self.npt
-        npars = len(self.lb)
+        npars = len(self.lower_bounds)
         if isinstance(self.sampling, str):
             isampling = [self.sampling] * npars
         else:
@@ -959,41 +806,42 @@ class ShuffledComplexEvolutionSolver:
             f'sampling must be string or list of strings'
             f' with {npars} entries')
         x = np.zeros((npt, npars))
-        bound = self.ub - self.lb
+        bound = self.upper_bounds - self.lower_bounds
         for i in range(npt):
             irnd = self.rnd.random_sample(npars)
             for j in range(npars):
                 opt = isampling[j].lower()
                 if (opt == 'half-open') or (opt == 'right-half-open'):
-                    x[i, j] = self.lb[j] + irnd[j] * bound[j]
+                    x[i, j] = self.lower_bounds[j] + irnd[j] * bound[j]
                 elif opt == 'left-half-open':
                     irnd[j] = 1. - irnd[j]
-                    x[i, j] = self.lb[j] + irnd[j] * bound[j]
+                    x[i, j] = self.lower_bounds[j] + irnd[j] * bound[j]
                 elif opt == 'open':
                     iirnd = irnd[j]
                     while not (iirnd > 0.):
                         iirnd = self.rnd.random_sample(1)[0]
-                    x[i, j] = self.lb[j] + iirnd * bound[j]
+                    x[i, j] = self.lower_bounds[j] + iirnd * bound[j]
                 elif opt == 'log':
                     # x must be > 0. for ln(x)
                     xshift = 0.
-                    if (self.lb[j] * self.ub[j]) < 0.:
+                    if (self.lower_bounds[j] * self.upper_bounds[j]) < 0.:
                         # lb < 0 and ub > 0 -> shift both > 0
-                        xshift = 2. * np.maximum(np.abs(self.lb[j]),
-                                                 np.abs(self.ub[j]))
-                    elif (self.lb[j] * self.ub[j]) == 0.:
-                        if self.lb[j] == 0.:
+                        xshift = 2. * np.maximum(np.abs(self.lower_bounds[j]),
+                                                 np.abs(self.upper_bounds[j]))
+                    elif (self.lower_bounds[j] * self.upper_bounds[j]) == 0.:
+                        if self.lower_bounds[j] == 0.:
                             # lb == 0 and ub > 0 -> shift to [ub, 2*ub)
-                            xshift = self.ub[j]
-                        if self.ub[j] == 0.:
+                            xshift = self.upper_bounds[j]
+                        if self.upper_bounds[j] == 0.:
                             # lb < 0 and ub == 0 -> shift to [-lb, -2*lb) > 0.
-                            xshift = -2. * self.lb[j]
-                    elif (self.lb[j] < 0.) and (self.ub[j] < 0.):
+                            xshift = -2. * self.lower_bounds[j]
+                    elif ( (self.lower_bounds[j] < 0.) and
+                           (self.upper_bounds[j] < 0.) ):
                         # lb < 0 and ub < 0 -> shift both > 0
-                        xshift = 2. * np.maximum(np.abs(self.lb[j]),
-                                                 np.abs(self.ub[j]))
-                    lnlb = np.log(self.lb[j] + xshift)
-                    lnub = np.log(self.ub[j] + xshift)
+                        xshift = 2. * np.maximum(np.abs(self.lower_bounds[j]),
+                                                 np.abs(self.upper_bounds[j]))
+                    lnlb = np.log(self.lower_bounds[j] + xshift)
+                    lnub = np.log(self.upper_bounds[j] + xshift)
                     x[i, j] = np.exp(lnlb + irnd[j] * (lnub - lnlb)) - xshift
                 else:
                     raise ValueError(f'unknown sampling option'
@@ -1031,32 +879,29 @@ class ShuffledComplexEvolutionSolver:
             self.criter = np.append(self.criter, self.bestf)
             self.criter_change = self.calc_criter_change()
 
-            # save restart
-            self.write_restartfiles()
-
         # finish up
         if self.printit < 2:
             print('Search stopped at trial number {0:d} with normalized'
                   ' geometric range {1:f}. '.format(self.icall, self.gnrng))
             print('The best point has improved by {:f} in the last'
-                  ' {:d} loops.'.format(self.criter_change, self.kstop))
+                  ' {:d} loops.'.format(self.criter_change, self.n_check))
 
         if not self.check_number_calls():
             success = False
             status  = 2
-            message = f'Reached maximum number of trials {self.maxn}'
+            message = f'Reached maximum number of trials {self.maxfev}'
         if self.check_criter_change():
             success = True
             status  = 1
-            message = (f'Best point improved less than {self.pcento}'
-                       f' in last {self.kstop} loops')
+            message = (f'Best point improved less than {self.f_tol}'
+                       f' in last {self.n_check} loops')
         if self.check_geometric_range():
             success = True
             status  = 0
             message = (f'Normalized geometric range of parameters'
-                       f' {self.gnrng} < {self.peps}')
+                       f' {self.gnrng} < {self.p_tol}')
 
-        if self.maxit:
+        if self.maximize:
             self.bestf *= -1.
 
         sce_result = OptimizeResult(
@@ -1069,12 +914,12 @@ class ShuffledComplexEvolutionSolver:
             nit=self.nloop)
 
         # polish results, only works if no mask
-        if self.polish and (len(self.lb) == self.nopt):
+        if self.polish and (len(self.lower_bounds) == self.nopt):
             polish_method = 'L-BFGS-B'
             result = minimize(self.func,
                               np.copy(sce_result.x),
                               method=polish_method,
-                              bounds=zip(self.lb, self.ub))
+                              bounds=zip(self.lower_bounds, self.upper_bounds))
 
             self.icall += result.nfev
             sce_result.nfev = self.icall
@@ -1084,8 +929,8 @@ class ShuffledComplexEvolutionSolver:
             # lies within the bounds.
             if ( (result.fun < sce_result.fun) and
                  result.success and
-                 np.all(result.x <= self.ub) and
-                 np.all(self.lb <= result.x) ):
+                 np.all(result.x <= self.upper_bounds) and
+                 np.all(self.lower_bounds <= result.x) ):
                 sce_result.fun = result.fun
                 sce_result.x = result.x
                 sce_result.jac = result.jac

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
 Unit tests for the shuffled complex evolution global minimization algorithm.
+
 """
 import unittest
-import os
 import numpy as np
 from scipy.optimize._constraints import Bounds
 from scipy.optimize import rosen
@@ -72,8 +72,8 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
 
     def setUp(self):
         self.x0 = [0.5, 0.1]
-        self.lb = [0., 0.]
-        self.ub = np.array([2., 2.])
+        self.lower_bounds = [0., 0.]
+        self.upper_bounds = np.array([2., 2.])
         self.rosenx = [1., 1.]
 
     def negative_rosen(self, x):
@@ -82,209 +82,189 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
     def test_defaults(self):
         # test that defaults are set correctly
         solver = ShuffledComplexEvolutionSolver(
-            rosen, self.x0, self.lb, self.ub)
+            rosen, self.x0, self.lower_bounds, self.upper_bounds)
         assert_equal(solver.sampling, 'half-open')
-        assert_equal(solver.maxn, 1000)
-        assert_equal(solver.kstop, 10)
-        assert_equal(solver.pcento, 0.0001)
-        assert_equal(solver.ngs, 2)
-        assert_equal(solver.npg, 2 * len(self.lb) + 1)
-        assert_equal(solver.nps, len(self.lb) + 1)
-        assert_equal(solver.nspl, 2 * len(self.lb) + 1)
-        assert_equal(solver.mings, 2)
-        assert_equal(solver.peps, 0.001)
+        assert_equal(solver.maxfev, 1000)
+        assert_equal(solver.n_check, 10)
+        assert_equal(solver.f_tol, 0.0001)
+        assert_equal(solver.n_complex, 2)
+        assert_equal(solver.n_point_complex, 2 * len(self.lower_bounds) + 1)
+        assert_equal(solver.n_point_subcomplex, len(self.lower_bounds) + 1)
+        assert_equal(solver.n_eval_complex_per_shuffle,
+                     2 * len(self.lower_bounds) + 1)
+        assert_equal(solver.min_n_complex, 2)
+        assert_equal(solver.p_tol, 0.001)
         assert_equal(solver.alpha, 0.8)
         assert_equal(solver.beta, 0.45)
-        assert_equal(solver.maxit, False)
+        assert_equal(solver.maximize, False)
         assert_equal(solver.printit, 2)
+        assert_equal(solver.polish, False)
+
+        solver = ShuffledComplexEvolutionSolver(
+            rosen, self.x0, self.lower_bounds, self.upper_bounds,
+            sampling='left-half-open',
+            maxfev=100, n_check=1, f_tol=0.001,
+            n_complex=20, n_point_complex=10, n_point_subcomplex=20,
+            n_eval_complex_per_shuffle=10, min_n_complex=20,
+            p_tol=0.01,
+            alpha=0.9, beta=0.55, maximize=True, printit=1,
+            polish=False)
+        assert_equal(solver.sampling, 'left-half-open')
+        assert_equal(solver.maxfev, 100)
+        assert_equal(solver.n_check, 1)
+        assert_equal(solver.f_tol, 0.001)
+        assert_equal(solver.n_complex, 20)
+        assert_equal(solver.n_point_complex, 10)
+        assert_equal(solver.n_point_subcomplex, 20)
+        assert_equal(solver.n_eval_complex_per_shuffle, 10)
+        assert_equal(solver.min_n_complex, 20)
+        assert_equal(solver.p_tol, 0.01)
+        assert_equal(solver.alpha, 0.9)
+        assert_equal(solver.beta, 0.55)
+        assert_equal(solver.maximize, True)
+        assert_equal(solver.printit, 1)
+        assert_equal(solver.polish, False)
+
+        solver = ShuffledComplexEvolutionSolver(
+            rosen, self.x0, self.lower_bounds, self.upper_bounds,
+            sampling='left-half-open',
+            maxfev=100, n_check=1, f_tol=0.001,
+            n_complex=20, n_point_complex=10, n_point_subcomplex=20,
+            n_eval_complex_per_shuffle=10, min_n_complex=20,
+            p_tol=0.01,
+            alpha=0.9, beta=0.55, maximize=True, printit=1,
+            polish=True)
+        assert_equal(solver.sampling, 'left-half-open')
+        assert_equal(solver.maxfev, 100)
+        assert_equal(solver.n_check, 1)
+        assert_equal(solver.f_tol, 0.001)
+        assert_equal(solver.n_complex, 20)
+        assert_equal(solver.n_point_complex, 10)
+        assert_equal(solver.n_point_subcomplex, 20)
+        assert_equal(solver.n_eval_complex_per_shuffle, 10)
+        assert_equal(solver.min_n_complex, 20)
+        assert_equal(solver.p_tol, 0.01)
+        assert_equal(solver.alpha, 0.9)
+        assert_equal(solver.beta, 0.55)
+        assert_equal(solver.maximize, True)
+        assert_equal(solver.printit, 1)
         assert_equal(solver.polish, True)
-        assert_equal(solver.restartfile1, '')
-        assert_equal(solver.restartfile2, '')
-
-        solver = ShuffledComplexEvolutionSolver(
-            rosen, self.x0, self.lb, self.ub,
-            sampling='left-half-open',
-            maxn=100, kstop=1, pcento=0.001,
-            ngs=20, npg=10, nps=20, nspl=10, mings=20,
-            peps=0.01,
-            alpha=0.9, beta=0.55, maxit=True, printit=1,
-            polish=False,
-            restart=False, restartfile1='sce.restart.npz',
-            restartfile2='sce.restart.txt')
-        assert_equal(solver.sampling, 'left-half-open')
-        assert_equal(solver.maxn, 100)
-        assert_equal(solver.kstop, 1)
-        assert_equal(solver.pcento, 0.001)
-        assert_equal(solver.ngs, 20)
-        assert_equal(solver.npg, 10)
-        assert_equal(solver.nps, 20)
-        assert_equal(solver.nspl, 10)
-        assert_equal(solver.mings, 20)
-        assert_equal(solver.peps, 0.01)
-        assert_equal(solver.alpha, 0.9)
-        assert_equal(solver.beta, 0.55)
-        assert_equal(solver.maxit, True)
-        assert_equal(solver.printit, 1)
-        assert_equal(solver.polish, False)
-        assert_equal(solver.restartfile1, 'sce.restart.npz')
-        assert_equal(solver.restartfile2, 'sce.restart.txt')
-
-        solver = ShuffledComplexEvolutionSolver(
-            rosen, self.x0, self.lb, self.ub,
-            sampling='left-half-open',
-            maxn=100, kstop=1, pcento=0.001,
-            ngs=20, npg=10, nps=20, nspl=10, mings=20,
-            peps=0.01,
-            alpha=0.9, beta=0.55, maxit=True, printit=1,
-            polish=False,
-            restart=True, restartfile1='sce.restart.npz',
-            restartfile2='sce.restart.txt')
-        assert_equal(solver.sampling, 'left-half-open')
-        assert_equal(solver.maxn, 100)
-        assert_equal(solver.kstop, 1)
-        assert_equal(solver.pcento, 0.001)
-        assert_equal(solver.ngs, 20)
-        assert_equal(solver.npg, 10)
-        assert_equal(solver.nps, 20)
-        assert_equal(solver.nspl, 10)
-        assert_equal(solver.mings, 20)
-        assert_equal(solver.peps, 0.01)
-        assert_equal(solver.alpha, 0.9)
-        assert_equal(solver.beta, 0.55)
-        assert_equal(solver.maxit, True)
-        assert_equal(solver.printit, 1)
-        assert_equal(solver.polish, False)
-        assert_equal(solver.restartfile1, 'sce.restart.npz')
-        assert_equal(solver.restartfile2, 'sce.restart.txt')
-
-        toremove = [solver.restartfile1, solver.restartfile2]
-        for ff in toremove:
-            if os.path.exists(ff):
-                os.remove(ff)
 
     def test_ShuffledComplexEvolutionSolver(self):
         solver = ShuffledComplexEvolutionSolver(
-            rosen, self.x0, self.lb, self.ub, maxn=100,
+            rosen, self.x0, self.lower_bounds, self.upper_bounds, maxfev=100,
             polish=False)
         result = solver.solve()
         assert_equal(result.fun, rosen(result.x))
 
         solver = ShuffledComplexEvolutionSolver(
-            rosen, self.x0, self.lb, self.ub, maxn=100,
+            rosen, self.x0, self.lower_bounds, self.upper_bounds, maxfev=100,
             polish=True)
         result = solver.solve()
         assert_equal(result.fun, rosen(result.x))
 
     def test_shuffled_complex_evolution(self):
         # standard
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds)
         assert_equal(result.fun, rosen(result.x))
 
         # bounds
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds)
         assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0,
-                                            list(zip(self.lb, self.ub)))
+                                            list(zip(self.lower_bounds,
+                                                     self.upper_bounds)))
         assert_allclose(result.x, self.rosenx, atol=1e-3)
         result = shuffled_complex_evolution(rosen, self.x0,
-                                            Bounds(self.lb, self.ub))
+                                            Bounds(self.lower_bounds,
+                                                   self.upper_bounds))
         assert_allclose(result.x, self.rosenx, atol=1e-3)
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb[0],
-                                            self.ub[0])
+        result = shuffled_complex_evolution(rosen, self.x0,
+                                            self.lower_bounds[0],
+                                            self.upper_bounds[0])
         assert_allclose(result.x, self.rosenx, atol=1e-3)
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb[0:1],
-                                            self.ub[0:1])
+        result = shuffled_complex_evolution(rosen, self.x0,
+                                            self.lower_bounds[0:1],
+                                            self.upper_bounds[0:1])
         assert_allclose(result.x, self.rosenx, atol=1e-3)
         # degenerated bounds
         x0 = [0.999, 0.5, 0.1]
-        lb = [2., 0., 0.]
-        ub = [2., 2., 2.]
+        lower_bounds = [2., 0., 0.]
+        upper_bounds = [2., 2., 2.]
         rosenx = [x0[0], 1., 1.]
-        result = shuffled_complex_evolution(rosen, x0, lb, ub)
-        assert_almost_equal(result.x, rosenx, decimal=2)
+        result = shuffled_complex_evolution(rosen, x0, lower_bounds,
+                                            upper_bounds)
         assert_allclose(result.x, rosenx, atol=1e-2)
         x0 = [0.999, 0.5, 0.1]
-        lb = [3., 0., 0.]
-        ub = [2., 2., 2.]
+        lower_bounds = [3., 0., 0.]
+        upper_bounds = [2., 2., 2.]
         rosenx = [x0[0], 1., 1.]
         with warns(UserWarning):
-            result = shuffled_complex_evolution(rosen, x0, lb, ub)
+            result = shuffled_complex_evolution(rosen, x0, lower_bounds,
+                                                upper_bounds)
         assert_allclose(result.x, rosenx, atol=1e-2)
 
         # seed
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub,
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds,
                                             polish=False, seed=1)
-        result2 = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                             self.ub, polish=False, seed=1)
+        result2 = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                             self.upper_bounds, seed=1)
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
-
-        # restart
-        restartfile1 = 'sce.restart.npz'
-        restartfile2 = restartfile1 + '.txt'
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, polish=False, seed=1)
-        _ = shuffled_complex_evolution(rosen, self.x0, self.lb, self.ub,
-                                       polish=False, seed=1,
-                                       restart=False,
-                                       restartfile1=restartfile1, maxn=10)
-        result2 = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                             self.ub, polish=False, seed=1,
-                                             restart=True)
-        assert_equal(result.x, result2.x)
-        assert_equal(result.nfev, result2.nfev)
-
-        toremove = [restartfile1, restartfile2]
-        for ff in toremove:
-            if os.path.exists(ff):
-                os.remove(ff)
 
         # printit
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, printit=0)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds, printit=0)
         assert_equal(result.fun, rosen(result.x))
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, printit=1)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds, printit=1)
         assert_equal(result.fun, rosen(result.x))
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, printit=2)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds, printit=2)
         assert_equal(result.fun, rosen(result.x))
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, printit=1, maxn=10)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds, printit=1,
+                                            maxfev=10)
         assert_equal(result.fun, rosen(result.x))
-        result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                            self.ub, printit=2, maxn=10)
+        result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
+                                            self.upper_bounds, printit=2,
+                                            maxfev=10)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(
             rosen, [0.5] * 5, [0.] * 5, [2.] * 5, printit=1,
-            pcento=10)
+            f_tol=10)
         print(result.message)
         assert_equal(result.fun, rosen(result.x))
 
         # sampling
         result = shuffled_complex_evolution(
-            rosen, self.x0, self.lb, self.ub,
-            sampling=['half-open'] * len(self.lb))
+            rosen, self.x0, self.lower_bounds, self.upper_bounds,
+            sampling=['half-open'] * len(self.lower_bounds))
         assert_allclose(result.x, self.rosenx, atol=1e-3)
         smpls = ['half-open', 'right-half-open', 'left-half-open', 'open',
                  'log']
         for sm in smpls:
-            result = shuffled_complex_evolution(rosen, self.x0, self.lb,
-                                                self.ub, sampling=sm)
+            result = shuffled_complex_evolution(rosen, self.x0,
+                                                self.lower_bounds,
+                                                self.upper_bounds, sampling=sm)
             assert_allclose(result.x, self.rosenx, atol=1e-3)
-        lb = [-1, -1.]
-        result = shuffled_complex_evolution(rosen, self.x0, lb, self.ub,
-                                            sampling='log')
+        lower_bounds = [-1, -1.]
+        result = shuffled_complex_evolution(rosen, self.x0, lower_bounds,
+                                            self.upper_bounds, sampling='log')
         assert_allclose(result.x, self.rosenx, atol=1e-3)
-        lb = [0., 0.]
-        result = shuffled_complex_evolution(rosen, self.x0, lb, self.ub,
-                                            sampling='log')
+        lower_bounds = [0., 0.]
+        result = shuffled_complex_evolution(rosen, self.x0, lower_bounds,
+                                            self.upper_bounds, sampling='log')
         assert_allclose(result.x, self.rosenx, atol=1e-3)
 
-        # maxit
+        # maximize
         result = shuffled_complex_evolution(self.negative_rosen, self.x0,
-                                            self.lb, self.ub, maxn=100,
-                                            polish=True, maxit=True)
+                                            self.lower_bounds,
+                                            self.upper_bounds, maxfev=100,
+                                            polish=True, maximize=True)
         assert_equal(result.fun, self.negative_rosen(result.x))
 
     def test_errors(self):
@@ -300,19 +280,28 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         # test correct bool string
         with assert_raises(ValueError, match='invalid truth value'):
             _strtobool('Ja')
-        # # test no initial population found
-        # func = deb03
-        # x0 = [-0.5, -0.5]
-        # bounds = [(-1, 0), (-1, 0.)]  # should be (0, 1) to work
+        # test no initial population found
+        func = deb03
+        x0 = [-0.5, -0.5]
+        bounds = [(-1, 0), (-1, 0.)]  # should be (0, 1) to work
+        # deb03 with values < 0 gives NaN.
+        # Hence SCE raises ValueError if standard numpy error settings
+        # because SCE cannot produce initial population.
+        # It raises RuntimeWarning if np.seterr('invalid'='raise')
+        # because of the NaN.
         # with assert_raises(ValueError,
         #                    match='Did not succeed to produce initial'):
-        #     shuffled_complex_evolution(func, x0, bounds, printit=1)
+        print('Numpy errors', np.geterr())
+        with assert_raises(RuntimeWarning,
+                           match='invalid value encountered'):
+            shuffled_complex_evolution(func, x0, bounds, printit=1)
 
     def test_shuffled_complex_evolution_args(self):
         # args
         a = 0.5
         result = shuffled_complex_evolution(rosenbrock_args, self.x0,
-                                            self.lb, self.ub,
+                                            self.lower_bounds,
+                                            self.upper_bounds,
                                             args=(a,))
         assert_equal(result.fun, rosenbrock_args(result.x, a))
         assert_allclose(result.x, (a, a**2), atol=1e-3)
@@ -320,7 +309,8 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         a = 0.5
         b = 200
         result = shuffled_complex_evolution(rosenbrock_args, self.x0,
-                                            self.lb, self.ub,
+                                            self.lower_bounds,
+                                            self.upper_bounds,
                                             args=(a,), kwargs={'b': b})
         assert_equal(result.fun, rosenbrock_args(result.x, a, b=b))
         assert_allclose(result.x, (a, a**2), atol=1e-3)
@@ -328,7 +318,8 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         a = 0.5
         b = 200
         result = shuffled_complex_evolution(rosenbrock_kwargs, self.x0,
-                                            self.lb, self.ub,
+                                            self.lower_bounds,
+                                            self.upper_bounds,
                                             kwargs={'a': a, 'b': b})
         assert_equal(result.fun, rosenbrock_kwargs(result.x, a=a, b=b))
         assert_allclose(result.x, (a, a**2), atol=1e-3)
