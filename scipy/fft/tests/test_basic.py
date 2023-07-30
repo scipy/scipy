@@ -511,3 +511,16 @@ class TestNamespaces:
         y = fft.hfft(x_herm)
         _assert_matching_namespace(y, x_herm)
         _assert_matching_namespace(fft.ihfft(y), y)
+
+
+@array_api_compatible
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
+                                  fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
+def test_non_standard_params(func, xp):
+    if xp.__name__ not in 'numpy':
+        x = xp.asarray([1, 2, 3])
+        # func(x) shouldn't raise an exception.
+        func(x)
+        assert_raises(ValueError, func, x, overwrite_x=True)
+        assert_raises(ValueError, func, x, workers=2)
+        # TODO test `plan` param.
