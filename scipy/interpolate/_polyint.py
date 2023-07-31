@@ -616,7 +616,6 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> labels = ['Interpolation nodes', 'True function $f$', 'Barycentric interpolation']
     >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
-    >>> plt.tight_layout()
     >>> plt.show()
     """
 
