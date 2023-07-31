@@ -6249,6 +6249,21 @@ class lognorm_gen(rv_continuous):
 
     %(example)s
 
+    The logarithm of a log-normally distributed random variable is
+    normally distributed:
+
+    >>> from scipy import stats
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> mu, sigma = 2, 0.5
+    >>> X = stats.norm(loc=mu, scale=sigma)
+    >>> Y = stats.lognorm(s=sigma, scale=np.exp(mu))
+    >>> x = np.linspace(*X.interval(0.999))
+    >>> y = Y.rvs(size=10000)
+    >>> ax.plot(x, X.pdf(x), label='X (pdf)')
+    >>> ax.hist(np.log(y), density=True, bins=x, label='log(Y) (histogram)')
+    >>> ax.legend()
+    >>> plt.show()
+
     """
     _support_mask = rv_continuous._open_support_mask
 
