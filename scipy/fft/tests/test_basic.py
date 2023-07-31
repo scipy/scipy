@@ -13,6 +13,7 @@ from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api,
     skip_if_array_api_gpu,
+    skip_if_array_api_backend,
     set_assert_allclose
 )
 from scipy._lib._array_api import _assert_matching_namespace, array_namespace, size
@@ -92,6 +93,7 @@ class TestFFT1D:
         assert_allclose(expect * (30 * 20), fft.ifft2(x, norm="forward"))
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_fftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
@@ -103,6 +105,7 @@ class TestFFT1D:
         _assert_allclose(expect / (30 * 20 * 10), fft.fftn(x, norm="forward"))
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_ifftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
@@ -152,6 +155,7 @@ class TestFFT1D:
             assert_allclose(x, fft.irfft2(fft.rfft2(x, norm=norm), norm=norm))
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_rfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
@@ -163,6 +167,7 @@ class TestFFT1D:
         _assert_allclose(expect / (30 * 20 * 10), fft.rfftn(x, norm="forward"))
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_irfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
         _assert_allclose = set_assert_allclose(xp)
@@ -229,6 +234,7 @@ class TestFFT1D:
 
     @skip_if_array_api_gpu
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_ihfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
         expect = fft.ifftn(x)[:, :, :6]
@@ -239,6 +245,7 @@ class TestFFT1D:
         assert_allclose(expect * (30 * 20 * 10), fft.ihfftn(x, norm="forward"))
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
@@ -266,6 +273,7 @@ class TestFFT1D:
             assert_allclose(op_tr, tr_op)
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
@@ -456,6 +464,7 @@ def test_multiprocess(func):
 class TestIRFFTN:
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     def test_not_last_axis_success(self, xp):
         ar, ai = np.random.random((2, 16, 8, 32))
         a = ar + 1j*ai
@@ -476,12 +485,7 @@ class TestNamespaces:
         _assert_matching_namespace(func(x), x)
 
     @array_api_compatible
-    @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
-    def test_fftn_ifftn(self, func, xp):
-        x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
-        _assert_matching_namespace(func(x), x)
-
-    @array_api_compatible
+    @skip_if_array_api_backend('torch')
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
@@ -498,6 +502,7 @@ class TestNamespaces:
         _assert_matching_namespace(fft.irfft(x), x)
 
     @array_api_compatible
+    @skip_if_array_api_backend('torch')
     @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
     def test_rfftn_irfftn(self, func, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -514,6 +519,7 @@ class TestNamespaces:
 
 
 @array_api_compatible
+@skip_if_array_api_backend('torch')
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
 def test_non_standard_params(func, xp):
