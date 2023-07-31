@@ -5342,8 +5342,6 @@ class jf_skew_t_gen(rv_continuous):
 
     Notes
     -----
-    For real parameters :math:`a>0` and :math:`b>0`, the probability density
-    function for `jf_skew_t` is:
     The probability density function for `jf_skew_t` is:
 
     .. math::
@@ -5381,7 +5379,7 @@ class jf_skew_t_gen(rv_continuous):
         return d1 * d2 / c
 
     def _rvs(self, a, b, size=None, random_state=None):
-        d1 = beta.rvs(a, b, size=size, random_state=random_state)
+        d1 = random_state.beta(a, b, size)
         d2 = (2 * d1 - 1) * np.sqrt(a + b)
         d3 = 2 * np.sqrt(d1 * (1 - d1))
         return d2 / d3
