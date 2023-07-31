@@ -506,13 +506,13 @@ def _lightweight_memoizer(f):
     # of parameters and corresponding function value, and only attempt to use
     # them twice (the number of times the function is evaluated at x0).
     def _memoized_func(params):
-        if _memoized_func.last_val is None:
+        if _memoized_func.skip_lookup:
             return f(params)
 
         if np.all(_memoized_func.last_params == params):
             return _memoized_func.last_val
         elif _memoized_func.last_params is not None:
-            _memoized_func.last_val = None
+            _memoized_func.skip_lookup = True
 
         val = f(params)
 
@@ -523,7 +523,8 @@ def _lightweight_memoizer(f):
         return val
 
     _memoized_func.last_params = None
-    _memoized_func.last_val = np.nan
+    _memoized_func.last_val = None
+    _memoized_func.skip_lookup = False
     return _memoized_func
 
 
