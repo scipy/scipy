@@ -17,7 +17,8 @@ from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
-# deprecated import to be removed in SciPy 1.13.0
+# even though this is a stdlib module, it got accidentally exposed in __all__ in the past.
+# it os now deprecated and scheduled to be removed in SciPy 1.13.0
 import itertools  # noqa
 
 
