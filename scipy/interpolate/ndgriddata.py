@@ -21,5 +21,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="ndgriddata",
-                                   private_module="_ndgriddata", all=__all__,
+                                   private_modules="_ndgriddata", all=__all__,
                                    attribute=name)

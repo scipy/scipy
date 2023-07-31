@@ -10,6 +10,8 @@ __all__ = [  # noqa: F822
     'BSpline',
     'NdPPoly',
     'PPoly',
+    'RectBivariateSpline',
+    'RegularGridInterpolator',
     'array',
     'asarray',
     'atleast_1d',
@@ -18,6 +20,7 @@ __all__ = [  # noqa: F822
     'dfitpack',
     'interp1d',
     'interp2d',
+    'interpn',
     'intp',
     'itertools',
     'lagrange',
@@ -37,5 +40,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="interpolate",
-                                   private_module="_interpolate", all=__all__,
-                                   attribute=name)
+                                   private_modules=["_interpolate", "fitpack2", "_rgi"],
+                                   all=__all__, attribute=name)

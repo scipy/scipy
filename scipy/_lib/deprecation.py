@@ -11,7 +11,7 @@ __all__ = ["_deprecated"]
 # be used over 'None' as the user could parse 'None' as a positional argument
 _NoValue = object()
 
-def _sub_module_deprecation(*, sub_package, module, private_module, all,
+def _sub_module_deprecation(*, sub_package, module, private_modules, all,
                             attribute, correct_module=None):
     """Helper function for deprecating modules that are public but were
     intended to be private.
@@ -22,8 +22,8 @@ def _sub_module_deprecation(*, sub_package, module, private_module, all,
         Subpackage the module belongs to eg. stats
     module : str
         Public but intended private module to deprecate
-    private_module : str
-        Private replacement for `module`
+    private_modules : str or list
+        Private replacement(s) for `module`
     all : list
         ``__all__`` belonging to `module`
     attribute : str
@@ -32,6 +32,9 @@ def _sub_module_deprecation(*, sub_package, module, private_module, all,
         Module in `sub_package` that `attribute` should be imported from.
         Default is that `attribute` should be imported from ``scipy.sub_package``.
     """
+    if not isinstance(private_modules, list):
+        private_modules = [private_modules]
+    
     if correct_module is not None:
         correct_import = f"scipy.{sub_package}.{correct_module}"
     else:
@@ -57,7 +60,15 @@ def _sub_module_deprecation(*, sub_package, module, private_module, all,
 
     warnings.warn(message, category=DeprecationWarning, stacklevel=3)
 
-    return getattr(import_module(f"scipy.{sub_package}.{private_module}"), attribute)
+    for module in private_modules:
+        try:
+            return getattr(import_module(f"scipy.{sub_package}.{module}"), attribute)
+        except AttributeError as e:
+            # still raise an error if the attribute isn't in any of the expected
+            # private modules
+            if module is private_modules[-1]:
+                raise e
+            continue
     
 
 def _deprecated(msg, stacklevel=2):
