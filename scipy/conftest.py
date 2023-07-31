@@ -2,11 +2,13 @@
 import json
 import os
 import warnings
+import tempfile
 
 import numpy as np
 import numpy.array_api
 import numpy.testing as npt
 import pytest
+import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
@@ -150,6 +152,34 @@ skip_if_array_api = pytest.mark.skipif(
 skip_if_array_api_gpu = pytest.mark.skipif(
     SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
     reason="do not run with Array API on and not on CPU",
+)
+
+
+# Following the approach of NumPy's conftest.py...
+# Use a known and persistent tmpdir for hypothesis' caches, which
+# can be automatically cleared by the OS or user.
+hypothesis.configuration.set_hypothesis_home_dir(
+    os.path.join(tempfile.gettempdir(), ".hypothesis")
+)
+
+# We register two custom profiles for SciPy - for details see
+# https://hypothesis.readthedocs.io/en/latest/settings.html
+# The first is designed for our own CI runs; the latter also
+# forces determinism and is designed for use via scipy.test()
+hypothesis.settings.register_profile(
+    name="scipy-developer", deadline=None, print_blob=True,
+)
+hypothesis.settings.register_profile(
+    name="scipy-user",
+    deadline=None, print_blob=True, database=None, derandomize=True,
+    suppress_health_check=list(hypothesis.HealthCheck),
+)
+# Note that the default profile is chosen based on the presence
+# of pytest.ini, but can be overridden by passing the
+# --hypothesis-profile=NAME argument to pytest.
+_pytest_ini = os.path.join(os.path.dirname(__file__), "..", "pytest.ini")
+hypothesis.settings.load_profile(
+    "scipy-developer" if os.path.isfile(_pytest_ini) else "scipy-user"
 )
 
 
