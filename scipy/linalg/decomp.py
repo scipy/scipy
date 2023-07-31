@@ -2,8 +2,8 @@
 # Use the `scipy.linalg` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _decomp
+from scipy._lib.deprecation import _sub_module_deprecation
+
 
 __all__ = [  # noqa: F822
     'eig', 'eigvals', 'eigh', 'eigvalsh',
@@ -20,13 +20,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.linalg.decomp is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.linalg instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.linalg` namespace, "
-                  "the `scipy.linalg.decomp` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_decomp, name)
+    return _sub_module_deprecation(sub_package="linalg", module="decomp",
+                                   private_module="_decomp", all=__all__,
+                                   attribute=name)
