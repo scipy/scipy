@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 from scipy.special import factorial
-from scipy._lib._util import _asarray_validated, float_factorial
+from scipy._lib._util import _asarray_validated, float_factorial, check_random_state
 
 
 __all__ = ["KroghInterpolator", "krogh_interpolate",
@@ -564,6 +564,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         If absent or None, the weights will be computed from `xi` (default).
         This allows for the re-use of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
+    random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Notes
     -----
@@ -612,8 +619,10 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> plt.show()
     """
 
-    def __init__(self, xi, yi=None, axis=0, *, wi=None):
+    def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
         super().__init__(xi, yi, axis)
+        
+        random_state = check_random_state(random_state)
 
         self.xi = np.asfarray(xi)
         self.set_yi(yi)
@@ -634,7 +643,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             # these numerical stability improvements will be able to provide all
             # the points to the constructor.
             self._inv_capacity = 4.0 / (np.max(self.xi) - np.min(self.xi))
-            permute = np.random.permutation(self.n)
+            permute = random_state.permutation(self.n, )
             inv_permute = np.zeros(self.n, dtype=np.int32)
             inv_permute[permute] = np.arange(self.n)
             self.wi = np.zeros(self.n)
