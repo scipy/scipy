@@ -816,16 +816,17 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         if self._diff_cij is None:
             # c[i,j] = xi[i] - xi[j]
             c = self.xi[:, np.newaxis] - self.xi
-            # c[i,j] = (w[j] / w[i]) / (xi[i] - xi[j])
+            # c[i,j] = (w[j] / w[i]) / (xi[i] - xi[j]) (equation 9.4)
             c = np.divide(self.wi, c * self.wi[..., np.newaxis],
                           out=np.zeros_like(c), where=c != 0)
 
             # calculate diagonal
-            # c[j,j] = -sum_{i != j} c[i,j]
+            # c[j,j] = -sum_{i != j} c[i,j] (equation 9.5)
             d = -c.sum(axis=1)
             # c[i,j] = l_j(x_i)
             np.fill_diagonal(c, d)
 
+            # differentiation matrix (equation 9.6)
             self._diff_cij = c
 
         if self._diff_baryint is None:
