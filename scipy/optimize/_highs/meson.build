@@ -261,23 +261,6 @@ _highs_constants = py3.extension_module('_highs_constants',
   subdir: 'scipy/optimize/_highs'
 )
 
-_highs_exceptions = py3.extension_module('_highs_exceptions',
-  cython_gen_cpp.process('cython/src/_highs_exceptions.pyx'),
-  c_args: cython_c_args,
-  include_directories: [
-    'cython/src/',
-    'src',
-    '../../_lib/highs/src/',
-    '../../_lib/highs/src/util/'
-  ],
-  dependencies: [np_dep, thread_dep, atomic_dep],
-  link_args: version_link_args,
-  link_with: [highs_lib, ipx_lib, basiclu_lib],
-  cpp_args: [highs_flags, highs_define_macros, cython_c_args],
-  install: true,
-  subdir: 'scipy/optimize/_highs'
-)
-
 py3.install_sources([
     'cython/src/HConst.pxd',
     'cython/src/Highs.pxd',
