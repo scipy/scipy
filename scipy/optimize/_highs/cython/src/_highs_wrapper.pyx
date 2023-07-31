@@ -57,6 +57,16 @@ from .HighsOptions cimport (
 )
 from .HighsModelUtils cimport utilBasisStatusToString
 
+from .HighsExceptions cimport (
+    create_highs_exceptions,
+    PresolveExceptionError,
+)
+
+# Create exceptions
+create_highs_exceptions()
+
+PyPresolveExceptionError = <object> PresolveExceptionError
+
 np.import_array()
 
 # options to reference for default values and bounds;
@@ -652,11 +662,11 @@ def _highs_wrapper(
     cdef HighsStatus run_status = HighsStatusOK
     try:
         run_status = highs.run()
-    except Exception as e:
-        print(f"The problem is too large to be solved. Details: {e}")
+    except PyPresolveExceptionError as e:
+        print(f"Presolve failed, details: {e}")
         return {
             'status': -1,  # Probably should be something else
-            'message': "The problem is too large to be solved.",
+            'message': "The problem is too large to be pre-solved.",
         }
 
     if run_status == HighsStatusError:
