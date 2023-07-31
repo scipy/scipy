@@ -291,7 +291,7 @@ jobs:
       run: |
         python -m pip install "Cython>=3.0.0b3"
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool
-        python -m pip install git+https://github.com/lysnikolaou/numpy.git@real-imag-remove
+        python -m pip install git+https://github.com/lysnikolaou/numpy.git
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
