@@ -9,7 +9,7 @@ from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from . import _sigtools
 
@@ -266,7 +266,8 @@ def kaiserord(ripple, width):
     return int(ceil(numtaps)), beta
 
 
-def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
+@_deprecate_positional_args(version="1.14")
+def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
            scale=True, nyq=_NoValue, fs=None):
     """
     FIR filter design using the window method.
@@ -493,8 +494,8 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 # Original version of firwin2 from scipy ticket #457, submitted by "tash".
 #
 # Rewritten by Warren Weckesser, 2010.
-
-def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=_NoValue,
+@_deprecate_positional_args(version="1.14")
+def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming', nyq=_NoValue,
             antisymmetric=False, fs=None):
     """
     FIR filter design using the window method.
@@ -696,7 +697,8 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=_NoValue,
     return out
 
 
-def remez(numtaps, bands, desired, weight=None, Hz=_NoValue, type='bandpass',
+@_deprecate_positional_args(version="1.14")
+def remez(numtaps, bands, desired, *, weight=None, Hz=_NoValue, type='bandpass',
           maxiter=25, grid_density=16, fs=None):
     """
     Calculate the minimax optimal filter using the Remez exchange algorithm.
@@ -860,7 +862,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=_NoValue, type='bandpass',
         if fs is not None:
             raise ValueError("Values cannot be given for both 'Hz' and 'fs'.")
         msg = ("'remez' keyword argument 'Hz' is deprecated in favour of 'fs'"
-               " and will be removed in SciPy 1.12.0.")
+               " and will be removed in SciPy 1.14.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         fs = Hz
 
@@ -880,7 +882,8 @@ def remez(numtaps, bands, desired, weight=None, Hz=_NoValue, type='bandpass',
                             maxiter, grid_density)
 
 
-def firls(numtaps, bands, desired, weight=None, nyq=_NoValue, fs=None):
+@_deprecate_positional_args(version="1.14")
+def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     """
     FIR filter design using least-squares error minimization.
 

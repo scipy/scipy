@@ -29,7 +29,7 @@ import warnings
 import sys
 import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt, Inf)
+                   asarray, sqrt)
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
@@ -40,6 +40,9 @@ from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import asfarray  # noqa
 
 
 # standard status messages of optimizers
@@ -288,9 +291,9 @@ _epsilon = sqrt(np.finfo(float).eps)
 
 
 def vecnorm(x, ord=2):
-    if ord == Inf:
+    if ord == np.inf:
         return np.amax(np.abs(x))
-    elif ord == -Inf:
+    elif ord == -np.inf:
         return np.amin(np.abs(x))
     else:
         return np.sum(np.abs(x)**ord, axis=0)**(1.0 / ord)
@@ -337,7 +340,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     hess : {callable,  '2-point', '3-point', 'cs', None}
@@ -1245,7 +1248,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
     return ret
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
+def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
               retall=0, callback=None, xrtol=0):
     """
@@ -1376,7 +1379,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
-                   gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                   gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, **unknown_options):
     """
@@ -1403,7 +1406,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     xrtol : float, default: 0
@@ -1537,8 +1540,9 @@ def _print_success_message_or_warn(warnflag, message, warntype=None):
         warnings.warn(message, warntype or OptimizeWarning, stacklevel=3)
 
 
-def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
-            maxiter=None, full_output=0, disp=1, retall=0, callback=None):
+def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
+            epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
+            callback=None):
     """
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -1713,7 +1717,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
 
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
-                 gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                 gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
                  **unknown_options):
     """
@@ -1741,7 +1745,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     """

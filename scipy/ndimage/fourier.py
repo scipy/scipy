@@ -8,7 +8,7 @@ from . import _fourier
 
 __all__ = [  # noqa: F822
     'fourier_gaussian', 'fourier_uniform',
-    'fourier_ellipsoid', 'fourier_shift', 'normalize_axis_index'
+    'fourier_ellipsoid', 'fourier_shift'
 ]
 
 

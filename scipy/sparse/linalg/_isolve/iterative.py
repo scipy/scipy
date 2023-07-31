@@ -3,20 +3,21 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol(name, b, tol=None, atol=0., rtol=1e-5):
+def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
     """
     A helper function to handle tolerance deprecations and normalization
     """
-    if tol is not None:
+    if tol is not _NoValue:
         msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
                "deprecated in favor of 'rtol' and will be removed in SciPy "
-               "v.1.14.0. Until then, if set, will override 'rtol'.")
+               "v.1.14.0. Until then, if set, it will override 'rtol'.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
-        rtol = float(tol)
+        rtol = float(tol) if tol is not None else rtol
 
     if atol == 'legacy':
         warnings.warn("scipy.sparse.linalg.{name} called with `atol` set to "
@@ -31,7 +32,8 @@ def _get_atol(name, b, tol=None, atol=0., rtol=1e-5):
     return atol
 
 
-def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+@_deprecate_positional_args(version="1.14")
+def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
          atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
@@ -159,8 +161,9 @@ def bicg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
-             atol=0., rtol=1e-5):
+@_deprecate_positional_args(version="1.14")
+def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
+             callback=None, atol=0., rtol=1e-5):
     """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
 
     Parameters
@@ -301,8 +304,9 @@ def bicgstab(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
-       rtol=1e-5):
+@_deprecate_positional_args(version="1.14")
+def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
+       atol=0., rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
     Parameters
@@ -415,7 +419,8 @@ def cg(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None, atol=0.,
         return postprocess(x), maxiter
 
 
-def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
+@_deprecate_positional_args(version="1.14")
+def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
@@ -567,8 +572,9 @@ def cgs(A, b, x0=None, tol=None, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
-          callback=None, restrt=None, atol=0., callback_type=None,
+@_deprecate_positional_args(version="1.14")
+def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
+          callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
@@ -622,7 +628,7 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
 
         .. deprecated:: 0.11.0
            `gmres` keyword argument `restrt` is deprecated in favor of
-           `restart` and will be removed in SciPy 1.12.0.
+           `restart` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
         .. deprecated 1.12.0
@@ -669,15 +675,15 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     """
 
     # Handle the deprecation frenzy
-    if restrt and restart:
-        raise ValueError("Cannot specify both restart and restrt"
+    if restrt not in (None, _NoValue) and restart:
+        raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
-                         " and will be removed in SciPy 1.12.0. Use "
+                         " and will be removed in SciPy 1.14.0. Use "
                          "'restart' instad.")
-    if restrt is not None:
+    if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"
-               " 1.12.0. Until then, if set, 'rstrt' will override 'restart'."
+               " 1.14.0. Until then, if set, 'rstrt' will override 'restart'."
                )
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
         restart = restrt
@@ -853,8 +859,9 @@ def gmres(A, b, x0=None, tol=None, restart=None, maxiter=None, M=None,
     return postprocess(x), info
 
 
-def qmr(A, b, x0=None, tol=None, maxiter=None, M1=None, M2=None, callback=None,
-        atol=0., rtol=1e-5):
+@_deprecate_positional_args(version="1.14")
+def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
+        callback=None, atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters

@@ -380,6 +380,7 @@ Some tests are specifically for comparing two samples.
    poisson_means_test
    ttest_ind
    mannwhitneyu
+   bws_test
    ranksums
    brunnermunzel
    mood
@@ -619,6 +620,7 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._bws_test import bws_test
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
@@ -626,7 +628,7 @@ from ._survival import *
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
-    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, stats
 )
 
 
