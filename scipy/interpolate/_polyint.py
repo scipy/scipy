@@ -806,7 +806,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
 
         if self._diff_cij is None:
             # c[i,j] = xi[i] - xi[j]
-            c = self.xi[..., np.newaxis] - self.xi
+            c = self.xi[:, np.newaxis] - self.xi
             # c[i,j] = (w[j] / w[i]) / (xi[i] - xi[j])
             c = np.divide(self.wi, c * self.wi[..., np.newaxis],
                           out=np.zeros_like(c), where=c != 0)
