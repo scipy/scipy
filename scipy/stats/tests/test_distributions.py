@@ -3737,7 +3737,7 @@ class TestJFSkewT:
             (gamlss_pdf_data["a"] == a) & (gamlss_pdf_data["b"] == b)
         ]
         x, pdf = data["x"], data["pdf"]
-        assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x))
+        assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
 
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
