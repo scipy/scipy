@@ -33,7 +33,7 @@ def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
 
 
 @_deprecate_positional_args(version="1.14")
-def bicg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
          atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
@@ -305,7 +305,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def cg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
        atol=0., rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
@@ -420,7 +420,7 @@ def cg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def cgs(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
@@ -573,7 +573,7 @@ def cgs(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
+def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
           callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
@@ -860,7 +860,7 @@ def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def qmr(A, b, *, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
+def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
         callback=None, atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
