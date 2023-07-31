@@ -112,11 +112,11 @@ class FitResult:
     def plot(self, ax=None, *, plot_type="hist"):
         """Visually compare the data against the fitted distribution.
 
-        Available only if ``matplotlib`` is installed.
+        Available only if `matplotlib` is installed.
 
         Parameters
         ----------
-        ax : matplotlib.axes.Axes
+        ax : `matplotlib.axes.Axes`
             Axes object to draw the plot onto, otherwise uses the current Axes.
         plot_type : {"hist", "qq", "pp", "cdf"}
             Type of plot to draw. Options include:
@@ -143,8 +143,27 @@ class FitResult:
 
         Returns
         -------
-        ax : matplotlib.axes.Axes
+        ax : `matplotlib.axes.Axes`
             The matplotlib Axes object on which the plot was drawn.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> from scipy import stats
+        >>> import matplotlib.pyplot as plt  # matplotlib must be installed
+        >>> rng = np.random.default_rng()
+        >>> data = stats.nbinom(5, 0.5).rvs(size=1000, random_state=rng)
+        >>> bounds = [(0, 30), (0, 1)]
+        >>> res = stats.fit(stats.nbinom, data, bounds)
+        >>> ax = res.plot()  # save matplotlib Axes object
+
+        The `matplotlib.axes.Axes` object can be used to customize the plot.
+        See `matplotlib.axes.Axes` documentation for details.
+
+        >>> ax.set_xlabel('number of trials')  # customize axis label
+        >>> ax.get_children()[0].set_linewidth(5)  # customize line widths
+        >>> ax.legend()
+        >>> plt.show()
         """
         try:
             import matplotlib  # noqa

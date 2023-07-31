@@ -8,7 +8,7 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -550,10 +550,12 @@ def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     msg = ("'scipy.integrate.simps' is deprecated in favour of "
            "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    # we don't deprecate positional use as the wrapper is going away completely
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
+@_deprecate_positional_args(version="1.14")
+def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
