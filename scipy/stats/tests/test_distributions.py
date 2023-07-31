@@ -3728,7 +3728,7 @@ class TestJFSkewT:
         return np.core.records.fromarrays(data, names="x,pdf,a,b")
 
     @pytest.mark.parametrize("a,b", [(2, 3), (8, 4), (12, 13)])
-    def compare_with_gamlss_r(self, gamlss_pdf_data, a, b):
+    def test_compare_with_gamlss_r(self, gamlss_pdf_data, a, b):
         """Compare the pdf with a table of reference values. The table of
         reference values was produced using R, where the Jones and Faddy skew
         t distribution is available in the GAMLSS package as `ST5`.
