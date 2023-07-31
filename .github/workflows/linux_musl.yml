@@ -22,7 +22,7 @@ jobs:
   musllinux_x86_64:
     runs-on: ubuntu-latest
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'andyfaff/scipy' || github.repository == ''"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     container:
       # Use container used for building musllinux wheels
       # it has git installed, all the pythons, etc
@@ -65,7 +65,7 @@ jobs:
         python -m pip install click rich_click doit pydevtool pooch
         
         chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh --nightly .     
+        tools/wheels/cibw_before_build_linux.sh --nightly .     
 
     - name: test
       run: |
