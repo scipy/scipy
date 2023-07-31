@@ -37,13 +37,19 @@ linux_aarch64_test_task:
 
   <<: *MODIFIED_CLONE
 
+  ccache_cache:
+    folder: .ccache
+    populate_script:
+      - mkdir -p .ccache
+    fingerprint_key: ccache-linux_aarch64
+
   pip_cache:
-    folder: ~/.cache/pip
+    folder: /root/.cache/pip
 
   test_script: |
     apt-get update
     apt-get install -y --no-install-recommends software-properties-common gcc g++ gfortran pkg-config
-    apt-get install -y --no-install-recommends libopenblas-dev libatlas-base-dev liblapack-dev
+    apt-get install -y --no-install-recommends libopenblas-dev libatlas-base-dev liblapack-dev ccache
 
     # When this task was written the linux image used ubuntu:jammy, for which
     # python3.10 is the default. If required different versions can be
@@ -58,11 +64,21 @@ linux_aarch64_test_task:
     ln -s $(which python3.10) python
     export PATH=$PWD:$PATH
 
+    export CCACHE_DIR=$PWD/.ccache
+    export PATH=/usr/lib/ccache:$PATH
+
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
     
+    # this line tells us where the task keeps its pip cache. 
+    # It may change over time!
+    echo $(python -m pip cache dir)
+    echo $(python -m pip cache list)
+    
     python dev.py test
+    
+    ccache -s
 
 
 macos_arm64_test_task:
@@ -72,7 +88,7 @@ macos_arm64_test_task:
   <<: *MODIFIED_CLONE
 
   pip_cache:
-    folder: ~/.cache/pip
+    folder: /Users/admin/Library/Caches/pip
 
   test_script: |
     brew install python@3.10
@@ -94,5 +110,12 @@ macos_arm64_test_task:
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch
+    
+    # this line tells us where the task keeps its pip cache. 
+    # It may change over time!
+    echo $(python -m pip cache dir)
+    echo $(python -m pip cache list)
+
+
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
     python dev.py test
