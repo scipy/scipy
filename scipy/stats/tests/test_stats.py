@@ -3399,6 +3399,7 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
+    @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])

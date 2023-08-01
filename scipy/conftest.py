@@ -167,20 +167,19 @@ hypothesis.configuration.set_hypothesis_home_dir(
 # The first is designed for our own CI runs; the latter also
 # forces determinism and is designed for use via scipy.test()
 hypothesis.settings.register_profile(
-    name="scipy-developer", deadline=None, print_blob=True,
+    name="nondeterministic", deadline=None, print_blob=True,
 )
 hypothesis.settings.register_profile(
-    name="scipy-user",
+    name="deterministic",
     deadline=None, print_blob=True, database=None, derandomize=True,
     suppress_health_check=list(hypothesis.HealthCheck),
 )
-# Note that the default profile is chosen based on the presence
-# of pytest.ini, but can be overridden by passing the
-# --hypothesis-profile=NAME argument to pytest.
-_pytest_ini = os.path.join(os.path.dirname(__file__), "..", "pytest.ini")
-hypothesis.settings.load_profile(
-    "scipy-developer" if os.path.isfile(_pytest_ini) else "scipy-user"
-)
+
+# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+# In the future, it would be good to work the choice into dev.py.
+SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                          "deterministic")
+hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 
 
 def skip_if_array_api_backend(backend):
