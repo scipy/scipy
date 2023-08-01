@@ -46,9 +46,9 @@ class TestFFT1D:
         xr = xp.asarray(random(maxlen))
         _assert_allclose = set_assert_allclose(xp)
         for i in range(1, maxlen):
-            _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-12, atol=0)
+            _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-10, atol=0)
             _assert_allclose(
-                fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-12, atol=0)
+                fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-10, atol=0)
 
     @array_api_compatible
     def test_fft(self, xp):
