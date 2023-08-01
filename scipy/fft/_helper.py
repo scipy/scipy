@@ -98,7 +98,8 @@ def _init_nd_shape_and_axes(x, shape, axes):
     shape : array
         The shape of the result. It is a 1-D integer array.
     axes : array
-        The shape of the result. It is a 1-D integer array.
+        Axes along which the calculation is computed.
+        It is a 1-D integer array.
 
     """
     xp = array_namespace(x)

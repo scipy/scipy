@@ -59,7 +59,8 @@ class TestNextFastLen:
             _assert_n_smooth(m, 5)
 
     def test_np_integers(self):
-        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
+        ITYPES = [np.int16, np.int32, np.int64,
+                  np.uint16, np.uint32, np.uint64]
         for ityp in ITYPES:
             x = ityp(12345)
             testN = next_fast_len(x)

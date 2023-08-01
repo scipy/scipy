@@ -68,15 +68,18 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.dctn(x, type=type, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                  workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.dctn(x, type=type, s=s, axes=axes, norm=norm,
+                                    overwrite_x=overwrite_x,
+                                    workers=workers,
+                                    orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
     """
-    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Cosine Transform
+    along the specified axes.
 
     Parameters
     ----------
@@ -136,8 +139,10 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.idctn(x, type=type, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                   workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.idctn(x, type=type, s=s, axes=axes, norm=norm,
+                                     overwrite_x=overwrite_x,
+                                     workers=workers,
+                                     orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
@@ -159,8 +164,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
-        If any element of `shape` is -1, the size of the corresponding dimension
-        of `x` is used.
+        If any element of `shape` is -1, the size of the corresponding
+        dimension of `x` is used.
     axes : int or array_like of ints or None, optional
         Axes over which the DST is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
@@ -204,15 +209,18 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.dstn(x, type=type, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                  workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.dstn(x, type=type, s=s, axes=axes, norm=norm,
+                                    overwrite_x=overwrite_x,
+                                    workers=workers,
+                                    orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
     """
-    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Sine Transform
+    along the specified axes.
 
     Parameters
     ----------
@@ -272,8 +280,10 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.idstn(x, type=type, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                   workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.idstn(x, type=type, s=s, axes=axes, norm=norm,
+                                     overwrite_x=overwrite_x,
+                                     workers=workers,
+                                     orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
@@ -425,8 +435,10 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.dct(x, type=type, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                 workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.dct(x, type=type, n=n, axis=axis, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers,
+                                   orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
@@ -508,8 +520,10 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.idct(x, type=type, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                  workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.idct(x, type=type, n=n, axis=axis, norm=norm,
+                                    overwrite_x=overwrite_x,
+                                    workers=workers,
+                                    orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
@@ -599,15 +613,15 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(2n+1)}{2N}\right)
 
-    If ``orthogonalize=True``, ``y[-1]`` is divided :math:`\sqrt{2}` which, when
-    combined with ``norm="ortho"``, makes the corresponding matrix of
+    If ``orthogonalize=True``, ``y[-1]`` is divided :math:`\sqrt{2}` which,
+    when combined with ``norm="ortho"``, makes the corresponding matrix of
     coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
     There are several definitions of the DST-III, we use the following (for
-    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1` and
-    even around :math:`n=N-1`
+    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1`
+    and even around :math:`n=N-1`
 
     .. math::
 
@@ -619,14 +633,14 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     of coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse of the
-    orthonormalized DST-II.
+    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse
+    of the orthonormalized DST-II.
 
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
-    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5` and
-    even around :math:`n=N-0.5`
+    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5`
+    and even around :math:`n=N-0.5`
 
     .. math::
 
@@ -635,8 +649,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     ``orthogonalize`` has no effect here, as the DST-IV matrix is already
     orthogonal up to a scale factor of ``2N``.
 
-    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`. The
-    orthonormalized DST-IV is exactly its own inverse.
+    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`.
+    The orthonormalized DST-IV is exactly its own inverse.
 
     References
     ----------
@@ -646,8 +660,10 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.dst(x, type=type, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                 workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.dst(x, type=type, n=n, axis=axis, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers,
+                                   orthogonalize=orthogonalize)
     return xp.asarray(y)
 
 
@@ -712,6 +728,8 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _realtransforms_uarray.idst(x, type=type, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                  workers=workers, orthogonalize=orthogonalize)
+    y = _realtransforms_uarray.idst(x, type=type, n=n, axis=axis, norm=norm,
+                                    overwrite_x=overwrite_x,
+                                    workers=workers,
+                                    orthogonalize=orthogonalize)
     return xp.asarray(y)

@@ -85,6 +85,7 @@ def test_fht_agrees_with_fftlog(xp):
               +2.7593607182401860E+00, 10.5251075070045800E+00]
     assert_allclose(ours, theirs)
 
+
 @skip_if_array_api_gpu
 @array_api_compatible
 @pytest.mark.parametrize('optimal', [True, False])

@@ -16,7 +16,11 @@ from scipy.conftest import (
     skip_if_array_api_backend,
     set_assert_allclose
 )
-from scipy._lib._array_api import _assert_matching_namespace, array_namespace, size
+from scipy._lib._array_api import (
+    _assert_matching_namespace,
+    array_namespace,
+    size
+)
 
 
 def fft1(x):
@@ -46,9 +50,10 @@ class TestFFT1D:
         xr = xp.asarray(random(maxlen))
         _assert_allclose = set_assert_allclose(xp)
         for i in range(1, maxlen):
-            _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-10, atol=0)
-            _assert_allclose(
-                fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-10, atol=0)
+            _assert_allclose(fft.ifft(fft.fft(x[0:i])), x[0:i],
+                             rtol=1e-10, atol=0)
+            _assert_allclose(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i],
+                             rtol=1e-10, atol=0)
 
     @array_api_compatible
     def test_fft(self, xp):
@@ -77,8 +82,10 @@ class TestFFT1D:
         expect = fft.fft(fft.fft(x, axis=1), axis=0)
         assert_allclose(expect, fft.fft2(x))
         assert_allclose(expect, fft.fft2(x, norm="backward"))
-        assert_allclose(expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
-                                  fft.fft2(x, norm="ortho"))
+        assert_allclose(
+            expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
+            fft.fft2(x, norm="ortho")
+        )
         assert_allclose(expect / (30 * 20), fft.fft2(x, norm="forward"))
 
     @skip_if_array_api_gpu
@@ -88,8 +95,10 @@ class TestFFT1D:
         expect = fft.ifft(fft.ifft(x, axis=1), axis=0)
         assert_allclose(expect, fft.ifft2(x))
         assert_allclose(expect, fft.ifft2(x, norm="backward"))
-        assert_allclose(expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
-                                  fft.ifft2(x, norm="ortho"))
+        assert_allclose(
+            expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
+            fft.ifft2(x, norm="ortho")
+        )
         assert_allclose(expect * (30 * 20), fft.ifft2(x, norm="forward"))
 
     @array_api_compatible
@@ -100,8 +109,10 @@ class TestFFT1D:
         expect = fft.fft(fft.fft(fft.fft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.fftn(x))
         _assert_allclose(expect, fft.fftn(x, norm="backward"))
-        _assert_allclose(expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
-                         fft.fftn(x, norm="ortho"))
+        _assert_allclose(
+            expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
+            fft.fftn(x, norm="ortho")
+        )
         _assert_allclose(expect / (30 * 20 * 10), fft.fftn(x, norm="forward"))
 
     @array_api_compatible
@@ -112,8 +123,10 @@ class TestFFT1D:
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
         _assert_allclose(expect, fft.ifftn(x))
         _assert_allclose(expect, fft.ifftn(x, norm="backward"))
-        _assert_allclose(fft.ifftn(x) * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
-                         fft.ifftn(x, norm="ortho"))
+        _assert_allclose(
+            fft.ifftn(x) * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
+            fft.ifftn(x, norm="ortho")
+        )
         _assert_allclose(expect * (30 * 20 * 10), fft.ifftn(x, norm="forward"))
 
     @array_api_compatible
@@ -124,8 +137,10 @@ class TestFFT1D:
             for norm in [None, "backward", "ortho", "forward"]:
                 _assert_allclose(fft.fft(x, n=n, norm=norm)[:(n//2 + 1)],
                                  fft.rfft(x, n=n, norm=norm))
-            _assert_allclose(fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n, dtype=xp.float64)),
-                             fft.rfft(x, n=n, norm="ortho"))
+            _assert_allclose(
+                fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n, dtype=xp.float64)),
+                fft.rfft(x, n=n, norm="ortho")
+            )
 
     @array_api_compatible
     def test_irfft(self, xp):
@@ -142,8 +157,10 @@ class TestFFT1D:
         expect = fft.fft2(x)[:, :11]
         assert_allclose(expect, fft.rfft2(x))
         assert_allclose(expect, fft.rfft2(x, norm="backward"))
-        assert_allclose(expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
-                                  fft.rfft2(x, norm="ortho"))
+        assert_allclose(
+            expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
+            fft.rfft2(x, norm="ortho")
+        )
         assert_allclose(expect / (30 * 20), fft.rfft2(x, norm="forward"))
 
     @skip_if_array_api_gpu
@@ -162,8 +179,10 @@ class TestFFT1D:
         expect = fft.fftn(x)[:, :, :6]
         _assert_allclose(expect, fft.rfftn(x))
         _assert_allclose(expect, fft.rfftn(x, norm="backward"))
-        _assert_allclose(expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
-                         fft.rfftn(x, norm="ortho"))
+        _assert_allclose(
+            expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
+            fft.rfftn(x, norm="ortho")
+        )
         _assert_allclose(expect / (30 * 20 * 10), fft.rfftn(x, norm="forward"))
 
     @array_api_compatible
@@ -185,13 +204,18 @@ class TestFFT1D:
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(x)
         xp_test = array_namespace(x)
-        _assert_allclose(expect, xp_test.asarray(fft.hfft(x_herm), dtype=xp.complex128))
         _assert_allclose(expect,
-                         xp_test.asarray(fft.hfft(x_herm, norm="backward"), dtype=xp.complex128))
+                         xp_test.asarray(fft.hfft(x_herm),
+                                         dtype=xp.complex128))
+        _assert_allclose(expect,
+                         xp_test.asarray(fft.hfft(x_herm, norm="backward"),
+                                         dtype=xp.complex128))
         _assert_allclose(expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),
-                         xp_test.asarray(fft.hfft(x_herm, norm="ortho"), dtype=xp.complex128))
+                         xp_test.asarray(fft.hfft(x_herm, norm="ortho"),
+                                         dtype=xp.complex128))
         _assert_allclose(expect / 30,
-                         xp_test.asarray(fft.hfft(x_herm, norm="forward"), dtype=xp.complex128))
+                         xp_test.asarray(fft.hfft(x_herm, norm="forward"),
+                                         dtype=xp.complex128))
 
     @array_api_compatible
     def test_ihfft(self, xp):
@@ -203,7 +227,8 @@ class TestFFT1D:
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(x_herm, fft.ihfft(fft.hfft(x_herm)))
         for norm in ["backward", "ortho", "forward"]:
-            _assert_allclose(x_herm, fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm))
+            _assert_allclose(x_herm,
+                             fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm))
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -220,8 +245,10 @@ class TestFFT1D:
         expect = fft.ifft2(x)[:, :11]
         assert_allclose(expect, fft.ihfft2(x))
         assert_allclose(expect, fft.ihfft2(x, norm="backward"))
-        assert_allclose(expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
-                         fft.ihfft2(x, norm="ortho"))
+        assert_allclose(
+            expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)),
+            fft.ihfft2(x, norm="ortho")
+        )
         assert_allclose(expect * (30 * 20), fft.ihfft2(x, norm="forward"))
 
     @skip_if_array_api_gpu
@@ -240,8 +267,10 @@ class TestFFT1D:
         expect = fft.ifftn(x)[:, :, :6]
         assert_allclose(expect, fft.ihfftn(x))
         assert_allclose(expect, fft.ihfftn(x, norm="backward"))
-        assert_allclose(expect * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
-                         fft.ihfftn(x, norm="ortho"))
+        assert_allclose(
+            expect * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)),
+            fft.ihfftn(x, norm="ortho")
+        )
         assert_allclose(expect * (30 * 20 * 10), fft.ihfftn(x, norm="forward"))
 
     @array_api_compatible
@@ -249,7 +278,8 @@ class TestFFT1D:
                                     fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
         if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            # @skip_if_array_api_backend doesn't seem to work
+            # with @pytest.mark.parametrize
             pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
@@ -279,7 +309,8 @@ class TestFFT1D:
                                     fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
         if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            # @skip_if_array_api_backend doesn't seem to work
+            # with @pytest.mark.parametrize
             pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((16, 8, 4)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
@@ -290,8 +321,10 @@ class TestFFT1D:
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
-            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            op_tr = op(xp_test.permute_dims(x, axes=a),
+                       s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]),
+                                         axes=a)
             _assert_allclose(op_tr, tr_op)
 
     @skip_if_array_api_gpu
@@ -309,8 +342,10 @@ class TestFFT1D:
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
-            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
+            op_tr = op(xp_test.permute_dims(x, axes=a),
+                       s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]),
+                                         axes=a)
             assert_allclose(op_tr, tr_op)
 
     @skip_if_array_api_gpu
@@ -404,22 +439,26 @@ class TestFFTThreadSafe:
 
         if xp is None:
             _assert_array_equal = assert_array_equal
-        elif 'cupy' in xp.__name__:
+        elif xp.__name__ == 'cupy':
             import cupy as cp
             _assert_array_equal = cp.testing.assert_array_equal
-        elif 'torch' in xp.__name__:
+        elif xp.__name__ == 'torch':
             import torch
             for i in range(self.threads):
-                torch.testing.assert_close(q.get(timeout=5), expected,
-                                msg='Function returned wrong value in multithreaded context')
+                torch.testing.assert_close(
+                    q.get(timeout=5), expected,
+                    msg='Function returned wrong value in multithreaded context'
+                )
             return
         else:
             _assert_array_equal = assert_array_equal
 
         # Make sure all threads returned the correct value
         for i in range(self.threads):
-            _assert_array_equal(q.get(timeout=5), expected,
-                               err_msg='Function returned wrong value in multithreaded context')
+            _assert_array_equal(
+                q.get(timeout=5), expected,
+                err_msg='Function returned wrong value in multithreaded context'
+            )
 
     @array_api_compatible
     def test_fft(self, xp):
@@ -492,7 +531,8 @@ class TestNamespaces:
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
         if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            # @skip_if_array_api_backend doesn't seem to work
+            # with @pytest.mark.parametrize
             pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
@@ -511,7 +551,8 @@ class TestNamespaces:
     @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
     def test_rfftn_irfftn(self, func, xp):
         if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            # @skip_if_array_api_backend doesn't seem to work
+            # with @pytest.mark.parametrize
             pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
@@ -527,11 +568,13 @@ class TestNamespaces:
 
 
 @array_api_compatible
-@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
+@pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
+                                  fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
 def test_non_standard_params(func, xp):
     if xp.__name__ == 'torch':
-        # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+        # @skip_if_array_api_backend doesn't seem to work
+        # with @pytest.mark.parametrize
         pytest.xfail("torch.fft not yet implemented by array-api-compat")
     if xp.__name__ != 'numpy':
         x = xp.asarray([1, 2, 3])
@@ -539,4 +582,5 @@ def test_non_standard_params(func, xp):
         func(x)
         assert_raises(ValueError, func, x, overwrite_x=True)
         assert_raises(ValueError, func, x, workers=2)
-        # note: `plan` param is not tested since SciPy currently does not use it
+        # `plan` param is not tested since SciPy does not use it currently
+        # but should be tested if it comes into use

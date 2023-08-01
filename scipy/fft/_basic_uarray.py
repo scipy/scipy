@@ -21,108 +21,126 @@ def _dispatch(func):
 
 
 @_dispatch
-def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-        plan=None):
+def fft(x, n=None, axis=-1, norm=None,
+        overwrite_x=False, workers=None, *, plan=None):
+    """fft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def ifft(x, n=None, axis=-1, norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """ifft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def rfft(x, n=None, axis=-1, norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """rfft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def irfft(x, n=None, axis=-1, norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """irfft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def hfft(x, n=None, axis=-1, norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """hfft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ihfft(x, n=None, axis=-1, norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """ihfft multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def fftn(x, s=None, axes=None, norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """fftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ifftn(x, s=None, axes=None, norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """ifftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def fft2(x, s=None, axes=(-2, -1), norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """fft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ifft2(x, s=None, axes=(-2, -1), norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """ifft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def rfftn(x, s=None, axes=None, norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """rfftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def rfft2(x, s=None, axes=(-2, -1), norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
+    """rfft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def irfftn(x, s=None, axes=None, norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
+    """irfftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def irfft2(x, s=None, axes=(-2, -1), norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
+    """irfft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def hfftn(x, s=None, axes=None, norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """hfftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def hfft2(x, s=None, axes=(-2, -1), norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
+    """hfft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def ihfftn(x, s=None, axes=None, norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
+    """ihfftn multimethod."""
     return (Dispatchable(x, np.ndarray),)
 
 
 @_dispatch
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def ihfft2(x, s=None, axes=(-2, -1), norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
+    """ihfft2 multimethod."""
     return (Dispatchable(x, np.ndarray),)

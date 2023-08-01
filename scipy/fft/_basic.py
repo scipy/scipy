@@ -77,8 +77,8 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     terms. The symmetry is highest when `n` is a power of 2, and the transform
     is therefore most efficient for these sizes. For poorly factorizable sizes,
     `scipy.fft` uses Bluestein's algorithm [2]_ and so is never worse than
-    O(`n` log `n`). Further performance improvements may be seen by zero-padding
-    the input using `next_fast_len`.
+    O(`n` log `n`). Further performance improvements may be seen by
+    zero-padding the input using `next_fast_len`.
 
     If ``x`` is a 1d array, then the `fft` is equivalent to ::
 
@@ -149,8 +149,9 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.fft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                           workers=workers, plan=plan)
+        return _basic_uarray.fft(x, n=n, axis=axis, norm=norm,
+                                 overwrite_x=overwrite_x, workers=workers,
+                                 plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -270,8 +271,9 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.ifft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
+        return _basic_uarray.ifft(x, n=n, axis=axis, norm=norm,
+                                  overwrite_x=overwrite_x, workers=workers,
+                                  plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -347,8 +349,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Notes
     -----
     When the DFT is computed for purely real input, the output is
-    Hermitian-symmetric, i.e., the negative frequency terms are just the complex
-    conjugates of the corresponding positive-frequency terms, and the
+    Hermitian-symmetric, i.e., the negative frequency terms are just the
+    complex conjugates of the corresponding positive-frequency terms, and the
     negative-frequency terms are therefore redundant. This function does not
     compute the negative frequency terms, and the length of the transformed
     axis of the output is therefore ``n//2 + 1``.
@@ -379,8 +381,9 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
+        return _basic_uarray.rfft(x, n=n, axis=axis, norm=norm,
+                                  overwrite_x=overwrite_x,
+                                  workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -495,8 +498,9 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
+        return _basic_uarray.irfft(x, n=n, axis=axis, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -593,8 +597,9 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
+        return _basic_uarray.hfft(x, n=n, axis=axis, norm=norm,
+                                  overwrite_x=overwrite_x,
+                                  workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -675,8 +680,9 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
+        return _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -795,8 +801,9 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.fftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
+        return _basic_uarray.fftn(x, s=s, axes=axes, norm=norm,
+                                  overwrite_x=overwrite_x,
+                                  workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -914,8 +921,9 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.ifftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
+        return _basic_uarray.ifftn(x, s=s, axes=axes, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -931,8 +939,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
+def fft2(x, s=None, axes=(-2, -1), norm=None,
+         overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 2-D discrete Fourier Transform
 
@@ -1028,13 +1036,14 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.fft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                     workers=workers, plan=plan)
+    y = _basic_uarray.fft2(x, s=s, axes=axes, norm=norm,
+                           overwrite_x=overwrite_x,
+                           workers=workers, plan=plan)
     return xp.asarray(y)
 
 
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def ifft2(x, s=None, axes=(-2, -1), norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 2-D inverse discrete Fourier Transform.
 
@@ -1127,8 +1136,9 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.ifft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
+    y = _basic_uarray.ifft2(x, s=s, axes=axes, norm=norm,
+                            overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
     return xp.asarray(y)
 
 
@@ -1230,8 +1240,9 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.rfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
+        return _basic_uarray.rfftn(x, s=s, axes=axes, norm=norm,
+                                   overwrite_x=overwrite_x,
+                                   workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -1247,8 +1258,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def rfft2(x, s=None, axes=(-2, -1), norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 2-D FFT of a real array.
 
@@ -1295,8 +1306,9 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.rfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
+    y = _basic_uarray.rfft2(x, s=s, axes=axes, norm=norm,
+                            overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
     return xp.asarray(y)
 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
@@ -1327,8 +1339,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Along any axis, if the shape indicated by `s` is smaller than that of
         the input, the input is cropped. If it is larger, the input is padded
         with zeros. If `s` is not given, the shape of the input along the axes
-        specified by axes is used. Except for the last axis which is taken to be
-        ``2*(m-1)``, where ``m`` is the length of the input along that axis.
+        specified by axes is used. Except for the last axis which is taken to
+        be ``2*(m-1)``, where ``m`` is the length of the input along that axis.
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
@@ -1404,8 +1416,9 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     if is_numpy(xp):
-        return _basic_uarray.irfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                              workers=workers, plan=plan)
+        return _basic_uarray.irfftn(x, s=s, axes=axes, norm=norm,
+                                    overwrite_x=overwrite_x,
+                                    workers=workers, plan=plan)
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
@@ -1421,8 +1434,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def irfft2(x, s=None, axes=(-2, -1), norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
     """
     Computes the inverse of `rfft2`
 
@@ -1469,8 +1482,9 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.irfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                       workers=workers, plan=plan)
+    y = _basic_uarray.irfft2(x, s=s, axes=axes, norm=norm,
+                             overwrite_x=overwrite_x,
+                             workers=workers, plan=plan)
     return xp.asarray(y)
 
 
@@ -1499,8 +1513,8 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Along any axis, if the shape indicated by `s` is smaller than that of
         the input, the input is cropped. If it is larger, the input is padded
         with zeros. If `s` is not given, the shape of the input along the axes
-        specified by axes is used. Except for the last axis which is taken to be
-        ``2*(m-1)`` where ``m`` is the length of the input along that axis.
+        specified by axes is used. Except for the last axis which is taken to
+        be ``2*(m-1)`` where ``m`` is the length of the input along that axis.
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
@@ -1585,12 +1599,13 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.hfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
+    y = _basic_uarray.hfftn(x, s=s, axes=axes, norm=norm,
+                            overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
     return xp.asarray(y)
 
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
+def hfft2(x, s=None, axes=(-2, -1), norm=None,
+          overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 2-D FFT of a Hermitian complex array.
 
@@ -1635,8 +1650,9 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.hfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
+    y = _basic_uarray.hfft2(x, s=s, axes=axes, norm=norm,
+                            overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
     return xp.asarray(y)
 
 
@@ -1732,13 +1748,14 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.ihfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                       workers=workers, plan=plan)
+    y = _basic_uarray.ihfftn(x, s=s, axes=axes, norm=norm,
+                             overwrite_x=overwrite_x,
+                             workers=workers, plan=plan)
     return xp.asarray(y)
 
 
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
+def ihfft2(x, s=None, axes=(-2, -1), norm=None,
+           overwrite_x=False, workers=None, *, plan=None):
     """
     Compute the 2-D inverse FFT of a real spectrum.
 
@@ -1783,6 +1800,7 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.ihfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                       workers=workers, plan=plan)
+    y = _basic_uarray.ihfft2(x, s=s, axes=axes, norm=norm,
+                             overwrite_x=overwrite_x,
+                             workers=workers, plan=plan)
     return xp.asarray(y)

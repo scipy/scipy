@@ -73,8 +73,8 @@ def set_global_backend(backend, coerce=False, only=False, try_last=False):
 
     Notes
     -----
-    This will overwrite the previously set global backend, which, by default, is
-    the SciPy implementation.
+    This will overwrite the previously set global backend, which, by default,
+    is the SciPy implementation.
 
     Examples
     --------
