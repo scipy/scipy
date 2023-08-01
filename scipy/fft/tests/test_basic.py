@@ -249,7 +249,8 @@ class TestFFT1D:
                                     fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
         if xp.__name__ == 'torch':
-            pytest.xfail
+            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
                 (1, 2, 0), (2, 0, 1), (2, 1, 0)]
@@ -277,6 +278,9 @@ class TestFFT1D:
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
+        if xp.__name__ == 'torch':
+            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((16, 8, 4)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
         _assert_allclose = set_assert_allclose(xp)
@@ -487,6 +491,9 @@ class TestNamespaces:
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
+        if xp.__name__ == 'torch':
+            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
@@ -503,6 +510,9 @@ class TestNamespaces:
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
     def test_rfftn_irfftn(self, func, xp):
+        if xp.__name__ == 'torch':
+            # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
@@ -520,10 +530,13 @@ class TestNamespaces:
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft, fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
 def test_non_standard_params(func, xp):
-    if xp.__name__ not in 'numpy':
+    if xp.__name__ == 'torch':
+        # @skip_if_array_api_backend doesn't seem to work with @pytest.mark.parametrize
+        pytest.xfail("torch.fft not yet implemented by array-api-compat")
+    if xp.__name__ != 'numpy':
         x = xp.asarray([1, 2, 3])
         # func(x) should not raise an exception
         func(x)
         assert_raises(ValueError, func, x, overwrite_x=True)
         assert_raises(ValueError, func, x, workers=2)
-        # TODO test `plan` param
+        # note: `plan` param is not tested since SciPy currently does not use it
