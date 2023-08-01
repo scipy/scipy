@@ -17,7 +17,7 @@ cirrus_wheels_linux_aarch64_task:
     image: family/docker-builder-arm64
     architecture: arm64
     platform: linux
-    cpu: 1
+    cpu: 2
     memory: 4G
   matrix:
     # build in a matrix because building and testing all four wheels in a
@@ -51,6 +51,7 @@ cirrus_wheels_macos_arm64_task:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:14
   matrix:
     - env:
+       # building all four wheels in a single task takes ~45 mins
        CIBW_BUILD: cp39-* cp310-* cp311-* cp312-*
   env:
     PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
