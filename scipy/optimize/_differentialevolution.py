@@ -132,12 +132,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             ``callback(x, convergence: float=val)``
 
         ``val`` represents the fractional value of the population convergence.
-        When ``val`` is greater than one, the function halts.
+        When ``val`` is greater than ``1.0``, the function halts.
 
         Introspection is used to determine which of the signatures is invoked.
 
-        The minimization will halt if the callback raises ``StopIteration``
-        or returns ``True`` (any polishing is still carried out).
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
 
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.
@@ -525,12 +525,12 @@ class DifferentialEvolutionSolver:
             ``callback(x, convergence: float=val)``
 
         ``val`` represents the fractional value of the population convergence.
-        When ``val`` is greater than one, the function halts.
+         When ``val`` is greater than ``1.0``, the function halts.
 
         Introspection is used to determine which of the signatures is invoked.
 
-        The minimization will halt if the callback raises ``StopIteration``
-        or returns ``True`` (any polishing is still carried out).
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
 
         .. versionchanged:: 1.12.0
             callback accepts the ``intermediate_result`` keyword.

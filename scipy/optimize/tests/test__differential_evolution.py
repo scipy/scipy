@@ -260,29 +260,77 @@ class TestDifferentialEvolutionSolver:
         assert_equal(result.x, solver.x)
 
     def test_intermediate_result(self):
-        bounds = [(0, 2), (0, 2)]
-        visited = [0]
+        # Check that intermediate result object passed into the callback
+        # function contains the expected information and that raising
+        # `StopIteration` causes the expected behavior.
+        maxiter = 10
+
+        def func(x):
+            val = rosen(x)
+            if val < func.val:
+                func.x = x
+                func.val = val
+            return val
+        func.x = None
+        func.val = np.inf
 
         def callback(intermediate_result):
-            visited[0] += 1
+            callback.nit += 1
+            callback.intermediate_result = intermediate_result
             assert intermediate_result.population.ndim == 2
             assert intermediate_result.population.shape[1] == 2
-            assert_equal(
-                intermediate_result.population_energies[0],
-                rosen(intermediate_result.population[0])
-            )
-            assert_equal(
-                intermediate_result.population_energies[3],
-                rosen(intermediate_result.population[3])
-            )
+            assert intermediate_result.nit == callback.nit
+
+            # Check that `x` and `fun` attributes are the best found so far
+            assert_equal(intermediate_result.x, callback.func.x)
+            assert_equal(intermediate_result.fun, callback.func.val)
+
+            # Check for consistency between `fun`, `population_energies`,
+            # `x`, and `population`
             assert_equal(intermediate_result.fun, rosen(intermediate_result.x))
+            for i in range(len(intermediate_result.population_energies)):
+                res = intermediate_result.population_energies[i]
+                ref = rosen(intermediate_result.population[i])
+                assert_equal(res, ref)
+            assert_equal(intermediate_result.x,
+                         intermediate_result.population[0])
+            assert_equal(intermediate_result.fun,
+                         intermediate_result.population_energies[0])
+
             assert intermediate_result.message == 'in progress'
             assert intermediate_result.success is True
             assert isinstance(intermediate_result, OptimizeResult)
+            if callback.nit == maxiter:
+                raise StopIteration
+        callback.nit = 0
+        callback.intermediate_result = None
+        callback.func = func
 
-        result = differential_evolution(rosen, bounds, callback=callback)
-        assert result.success
-        assert_equal(visited[0], result.nit)
+        bounds = [(0, 2), (0, 2)]
+        kwargs = dict(func=func, bounds=bounds, seed=838245, polish=False)
+        res = differential_evolution(**kwargs, callback=callback)
+        ref = differential_evolution(**kwargs, maxiter=maxiter)
+
+        # Check that final `intermediate_result` is equivalent to returned
+        # result object and that terminating with callback `StopIteration`
+        # after `maxiter` iterations is equivalent to terminating with
+        # `maxiter` parameter.
+        assert res.success == ref.success == False
+        assert callback.nit == res.nit == maxiter
+        assert res.message == 'callback function requested stop early'
+        assert ref.message == 'Maximum number of iterations has been exceeded.'
+        for field, val in ref.items():
+            if field in {'message', 'success'}:  # checked separately
+                continue
+            assert_equal(callback.intermediate_result[field], val)
+            assert_equal(res[field], val)
+
+        # Check that polish occurs after `StopIteration` as advertised
+        callback.nit = 0
+        func.val = np.inf
+        kwargs['polish'] = True
+        res = differential_evolution(**kwargs, callback=callback)
+        assert res.fun < ref.fun
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
