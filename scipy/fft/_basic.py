@@ -287,30 +287,26 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    Compute the 2-D discrete Fourier Transform
+    Compute the 1-D discrete Fourier Transform for real input.
 
-    This function computes the N-D discrete Fourier Transform
-    over any axes in an M-D array by means of the
-    Fast Fourier Transform (FFT). By default, the transform is computed over
-    the last two axes of the input array, i.e., a 2-dimensional FFT.
+    This function computes the 1-D *n*-point discrete Fourier
+    Transform (DFT) of a real-valued array by means of an efficient algorithm
+    called the Fast Fourier Transform (FFT).
 
     Parameters
     ----------
     x : array_like
-        Input array, can be complex
-    s : sequence of ints, optional
-        Shape (length of each transformed axis) of the output
-        (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
-        This corresponds to ``n`` for ``fft(x, n)``.
-        Along each axis, if the given shape is smaller than that of the input,
-        the input is cropped. If it is larger, the input is padded with zeros.
-        if `s` is not given, the shape of the input along the axes specified
-        by `axes` is used.
-    axes : sequence of ints, optional
-        Axes over which to compute the FFT. If not given, the last two axes are
+        Input array
+    n : int, optional
+        Number of points along transformation axis in the input to use.
+        If `n` is smaller than the length of the input, the input is cropped.
+        If it is larger, the input is padded with zeros. If `n` is not given,
+        the length of the input along the axis specified by `axis` is used.
+    axis : int, optional
+        Axis over which to compute the FFT. If not given, the last axis is
         used.
     norm : {"backward", "ortho", "forward"}, optional
         Normalization mode (see `fft`). Default is "backward".
@@ -330,97 +326,106 @@ def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *
     Returns
     -------
     out : complex ndarray
-        The truncated or zero-padded input, transformed along the axes
-        indicated by `axes`, or the last two axes if `axes` is not given.
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        If `n` is even, the length of the transformed axis is ``(n/2)+1``.
+        If `n` is odd, the length is ``(n+1)/2``.
 
     Raises
     ------
-    ValueError
-        If `s` and `axes` have different length, or `axes` not given and
-        ``len(s) != 2``.
     IndexError
-        If an element of `axes` is larger than the number of axes of `x`.
+        If `axis` is larger than the last axis of `a`.
 
     See Also
     --------
-    ifft2 : The inverse 2-D FFT.
-    fft : The 1-D FFT.
+    irfft : The inverse of `rfft`.
+    fft : The 1-D FFT of general (complex) input.
     fftn : The N-D FFT.
-    fftshift : Shifts zero-frequency terms to the center of the array.
-        For 2-D input, swaps first and third quadrants, and second
-        and fourth quadrants.
+    rfft2 : The 2-D FFT of real input.
+    rfftn : The N-D FFT of real input.
 
     Notes
     -----
-    `fft2` is just `fftn` with a different default for `axes`.
+    When the DFT is computed for purely real input, the output is
+    Hermitian-symmetric, i.e., the negative frequency terms are just the complex
+    conjugates of the corresponding positive-frequency terms, and the
+    negative-frequency terms are therefore redundant. This function does not
+    compute the negative frequency terms, and the length of the transformed
+    axis of the output is therefore ``n//2 + 1``.
 
-    The output, analogously to `fft`, contains the term for zero frequency in
-    the low-order corner of the transformed axes, the positive frequency terms
-    in the first half of these axes, the term for the Nyquist frequency in the
-    middle of the axes and the negative frequency terms in the second half of
-    the axes, in order of decreasingly negative frequency.
+    When ``X = rfft(x)`` and fs is the sampling frequency, ``X[0]`` contains
+    the zero-frequency term 0*fs, which is real due to Hermitian symmetry.
 
-    See `fftn` for details and a plotting example, and `fft` for
-    definitions and conventions used.
+    If `n` is even, ``A[-1]`` contains the term representing both positive
+    and negative Nyquist frequency (+fs/2 and -fs/2), and must also be purely
+    real. If `n` is odd, there is no term at fs/2; ``A[-1]`` contains
+    the largest positive frequency (fs/2*(n-1)/n), and is complex in the
+    general case.
 
+    If the input `a` contains an imaginary part, it is silently discarded.
 
     Examples
     --------
     >>> import scipy.fft
-    >>> import numpy as np
-    >>> x = np.mgrid[:5, :5][0]
-    >>> scipy.fft.fft2(x)
-    array([[ 50.  +0.j        ,   0.  +0.j        ,   0.  +0.j        , # may vary
-              0.  +0.j        ,   0.  +0.j        ],
-           [-12.5+17.20477401j,   0.  +0.j        ,   0.  +0.j        ,
-              0.  +0.j        ,   0.  +0.j        ],
-           [-12.5 +4.0614962j ,   0.  +0.j        ,   0.  +0.j        ,
-              0.  +0.j        ,   0.  +0.j        ],
-           [-12.5 -4.0614962j ,   0.  +0.j        ,   0.  +0.j        ,
-              0.  +0.j        ,   0.  +0.j        ],
-           [-12.5-17.20477401j,   0.  +0.j        ,   0.  +0.j        ,
-              0.  +0.j        ,   0.  +0.j        ]])
+    >>> scipy.fft.fft([0, 1, 0, 0])
+    array([ 1.+0.j,  0.-1.j, -1.+0.j,  0.+1.j]) # may vary
+    >>> scipy.fft.rfft([0, 1, 0, 0])
+    array([ 1.+0.j,  0.-1.j, -1.+0.j]) # may vary
+
+    Notice how the final element of the `fft` output is the complex conjugate
+    of the second element, for real input. For `rfft`, this symmetry is
+    exploited to compute only the non-negative frequency terms.
 
     """
     xp = array_namespace(x)
+    if is_numpy(xp):
+        return _basic_uarray.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
+    if overwrite_x:
+        raise ValueError(arg_err_msg("overwrite_x"))
+    if workers is not None:
+        raise ValueError(arg_err_msg("workers"))
+    if plan is not None:
+        raise ValueError(arg_err_msg("plan"))
+    if hasattr(xp, 'fft'):
+        if norm is None:
+            norm = 'backward'
+        return xp.fft.rfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = _basic_uarray.fft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                     workers=workers, plan=plan)
+    y = _basic_uarray.rfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
-def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    Compute the 2-D inverse discrete Fourier Transform.
+    Computes the inverse of `rfft`.
 
-    This function computes the inverse of the 2-D discrete Fourier
-    Transform over any number of axes in an M-D array by means of
-    the Fast Fourier Transform (FFT). In other words, ``ifft2(fft2(x)) == x``
-    to within numerical accuracy. By default, the inverse transform is
-    computed over the last two axes of the input array.
+    This function computes the inverse of the 1-D *n*-point
+    discrete Fourier Transform of real input computed by `rfft`.
+    In other words, ``irfft(rfft(x), len(x)) == x`` to within numerical
+    accuracy. (See Notes below for why ``len(a)`` is necessary here.)
 
-    The input, analogously to `ifft`, should be ordered in the same way as is
-    returned by `fft2`, i.e., it should have the term for zero frequency
-    in the low-order corner of the two axes, the positive frequency terms in
-    the first half of these axes, the term for the Nyquist frequency in the
-    middle of the axes and the negative frequency terms in the second half of
-    both axes, in order of decreasingly negative frequency.
+    The input is expected to be in the form returned by `rfft`, i.e., the
+    real zero-frequency term followed by the complex positive frequency terms
+    in order of increasing frequency. Since the discrete Fourier Transform of
+    real input is Hermitian-symmetric, the negative frequency terms are taken
+    to be the complex conjugates of the corresponding positive frequency terms.
 
     Parameters
     ----------
     x : array_like
-        Input array, can be complex.
-    s : sequence of ints, optional
-        Shape (length of each axis) of the output (``s[0]`` refers to axis 0,
-        ``s[1]`` to axis 1, etc.). This corresponds to `n` for ``ifft(x, n)``.
-        Along each axis, if the given shape is smaller than that of the input,
-        the input is cropped. If it is larger, the input is padded with zeros.
-        if `s` is not given, the shape of the input along the axes specified
-        by `axes` is used.  See notes for issue on `ifft` zero padding.
-    axes : sequence of ints, optional
-        Axes over which to compute the FFT. If not given, the last two
-        axes are used.
+        The input array.
+    n : int, optional
+        Length of the transformed axis of the output.
+        For `n` output points, ``n//2+1`` input points are necessary. If the
+        input is longer than this, it is cropped. If it is shorter than this,
+        it is padded with zeros. If `n` is not given, it is taken to be
+        ``2*(m-1)``, where ``m`` is the length of the input along the axis
+        specified by `axis`.
+    axis : int, optional
+        Axis over which to compute the inverse FFT. If not given, the last
+        axis is used.
     norm : {"backward", "ortho", "forward"}, optional
         Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
@@ -438,53 +443,252 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, 
 
     Returns
     -------
-    out : complex ndarray
-        The truncated or zero-padded input, transformed along the axes
-        indicated by `axes`, or the last two axes if `axes` is not given.
+    out : ndarray
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        The length of the transformed axis is `n`, or, if `n` is not given,
+        ``2*(m-1)`` where ``m`` is the length of the transformed axis of the
+        input. To get an odd number of output points, `n` must be specified.
 
     Raises
     ------
-    ValueError
-        If `s` and `axes` have different length, or `axes` not given and
-        ``len(s) != 2``.
     IndexError
-        If an element of `axes` is larger than the number of axes of `x`.
+        If `axis` is larger than the last axis of `x`.
 
     See Also
     --------
-    fft2 : The forward 2-D FFT, of which `ifft2` is the inverse.
-    ifftn : The inverse of the N-D FFT.
+    rfft : The 1-D FFT of real input, of which `irfft` is inverse.
     fft : The 1-D FFT.
-    ifft : The 1-D inverse FFT.
+    irfft2 : The inverse of the 2-D FFT of real input.
+    irfftn : The inverse of the N-D FFT of real input.
 
     Notes
     -----
-    `ifft2` is just `ifftn` with a different default for `axes`.
+    Returns the real valued `n`-point inverse discrete Fourier transform
+    of `x`, where `x` contains the non-negative frequency terms of a
+    Hermitian-symmetric sequence. `n` is the length of the result, not the
+    input.
 
-    See `ifftn` for details and a plotting example, and `fft` for
-    definition and conventions used.
+    If you specify an `n` such that `a` must be zero-padded or truncated, the
+    extra/removed values will be added/removed at high frequencies. One can
+    thus resample a series to `m` points via Fourier interpolation by:
+    ``a_resamp = irfft(rfft(a), m)``.
 
-    Zero-padding, analogously with `ifft`, is performed by appending zeros to
-    the input along the specified dimension. Although this is the common
-    approach, it might lead to surprising results. If another form of zero
-    padding is desired, it must be performed before `ifft2` is called.
+    The default value of `n` assumes an even output length. By the Hermitian
+    symmetry, the last imaginary component must be 0 and so is ignored. To
+    avoid losing information, the correct length of the real input *must* be
+    given.
 
     Examples
     --------
     >>> import scipy.fft
-    >>> import numpy as np
-    >>> x = 4 * np.eye(4)
-    >>> scipy.fft.ifft2(x)
-    array([[1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j], # may vary
-           [0.+0.j,  0.+0.j,  0.+0.j,  1.+0.j],
-           [0.+0.j,  0.+0.j,  1.+0.j,  0.+0.j],
-           [0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]])
+    >>> scipy.fft.ifft([1, -1j, -1, 1j])
+    array([0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]) # may vary
+    >>> scipy.fft.irfft([1, -1j, -1])
+    array([0.,  1.,  0.,  0.])
+
+    Notice how the last term in the input to the ordinary `ifft` is the
+    complex conjugate of the second term, and the output has zero imaginary
+    part everywhere. When calling `irfft`, the negative frequencies are not
+    specified, and the output array is purely real.
 
     """
     xp = array_namespace(x)
+    if is_numpy(xp):
+        return _basic_uarray.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
+                             workers=workers, plan=plan)
+    if overwrite_x:
+        raise ValueError(arg_err_msg("overwrite_x"))
+    if workers is not None:
+        raise ValueError(arg_err_msg("workers"))
+    if plan is not None:
+        raise ValueError(arg_err_msg("plan"))
+    if hasattr(xp, 'fft'):
+        if norm is None:
+            norm = 'backward'
+        return xp.fft.irfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = _basic_uarray.ifft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
+    y = _basic_uarray.irfft(x, n=n, axis=axis, norm=norm)
+    return xp.asarray(y)
+
+
+def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
+    """
+    Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
+    spectrum.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array.
+    n : int, optional
+        Length of the transformed axis of the output. For `n` output
+        points, ``n//2 + 1`` input points are necessary. If the input is
+        longer than this, it is cropped. If it is shorter than this, it is
+        padded with zeros. If `n` is not given, it is taken to be ``2*(m-1)``,
+        where ``m`` is the length of the input along the axis specified by
+        `axis`.
+    axis : int, optional
+        Axis over which to compute the FFT. If not given, the last
+        axis is used.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    plan : object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
+
+        .. versionadded:: 1.5.0
+
+    Returns
+    -------
+    out : ndarray
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        The length of the transformed axis is `n`, or, if `n` is not given,
+        ``2*m - 2``, where ``m`` is the length of the transformed axis of
+        the input. To get an odd number of output points, `n` must be
+        specified, for instance, as ``2*m - 1`` in the typical case,
+
+    Raises
+    ------
+    IndexError
+        If `axis` is larger than the last axis of `a`.
+
+    See Also
+    --------
+    rfft : Compute the 1-D FFT for real input.
+    ihfft : The inverse of `hfft`.
+    hfftn : Compute the N-D FFT of a Hermitian signal.
+
+    Notes
+    -----
+    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
+    opposite case: here the signal has Hermitian symmetry in the time
+    domain and is real in the frequency domain. So, here, it's `hfft`, for
+    which you must supply the length of the result if it is to be odd.
+    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
+    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
+
+    Examples
+    --------
+    >>> from scipy.fft import fft, hfft
+    >>> import numpy as np
+    >>> a = 2 * np.pi * np.arange(10) / 10
+    >>> signal = np.cos(a) + 3j * np.sin(3 * a)
+    >>> fft(signal).round(10)
+    array([ -0.+0.j,   5.+0.j,  -0.+0.j,  15.-0.j,   0.+0.j,   0.+0.j,
+            -0.+0.j, -15.-0.j,   0.+0.j,   5.+0.j])
+    >>> hfft(signal[:6]).round(10) # Input first half of signal
+    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
+    >>> hfft(signal, 10)  # Input entire signal and truncate
+    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
+    """
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return _basic_uarray.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
+                            workers=workers, plan=plan)
+    if overwrite_x:
+        raise ValueError(arg_err_msg("overwrite_x"))
+    if workers is not None:
+        raise ValueError(arg_err_msg("workers"))
+    if plan is not None:
+        raise ValueError(arg_err_msg("plan"))
+    if hasattr(xp, 'fft'):
+        if norm is None:
+            norm = 'backward'
+        return xp.fft.hfft(x, n=n, axis=axis, norm=norm)
+    x = np.asarray(x)
+    y = _basic_uarray.hfft(x, n=n, axis=axis, norm=norm)
+    return xp.asarray(y)
+
+
+def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
+    """
+    Compute the inverse FFT of a signal that has Hermitian symmetry.
+
+    Parameters
+    ----------
+    x : array_like
+        Input array.
+    n : int, optional
+        Length of the inverse FFT, the number of points along
+        transformation axis in the input to use.  If `n` is smaller than
+        the length of the input, the input is cropped. If it is larger,
+        the input is padded with zeros. If `n` is not given, the length of
+        the input along the axis specified by `axis` is used.
+    axis : int, optional
+        Axis over which to compute the inverse FFT. If not given, the last
+        axis is used.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    plan : object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
+
+        .. versionadded:: 1.5.0
+
+    Returns
+    -------
+    out : complex ndarray
+        The truncated or zero-padded input, transformed along the axis
+        indicated by `axis`, or the last one if `axis` is not specified.
+        The length of the transformed axis is ``n//2 + 1``.
+
+    See Also
+    --------
+    hfft, irfft
+
+    Notes
+    -----
+    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
+    opposite case: here, the signal has Hermitian symmetry in the time
+    domain and is real in the frequency domain. So, here, it's `hfft`, for
+    which you must supply the length of the result if it is to be odd:
+    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
+    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
+
+    Examples
+    --------
+    >>> from scipy.fft import ifft, ihfft
+    >>> import numpy as np
+    >>> spectrum = np.array([ 15, -4, 0, -1, 0, -4])
+    >>> ifft(spectrum)
+    array([1.+0.j,  2.+0.j,  3.+0.j,  4.+0.j,  3.+0.j,  2.+0.j]) # may vary
+    >>> ihfft(spectrum)
+    array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
+    """
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
+                             workers=workers, plan=plan)
+    if overwrite_x:
+        raise ValueError(arg_err_msg("overwrite_x"))
+    if workers is not None:
+        raise ValueError(arg_err_msg("workers"))
+    if plan is not None:
+        raise ValueError(arg_err_msg("plan"))
+    if hasattr(xp, 'fft'):
+        if norm is None:
+            norm = 'backward'
+        return xp.fft.ihfft(x, n=n, axis=axis, norm=norm)
+    x = np.asarray(x)
+    y = _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
 
 
@@ -727,26 +931,30 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
+def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
-    Compute the 1-D discrete Fourier Transform for real input.
+    Compute the 2-D discrete Fourier Transform
 
-    This function computes the 1-D *n*-point discrete Fourier
-    Transform (DFT) of a real-valued array by means of an efficient algorithm
-    called the Fast Fourier Transform (FFT).
+    This function computes the N-D discrete Fourier Transform
+    over any axes in an M-D array by means of the
+    Fast Fourier Transform (FFT). By default, the transform is computed over
+    the last two axes of the input array, i.e., a 2-dimensional FFT.
 
     Parameters
     ----------
     x : array_like
-        Input array
-    n : int, optional
-        Number of points along transformation axis in the input to use.
-        If `n` is smaller than the length of the input, the input is cropped.
-        If it is larger, the input is padded with zeros. If `n` is not given,
-        the length of the input along the axis specified by `axis` is used.
-    axis : int, optional
-        Axis over which to compute the FFT. If not given, the last axis is
+        Input array, can be complex
+    s : sequence of ints, optional
+        Shape (length of each transformed axis) of the output
+        (``s[0]`` refers to axis 0, ``s[1]`` to axis 1, etc.).
+        This corresponds to ``n`` for ``fft(x, n)``.
+        Along each axis, if the given shape is smaller than that of the input,
+        the input is cropped. If it is larger, the input is padded with zeros.
+        if `s` is not given, the shape of the input along the axes specified
+        by `axes` is used.
+    axes : sequence of ints, optional
+        Axes over which to compute the FFT. If not given, the last two axes are
         used.
     norm : {"backward", "ortho", "forward"}, optional
         Normalization mode (see `fft`). Default is "backward".
@@ -766,259 +974,97 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Returns
     -------
     out : complex ndarray
-        The truncated or zero-padded input, transformed along the axis
-        indicated by `axis`, or the last one if `axis` is not specified.
-        If `n` is even, the length of the transformed axis is ``(n/2)+1``.
-        If `n` is odd, the length is ``(n+1)/2``.
+        The truncated or zero-padded input, transformed along the axes
+        indicated by `axes`, or the last two axes if `axes` is not given.
 
     Raises
     ------
+    ValueError
+        If `s` and `axes` have different length, or `axes` not given and
+        ``len(s) != 2``.
     IndexError
-        If `axis` is larger than the last axis of `a`.
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
-    irfft : The inverse of `rfft`.
-    fft : The 1-D FFT of general (complex) input.
-    fftn : The N-D FFT.
-    rfft2 : The 2-D FFT of real input.
-    rfftn : The N-D FFT of real input.
-
-    Notes
-    -----
-    When the DFT is computed for purely real input, the output is
-    Hermitian-symmetric, i.e., the negative frequency terms are just the complex
-    conjugates of the corresponding positive-frequency terms, and the
-    negative-frequency terms are therefore redundant. This function does not
-    compute the negative frequency terms, and the length of the transformed
-    axis of the output is therefore ``n//2 + 1``.
-
-    When ``X = rfft(x)`` and fs is the sampling frequency, ``X[0]`` contains
-    the zero-frequency term 0*fs, which is real due to Hermitian symmetry.
-
-    If `n` is even, ``A[-1]`` contains the term representing both positive
-    and negative Nyquist frequency (+fs/2 and -fs/2), and must also be purely
-    real. If `n` is odd, there is no term at fs/2; ``A[-1]`` contains
-    the largest positive frequency (fs/2*(n-1)/n), and is complex in the
-    general case.
-
-    If the input `a` contains an imaginary part, it is silently discarded.
-
-    Examples
-    --------
-    >>> import scipy.fft
-    >>> scipy.fft.fft([0, 1, 0, 0])
-    array([ 1.+0.j,  0.-1.j, -1.+0.j,  0.+1.j]) # may vary
-    >>> scipy.fft.rfft([0, 1, 0, 0])
-    array([ 1.+0.j,  0.-1.j, -1.+0.j]) # may vary
-
-    Notice how the final element of the `fft` output is the complex conjugate
-    of the second element, for real input. For `rfft`, this symmetry is
-    exploited to compute only the non-negative frequency terms.
-
-    """
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return _basic_uarray.rfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
-    if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
-        return xp.fft.rfft(x, n=n, axis=axis, norm=norm)
-    x = np.asarray(x)
-    y = _basic_uarray.rfft(x, n=n, axis=axis, norm=norm)
-    return xp.asarray(y)
-
-
-def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
-    """
-    Computes the inverse of `rfft`.
-
-    This function computes the inverse of the 1-D *n*-point
-    discrete Fourier Transform of real input computed by `rfft`.
-    In other words, ``irfft(rfft(x), len(x)) == x`` to within numerical
-    accuracy. (See Notes below for why ``len(a)`` is necessary here.)
-
-    The input is expected to be in the form returned by `rfft`, i.e., the
-    real zero-frequency term followed by the complex positive frequency terms
-    in order of increasing frequency. Since the discrete Fourier Transform of
-    real input is Hermitian-symmetric, the negative frequency terms are taken
-    to be the complex conjugates of the corresponding positive frequency terms.
-
-    Parameters
-    ----------
-    x : array_like
-        The input array.
-    n : int, optional
-        Length of the transformed axis of the output.
-        For `n` output points, ``n//2+1`` input points are necessary. If the
-        input is longer than this, it is cropped. If it is shorter than this,
-        it is padded with zeros. If `n` is not given, it is taken to be
-        ``2*(m-1)``, where ``m`` is the length of the input along the axis
-        specified by `axis`.
-    axis : int, optional
-        Axis over which to compute the inverse FFT. If not given, the last
-        axis is used.
-    norm : {"backward", "ortho", "forward"}, optional
-        Normalization mode (see `fft`). Default is "backward".
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-        See :func:`fft` for more details.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``.
-        See :func:`~scipy.fft.fft` for more details.
-    plan : object, optional
-        This argument is reserved for passing in a precomputed plan provided
-        by downstream FFT vendors. It is currently not used in SciPy.
-
-        .. versionadded:: 1.5.0
-
-    Returns
-    -------
-    out : ndarray
-        The truncated or zero-padded input, transformed along the axis
-        indicated by `axis`, or the last one if `axis` is not specified.
-        The length of the transformed axis is `n`, or, if `n` is not given,
-        ``2*(m-1)`` where ``m`` is the length of the transformed axis of the
-        input. To get an odd number of output points, `n` must be specified.
-
-    Raises
-    ------
-    IndexError
-        If `axis` is larger than the last axis of `x`.
-
-    See Also
-    --------
-    rfft : The 1-D FFT of real input, of which `irfft` is inverse.
+    ifft2 : The inverse 2-D FFT.
     fft : The 1-D FFT.
-    irfft2 : The inverse of the 2-D FFT of real input.
-    irfftn : The inverse of the N-D FFT of real input.
+    fftn : The N-D FFT.
+    fftshift : Shifts zero-frequency terms to the center of the array.
+        For 2-D input, swaps first and third quadrants, and second
+        and fourth quadrants.
 
     Notes
     -----
-    Returns the real valued `n`-point inverse discrete Fourier transform
-    of `x`, where `x` contains the non-negative frequency terms of a
-    Hermitian-symmetric sequence. `n` is the length of the result, not the
-    input.
+    `fft2` is just `fftn` with a different default for `axes`.
 
-    If you specify an `n` such that `a` must be zero-padded or truncated, the
-    extra/removed values will be added/removed at high frequencies. One can
-    thus resample a series to `m` points via Fourier interpolation by:
-    ``a_resamp = irfft(rfft(a), m)``.
+    The output, analogously to `fft`, contains the term for zero frequency in
+    the low-order corner of the transformed axes, the positive frequency terms
+    in the first half of these axes, the term for the Nyquist frequency in the
+    middle of the axes and the negative frequency terms in the second half of
+    the axes, in order of decreasingly negative frequency.
 
-    The default value of `n` assumes an even output length. By the Hermitian
-    symmetry, the last imaginary component must be 0 and so is ignored. To
-    avoid losing information, the correct length of the real input *must* be
-    given.
+    See `fftn` for details and a plotting example, and `fft` for
+    definitions and conventions used.
+
 
     Examples
     --------
     >>> import scipy.fft
-    >>> scipy.fft.ifft([1, -1j, -1, 1j])
-    array([0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]) # may vary
-    >>> scipy.fft.irfft([1, -1j, -1])
-    array([0.,  1.,  0.,  0.])
-
-    Notice how the last term in the input to the ordinary `ifft` is the
-    complex conjugate of the second term, and the output has zero imaginary
-    part everywhere. When calling `irfft`, the negative frequencies are not
-    specified, and the output array is purely real.
+    >>> import numpy as np
+    >>> x = np.mgrid[:5, :5][0]
+    >>> scipy.fft.fft2(x)
+    array([[ 50.  +0.j        ,   0.  +0.j        ,   0.  +0.j        , # may vary
+              0.  +0.j        ,   0.  +0.j        ],
+           [-12.5+17.20477401j,   0.  +0.j        ,   0.  +0.j        ,
+              0.  +0.j        ,   0.  +0.j        ],
+           [-12.5 +4.0614962j ,   0.  +0.j        ,   0.  +0.j        ,
+              0.  +0.j        ,   0.  +0.j        ],
+           [-12.5 -4.0614962j ,   0.  +0.j        ,   0.  +0.j        ,
+              0.  +0.j        ,   0.  +0.j        ],
+           [-12.5-17.20477401j,   0.  +0.j        ,   0.  +0.j        ,
+              0.  +0.j        ,   0.  +0.j        ]])
 
     """
     xp = array_namespace(x)
-    if is_numpy(xp):
-        return _basic_uarray.irfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
-    if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
-        return xp.fft.irfft(x, n=n, axis=axis, norm=norm)
     x = np.asarray(x)
-    y = _basic_uarray.irfft(x, n=n, axis=axis, norm=norm)
+    y = _basic_uarray.fft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+                     workers=workers, plan=plan)
     return xp.asarray(y)
 
 
-def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
-    Compute the 2-D FFT of a real array.
+    Compute the 2-D inverse discrete Fourier Transform.
 
-    Parameters
-    ----------
-    x : array
-        Input array, taken to be real.
-    s : sequence of ints, optional
-        Shape of the FFT.
-    axes : sequence of ints, optional
-        Axes over which to compute the FFT.
-    norm : {"backward", "ortho", "forward"}, optional
-        Normalization mode (see `fft`). Default is "backward".
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-        See :func:`fft` for more details.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``.
-        See :func:`~scipy.fft.fft` for more details.
-    plan : object, optional
-        This argument is reserved for passing in a precomputed plan provided
-        by downstream FFT vendors. It is currently not used in SciPy.
+    This function computes the inverse of the 2-D discrete Fourier
+    Transform over any number of axes in an M-D array by means of
+    the Fast Fourier Transform (FFT). In other words, ``ifft2(fft2(x)) == x``
+    to within numerical accuracy. By default, the inverse transform is
+    computed over the last two axes of the input array.
 
-        .. versionadded:: 1.5.0
-
-    Returns
-    -------
-    out : ndarray
-        The result of the real 2-D FFT.
-
-    See Also
-    --------
-    irfft2 : The inverse of the 2-D FFT of real input.
-    rfft : The 1-D FFT of real input.
-    rfftn : Compute the N-D discrete Fourier Transform for real
-            input.
-
-    Notes
-    -----
-    This is really just `rfftn` with different default behavior.
-    For more details see `rfftn`.
-
-    """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.rfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
-    return xp.asarray(y)
-
-
-def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-           plan=None):
-    """
-    Computes the inverse of `rfft2`
+    The input, analogously to `ifft`, should be ordered in the same way as is
+    returned by `fft2`, i.e., it should have the term for zero frequency
+    in the low-order corner of the two axes, the positive frequency terms in
+    the first half of these axes, the term for the Nyquist frequency in the
+    middle of the axes and the negative frequency terms in the second half of
+    both axes, in order of decreasingly negative frequency.
 
     Parameters
     ----------
     x : array_like
-        The input array
+        Input array, can be complex.
     s : sequence of ints, optional
-        Shape of the real output to the inverse FFT.
+        Shape (length of each axis) of the output (``s[0]`` refers to axis 0,
+        ``s[1]`` to axis 1, etc.). This corresponds to `n` for ``ifft(x, n)``.
+        Along each axis, if the given shape is smaller than that of the input,
+        the input is cropped. If it is larger, the input is padded with zeros.
+        if `s` is not given, the shape of the input along the axes specified
+        by `axes` is used.  See notes for issue on `ifft` zero padding.
     axes : sequence of ints, optional
-        The axes over which to compute the inverse fft.
-        Default is the last two axes.
+        Axes over which to compute the FFT. If not given, the last two
+        axes are used.
     norm : {"backward", "ortho", "forward"}, optional
         Normalization mode (see `fft`). Default is "backward".
     overwrite_x : bool, optional
@@ -1036,25 +1082,53 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
     Returns
     -------
-    out : ndarray
-        The result of the inverse real 2-D FFT.
+    out : complex ndarray
+        The truncated or zero-padded input, transformed along the axes
+        indicated by `axes`, or the last two axes if `axes` is not given.
+
+    Raises
+    ------
+    ValueError
+        If `s` and `axes` have different length, or `axes` not given and
+        ``len(s) != 2``.
+    IndexError
+        If an element of `axes` is larger than the number of axes of `x`.
 
     See Also
     --------
-    rfft2 : The 2-D FFT of real input.
-    irfft : The inverse of the 1-D FFT of real input.
-    irfftn : The inverse of the N-D FFT of real input.
+    fft2 : The forward 2-D FFT, of which `ifft2` is the inverse.
+    ifftn : The inverse of the N-D FFT.
+    fft : The 1-D FFT.
+    ifft : The 1-D inverse FFT.
 
     Notes
     -----
-    This is really `irfftn` with different defaults.
-    For more details see `irfftn`.
+    `ifft2` is just `ifftn` with a different default for `axes`.
+
+    See `ifftn` for details and a plotting example, and `fft` for
+    definition and conventions used.
+
+    Zero-padding, analogously with `ifft`, is performed by appending zeros to
+    the input along the specified dimension. Although this is the common
+    approach, it might lead to surprising results. If another form of zero
+    padding is desired, it must be performed before `ifft2` is called.
+
+    Examples
+    --------
+    >>> import scipy.fft
+    >>> import numpy as np
+    >>> x = 4 * np.eye(4)
+    >>> scipy.fft.ifft2(x)
+    array([[1.+0.j,  0.+0.j,  0.+0.j,  0.+0.j], # may vary
+           [0.+0.j,  0.+0.j,  0.+0.j,  1.+0.j],
+           [0.+0.j,  0.+0.j,  1.+0.j,  0.+0.j],
+           [0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]])
 
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.irfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                       workers=workers, plan=plan)
+    y = _basic_uarray.ifft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+                      workers=workers, plan=plan)
     return xp.asarray(y)
 
 
@@ -1172,6 +1246,58 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     y = _basic_uarray.rfftn(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
 
+
+def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
+    """
+    Compute the 2-D FFT of a real array.
+
+    Parameters
+    ----------
+    x : array
+        Input array, taken to be real.
+    s : sequence of ints, optional
+        Shape of the FFT.
+    axes : sequence of ints, optional
+        Axes over which to compute the FFT.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    plan : object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
+
+        .. versionadded:: 1.5.0
+
+    Returns
+    -------
+    out : ndarray
+        The result of the real 2-D FFT.
+
+    See Also
+    --------
+    irfft2 : The inverse of the 2-D FFT of real input.
+    rfft : The 1-D FFT of real input.
+    rfftn : Compute the N-D discrete Fourier Transform for real
+            input.
+
+    Notes
+    -----
+    This is really just `rfftn` with different default behavior.
+    For more details see `rfftn`.
+
+    """
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = _basic_uarray.rfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+                      workers=workers, plan=plan)
+    return xp.asarray(y)
 
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
@@ -1295,248 +1421,17 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     return xp.asarray(y)
 
 
-def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-         plan=None):
-    """
-    Compute the FFT of a signal that has Hermitian symmetry, i.e., a real
-    spectrum.
-
-    Parameters
-    ----------
-    x : array_like
-        The input array.
-    n : int, optional
-        Length of the transformed axis of the output. For `n` output
-        points, ``n//2 + 1`` input points are necessary. If the input is
-        longer than this, it is cropped. If it is shorter than this, it is
-        padded with zeros. If `n` is not given, it is taken to be ``2*(m-1)``,
-        where ``m`` is the length of the input along the axis specified by
-        `axis`.
-    axis : int, optional
-        Axis over which to compute the FFT. If not given, the last
-        axis is used.
-    norm : {"backward", "ortho", "forward"}, optional
-        Normalization mode (see `fft`). Default is "backward".
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-        See `fft` for more details.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``.
-        See :func:`~scipy.fft.fft` for more details.
-    plan : object, optional
-        This argument is reserved for passing in a precomputed plan provided
-        by downstream FFT vendors. It is currently not used in SciPy.
-
-        .. versionadded:: 1.5.0
-
-    Returns
-    -------
-    out : ndarray
-        The truncated or zero-padded input, transformed along the axis
-        indicated by `axis`, or the last one if `axis` is not specified.
-        The length of the transformed axis is `n`, or, if `n` is not given,
-        ``2*m - 2``, where ``m`` is the length of the transformed axis of
-        the input. To get an odd number of output points, `n` must be
-        specified, for instance, as ``2*m - 1`` in the typical case,
-
-    Raises
-    ------
-    IndexError
-        If `axis` is larger than the last axis of `a`.
-
-    See Also
-    --------
-    rfft : Compute the 1-D FFT for real input.
-    ihfft : The inverse of `hfft`.
-    hfftn : Compute the N-D FFT of a Hermitian signal.
-
-    Notes
-    -----
-    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
-    opposite case: here the signal has Hermitian symmetry in the time
-    domain and is real in the frequency domain. So, here, it's `hfft`, for
-    which you must supply the length of the result if it is to be odd.
-    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
-    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
-
-    Examples
-    --------
-    >>> from scipy.fft import fft, hfft
-    >>> import numpy as np
-    >>> a = 2 * np.pi * np.arange(10) / 10
-    >>> signal = np.cos(a) + 3j * np.sin(3 * a)
-    >>> fft(signal).round(10)
-    array([ -0.+0.j,   5.+0.j,  -0.+0.j,  15.-0.j,   0.+0.j,   0.+0.j,
-            -0.+0.j, -15.-0.j,   0.+0.j,   5.+0.j])
-    >>> hfft(signal[:6]).round(10) # Input first half of signal
-    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
-    >>> hfft(signal, 10)  # Input entire signal and truncate
-    array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
-    """
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return _basic_uarray.hfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
-    if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
-        return xp.fft.hfft(x, n=n, axis=axis, norm=norm)
-    x = np.asarray(x)
-    y = _basic_uarray.hfft(x, n=n, axis=axis, norm=norm)
-    return xp.asarray(y)
-
-
-def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
-    """
-    Compute the inverse FFT of a signal that has Hermitian symmetry.
-
-    Parameters
-    ----------
-    x : array_like
-        Input array.
-    n : int, optional
-        Length of the inverse FFT, the number of points along
-        transformation axis in the input to use.  If `n` is smaller than
-        the length of the input, the input is cropped. If it is larger,
-        the input is padded with zeros. If `n` is not given, the length of
-        the input along the axis specified by `axis` is used.
-    axis : int, optional
-        Axis over which to compute the inverse FFT. If not given, the last
-        axis is used.
-    norm : {"backward", "ortho", "forward"}, optional
-        Normalization mode (see `fft`). Default is "backward".
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-        See `fft` for more details.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``.
-        See :func:`~scipy.fft.fft` for more details.
-    plan : object, optional
-        This argument is reserved for passing in a precomputed plan provided
-        by downstream FFT vendors. It is currently not used in SciPy.
-
-        .. versionadded:: 1.5.0
-
-    Returns
-    -------
-    out : complex ndarray
-        The truncated or zero-padded input, transformed along the axis
-        indicated by `axis`, or the last one if `axis` is not specified.
-        The length of the transformed axis is ``n//2 + 1``.
-
-    See Also
-    --------
-    hfft, irfft
-
-    Notes
-    -----
-    `hfft`/`ihfft` are a pair analogous to `rfft`/`irfft`, but for the
-    opposite case: here, the signal has Hermitian symmetry in the time
-    domain and is real in the frequency domain. So, here, it's `hfft`, for
-    which you must supply the length of the result if it is to be odd:
-    * even: ``ihfft(hfft(a, 2*len(a) - 2) == a``, within roundoff error,
-    * odd: ``ihfft(hfft(a, 2*len(a) - 1) == a``, within roundoff error.
-
-    Examples
-    --------
-    >>> from scipy.fft import ifft, ihfft
-    >>> import numpy as np
-    >>> spectrum = np.array([ 15, -4, 0, -1, 0, -4])
-    >>> ifft(spectrum)
-    array([1.+0.j,  2.+0.j,  3.+0.j,  4.+0.j,  3.+0.j,  2.+0.j]) # may vary
-    >>> ihfft(spectrum)
-    array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
-    """
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm, overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
-    if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
-        return xp.fft.ihfft(x, n=n, axis=axis, norm=norm)
-    x = np.asarray(x)
-    y = _basic_uarray.ihfft(x, n=n, axis=axis, norm=norm)
-    return xp.asarray(y)
-
-
-def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
-          plan=None):
-    """
-    Compute the 2-D FFT of a Hermitian complex array.
-
-    Parameters
-    ----------
-    x : array
-        Input array, taken to be Hermitian complex.
-    s : sequence of ints, optional
-        Shape of the real output.
-    axes : sequence of ints, optional
-        Axes over which to compute the FFT.
-    norm : {"backward", "ortho", "forward"}, optional
-        Normalization mode (see `fft`). Default is "backward".
-    overwrite_x : bool, optional
-        If True, the contents of `x` can be destroyed; the default is False.
-        See `fft` for more details.
-    workers : int, optional
-        Maximum number of workers to use for parallel computation. If negative,
-        the value wraps around from ``os.cpu_count()``.
-        See :func:`~scipy.fft.fft` for more details.
-    plan : object, optional
-        This argument is reserved for passing in a precomputed plan provided
-        by downstream FFT vendors. It is currently not used in SciPy.
-
-        .. versionadded:: 1.5.0
-
-    Returns
-    -------
-    out : ndarray
-        The real result of the 2-D Hermitian complex real FFT.
-
-    See Also
-    --------
-    hfftn : Compute the N-D discrete Fourier Transform for Hermitian
-            complex input.
-
-    Notes
-    -----
-    This is really just `hfftn` with different default behavior.
-    For more details see `hfftn`.
-
-    """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.hfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
-                      workers=workers, plan=plan)
-    return xp.asarray(y)
-
-
-def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
-    Compute the 2-D inverse FFT of a real spectrum.
+    Computes the inverse of `rfft2`
 
     Parameters
     ----------
     x : array_like
         The input array
     s : sequence of ints, optional
-        Shape of the real input to the inverse FFT.
+        Shape of the real output to the inverse FFT.
     axes : sequence of ints, optional
         The axes over which to compute the inverse fft.
         Default is the last two axes.
@@ -1562,17 +1457,19 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None,
 
     See Also
     --------
-    ihfftn : Compute the inverse of the N-D FFT of Hermitian input.
+    rfft2 : The 2-D FFT of real input.
+    irfft : The inverse of the 1-D FFT of real input.
+    irfftn : The inverse of the N-D FFT of real input.
 
     Notes
     -----
-    This is really `ihfftn` with different defaults.
-    For more details see `ihfftn`.
+    This is really `irfftn` with different defaults.
+    For more details see `irfftn`.
 
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    y = _basic_uarray.ihfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+    y = _basic_uarray.irfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                        workers=workers, plan=plan)
     return xp.asarray(y)
 
@@ -1692,6 +1589,56 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
                       workers=workers, plan=plan)
     return xp.asarray(y)
 
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
+    """
+    Compute the 2-D FFT of a Hermitian complex array.
+
+    Parameters
+    ----------
+    x : array
+        Input array, taken to be Hermitian complex.
+    s : sequence of ints, optional
+        Shape of the real output.
+    axes : sequence of ints, optional
+        Axes over which to compute the FFT.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See `fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    plan : object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
+
+        .. versionadded:: 1.5.0
+
+    Returns
+    -------
+    out : ndarray
+        The real result of the 2-D Hermitian complex real FFT.
+
+    See Also
+    --------
+    hfftn : Compute the N-D discrete Fourier Transform for Hermitian
+            complex input.
+
+    Notes
+    -----
+    This is really just `hfftn` with different default behavior.
+    For more details see `hfftn`.
+
+    """
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = _basic_uarray.hfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+                      workers=workers, plan=plan)
+    return xp.asarray(y)
+
 
 def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
@@ -1786,5 +1733,56 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     xp = array_namespace(x)
     x = np.asarray(x)
     y = _basic_uarray.ihfftn(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
+                       workers=workers, plan=plan)
+    return xp.asarray(y)
+
+
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
+    """
+    Compute the 2-D inverse FFT of a real spectrum.
+
+    Parameters
+    ----------
+    x : array_like
+        The input array
+    s : sequence of ints, optional
+        Shape of the real input to the inverse FFT.
+    axes : sequence of ints, optional
+        The axes over which to compute the inverse fft.
+        Default is the last two axes.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see `fft`). Default is "backward".
+    overwrite_x : bool, optional
+        If True, the contents of `x` can be destroyed; the default is False.
+        See :func:`fft` for more details.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    plan : object, optional
+        This argument is reserved for passing in a precomputed plan provided
+        by downstream FFT vendors. It is currently not used in SciPy.
+
+        .. versionadded:: 1.5.0
+
+    Returns
+    -------
+    out : ndarray
+        The result of the inverse real 2-D FFT.
+
+    See Also
+    --------
+    ihfftn : Compute the inverse of the N-D FFT of Hermitian input.
+
+    Notes
+    -----
+    This is really `ihfftn` with different defaults.
+    For more details see `ihfftn`.
+
+    """
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = _basic_uarray.ihfft2(x, s=s, axes=axes, norm=norm, overwrite_x=overwrite_x,
                        workers=workers, plan=plan)
     return xp.asarray(y)
