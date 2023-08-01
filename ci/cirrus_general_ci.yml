@@ -62,7 +62,8 @@ linux_aarch64_test_task:
     # python3.10 -m ensurepip --default-pip --user
 
     ln -s $(which python3.10) python
-    echo "PATH=/usr/lib/ccache:$PWD:$PATH" >> $CIRRUS_ENV
+    export PATH=/usr/lib/ccache:$PWD:$PATH
+    echo "PATH=$PATH" >> $CIRRUS_ENV
     echo "CCACHE_DIR=$PWD/.ccache" >> $CIRRUS_ENV
 
     python -m pip install meson ninja numpy cython pybind11 pythran cython
@@ -101,6 +102,10 @@ macos_arm64_test_task:
     brew install python@3.10
 
     export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    export PYTHONPATH=/opt/homebrew/lib/python3.10/site-packages
+    
+    echo "PYTHONPATH=$PYTHONPATH" >> $CIRRUS_ENV
+    echo "_CWD=$PWD" >> $CIRRUS_ENV
     echo "PATH=$PATH" >> $CIRRUS_ENV
     #    export PATH=/opt/homebrew/opt/ccache/libexec:$PATH
 
@@ -108,15 +113,16 @@ macos_arm64_test_task:
 
     # used for installing OpenBLAS/gfortran
     bash tools/wheels/cibw_before_build_macos.sh $PWD
+    echo "DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib" >> $CIRRUS_ENV
 
     echo "PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig" >> $CIRRUS_ENV
     echo "CMAKE_PREFIX_PATH=/opt/arm64-builds/" >> $CIRRUS_ENV
     # export CCACHE_DIR=$PWD/.ccache
-
-    pushd ~/
-    python -m venv scipy-dev
-    source scipy-dev/bin/activate
-    popd
+    
+    cd ..
+    python -m venv test_env
+    source test_env/bin/activate
+    cd $_CWD
 
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
@@ -127,21 +133,15 @@ macos_arm64_test_task:
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
 
-    echo "DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib" >> $CIRRUS_ENV
-
-  build_script:
-    pushd ~/
-    python -m venv scipy-dev
-    source scipy-dev/bin/activate
-    popd
-    
+  build_script: |
+    cd ..
+    source test_env/bin/activate
+    cd $_CWD
     python dev.py build -j3
     # ccache -s
 
-  build_script:
-    pushd ~/
-    python -m venv scipy-dev
-    source scipy-dev/bin/activate
-    popd
-
+  test_script: |
+    cd ..
+    source test_env/bin/activate
+    cd $_CWD
     python dev.py test -j3
