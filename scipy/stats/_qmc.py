@@ -434,11 +434,13 @@ def geometric_discrepancy(
 
     """
     sample = _ensure_in_unit_hypercube(sample)
+    if sample.shape[0] < 2:
+        raise ValueError("Sample must contain at least two points")
 
     distances = distance.pdist(sample, metric=metric)  # type: ignore[call-overload]
 
     if np.any(distances == 0.0):
-        warnings.warn("The sample contains duplicate points.", stacklevel=2)
+        warnings.warn("Sample contains duplicate points.", stacklevel=2)
 
     if method == "mindist":
         return np.min(distances[distances.nonzero()])
