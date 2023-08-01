@@ -12,6 +12,7 @@ def x():
     return np.random.randn(512, 128)  # Must be large enough to qualify for mt
 
 
+@skip_if_array_api
 @pytest.mark.parametrize("func", [
     fft.fft, fft.ifft, fft.fft2, fft.ifft2, fft.fftn, fft.ifftn,
     fft.rfft, fft.irfft, fft.rfft2, fft.irfft2, fft.rfftn, fft.irfftn,
@@ -30,6 +31,7 @@ def _mt_fft(x):
     return fft.fft(x, workers=2)
 
 
+@skip_if_array_api
 def test_mixed_threads_processes(x):
     # Test that the fft threadpool is safe to use before & after fork
 
