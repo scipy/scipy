@@ -1,4 +1,4 @@
-from ._basic_np import _dispatch
+from ._basic_uarray import _dispatch
 from scipy._lib.uarray import Dispatchable
 import numpy as np
 

@@ -2,7 +2,7 @@ python_sources = [
   '__init__.py',
   '_backend.py',
   '_basic.py',
-  '_basic_np.py',
+  '_basic_uarray.py',
   '_debug_backends.py',
   '_fftlog.py',
   '_fftlog_np.py',
