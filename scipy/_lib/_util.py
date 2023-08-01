@@ -91,13 +91,16 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
         raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
 
+    # Array API does not require that arrays be iterable, apparently
+    arrays = [arrays[i, ...] for i in range(arrays.shape[0])]
+
     args = xp.broadcast_arrays(cond, *arrays)
-    cond, arrays = xp.astype(args[0], dtype=bool, copy=False), args[1:]
+    cond, arrays = xp.astype(args[0], bool, copy=False), args[1:]
 
     temp1 = f(*(arr[cond] for arr in arrays))
 
     if f2 is None:
-        dtype = xp.result_type(temp1, fillvalue)
+        dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
         out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
     else:
         ncond = ~cond

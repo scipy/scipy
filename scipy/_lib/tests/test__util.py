@@ -405,8 +405,10 @@ def test__rng_html_rewrite():
 
 
 class TestLazywhere:
-    arrays = npst.arrays(dtype=npst.floating_dtypes(), shape=npst.array_shapes())
-    fillvalue = npst.arrays(dtype=npst.floating_dtypes(), shape=tuple())
+    # Mixing floats and integers does not work in np.array_api, so don't try
+    dtype = strategies.sampled_from((np.float32, np.float64))
+    arrays = npst.arrays(dtype=dtype, shape=npst.array_shapes())
+    fillvalue = npst.arrays(dtype=dtype, shape=tuple())
     p = strategies.floats(min_value=0, max_value=1)
 
     @array_api_compatible
@@ -419,18 +421,22 @@ class TestLazywhere:
             return args[0]
 
         def f2(*args):
-            return args[0]*0.5
+            return args[0] / 2
 
         if arrays.ndim <= 1:
-            arrays = (arrays,)
+            arrays = xp.expand_dims(arrays, axis=0)
 
         rng = np.random.default_rng(84268954369357456)
-        cond = rng.random(size=arrays[0].shape) > p
+        shape = arrays[0, ...].shape
+        cond = xp.asarray(rng.random(size=shape) > p)
 
-        res = _lazywhere(cond, arrays, f, fillvalue)
-        ref = np.where(cond, f(*arrays), fillvalue)
+        arrays_list = [arrays[i, ...] for i in range(arrays.shape[0])]
+        res = _lazywhere(cond, arrays, f, fillvalue)  # `Array`s not iterable
+        ref = np.where(cond, f(*arrays_list),
+                       # broadcast to follow sane type promotion rules
+                       np.broadcast_to(fillvalue, shape))
         assert_equal(res, ref)
 
         res = _lazywhere(cond, arrays, f, f2=f2)
-        ref = np.where(cond, f(*arrays), f2(*arrays))
+        ref = np.where(cond, f(*arrays_list), f2(*arrays_list))
         assert_equal(res, ref)
