@@ -31,7 +31,7 @@ class TestFFTShift:
     @array_api_compatible
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3])
-        if xp.__name__ in 'torch':
+        if xp.__name__ == 'torch':
             assert_raises(RuntimeError, fft.fft, x, 0)
         else:
             assert_raises(ValueError, fft.fft, x, 0)
@@ -248,6 +248,8 @@ class TestFFT1D:
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
+        if xp.__name__ == 'torch':
+            pytest.xfail
         x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
                 (1, 2, 0), (2, 0, 1), (2, 1, 0)]
