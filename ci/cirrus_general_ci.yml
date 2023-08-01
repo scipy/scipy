@@ -32,8 +32,8 @@ linux_aarch64_test_task:
     image: family/docker-builder-arm64
     architecture: arm64
     platform: linux
-    cpu: 2
-    memory: 8G
+    cpu: 1
+    memory: 4G
 
   <<: *MODIFIED_CLONE
 
@@ -76,7 +76,7 @@ linux_aarch64_test_task:
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
     
-    python dev.py test -j2
+    python dev.py test -j1
     
     ccache -s
 
