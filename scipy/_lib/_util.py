@@ -45,6 +45,8 @@ except ImportError:
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     """Return elements chosen from two possibilities depending on a condition
 
+    Equivalent to ``f(*arrays) if cond else fillvalue`` performed elementwise.
+
     Parameters
     ----------
     cond : array
@@ -90,7 +92,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
 
     args = xp.broadcast_arrays(cond, *arrays)
-    cond, arrays = args[0].astype(bool, copy=False), args[1:]
+    cond, arrays = xp.astype(args[0], dtype=bool, copy=False), args[1:]
 
     temp1 = f(*(arr[cond] for arr in arrays))
 
