@@ -84,18 +84,22 @@ linux_aarch64_test_task:
 macos_arm64_test_task:
   macos_instance:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
-    cpu: 2
-    memory: 8G
 
   <<: *MODIFIED_CLONE
+
+  ccache_cache:
+    folder: .ccache
+    populate_script:
+      - mkdir -p .ccache
+    fingerprint_key: ccache-macosx_arm64
 
   pip_cache:
     folder: /Users/admin/Library/Caches/pip
 
   test_script: |
-    brew install python@3.10
+    brew install python@3.10 ccache
 
-    export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    export PATH=/opt/homebrew/opt/ccache/libexec:/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
     python --version
 
     # used for installing OpenBLAS/gfortran
@@ -103,6 +107,7 @@ macos_arm64_test_task:
 
     export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
     export CMAKE_PREFIX_PATH=/opt/arm64-builds/
+    export CCACHE_DIR=$PWD/.ccache
 
     pushd ~/
     python -m venv scipy-dev
@@ -118,6 +123,7 @@ macos_arm64_test_task:
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
 
-
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
-    python dev.py test -j2
+    python dev.py test -j3
+
+    ccache -s
