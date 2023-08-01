@@ -76,14 +76,16 @@ linux_aarch64_test_task:
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
     
-    python dev.py test
+    python dev.py test -j2
     
     ccache -s
 
 
 macos_arm64_test_task:
   macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:14
+    image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
+    cpu: 2
+    memory: 8G
 
   <<: *MODIFIED_CLONE
 
@@ -118,4 +120,4 @@ macos_arm64_test_task:
 
 
     export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
-    python dev.py test
+    python dev.py test -j2
