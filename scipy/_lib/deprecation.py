@@ -66,7 +66,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         except AttributeError as e:
             # still raise an error if the attribute isn't in any of the expected
             # private modules
-            if module is private_modules[-1]:
+            if module == private_modules[-1]:
                 raise e
             continue
     
