@@ -16,7 +16,6 @@
 #include "npy_2_complexcompat.h"
 #include "sf_error.h"
 
-#define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
 #define ZCONVINF(func,z)                                                \
     do {                                                                \
         if ((double)npy_creal(z) == (double)1.0e300) {    \

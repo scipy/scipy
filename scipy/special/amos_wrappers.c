@@ -309,8 +309,8 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
         NPY_CSETIMAG(&cy, 0);
     } else {
         cy = cbesi_wrap_e(v*sign, z);
-        NPY_CSETREAL(&cy, npy_cimag(cy) * INFINITY);
-        NPY_CSETIMAG(&cy, npy_creal(cy) * INFINITY);
+        NPY_CSETREAL(&cy, npy_creal(cy) * INFINITY);
+        NPY_CSETIMAG(&cy, npy_cimag(cy) * INFINITY);
     }
   }
 
