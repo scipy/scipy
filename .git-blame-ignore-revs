@@ -6,3 +6,5 @@
 c1c91d3933291046c72a8e1569c0c4703a51ba45
 # Release entries move
 b9cb3d075dad2b1ee9c145f9e69192d6eeda4f1e
+# Rename `fft/tests/test_numpy.py` to `test_basic.py`
+79099da5aefd2f76092b999823e45a6519e41005
