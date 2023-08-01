@@ -315,7 +315,7 @@ class TestDifferentialEvolutionSolver:
         # result object and that terminating with callback `StopIteration`
         # after `maxiter` iterations is equivalent to terminating with
         # `maxiter` parameter.
-        assert res.success == ref.success == False
+        assert res.success is ref.success is False
         assert callback.nit == res.nit == maxiter
         assert res.message == 'callback function requested stop early'
         assert ref.message == 'Maximum number of iterations has been exceeded.'
