@@ -8,7 +8,6 @@ python_sources = [
   '_fftlog_np.py',
   '_fftlog_multimethods.py',
   '_helper.py',
-  '_helper_np.py',
   '_realtransforms.py',
   '_realtransforms_np.py'
 ]
