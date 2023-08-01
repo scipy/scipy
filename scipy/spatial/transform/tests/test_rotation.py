@@ -56,7 +56,39 @@ def test_quat_double_to_canonical_single_cover():
         ])
     r = Rotation.from_quat(x)
     expected_quat = np.abs(x) / np.linalg.norm(x, axis=1)[:, None]
-    assert_array_almost_equal(r.as_quat(canonical=True), expected_quat)
+    assert_allclose(r.as_quat(canonical=True), expected_quat)
+
+
+def test_quat_double_cover():
+    # See the Rotation.from_quat() docstring for scope of the quaternion
+    # double cover property.
+    # Check from_quat and as_quat(canonical=False)
+    q = np.array([0, 0, 0, -1])
+    r = Rotation.from_quat(q)
+    assert_equal(q, r.as_quat(canonical=False))
+
+    # Check composition and inverse
+    q = np.array([1, 0, 0, 1])/np.sqrt(2)  # 90 deg rotation about x
+    r = Rotation.from_quat(q)
+    r3 = r*r*r
+    assert_allclose(r.as_quat(canonical=False)*np.sqrt(2),
+                    [1, 0, 0, 1])
+    assert_allclose(r.inv().as_quat(canonical=False)*np.sqrt(2),
+                    [-1, 0, 0, 1])
+    assert_allclose(r3.as_quat(canonical=False)*np.sqrt(2),
+                    [1, 0, 0, -1])
+    assert_allclose(r3.inv().as_quat(canonical=False)*np.sqrt(2),
+                    [-1, 0, 0, -1])
+
+    # More sanity checks
+    assert_allclose((r*r.inv()).as_quat(canonical=False),
+                    [0, 0, 0, 1])
+    assert_allclose((r3*r3.inv()).as_quat(canonical=False),
+                    [0, 0, 0, 1])
+    assert_allclose((r*r3).as_quat(canonical=False),
+                    [0, 0, 0, -1])
+    assert_allclose((r.inv()*r3.inv()).as_quat(canonical=False),
+                    [0, 0, 0, -1])
 
 
 def test_malformed_1d_from_quat():
@@ -914,6 +946,30 @@ def test_magnitude_single_rotation():
     assert_allclose(result2, 0)
 
 
+def test_approx_equal():
+    rng = np.random.RandomState(0)
+    p = Rotation.random(10, random_state=rng)
+    q = Rotation.random(10, random_state=rng)
+    r = p * q.inv()
+    r_mag = r.magnitude()
+    atol = np.median(r_mag)  # ensure we get mix of Trues and Falses
+    assert_equal(p.approx_equal(q, atol), (r_mag < atol))
+
+
+def test_approx_equal_single_rotation():
+    # also tests passing single argument to approx_equal
+    p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
+    q = Rotation.from_quat(np.eye(4))
+    assert p.approx_equal(q[3])
+    assert not p.approx_equal(q[0])
+
+    # test passing atol and using degrees
+    assert not p.approx_equal(q[3], atol=1e-10)
+    assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
+    with pytest.warns(UserWarning, match="atol must be set"):
+        assert p.approx_equal(q[3], degrees=True)
+
+
 def test_mean():
     axes = np.concatenate((-np.eye(3), np.eye(3)))
     thetas = np.linspace(0, np.pi / 2, 100)
@@ -1419,6 +1475,42 @@ def test_multiplication_stability():
     for q in qs:
         rs *= q * rs
         assert_allclose(np.linalg.norm(rs.as_quat(), axis=1), 1)
+
+
+def test_pow():
+    atol = 1e-14
+    p = Rotation.random(10, random_state=0)
+    p_inv = p.inv()
+    # Test the short-cuts and other integers
+    for n in [-5, -2, -1, 0, 1, 2, 5]:
+        q = p ** n
+        r = Rotation.identity(10)
+        for _ in range(abs(n)):
+            if n > 0:
+                r = r * p
+            else:
+                r = r * p_inv
+        ang = (q * r.inv()).magnitude()
+        assert np.all(ang < atol)
+
+    # Large angle fractional
+    for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:
+        q = p ** n
+        r = Rotation.from_rotvec(n * p.as_rotvec())
+        assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+    # Small angle
+    p = Rotation.from_rotvec([1e-12, 0, 0])
+    n = 3
+    q = p ** n
+    r = Rotation.from_rotvec(n * p.as_rotvec())
+    assert_allclose(q.as_quat(), r.as_quat(), atol=atol)
+
+
+def test_pow_errors():
+    p = Rotation.random(random_state=0)
+    with pytest.raises(NotImplementedError, match='modulus not supported'):
+        pow(p, 1, 1)
 
 
 def test_rotation_within_numpy_array():

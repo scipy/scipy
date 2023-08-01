@@ -1399,12 +1399,11 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.statistic, r2.statistic, atol=1e-15)
 
 
-def test_kendalltau_dep_initial_lexsort():
-    with pytest.warns(
-        DeprecationWarning,
-        match="'kendalltau' keyword argument 'initial_lexsort'"
-    ):
+def test_kendalltau_deprecations():
+    with pytest.deprecated_call(match="keyword argument 'initial_lexsort"):
         stats.kendalltau([], [], initial_lexsort=True)
+    with pytest.deprecated_call(match="use keyword arguments"):
+        stats.kendalltau([], [], True)
 
 
 def test_kendalltau_gh18139_overflow():

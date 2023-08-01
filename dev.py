@@ -111,14 +111,6 @@ import math
 import traceback
 from concurrent.futures.process import _MAX_WINDOWS_WORKERS
 
-# distutils is required to infer meson install path
-# if this needs to be replaced for Python 3.12 support and there's no
-# stdlib alternative, use CmdAction and the hack discussed in gh-16058
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
-    from distutils import dist
-    from distutils.command.install import INSTALL_SCHEMES
-
 from pathlib import Path
 from collections import namedtuple
 from types import ModuleType as new_module
@@ -192,7 +184,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "environments",
-            "commands": ["shell", "python", "ipython"],
+            "commands": ["shell", "python", "ipython", "show_PYTHONPATH"],
         },
         {
             "name": "documentation",
@@ -337,14 +329,23 @@ class Dirs:
         Depending on whether we have debian python or not,
         return dist_packages path or site_packages path.
         """
-        if 'deb_system' in INSTALL_SCHEMES:
-            # debian patched python in use
-            install_cmd = dist.Distribution().get_command_obj('install')
-            install_cmd.select_scheme('deb_system')
-            install_cmd.finalize_options()
-            plat_path = Path(install_cmd.install_platlib)
-        else:
+        if sys.version_info >= (3, 12):
             plat_path = Path(get_path('platlib'))
+        else:
+            # distutils is required to infer meson install path
+            # for python < 3.12 in debian patched python
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=DeprecationWarning)
+                from distutils import dist
+                from distutils.command.install import INSTALL_SCHEMES
+            if 'deb_system' in INSTALL_SCHEMES:
+                # debian patched python in use
+                install_cmd = dist.Distribution().get_command_obj('install')
+                install_cmd.select_scheme('deb_system')
+                install_cmd.finalize_options()
+                plat_path = Path(install_cmd.install_platlib)
+            else:
+                plat_path = Path(get_path('platlib'))
         return self.installed / plat_path.relative_to(sys.exec_prefix)
 
 
@@ -386,7 +387,7 @@ class Build(Task):
     """:wrench: Build & install package on path.
 
     \b
-    ```python
+    ```shell-session
     Examples:
 
     $ python dev.py build --asan ;
@@ -1033,9 +1034,16 @@ class Mypy(Task):
 class Doc(Task):
     """:wrench: Build documentation.
 
-TARGETS: Sphinx build targets [default: 'html']
+    TARGETS: Sphinx build targets [default: 'html']
 
-"""
+    Running `python dev.py doc -j8 html` is equivalent to:
+    1. Execute build command (skipp by passing the global `-n` option).
+    2. Set the PYTHONPATH environment variable
+       (query with `python dev.py -n show_PYTHONPATH`).
+    3. Run make on `doc/Makefile`, i.e.: `make -C doc -j8 TARGETS`
+
+    To remove all generated documentation do: `python dev.py -n doc clean`
+    """
     ctx = CONTEXT
 
     args = Argument(['args'], nargs=-1, metavar='TARGETS', required=False)
@@ -1076,11 +1084,6 @@ TARGETS: Sphinx build targets [default: 'html']
             if no_cache:
                 sphinxopts += "-E"
             make_params.append(f'SPHINXOPTS="{sphinxopts}"')
-
-        # Environment variables needed for notebooks
-        # See gh-17322
-        make_params.append('SQLALCHEMY_SILENCE_UBER_WARNING=1')
-        make_params.append('JUPYTER_PLATFORM_DIRS=1')
 
         return {
             'actions': [
@@ -1130,8 +1133,18 @@ class RefguideCheck(Task):
 # ENVS
 
 @cli.cls_cmd('python')
-class Python():
-    """:wrench: Start a Python shell with PYTHONPATH set."""
+class Python:
+    """:wrench: Start a Python shell with PYTHONPATH set.
+
+    ARGS: Arguments passed to the Python interpreter.
+          If not set, an interactive shell is launched.
+
+    Running `python dev.py shell my_script.py` is equivalent to:
+    1. Execute build command (skipp by passing the global `-n` option).
+    2. Set the PYTHONPATH environment variable
+       (query with `python dev.py -n show_PYTHONPATH`).
+    3. Run interpreter: `python my_script.py`
+    """
     ctx = CONTEXT
     pythonpath = Option(
         ['--pythonpath', '-p'], metavar='PYTHONPATH', default=None,
@@ -1167,7 +1180,14 @@ class Python():
 
 @cli.cls_cmd('ipython')
 class Ipython(Python):
-    """:wrench: Start IPython shell with PYTHONPATH set."""
+    """:wrench: Start IPython shell with PYTHONPATH set.
+
+    Running `python dev.py ipython` is equivalent to:
+    1. Execute build command (skipp by passing the global `-n` option).
+    2. Set the PYTHONPATH environment variable
+       (query with `python dev.py -n show_PYTHONPATH`).
+    3. Run the `ipython` interpreter.
+    """
     ctx = CONTEXT
     pythonpath = Python.pythonpath
 
@@ -1180,7 +1200,14 @@ class Ipython(Python):
 
 @cli.cls_cmd('shell')
 class Shell(Python):
-    """:wrench: Start Unix shell with PYTHONPATH set."""
+    """:wrench: Start Unix shell with PYTHONPATH set.
+
+    Running `python dev.py shell` is equivalent to:
+    1. Execute build command (skipp by passing the global `-n` option).
+    2. Open a new shell.
+    3. Set the PYTHONPATH environment variable in shell
+       (query with `python dev.py -n show_PYTHONPATH`).
+    """
     ctx = CONTEXT
     pythonpath = Python.pythonpath
     extra_argv = Python.extra_argv
@@ -1189,10 +1216,32 @@ class Shell(Python):
     def run(cls, pythonpath, extra_argv, **kwargs):
         cls._setup(pythonpath, **kwargs)
         shell = os.environ.get('SHELL', 'sh')
-        print("Spawning a Unix shell...")
+        click.echo(f"Spawning a Unix shell '{shell}' ...")
         os.execv(shell, [shell] + list(extra_argv))
         sys.exit(1)
 
+
+@cli.cls_cmd('show_PYTHONPATH')
+class ShowDirs(Python):
+    """:information: Show value of the PYTHONPATH environment variable used in
+    this script.
+
+    PYTHONPATH sets the default search path for module files for the
+    interpreter. Here, it includes the path to the local SciPy build
+    (typically `.../build-install/lib/python3.10/site-packages`).
+
+    Use the global option `-n` to skip the building step, e.g.:
+    `python dev.py -n show_PYTHONPATH`
+    """
+    ctx = CONTEXT
+    pythonpath = Python.pythonpath
+    extra_argv = Python.extra_argv
+
+    @classmethod
+    def run(cls, pythonpath, extra_argv, **kwargs):
+        cls._setup(pythonpath, **kwargs)
+        py_path = os.environ.get('PYTHONPATH', '')
+        click.echo(f"PYTHONPATH={py_path}")
 
 @cli.command()
 @click.argument('version_args', nargs=2)

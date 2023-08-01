@@ -82,10 +82,10 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.helper',
     'scipy.fftpack.pseudo_diffs',
     'scipy.fftpack.realtransforms',
-    'scipy.integrate.odepack',
-    'scipy.integrate.quadpack',
     'scipy.integrate.dop',
     'scipy.integrate.lsoda',
+    'scipy.integrate.odepack',
+    'scipy.integrate.quadpack',
     'scipy.integrate.vode',
     'scipy.interpolate.dfitpack',
     'scipy.interpolate.fitpack',
@@ -98,8 +98,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.arff.arffread',
     'scipy.io.harwell_boeing',
     'scipy.io.idl',
-    'scipy.io.mmio',
-    'scipy.io.netcdf',
     'scipy.io.matlab.byteordercodes',
     'scipy.io.matlab.mio',
     'scipy.io.matlab.mio4',
@@ -109,6 +107,8 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.matlab.mio_utils',
     'scipy.io.matlab.miobase',
     'scipy.io.matlab.streams',
+    'scipy.io.mmio',
+    'scipy.io.netcdf',
     'scipy.linalg.basic',
     'scipy.linalg.decomp',
     'scipy.linalg.decomp_cholesky',
@@ -316,26 +316,51 @@ def test_api_importable():
                              "{}".format(module_names))
 
 
-@pytest.mark.parametrize("module_name",
-                         ['scipy.stats.stats',
-                          'scipy.stats.morestats'])
-def test_private_but_present_deprecation(module_name):
+@pytest.mark.parametrize(("module_name", "correct_module"),
+                         [('scipy.integrate.dop', None),
+                          ('scipy.integrate.lsoda', None),
+                          ('scipy.integrate.odepack', None),
+                          ('scipy.integrate.quadpack', None),
+                          ('scipy.integrate.vode', None),
+                          ('scipy.optimize.cobyla', None),
+                          ('scipy.optimize.lbfgsb', None),
+                          ('scipy.optimize.linesearch', None),
+                          ('scipy.optimize.minpack', None),
+                          ('scipy.optimize.minpack2', None),
+                          ('scipy.optimize.moduleTNC', None),
+                          ('scipy.optimize.nonlin', None),
+                          ('scipy.optimize.optimize', None),
+                          ('scipy.optimize.slsqp', None),
+                          ('scipy.optimize.tnc', None),
+                          ('scipy.optimize.zeros', None),
+                          ('scipy.stats.biasedurn', None),
+                          ('scipy.stats.kde', None),
+                          ('scipy.stats.morestats', None),
+                          ('scipy.stats.mstats_basic', 'mstats'),
+                          ('scipy.stats.mstats_extras', 'mstats'),
+                          ('scipy.stats.mvn', None),
+                          ('scipy.stats.stats', None)])
+def test_private_but_present_deprecation(module_name, correct_module):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
     # were misleading. Check that this is resolved.
     module = import_module(module_name)
-    sub_package_name = module_name.split(".")[1]
-    sub_package = import_module(f"scipy.{sub_package_name}")
+    if correct_module is None:
+        import_name = f'scipy.{module_name.split(".")[1]}'
+    else:
+        import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
+    
+    correct_import = import_module(import_name)
 
     # Attributes that were formerly in `module_name` can still be imported from
     # `module_name`, albeit with a deprecation warning. The specific message
     # depends on whether the attribute is public in `scipy.xxx` or not.
     for attr_name in module.__all__:
-        attr = getattr(sub_package, attr_name, None)
+        attr = getattr(correct_import, attr_name, None)
         if attr is None:
             message = f"`{module_name}.{attr_name}` is deprecated..."
         else:
-            message = f"Please import `{attr_name}` from the `scipy.{sub_package_name}`..."
+            message = f"Please import `{attr_name}` from the `{import_name}`..."
         with pytest.deprecated_call(match=message):
             getattr(module, attr_name)
 
