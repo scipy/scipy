@@ -9,7 +9,7 @@ python_sources = [
   '_fftlog_multimethods.py',
   '_helper.py',
   '_realtransforms.py',
-  '_realtransforms_np.py'
+  '_realtransforms_uarray.py'
 ]
 
 
