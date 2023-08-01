@@ -84,7 +84,6 @@ History
     * call_func method to assure scalar output,
       Jul 2023, Matthias Cuntz
     * Require keyword names after mask, Jul 2023, Matthias Cuntz
-    * Set default polish=False, Jul 2023, Matthias Cuntz
     * Renamed keywords to more talkative names:
       lb -> lower_bounds, ub -> upper_bounds,
       maxn -> maxfev, kstop -> n_check, pcento -> f_tol, peps -> p_tol,
@@ -93,6 +92,7 @@ History
       iniflg -> x0_in_pop, maxit -> maximize,
       Jul 2023, Matthias Cuntz
     * Removed restart capability, Jul 2023, Matthias Cuntz
+    * Set maxfev to N*log(N) formula per default, Aug 2023, Matthias Cuntz
 
 """
 import warnings
@@ -167,12 +167,12 @@ def shuffled_complex_evolution(
         mask=None, *,
         args=(), kwargs={},
         sampling='half-open',
-        maxfev=1000, n_check=10, f_tol=0.0001, p_tol=0.001,
+        maxfev=0, n_check=10, f_tol=0.0001, p_tol=0.001,
         n_complex=2, n_point_complex=0, n_point_subcomplex=0,
         n_eval_complex_per_shuffle=0, min_n_complex=0,
         seed=None, x0_in_pop=True,
         alpha=0.8, beta=0.45, maximize=False, printit=2,
-        polish=False):
+        polish=True):
     """
     Shuffled Complex Evolution algorithm for finding the minimum of a
     multivariate function
@@ -234,7 +234,7 @@ def shuffled_complex_evolution(
         The default is 'half-open'.
     maxfev : int, optional
         Maximum number of function evaluations allowed during minimization
-        (without polishing) (default: 1000).
+        (without polishing) (default: `6400+160*nopt*log10(nopt)`).
     n_check : int, optional
         Number of evolution loops checked for percentage change (`f_tol`)
         of function `func` (default: 10).
@@ -283,7 +283,7 @@ def shuffled_complex_evolution(
 
         The default is 2.
     polish : bool, optional
-        If True, then `scipy.optimize.minimize` is used with the
+        If True (default), then `scipy.optimize.minimize` is used with the
         `L-BFGS-B` method to polish the result at the end, which
         can improve the minimization slightly. For large problems, polishing
         can take a long time due to the computation of the Jacobian.
@@ -396,14 +396,15 @@ class ShuffledComplexEvolutionSolver:
     """
 
     def __init__(self, func, x0, lower_bounds, upper_bounds=None,
-                 mask=None, args=(), kwargs={},
+                 mask=None, *,
+                 args=(), kwargs={},
                  sampling='half-open',
-                 maxfev=1000, n_check=10, f_tol=0.0001,
+                 maxfev=0, n_check=10, f_tol=0.0001,
                  n_complex=2, n_point_complex=0, n_point_subcomplex=0,
                  n_eval_complex_per_shuffle=0, min_n_complex=0,
                  p_tol=0.001, seed=None, x0_in_pop=True,
                  alpha=0.8, beta=0.45, maximize=False, printit=2,
-                 polish=False):
+                 polish=True):
 
         # function to minimize
         self.func = _FunctionWrapper(func, *args, **kwargs)
@@ -412,7 +413,6 @@ class ShuffledComplexEvolutionSolver:
         self.rnd = check_random_state(seed)
         # parameters for initial run
         self.sampling = sampling
-        self.maxfev = maxfev
         self.n_check = n_check
         self.f_tol = f_tol
         self.p_tol = p_tol
@@ -440,6 +440,9 @@ class ShuffledComplexEvolutionSolver:
                               if min_n_complex > 0
                               else self.n_complex)
         self.npt   = self.n_point_complex * self.n_complex
+        self.maxfev = (maxfev
+                       if maxfev > 0
+                       else int(6400 + 160 * self.nopt * np.log10(self.nopt)))
 
         # assure lower_bounds and upper_bounds are numpy arrays
         if upper_bounds is None:
@@ -661,7 +664,6 @@ class ShuffledComplexEvolutionSolver:
 
         """
         fuc = self.func(x)
-        print(x, fuc)
         if isinstance(fuc, np.ndarray):
             if fuc.size > 1:
                 raise RuntimeError(
