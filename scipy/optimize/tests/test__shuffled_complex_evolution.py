@@ -97,7 +97,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         assert_equal(solver.alpha, 0.8)
         assert_equal(solver.beta, 0.45)
         assert_equal(solver.maximize, False)
-        assert_equal(solver.printit, 2)
+        assert_equal(solver.disp, 0)
         assert_equal(solver.polish, True)
 
         solver = ShuffledComplexEvolutionSolver(
@@ -107,7 +107,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
             n_complex=20, n_point_complex=10, n_point_subcomplex=20,
             n_eval_complex_per_shuffle=10, min_n_complex=20,
             p_tol=0.01,
-            alpha=0.9, beta=0.55, maximize=True, printit=1,
+            alpha=0.9, beta=0.55, maximize=True, disp=1,
             polish=False)
         assert_equal(solver.sampling, 'left-half-open')
         assert_equal(solver.maxfev, 100)
@@ -122,7 +122,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         assert_equal(solver.alpha, 0.9)
         assert_equal(solver.beta, 0.55)
         assert_equal(solver.maximize, True)
-        assert_equal(solver.printit, 1)
+        assert_equal(solver.disp, 1)
         assert_equal(solver.polish, False)
 
         solver = ShuffledComplexEvolutionSolver(
@@ -132,7 +132,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
             n_complex=20, n_point_complex=10, n_point_subcomplex=20,
             n_eval_complex_per_shuffle=10, min_n_complex=20,
             p_tol=0.01,
-            alpha=0.9, beta=0.55, maximize=True, printit=1,
+            alpha=0.9, beta=0.55, maximize=True, disp=1,
             polish=True)
         assert_equal(solver.sampling, 'left-half-open')
         assert_equal(solver.maxfev, 100)
@@ -147,7 +147,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         assert_equal(solver.alpha, 0.9)
         assert_equal(solver.beta, 0.55)
         assert_equal(solver.maximize, True)
-        assert_equal(solver.printit, 1)
+        assert_equal(solver.disp, 1)
         assert_equal(solver.polish, True)
 
     def test_ShuffledComplexEvolutionSolver(self):
@@ -218,29 +218,29 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         assert_equal(result.x, result2.x)
         assert_equal(result.nfev, result2.nfev)
 
-        # printit
+        # disp
         result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
-                                            self.upper_bounds, printit=0,
+                                            self.upper_bounds, disp=0,
                                             polish=False)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
-                                            self.upper_bounds, printit=1,
+                                            self.upper_bounds, disp=1,
                                             polish=False)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
-                                            self.upper_bounds, printit=2,
+                                            self.upper_bounds, disp=2,
                                             polish=False)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
-                                            self.upper_bounds, printit=1,
+                                            self.upper_bounds, disp=1,
                                             maxfev=10, polish=False)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(rosen, self.x0, self.lower_bounds,
-                                            self.upper_bounds, printit=2,
+                                            self.upper_bounds, disp=2,
                                             maxfev=10, polish=False)
         assert_equal(result.fun, rosen(result.x))
         result = shuffled_complex_evolution(
-            rosen, [0.5] * 5, [0.] * 5, [2.] * 5, printit=1,
+            rosen, [0.5] * 5, [0.] * 5, [2.] * 5, disp=1,
             f_tol=10)
         # print(result.message)
         assert_equal(result.fun, rosen(result.x))
@@ -300,7 +300,7 @@ class TestShuffledComplexEvolutionSolver(unittest.TestCase):
         print('Numpy errors', np.geterr())
         with assert_raises(RuntimeWarning,
                            match='invalid value encountered'):
-            shuffled_complex_evolution(func, x0, bounds, printit=1)
+            shuffled_complex_evolution(func, x0, bounds, disp=1)
 
     def test_shuffled_complex_evolution_args(self):
         # args

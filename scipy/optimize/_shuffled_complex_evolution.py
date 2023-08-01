@@ -93,6 +93,8 @@ History
       Jul 2023, Matthias Cuntz
     * Removed restart capability, Jul 2023, Matthias Cuntz
     * Set maxfev to N*log(N) formula per default, Aug 2023, Matthias Cuntz
+    * Renamed printit to disp and change meaning of number,
+      Aug 2023, Matthias Cuntz
 
 """
 import warnings
@@ -171,7 +173,7 @@ def shuffled_complex_evolution(
         n_complex=2, n_point_complex=0, n_point_subcomplex=0,
         n_eval_complex_per_shuffle=0, min_n_complex=0,
         seed=None, x0_in_pop=True,
-        alpha=0.8, beta=0.45, maximize=False, printit=2,
+        alpha=0.8, beta=0.45, maximize=False, disp=0,
         polish=True):
     """
     Shuffled Complex Evolution algorithm for finding the minimum of a
@@ -274,14 +276,13 @@ def shuffled_complex_evolution(
         Parameter for contraction of points in complex (default: 0.45).
     maximize : bool, optional
         If True: maximize instead of minimize `func` (default: False).
-    printit : int, optional
-        Controlling print-out (default: 2):
+    disp : int, optional
+        Controlling print-out out results (default: 0):
 
-            - 0: print information for the best point of the population
-            - 1: print information for each function evaluation
-            - 2: no printing.
+            - 0: no printing.
+            - 1: print information for the best point of the population
+            - 2: print information for each function evaluation
 
-        The default is 2.
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` is used with the
         `L-BFGS-B` method to polish the result at the end, which
@@ -342,7 +343,7 @@ def shuffled_complex_evolution(
     >>> upper_bounds = np.array([5., 8.])
     >>> x0 = np.array([-2., 7.])
     >>> res = shuffled_complex_evolution(rosen, x0, lower_bounds,
-    ...     upper_bounds, seed=1, maxfev=1000, printit=2)
+    ...     upper_bounds, seed=1, maxfev=1000)
     >>> print(res.nfev)
     298
     >>> print('{:.3f}'.format(res.fun))
@@ -360,7 +361,7 @@ def shuffled_complex_evolution(
     ...     n_check=10, f_tol=0.0001, seed=12358, n_complex=5,
     ...     n_point_complex=5*nopt+1, n_point_subcomplex=nopt+1,
     ...     n_eval_complex_per_shuffle=5*nopt+1, min_n_complex=2,
-    ...     x0_in_pop=True, printit=2, alpha=0.8, beta=0.45)
+    ...     x0_in_pop=True, alpha=0.8, beta=0.45)
     >>> print(res.nfev)
     30228
     >>> print('{:.3g}'.format(res.fun))
@@ -379,7 +380,7 @@ def shuffled_complex_evolution(
             n_eval_complex_per_shuffle=n_eval_complex_per_shuffle,
             min_n_complex=min_n_complex,
             p_tol=p_tol, seed=seed, x0_in_pop=x0_in_pop,
-            alpha=alpha, beta=beta, maximize=maximize, printit=printit,
+            alpha=alpha, beta=beta, maximize=maximize, disp=disp,
             polish=polish) as solver:
         ret = solver.solve()
 
@@ -403,7 +404,7 @@ class ShuffledComplexEvolutionSolver:
                  n_complex=2, n_point_complex=0, n_point_subcomplex=0,
                  n_eval_complex_per_shuffle=0, min_n_complex=0,
                  p_tol=0.001, seed=None, x0_in_pop=True,
-                 alpha=0.8, beta=0.45, maximize=False, printit=2,
+                 alpha=0.8, beta=0.45, maximize=False, disp=0,
                  polish=True):
 
         # function to minimize
@@ -419,7 +420,7 @@ class ShuffledComplexEvolutionSolver:
         self.alpha = alpha
         self.beta = beta
         self.maximize = maximize
-        self.printit = printit
+        self.disp = disp
         self.polish = polish
 
         # initialize SCE parameters
@@ -500,12 +501,12 @@ class ShuffledComplexEvolutionSolver:
         for i in range(self.npt):
             self.xf[i] = self.call_func(self.x[i, :])
             self.icall += 1
-            if self.printit == 1:
+            if self.disp == 2:
                 print('  i, f, X: ', self.icall, self.xf[i], self.x[i, :])
 
         # redo an initial population if all runs failed
         if not np.any(np.isfinite(self.xf)):
-            if self.printit < 2:
+            if self.disp > 0:
                 print('Redo initial population because all failed')
             self.x = self.sample_input_matrix(self.npt)
             for i in range(self.npt):
@@ -513,7 +514,7 @@ class ShuffledComplexEvolutionSolver:
             for i in range(self.npt):
                 self.xf[i] = self.call_func(self.x[i, :])
                 self.icall += 1
-                if self.printit == 1:
+                if self.disp == 2:
                     print('  i, f, X: ', self.icall, self.xf[i],
                           self.x[i, :])
         if not np.any(np.isfinite(self.xf)):
@@ -721,7 +722,7 @@ class ShuffledComplexEvolutionSolver:
         # calc function for reflection point
         fnew = self.call_func(snew)
         icall += 1
-        if self.printit == 1:
+        if self.disp == 2:
             print('  i, f, X: ', self.icall + icall, fnew, snew)
 
         # reflection failed: attempt a contraction point
@@ -730,7 +731,7 @@ class ShuffledComplexEvolutionSolver:
             snew = np.where(self.mask, snew, sb)
             fnew = self.call_func(snew)
             icall += 1
-            if self.printit == 1:
+            if self.disp == 2:
                 print('  i, f, X: ', self.icall + icall, fnew, snew)
 
         # both reflection and contraction have failed, attempt a random point
@@ -739,7 +740,7 @@ class ShuffledComplexEvolutionSolver:
             snew = np.where(self.mask, snew, sb)
             fnew = self.call_func(snew)
             icall += 1
-            if self.printit == 1:
+            if self.disp == 2:
                 print('  i, f, X: ', self.icall + icall, fnew, snew)
 
         # end of cce
@@ -753,7 +754,7 @@ class ShuffledComplexEvolutionSolver:
         if self.icall < self.maxfev:
             return True
         else:
-            if self.printit < 2:
+            if self.disp > 0:
                 print(f'Optimisation terminated because trial number'
                       f' {self.maxfev} reached maximum number of trials'
                       f' {self.icall}.')
@@ -765,7 +766,7 @@ class ShuffledComplexEvolutionSolver:
 
         """
         if self.criter_change < self.f_tol:
-            if self.printit < 2:
+            if self.disp > 0:
                 print(f'The best point has improved by less then {self.f_tol}'
                       f' in the last {self.n_check} loops.')
             return True
@@ -779,7 +780,7 @@ class ShuffledComplexEvolutionSolver:
         """
         self.gnrng = self.calc_gnrng()
         if self.gnrng < self.p_tol:
-            if self.printit < 2:
+            if self.disp > 0:
                 print(f'The population has converged to a small parameter'
                       f' space {self.gnrng} (<{self.p_tol}).')
             return True
@@ -872,7 +873,7 @@ class ShuffledComplexEvolutionSolver:
             self.bestx = self.x[0, :]
             self.bestf = self.xf[0]
 
-            if self.printit < 2:
+            if self.disp > 0:
                 print(f'\nEvolution loop {self.nloop}, trials {self.icall}.'
                       f' Best f: {self.bestf:.2f}, worst f:'
                       f' {self.xf[-1]:.2f}\n'
@@ -882,7 +883,7 @@ class ShuffledComplexEvolutionSolver:
             self.criter_change = self.calc_criter_change()
 
         # finish up
-        if self.printit < 2:
+        if self.disp > 0:
             print('Search stopped at trial number {0:d} with normalized'
                   ' geometric range {1:f}. '.format(self.icall, self.gnrng))
             print('The best point has improved by {:f} in the last'
