@@ -46,7 +46,7 @@ linux_aarch64_test_task:
   pip_cache:
     folder: /root/.cache/pip
 
-  test_script: |
+  prepare_env_script: |
     apt-get update
     apt-get install -y --no-install-recommends software-properties-common gcc g++ gfortran pkg-config
     apt-get install -y --no-install-recommends libopenblas-dev libatlas-base-dev liblapack-dev ccache
@@ -62,10 +62,8 @@ linux_aarch64_test_task:
     # python3.10 -m ensurepip --default-pip --user
 
     ln -s $(which python3.10) python
-    export PATH=$PWD:$PATH
-
-    export CCACHE_DIR=$PWD/.ccache
-    export PATH=/usr/lib/ccache:$PATH
+    echo "PATH=/usr/lib/ccache:$PWD:$PATH" >> $CIRRUS_ENV
+    echo "CCACHE_DIR=$PWD/.ccache" >> $CIRRUS_ENV
 
     python -m pip install meson ninja numpy cython pybind11 pythran cython
     python -m pip install click rich_click doit pydevtool
@@ -75,9 +73,12 @@ linux_aarch64_test_task:
     # It may change over time!
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
-    
+
+  build_script: |
+    python dev.py build -j1
+
+  test_script: |
     python dev.py test -j1
-    
     ccache -s
 
 
@@ -87,27 +88,30 @@ macos_arm64_test_task:
 
   <<: *MODIFIED_CLONE
 
-  ccache_cache:
-    folder: .ccache
-    populate_script:
-      - mkdir -p .ccache
-    fingerprint_key: ccache-macosx_arm64
+  #  ccache_cache:
+  #    folder: .ccache
+  #    populate_script:
+  #      - mkdir -p .ccache
+  #    fingerprint_key: ccache-macosx_arm64
 
   pip_cache:
     folder: /Users/admin/Library/Caches/pip
 
-  test_script: |
-    brew install python@3.10 ccache
+  prepare_env_script: |
+    brew install python@3.10
 
-    export PATH=/opt/homebrew/opt/ccache/libexec:/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    echo "PATH=$PATH" >> $CIRRUS_ENV
+    #    export PATH=/opt/homebrew/opt/ccache/libexec:$PATH
+
     python --version
 
     # used for installing OpenBLAS/gfortran
     bash tools/wheels/cibw_before_build_macos.sh $PWD
 
-    export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
-    export CMAKE_PREFIX_PATH=/opt/arm64-builds/
-    export CCACHE_DIR=$PWD/.ccache
+    echo "PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig" >> $CIRRUS_ENV
+    echo "CMAKE_PREFIX_PATH=/opt/arm64-builds/" >> $CIRRUS_ENV
+    # export CCACHE_DIR=$PWD/.ccache
 
     pushd ~/
     python -m venv scipy-dev
@@ -123,7 +127,21 @@ macos_arm64_test_task:
     echo $(python -m pip cache dir)
     echo $(python -m pip cache list)
 
-    export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
-    python dev.py test -j3
+    echo "DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib" >> $CIRRUS_ENV
 
-    ccache -s
+  build_script:
+    pushd ~/
+    python -m venv scipy-dev
+    source scipy-dev/bin/activate
+    popd
+    
+    python dev.py build -j3
+    # ccache -s
+
+  build_script:
+    pushd ~/
+    python -m venv scipy-dev
+    source scipy-dev/bin/activate
+    popd
+
+    python dev.py test -j3
