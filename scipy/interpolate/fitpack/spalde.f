@@ -1,4 +1,4 @@
-      recursive subroutine spalde(t,n,c,k1,x,d,ier)
+      recursive subroutine spalde(t,n,c,nc,k1,x,d,ier)
       implicit none
 c  subroutine spalde evaluates at a point x all the derivatives
 c              (j-1)
@@ -12,7 +12,8 @@ c
 c  input parameters:
 c    t    : array,length n, which contains the position of the knots.
 c    n    : integer, giving the total number of knots of s(x).
-c    c    : array,length n, which contains the b-spline coefficients.
+c    c    : array,length nc, which contains the b-spline coefficients.
+c    nc   : integer, giving the total number of coefficients (must be >= n-k1)
 c    k1   : integer, giving the order of s(x) (order=degree+1)
 c    x    : real, which contains the point where the derivatives must
 c           be evaluated.
@@ -49,10 +50,10 @@ c
 c  latest update : march 1987
 c
 c  ..scalar arguments..
-      integer n,k1,ier
+      integer n,nc,k1,ier
       real*8 x
 c  ..array arguments..
-      real*8 t(n),c(n),d(k1)
+      real*8 t(n),c(nc),d(k1)
 c  ..local scalars..
       integer l,nk1
 c  ..
