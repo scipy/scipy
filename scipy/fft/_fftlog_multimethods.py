@@ -6,6 +6,10 @@ import numpy as np
 from ._basic_uarray import _dispatch
 from scipy._lib.uarray import Dispatchable
 
+# The functions in this file decorated with `@_dispatch` will only be called
+# from the correspondingly named public functions with NumPy arrays or
+# array-likes, not with CuPy, PyTorch and other array API standard supporting
+# objects. See the docstrings in `_backend.py` for more details and examples.
 
 __all__ = ['fht', 'ifht']
 

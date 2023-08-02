@@ -1,6 +1,11 @@
 from scipy._lib.uarray import generate_multimethod, Dispatchable
 import numpy as np
 
+# The functions in this file decorated with `@_dispatch` will only be called
+# from the correspondingly named public functions with NumPy arrays or
+# array-likes, not with CuPy, PyTorch and other array API standard supporting
+# objects. See the docstrings in `_backend.py` for more details and examples.
+
 
 def _x_replacer(args, kwargs, dispatchables):
     """

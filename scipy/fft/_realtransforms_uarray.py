@@ -2,6 +2,11 @@ from ._basic_uarray import _dispatch
 from scipy._lib.uarray import Dispatchable
 import numpy as np
 
+# The functions in this file decorated with `@_dispatch` will only be called
+# from the correspondingly named public functions with NumPy arrays or
+# array-likes, not with CuPy, PyTorch and other array API standard supporting
+# objects. See the docstrings in `_backend.py` for more details and examples.
+
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
