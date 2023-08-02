@@ -372,6 +372,9 @@ def geometric_discrepancy(
     Note that this is different from `scipy.stats.qmc.discrepancy`, where lower
     values correspond to higher quality of the sample.
 
+    Also note that when comparing different sampling strategies using this function,
+    the sample size must be kept constant.
+
     It is possible to calculate two metrics from the minimum spanning tree:
     the mean edge length and the standard deviation of edges lengths. Using
     both metrics offers a better picture of uniformity than either metric alone,
