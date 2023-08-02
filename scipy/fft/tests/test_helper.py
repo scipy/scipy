@@ -444,7 +444,7 @@ class TestFFTFreq:
         if xp.__name__ == 'numpy.array_api':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `numpy.array_api.fft.fftfreq`")
-        if xp.__name__ == 'cupy':
+        elif xp.__name__ == 'cupy':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float32)
@@ -463,7 +463,7 @@ class TestRFFTFreq:
         if xp.__name__ == 'numpy.array_api':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `numpy.array_api.fft.fftfreq`")
-        if xp.__name__ == 'cupy':
+        elif xp.__name__ == 'cupy':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float32)
@@ -482,7 +482,7 @@ class TestNamespaces:
         if xp.__name__ == 'numpy.array_api':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `numpy.array_api.fft.fftfreq`")
-        if xp.__name__ == 'cupy':
+        elif xp.__name__ == 'cupy':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
@@ -493,7 +493,7 @@ class TestNamespaces:
         if xp.__name__ == 'numpy.array_api':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `numpy.array_api.fft.fftfreq`")
-        if xp.__name__ == 'cupy':
+        elif xp.__name__ == 'cupy':
             pytest.xfail("`device` keyword has not yet been implemented\
                           in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4])
