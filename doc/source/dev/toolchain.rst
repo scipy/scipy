@@ -28,7 +28,7 @@ section for an example.)
 - BLAS and LAPACK numerical libraries need to be installed.
 - Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
 - The Python environment needs the ``NumPy`` package to be installed.
-- Testing requires the ``pytest`` Python package.
+- Testing requires the ``pytest`` and ``hypothesis`` Python packages.
 - Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
 
 .. _MyST-NB: https://myst-nb.readthedocs.io/
@@ -401,6 +401,7 @@ Testing and benchmarking require recent versions of:
  Tool                      Version    URL
 =========================  ========  ====================================
 pytest                     Recent     https://docs.pytest.org/en/latest/
+Hypothesis                 Recent     https://hypothesis.readthedocs.io/
 asv (airspeed velocity)    Recent     https://asv.readthedocs.io/
 =========================  ========  ====================================
 

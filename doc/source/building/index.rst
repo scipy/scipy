@@ -353,7 +353,7 @@ virtual environments:
        python -m pip install numpy cython pythran pybind11 meson ninja pydevtool rich-click
 
        # Test and optional runtime dependencies
-       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath
+       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
 
        # Doc build dependencies
        python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb

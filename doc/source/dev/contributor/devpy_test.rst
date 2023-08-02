@@ -120,6 +120,14 @@ which are disabled even when calling ``python dev.py test -m full``.
 They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 
+By default, tests that use ``Hypothesis`` run with the ``deterministic``
+profile defined in ``scipy/scipy/conftest.py``. This profile includes the
+Hypothesis setting ``derandomize=True`` so the same examples are used until
+Hypothesis, Python, or the test function are updated. To better use
+Hypothesis' abilities to find counterexamples, select the ``nondeterministic``
+profile by setting the environment variable
+``SCIPY_HYPOTHESIS_PROFILE=nondeterministic`` before running the test suite.
+
 .. |pytest-cov| replace:: ``pytest-cov``
 .. _pytest-cov: https://pypi.org/project/pytest-cov/
 
@@ -133,3 +141,6 @@ before running the test suite.
 
 .. |test-linprog| replace:: ``scipy/optimize/tests/test_linprog.py``
 .. _test-linprog: https://github.com/scipy/scipy/blob/main/scipy/optimize/tests/test_linprog.py
+
+.. |Hypothesis| replace:: ``Hypothesis``
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/
