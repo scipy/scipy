@@ -89,25 +89,25 @@ macos_arm64_test_task:
 
   <<: *MODIFIED_CLONE
 
-  #  ccache_cache:
-  #    folder: .ccache
-  #    populate_script:
-  #      - mkdir -p .ccache
-  #    fingerprint_key: ccache-macosx_arm64
+  ccache_cache:
+    folder: .ccache
+    populate_script:
+      - mkdir -p .ccache
+    fingerprint_key: ccache-macosx_arm64
 
   pip_cache:
     folder: /Users/admin/Library/Caches/pip
 
   prepare_env_script: |
-    brew install python@3.10
+    brew install python@3.10 ccache
 
     export PATH=/opt/homebrew/opt/python@3.10/libexec/bin:$PATH
+    export PATH=/opt/homebrew/opt/ccache/libexec:$PATH
     export PYTHONPATH=/opt/homebrew/lib/python3.10/site-packages
     
     echo "PYTHONPATH=$PYTHONPATH" >> $CIRRUS_ENV
     echo "_CWD=$PWD" >> $CIRRUS_ENV
     echo "PATH=$PATH" >> $CIRRUS_ENV
-    #    export PATH=/opt/homebrew/opt/ccache/libexec:$PATH
 
     python --version
 
@@ -137,11 +137,11 @@ macos_arm64_test_task:
     cd ..
     source test_env/bin/activate
     cd $_CWD
-    python dev.py build -j3
+    python dev.py build
     # ccache -s
 
   test_script: |
     cd ..
     source test_env/bin/activate
     cd $_CWD
-    python dev.py test -j3
+    python dev.py test
