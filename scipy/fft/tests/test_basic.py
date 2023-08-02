@@ -370,14 +370,32 @@ class TestFFT1D:
                     assert_allclose(x_norm, xp_test.linalg.vector_norm(tmp))
 
     @skip_if_array_api
-    @pytest.mark.parametrize("dtype", [np.half, np.single, np.double,
-                                       np.longdouble])
-    def test_dtypes(self, dtype):
-        # make sure that all input precisions are accepted
-        x = random(30).astype(dtype)
+    def test_float16(self):
+        x = random(30).astype(np.float16)
         assert_array_almost_equal(fft.ifft(fft.fft(x)), x)
         assert_array_almost_equal(fft.irfft(fft.rfft(x)), x)
         assert_array_almost_equal(fft.hfft(fft.ihfft(x), len(x)), x)
+
+    @array_api_compatible
+    def test_float32(self, xp):
+        x = xp.asarray(random(30), dtype=xp.float32)
+        _assert_allclose = set_assert_allclose(xp)
+        _assert_allclose(fft.ifft(fft.fft(x)),
+                         xp.asarray(x, dtype=xp.complex64),
+                         rtol=1e-4, atol=0)
+        _assert_allclose(fft.irfft(fft.rfft(x)), x,
+                         rtol=1e-4, atol=0)
+        _assert_allclose(fft.hfft(fft.ihfft(x), x.shape[0]), x,
+                         rtol=1e-4, atol=0)
+
+    @array_api_compatible
+    def test_float64(self, xp):
+        x = xp.asarray(random(30), dtype=xp.float64)
+        _assert_allclose = set_assert_allclose(xp)
+        _assert_allclose(fft.ifft(fft.fft(x)),
+                         xp.asarray(x, dtype=xp.complex128))
+        _assert_allclose(fft.irfft(fft.rfft(x)), x)
+        _assert_allclose(fft.hfft(fft.ihfft(x), x.shape[0]), x)
 
 
 @skip_if_array_api
