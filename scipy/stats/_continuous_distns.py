@@ -5372,6 +5372,11 @@ class jf_skew_t_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ia, ib]
+
     def _pdf(self, x, a, b):
         c = 2 ** (a + b - 1) * sc.beta(a, b) * np.sqrt(a + b)
         d1 = (1 + x / np.sqrt(a + b + x ** 2)) ** (a + 0.5)
