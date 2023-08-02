@@ -946,6 +946,30 @@ def test_magnitude_single_rotation():
     assert_allclose(result2, 0)
 
 
+def test_approx_equal():
+    rng = np.random.RandomState(0)
+    p = Rotation.random(10, random_state=rng)
+    q = Rotation.random(10, random_state=rng)
+    r = p * q.inv()
+    r_mag = r.magnitude()
+    atol = np.median(r_mag)  # ensure we get mix of Trues and Falses
+    assert_equal(p.approx_equal(q, atol), (r_mag < atol))
+
+
+def test_approx_equal_single_rotation():
+    # also tests passing single argument to approx_equal
+    p = Rotation.from_rotvec([0, 0, 1e-9])  # less than default atol of 1e-8
+    q = Rotation.from_quat(np.eye(4))
+    assert p.approx_equal(q[3])
+    assert not p.approx_equal(q[0])
+
+    # test passing atol and using degrees
+    assert not p.approx_equal(q[3], atol=1e-10)
+    assert not p.approx_equal(q[3], atol=1e-8, degrees=True)
+    with pytest.warns(UserWarning, match="atol must be set"):
+        assert p.approx_equal(q[3], degrees=True)
+
+
 def test_mean():
     axes = np.concatenate((-np.eye(3), np.eye(3)))
     thetas = np.linspace(0, np.pi / 2, 100)

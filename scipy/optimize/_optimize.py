@@ -148,6 +148,9 @@ def _wrap_callback(callback, method=None):
     elif method == 'trust-constr':
         def wrapped_callback(res):
             return callback(np.copy(res.x), res)
+    elif method == 'differential_evolution':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res.convergence)
     else:
         def wrapped_callback(res):
             return callback(np.copy(res.x))
@@ -337,7 +340,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     hess : {callable,  '2-point', '3-point', 'cs', None}
@@ -1403,7 +1406,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     xrtol : float, default: 0
@@ -1742,7 +1745,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     """
