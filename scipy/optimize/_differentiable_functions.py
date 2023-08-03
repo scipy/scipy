@@ -3,6 +3,7 @@ import scipy.sparse as sps
 from ._numdiff import approx_derivative, group_columns
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy.sparse.linalg import LinearOperator
+from scipy._lib._array_api import atleast_nd, array_namespace
 
 
 FD_METHODS = ('2-point', '3-point', 'cs')
@@ -103,13 +104,14 @@ class ScalarFunction:
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
 
-        _x = np.atleast_1d(x0).copy()
-        _dtype = np.float
-        if np.issubdtype(_x.dtype, np.floating):
+        self.xp = xp = array_namespace(x0)
+        _x = atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to np.floating
-        self.x = _x.astype(_dtype)
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
         self.n = self.x.size
         self.nfev = 0
@@ -237,8 +239,9 @@ class ScalarFunction:
                 self.g_prev = self.g
                 # ensure that self.x is a copy of x. Don't store a reference
                 # otherwise the memoization doesn't work properly.
-                _x = np.atleast_1d(x).copy()
-                self.x = _x.astype(self.x_dtype)
+
+                _x = atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -247,8 +250,8 @@ class ScalarFunction:
             def update_x(x):
                 # ensure that self.x is a copy of x. Don't store a reference
                 # otherwise the memoization doesn't work properly.
-                _x = np.atleast_1d(x).copy()
-                self.x = _x.astype(self.x_dtype)
+                _x = atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -331,13 +334,14 @@ class VectorFunction:
                              "be estimated using one of the quasi-Newton "
                              "strategies.")
 
-        _x = np.atleast_1d(x0).copy()
-        _dtype = np.float
-        if np.issubdtype(_x.dtype, np.floating):
+        self.xp = xp = array_namespace(x0)
+        _x = atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to np.floating
-        self.x = _x.astype(_dtype)
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
 
         self.n = self.x.size
@@ -508,16 +512,16 @@ class VectorFunction:
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                _x = np.atleast_1d(x).copy()
-                self.x = _x.astype(self.x_dtype)
+                _x = atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                _x = np.atleast_1d(x).copy()
-                self.x = _x.astype(self.x_dtype)
+                _x = atleast_nd(x, ndim=1, xp=self.xp)
+                self.x = self.xp.astype(_x, self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -587,13 +591,14 @@ class LinearVectorFunction:
 
         self.m, self.n = self.J.shape
 
-        _x = np.atleast_1d(x0).copy()
-        _dtype = np.float
-        if np.issubdtype(_x.dtype, np.floating):
+        self.xp = xp = array_namespace(x0)
+        _x = atleast_nd(x0, ndim=1, xp=xp)
+        _dtype = xp.float64
+        if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
-        # promotes to np.floating
-        self.x = _x.astype(_dtype)
+        # promotes to floating
+        self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
 
         self.f = self.J.dot(self.x)
@@ -604,8 +609,8 @@ class LinearVectorFunction:
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            _x = np.atleast_1d(x).copy()
-            self.x = _x.astype(self.x_dtype)
+            _x = atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
             self.f_updated = False
 
     def fun(self, x):

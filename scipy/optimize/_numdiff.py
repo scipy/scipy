@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
+from scipy._lib._array_api import atleast_nd, array_namespace
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
@@ -438,12 +439,14 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     if method not in ['2-point', '3-point', 'cs']:
         raise ValueError("Unknown method '%s'. " % method)
 
-    x0 = np.atleast_1d(x0)
-    _dtype = np.float
-    if np.issubdtype(x0.dtype, np.floating):
-        _dtype = x0.dtype
-    # promotes to np.floating
-    x0 = x0.astype(_dtype)
+    xp = array_namespace(x0)
+    _x = atleast_nd(x0, ndim=1, xp=xp)
+    _dtype = xp.float64
+    if xp.isdtype(_x.dtype, "real floating"):
+        _dtype = _x.dtype
+
+    # promotes to floating
+    x0 = xp.astype(_x, _dtype)
 
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
@@ -461,8 +464,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     def fun_wrapped(x):
         # send user function same fp type as x0. (but only if cs is not being
         # used
-        if np.issubdtype(x.dtype, np.floating):
-            x = x.astype(x, x0.dtype)
+        if xp.isdtype(x.dtype, "real floating"):
+            x = xp.astype(x, x0.dtype)
 
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
