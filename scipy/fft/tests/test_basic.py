@@ -458,12 +458,10 @@ class TestFFTThreadSafe:
         if xp is None:
             _assert_array_equal = assert_array_equal
         elif xp.__name__ == 'cupy':
-            import cupy as cp
-            _assert_array_equal = cp.testing.assert_array_equal
+            _assert_array_equal = xp.testing.assert_array_equal
         elif xp.__name__ == 'torch':
-            import torch
             for i in range(self.threads):
-                torch.testing.assert_close(
+                xp.testing.assert_close(
                     q.get(timeout=5), expected,
                     msg='Function returned wrong value in multithreaded context'
                 )

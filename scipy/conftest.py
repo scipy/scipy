@@ -177,9 +177,7 @@ def set_assert_allclose(xp=None):
     if xp is None:
         return npt.assert_allclose
     if 'cupy' in xp.__name__:
-        import cupy as cp
-        return cp.testing.assert_allclose
+        return xp.testing.assert_allclose
     elif 'torch' in xp.__name__:
-        import torch
-        return torch.testing.assert_close
+        return xp.testing.assert_close
     return npt.assert_allclose
