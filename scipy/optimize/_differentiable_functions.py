@@ -104,9 +104,13 @@ class ScalarFunction:
                              "quasi-Newton strategies.")
 
         _x = np.atleast_1d(x0).copy()
+        _dtype = np.float
+        if np.issubdtype(_x.dtype, np.floating):
+            _dtype = _x.dtype
+
         # promotes to np.floating
-        self.x = np.asfarray(_x, _x.dtype)
-        self.x_dtype = _x.dtype
+        self.x = _x.astype(_dtype)
+        self.x_dtype = _dtype
         self.n = self.x.size
         self.nfev = 0
         self.ngev = 0
@@ -233,7 +237,8 @@ class ScalarFunction:
                 self.g_prev = self.g
                 # ensure that self.x is a copy of x. Don't store a reference
                 # otherwise the memoization doesn't work properly.
-                self.x = np.asfarray(np.atleast_1d(x), self.x_dtype).copy()
+                _x = np.atleast_1d(x).copy()
+                self.x = _x.astype(self.x_dtype)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -242,7 +247,8 @@ class ScalarFunction:
             def update_x(x):
                 # ensure that self.x is a copy of x. Don't store a reference
                 # otherwise the memoization doesn't work properly.
-                self.x = np.asfarray(np.atleast_1d(x), self.x_dtype).copy()
+                _x = np.atleast_1d(x).copy()
+                self.x = _x.astype(self.x_dtype)
                 self.f_updated = False
                 self.g_updated = False
                 self.H_updated = False
@@ -326,9 +332,13 @@ class VectorFunction:
                              "strategies.")
 
         _x = np.atleast_1d(x0).copy()
+        _dtype = np.float
+        if np.issubdtype(_x.dtype, np.floating):
+            _dtype = _x.dtype
+
         # promotes to np.floating
-        self.x = np.asfarray(_x, _x.dtype)
-        self.x_dtype = _x.dtype
+        self.x = _x.astype(_dtype)
+        self.x_dtype = _dtype
 
         self.n = self.x.size
         self.nfev = 0
@@ -498,14 +508,16 @@ class VectorFunction:
                 self._update_jac()
                 self.x_prev = self.x
                 self.J_prev = self.J
-                self.x = np.asfarray(np.atleast_1d(x), self.x_dtype).copy()
+                _x = np.atleast_1d(x).copy()
+                self.x = _x.astype(self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
                 self._update_hess()
         else:
             def update_x(x):
-                self.x = np.asfarray(np.atleast_1d(x), self.x_dtype).copy()
+                _x = np.atleast_1d(x).copy()
+                self.x = _x.astype(self.x_dtype)
                 self.f_updated = False
                 self.J_updated = False
                 self.H_updated = False
@@ -576,9 +588,13 @@ class LinearVectorFunction:
         self.m, self.n = self.J.shape
 
         _x = np.atleast_1d(x0).copy()
+        _dtype = np.float
+        if np.issubdtype(_x.dtype, np.floating):
+            _dtype = _x.dtype
+
         # promotes to np.floating
-        self.x = np.asfarray(_x, _x.dtype)
-        self.x_dtype = _x.dtype
+        self.x = _x.astype(_dtype)
+        self.x_dtype = _dtype
 
         self.f = self.J.dot(self.x)
         self.f_updated = True
@@ -588,7 +604,8 @@ class LinearVectorFunction:
 
     def _update_x(self, x):
         if not np.array_equal(x, self.x):
-            self.x = np.asfarray(np.atleast_1d(x), self.x_dtype).copy()
+            _x = np.atleast_1d(x).copy()
+            self.x = _x.astype(self.x_dtype)
             self.f_updated = False
 
     def fun(self, x):

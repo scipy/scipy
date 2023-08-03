@@ -439,7 +439,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         raise ValueError("Unknown method '%s'. " % method)
 
     x0 = np.atleast_1d(x0)
-    x0 = np.asfarray(x0, x0.dtype)
+    _dtype = np.float
+    if np.issubdtype(x0.dtype, np.floating):
+        _dtype = x0.dtype
+    # promotes to np.floating
+    x0 = x0.astype(_dtype)
 
     if x0.ndim > 1:
         raise ValueError("`x0` must have at most 1 dimension.")
@@ -458,7 +462,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
         # send user function same fp type as x0. (but only if cs is not being
         # used
         if np.issubdtype(x.dtype, np.floating):
-            x = np.asfarray(x, x0.dtype)
+            x = x.astype(x, x0.dtype)
 
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
