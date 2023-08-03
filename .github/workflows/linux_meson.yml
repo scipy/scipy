@@ -292,9 +292,10 @@ jobs:
         python -m pip install "Cython>=3.0.0b3"
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
-        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 threadpoolctl pooch matplotlib
 
     - name:  Prepare compiler cache
       id:    prep-ccache

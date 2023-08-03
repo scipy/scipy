@@ -99,7 +99,8 @@ musllinux_amd64_test_task:
     cd $_CWD
     python -m pip install cython
     pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-    python -m pip install meson ninja pybind11 pythran pytest
+    pip install git+https://github.com/serge-sans-paille/pythran
+    python -m pip install meson ninja pybind11 pytest
     python -m pip install click rich_click doit pydevtool pooch
 
   build_script: |
