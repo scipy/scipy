@@ -192,7 +192,7 @@ class TestUtils:
             qmc.geometric_discrepancy(sample, method="toto")
 
         sample = np.array([[0, 0], [0, 0], [0, 1]])
-        with pytest.raises(UserWarning, match="Sample contains duplicate points."):
+        with pytest.warns(UserWarning, match="Sample contains duplicate points."):
             qmc.geometric_discrepancy(sample)
 
         sample = np.array([[0.5, 0.5]])
@@ -223,7 +223,10 @@ class TestUtils:
             qmc.geometric_discrepancy(sample, method='mst'), 0.19704396643366182
         )
 
-    @pytest.mark.xfail(reason="minimum_spanning_tree ignores zero distances (#18892)")
+    @pytest.mark.xfail(
+            reason="minimum_spanning_tree ignores zero distances (#18892)",
+            strict=True,
+    )
     def test_geometric_discrepancy_mst_with_zero_distances(self):
         sample = np.array([[0, 0], [0, 0], [0, 1]])
         assert_allclose(qmc.geometric_discrepancy(sample, method='mst'), 0.5)
