@@ -70,7 +70,6 @@ linux_aarch64_test_task:
     python -m pip install click rich_click doit pydevtool
     python -m pip install pytest pooch pytest-xdist
     
-
     # this line tells us where the task keeps its pip cache. 
     # It may change over time!
     echo $(python -m pip cache dir)
