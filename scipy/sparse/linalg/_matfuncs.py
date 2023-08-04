@@ -863,7 +863,7 @@ def _ell(A, m):
     value = int(np.ceil(log2_alpha_div_u / (2 * m)))
     return max(value, 0)
 
-def matrix_power(A, power, structure=None):
+def matrix_power(A, power):
     """
     Raise a square matrix to the integer power, `power`.
 
@@ -875,13 +875,45 @@ def matrix_power(A, power, structure=None):
     A : (M, M) square sparse array or matrix
         sparse array that will be raised to power `power`
     power : int
-        Non-negative integer exponent used to raise sparse array `A`
+        Exponent used to raise sparse array `A`
 
     Returns
     -------
     A**power : (M, M) sparse array or matrix
         The output matrix will be the same shape as A, and will preserve
         the class of A, but the format of the output may be changed.
+    
+    Notes
+    -----
+    This uses a recursive implementation of the matrix power. For computing
+    the matrix power using a reasonably large `power`, this may be less efficient
+    than computing the product directly, using a*a*...*a. This is contingent upon
+    the number of nonzero entries in the matrix. 
+
+    .. versionadded:: 1.12.0
+
+    Examples
+    --------
+    >>> from scipy import sparse
+    >>> A = sparse.csc_array([[0,1,0],[1,0,1],[0,1,0]])
+    >>> A.todense()
+    array([[0, 1, 0],
+           [1, 0, 1],
+           [0, 1, 0]])
+    >>> (A @ A).todense()
+    array([[1, 0, 1],
+           [0, 2, 0],
+           [1, 0, 1]])
+    >>> A2 = sparse.linalg.matrix_power(A, 2)
+    >>> A2.todense()
+    array([[1, 0, 1],
+           [0, 2, 0],
+           [1, 0, 1]])
+    >>> A4 = sparse.linalg.matrix_power(A, 4)
+    >>> A4.todense()
+    array([[2, 0, 2],
+           [0, 4, 0],
+           [2, 0, 2]])
 
     """
     M, N = A.shape
@@ -891,7 +923,7 @@ def matrix_power(A, power, structure=None):
     if isintlike(power):
         power = int(power)
         if power < 0:
-            raise ValueError(f"{power=} but power must be >= 0")
+            raise ValueError('exponent must be >= 0')
 
         if power == 0:
             return eye(M, dtype=A.dtype)
@@ -905,4 +937,4 @@ def matrix_power(A, power, structure=None):
         else:
             return tmp @ tmp
     else:
-        raise ValueError(f"power is a {type(power)} must be an integer")
+        raise ValueError("exponent must be an integer")
