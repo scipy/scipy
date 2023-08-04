@@ -5336,7 +5336,7 @@ invweibull = invweibull_gen(a=0, name='invweibull')
 
 
 class jf_skew_t_gen(rv_continuous):
-    r"""Jones and Faddy skew-t distribution [1]_.
+    r"""Jones and Faddy skew-t distribution.
 
     %(before_notes)s
 
@@ -5346,17 +5346,17 @@ class jf_skew_t_gen(rv_continuous):
 
     .. math::
 
-        f(t; a, b) = C_{a,b}^{-1}
-                    \left(1+\frac{t}{\left(a+b+t^2\right)^{1/2}}\right)^{a+1/2}
-                    \left(1-\frac{t}{\left(a+b+t^2\right)^{1/2}}\right)^{b+1/2}
+        f(x; a, b) = C_{a,b}^{-1}
+                    \left(1+\frac{x}{\left(a+b+x^2\right)^{1/2}}\right)^{a+1/2}
+                    \left(1-\frac{x}{\left(a+b+x^2\right)^{1/2}}\right)^{b+1/2}
 
     for real numbers :math:`a>0` and :math:`b>0`, where
     :math:`C_{a,b} = 2^{a+b-1}B(a,b)(a+b)^{1/2}`, and :math:`B` denotes the
     beta function (`scipy.special.beta`).
 
-    When :math:`a=b` this reduces to the Student-t distribution on :math:`2a`
-    degrees of freedom. When `a < b` or `a > b`, the distribution is negatively
-    or positively skewed respectively. In fact, :math:`f(t;b,a)=f(-t;a,b)`.
+    When :math:`a<b`, the distribution is negatively skewed, and when
+    :math:`a>b`, the distribution is positively skewed. If :math:`a=b`, then
+    we recover the `t` distribution with :math:`2a` degrees of freedom.
 
     `jf_skew_t` takes :math:`a` and :math:`b` as shape parameters.
 
@@ -5367,7 +5367,7 @@ class jf_skew_t_gen(rv_continuous):
     .. [1] M.C. Jones and M.J. Faddy. "A skew extension of the t distribution,
            with applications" *Journal of the Royal Statistical Society*.
            Series B (Statistical Methodology) 65, no. 1 (2003): 159-174.
-           doi: 10.1111/1467-9868.00378
+           :doi:`10.1111/1467-9868.00378`
 
     %(example)s
 

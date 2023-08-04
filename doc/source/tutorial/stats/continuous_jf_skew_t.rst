@@ -21,8 +21,8 @@ function `scipy.special.beta` and the formula for the moments
 :math:`\mu_{n}^{\prime}` holds provided that :math:`a>n/2` and :math:`b>n/2`.
 
 When :math:`a<b`, the distribution is negatively skewed, and when :math:`a>b`,
-the distribution is positively skewed. When :math:`a=b`, the distribution
-reduces to the `t` distribution on :math:`2a` degrees of freedom.
+the distribution is positively skewed. If :math:`a=b`, then we recover the `t`
+distribution with :math:`2a` degrees of freedom.
 
 References
 ----------
@@ -30,6 +30,6 @@ References
 -  M.C. Jones and M.J. Faddy. "A skew extension of the t distribution, with
    applications" *Journal of the Royal Statistical Society*, Series B
    (Statistical Methodology) 65, no. 1 (2003): 159-174.
-   doi: 10.1111/1467-9868.00378
+   :doi:`10.1111/1467-9868.00378`
 
 Implementation: `scipy.stats.jf_skew_t`
