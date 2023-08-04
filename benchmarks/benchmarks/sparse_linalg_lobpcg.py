@@ -120,7 +120,7 @@ class Sakurai(LinearOperator):
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
         d1 = -4 * np.ones(self.n, dtype=self.dtype)
         d2 = np.ones(self.n, dtype=self.dtype)
-        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
+        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
 
 
     def tobanded(self):
@@ -352,7 +352,7 @@ class Bench(Benchmark):
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n, dtype='int')
-        self.A = sakurai_obj
+        self.A = sakurai_obj()
         self.Aa = sakurai_obj.toarray()
         self.eigenvalues = sakurai_obj.eigenvalues
 
