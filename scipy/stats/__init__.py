@@ -307,6 +307,7 @@ drawn from a specified distribution or a distribution with specified properties
 
    ttest_1samp
    binomtest
+   quantile_test
    skewtest
    kurtosistest
    normaltest
