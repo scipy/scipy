@@ -138,15 +138,13 @@ def atleast_nd(x, *, ndim, xp):
     return x
 
 
-def copy(x, *, xp):
+def copy(x):
     """
     Copies an array.
 
     Parameters
     ----------
     x : array
-    xp : module
-        Common namespace.
 
     Returns
     -------
@@ -159,4 +157,5 @@ def copy(x, *, xp):
     `subok` and `order` keywords are not used. Furthermore, if `x` is a scalar
     an array will still be returned.
     """
+    xp = array_namespace(x)
     return xp.astype(x, x.dtype, copy=True)
