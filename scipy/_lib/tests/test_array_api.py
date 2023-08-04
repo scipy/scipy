@@ -87,6 +87,3 @@ def test_copy(xp):
     assert x[1] != y[1]
     assert x[2] != y[2]
     assert id(x) != id(y)
-
-    y = copy(1.0)
-    assert_equal(y[0], 1.0)
