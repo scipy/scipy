@@ -136,3 +136,27 @@ def atleast_nd(x, *, ndim, xp):
         x = xp.expand_dims(x, axis=0)
         x = atleast_nd(x, ndim=ndim, xp=xp)
     return x
+
+
+def copy(x, *, xp):
+    """
+    Copies an array.
+
+    Parameters
+    ----------
+    x : array
+    xp : module
+        Common namespace.
+
+    Returns
+    -------
+    copy : array
+        Copied array
+
+    Notes
+    -----
+    This copy function does not offer all the semantics of `np.copy`, i.e. the
+    `subok` and `order` keywords are not used. Furthermore, if `x` is a scalar
+    an array will still be returned.
+    """
+    return xp.astype(x, x.dtype, copy=True)
