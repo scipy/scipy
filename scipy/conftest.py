@@ -165,7 +165,7 @@ def skip_if_array_api_gpu(func):
             return func(self, *args, **kwargs)
     else:
         @wraps(func)
-        def wrapped(*args, **kwargs):  # type: ignore[misc]
+        def wrapped(*args, **kwargs):
             xp = kwargs["xp"]
             if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
                 if xp.__name__ == 'cupy':
@@ -192,7 +192,7 @@ def skip_if_array_api_backend(backend):
                 return func(self, *args, **kwargs)
         else:
             @wraps(func)
-            def wrapped(*args, **kwargs):  # type: ignore[misc]
+            def wrapped(*args, **kwargs):
                 xp = kwargs["xp"]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
