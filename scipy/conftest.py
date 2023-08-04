@@ -2,6 +2,7 @@
 import json
 import os
 import warnings
+from functools import wraps
 
 import numpy as np
 import numpy.array_api
@@ -147,10 +148,33 @@ skip_if_array_api = pytest.mark.skipif(
     reason="do not run with Array API on",
 )
 
-skip_if_array_api_gpu = pytest.mark.skipif(
-    SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
-    reason="do not run with Array API on and not on CPU",
-)
+
+def skip_if_array_api_gpu(func):
+    reason = "do not run with Array API on and not on CPU"
+    # method gets there as a function so we cannot use inspect.ismethod
+    if '.' in func.__qualname__:
+        @wraps(func)
+        def wrapped(self, *args, **kwargs):
+            xp = kwargs["xp"]
+            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
+                if xp.__name__ == 'cupy':
+                    pytest.skip(reason=reason)
+                elif xp.__name__ == 'torch':
+                    if torch.cuda.is_available():
+                        pytest.skip(reason=reason)
+            return func(self, *args, **kwargs)
+    else:
+        @wraps(func)
+        def wrapped(*args, **kwargs):  # type: ignore[misc]
+            xp = kwargs["xp"]
+            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
+                if xp.__name__ == 'cupy':
+                    pytest.skip(reason=reason)
+                elif xp.__name__ == 'torch':
+                    if torch.cuda.is_available():
+                        pytest.skip(reason=reason)
+            return func(*args, **kwargs)
+    return wrapped
 
 
 def skip_if_array_api_backend(backend):
@@ -160,14 +184,18 @@ def skip_if_array_api_backend(backend):
         )
         # method gets there as a function so we cannot use inspect.ismethod
         if '.' in func.__qualname__:
-            def wrapped(self, *args, xp, **kwargs):
+            @wraps(func)
+            def wrapped(self, *args, **kwargs):
+                xp = kwargs["xp"]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
-                return func(self, *args, xp, **kwargs)
+                return func(self, *args, **kwargs)
         else:
-            def wrapped(*args, xp, **kwargs):  # type: ignore[misc]
+            @wraps(func)
+            def wrapped(*args, **kwargs):  # type: ignore[misc]
+                xp = kwargs["xp"]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
-                return func(*args, xp, **kwargs)
+                return func(*args, **kwargs)
         return wrapped
     return wrapper
