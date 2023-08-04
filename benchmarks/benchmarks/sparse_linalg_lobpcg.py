@@ -110,36 +110,36 @@ class Sakurai(LinearOperator):
         shape = (n, n)
         super().__init__(dtype, shape)
 
-        k = np.arange(1, n+1)
+        k = np.arange(1, n + 1)
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
         self.eigenvalues = e
 
 
     def tosparse(self):
         from scipy.sparse import spdiags
-        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(n, dtype=self.dtype)
-        d2 = np.ones(n, dtype=self.dtype)
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        d2 = np.ones(self.n, dtype=self.dtype)
         return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
 
 
     def tobanded(self):
-        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(n, dtype=self.dtype)
-        d2 = np.ones(n, dtype=self.dtype)
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        d2 = np.ones(self.n, dtype=self.dtype)
         return np.array([d2, d1, d0])
 
 
     def toarray(self):
-        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
-        d1 = -4 * np.ones(n-1, dtype=self.dtype)
-        d2 = np.ones(n-2, dtype=self.dtype)
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n - 1, dtype=self.dtype)
+        d2 = np.ones(self.n - 2, dtype=self.dtype)
         a = np.diag(d0)
         a += np.diag(d1, 1) + np.diag(d1, -1)
         a += np.diag(d2, 2) + np.diag(d2, -2)
         return a
 
-
+    
     def _matvec(self, x):
         n = self.n
         assert n == x.shape[0]
