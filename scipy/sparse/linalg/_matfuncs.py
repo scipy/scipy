@@ -887,8 +887,8 @@ def matrix_power(A, power):
     -----
     This uses a recursive implementation of the matrix power. For computing
     the matrix power using a reasonably large `power`, this may be less efficient
-    than computing the product directly, using a*a*...*a. This is contingent upon
-    the number of nonzero entries in the matrix. 
+    than computing the product directly, using A @ A @ ... @ A.
+    This is contingent upon the number of nonzero entries in the matrix. 
 
     .. versionadded:: 1.12.0
 
