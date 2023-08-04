@@ -76,7 +76,7 @@ def test_raises():
 @array_api_compatible
 def test_copy(xp):
     x = xp.asarray([1, 2, 3])
-    y = copy(x, xp)
+    y = copy(x)
     # with numpy we'd want to use np.shared_memory, but that's not specified
     # in the array-api
     x[0] = 10
@@ -87,3 +87,6 @@ def test_copy(xp):
     assert x[1] != y[1]
     assert x[2] != y[2]
     assert id(x) != id(y)
+
+    y = copy(1.0)
+    assert_equal(y[0], 1.0)

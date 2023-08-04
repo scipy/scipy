@@ -158,4 +158,4 @@ def copy(x):
     an array will still be returned.
     """
     xp = array_namespace(x)
-    return xp.astype(x, x.dtype, copy=True)
+    return xp.asarray(x, copy=True)
