@@ -7,7 +7,7 @@ with safe_import():
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
 
 
-class sakurai:
+class Sakurai(LinearOperator):
     """
     Construct a Sakurai matrix in various formats and its eigenvalues.
 
@@ -21,23 +21,24 @@ class sakurai:
     ----------
     n : int
         The size of the matrix.
+    dtype: numerial numpy type
+        The `dtype` of the array, matrix, or banded output.
+        The default ``dtype="float"``
 
     Returns
     -------
-    sakurai_obj: custom object
-        The object containing the output
-    sakurai_obj.array : (n, n) ndarray, float
-        The Sakurai matrix in the ndarray format
-    sakurai_obj.sparse : (n, n) sparse matrix, float
-        The Sakurai matrix in a DIAgonal sparse format
-    sakurai_obj.banded : (3, n) ndarray, float
+    sakurai_lo: `LinearOperator` custom object
+        The object containing the output standard for `LinearOperator`:
+        sakurai_lo.toarray() : (n, n) ndarray
+        sakurai_lo.tosparse() : (n, n) DIAgonal sparse format
+        sakurai_lo._matvec and sakurai_lo._matmat: callable objects
+            The handle to a function that multiplies the Sakurai matrix
+            `s` of the shape `n`-by-`n` on the right by an input matrix `x`
+            of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
+    sakurai_lo.tobanded() : (3, n) ndarray
         The Sakurai matrix in the format for banded symmetric matrices,
         i.e., 3 upper diagonals with the main diagonal at the bottom
-    sakurai_obj.callable : callable object
-        The handle to a function that multiplies the Sakurai matrix
-        `s` of the shape `n`-by-`n` on the right by an input matrix `x`
-        of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
-    sakurai_obj.eigenvalues : (n, ) ndarray, float
+    sakurai_lo.eigenvalues : (n, ) ndarray, float
         Eigenvalues of the Sakurai matrix ordered ascending
 
     Notes
@@ -47,7 +48,7 @@ class sakurai:
     just for the matrix `B` that this function outputs in various formats
     together with its eigenvalues.
     
-    .. versionadded:: 1.11.2
+    .. versionadded:: 1.12.0
 
     References
     ----------
@@ -59,55 +60,87 @@ class sakurai:
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.linalg import sakurai, eig_banded
+    >>> from scipy.??? import Sakurai
+    >>> from scipy.linalg import eig_banded
     >>> n = 6
-    >>> sak = sakurai(n)
-    >>> sak.array
+    >>> sak = Sakurai(n)
+    >>> sak.toarray()
     array([[ 5., -4.,  1.,  0.,  0.,  0.],
            [-4.,  6., -4.,  1.,  0.,  0.],
            [ 1., -4.,  6., -4.,  1.,  0.],
            [ 0.,  1., -4.,  6., -4.,  1.],
            [ 0.,  0.,  1., -4.,  6., -4.],
            [ 0.,  0.,  0.,  1., -4.,  5.]])
-    >>> sak.banded
+    >>> sak.tobanded()
     array([[ 1.,  1.,  1.,  1.,  1.,  1.],
            [-4., -4., -4., -4., -4., -4.],
            [ 5.,  6.,  6.,  6.,  6.,  5.]])
-    >>> sak.sparse
+    >>> sak.tosparse()
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
-    >>> np.array_equal(sak.sparse.A, sak.array)
+    >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
     True
-    >>> np.array_equal(sak.callable(np.eye(n)), sak.array)
+    >>> np.array_equal(sak(np.eye(n)), sak.tosparse().toarray())
     True
     >>> sak.eigenvalues
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
            10.54287655, 14.45473055])
 
+    The entries of the matrix are all integers so can use ``dtype='int'``.
+
+    >>> sak = Sakurai(n, dtype='int')
+    >>> sak.tobanded()
+    array([[ 1,  1,  1,  1,  1,  1],
+           [-4, -4, -4, -4, -4, -4],
+           [ 5,  6,  6,  6,  6,  5]])
+    >>> sak.tosparse()
+    <6x6 sparse matrix of type '<class 'numpy.int32'>'
+        with 24 stored elements (5 diagonals) in DIAgonal format>
+
     The banded form can be used in scipy functions for banded matrices, e.g.,
 
-    >>> e = eig_banded(sak.banded, eigvals_only=True)
+    >>> e = eig_banded(sak.tobanded(), eigvals_only=True)
     >>> np.allclose(sak.eigenvalues, e, atol= n * n * n * np.finfo(float).eps)
     True
 
     """
-    def __init__(self, n) -> None:
-        from scipy.sparse import spdiags
+    def __init__(self, n, dtype=np.float64) -> None:
         self.n = n
-        d0 = np.r_[5, 6 * np.ones(n - 2), 5]
-        d1 = -4 * np.ones(n)
-        d2 = np.ones(n)
-        s = spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
-        self.sparse = s
-        self.array = s.toarray()
-        self.banded = np.array([d2, d1, d0])
+        self.dtype = dtype
+        shape = (n, n)
+        super().__init__(dtype, shape)
 
         k = np.arange(1, n+1)
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
         self.eigenvalues = e
 
 
-    def callable(self, x):
+    def tosparse(self):
+        from scipy.sparse import spdiags
+        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(n, dtype=self.dtype)
+        d2 = np.ones(n, dtype=self.dtype)
+        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], n, n)
+
+
+    def tobanded(self):
+        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(n, dtype=self.dtype)
+        d2 = np.ones(n, dtype=self.dtype)
+        return np.array([d2, d1, d0])
+
+
+    def toarray(self):
+        d0 = np.r_[5, 6 * np.ones(n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(n-1, dtype=self.dtype)
+        d2 = np.ones(n-2, dtype=self.dtype)
+        a = np.diag(d0)
+        a += np.diag(d1, 1) + np.diag(d1, -1)
+        a += np.diag(d2, 2) + np.diag(d2, -2)
+        return a
+
+
+    def _matvec(self, x):
         n = self.n
         assert n == x.shape[0]
         x = x.reshape(n, -1)
@@ -118,6 +151,18 @@ class sakurai:
                       + np.pad(x[:-3,:], ((1,0),(0,0)))
                       + np.pad(x[3:,:], ((0,1),(0,0))))
         return sx
+
+
+    def _matmat(self, x):
+        return self._matvec(x)
+
+
+    def _adjoint(self):
+        return self
+
+
+    def _transpose(self):
+        return self
 
 
 class mikota_pair:
@@ -306,16 +351,16 @@ class Bench(Benchmark):
 
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
-        sakurai_obj = sakurai(n)
-        self.A = sakurai_obj.callable
-        self.Aa = sakurai_obj.array
+        sakurai_obj = Sakurai(n, dtype='int')
+        self.A = sakurai_obj
+        self.Aa = sakurai_obj.toarray()
         self.eigenvalues = sakurai_obj.eigenvalues
 
 
     def setup_sakuraii(self, n, solver):
         self.shape = (n, n)
-        sakurai_obj = sakurai(n)
-        self.A = sakurai_obj.banded
+        sakurai_obj = Sakurai(n)
+        self.A = sakurai_obj.tobanded()
         self.eigenvalues = sakurai_obj.eigenvalues
 
     
@@ -359,8 +404,7 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
-            a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
-            ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
+            ea, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=15000,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol
