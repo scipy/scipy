@@ -385,10 +385,10 @@ class Bench(Benchmark):
         mik_k = mik.k
         mik_m = mik.m
         self.Ac = mik_k
-        self.Aa = mik_k..toarray()
+        self.Aa = mik_k.toarray()
         self.Bc = mik_m
-        self.Ba = mik_m..toarray()
-        self.Ab = mik_k..tobanded()
+        self.Ba = mik_m.toarray()
+        self.Ab = mik_k.tobanded()
         self.eigenvalues = mik.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
