@@ -31,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._util import ComplexWarning
 
 
 class _TestConvolve:
@@ -297,7 +298,7 @@ class _TestConvolve2d:
     def test_fillvalue_errors(self):
         msg = "could not cast `fillvalue` directly to the output "
         with np.testing.suppress_warnings() as sup:
-            sup.filter(np.ComplexWarning, "Casting complex values")
+            sup.filter(ComplexWarning, "Casting complex values")
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 

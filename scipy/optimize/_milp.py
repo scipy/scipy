@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack, issparse
+from scipy._lib._util import VisibleDeprecationWarning
 from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
@@ -43,7 +44,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except (TypeError, ValueError, np.VisibleDeprecationWarning):
+            except (TypeError, ValueError, VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 

@@ -35,6 +35,7 @@ from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
+from scipy._lib._util import AxisError
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -2891,7 +2892,7 @@ class TestIQR:
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        assert_raises(np.AxisError, stats.iqr, d, axis=4)
+        assert_raises(AxisError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -7089,7 +7090,7 @@ class TestFOneWay:
     def test_axis_error(self):
         a = np.ones((3, 4))
         b = np.ones((5, 4))
-        with assert_raises(np.AxisError):
+        with assert_raises(AxisError):
             stats.f_oneway(a, b, axis=2)
 
     def test_bad_shapes(self):

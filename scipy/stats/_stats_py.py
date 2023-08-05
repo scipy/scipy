@@ -43,7 +43,8 @@ from scipy.spatial import distance_matrix
 from scipy.ndimage import _measurements
 from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
-                              rng_integers, _rename_parameter, _contains_nan)
+                              rng_integers, _rename_parameter, _contains_nan,
+                              AxisError)
 
 import scipy.special as special
 from scipy import linalg
@@ -4123,9 +4124,9 @@ def f_oneway(*samples, axis=0):
     num_groups = len(samples)
 
     # We haven't explicitly validated axis, but if it is bad, this call of
-    # np.concatenate will raise np.AxisError.  The call will raise ValueError
-    # if the dimensions of all the arrays, except the axis dimension, are not
-    # the same.
+    # np.concatenate will raise np.exceptions.AxisError. The call will raise
+    # ValueError if the dimensions of all the arrays, except the axis 
+    # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
@@ -7675,7 +7676,7 @@ def _get_len(a, axis, msg):
     try:
         n = a.shape[axis]
     except IndexError:
-        raise np.AxisError(axis, a.ndim, msg) from None
+        raise AxisError(axis, a.ndim, msg) from None
     return n
 
 
