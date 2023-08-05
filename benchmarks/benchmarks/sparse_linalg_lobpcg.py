@@ -352,7 +352,8 @@ class Bench(Benchmark):
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n, dtype='int')
-        self.A = sakurai_obj()
+        self.A = sakurai_obj
+        self.As = sakurai_obj.tosparse()
         self.Aa = sakurai_obj.toarray()
         self.eigenvalues = sakurai_obj.eigenvalues
 
@@ -404,7 +405,7 @@ class Bench(Benchmark):
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
-            ea, _ = eigsh(self.A, k=m, which='SA', tol=1e-9, maxiter=15000,
+            ea, _ = eigsh(self.As, k=m, which='SA', tol=1e-9, maxiter=15000,
                                    v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol
