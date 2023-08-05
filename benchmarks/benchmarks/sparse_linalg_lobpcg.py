@@ -165,7 +165,7 @@ class Sakurai(LinearOperator):
         return self
 
 
-class mikota_pair:
+class Mikota_pair:
     """
     Construct the Mikota pair of matrices in various formats and
     eigenvalues of the generalized eigenproblem with them.
@@ -194,31 +194,11 @@ class mikota_pair:
     -------
     mikota_obj: custom object
         The object containing the output
-    mikota_obj.Karray : (n, n) ndarray, float
-        The stiffness matrix in the ndarray format
-    mikota_obj.Ksparse : (n, n) sparse matrix, float
-        The stiffness matrix in a DIAgonal sparse format
-    mikota_obj.Kbanded : (2, n) ndarray, int32
-        The stiffness matrix in the format for banded symmetric matrices,
-        i.e., 2 upper diagonals with the main diagonal at the bottom
-    mikota_obj.Kcallable : callable object
-        The handle to a function that multiplies the stiffness matrix
-        `K` of the shape `n`-by-`n` on the right by an input matrix `x`
-        of the shape `n`-by-`k` to output ``K @ x`` without constructing `K`
-    mikota_obj.Marray : (n, n) ndarray, float
-        The mass matrix in the ndarray format
-    mikota_obj.Msparse : (n, n) sparse matrix, float
-        The mass matrix in a DIAgonal sparse format
-    mikota_obj.Mbanded : (1, n) ndarray, float
-        The main diagonal of the mass matrix
-    mikota_obj.Mcallable : callable object
-        The handle to a function that multiplies the mass matrix
-        `M` of the shape `n`-by-`n` on the right by an input matrix `x`
-        of the shape `n`-by-`k` to output ``M @ x`` without constructing `M`
+
     mikota_obj.eigenvalues : (n, ) ndarray, float
         Eigenvalues of the Mikota matrix pair: 1, 4, 9, ..., ``n * n``
     
-    .. versionadded:: 1.11.2
+    .. versionadded:: 1.12.0
 
     References
     ----------
@@ -236,81 +216,146 @@ class mikota_pair:
     >>> import numpy as np
     >>> from scipy.linalg import mikota_pair
     >>> n = 6
-    >>> mik = mikota_pair(n)
-    >>> mik.Karray
+    >>> mik = Mikota_pair(n)
+    >>> mik_k = mik.k
+    >>> mik_m = mik.m
+    >>> mik_k.toarray()
     array([[11., -5.,  0.,  0.,  0.,  0.],
            [-5.,  9., -4.,  0.,  0.,  0.],
            [ 0., -4.,  7., -3.,  0.,  0.],
            [ 0.,  0., -3.,  5., -2.,  0.],
            [ 0.,  0.,  0., -2.,  3., -1.],
            [ 0.,  0.,  0.,  0., -1.,  1.]])
-    >>> mik.Kbanded
+    >>> mik_k.tobanded()
     array([[ 0, -5, -4, -3, -2, -1],
            [11,  9,  7,  5,  3,  1]])
-    >>> mik.Mbanded
+    >>> mik_m.tobanded()
     array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
         0.16666667])
-    >>> mik.Ksparse
+    >>> mik_k.tosparse()
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 16 stored elements (3 diagonals) in DIAgonal format>
-    >>> mik.Msparse
+    >>> mik_m.tosparse()
     <6x6 sparse matrix of type '<class 'numpy.float64'>'
         with 6 stored elements (1 diagonals) in DIAgonal format>
-    >>> np.array_equal(mik.Ksparse.A, mik.Karray)
+    >>> np.array_equal(mik_k.tosparse().toarray(), mik_k.toarray())
     True
-    >>> np.array_equal(mik.Msparse.A, mik.Marray)
+    >>> np.array_equal(mik_m.tosparse().toarray(), mik_m.toarray())
     True
-    >>> np.array_equal(mik.Kcallable(np.eye(n)), mik.Karray)
+    >>> np.array_equal(mik_k(np.eye(n)), mik_k.toarray())
     True
-    >>> np.array_equal(mik.Mcallable(np.eye(n)), mik.Marray)
+    >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())
     True
     >>> mik.eigenvalues
     array([ 1.,  4.,  9., 16., 25., 36.])  
 
     """
-    def __init__(self, n) -> None:
-        from scipy.sparse import diags
+    def __init__(self, n, dtype=np.float64) -> None:
         self.n = n
+        self.dtype = dtype
+
         aranp1 = np.arange(1, n + 1)
-        aranp1_inv = 1. / aranp1
-        self.Mbanded = aranp1_inv
-        M = diags([aranp1_inv], [0], shape=(n, n))
-        self.Msparse = M
-        self.Marray = M.toarray()
-
-        y = - np.arange(n - 1, 0, -1)
-        z = np.arange(2 * n - 1, 0, -2)
-        K = diags([y, z, y], [-1, 0, 1], shape=(n, n))
-        self.Ksparse = K
-        self.Karray = K.toarray()
-        self.Kbanded = np.array([np.pad(y, (1, 0), 'constant'), z])
-
         self.eigenvalues = aranp1 * aranp1.astype(float)
 
+        self.m = self.M(n, dtype)
+        self.k = self.K(n, dtype)
 
-    def Mcallable(self, x):
-        n = self.n
-        assert n == x.shape[0]
-        aranp1_inv = 1. / np.arange(1, n + 1)
-        # linearoperator requires 2D array
-        if len(x.shape) == 1:
-            x = x.reshape(-1, 1)
-        return aranp1_inv[:, np.newaxis] * x
+    class M(LinearOperator):
+        def __init__(self, n, dtype) -> None:
+            self.n = n
+            self.dtype = dtype
+            shape = (n, n)
+            super().__init__(dtype, shape)
 
 
-    def Kcallable(self, x):
-        n = self.n
-        assert n == x.shape[0]
-        x = x.reshape(n, -1)
-        kx = np.zeros_like(x)
-        y = - np.arange(n - 1, 0, -1)
-        z = np.arange(2 * n - 1, 0, -2)
-        kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
-        kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
-        kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
-                        + z[1: -1, None] * x[1: -1, :]
-                        + y[1:, None] * x[2:, :])
-        return kx
+        def tosparse(self):
+            from scipy.sparse import diags
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            aranp1_inv = 1. / aranp1
+            return diags([aranp1_inv], [0], shape=(self.n, self.n))
+
+
+        def tobanded(self):
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            return 1. / aranp1
+
+
+        def toarray(self):
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            aranp1_inv = 1. / aranp1
+            return np.diag(aranp1_inv)
+
+
+        def _matvec(self, x):
+            n = self.n
+            assert n == x.shape[0]
+            aranp1_inv = 1. / np.arange(1, n + 1)
+            # linearoperator requires 2D array
+            if len(x.shape) == 1:
+                x = x.reshape(-1, 1)
+            return aranp1_inv[:, np.newaxis] * x
+
+
+        def _matmat(self, x):
+            return self._matvec(x)
+
+
+        def _adjoint(self):
+            return self
+
+
+        def _transpose(self):
+            return self
+
+
+    class K(LinearOperator):
+        def __init__(self, n, dtype):
+            self.n = n
+            self.dtype = dtype
+            shape = (n, n)
+            super().__init__(dtype, shape)
+
+        def tosparse(self):
+            from scipy.sparse import diags
+            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
+            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
+            return diags([y, z, y], [-1, 0, 1], shape=(self.n, self.n))
+
+
+        def tobanded(self):
+            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
+            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
+            return np.array([np.pad(y, (1, 0), 'constant'), z])
+
+        def toarray(self):
+            return self.tosparse().toarray()
+
+
+        def _matvec(self, x):
+            n = self.n
+            assert n == x.shape[0]
+            x = x.reshape(n, -1)
+            kx = np.zeros_like(x)
+            y = - np.arange(n - 1, 0, -1)
+            z = np.arange(2 * n - 1, 0, -2)
+            kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
+            kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
+            kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
+                            + z[1: -1, None] * x[1: -1, :]
+                            + y[1:, None] * x[2:, :])
+            return kx
+
+
+        def _matmat(self, x):
+            return self._matvec(x)
+
+
+        def _adjoint(self):
+            return self
+
+
+        def _transpose(self):
+            return self
 
 
 class Bench(Benchmark):
@@ -336,13 +381,15 @@ class Bench(Benchmark):
 
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
-        mikota_pair_obj = mikota_pair(n)
-        self.Ac = mikota_pair_obj.Kcallable
-        self.Aa = mikota_pair_obj.Karray
-        self.Bc = mikota_pair_obj.Mcallable
-        self.Ba = mikota_pair_obj.Marray
-        self.Ab = mikota_pair_obj.Kbanded
-        self.eigenvalues = mikota_pair_obj.eigenvalues
+        mik = Mikota_pair(n)
+        mik_k = mik.k
+        mik_m = mik.m
+        self.Ac = mik_k
+        self.Aa = mik_k..toarray()
+        self.Bc = mik_m
+        self.Ba = mik_m..toarray()
+        self.Ab = mik_k..tobanded()
+        self.eigenvalues = mik.eigenvalues
 
         # if solver == 'eigh' and n >= 512:
         #     # skip: slow, and not useful to benchmark
