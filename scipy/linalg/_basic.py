@@ -602,7 +602,7 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     return x
 
 
-def solve_toeplitz(c_or_cr, b, check_finite=True, return_reflection=False):
+def solve_toeplitz(c_or_cr, b, check_finite=True, *, return_reflection=False):
     """Solve a Toeplitz system using Levinson Recursion
 
     The Toeplitz matrix has constant diagonals, with c as its first column
