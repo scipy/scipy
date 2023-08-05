@@ -210,10 +210,10 @@ class TestVq:
         assert_array_equal(codes0, codes1)
 
 
-# Class-level skip on GPU for now; once pdist/cdist are hooked up for CuPy,
-# more tests will work so use per-test markers then
-@skip_if_array_api_gpu
+# Whole class skipped on GPU for now;
+# once pdist/cdist are hooked up for CuPy, more tests will work
 class TestKMean:
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_large_features(self, xp):
         # Generate a data set with large values, and run kmeans on it to
@@ -232,6 +232,7 @@ class TestKMean:
 
         kmeans(xp.asarray(data), xp.asarray(2))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_simple(self, xp):
         np.random.seed(54321)
@@ -241,6 +242,7 @@ class TestKMean:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_lost_cluster(self, xp):
         # This will cause kmeans to have a cluster with no points.
@@ -258,6 +260,7 @@ class TestKMean:
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_simple(self, xp):
         np.random.seed(12345678)
@@ -270,6 +273,7 @@ class TestKMean:
             assert_array_almost_equal(code1, CODET1)
             assert_array_almost_equal(code2, CODET2)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_rank1(self, xp):
         data = xp.asarray(TESTDATA_2D)
@@ -280,6 +284,7 @@ class TestKMean:
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     @skip_if_array_api_backend('numpy.array_api')
     def test_kmeans2_rank1_2(self, xp):
@@ -287,6 +292,7 @@ class TestKMean:
         data1 = data[:, 0]
         kmeans2(data1, xp.asarray(2), iter=1)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_high_dim(self, xp):
         # test kmeans2 when the number of dimensions exceeds the number
@@ -315,6 +321,7 @@ class TestKMean:
             kmeans2(data, k, minit='random')
             kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     @skip_if_array_api_backend('numpy.array_api')
     @pytest.mark.skipif(sys.platform == 'win32',
@@ -335,6 +342,7 @@ class TestKMean:
             init_cov = xp.cov(init.T)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans2_empty(self, xp):
         # Regression test for gh-1032.
@@ -347,6 +355,7 @@ class TestKMean:
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_large_thres(self, xp):
         # Regression test for gh-1774
@@ -383,6 +392,7 @@ class TestKMean:
         res, _ = kmeans2(data, xp.asarray(2), minit='++')
         assert_array_almost_equal(res, centers, decimal=0)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_kmeans_diff_convergence(self, xp):
         # Regression test for gh-8727
