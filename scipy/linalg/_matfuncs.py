@@ -328,7 +328,8 @@ def expm(A):
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
     # working memory to hold intermediate arrays
-    Am = np.empty((5, n, n), dtype=a.dtype)
+    # For some reason np.empty causes issues; see gh-18086
+    Am = np.zeros((5, n, n), dtype=a.dtype)
 
     # Main loop to go through the slices of an ndarray and passing to expm
     for ind in product(*[range(x) for x in a.shape[:-2]]):
