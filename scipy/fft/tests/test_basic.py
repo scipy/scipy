@@ -476,31 +476,37 @@ class TestFFTThreadSafe:
                 err_msg='Function returned wrong value in multithreaded context'
             )
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_fft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex128)
         self._test_mtsame(fft.fft, a, xp=xp)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_ifft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.ifft, a, xp=xp)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_rfft(self, xp):
         a = xp.ones(self.input_shape)
         self._test_mtsame(fft.rfft, a, xp=xp)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_irfft(self, xp):
         a = xp.full(self.input_shape, 1+0j)
         self._test_mtsame(fft.irfft, a, xp=xp)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_hfft(self, xp):
         a = xp.ones(self.input_shape, dtype=xp.complex64)
         self._test_mtsame(fft.hfft, a, xp=xp)
 
+    @skip_if_array_api_gpu
     @array_api_compatible
     def test_ihfft(self, xp):
         a = xp.ones(self.input_shape)
