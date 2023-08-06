@@ -171,7 +171,7 @@ functions directly on these arrays because NumPy may not properly convert
 them for computations, leading to unexpected (and incorrect) results. If you
 do want to apply a NumPy function to these arrays, first check if SciPy has
 its own implementation for the given sparse array class, or **convert the
-sparse array to a NumPy array** (e.g., using the ``toarray()`` method of the
+sparse array to a NumPy array** (e.g., using the ``toarray`` method of the
 class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
