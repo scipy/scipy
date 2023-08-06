@@ -422,7 +422,7 @@ class dok_array(_dok_base, sparray):
 
     This can be instantiated in several ways:
         dok_array(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         dok_array(S)
             with another sparse array or matrix S (equivalent to S.todok())
@@ -475,7 +475,7 @@ class dok_matrix(spmatrix, _dok_base, dict):
 
     This can be instantiated in several ways:
         dok_matrix(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         dok_matrix(S)
             with another sparse array or matrix S (equivalent to S.todok())

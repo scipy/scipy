@@ -634,7 +634,7 @@ class bsr_array(_bsr_base, sparray):
 
     This can be instantiated in several ways:
         bsr_array(D, [blocksize=(R,C)])
-            where D is a dense matrix or 2-D ndarray.
+            where D is a 2-D ndarray.
 
         bsr_array(S, [blocksize=(R,C)])
             with another sparse array or matrix S (equivalent to S.tobsr())
@@ -741,7 +741,7 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     This can be instantiated in several ways:
         bsr_matrix(D, [blocksize=(R,C)])
-            where D is a dense matrix or 2-D ndarray.
+            where D is a 2-D ndarray.
 
         bsr_matrix(S, [blocksize=(R,C)])
             with another sparse array or matrix S (equivalent to S.tobsr())

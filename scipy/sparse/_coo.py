@@ -528,7 +528,7 @@ class coo_array(_coo_base, sparray):
 
     This can be instantiated in several ways:
         coo_array(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         coo_array(S)
             with another sparse array or matrix S (equivalent to S.tocoo())
@@ -642,7 +642,7 @@ class coo_matrix(spmatrix, _coo_base):
 
     This can be instantiated in several ways:
         coo_matrix(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         coo_matrix(S)
             with another sparse array or matrix S (equivalent to S.tocoo())

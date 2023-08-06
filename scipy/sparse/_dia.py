@@ -406,7 +406,7 @@ class dia_array(_dia_base, sparray):
 
     This can be instantiated in several ways:
         dia_array(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         dia_array(S)
             with another sparse array or matrix S (equivalent to S.todia())
@@ -481,7 +481,7 @@ class dia_matrix(spmatrix, _dia_base):
 
     This can be instantiated in several ways:
         dia_matrix(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         dia_matrix(S)
             with another sparse array or matrix S (equivalent to S.todia())

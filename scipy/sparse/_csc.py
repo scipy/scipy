@@ -178,7 +178,7 @@ class csc_array(_csc_base, sparray):
 
     This can be instantiated in several ways:
         csc_array(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         csc_array(S)
             with another sparse array or matrix S (equivalent to S.tocsc())
@@ -273,7 +273,7 @@ class csc_matrix(spmatrix, _csc_base):
 
     This can be instantiated in several ways:
         csc_matrix(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         csc_matrix(S)
             with another sparse array or matrix S (equivalent to S.tocsc())

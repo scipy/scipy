@@ -249,7 +249,7 @@ class csr_array(_csr_base, sparray):
 
     This can be instantiated in several ways:
         csr_array(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         csr_array(S)
             with another sparse array or matrix S (equivalent to S.tocsr())
@@ -372,7 +372,7 @@ class csr_matrix(spmatrix, _csr_base):
 
     This can be instantiated in several ways:
         csr_matrix(D)
-            where D is a dense matrix or 2-D ndarray
+            where D is a 2-D ndarray
 
         csr_matrix(S)
             with another sparse array or matrix S (equivalent to S.tocsr())
