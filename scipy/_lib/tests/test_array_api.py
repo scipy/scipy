@@ -75,9 +75,8 @@ def test_raises():
 
 @array_api_compatible
 def test_copy(xp):
-    x = xp.asarray([1, 2, 3])
-
     for _xp in [xp, None]:
+        x = xp.asarray([1, 2, 3])
         y = copy(x, xp=_xp)
         # with numpy we'd want to use np.shared_memory, but that's not specified
         # in the array-api

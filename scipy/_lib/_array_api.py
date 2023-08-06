@@ -158,7 +158,8 @@ def copy(x, *, xp=None):
     This copy function does not offer all the semantics of `np.copy`, i.e. the
     `subok` and `order` keywords are not used.
     """
+    # Note: xp.asarray fails if xp is numpy.
     if xp is None:
         xp = array_namespace(x)
 
-    return xp.asarray(x, copy=True)
+    return as_xparray(x, copy=True, xp=xp)
