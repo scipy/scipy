@@ -683,10 +683,10 @@ class bsr_array(_bsr_base, sparray):
 
     **Summary of BSR format**
 
-    The Block Compressed Row (BSR) format is very similar to the Compressed
+    The Block Sparse Row (BSR) format is very similar to the Compressed
     Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
-    sub matrices like the last example below.  Block matrices often arise in
-    vector-valued finite element discretizations. In such cases, BSR is
+    sub matrices like the last example below. Such sparse block matrices often
+    arise in vector-valued finite element discretizations. In such cases, BSR is
     considerably more efficient than CSR and CSC for many sparse arithmetic
     operations.
 
@@ -790,10 +790,10 @@ class bsr_matrix(spmatrix, _bsr_base):
 
     **Summary of BSR format**
 
-    The Block Compressed Row (BSR) format is very similar to the Compressed
+    The Block Sparse Row (BSR) format is very similar to the Compressed
     Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
-    sub matrices like the last example below.  Block matrices often arise in
-    vector-valued finite element discretizations. In such cases, BSR is
+    sub matrices like the last example below. Such sparse block matrices often
+    arise in vector-valued finite element discretizations. In such cases, BSR is
     considerably more efficient than CSR and CSC for many sparse arithmetic
     operations.
 
