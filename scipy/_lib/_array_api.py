@@ -138,13 +138,15 @@ def atleast_nd(x, *, ndim, xp):
     return x
 
 
-def copy(x):
+def copy(x, *, xp=None):
     """
     Copies an array.
 
     Parameters
     ----------
     x : array
+
+    x: array_namespace
 
     Returns
     -------
@@ -154,8 +156,9 @@ def copy(x):
     Notes
     -----
     This copy function does not offer all the semantics of `np.copy`, i.e. the
-    `subok` and `order` keywords are not used. Furthermore, if `x` is a scalar
-    an array will still be returned.
+    `subok` and `order` keywords are not used.
     """
-    xp = array_namespace(x)
+    if xp is None:
+        xp = array_namespace(x)
+
     return xp.asarray(x, copy=True)
