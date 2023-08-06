@@ -452,8 +452,8 @@ class _spbase:
         Examples
         --------
         >>> import numpy as np
-        >>> from scipy.sparse import csr_array/matrix
-        >>> A = csr_array/matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> v = np.array([1, 0, -1])
         >>> A.dot(v)
         array([ 1, -3, -1], dtype=int64)
@@ -835,8 +835,8 @@ class _spbase:
 
         Examples
         --------
-        >>> from scipy.sparse import csr_array/matrix
-        >>> A = csr_array/matrix([[1,2,0],[0,0,3],[4,0,5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1,2,0],[0,0,3],[4,0,5]])
         >>> A.nonzero()
         (array([0, 0, 1, 2, 2]), array([0, 1, 2, 0, 2]))
 
@@ -1197,8 +1197,8 @@ class _spbase:
 
         Examples
         --------
-        >>> from scipy.sparse import csr_array/matrix
-        >>> A = csr_array/matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> from scipy.sparse import csr_array
+        >>> A = csr_array([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
         >>> A.diagonal()
         array([1, 0, 5])
         >>> A.diagonal(k=1)
