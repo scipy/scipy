@@ -634,10 +634,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True, *, return_reflection=False):
         of `b`.
     reflection_coeff : (M+1,) or (M+1, K) ndarray
         Toeplitz reflection coefficients. When the matrix formed by c is
-        symmetric Toeplitz and ``b`` is ``c[n:]``, as in the solution of
-        autoregressive systems, then ``reflection_coeff`` also correspond to
-        the partial autocorrelation function. Only returned when
-        return_reflection is True.
+        symmetric Toeplitz and `b` is ``c[n:]``, as in the solution of
+        autoregressive systems, then `reflection_coeff` also correspond to the
+        partial autocorrelation function. Only returned when return_reflection
+        is True.
 
     See Also
     --------
