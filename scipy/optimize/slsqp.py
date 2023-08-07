@@ -34,5 +34,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="slsqp",
-                                   private_modules="_slsqp_py", all=__all__,
+                                   private_modules=["_slsqp_py"], all=__all__,
                                    attribute=name)
