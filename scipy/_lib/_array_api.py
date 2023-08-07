@@ -146,7 +146,7 @@ def copy(x, *, xp=None):
     ----------
     x : array
 
-    x: array_namespace
+    xp : array_namespace
 
     Returns
     -------
