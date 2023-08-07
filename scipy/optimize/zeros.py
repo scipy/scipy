@@ -32,5 +32,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="zeros",
-                                   private_module="_zeros_py", all=__all__,
+                                   private_modules=["_zeros_py"], all=__all__,
                                    attribute=name)

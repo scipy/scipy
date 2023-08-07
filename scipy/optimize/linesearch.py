@@ -26,5 +26,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="linesearch",
-                                   private_module="_linesearch", all=__all__,
+                                   private_modules=["_linesearch"], all=__all__,
                                    attribute=name)
