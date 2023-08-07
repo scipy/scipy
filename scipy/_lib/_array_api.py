@@ -138,6 +138,33 @@ def atleast_nd(x, *, ndim, xp):
     return x
 
 
+def copy(x, *, xp=None):
+    """
+    Copies an array.
+
+    Parameters
+    ----------
+    x : array
+
+    xp : array_namespace
+
+    Returns
+    -------
+    copy : array
+        Copied array
+
+    Notes
+    -----
+    This copy function does not offer all the semantics of `np.copy`, i.e. the
+    `subok` and `order` keywords are not used.
+    """
+    # Note: xp.asarray fails if xp is numpy.
+    if xp is None:
+        xp = array_namespace(x)
+
+    return as_xparray(x, copy=True, xp=xp)
+
+
 def is_numpy(xp):
     return xp.__name__ == "scipy._lib.array_api_compat.array_api_compat.numpy"
 
