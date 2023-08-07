@@ -160,7 +160,7 @@ def skip_if_array_api_gpu(func):
                 if xp.__name__ == 'cupy':
                     pytest.skip(reason=reason)
                 elif xp.__name__ == 'torch':
-                    if 'cpu' not in torch.empty(2, 2).device.type:
+                    if 'cpu' not in torch.empty(0).device.type:
                         pytest.skip(reason=reason)
             return func(self, *args, **kwargs)
     else:
@@ -171,7 +171,7 @@ def skip_if_array_api_gpu(func):
                 if xp.__name__ == 'cupy':
                     pytest.skip(reason=reason)
                 elif xp.__name__ == 'torch':
-                    if 'cpu' not in torch.empty(2, 2).device.type:
+                    if 'cpu' not in torch.empty(0).device.type:
                         pytest.skip(reason=reason)
             return func(*args, **kwargs)
     return wrapped
