@@ -34,5 +34,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="interpolate", module="fitpack2",
-                                   private_modules="_fitpack2", all=__all__,
+                                   private_modules=["_fitpack2"], all=__all__,
                                    attribute=name)

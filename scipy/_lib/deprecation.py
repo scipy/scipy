@@ -22,8 +22,9 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         Subpackage the module belongs to eg. stats
     module : str
         Public but intended private module to deprecate
-    private_modules : str or list
-        Private replacement(s) for `module`
+    private_modules : list
+        Private replacement(s) for `module`; should contain the
+        content of ``all``, possibly spread over several modules.
     all : list
         ``__all__`` belonging to `module`
     attribute : str
@@ -32,9 +33,6 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
         Module in `sub_package` that `attribute` should be imported from.
         Default is that `attribute` should be imported from ``scipy.sub_package``.
     """
-    if not isinstance(private_modules, list):
-        private_modules = [private_modules]
-    
     if correct_module is not None:
         correct_import = f"scipy.{sub_package}.{correct_module}"
     else:
