@@ -159,28 +159,29 @@ def log_to_dicts(log, pid, options):
 def main(argv):
     usage = __doc__
     parser = argparse.ArgumentParser(usage)
-    parser.add_argument('-a', '--showall', action='store_true', dest='showall',
-                      default=False,
-                      help='report on last build step for all outputs. Default '
-                      'is to report just on the last (possibly incremental) '
-                      'build')
-    parser.add_argument('-g', '--granularity', type='int', default=50000,
-                      dest='granularity',
-                      help='minimum length time-trace event to embed in '
-                      'microseconds. Default: %default')
+    parser.add_argument("logfiles", nargs="*", help=argparse.SUPPRESS)
+    parser.add_argument('-a', '--showall', action='store_true',
+                        dest='showall', default=False,
+                        help='report on last build step for all outputs. '
+                              'Default is to report just on the last '
+                              '(possibly incremental) build')
+    parser.add_argument('-g', '--granularity', type=int, default=50000,
+                        dest='granularity',
+                        help='minimum length time-trace event to embed in '
+                             'microseconds. Default: 50000')
     parser.add_argument('-e', '--embed-time-trace', action='store_true',
-                      default=False, dest='embed_time_trace',
-                      help='embed clang -ftime-trace json file found adjacent '
-                      'to a target file')
+                        default=False, dest='embed_time_trace',
+                        help='embed clang -ftime-trace json file found '
+                             'adjacent to a target file')
     options = parser.parse_args()
 
-    if len(args) == 0:
-      print('Must specify at least one .ninja_log file')
-      parser.print_help()
-      return 1
+    #if len(args) == 0:
+    #  print('Must specify at least one .ninja_log file')
+    #  parser.print_help()
+    #  return 1
 
     entries = []
-    for pid, log_file in enumerate(args):
+    for pid, log_file in enumerate(options.logfiles):
         with open(log_file, 'r') as log:
             entries += list(log_to_dicts(log, pid, vars(options)))
     json.dump(entries, sys.stdout)
