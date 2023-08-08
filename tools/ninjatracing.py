@@ -175,11 +175,6 @@ def main(argv):
                              'adjacent to a target file')
     options = parser.parse_args()
 
-    #if len(args) == 0:
-    #  print('Must specify at least one .ninja_log file')
-    #  parser.print_help()
-    #  return 1
-
     entries = []
     for pid, log_file in enumerate(options.logfiles):
         with open(log_file, 'r') as log:
