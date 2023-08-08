@@ -1,5 +1,4 @@
-'''Multimethods for fast Hankel transforms.
-'''
+"""Multimethods for fast Hankel transforms."""
 
 import numpy as np
 

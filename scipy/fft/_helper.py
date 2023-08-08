@@ -109,8 +109,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
 
 def fftfreq(n, d=1.0, *, xp=None, device=None):
-    """
-    Return the Discrete Fourier Transform sample frequencies.
+    """Return the Discrete Fourier Transform sample frequencies.
 
     The returned float array `f` contains the frequency bin centers in cycles
     per unit of the sample spacing (with zero at the start).  For instance, if
@@ -153,8 +152,7 @@ def fftfreq(n, d=1.0, *, xp=None, device=None):
 
 
 def rfftfreq(n, d=1.0, *, xp=None, device=None):
-    """
-    Return the Discrete Fourier Transform sample frequencies
+    """Return the Discrete Fourier Transform sample frequencies
     (for usage with rfft, irfft).
 
     The returned float array `f` contains the frequency bin centers in cycles
@@ -204,8 +202,7 @@ def rfftfreq(n, d=1.0, *, xp=None, device=None):
 
 
 def fftshift(x, axes=None):
-    """
-    Shift the zero-frequency component to the center of the spectrum.
+    """Shift the zero-frequency component to the center of the spectrum.
 
     This function swaps half-spaces for all axes listed (defaults to all).
     Note that ``y[0]`` is the Nyquist component only if ``len(x)`` is even.
@@ -256,8 +253,7 @@ def fftshift(x, axes=None):
 
 
 def ifftshift(x, axes=None):
-    """
-    The inverse of `fftshift`. Although identical for even-length `x`, the
+    """The inverse of `fftshift`. Although identical for even-length `x`, the
     functions differ by one sample for odd-length `x`.
 
     Parameters

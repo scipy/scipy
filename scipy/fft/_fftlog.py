@@ -1,9 +1,9 @@
-'''Fast Hankel transforms using the FFTLog algorithm.
+"""Fast Hankel transforms using the FFTLog algorithm.
 
 The implementation closely follows the Fortran code of Hamilton (2000).
 
 added: 14/11/2020 Nicolas Tessore <n.tessore@ucl.ac.uk>
-'''
+"""
 
 import numpy as np
 from scipy._lib._array_api import array_namespace

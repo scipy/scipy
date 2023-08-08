@@ -8,8 +8,7 @@ import numpy as np
 
 
 def _x_replacer(args, kwargs, dispatchables):
-    """
-    uarray argument replacer to replace the transform input array (``x``)
+    """uarray argument replacer to replace the transform input array (``x``).
     """
     if len(args) > 0:
         return (dispatchables[0],) + args[1:], kwargs
@@ -19,8 +18,7 @@ def _x_replacer(args, kwargs, dispatchables):
 
 
 def _dispatch(func):
-    """
-    Function annotation that creates a uarray multimethod from the function
+    """Function annotation that creates a uarray multimethod from the function.
     """
     return generate_multimethod(func, _x_replacer, domain="numpy.scipy.fft")
 
