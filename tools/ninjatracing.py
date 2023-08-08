@@ -27,7 +27,7 @@ the profiling results.
 
 import json
 import os
-import optparse
+import argparse
 import re
 import sys
 
@@ -158,7 +158,7 @@ def log_to_dicts(log, pid, options):
 
 def main(argv):
     usage = __doc__
-    parser = optparse.OptionParser(usage)
+    parser = argparse.ArgumentParser(usage)
     parser.add_option('-a', '--showall', action='store_true', dest='showall',
                       default=False,
                       help='report on last build step for all outputs. Default '
@@ -172,7 +172,7 @@ def main(argv):
                       default=False, dest='embed_time_trace',
                       help='embed clang -ftime-trace json file found adjacent '
                       'to a target file')
-    (options, args) = parser.parse_args()
+    options = parser.parse_args()
 
     if len(args) == 0:
       print('Must specify at least one .ninja_log file')
