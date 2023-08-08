@@ -19,5 +19,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="cobyla",
-                                   private_module="_cobyla_py", all=__all__,
+                                   private_modules=["_cobyla_py"], all=__all__,
                                    attribute=name)
