@@ -66,9 +66,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
 
 def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
-    '''Compute the coefficient array for a fast Hankel transform.
-    '''
-
+    """Compute the coefficient array for a fast Hankel transform."""
     lnkr, q = offset, bias
 
     # Hankel transform coefficients
@@ -106,7 +104,7 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
 
 
 def fhtoffset(dln, mu, initial=0.0, bias=0.0):
-    '''Return optimal offset for a fast Hankel transform.
+    """Return optimal offset for a fast Hankel transform.
 
     Returns an offset close to `initial` that fulfils the low-ringing
     condition of [1]_ for the fast Hankel transform `fht` with logarithmic
@@ -138,7 +136,7 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     ----------
     .. [1] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
-    '''
+    """
 
     lnkr, q = initial, bias
 
@@ -152,10 +150,10 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
 
 
 def _fhtq(a, u, inverse=False):
-    '''Compute the biased fast Hankel transform.
+    """Compute the biased fast Hankel transform.
 
     This is the basic FFTLog routine.
-    '''
+    """
 
     # size of transform
     n = np.shape(a)[-1]
