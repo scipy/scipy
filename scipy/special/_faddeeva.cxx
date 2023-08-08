@@ -9,14 +9,14 @@ extern "C" {
 
 npy_cdouble faddeeva_w(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     std::complex<double> w = Faddeeva::w(z);
     return npy_cpack(real(w), imag(w));
 }
 
 npy_cdouble faddeeva_erf(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = Faddeeva::erf(z);
     return npy_cpack(real(w), imag(w));
 }
@@ -28,7 +28,7 @@ double faddeeva_erfc(double x)
 
 npy_cdouble faddeeva_erfc_complex(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = Faddeeva::erfc(z);
     return npy_cpack(real(w), imag(w));
 }
@@ -40,7 +40,7 @@ double faddeeva_erfcx(double x)
 
 npy_cdouble faddeeva_erfcx_complex(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = Faddeeva::erfcx(z);
     return npy_cpack(real(w), imag(w));
 }
@@ -52,7 +52,7 @@ double faddeeva_erfi(double x)
 
 npy_cdouble faddeeva_erfi_complex(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = Faddeeva::erfi(z);
     return npy_cpack(real(w), imag(w));
 }
@@ -64,7 +64,7 @@ double faddeeva_dawsn(double x)
 
 npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     complex<double> w = Faddeeva::Dawson(z);
     return npy_cpack(real(w), imag(w));
 }
@@ -75,7 +75,7 @@ npy_cdouble faddeeva_dawsn_complex(npy_cdouble zp)
 
 npy_cdouble faddeeva_ndtr(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
     z *= M_SQRT1_2;
     complex<double> w = 0.5 * Faddeeva::erfc(-z);
     return npy_cpack(real(w), imag(w));
@@ -124,8 +124,8 @@ double faddeeva_log_ndtr(double x)
  */
 npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
 {
-    complex<double> z(zp.real, zp.imag);
-    if (zp.real > 6) {
+    complex<double> z(npy_creal(zp), npy_cimag(zp));
+    if (npy_creal(zp) > 6) {
         // Underflow. Close to the real axis, expand the log in log(1 - ndtr(-z)).
         complex<double> w = -0.5 * Faddeeva::erfc(z*M_SQRT1_2);
         if (abs(w) < 1e-8) {

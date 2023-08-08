@@ -2,6 +2,7 @@
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import VisibleDeprecationWarning
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
@@ -714,7 +715,7 @@ class _spbase:
     @property
     def A(self) -> np.ndarray:
         if isinstance(self, sparray):
-            warn(np.VisibleDeprecationWarning(
+            warn(VisibleDeprecationWarning(
                 "`.A` is deprecated and will be removed in v1.13.0. "
                 "Use `.toarray()` instead."
             ))
@@ -727,7 +728,7 @@ class _spbase:
     @property
     def H(self):
         if isinstance(self, sparray):
-            warn(np.VisibleDeprecationWarning(
+            warn(VisibleDeprecationWarning(
                 "`.H` is deprecated and will be removed in v1.13.0. "
                 "Please use `.T.conjugate()` instead."
             ))
