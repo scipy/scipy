@@ -159,16 +159,16 @@ def log_to_dicts(log, pid, options):
 def main(argv):
     usage = __doc__
     parser = argparse.ArgumentParser(usage)
-    parser.add_option('-a', '--showall', action='store_true', dest='showall',
+    parser.add_argument('-a', '--showall', action='store_true', dest='showall',
                       default=False,
                       help='report on last build step for all outputs. Default '
                       'is to report just on the last (possibly incremental) '
                       'build')
-    parser.add_option('-g', '--granularity', type='int', default=50000,
+    parser.add_argument('-g', '--granularity', type='int', default=50000,
                       dest='granularity',
                       help='minimum length time-trace event to embed in '
                       'microseconds. Default: %default')
-    parser.add_option('-e', '--embed-time-trace', action='store_true',
+    parser.add_argument('-e', '--embed-time-trace', action='store_true',
                       default=False, dest='embed_time_trace',
                       help='embed clang -ftime-trace json file found adjacent '
                       'to a target file')

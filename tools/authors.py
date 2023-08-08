@@ -27,9 +27,9 @@ MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
 
 def main():
     p = argparse.ArgumentParser(__doc__.strip())
-    p.add_option("-d", "--debug", action="store_true",
+    p.add_argument("-d", "--debug", action="store_true",
                  help="print debug output")
-    p.add_option("-n", "--new", action="store_true",
+    p.add_argument("-n", "--new", action="store_true",
                  help="print debug output")
     options = p.parse_args()
 
