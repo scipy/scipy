@@ -148,6 +148,9 @@ def _wrap_callback(callback, method=None):
     elif method == 'trust-constr':
         def wrapped_callback(res):
             return callback(np.copy(res.x), res)
+    elif method == 'differential_evolution':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res.convergence)
     else:
         def wrapped_callback(res):
             return callback(np.copy(res.x))
@@ -1357,7 +1360,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'eps': epsilon,
             'disp': disp,
             'maxiter': maxiter,
-            'return_all': retall}
+            'return_all': retall,
+            'xrtol': xrtol}
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)

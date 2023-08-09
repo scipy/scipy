@@ -17,6 +17,10 @@ from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
+# even though this is a stdlib module, it got accidentally exposed in __all__
+# in the past. It is now deprecated and scheduled to be removed in SciPy 1.13.0
+import itertools  # noqa
+
 
 def lagrange(x, w):
     r"""

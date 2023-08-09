@@ -502,11 +502,17 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
 
 
 def _lightweight_memoizer(f):
-    # very shallow memoization - only remember the first set of parameters
-    # and corresponding function value to address gh-13670
+    # very shallow memoization to address gh-13670: only remember the first set
+    # of parameters and corresponding function value, and only attempt to use
+    # them twice (the number of times the function is evaluated at x0).
     def _memoized_func(params):
+        if _memoized_func.skip_lookup:
+            return f(params)
+
         if np.all(_memoized_func.last_params == params):
             return _memoized_func.last_val
+        elif _memoized_func.last_params is not None:
+            _memoized_func.skip_lookup = True
 
         val = f(params)
 
@@ -518,6 +524,7 @@ def _lightweight_memoizer(f):
 
     _memoized_func.last_params = None
     _memoized_func.last_val = None
+    _memoized_func.skip_lookup = False
     return _memoized_func
 
 
@@ -525,7 +532,7 @@ def _wrap_func(func, xdata, ydata, transform):
     if transform is None:
         def func_wrapped(params):
             return func(xdata, *params) - ydata
-    elif transform.ndim == 1:
+    elif transform.size == 1 or transform.ndim == 1:
         def func_wrapped(params):
             return transform * (func(xdata, *params) - ydata)
     else:
@@ -599,12 +606,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         initial values will all be 1 (if the number of parameters for the
         function can be determined using introspection, otherwise a
         ValueError is raised).
-    sigma : None or M-length sequence or MxM array, optional
+    sigma : None or scalar or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A 1-D `sigma` should contain values of standard deviations of
+            - A scalar or 1-D `sigma` should contain values of standard deviations of
               errors in `ydata`. In this case, the optimized function is
               ``chisq = sum((r / sigma) ** 2)``.
 
@@ -930,8 +937,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     if sigma is not None:
         sigma = np.asarray(sigma)
 
-        # if 1-D, sigma are errors, define transform = 1/sigma
-        if sigma.shape == (ydata.size, ):
+        # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
+        if sigma.size == 1 or sigma.shape == (ydata.size, ):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C

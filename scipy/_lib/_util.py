@@ -11,16 +11,25 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    Type,
     TypeVar,
 )
 
 import numpy as np
 
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import AxisError
-else:
-    from numpy import AxisError
 
+AxisError: Type[Exception]
+ComplexWarning: Type[Warning]
+VisibleDeprecationWarning: Type[Warning]
+
+if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
+    from numpy.exceptions import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+else:
+    from numpy import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
 
 
 IntNumber = Union[int, np.integer]
