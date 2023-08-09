@@ -19,7 +19,7 @@ class LaplacianNd(LinearOperator):
         A tuple of integers of length `N` (corresponding to the dimension of
         the Lapacian), where each entry gives the size of that dimension. The
         Laplacian matrix is square of the size ``np.prod(grid_shape)``.
-    boundary_conditions: {'neumann', 'dirichlet', 'periodic'}, optional
+    boundary_conditions : {'neumann', 'dirichlet', 'periodic'}, optional
         The type of the boundary conditions on the boundaries of the grid.
         Valid values are ``'dirichlet'`` or ``'neumann'``(default) or
         ``'periodic'``.
