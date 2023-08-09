@@ -383,10 +383,26 @@ def least_squares(
         Maximum number of function evaluations before the termination.
         If None (default), the value is chosen automatically:
 
-            * For 'trf' and 'dogbox' : 100 * n.
-            * For 'lm' :  100 * n if `jac` is callable and 100 * n * (n + 1)
-              otherwise (because 'lm' counts function calls in Jacobian
-              estimation).
+            * For ``method='trf'`` and ``method='dogbox'`` : 100 * n.
+            * For ``method='lm'`` :  100 * n if `jac` is callable and
+              100 * n * (n + 1) otherwise (because 'lm' counts function
+              calls in Jacobian estimation).
+
+        Note that `max_nfev` is not always strictly respected. If a callable
+        is provided for the argument `jac`, the following holds:
+
+            * For ``method='trf'`` and ``method='dogbox'`` : `max_nfev` is
+              respected exactly.
+            * For ``method='lm'`` : the actual number of function evaluations
+              is `max_nfev + 2`.
+
+        If no callable is provided for `jac`, the following holds for the
+        actual number of function evaluations:
+
+            * For ``method='trf'`` and ``method='dogbox'``:
+              `max_nfev` + `njev` * `n` where `n` denotes the number of
+              variables.
+            * For ``method='lm'`` : scales with `max_nfev`
 
     diff_step : None or array_like, optional
         Determines the relative step size for the finite difference
