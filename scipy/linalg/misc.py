@@ -17,5 +17,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="linalg", module="misc",
-                                   private_module="_misc", all=__all__,
+                                   private_modules=["_misc"], all=__all__,
                                    attribute=name)
