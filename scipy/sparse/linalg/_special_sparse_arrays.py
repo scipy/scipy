@@ -19,24 +19,24 @@ class LaplacianNd(LinearOperator):
         A tuple of integers of length `N` (corresponding to the dimension of
         the Lapacian), where each entry gives the size of that dimension. The
         Laplacian matrix is square of the size ``np.prod(grid_shape)``.
-    boundary_conditions: string
+    boundary_conditions: {'neumann', 'dirichlet', 'periodic'}, optional
         The type of the boundary conditions on the boundaries of the grid.
         Valid values are ``'dirichlet'`` or ``'neumann'``(default) or
         ``'periodic'``.
-    dtype : type
+    dtype : dtype
         Numerical type of the array. Default is ``np.int8``.
 
     Attributes
     ----------
-    eigs : ndarray
+    eigenvalues : ndarray
         Eigenvalues of the Laplacian matrix in ascending order.
 
     Methods
     -------
-    toarray: ndarray
-        The ``(n, n)`` Laplacian matrix in a dense 2D array format.
-    tosparse: sparse
-        The ``(n, n)`` Laplacian matrix in a sparse format.
+    toarray()
+        Construct a dense array from Laplacian data
+    tosparse()
+        Construct a sparse array from Laplacian data
 
     .. versionadded:: 1.12.0
 
@@ -44,12 +44,12 @@ class LaplacianNd(LinearOperator):
     -----
     Compared to the MATLAB/Octave implementation [1] of 1-, 2-, and 3-D
     Laplacian, this code allows the arbitrary N-D case and the matrix-free
-    callable option, but is currently limited to pure dirichlet, neumann or
-    periodic boundary conditions only and outputs just the eigenvalues,
+    callable option, but is currently limited to pure Dirichlet, Neumann or
+    Periodic boundary conditions only and outputs just the eigenvalues,
     no eigenvectors.
 
     The Laplacian matrix of a graph (`scipy.sparse.csgraph.laplacian`) of a
-    rectangular grid corresponds to the negative Laplacian with the neumann
+    rectangular grid corresponds to the negative Laplacian with the Neumann
     conditions, i.e., ``boundary_conditions = 'neumann'``.
 
     All eigenvalues and eigenvectors of the discrete Laplacian operator for
@@ -60,7 +60,9 @@ class LaplacianNd(LinearOperator):
     ----------
     .. [1] https://github.com/lobpcg/blopex/blob/master/blopex_\
 tools/matlab/laplacian/laplacian.m
-    .. [2] https://w.wiki/7CVT
+    .. [2] "Eigenvalues and eigenvectors of the second derivative", Wikipedia
+           https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors_\
+of_the_second_derivative
 
     Examples
     --------
@@ -69,7 +71,7 @@ tools/matlab/laplacian/laplacian.m
     >>> from scipy.sparse import diags, csgraph
     >>> from scipy.linalg import eigvalsh
 
-    The one-dimensional Laplacian demonstrated below for pure neumann boundary
+    The one-dimensional Laplacian demonstrated below for pure Neumann boundary
     conditions on a regular grid with ``n=6`` grid points is exactly the
     negative graph Laplacian for the undirected linear graph with ``n``
     vertices using the sparse adjacency matrix ``G`` represented by the
@@ -136,11 +138,11 @@ tools/matlab/laplacian/laplacian.m
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigs
+    >>> lap.eigenvalues
     array([-6.41421356, -5.        , -4.41421356, -3.58578644, -3.        ,
            -1.58578644])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigs, eigvals)
+    >>> np.allclose(lap.eigenvalues, eigvals)
     True
 
     with ``"periodic"``
@@ -160,10 +162,10 @@ tools/matlab/laplacian/laplacian.m
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigs
+    >>> lap.eigenvalues
     array([-7., -7., -4., -3., -3.,  0.])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigs, eigvals)
+    >>> np.allclose(lap.eigenvalues, eigvals)
     True
 
     and with ``'neumann'``
@@ -183,10 +185,10 @@ tools/matlab/laplacian/laplacian.m
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigs
+    >>> lap.eigenvalues
     array([-5., -3., -3., -2., -1.,  0.])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigs, eigvals)
+    >>> np.allclose(lap.eigenvalues, eigvals)
     True
 
     """
@@ -197,17 +199,16 @@ tools/matlab/laplacian/laplacian.m
 
         if boundary_conditions not in ("dirichlet", "neumann", "periodic"):
             raise ValueError(
-                f"Unknown value '{boundary_conditions}' is given for"
+                f"Unknown value {boundary_conditions!r} is given for"
                 " 'boundary_conditions' parameter."
                 " The valid options are 'dirichlet', 'periodic', and "
                 "'neumann' (default).")
 
         self.grid_shape = grid_shape
         self.boundary_conditions = boundary_conditions
-        self.dtype = dtype
         # LaplacianNd folds all dimensions in `grid_shape` into a single one
         N = np.prod(grid_shape)
-        super().__init__(dtype=self.dtype, shape=(N, N))
+        super().__init__(dtype=dtype, shape=(N, N))
 
         indices = np.indices(grid_shape)
         L = np.zeros(grid_shape)
@@ -220,17 +221,27 @@ tools/matlab/laplacian/laplacian.m
             else:  # boundary_conditions == "periodic"
                 L += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
-        self._eigs = np.sort(L.ravel())
+        self._eigenvalues = np.sort(L.ravel())
 
     @property
-    def eigs(self):
-        return self._eigs
+    def eigenvalues(self):
+        return self._eigenvalues
 
-    @eigs.setter
-    def eigs(self, value):
-        raise RuntimeError('"eigs" attribute is read-only and cannot be set.')
+    @eigenvalues.setter
+    def eigenvalues(self, value):
+        raise AttributeError('"eigenvalues" attribute is read-only and cannot '
+                             'be set.')
 
     def toarray(self):
+        """
+        Converts the Laplacian data to a dense array
+
+        Returns
+        -------
+        L : ndarray
+            The shape is ``(N, N)`` where ``N = np.prod(grid_shape)``.
+
+        """
         grid_shape = self.grid_shape
         n = np.prod(grid_shape)
         L = np.zeros([n, n], dtype=self.dtype)
@@ -286,6 +297,16 @@ tools/matlab/laplacian/laplacian.m
         return L
 
     def tosparse(self):
+        """
+        Constructs a sparse array from the Laplacian data. The returned sparse
+        array format is dependent on the selected boundary conditions.
+
+        Returns
+        -------
+        L : scipy.sparse.sparray
+            The shape is ``(N, N)`` where ``N = np.prod(grid_shape)``.
+
+        """
         N = len(self.grid_shape)
         p = np.prod(self.grid_shape)
         L = dia_array((p, p), dtype=self.dtype)
