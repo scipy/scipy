@@ -105,11 +105,11 @@ class TestLaplacianNd:
     def test_matmat(self, grid_shape, bc, dtype):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         n = np.prod(grid_shape)
-        x0 = np.arange(n)[:, None]
+        x0 = np.arange(n)
         x1 = x0.reshape((-1, 1))
         x2 = np.arange(2 * n).reshape((n, 2))
         input_set = [x0, x1, x2]
         for x in input_set:
-            y = lap.matmat(x.astype(dtype))
+            y = lap.dot(x.astype(dtype))
             assert x.shape == y.shape
             assert y.dtype == dtype
