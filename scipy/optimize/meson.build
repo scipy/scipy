@@ -250,6 +250,7 @@ py3.install_sources([
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
   '_lbfgsb_py.py',
