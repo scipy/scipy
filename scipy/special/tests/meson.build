@@ -44,6 +44,7 @@ python_sources = [
   'test_spfun_stats.py',
   'test_sph_harm.py',
   'test_spherical_bessel.py',
+  'test_support_cupy_torch_jax.py',
   'test_trig.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
