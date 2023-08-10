@@ -9,6 +9,10 @@ from libc.math cimport (
     isnan, isinf, isfinite, log1p, fabs, exp, log, sin, cos, sqrt, pow
 )
 
+cdef extern from "npy_2_complexcompat.h":
+    void NPY_CSETREAL(np.npy_cdouble *c, double real) nogil
+    void NPY_CSETIMAG(np.npy_cdouble *c, double imag) nogil
+
 cdef extern from "_complexstuff.h":
     double npy_cabs(np.npy_cdouble z) nogil
     double npy_carg(np.npy_cdouble z) nogil
@@ -120,8 +124,8 @@ cdef inline number_t zpow(number_t x, double y) noexcept nogil:
     cdef np.npy_cdouble r, z
     # FIXME
     if number_t is double_complex:
-        z.real = y
-        z.imag = 0.0
+        NPY_CSETREAL(&z, y)
+        NPY_CSETIMAG(&z, 0.0)
         r = npy_cpow(npy_cdouble_from_double_complex(x), z)
         return double_complex_from_npy_cdouble(r)
     else:
@@ -129,8 +133,8 @@ cdef inline number_t zpow(number_t x, double y) noexcept nogil:
 
 cdef inline double_complex zpack(double zr, double zi) noexcept nogil:
     cdef np.npy_cdouble z
-    z.real = zr
-    z.imag = zi
+    NPY_CSETREAL(&z, zr)
+    NPY_CSETIMAG(&z, zi)
     return double_complex_from_npy_cdouble(z)
 
 @cython.cdivision(True)

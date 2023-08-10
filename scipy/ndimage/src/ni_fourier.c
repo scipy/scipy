@@ -35,6 +35,9 @@
 #include <math.h>
 #include <assert.h>
 
+#include <numpy/npy_math.h>
+#include "npy_2_complexcompat.h"
+
 #if !defined(M_PI)
 #define M_PI 3.14159265358979323846
 #endif
@@ -158,22 +161,22 @@ case _TYPE:                                          \
     *(_type *)_po = _tmp;                            \
     break
 
-#define CASE_FOURIER_OUT_RC(_TYPE, _type, _po, _tmp) \
+#define CASE_FOURIER_OUT_RC(_TYPE, _type, _T, _po, _tmp) \
 case _TYPE:                                          \
-    ((_type *)_po)->real = tmp;                      \
-    ((_type *)_po)->imag = 0.0;                      \
+    NPY_CSETREAL##_T((_type *)_po, tmp);                      \
+    NPY_CSETIMAG##_T((_type *)_po, 0.0);                      \
     break
 
-#define CASE_FOURIER_OUT_CC(_TYPE, _type, _po, _tmp_r, _tmp_i) \
+#define CASE_FOURIER_OUT_CC(_TYPE, _type, _T, _po, _tmp_r, _tmp_i) \
 case _TYPE:                                                    \
-    ((_type *)_po)->real = _tmp_r;                             \
-    ((_type *)_po)->imag = _tmp_i;                             \
+    NPY_CSETREAL##_T((_type *)_po, _tmp_r);                             \
+    NPY_CSETIMAG##_T((_type *)_po, _tmp_i);                             \
     break
 
-#define CASE_FOURIER_FILTER_RC(_TYPE, _type, _pi, _tmp, _tmp_r, _tmp_i) \
+#define CASE_FOURIER_FILTER_RC(_TYPE, _type, _t, _pi, _tmp, _tmp_r, _tmp_i) \
 case _TYPE:                                                             \
-    _tmp_r = ((_type *)_pi)->real * _tmp;                               \
-    _tmp_i = ((_type *)_pi)->imag * _tmp;                               \
+    _tmp_r = npy_creal##_t(*((_type *)_pi)) * _tmp;                               \
+    _tmp_i = npy_cimag##_t(*((_type *)_pi)) * _tmp;                               \
     break
 
 #define CASE_FOURIER_FILTER_RR(_TYPE, _type, _pi, _tmp) \
@@ -384,9 +387,9 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 PyArray_TYPE(input) == NPY_CDOUBLE) {
             double tmp_r = 0.0, tmp_i = 0.0;
             switch (PyArray_TYPE(input)) {
-                CASE_FOURIER_FILTER_RC(NPY_CFLOAT, npy_cfloat,
+                CASE_FOURIER_FILTER_RC(NPY_CFLOAT, npy_cfloat, f,
                                        pi, tmp, tmp_r, tmp_i);
-                CASE_FOURIER_FILTER_RC(NPY_CDOUBLE, npy_cdouble,
+                CASE_FOURIER_FILTER_RC(NPY_CDOUBLE, npy_cdouble,,
                                        pi, tmp, tmp_r, tmp_i);
             default:
                 NPY_END_THREADS;
@@ -394,8 +397,8 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
                 goto exit;
             }
             switch (PyArray_TYPE(output)) {
-                CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, po, tmp_r, tmp_i);
-                CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble, po, tmp_r, tmp_i);
+                CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, F, po, tmp_r, tmp_i);
+                CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble,, po, tmp_r, tmp_i);
             default:
                 NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -425,8 +428,8 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             switch (PyArray_TYPE(output)) {
                 CASE_FOURIER_OUT_RR(NPY_FLOAT, npy_float, po, tmp);
                 CASE_FOURIER_OUT_RR(NPY_DOUBLE, npy_double, po, tmp);
-                CASE_FOURIER_OUT_RC(NPY_CFLOAT, npy_cfloat, po, tmp);
-                CASE_FOURIER_OUT_RC(NPY_CDOUBLE, npy_cdouble, po, tmp);
+                CASE_FOURIER_OUT_RC(NPY_CFLOAT, npy_cfloat, F, po, tmp);
+                CASE_FOURIER_OUT_RC(NPY_CDOUBLE, npy_cdouble,, po, tmp);
             default:
                 NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -455,10 +458,10 @@ case _TYPE:                                                                 \
     _i = _tmp * _sint;                                                      \
     break
 
-#define CASE_FOURIER_SHIFT_C(_TYPE, _type, _pi, _r, _i, _cost, _sint) \
+#define CASE_FOURIER_SHIFT_C(_TYPE, _type, _t, _pi, _r, _i, _cost, _sint) \
 case _TYPE:                                                           \
-    _r = ((_type *)_pi)->real * _cost - ((_type *)_pi)->imag * _sint; \
-    _i = ((_type *)_pi)->real * _sint + ((_type *)_pi)->imag * _cost; \
+    _r = npy_creal##_t(*((_type *)_pi)) * _cost - npy_cimag##_t(*((_type *)_pi)) * _sint; \
+    _i = npy_creal##_t(*((_type *)_pi)) * _sint + npy_cimag##_t(*((_type *)_pi)) * _cost; \
     break
 
 int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
@@ -569,9 +572,9 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
                                  pi, tmp, r, i, cost, sint);
             CASE_FOURIER_SHIFT_R(NPY_DOUBLE, npy_double,
                                  pi, tmp, r, i, cost, sint);
-            CASE_FOURIER_SHIFT_C(NPY_CFLOAT, npy_cfloat,
+            CASE_FOURIER_SHIFT_C(NPY_CFLOAT, npy_cfloat, f,
                                  pi, r, i, cost, sint);
-            CASE_FOURIER_SHIFT_C(NPY_CDOUBLE, npy_cdouble,
+            CASE_FOURIER_SHIFT_C(NPY_CDOUBLE, npy_cdouble,,
                                  pi, r, i, cost, sint);
         default:
             NPY_END_THREADS;
@@ -579,8 +582,8 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
             goto exit;
         }
         switch (PyArray_TYPE(output)) {
-            CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, po, r, i);
-            CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble, po, r, i);
+            CASE_FOURIER_OUT_CC(NPY_CFLOAT, npy_cfloat, F, po, r, i);
+            CASE_FOURIER_OUT_CC(NPY_CDOUBLE, npy_cdouble,, po, r, i);
         default:
             NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");

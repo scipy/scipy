@@ -6,7 +6,6 @@ class spmatrix:
 
     It cannot be instantiated.  Most of the work is provided by subclasses.
     """
-    _is_array = False
 
     @property
     def _bsr_container(self):

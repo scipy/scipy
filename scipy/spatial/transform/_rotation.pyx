@@ -481,6 +481,7 @@ cdef class Rotation:
     __pow__
     inv
     magnitude
+    approx_equal
     mean
     reduce
     create_group
@@ -785,6 +786,14 @@ cdef class Rotation:
 
         3D rotations can be represented using unit-norm quaternions [1]_.
 
+        Advanced users may be interested in the "double cover" of 3D space by
+        the quaternion representation [2]_. As of version 1.11.0, the
+        following subset (and only this subset) of operations on a `Rotation`
+        ``r`` corresponding to a quaternion ``q`` are guaranteed to preserve
+        the double cover property: ``r = Rotation.from_quat(q)``,
+        ``r.as_quat(canonical=False)``, ``r.inv()``, and composition using the
+        ``*`` operator such as ``r*r``.
+
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
@@ -800,6 +809,8 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
+        .. [2] Hanson, Andrew J. "Visualizing quaternions."
+            Morgan Kaufmann Publishers Inc., San Francisco, CA. 2006.
 
         Examples
         --------
@@ -2290,7 +2301,8 @@ cdef class Rotation:
         -------
         magnitude : ndarray or float
             Angle(s) in radians, float if object contains a single rotation
-            and ndarray if object contains multiple rotations.
+            and ndarray if object contains multiple rotations. The magnitude
+            will always be in the range [0, pi].
 
         Examples
         --------
@@ -2316,6 +2328,60 @@ cdef class Rotation:
             return angles[0]
         else:
             return np.asarray(angles)
+
+
+    @cython.embedsignature(True)
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
+    def approx_equal(Rotation self, Rotation other, atol=None, degrees=False):
+        """Determine if another rotation is approximately equal to this one.
+
+        Equality is measured by calculating the smallest angle between the
+        rotations, and checking to see if it is smaller than `atol`.
+
+        Parameters
+        ----------
+        other : `Rotation` instance
+            Object containing the rotations to measure against this one.
+        atol : float, optional
+            The absolute angular tolerance, below which the rotations are
+            considered equal. If not given, then set to 1e-8 radians by
+            default.
+        degrees : bool, optional
+            If True and `atol` is given, then `atol` is measured in degrees. If
+            False (default), then atol is measured in radians.
+
+        Returns
+        -------
+        approx_equal : ndarray or bool
+            Whether the rotations are approximately equal, bool if object
+            contains a single rotation and ndarray if object contains multiple
+            rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> import numpy as np
+        >>> p = R.from_quat([0, 0, 0, 1])
+        >>> q = R.from_quat(np.eye(4))
+        >>> p.approx_equal(q)
+        array([False, False, False, True])
+
+        Approximate equality for a single rotation:
+
+        >>> p.approx_equal(q[0])
+        False
+        """
+        if atol is None:
+            if degrees:
+                warnings.warn("atol must be set to use the degrees flag, "
+                              "defaulting to 1e-8 radians.")
+            atol = 1e-8  # radians
+        elif degrees:
+            atol = np.deg2rad(atol)
+
+        angles = (other * self.inv()).magnitude()
+        return angles < atol
 
     @cython.embedsignature(True)
     def mean(self, weights=None):
