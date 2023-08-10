@@ -19,6 +19,7 @@
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 

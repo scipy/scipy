@@ -20,7 +20,7 @@ from scipy._lib import _pep440
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
-                   int8, ComplexWarning)
+                   int8)
 
 import random
 from numpy.testing import (assert_equal, assert_array_equal,
@@ -39,6 +39,7 @@ from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
+from scipy._lib._util import ComplexWarning
 
 import pytest
 

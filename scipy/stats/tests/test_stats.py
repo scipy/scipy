@@ -38,6 +38,7 @@ from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
+from scipy._lib._util import AxisError
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -2894,7 +2895,7 @@ class TestIQR:
         assert_equal(stats.iqr(d, axis=(1, 3))[2, 2],
                      stats.iqr(d[2, :, 2,:].ravel()))
 
-        assert_raises(np.AxisError, stats.iqr, d, axis=4)
+        assert_raises(AxisError, stats.iqr, d, axis=4)
         assert_raises(ValueError, stats.iqr, d, axis=(0, 0))
 
     def test_rng(self):
@@ -7136,7 +7137,7 @@ class TestFOneWay:
     def test_axis_error(self):
         a = np.ones((3, 4))
         b = np.ones((5, 4))
-        with assert_raises(np.AxisError):
+        with assert_raises(AxisError):
             stats.f_oneway(a, b, axis=2)
 
     def test_bad_shapes(self):
@@ -8041,6 +8042,145 @@ class TestMGCStat:
 
         res = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_equal(res.stat, res.statistic)
+
+
+class TestQuantileTest():
+    r""" Test the non-parametric quantile test,
+    including the computation of confidence intervals
+    """
+
+    def test_quantile_test_iv(self):
+        x = [1, 2, 3]
+
+        message = "`x` must be a one-dimensional array of numbers."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test([x])
+
+        message = "`q` must be a scalar."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, q=[1, 2])
+
+        message = "`p` must be a float strictly between 0 and 1."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, p=[0.5, 0.75])
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, p=2)
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, p=-0.5)
+
+        message = "`alternative` must be one of..."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x, alternative='one-sided')
+
+        message = "`confidence_level` must be a number between 0 and 1."
+        with pytest.raises(ValueError, match=message):
+            stats.quantile_test(x).confidence_interval(1)
+
+    @pytest.mark.parametrize(
+        'p, alpha, lb, ub, alternative',
+        [[0.3, 0.95, 1.221402758160170, 1.476980793882643, 'two-sided'],
+         [0.5, 0.9, 1.506817785112854, 1.803988415397857, 'two-sided'],
+         [0.25, 0.95, -np.inf, 1.39096812846378, 'less'],
+         [0.8, 0.9, 2.117000016612675, np.inf, 'greater']]
+    )
+    def test_R_ci_quantile(self, p, alpha, lb, ub, alternative):
+        # Test against R library `confintr` function `ci_quantile`, e.g.
+        # library(confintr)
+        # options(digits=16)
+        # x <- exp(seq(0, 1, by = 0.01))
+        # ci_quantile(x, q = 0.3)$interval
+        # ci_quantile(x, q = 0.5, probs = c(0.05, 0.95))$interval
+        # ci_quantile(x, q = 0.25, probs = c(0, 0.95))$interval
+        # ci_quantile(x, q = 0.8, probs = c(0.1, 1))$interval
+        x = np.exp(np.arange(0, 1.01, 0.01))
+        res = stats.quantile_test(x, p=p, alternative=alternative)
+        assert_allclose(res.confidence_interval(alpha), [lb, ub], rtol=1e-15)
+
+    @pytest.mark.parametrize(
+        'q, p, alternative, ref',
+        [[1.2, 0.3, 'two-sided', 0.01515567517648],
+         [1.8, 0.5, 'two-sided', 0.1109183496606]]
+    )
+    def test_R_pvalue(self, q, p, alternative, ref):
+        # Test against R library `snpar` function `quant.test`, e.g.
+        # library(snpar)
+        # options(digits=16)
+        # x < - exp(seq(0, 1, by=0.01))
+        # quant.test(x, q=1.2, p=0.3, exact=TRUE, alternative='t')
+        x = np.exp(np.arange(0, 1.01, 0.01))
+        res = stats.quantile_test(x, q=q, p=p, alternative=alternative)
+        assert_allclose(res.pvalue, ref, rtol=1e-12)
+
+    @pytest.mark.parametrize('case', ['continuous', 'discrete'])
+    @pytest.mark.parametrize('alternative', ['less', 'greater'])
+    @pytest.mark.parametrize('alpha', [0.9, 0.95])
+    def test_pval_ci_match(self, case, alternative, alpha):
+        # Verify that the following statement holds:
+
+        # The 95% confidence interval corresponding with alternative='less'
+        # has -inf as its lower bound, and the upper bound `xu` is the greatest
+        # element from the sample `x` such that:
+        # `stats.quantile_test(x, q=xu, p=p, alternative='less').pvalue``
+        # will be greater than 5%.
+
+        # And the corresponding statement for the alternative='greater' case.
+
+        seed = int((7**len(case) + len(alternative))*alpha)
+        rng = np.random.default_rng(seed)
+        if case == 'continuous':
+            p, q = rng.random(size=2)
+            rvs = rng.random(size=100)
+        else:
+            rvs = rng.integers(1, 11, size=100)
+            p = rng.random()
+            q = rng.integers(1, 11)
+
+        res = stats.quantile_test(rvs, q=q, p=p, alternative=alternative)
+        ci = res.confidence_interval(confidence_level=alpha)
+
+        # select elements inside the confidence interval based on alternative
+        if alternative == 'less':
+            i_inside = rvs <= ci.high
+        else:
+            i_inside = rvs >= ci.low
+
+        for x in rvs[i_inside]:
+            res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
+            assert res.pvalue > 1 - alpha
+
+        for x in rvs[~i_inside]:
+            res = stats.quantile_test(rvs, q=x, p=p, alternative=alternative)
+            assert res.pvalue < 1 - alpha
+
+    def test_match_conover_examples(self):
+        # Test against the examples in [1] (Conover Practical Nonparametric
+        # Statistics Third Edition) pg 139
+
+        # Example 1
+        # Data is [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
+        # 174, 166, 248]
+        # Two-sided test of whether the upper quartile (p=0.75) equals 193
+        # (q=193). Conover shows that 7 of the observations are less than or
+        # equal to 193, and "for the binomial random variable Y, P(Y<=7) =
+        # 0.0173", so the two-sided p-value is twice that, 0.0346.
+        x = [189, 233, 195, 160, 212, 176, 231, 185, 199, 213, 202, 193,
+             174, 166, 248]
+        pvalue_expected = 0.0346
+        res = stats.quantile_test(x, q=193, p=0.75, alternative='two-sided')
+        assert_allclose(res.pvalue, pvalue_expected, rtol=1e-5)
+
+        # Example 2
+        # Conover doesn't give explicit data, just that 8 out of 112
+        # observations are 60 or less. The test is whether the median time is
+        # equal to 60 against the alternative that the median is greater than
+        # 60. The p-value is calculated as P(Y<=8), where Y is again a binomial
+        # distributed random variable, now with p=0.5 and n=112. Conover uses a
+        # normal approximation, but we can easily calculate the CDF of the
+        # binomial distribution.
+        x = [59]*8 + [61]*(112-8)
+        pvalue_expected = stats.binom(p=0.5, n=112).pmf(k=8)
+        res = stats.quantile_test(x, q=60, p=0.5, alternative='greater')
+        assert_allclose(res.pvalue, pvalue_expected, atol=1e-10)
 
 
 class TestPageTrendTest:
