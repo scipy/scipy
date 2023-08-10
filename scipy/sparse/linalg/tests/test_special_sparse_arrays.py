@@ -107,14 +107,14 @@ class TestLaplacianNd:
             .astype(dtype),
         )
         assert_array_equal(
-            LaplacianNd(
-                grid_shape, boundary_conditions=bc, dtype=dtype
-            ).tosparse(),
+            LaplacianNd(grid_shape, boundary_conditions=bc, dtype=dtype)
+            .tosparse()
+            .toarray(),
             LaplacianNd(grid_shape, boundary_conditions=bc)
             .tosparse()
+            .toarray()
             .astype(dtype),
         )
-
 
     @pytest.mark.parametrize("dtype", ALLDTYPES)
     @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
