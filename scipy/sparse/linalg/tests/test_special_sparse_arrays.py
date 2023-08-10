@@ -98,6 +98,23 @@ class TestLaplacianNd:
         n = np.prod(grid_shape)
         assert lap.shape == (n, n)
         assert lap.dtype == dtype
+        assert_array_equal(
+            LaplacianNd(
+                grid_shape, boundary_conditions=bc, dtype=dtype
+            ).toarray(),
+            LaplacianNd(grid_shape, boundary_conditions=bc)
+            .toarray()
+            .astype(dtype),
+        )
+        assert_array_equal(
+            LaplacianNd(
+                grid_shape, boundary_conditions=bc, dtype=dtype
+            ).tosparse(),
+            LaplacianNd(grid_shape, boundary_conditions=bc)
+            .tosparse()
+            .astype(dtype),
+        )
+
 
     @pytest.mark.parametrize("dtype", ALLDTYPES)
     @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
