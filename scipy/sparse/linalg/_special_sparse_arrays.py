@@ -7,16 +7,17 @@ __all__ = ['LaplacianNd']
 
 class LaplacianNd(LinearOperator):
     """
-    The grid Laplacian in `N` dimensions and its eigenvalues.
+    The grid Laplacian in ``N`` dimensions and its eigenvalues.
 
     Construct Laplacian on a uniform rectangular grid in `N` dimensions
-    and output its eigenvalues. The Laplacian matrix `L` is square real
-    symmetric negative definite with signed interger entries and many zeros.
+    and output its eigenvalues. The Laplacian ``L`` is square, negative
+    definite, real symmetric, array with signed integer entries and zeros
+    otherwise.
 
     Parameters
     ----------
     grid_shape : tuple
-        A tuple of integers of length `N` (corresponding to the dimension of
+        A tuple of integers of length ``N`` (corresponding to the dimension of
         the Lapacian), where each entry gives the size of that dimension. The
         Laplacian matrix is square of the size ``np.prod(grid_shape)``.
     boundary_conditions : {'neumann', 'dirichlet', 'periodic'}, optional
@@ -103,13 +104,13 @@ of_the_second_derivative
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
 
-    The two-dimensional Laplacian is illustrated on a regular
-    grid with ``grid_shape = (2, 3)`` points in each dimension.
+    The two-dimensional Laplacian is illustrated on a regular grid with
+    ``grid_shape = (2, 3)`` points in each dimension.
 
     >>> grid_shape = (2, 3)
     >>> n = np.prod(grid_shape)
 
-    Numeration of grid points is as follows.
+    Numeration of grid points is as follows:
 
     >>> np.arange(n).reshape(grid_shape + (-1,))
     array([[[0],
@@ -211,17 +212,17 @@ of_the_second_derivative
         super().__init__(dtype=dtype, shape=(N, N))
 
         indices = np.indices(grid_shape)
-        L = np.zeros(grid_shape)
+        Leig = np.zeros(grid_shape)
 
         for j, n in zip(indices, grid_shape):
             if boundary_conditions == "dirichlet":
-                L += -4 * np.sin(np.pi * (j + 1) / (2 * (n + 1))) ** 2
+                Leig += -4 * np.sin(np.pi * (j + 1) / (2 * (n + 1))) ** 2
             elif boundary_conditions == "neumann":
-                L += -4 * np.sin(np.pi * j / (2 * n)) ** 2
+                Leig += -4 * np.sin(np.pi * j / (2 * n)) ** 2
             else:  # boundary_conditions == "periodic"
-                L += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
+                Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
-        self._eigenvalues = np.sort(L.ravel())
+        self._eigenvalues = np.sort(Leig.ravel())
 
     @property
     def eigenvalues(self):

@@ -12,7 +12,7 @@ class TestLaplacianNd:
     """
     LaplacianNd tests
     """
-    INT_DTYPES = [np.int32, np.int64]
+    INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
     REAL_DTYPES = [np.float32, np.float64]
     COMPLEX_DTYPES = [np.complex64, np.complex128]
     ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
@@ -93,7 +93,7 @@ class TestLaplacianNd:
     @pytest.mark.parametrize("dtype", ALLDTYPES)
     @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
-    def test_input_output_dtype_shape_consistency(self, grid_shape, bc, dtype):
+    def test_linearoperator_shape_dtype(self, grid_shape, bc, dtype):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=dtype)
         n = np.prod(grid_shape)
         assert lap.shape == (n, n)
