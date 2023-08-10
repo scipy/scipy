@@ -10,7 +10,7 @@ from scipy.conftest import (
     skip_if_array_api,
     skip_if_array_api_gpu,
 )
-from scipy._lib._array_api import as_xparray
+from scipy._lib._array_api import copy
 
 import math
 SQRT_2 = math.sqrt(2)
@@ -203,7 +203,7 @@ def test_orthogonalize_noop(func, type, norm, xp):
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
 
-    x2 = as_xparray(x, copy=True, xp=xp)
+    x2 = copy(x, xp=xp)
     x2[0] *= SQRT_2
     x2[-1] *= SQRT_2
 
@@ -234,7 +234,7 @@ def test_orthogonalize_dcst2(func, norm, xp):
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):
     x = xp.asarray(np.random.rand(100))
-    x2 = as_xparray(x, copy=True, xp=xp)
+    x2 = copy(x, xp=xp)
     x2[0 if func == dct else -1] *= SQRT_2
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
