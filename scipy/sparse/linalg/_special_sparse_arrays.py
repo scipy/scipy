@@ -245,7 +245,7 @@ of_the_second_derivative
         """
         grid_shape = self.grid_shape
         n = np.prod(grid_shape)
-        L = np.zeros([n, n], dtype=self.dtype)
+        L = np.zeros([n, n], dtype=np.int8)
         # Scratch arrays
         L_i = np.empty_like(L)
         Ltemp = np.empty_like(L)
@@ -295,7 +295,7 @@ of_the_second_derivative
 
             L += L_i
 
-        return L
+        return L.astype(self.dtype)
 
     def tosparse(self):
         """
@@ -310,11 +310,11 @@ of_the_second_derivative
         """
         N = len(self.grid_shape)
         p = np.prod(self.grid_shape)
-        L = dia_array((p, p), dtype=self.dtype)
+        L = dia_array((p, p), dtype=np.int8)
 
         for i in range(N):
             dim = self.grid_shape[i]
-            data = np.ones([3, dim], dtype=self.dtype)
+            data = np.ones([3, dim], dtype=np.int8)
             data[1, :] *= -2
 
             if self.boundary_conditions == "neumann":
@@ -322,21 +322,21 @@ of_the_second_derivative
                 data[1, -1] = -1
 
             L_i = dia_array((data, [-1, 0, 1]), shape=(dim, dim),
-                            dtype=self.dtype
+                            dtype=np.int8
                             )
 
             if self.boundary_conditions == "periodic":
-                t = dia_array((dim, dim), dtype=self.dtype)
+                t = dia_array((dim, dim), dtype=np.int8)
                 t.setdiag([1], k=-dim+1)
                 t.setdiag([1], k=dim-1)
                 L_i += t
 
             for j in range(i):
-                L_i = kron(eye(self.grid_shape[j], dtype=self.dtype), L_i)
+                L_i = kron(eye(self.grid_shape[j], dtype=np.int8), L_i)
             for j in range(i + 1, N):
-                L_i = kron(L_i, eye(self.grid_shape[j], dtype=self.dtype))
+                L_i = kron(L_i, eye(self.grid_shape[j], dtype=np.int8))
             L += L_i
-        return L
+        return L.astype(self.dtype)
 
     def _matvec(self, x):
         grid_shape = self.grid_shape
