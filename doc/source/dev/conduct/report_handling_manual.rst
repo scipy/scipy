@@ -217,4 +217,4 @@ Conflicts of interest
 ~~~~~~~~~~~~~~~~~~~~~
 
 In the event of any conflict of interest, a committee member must immediately
-notify the other members, and recuse themselves if necessary.
+notify the other members, and recurse themselves if necessary.

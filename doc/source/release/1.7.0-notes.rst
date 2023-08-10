@@ -538,7 +538,7 @@ Issues closed for 1.7.0
 * `#12518 <https://github.com/scipy/scipy/issues/12518>`__: Null hypothesis of Kolmogorov Smirnov test is not correctly described
 * `#12534 <https://github.com/scipy/scipy/issues/12534>`__: Feature request: scipy.linalg.norm to deal with 0-size array
 * `#12622 <https://github.com/scipy/scipy/issues/12622>`__: scipy.interpolate.interpn docstring example
-* `#12635 <https://github.com/scipy/scipy/issues/12635>`__: scipy.stats.beta.ppf gives unexpexted results
+* `#12635 <https://github.com/scipy/scipy/issues/12635>`__: scipy.stats.beta.ppf gives unexpected results
 * `#12669 <https://github.com/scipy/scipy/issues/12669>`__: Median-averaging of complex CSDs
 * `#12731 <https://github.com/scipy/scipy/issues/12731>`__: stats.ncx2.cdf fails for nc >> x >> 1
 * `#12778 <https://github.com/scipy/scipy/issues/12778>`__: Confusing documentation of scipy.stats.weightedtau

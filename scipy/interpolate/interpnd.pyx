@@ -873,7 +873,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     continuously differentiable.
 
     The gradients of the interpolant are chosen so that the curvature
-    of the interpolating surface is approximatively minimized. The
+    of the interpolating surface is approximately minimized. The
     gradients necessary for this are estimated using the global
     algorithm described in [Nielson83]_ and [Renka84]_.
 

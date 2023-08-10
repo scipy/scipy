@@ -197,7 +197,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       *iperm_c; /* inverse of perm_c */
     int       *swap, *iswap; /* swap is used to store the row permutation
 				during the factorization. Initially, it is set
-				to iperm_c (row indeces of Pc*A*Pc').
+				to iperm_c (row indices of Pc*A*Pc').
 				iswap is the inverse of swap. After the
 				factorization, it is equal to perm_r. */
     int       *iwork;
@@ -216,7 +216,7 @@ zgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       nzlumax;
     double    *amax; 
     doublecomplex    drop_sum;
-    double alpha, omega;  /* used in MILU, mimicing DRIC */
+    double alpha, omega;  /* used in MILU, mimicking DRIC */
     double    *dwork2;	   /* used by the second dropping rule */
 
     /* Local scalars */

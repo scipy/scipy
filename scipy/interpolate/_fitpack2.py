@@ -1300,7 +1300,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
     -----
     The class is not meant to be instantiated directly from the data to be
     interpolated or smoothed. As a result, its ``fp`` attribute and
-    ``get_residual`` method are inherited but overriden; ``AttributeError`` is
+    ``get_residual`` method are inherited but overridden; ``AttributeError`` is
     raised when they are accessed.
 
     The other inherited attributes can be used as usual.
@@ -2115,7 +2115,7 @@ ERROR: on entry, the input data are controlled on validity
                          8<=nv<=min(nvest,mv+7)
                          v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
                          the schoenberg-whitney conditions, i.e. there must be
-                         subset of grid co-ordinates uu(p) and vv(q) such that
+                         subset of grid coordinates uu(p) and vv(q) such that
                             tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
                             (iopt(2)=1 and iopt(3)=1 also count for a uu-value
                             tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4

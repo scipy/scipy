@@ -6068,7 +6068,7 @@ C       **********************************
         SUBROUTINE ITAIRY(X,APT,BPT,ANT,BNT)
 C
 C       ======================================================
-C       Purpose: Compute the integrals of Airy fnctions with
+C       Purpose: Compute the integrals of Airy functions with
 C                respect to t from 0 and x ( x ≥ 0 )
 C       Input  : x   --- Upper limit of the integral
 C       Output : APT --- Integration of Ai(t) from 0 and x

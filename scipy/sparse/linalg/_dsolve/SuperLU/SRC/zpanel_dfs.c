@@ -10,7 +10,7 @@ at the top-level directory.
 */
 
 /*! @file zpanel_dfs.c
- * \brief Peforms a symbolic factorization on a panel of symbols
+ * \brief Performs a symbolic factorization on a panel of symbols
  *
  * <pre>
  * -- SuperLU routine (version 2.0) --

@@ -2615,14 +2615,14 @@ PRIVATE void order_children
 
 		/* order this column */
 		Col [c].shared2.order = order++ ;
-		/* collaps tree */
+		/* collapse tree */
 		Col [c].shared1.parent = parent ;
 
 		/* get immediate parent of this column */
 		c = Col [c].shared1.parent ;
 
 		/* continue until we hit an ordered column.  There are */
-		/* guarranteed not to be anymore unordered columns */
+		/* guaranteed not to be anymore unordered columns */
 		/* above an ordered column */
 	    } while (Col [c].shared2.order == EMPTY) ;
 
@@ -2773,7 +2773,7 @@ PRIVATE void detect_super_cols
 		    ASSERT (ROW_IS_ALIVE (*cp1))  ;
 		    ASSERT (ROW_IS_ALIVE (*cp2))  ;
 		    /* row indices will same order for both supercols, */
-		    /* no gather scatter nessasary */
+		    /* no gather scatter necessary */
 		    if (*cp1++ != *cp2++)
 		    {
 			break ;
@@ -2823,7 +2823,7 @@ PRIVATE void detect_super_cols
 
 /*
     Defragments and compacts columns and rows in the workspace A.  Used when
-    all avaliable memory has been used while performing row merging.  Returns
+    all available memory has been used while performing row merging.  Returns
     the index of the first free position in A, after garbage collection.  The
     time taken by this routine is linear is the size of the array A, which is
     itself linear in the number of nonzeros in the input matrix.

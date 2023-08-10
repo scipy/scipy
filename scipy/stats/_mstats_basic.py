@@ -1604,7 +1604,7 @@ def kruskal(*args):
     >>> b = [6.9, 7.0, 6.1, 7.9]
     >>> c = [7.2, 6.9, 6.1, 6.5]
 
-    Test the hypotesis that the distribution functions for all of the brands'
+    Test the hypothesis that the distribution functions for all of the brands'
     durations are identical. Use 5% level of significance.
 
     >>> kruskal(a, b, c)

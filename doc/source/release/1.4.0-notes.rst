@@ -26,7 +26,7 @@ Highlights of this release
 - a new submodule, `scipy.fft`, now supersedes `scipy.fftpack`; this
   means support for ``long double`` transforms, faster multi-dimensional
   transforms, improved algorithm time complexity, release of the global
-  intepreter lock, and control over threading behavior
+  interpreter lock, and control over threading behavior
 - support for ``pydata/sparse`` arrays in `scipy.sparse.linalg`
 - substantial improvement to the documentation and functionality of
   several `scipy.special` functions, and some new additions
@@ -912,7 +912,7 @@ Pull requests for 1.4.0
 * `#10825 <https://github.com/scipy/scipy/pull/10825>`__: MAINT: special: change some features of the Voigt function
 * `#10828 <https://github.com/scipy/scipy/pull/10828>`__: MAINT: integrate: Remove unused variable from init_callback
 * `#10830 <https://github.com/scipy/scipy/pull/10830>`__: Adding LOBPCG solver in svds in addition to ARPACK
-* `#10837 <https://github.com/scipy/scipy/pull/10837>`__: WIP: ENH: reduction function for \`spatial.tranform.Rotation\`...
+* `#10837 <https://github.com/scipy/scipy/pull/10837>`__: WIP: ENH: reduction function for \`spatial.transform.Rotation\`...
 * `#10843 <https://github.com/scipy/scipy/pull/10843>`__: ENH: Adding optional parameter to stats.zscores to allow for...
 * `#10845 <https://github.com/scipy/scipy/pull/10845>`__: Rebase kruskal fix
 * `#10847 <https://github.com/scipy/scipy/pull/10847>`__: remove redundant __getitem__ from scipy.sparse.lil

@@ -205,7 +205,7 @@ Authors
 * Janani Padmanabhan +
 * Tiago M.D. Pereira +
 * Nicolas Del Piano +
-* Manuel Reinhardt +
+* Manual Reinhardt +
 * Thomas Robitaille
 * Mike Romberg +
 * Alex Rothberg +
@@ -489,7 +489,7 @@ Pull requests
 - `#3897 <https://github.com/scipy/scipy/pull/3897>`__: BUG: associated Legendre function of second kind for 1<x<1.0001
 - `#3899 <https://github.com/scipy/scipy/pull/3899>`__: BUG: fix undefined behavior in alngam
 - `#3906 <https://github.com/scipy/scipy/pull/3906>`__: MAINT/DOC: Whitespace tweaks in several docstrings.
-- `#3907 <https://github.com/scipy/scipy/pull/3907>`__: TST: relax bounds of interpolate test to accomodate rounding...
+- `#3907 <https://github.com/scipy/scipy/pull/3907>`__: TST: relax bounds of interpolate test to accommodate rounding...
 - `#3909 <https://github.com/scipy/scipy/pull/3909>`__: MAINT: Create a common version of `count_nonzero` for compatibility...
 - `#3910 <https://github.com/scipy/scipy/pull/3910>`__: Fix a couple of test errors in master
 - `#3911 <https://github.com/scipy/scipy/pull/3911>`__: Use MathJax for the html docs

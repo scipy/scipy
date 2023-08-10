@@ -223,7 +223,7 @@ interest include, but are not limited to:
 All members of the Council, BDFL included, shall disclose to the rest of the
 Council any conflict of interest they may have. Members with a conflict of
 interest in a particular issue may participate in Council discussions on that
-issue, but must recuse themselves from voting on the issue. If the BDFL has
+issue, but must recurse themselves from voting on the issue. If the BDFL has
 recused his/herself for a particular decision, the Council will appoint a
 substitute BDFL for that decision.
 

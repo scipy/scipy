@@ -130,7 +130,7 @@
           Jacobian (HYBRJ1 and HYBRJ).
 1
 0                                                                 Page
-0       Lack of good progress.  HYBRD1 searches for a zero of the syste
+0       Lack of good progress.  HYBRD1 searches for a zero of the system
           by minimizing the sum of the squares of the functions.  In so
           doing, it can become trapped in a region where the minimum
           does not correspond to a zero of the system and, in this situ
@@ -390,7 +390,7 @@
 0                                                                 Page
 0
   4. Successful completion.
-0       The accuracy of HYBRD is controlled by the convergence paramete
+0       The accuracy of HYBRD is controlled by the convergence parameter
         XTOL.  This parameter is used in a test which makes a compariso
         between the approximation X and a solution XSOL.  HYBRD termi-
         nates when the test is satisfied.  If the convergence parameter
@@ -726,7 +726,7 @@
           should be unusual because, as indicated below, lack of good
           progress is usually diagnosed earlier by HYBRJ1, causing ter-
           mination with INFO = 4.
-0       Lack of good progress.  HYBRJ1 searches for a zero of the syste
+0       Lack of good progress.  HYBRJ1 searches for a zero of the system
           by minimizing the sum of the squares of the functions.  In so
           doing, it can become trapped in a region where the minimum
           does not correspond to a zero of the system and, in this situ
@@ -989,7 +989,7 @@
 0       WA1, WA2, WA3, and WA4 are work arrays of length N.
 0
   4. Successful completion.
-0       The accuracy of HYBRJ is controlled by the convergence paramete
+0       The accuracy of HYBRJ is controlled by the convergence parameter
         XTOL.  This parameter is used in a test which makes a compariso
         between the approximation X and a solution XSOL.  HYBRJ termi-
         nates when the test is satisfied.  If the convergence parameter
@@ -1415,7 +1415,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0
@@ -1780,7 +1780,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0
@@ -2121,7 +2121,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0
@@ -2485,7 +2485,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0
@@ -2814,7 +2814,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0
@@ -3162,7 +3162,7 @@
 0       FORTRAN-supplied ... DABS,DMAX1,DMIN1,DSQRT,MOD
 0
   8. References.
-0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementatio
+0       Jorge J. More, The Levenberg-Marquardt Algorithm, Implementation
         and Theory. Numerical Analysis, G. A. Watson, editor.
         Lecture Notes in Mathematics 630, Springer-Verlag, 1977.
 0

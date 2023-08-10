@@ -366,7 +366,7 @@ Issues closed for 0.17.0
 - `#4118 <https://github.com/scipy/scipy/issues/4118>`__: `scipy.integrate.ode.set_solout` called after `scipy.integrate.ode.set_initial_value` fails silently
 - `#4233 <https://github.com/scipy/scipy/issues/4233>`__: 1D scipy.interpolate.griddata using method=nearest produces nans...
 - `#4375 <https://github.com/scipy/scipy/issues/4375>`__: All tests fail due to bad file permissions
-- `#4580 <https://github.com/scipy/scipy/issues/4580>`__: scipy.ndimage.filters.convolve documenation is incorrect
+- `#4580 <https://github.com/scipy/scipy/issues/4580>`__: scipy.ndimage.filters.convolve documentation is incorrect
 - `#4627 <https://github.com/scipy/scipy/issues/4627>`__: logsumexp with sign indicator - enable calculation with negative...
 - `#4702 <https://github.com/scipy/scipy/issues/4702>`__: logsumexp with zero scaling factor
 - `#4834 <https://github.com/scipy/scipy/issues/4834>`__: gammainc should return 1.0 instead of NaN for infinite x
@@ -447,7 +447,7 @@ Pull requests for 0.17.0
 - `#4968 <https://github.com/scipy/scipy/pull/4968>`__: DEP: deprecate ``stats.f_value*`` and ``mstats.f_value*`` functions.
 - `#4969 <https://github.com/scipy/scipy/pull/4969>`__: ENH: review `stats.relfreq` and `stats.cumfreq`; fixes to `stats.histogram`
 - `#4971 <https://github.com/scipy/scipy/pull/4971>`__: Extend github source links to line ranges
-- `#4972 <https://github.com/scipy/scipy/pull/4972>`__: MAINT: impove the error message in validate_runtests_log
+- `#4972 <https://github.com/scipy/scipy/pull/4972>`__: MAINT: improve the error message in validate_runtests_log
 - `#4976 <https://github.com/scipy/scipy/pull/4976>`__: DEP: deprecate `scipy.stats.threshold`
 - `#4977 <https://github.com/scipy/scipy/pull/4977>`__: MAINT: more careful dtype treatment in block diagonal matrix...
 - `#4979 <https://github.com/scipy/scipy/pull/4979>`__: ENH: distributions, complex arguments

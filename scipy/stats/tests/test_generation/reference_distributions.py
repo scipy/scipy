@@ -50,7 +50,7 @@ class ReferenceDistribution:
     inaccuracy of the reference values (e.g. due to numerical issues that
     mpmath's arbitrary precision arithmetic doesn't handle), then it may be
     appropriate to override a method of the reference distribution rather than
-    relying on the generic implementation. Otherwise, hesistate to override
+    relying on the generic implementation. Otherwise, hesitate to override
     methods: the generic implementations are mathematically correct and easy
     to verify, whereas an override introduces many possibilities of mistakes,
     requires more time to write, and requires more time to review.

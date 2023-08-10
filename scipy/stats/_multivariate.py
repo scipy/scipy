@@ -6345,7 +6345,7 @@ class vonmises_fisher_gen(multi_rv_generic):
     direction :math:`\mathbf{\mu}`.
 
     In dimensions 2 and 3, specialized algorithms are used for fast sampling
-    [2]_, [3]_. For dimenions of 4 or higher the rejection sampling algorithm
+    [2]_, [3]_. For dimensions of 4 or higher the rejection sampling algorithm
     described in [4]_ is utilized. This implementation is partially based on
     the geomstats package [5]_, [6]_.
 

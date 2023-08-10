@@ -58,7 +58,7 @@ Interpolation
    :toctree: generated/
 
    affine_transform - Apply an affine transformation
-   geometric_transform - Apply an arbritrary geometric transform
+   geometric_transform - Apply an arbitrary geometric transform
    map_coordinates - Map input array to new coordinates by interpolation
    rotate - Rotate an array
    shift - Shift an array

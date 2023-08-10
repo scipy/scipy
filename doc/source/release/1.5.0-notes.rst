@@ -256,7 +256,7 @@ a new ``mode`` parameter to specify how the p-value is to be computed.  The
 default is ``"auto"``, which uses the exact distribution for inputs up to length
 25 and the normal approximation for larger inputs.
 
-Added a new Cython-based implementation to evaluate guassian kernel estimates,
+Added a new Cython-based implementation to evaluate gaussian kernel estimates,
 which should improve the performance of ``gaussian_kde``
 
 The ``winsorize`` function now has a ``nan_policy`` argument for refined
@@ -543,7 +543,7 @@ Issues closed for 1.5.0
 * `#11216 <https://github.com/scipy/scipy/issues/11216>`__: linprog: interior-point: Cholmod reordering can be reused
 * `#11223 <https://github.com/scipy/scipy/issues/11223>`__: Add wrappers for ?pttrf, ?pttrs
 * `#11224 <https://github.com/scipy/scipy/issues/11224>`__: Add wrapperfor ?pteqr
-* `#11235 <https://github.com/scipy/scipy/issues/11235>`__: MAINT: Missleading Error Message for IIR Filter
+* `#11235 <https://github.com/scipy/scipy/issues/11235>`__: MAINT: Misleading Error Message for IIR Filter
 * `#11244 <https://github.com/scipy/scipy/issues/11244>`__: Missing reference in \`scipy.optimize.line_search\`
 * `#11262 <https://github.com/scipy/scipy/issues/11262>`__: Hermitian Eigenvalue Problem eigh() API and wrapper change proposal
 * `#11266 <https://github.com/scipy/scipy/issues/11266>`__: Sparse matrix constructor data type detection changes on Numpy...
@@ -587,7 +587,7 @@ Issues closed for 1.5.0
 * `#11503 <https://github.com/scipy/scipy/issues/11503>`__: medfilt produces 0 on input of length 1
 * `#11529 <https://github.com/scipy/scipy/issues/11529>`__: Pyflakes generates almost 700 warnings.
 * `#11566 <https://github.com/scipy/scipy/issues/11566>`__: irfft/irfft2/irfftn docs are slightly confusing re: input type.
-* `#11572 <https://github.com/scipy/scipy/issues/11572>`__: least_squares: too small tolerances not catched with method='lm'
+* `#11572 <https://github.com/scipy/scipy/issues/11572>`__: least_squares: too small tolerances not caught with method='lm'
 * `#11581 <https://github.com/scipy/scipy/issues/11581>`__: DOC: scipy.interpolate.RectSphereBivariateSpline
 * `#11586 <https://github.com/scipy/scipy/issues/11586>`__: Differential evolution breaks with LinearConstraints with sparse...
 * `#11595 <https://github.com/scipy/scipy/issues/11595>`__: scipy.spatial.cKDTree construction slow for some datasets
@@ -602,7 +602,7 @@ Issues closed for 1.5.0
 * `#11637 <https://github.com/scipy/scipy/issues/11637>`__: BUG: core dumps when calling scipy.interpolate.interp1d with...
 * `#11638 <https://github.com/scipy/scipy/issues/11638>`__: better documentation for 'return_all' option in minimize(Nelder...
 * `#11652 <https://github.com/scipy/scipy/issues/11652>`__: TST, MAINT: CI failures for pre-release NumPy wheels
-* `#11659 <https://github.com/scipy/scipy/issues/11659>`__: optimize.fmin_l_bfgs_b needs bound check and appropiate error...
+* `#11659 <https://github.com/scipy/scipy/issues/11659>`__: optimize.fmin_l_bfgs_b needs bound check and appropriate error...
 * `#11660 <https://github.com/scipy/scipy/issues/11660>`__: BUG/ENH: distribution.ncf with nc=0 returns nan
 * `#11661 <https://github.com/scipy/scipy/issues/11661>`__: scipy.ndimage.convolve1d and correlate1d don't behave properly...
 * `#11669 <https://github.com/scipy/scipy/issues/11669>`__: p-value varies with the order of the data
@@ -723,7 +723,7 @@ Pull requests for 1.5.0
 * `#11268 <https://github.com/scipy/scipy/pull/11268>`__: DOC: example of NonLinearConstraint
 * `#11269 <https://github.com/scipy/scipy/pull/11269>`__: Fix: Sparse matrix constructor data type detection changes on...
 * `#11276 <https://github.com/scipy/scipy/pull/11276>`__: BLD: update minimum Python, NumPy, Cython, Pybind11 versions
-* `#11277 <https://github.com/scipy/scipy/pull/11277>`__: MAINT: Cleanup conditionals for unsupported numpy verisons
+* `#11277 <https://github.com/scipy/scipy/pull/11277>`__: MAINT: Cleanup conditionals for unsupported numpy versions
 * `#11278 <https://github.com/scipy/scipy/pull/11278>`__: MAINT: Cleanup stats.iqr workarounds for unsupported NumPy versions
 * `#11282 <https://github.com/scipy/scipy/pull/11282>`__: TST/CI: improve traceback formatting for test failures
 * `#11284 <https://github.com/scipy/scipy/pull/11284>`__: fix docs & behavior for mode sequences in ndimage filters

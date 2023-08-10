@@ -2988,7 +2988,7 @@ void qh_mergecycle_all(qhT *qh, facetT *facetlist, boolT *wasmerge) {
       each facet->f.replace == newfacet
 
     newfacet moved to end of qh.facet_list
-      makes newfacet a newfacet (get's facet1->id if it was old)
+      makes newfacet a newfacet (gets facet1->id if it was old)
       sets newfacet->newmerge
       clears newfacet->center (unless merging into a large facet)
       clears newfacet->tested and ridge->tested for facet1

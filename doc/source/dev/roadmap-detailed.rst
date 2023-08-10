@@ -378,7 +378,7 @@ There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
 
 - callback keyword is inconsistent
 - tol keyword is broken, should be relative tol
-- Fortran code not re-entrant (but we don't solve, maybe re-use from
+- Fortran code not re-entrant (but we don't solve, maybe reuse from
   PyKrilov)
 
 ``_dsolve``:

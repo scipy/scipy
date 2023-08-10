@@ -22,13 +22,13 @@ c   kx,ky : integer values, giving the degrees of the spline.
 c   nux   : integer values, specifying the order of the partial
 c   nuy     derivative. 0<=nux<kx, 0<=nuy<ky.
 c   x     : real array of dimension (mx).
-c           before entry x(i) must be set to the x co-ordinate of the
+c           before entry x(i) must be set to the x coordinate of the
 c           i-th grid point along the x-axis.
 c           tx(kx+1)<=x(i-1)<=x(i)<=tx(nx-kx), i=2,...,mx.
 c   mx    : on entry mx must specify the number of grid points along
 c           the x-axis. mx >=1.
 c   y     : real array of dimension (my).
-c           before entry y(j) must be set to the y co-ordinate of the
+c           before entry y(j) must be set to the y coordinate of the
 c           j-th grid point along the y-axis.
 c           ty(ky+1)<=y(j-1)<=y(j)<=ty(ny-ky), j=2,...,my.
 c   my    : on entry my must specify the number of grid points along

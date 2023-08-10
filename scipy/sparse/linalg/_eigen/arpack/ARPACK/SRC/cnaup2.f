@@ -26,7 +26,7 @@ c          products (involving the operator OP) per Arnoldi iteration.
 c          The logic for adjusting is contained within the current
 c          subroutine.
 c          If ISHIFT=0, NP is the number of shifts the user needs
-c          to provide via reverse comunication. 0 < NP < NCV-NEV.
+c          to provide via reverse communication. 0 < NP < NCV-NEV.
 c          NP may be less than NCV-NEV since a leading block of the current
 c          upper Hessenberg matrix has split off and contains "unwanted"
 c          Ritz values.

@@ -85,7 +85,7 @@ Compiling Qhull with Microsoft Visual C++
 Compiling Qhull with Qt Creator
 Compiling Qhull with mingw on Windows
 Compiling Qhull with cygwin on Windows
-Compiling from Makfile without gcc
+Compiling from Makefile without gcc
 Compiling on other machines and compilers
 Distributed files
 Authors
@@ -320,7 +320,7 @@ Compiling Qhull with cygwin on Windows
   - make
 
 -----------------
-Compiling from Makfile without gcc
+Compiling from Makefile without gcc
 
   The file, qhull-src.tgz, contains documentation and source files for
   qhull and rbox.  

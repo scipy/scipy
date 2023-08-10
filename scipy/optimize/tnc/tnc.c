@@ -483,7 +483,7 @@ static void setConstraints(int n, double x[], int pivot[], double xscale[],
     int i;
 
     for (i = 0; i < n; i++) {
-        /* tolerances should be better ajusted */
+        /* tolerances should be better adjusted */
         if (xscale[i] == 0.0) {
             pivot[i] = 2;
         }
@@ -2036,7 +2036,7 @@ static double ddot1(int n, const double dx[], const double dy[])
     return dtemp;
 }
 
-/* Euclidian norm */
+/* Euclidean norm */
 static double dnrm21(int n, const double dx[])
 {
     int i;

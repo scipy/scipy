@@ -22,7 +22,7 @@ c  determine the maximal admissible number of knots.
       nmax = m+4
 c  the initial choice of knots depends on the value of iopt.
 c    if iopt=0 the program starts with the minimal number of knots
-c    so that can be guarantied that the concavity/convexity constraints
+c    so that can be guaranteed that the concavity/convexity constraints
 c    will be satisfied.
 c    if iopt = 1 the program will continue from the point on where she
 c    left at the foregoing call.

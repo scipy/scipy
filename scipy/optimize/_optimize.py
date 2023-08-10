@@ -3163,7 +3163,7 @@ def _linesearch_powell(func, p, xi, tol=1e-3,
                        lower_bound=None, upper_bound=None, fval=None):
     """Line-search algorithm using fminbound.
 
-    Find the minimium of the function ``func(x0 + alpha*direc)``.
+    Find the minimum of the function ``func(x0 + alpha*direc)``.
 
     lower_bound : np.array.
         The lower bounds for each parameter in ``x0``. If the ``i``th

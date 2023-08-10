@@ -1333,9 +1333,9 @@ subroutine <prefix2c>hegvx_lwork(itype,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w
 
 end subroutine <prefix2c>hegvx_lwork
 
-subroutine <prefix>syequb(lower,n,a,lda,s,scond,amax,work,info)
+subroutine <prefix>syequb(lower,n,a,lda,s,second,amax,work,info)
 
-    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&second,&amax,work,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,F_INT*
 
     integer intent(hide),depend(a) :: n = shape(a,1)
@@ -1346,15 +1346,15 @@ subroutine <prefix>syequb(lower,n,a,lda,s,scond,amax,work,info)
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     <ftype> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
     <ftypereal> intent(out),dimension(n),depend(n) :: s
-    <ftypereal> intent(out) :: scond
+    <ftypereal> intent(out) :: second
     <ftypereal> intent(out) :: amax
     integer intent(out) :: info
 
 end subroutine <prefix>syequb
 
-subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
+subroutine <prefix2c>heequb(lower,n,a,lda,s,second,amax,work,info)
 
-    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&scond,&amax,work,&info)
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,s,&second,&amax,work,&info)
     callprotoargument char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*
 
     integer intent(hide),depend(a) :: n = shape(a,1)
@@ -1365,7 +1365,7 @@ subroutine <prefix2c>heequb(lower,n,a,lda,s,scond,amax,work,info)
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     <ftype2c> intent(in),dimension(lda,n),check(shape(a,0)==shape(a,1)) :: a
     <ftype2> intent(out),dimension(n),depend(n) :: s
-    <ftype2> intent(out) :: scond
+    <ftype2> intent(out) :: second
     <ftype2> intent(out) :: amax
     integer intent(out) :: info
 

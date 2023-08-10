@@ -53,7 +53,7 @@ c
 c  latest update : march 1987
 c
 c++ pearu: 11 aug 2003
-c++   - disabled cliping x values to interval [min(t),max(t)]
+c++   - disabled clipping x values to interval [min(t),max(t)]
 c++   - removed the restriction of the orderness of x values
 c++   - fixed initialization of sp to double precision value
 c

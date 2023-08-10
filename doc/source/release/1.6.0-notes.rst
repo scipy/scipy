@@ -22,7 +22,7 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 --------------------------
 
-- `scipy.ndimage` improvements: Fixes and ehancements to boundary extension 
+- `scipy.ndimage` improvements: Fixes and enhancements to boundary extension 
   modes for interpolation functions. Support for complex-valued inputs in many
   filtering and interpolation functions. New ``grid_mode`` option for 
   `scipy.ndimage.zoom` to enable results consistent with scikit-image's 
@@ -466,7 +466,7 @@ Issues closed for 1.6.0
 * `#4922 <https://github.com/scipy/scipy/issues/4922>`__: unexpected zero output values from zoom
 * `#5202 <https://github.com/scipy/scipy/issues/5202>`__: BUG: stats: Spurious warnings from the pdf method of several...
 * `#5223 <https://github.com/scipy/scipy/issues/5223>`__: Zoom does not return the same values when resizing a sub-array...
-* `#5396 <https://github.com/scipy/scipy/issues/5396>`__: scipy.spatial.distance.pdist documention bug
+* `#5396 <https://github.com/scipy/scipy/issues/5396>`__: scipy.spatial.distance.pdist documentation bug
 * `#5489 <https://github.com/scipy/scipy/issues/5489>`__: ValueError: failed to create intent(cache|hide)|optional array--...
 * `#6096 <https://github.com/scipy/scipy/issues/6096>`__: loadmat drops dtype of empty arrays when squeeze_me=True
 * `#6713 <https://github.com/scipy/scipy/issues/6713>`__: sicpy.ndimage.zoom returns artefacts and boundaries in some cases
@@ -532,7 +532,7 @@ Issues closed for 1.6.0
 * `#12369 <https://github.com/scipy/scipy/issues/12369>`__: scipy.signal.correlate has an error in the documentation, examples...
 * `#12373 <https://github.com/scipy/scipy/issues/12373>`__: interp1d returns incorrect values for step functions
 * `#12378 <https://github.com/scipy/scipy/issues/12378>`__: interpolate.NearestNDInterpolator.__call__ & LinearNDInterpolator.__call__...
-* `#12411 <https://github.com/scipy/scipy/issues/12411>`__: scipy.stats.spearmanr mishandles nan variables with "propogate"
+* `#12411 <https://github.com/scipy/scipy/issues/12411>`__: scipy.stats.spearmanr mishandles nan variables with "propagate"
 * `#12413 <https://github.com/scipy/scipy/issues/12413>`__: DOC: Remove the "Basic functions" section from the SciPy tutorial.
 * `#12415 <https://github.com/scipy/scipy/issues/12415>`__: scipy.stats.dirichlet documentation issue
 * `#12419 <https://github.com/scipy/scipy/issues/12419>`__: least_squares ValueError with 'lm' method - regression from 1.4.1...
@@ -628,7 +628,7 @@ Pull requests for 1.6.0
 * `#12199 <https://github.com/scipy/scipy/pull/12199>`__: ENH: match np.result_type behaviour in some scipy.signal functions
 * `#12200 <https://github.com/scipy/scipy/pull/12200>`__: ENH: add FIR and IIR gammatone filters to scipy.signal
 * `#12204 <https://github.com/scipy/scipy/pull/12204>`__: ENH: Add overwrite argument for odr.ODR() and its test.
-* `#12206 <https://github.com/scipy/scipy/pull/12206>`__: MAINT:lstsq: Switch to tranposed problem if the array is tall
+* `#12206 <https://github.com/scipy/scipy/pull/12206>`__: MAINT:lstsq: Switch to transposed problem if the array is tall
 * `#12208 <https://github.com/scipy/scipy/pull/12208>`__: wavfile bugfixes and maintenance
 * `#12214 <https://github.com/scipy/scipy/pull/12214>`__: DOC: fix docstring of "sd_beta" of odr.Output.
 * `#12234 <https://github.com/scipy/scipy/pull/12234>`__: MAINT: prevent divide by zero warnings in scipy.optimize BFGS...

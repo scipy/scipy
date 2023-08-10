@@ -137,7 +137,7 @@ realT   qh_detjoggle(qhT *qh, pointT *points, int numpoints, int dimension);
 void    qh_detmaxoutside(qhT *qh);
 void    qh_detroundoff(qhT *qh);
 realT   qh_detsimplex(qhT *qh, pointT *apex, setT *points, int dim, boolT *nearzero);
-realT   qh_distnorm(int dim, pointT *point, pointT *normal, realT *offsetp);
+realT   qh_distnorm(int dim, pointT *point, pointT *normal, realT *offset);
 realT   qh_distround(qhT *qh, int dimension, realT maxabs, realT maxsumabs);
 realT   qh_divzero(realT numer, realT denom, realT mindenom1, boolT *zerodiv);
 realT   qh_facetarea(qhT *qh, facetT *facet);

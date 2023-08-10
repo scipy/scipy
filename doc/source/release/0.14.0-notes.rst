@@ -440,7 +440,7 @@ Pull requests
 - `#3239 <https://github.com/scipy/scipy/pull/3239>`__: correct doc for pchip interpolation
 - `#3240 <https://github.com/scipy/scipy/pull/3240>`__: DOC: fix ReST errors in the BPoly docstring
 - `#3241 <https://github.com/scipy/scipy/pull/3241>`__: RF: check write attr of fileobject without writing
-- `#3243 <https://github.com/scipy/scipy/pull/3243>`__: a bit of maintanence work in stats
+- `#3243 <https://github.com/scipy/scipy/pull/3243>`__: a bit of maintenance work in stats
 - `#3245 <https://github.com/scipy/scipy/pull/3245>`__: BUG/ENH: stats: make frozen distributions hold separate instances
 - `#3247 <https://github.com/scipy/scipy/pull/3247>`__: ENH function to return nnz per row/column in some sparse matrices
 - `#3248 <https://github.com/scipy/scipy/pull/3248>`__: ENH much more efficient sparse min/max with axis

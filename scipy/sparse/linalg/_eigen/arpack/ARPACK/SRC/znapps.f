@@ -209,7 +209,7 @@ c
       zabs1( cdum ) = abs( dble( cdum ) ) + abs( dimag( cdum ) )
 c
 c     %----------------%
-c     | Data statments |
+c     | Data statements |
 c     %----------------%
 c
       data       first / .true. /

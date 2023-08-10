@@ -679,7 +679,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
         raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
                          " and will be removed in SciPy 1.14.0. Use "
-                         "'restart' instad.")
+                         "'restart' instead.")
     if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"

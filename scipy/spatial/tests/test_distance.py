@@ -158,8 +158,8 @@ def _chk_weights(arrays, weights=None, axis=None,
                  pos_only=False, neg_check=False,
                  nan_screen=False, mask_screen=False,
                  ddof=None):
-    chked = _chk_asarrays(arrays, axis=axis)
-    arrays, axis = chked[:-1], chked[-1]
+    checked = _chk_asarrays(arrays, axis=axis)
+    arrays, axis = checked[:-1], checked[-1]
 
     simplify_weights = simplify_weights and not force_weights
     if not force_weights and mask_screen:
@@ -284,13 +284,13 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
         weights = kwargs.get(weight_arg, None)
         axis = kwargs.get('axis', default_axis)
 
-        chked = _chk_weights(arrays, weights=weights, axis=axis, force_weights=True, mask_screen=True)
-        arrays, weights, axis = chked[:-2], chked[-2], chked[-1]
+        checked = _chk_weights(arrays, weights=weights, axis=axis, force_weights=True, mask_screen=True)
+        arrays, weights, axis = checked[:-2], checked[-2], checked[-1]
         if squeeze:
             arrays = [np.atleast_1d(a.squeeze()) for a in arrays]
 
         try:
-            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBESERVATIONS
+            # WEIGHTS CHECK 1: EQUAL WEIGHTED OBSERVATIONS
             args = tuple(arrays) + rest
             if ones_test:
                 kwargs[weight_arg] = weights

@@ -10,7 +10,7 @@ at the top-level directory.
 */
 
 /*! @file ilu_spanel_dfs.c
- * \brief Peforms a symbolic factorization on a panel of symbols and
+ * \brief Performs a symbolic factorization on a panel of symbols and
  * record the entries with maximum absolute value in each column
  *
  * <pre>

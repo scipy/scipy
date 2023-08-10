@@ -548,7 +548,7 @@ void CWalleniusNCHypergeometric::findpars() {
    }
 
    // find r to center peak of integrand at 0.5
-   double dd, d1, z, zd, rr, lastr, rrc, rt, r2, r21, a, b, dummy;
+   double dd, d1, z, zd, rr, last, rrc, rt, r2, r21, a, b, dummy;
    double oo[2];
    double xx[2] = {static_cast<double>(x), static_cast<double>(n-x)};
    int i, j = 0;
@@ -565,7 +565,7 @@ void CWalleniusNCHypergeometric::findpars() {
    if (rr <= d1) rr = 1.2*d1;           // initial guess
    // Newton-Raphson iteration to find r
    do {
-      lastr = rr;
+      last = rr;
       rrc = 1. / rr;
       z = dd - rrc;
       zd = rrc * rrc;
@@ -581,7 +581,7 @@ void CWalleniusNCHypergeometric::findpars() {
       }
       if (zd == 0) FatalError("can't find r in function CWalleniusNCHypergeometric::findpars");
       rr -= z / zd;
-      if (rr <= d1) rr = lastr * 0.125 + d1*0.875;
+      if (rr <= d1) rr = last * 0.125 + d1*0.875;
       if (++j == 70) FatalError("convergence problem searching for r in function CWalleniusNCHypergeometric::findpars");
    }
    while (fabs(rr-lastr) > rr * 1.E-6);
@@ -618,11 +618,11 @@ void CWalleniusNCHypergeometric::findpars() {
 
 
 int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, StochasticLib1 *sto) {
-   // This function generates a Bernouilli variate with probability proportional
+   // This function generates a Bernoulli variate with probability proportional
    // to the univariate Wallenius' noncentral hypergeometric distribution.
    // The return value will be 1 with probability f(x_)/h and 0 with probability
    // 1-f(x_)/h.
-   // This is equivalent to calling sto->Bernouilli(probability(x_)/h),
+   // This is equivalent to calling sto->Bernoulli(probability(x_)/h),
    // but this method is faster. The method used here avoids calculating the
    // Wallenius probability by sampling in the t-domain.
    // rh is a uniform random number in the interval 0 <= rh < h. The function
@@ -696,7 +696,7 @@ int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, Sto
 
       t2 = (ts-0.5) / k;            // calculate 1/Ypsilon(ts)
       rgts = exp(-(phideri0 + bico - 0.5 * t2*t2));
-      return rh < G_integral * fts * rgts;   // Bernouilli variate
+      return rh < G_integral * fts * rgts;   // Bernoulli variate
    }
 
    else { // G > h: can't use sampling in t-domain
@@ -829,7 +829,7 @@ double CWalleniusNCHypergeometric::laplace() {
    int j;                        // loop counter for derivative
    int k;                        // loop counter for expansion degree
    int ll;                       // k/2
-   int converg = 0;              // number of consequtive terms below accuracy
+   int converg = 0;              // number of consecutive terms below accuracy
    int PrecisionIndex;           // index into ErfRes table according to desired precision
 
    // initialize
@@ -1504,7 +1504,7 @@ void CMultiWalleniusNCHypergeometric::findpars(void) {
    double dd;                           // scaled d
    double dr;                           // 1/d
 
-   double z, zd, rr, lastr, rrc, rt, r2, r21, a, b, ro, k1, dummy;
+   double z, zd, rr, last, rrc, rt, r2, r21, a, b, ro, k1, dummy;
    double omax;                         // highest omega
    double omaxr;                        // 1/omax
    double omeg[MAXCOLORS];              // scaled weights
@@ -1529,7 +1529,7 @@ void CMultiWalleniusNCHypergeometric::findpars(void) {
    if (rr <= dr) rr = 1.2 * dr;  // initial guess
    // Newton-Raphson iteration to find r
    do {
-      lastr = rr;
+      last = rr;
       rrc = 1. / rr;
       z = dd - rrc;                    // z(r)
       zd = rrc * rrc;                  // z'(r)
@@ -1545,7 +1545,7 @@ void CMultiWalleniusNCHypergeometric::findpars(void) {
       }
       if (zd == 0) FatalError("can't find r in function CMultiWalleniusNCHypergeometric::findpars");
       rr -= z / zd;                    // next r
-      if (rr <= dr) rr = lastr * 0.125 + dr * 0.875;
+      if (rr <= dr) rr = last * 0.125 + dr * 0.875;
       if (++j == 70) FatalError("convergence problem searching for r in function CMultiWalleniusNCHypergeometric::findpars");
    }
    while (fabs(rr-lastr) > rr * 1.E-5);
@@ -1604,7 +1604,7 @@ double CMultiWalleniusNCHypergeometric::laplace(void) {
    int j;                              // loop counter for derivative
    int k;                              // loop counter for expansion degree
    int ll;                             // k/2
-   int converg = 0;                    // number of consequtive terms below accuracy
+   int converg = 0;                    // number of consecutive terms below accuracy
    int PrecisionIndex;                 // index into ErfRes table according to desired precision
 
    // initialize

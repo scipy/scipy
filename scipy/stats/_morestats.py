@@ -1868,7 +1868,7 @@ def shapiro(x):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(figsize=(8, 5))
     >>> bins = np.linspace(0.65, 1, 50)
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.hist(ref.null_distribution, density=True, bins=bins)
     ...     ax.set_title("Shapiro-Wilk Test Null Distribution \n"
     ...                  "(Monte Carlo Approximation, 11 Observations)")
@@ -2529,7 +2529,7 @@ class _ABW:
     """Distribution of Ansari-Bradley W-statistic under the null hypothesis."""
     # TODO: calculate exact distribution considering ties
     # We could avoid summing over more than half the frequencies,
-    # but inititally it doesn't seem worth the extra complexity
+    # but initially it doesn't seem worth the extra complexity
 
     def __init__(self):
         """Minimal initializer."""
@@ -2853,7 +2853,7 @@ def bartlett(*samples):
     >>> val = np.linspace(0, 5, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Bartlett Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -3101,7 +3101,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     >>> val = np.linspace(0, 5, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Levene Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -3401,7 +3401,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     >>> val = np.linspace(0, 8, 100)
     >>> pdf = dist.pdf(val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(val, pdf, color='C0')
     ...     ax.set_title("Fligner Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -4905,7 +4905,7 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
            https://www.youtube.com/watch?v=rZKa4tW2NKs.
 
     .. [4] Neuhaus, Karl-Ludwig, et al. "Improved thrombolysis in acute
-           myocardial infarction with front-loaded administration of alteplase:
+           myocardial infraction with front-loaded administration of alteplase:
            results of the rt-PA-APSAC patency study (TAPS)." Journal of the
            American College of Cardiology 19.5 (1992): 885-891.
 
@@ -4915,10 +4915,10 @@ def false_discovery_control(ps, *, axis=0, method='bh'):
 
         Thrombolysis with recombinant tissue-type plasminogen activator (rt-PA)
         and anisoylated plasminogen streptokinase activator (APSAC) in
-        myocardial infarction has been proved to reduce mortality. [4]_
+        myocardial infraction has been proved to reduce mortality. [4]_
         investigated the effects of a new front-loaded administration of rt-PA
         versus those obtained with a standard regimen of APSAC, in a randomized
-        multicentre trial in 421 patients with acute myocardial infarction.
+        multicentre trial in 421 patients with acute myocardial infraction.
 
     There were four families of hypotheses tested in the study, the last of
     which was "cardiac and other events after the start of thrombolitic

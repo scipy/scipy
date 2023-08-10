@@ -443,7 +443,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     }
     /* Initialize zero filled buffers to 0, so that we can use
      * Py_XINCREF/Py_XDECREF on it for object arrays (necessary for
-     * copyswap to work correctly). Stricly speaking, it is not needed for
+     * copyswap to work correctly). Strictly speaking, it is not needed for
      * fundamental types (as values are copied instead of pointers, without
      * refcounts), but oh well...
      */

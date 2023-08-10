@@ -85,7 +85,7 @@ c                             will probably gain from splitting up the
 c                             interval at this point and calling
 c                             appropriate integrators on the subranges.
 c                         = 4 the extrapolation table constructed for
-c                             convergence accelaration of the series
+c                             convergence acceleration of the series
 c                             formed by the integral contributions over
 c                             the cycles, does not converge to within
 c                             the requested accuracy.
@@ -181,7 +181,7 @@ c                     on return,
 c                     work(1), ..., work(lst) contain the integral
 c                      approximations over the cycles,
 c                     work(limlst+1), ..., work(limlst+lst) contain
-c                      the error extimates over the cycles.
+c                      the error estimates over the cycles.
 c                     further elements of work have no specific
 c                     meaning for the user.
 c

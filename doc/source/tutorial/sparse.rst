@@ -219,5 +219,5 @@ To convert an instance to canonical form, use the ``.sum_duplicates()`` method:
 Next steps with sparse arrays 
 -------------------------------
 
-Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficency in these circumstances. 
+Sparse array types are most helpful when working with large, nearly empty arrays. Specifically, `sparse linear algebra <https://docs.scipy.org/doc/scipy/tutorial/arpack.html>`_ and `sparse graph methods <https://docs.scipy.org/doc/scipy/tutorial/csgraph.html>`_ see the largest improvements in efficiency in these circumstances. 
 

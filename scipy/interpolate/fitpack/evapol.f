@@ -23,7 +23,7 @@ c   rad   : real function subprogram, defining the boundary of the
 c           approximation domain. must be declared external in the
 c           calling (sub)-program
 c   x,y   : real values.
-c           before entry x and y must be set to the co-ordinates of
+c           before entry x and y must be set to the coordinates of
 c           the point where f(x,y) must be evaluated.
 c
 c  output parameter:

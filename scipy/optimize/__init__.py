@@ -13,7 +13,7 @@ Optimization and root finding (:mod:`scipy.optimize`)
 SciPy ``optimize`` provides functions for minimizing (or maximizing)
 objective functions, possibly subject to constraints. It includes
 solvers for nonlinear problems (with support for both local and global
-optimization algorithms), linear programing, constrained
+optimization algorithms), linear programming, constrained
 and nonlinear least-squares, root finding, and curve fitting.
 
 Common functions and objects, shared across different solvers, are:

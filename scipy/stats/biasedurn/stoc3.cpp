@@ -805,7 +805,7 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    are small, and the ratio-of-uniforms rejection method when the former 
    method would be too slow or would give overflow.
    */   
-   int32_t fak, addd;                  // used for undoing transformations
+   int32_t fak, add;                  // used for undoing transformations
    int32_t x;                          // result
 
    // check if parameters are valid
@@ -822,17 +822,17 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    }
 
    // symmetry transformations
-   fak = 1;  addd = 0;
+   fak = 1;  add = 0;
    if (m > N/2) {
       // invert m
       m = N - m;
-      fak = -1;  addd = n;
+      fak = -1;  add = n;
    }
 
    if (n > N/2) {
       // invert n
       n = N - n;
-      addd += fak * m;  fak = - fak;
+      add += fak * m;  fak = - fak;
    }
 
    if (n > m) {
@@ -841,7 +841,7 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    }
 
    // cases with only one possible result end here
-   if (n == 0 || odds == 0.) return addd;
+   if (n == 0 || odds == 0.) return add;
 
    if (fak == -1) {
       // reciprocal odds if inverting
@@ -859,7 +859,7 @@ int32_t StochasticLib3::FishersNCHyp (int32_t n, int32_t m, int32_t N, double od
    }
 
    // undo symmetry transformations  
-   return x * fak + addd;
+   return x * fak + add;
 }
 
 /***********************************************************************

@@ -14,7 +14,7 @@ c         Mathematical Software,
 c
 c     The paper describes an improvement and a correction to Algorithm 778. 
 c     It is shown that the performance of the algorithm can be improved 
-c     significantly by making a relatively simple modication to the subspace 
+c     significantly by making a relatively simple modification to the subspace 
 c     minimization phase. The correction concerns an error caused by the use 
 c     of routine dpmeps to estimate machine precision. 
 c
@@ -475,7 +475,7 @@ c
 c
 c     ************
  
-      logical          prjctd,cnstnd,boxed,updatd,wrk
+      logical          prjctd,cnstnd,boxed,updated,wrk
       character*3      word
       integer          i,k,nintol,iback,nskip,
      +                 head,col,iter,itail,iupdat,
@@ -503,7 +503,7 @@ c           for the limited memory BFGS matrices:
          head   = 1
          theta  = one
          iupdat = 0
-         updatd = .false.
+         updated = .false.
          iback  = 0
          itail  = 0
          iword  = 0
@@ -567,7 +567,7 @@ c          restore local variables.
          prjctd = lsave(1)
          cnstnd = lsave(2)
          boxed  = lsave(3)
-         updatd = lsave(4)
+         updated = lsave(4)
 
          nintol = isave(1)
          iback  = isave(4)
@@ -651,7 +651,7 @@ c
       if (.not. cnstnd .and. col .gt. 0) then 
 c                                            skip the search for GCP.
          call dcopy(n,x,1,z,1)
-         wrk = updatd
+         wrk = updated
          nseg = 0
          goto 333
       endif
@@ -675,7 +675,7 @@ c         singular triangular system detected; refresh the lbfgs memory.
          head   = 1
          theta  = one
          iupdat = 0
-         updatd = .false.
+         updated = .false.
          call timer(cpu2) 
          cachyt = cachyt + cpu2 - cpu1
          goto 222
@@ -688,7 +688,7 @@ c     Count the entering and leaving variables for iter > 0;
 c     find the index set of free and active variables at the GCP.
 
       call freev(n,nfree,index,nenter,ileave,indx2,
-     +           iwhere,wrk,updatd,cnstnd,iprint,iter)
+     +           iwhere,wrk,updated,cnstnd,iprint,iter)
       nact = n - nfree
 
  333  continue
@@ -713,7 +713,7 @@ c       where     E = [-I  0]
 c                     [ 0  I]
 
       if (wrk) call formk(n,nfree,index,nenter,ileave,indx2,iupdat,
-     +                 updatd,wn,snd,m,ws,wy,sy,theta,col,head,info)
+     +                 updated,wn,snd,m,ws,wy,sy,theta,col,head,info)
       if (info .ne. 0) then
 c          nonpositive definiteness in Cholesky factorization;
 c          refresh the lbfgs memory and restart the iteration.
@@ -723,7 +723,7 @@ c          refresh the lbfgs memory and restart the iteration.
          head   = 1
          theta  = one
          iupdat = 0
-         updatd = .false.
+         updated = .false.
          call timer(cpu2) 
          sbtime = sbtime + cpu2 - cpu1 
          goto 222
@@ -749,7 +749,7 @@ c          refresh the lbfgs memory and restart the iteration.
          head   = 1
          theta  = one
          iupdat = 0
-         updatd = .false.
+         updated = .false.
          call timer(cpu2) 
          sbtime = sbtime + cpu2 - cpu1 
          goto 222
@@ -801,7 +801,7 @@ c             refresh the lbfgs memory and restart the iteration.
             head   = 1
             theta  = one
             iupdat = 0
-            updatd = .false.
+            updated = .false.
             task   = 'RESTART_FROM_LNSRCH'
             call timer(cpu2)
             lnscht = lnscht + cpu2 - cpu1
@@ -863,7 +863,7 @@ c     Compute d=newx-oldx, r=newg-oldg, rr=y'y and dr=y's.
       if (dr .le. epsmch*ddum) then
 c                            skip the L-BFGS update.
          nskip = nskip + 1
-         updatd = .false.
+         updated = .false.
          if (iprint .ge. 1) write (6,1004) dr, ddum
          goto 888
       endif 
@@ -874,7 +874,7 @@ c     Update the L-BFGS matrix.
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
  
-      updatd = .true.
+      updated = .true.
       iupdat = iupdat + 1
 
 c     Update matrices WS and WY and form the middle matrix in B.
@@ -898,7 +898,7 @@ c          refresh the lbfgs memory and restart the iteration.
          head = 1
          theta = one
          iupdat = 0
-         updatd = .false.
+         updated = .false.
          goto 222
       endif
 
@@ -926,7 +926,7 @@ c     Save local variables.
       lsave(1)  = prjctd
       lsave(2)  = cnstnd
       lsave(3)  = boxed
-      lsave(4)  = updatd
+      lsave(4)  = updated
 
       isave(1)  = nintol
       isave(4)  = iback 
@@ -1269,7 +1269,7 @@ c                                which have not been encountered;
 c         iorder(nleft+1),...,iorder(nbreak) are indices of
 c                                     encountered breakpoints; and
 c         iorder(nfree),...,iorder(n) are indices of variables which
-c                 have no bound constraits along the search direction.
+c                 have no bound constraints along the search direction.
 c
 c     iwhere is an integer array of dimension n.
 c       On entry iwhere indicates only the permanently fixed (iwhere=3)
@@ -1834,14 +1834,14 @@ c                                    return
 c======================= The end of errclb =============================
  
       subroutine formk(n, nsub, ind, nenter, ileave, indx2, iupdat, 
-     +                 updatd, wn, wn1, m, ws, wy, sy, theta, col,
+     +                 updated, wn, wn1, m, ws, wy, sy, theta, col,
      +                 head, info)
 
       integer          n, nsub, m, col, head, nenter, ileave, iupdat,
      +                 info, ind(n), indx2(n)
       double precision theta, wn(2*m, 2*m), wn1(2*m, 2*m),
      +                 ws(n, m), wy(n, m), sy(m, m)
-      logical          updatd
+      logical          updated
 
 c     ************
 c
@@ -1889,8 +1889,8 @@ c     iupdat is an integer variable.
 c       On entry iupdat is the total number of BFGS updates made so far.
 c       On exit iupdat is unchanged. 
 c
-c     updatd is a logical variable.
-c       On entry 'updatd' is true if the L-BFGS matrix is updatd.
+c     updated is a logical variable.
+c       On entry 'updated' is true if the L-BFGS matrix is updated.
 c       On exit 'updatd' is unchanged. 
 c
 c     wn is a double precision array of dimension 2m x 2m.
@@ -1978,7 +1978,7 @@ c                     [L_a+R_z   S'AA'S   ]
 c        where L_a is the strictly lower triangular part of S'AA'Y
 c              R_z is the upper triangular part of S'ZZ'Y.
       
-      if (updatd) then
+      if (updated) then
          if (iupdat .gt. m) then 
 c                                 shift old part of WN1.
             do 10 jy = 1, m - 1
@@ -2227,11 +2227,11 @@ c        J' stored in the upper triangle of wt.
 c======================= The end of formt ==============================
  
       subroutine freev(n, nfree, index, nenter, ileave, indx2, 
-     +                 iwhere, wrk, updatd, cnstnd, iprint, iter)
+     +                 iwhere, wrk, updated, cnstnd, iprint, iter)
 
       integer n, nfree, nenter, ileave, iprint, iter, 
      +        index(n), indx2(n), iwhere(n)
-      logical wrk, updatd, cnstnd
+      logical wrk, updated, cnstnd
 
 c     ************
 c
@@ -2302,7 +2302,7 @@ c            write(6,*) ' index = ', i
          if (iprint .ge. 99) write (6,*)
      +       n+1-ileave,' variables leave; ',nenter,' variables enter'
       endif
-      wrk = (ileave .lt. n+1) .or. (nenter .gt. 0) .or. updatd
+      wrk = (ileave .lt. n+1) .or. (nenter .gt. 0) .or. updated
  
 c     Find the index set of free and active variables at the GCP.
  

@@ -1546,7 +1546,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     Indeed, the test statistic is negative, suggesting that the true mean of
     the distribution underlying ``x`` is less than that of the distribution
-    underlying ``y``. To determine the probability of this occuring by chance
+    underlying ``y``. To determine the probability of this occurring by chance
     if the two samples were drawn from the same distribution, we perform
     a permutation test.
 

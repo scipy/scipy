@@ -457,7 +457,7 @@ Issues closed for 1.2.0
 * `#9345 <https://github.com/scipy/scipy/issues/9345>`__: Example from documentation of scipy.sparse.linalg.eigs raises...
 * `#9383 <https://github.com/scipy/scipy/issues/9383>`__: Default value for "mode" in "ndimage.shift"
 * `#9419 <https://github.com/scipy/scipy/issues/9419>`__: dual_annealing off by one in the number of iterations
-* `#9442 <https://github.com/scipy/scipy/issues/9442>`__: Error in Defintion of Rosenbrock Function
+* `#9442 <https://github.com/scipy/scipy/issues/9442>`__: Error in Definition of Rosenbrock Function
 * `#9453 <https://github.com/scipy/scipy/issues/9453>`__: TST: test_eigs_consistency() doesn't have consistent results
 
 
@@ -623,7 +623,7 @@ Pull requests for 1.2.0
 * `#9176 <https://github.com/scipy/scipy/pull/9176>`__: BUG: CloughTocher2DInterpolator: fix miscalculation at neighborless...
 * `#9177 <https://github.com/scipy/scipy/pull/9177>`__: BUILD: Document the "clean" target in the doc/Makefile.
 * `#9178 <https://github.com/scipy/scipy/pull/9178>`__: MAINT: make refguide-check more robust for printed numpy arrays
-* `#9186 <https://github.com/scipy/scipy/pull/9186>`__: MAINT: Remove np.ediff1d occurence
+* `#9186 <https://github.com/scipy/scipy/pull/9186>`__: MAINT: Remove np.ediff1d occurrence
 * `#9188 <https://github.com/scipy/scipy/pull/9188>`__: DOC: correct typo in extending ndimage with C
 * `#9190 <https://github.com/scipy/scipy/pull/9190>`__: ENH: Support specifying axes for fftconvolve
 * `#9192 <https://github.com/scipy/scipy/pull/9192>`__: MAINT: optimize: fixed @pv style suggestions from #9112
@@ -688,7 +688,7 @@ Pull requests for 1.2.0
 * `#9377 <https://github.com/scipy/scipy/pull/9377>`__: DOC: Add examples integrate: fixed_quad and quadrature
 * `#9379 <https://github.com/scipy/scipy/pull/9379>`__: MAINT: TST: Make tests NumPy 1.8 compatible
 * `#9385 <https://github.com/scipy/scipy/pull/9385>`__: CI: On Travis matrix "OPTIMIZE=-OO" flag ignored
-* `#9387 <https://github.com/scipy/scipy/pull/9387>`__: Fix defaut value for 'mode' in 'ndimage.shift' in the doc
+* `#9387 <https://github.com/scipy/scipy/pull/9387>`__: Fix default value for 'mode' in 'ndimage.shift' in the doc
 * `#9392 <https://github.com/scipy/scipy/pull/9392>`__: BUG: rank has to be integer in rank_filter: fixed issue 9388
 * `#9399 <https://github.com/scipy/scipy/pull/9399>`__: DOC: Misc. typos
 * `#9400 <https://github.com/scipy/scipy/pull/9400>`__: TST: stats: Fix the expected r-value of a linregress test.

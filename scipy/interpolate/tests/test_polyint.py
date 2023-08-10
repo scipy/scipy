@@ -391,7 +391,7 @@ class TestBarycentric:
         with np.errstate(divide='raise'):
             yi = P(P.xi)
 
-        # Additionaly check if the interpolated values are the nodes values
+        # Additionally check if the interpolated values are the nodes values
         assert_almost_equal(yi, P.yi.ravel())
 
 

@@ -32,11 +32,11 @@ def spline_filter(Iin, lmbda=5.0):
     Returns
     -------
     res : ndarray
-        filterd input data
+        filtered input data
 
     Examples
     --------
-    We can filter an multi dimentional signal (ex: 2D image) using cubic
+    We can filter an multi dimensional signal (ex: 2D image) using cubic
     B-spline filter:
 
     >>> import numpy as np

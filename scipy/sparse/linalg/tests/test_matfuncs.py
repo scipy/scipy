@@ -459,7 +459,7 @@ class TestExpM:
         # This is Ward's example #4.
         # This is a version of the Forsythe matrix.
         # The eigenvector problem is badly conditioned.
-        # Ward's algorithm has difficulty esimating the accuracy
+        # Ward's algorithm has difficulty estimating the accuracy
         # of its results for this problem.
         #
         # Check the construction of one instance of this family of matrices.

@@ -306,7 +306,7 @@ References
 ~~~~~~~~~~
 
 .. [1] Von Neumann, John. "13. various techniques used in connection with
-       random digits." Appl. Math Ser 12.36-38 (1951): 3.
+       random digits." Appl. Math Set 12.36-38 (1951): 3.
 
 .. [2] UNU.RAN User Manual, https://statmath.wu.ac.at/unuran/doc/unuran.html
 

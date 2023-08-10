@@ -136,7 +136,7 @@ c       where z = -2 T Y^T v.
 c
 c       Now, suppose that A is a (rank-deficient) matrix
 c       whose complete QR decomposition has
-c       the blockwise partioned form
+c       the blockwise partitioned form
 c           ( Q_11 Q_12 ) ( R_11 R_12 )   ( Q_11 )
 c       A = (           ) (           ) = (      ) (R_11 R_12).
 c           ( Q_21 Q_22 ) (  0    0   )   ( Q_21 )
@@ -435,7 +435,7 @@ c       n -- second dimension of a
 c       a -- matrix whose QR decomposition gets computed
 c
 c       output:
-c       a -- triangular (R) factor in the QR decompositon
+c       a -- triangular (R) factor in the QR decomposition
 c            of the matrix input into the same storage locations,
 c            with the Householder vectors stored in the part of a
 c            that would otherwise consist entirely of zeroes, that is,
@@ -692,7 +692,7 @@ c                then the rank of the output matrix will be
 c                less than krank)
 c
 c       output:
-c       a -- triangular (R) factor in the QR decompositon
+c       a -- triangular (R) factor in the QR decomposition
 c            of the matrix input into the same storage locations,
 c            with the Householder vectors stored in the part of a
 c            that would otherwise consist entirely of zeroes, that is,

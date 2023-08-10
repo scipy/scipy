@@ -694,7 +694,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                                    shape=self.shape,dtype=data.dtype)
 
 #    # these functions are used by the parent class
-#    # to remove redudancy between bsc_matrix and bsr_matrix
+#    # to remove redundancy between bsc_matrix and bsr_matrix
 #    def _swap(self,x):
 #        """swap the members of x if this is a column-oriented matrix
 #        """

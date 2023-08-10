@@ -42,7 +42,7 @@ C     Calls the routine BRATIO.
 C
 C                                   References
 C
-C     Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithim
+C     Didonato, Armido R. and Morris, Alfred H. Jr. (1992) Algorithm
 C     708 Significant Digit Computation of the Incomplete Beta Function
 C     Ratios. ACM ToMS, Vol.18, No. 3, Sept. 1992, 360-373.
 C

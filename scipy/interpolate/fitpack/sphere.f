@@ -57,7 +57,7 @@ c  teta  : real array of dimension at least (m).
 c  phi   : real array of dimension at least (m).
 c  r     : real array of dimension at least (m).
 c          before entry,teta(i),phi(i),r(i) must be set to the spherical
-c          co-ordinates of the i-th data point, for i=1,...,m.the order
+c          coordinates of the i-th data point, for i=1,...,m.the order
 c          of the data points is immaterial. unchanged on exit.
 c  w     : real array of dimension at least (m). before entry, w(i) must
 c          be set to the i-th value in the set of weights. the w(i) must

@@ -1599,7 +1599,7 @@ def cdf2rdf(w, v):
     u[stack_ind + (k, j)] = -0.5j
     u[stack_ind + (k, k)] = 0.5
 
-    # multipy matrices v and u (equivalent to v @ u)
+    # multiply matrices v and u (equivalent to v @ u)
     vr = einsum('...ij,...jk->...ik', v, u).real
 
     return wr, vr

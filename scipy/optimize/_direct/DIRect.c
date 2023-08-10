@@ -187,7 +187,7 @@
 /* |            as described by Jones et.al. (0) or use our modification(1)| */
 /* | logfile -- File-Handle for the logfile. DIRECT expects this file to be| */
 /* |            opened and closed by the user outside of DIRECT. We moved  | */
-/* |            this to the outside so the user can add extra informations | */
+/* |            this to the outside so the user can add extra information | */
 /* |            to this file before and after the call to DIRECT.          | */
 /* | fglobal -- Function value of the global optimum. If this value is not | */
 /* |            known (that is, we solve a real problem, not a testproblem)| */
@@ -289,13 +289,13 @@
 /* |       c -- midpoints of arrays                                        | */
 /* |  thirds -- Precalculated values of 1/3^i.                             | */
 /* |  levels -- Length of intervals.                                       | */
-/* |  length -- Length of intervall (index)                                | */
+/* |  length -- Length of interval (index)                                | */
 /* |       t -- actual iteration                                           | */
 /* |       j -- loop-variable                                              | */
 /* | actdeep -- the actual minimal interval-length index                   | */
 /* |  Minpos -- position of the actual minimum                             | */
 /* |    file -- The filehandle for a datafile.                             | */
-/* |  maxpos -- The number of intervalls, which are truncated.             | */
+/* |  maxpos -- The number of intervals, which are truncated.             | */
 /* |    help -- A help variable.                                           | */
 /* | numfunc -- The actual number of function evaluations.                 | */
 /* |   file2 -- The filehandle for an other datafile.                      | */
@@ -305,15 +305,15 @@
 /* |            initialisation.                                            | */
 /* |   cheat -- Obsolete. If equal 1, we don't allow Ktilde > kmax.        | */
 /* |  writed -- If writed=1, store final division to plot with Matlab.     | */
-/* |   List2 -- List of indicies of intervalls, which are to be truncated. | */
+/* |   List2 -- List of indices of intervals, which are to be truncated. | */
 /* |       i -- Another loop-variable.                                     | */
 /* |actmaxdeep-- The actual maximum (minimum) of possible Interval length. | */
 /* |  oldpos -- The old index of the minimum. Used to print only, if there | */
 /* |            is a new minimum found.                                    | */
 /* |  tstart -- The start of the outer loop.                               | */
-/* |   start -- The postion of the starting point in the inner loop.       | */
+/* |   start -- The position of the starting point in the inner loop.       | */
 /* | Newtosample -- The total number of points to sample in the inner loop.| */
-/* |       w -- Array used to divide the intervalls                        | */
+/* |       w -- Array used to divide the intervals                        | */
 /* |    kmax -- Obsolete. If cheat = 1, Ktilde was not allowed to be larger| */
 /* |            than kmax. If Ktilde > kmax, we set ktilde = kmax.         | */
 /* |   delta -- The distance to new points from center of old hyperrec.    | */
@@ -425,7 +425,7 @@
     oldmaxf = *maxf;
     increase = 0;
 /* +-----------------------------------------------------------------------+ */
-/* | Initialiase the lists.                                                | */
+/* | Initialise the lists.                                                | */
 /* +-----------------------------------------------------------------------+ */
     direct_dirinitlist_(anchor, &ifree, point, f, &MAXFUNC, &MAXDEEP);
 /* +-----------------------------------------------------------------------+ */
@@ -613,12 +613,12 @@
             goto cleanup;
         }
 /* +-----------------------------------------------------------------------+ */
-/* | Divide the intervalls.                                                | */
+/* | Divide the intervals.                                                | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirdivide_(&start, &actdeep_div__, length, point, arrayi, &
             help, list2, w, &maxi, f, &MAXFUNC, &MAXDEEP, n);
 /* +-----------------------------------------------------------------------+ */
-/* | Insert the new intervalls into the list (sorted).                     | */
+/* | Insert the new intervals into the list (sorted).                     | */
 /* +-----------------------------------------------------------------------+ */
         direct_dirinsertlist_(&start, anchor, point, f, &maxi, length, &
             MAXFUNC, &MAXDEEP, n, &help, jones);

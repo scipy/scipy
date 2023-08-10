@@ -2869,7 +2869,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
         # above, down to res.nfev. However, testing found that when TNC is
         # called with or without a callback the output is different. The two
         # should be the same! This indicates that the TNC callback may be
-        # mutating something when it should't.
+        # mutating something when it shouldn't.
         assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 

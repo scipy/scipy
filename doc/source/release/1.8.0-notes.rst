@@ -95,7 +95,7 @@ bindings. This also fixes an issue with the callback altering the state of the
 optimization.
 
 Added optional parameters ``target_accept_rate`` and ``stepwise_factor`` for
-adapative step size adjustment in ``basinhopping``.
+adaptive step size adjustment in ``basinhopping``.
 
 The ``epsilon`` argument to ``approx_fprime`` is now optional so that it may
 have a default value consistent with most other functions in `scipy.optimize`.
@@ -492,7 +492,7 @@ Issues closed for 1.8.0
 * `#13898 <https://github.com/scipy/scipy/issues/13898>`__: Savitzky-Golay filter for even number data
 * `#13902 <https://github.com/scipy/scipy/issues/13902>`__: Different solvers of \`svds\` return quite different results
 * `#13922 <https://github.com/scipy/scipy/issues/13922>`__: Need Exception / Error for Incorrect and/or misleading analog...
-* `#14122 <https://github.com/scipy/scipy/issues/14122>`__: Item assignement for spatial.transform.Rotation objects
+* `#14122 <https://github.com/scipy/scipy/issues/14122>`__: Item assignment for spatial.transform.Rotation objects
 * `#14140 <https://github.com/scipy/scipy/issues/14140>`__: Likely unnecessary invalid value warning from PchipInterpolator
 * `#14152 <https://github.com/scipy/scipy/issues/14152>`__: zpk2sos not working correctly when butterworth band-pass filter...
 * `#14165 <https://github.com/scipy/scipy/issues/14165>`__: scipy.optimize.minimize method='Nelder-Mead': 'maxfev' is not...
@@ -573,7 +573,7 @@ Pull requests for 1.8.0
 * `#11754 <https://github.com/scipy/scipy/pull/11754>`__: ENH: stats: Updates to \`variation\`.
 * `#11954 <https://github.com/scipy/scipy/pull/11954>`__: ENH: improve ARGUS rv generation in scipy.stats
 * `#12143 <https://github.com/scipy/scipy/pull/12143>`__: BUG: Correctly use \`axis\` in \`scipy.stats.tmean\`
-* `#12146 <https://github.com/scipy/scipy/pull/12146>`__: DOC: add docs to explain behaviour of newton's mehod on arrays
+* `#12146 <https://github.com/scipy/scipy/pull/12146>`__: DOC: add docs to explain behaviour of newton's method on arrays
 * `#12197 <https://github.com/scipy/scipy/pull/12197>`__: BUG: fix moments method to support arrays and list
 * `#12889 <https://github.com/scipy/scipy/pull/12889>`__: MAINT: deal with cases in \`minimize\` for \`(bounds.lb == bounds.ub).any()
 * `#13002 <https://github.com/scipy/scipy/pull/13002>`__: ENH: stats: Tukey's honestly significant difference test
@@ -615,7 +615,7 @@ Pull requests for 1.8.0
 * `#14204 <https://github.com/scipy/scipy/pull/14204>`__: Improve error message for index dimension
 * `#14208 <https://github.com/scipy/scipy/pull/14208>`__: MAINT: add invalid='ignore' to np.errstate block in PchipInterpolator
 * `#14209 <https://github.com/scipy/scipy/pull/14209>`__: ENH: stats: kendalltau: add alternative parameter
-* `#14210 <https://github.com/scipy/scipy/pull/14210>`__: BUG: Fix Nelder-Mead logic when using a non-1D x0 and adapative
+* `#14210 <https://github.com/scipy/scipy/pull/14210>`__: BUG: Fix Nelder-Mead logic when using a non-1D x0 and adaptive
 * `#14211 <https://github.com/scipy/scipy/pull/14211>`__: Fixed doc for gaussian_kde (kde.factor description)
 * `#14213 <https://github.com/scipy/scipy/pull/14213>`__: ENH: stats: somersd: add alternative parameter
 * `#14214 <https://github.com/scipy/scipy/pull/14214>`__: ENH: Improve the \`scipy.spatial.qhull\` annotations
@@ -660,7 +660,7 @@ Pull requests for 1.8.0
 * `#14310 <https://github.com/scipy/scipy/pull/14310>`__: ENH: make epsilon optional in optimize.approx_fprime.
 * `#14311 <https://github.com/scipy/scipy/pull/14311>`__: MAINT: Corrected NumPy API usage in scipy.spatial
 * `#14312 <https://github.com/scipy/scipy/pull/14312>`__: ENH: Using random directional derivative to check grad
-* `#14326 <https://github.com/scipy/scipy/pull/14326>`__: MAINT: Removed redifinition of trace1 in spatial/qhull
+* `#14326 <https://github.com/scipy/scipy/pull/14326>`__: MAINT: Removed redefinition of trace1 in spatial/qhull
 * `#14328 <https://github.com/scipy/scipy/pull/14328>`__: MAINT: _lib: add __dealloc__ to MessageStream
 * `#14331 <https://github.com/scipy/scipy/pull/14331>`__: ENH: Complement \`trace\` method of sparse matrices like \`csr_matrix/csc_matrix/coo_matrix\`
 * `#14338 <https://github.com/scipy/scipy/pull/14338>`__: BUG: fix \`stats.binned_statistic_dd\` issue with values close...

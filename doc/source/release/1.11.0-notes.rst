@@ -341,7 +341,7 @@ Authors
 * Matthew Brett (1)
 * Evgeni Burovski (39)
 * Matthias Bussonnier (2)
-* Maria Cann (1) +
+* Maria Can (1) +
 * Alfredo Carella (1) +
 * CJ Carey (34)
 * Hood Chatham (2)
@@ -516,7 +516,7 @@ Issues closed for 1.11.0
 * `#15089 <https://github.com/scipy/scipy/issues/15089>`__: BUG: scipy.optimize.minimize() does not report lowest energy...
 * `#15136 <https://github.com/scipy/scipy/issues/15136>`__: ENH: Bump boost.math version
 * `#15177 <https://github.com/scipy/scipy/issues/15177>`__: BUG: element-wise division between sparse matrices and array-likes...
-* `#15212 <https://github.com/scipy/scipy/issues/15212>`__: BUG: stange behavior of scipy.integrate.quad for divergent integrals
+* `#15212 <https://github.com/scipy/scipy/issues/15212>`__: BUG: strange behavior of scipy.integrate.quad for divergent integrals
 * `#15514 <https://github.com/scipy/scipy/issues/15514>`__: BUG: optimize.shgo: error with vector constraints
 * `#15600 <https://github.com/scipy/scipy/issues/15600>`__: BUG: handle inconsistencies in factorial functions and their...
 * `#15613 <https://github.com/scipy/scipy/issues/15613>`__: ENH: Provide functions to compute log-integrals numerically (e.g.,...
@@ -556,7 +556,7 @@ Issues closed for 1.11.0
 * `#17137 <https://github.com/scipy/scipy/issues/17137>`__: BUG: optimize: Intermittent failure of \`test_milp_timeout_16545\`
 * `#17146 <https://github.com/scipy/scipy/issues/17146>`__: BUG: Scipy stats probability greater than 1
 * `#17214 <https://github.com/scipy/scipy/issues/17214>`__: BUG: scipy.stats.mode: inconsistent shape with \`axis=None\`...
-* `#17234 <https://github.com/scipy/scipy/issues/17234>`__: BUG: cythonization / compliation failure with development branch...
+* `#17234 <https://github.com/scipy/scipy/issues/17234>`__: BUG: cythonization / compilation failure with development branch...
 * `#17250 <https://github.com/scipy/scipy/issues/17250>`__: ENH: Expose parallel HiGHS solvers in high-level API
 * `#17281 <https://github.com/scipy/scipy/issues/17281>`__: BUG: using LinearOperator as RHS operand of @ causes a NumPy...
 * `#17285 <https://github.com/scipy/scipy/issues/17285>`__: ENH: Expose DisjointSet._sizes
@@ -576,7 +576,7 @@ Issues closed for 1.11.0
 * `#17576 <https://github.com/scipy/scipy/issues/17576>`__: ENH: override fit method for von mises
 * `#17593 <https://github.com/scipy/scipy/issues/17593>`__: BUG: cannot import name 'permutation_test' from 'scipy.stats'
 * `#17604 <https://github.com/scipy/scipy/issues/17604>`__: DOC: optimize.curve_fit: documentation of \`fvec\` is not specific
-* `#17620 <https://github.com/scipy/scipy/issues/17620>`__: ENH: Cachable normalisation parameter for frozen distributions
+* `#17620 <https://github.com/scipy/scipy/issues/17620>`__: ENH: Cacheable normalisation parameter for frozen distributions
 * `#17631 <https://github.com/scipy/scipy/issues/17631>`__: BUG: numerical issues for cdf/ppf of the betaprime distribution
 * `#17639 <https://github.com/scipy/scipy/issues/17639>`__: BUG: "xl" not returned if success = False for scipy.optimize.shgo
 * `#17652 <https://github.com/scipy/scipy/issues/17652>`__: Check for non-running tests because of test function name and...
@@ -1072,7 +1072,7 @@ Pull requests for 1.11.0
 * `#18370 <https://github.com/scipy/scipy/pull/18370>`__: DOC: stats.chisquare: attribute is pvalue, not p
 * `#18374 <https://github.com/scipy/scipy/pull/18374>`__: CI: pin to rtools40
 * `#18378 <https://github.com/scipy/scipy/pull/18378>`__: DOC: add output_type to signature of cKDTree.query_pairs
-* `#18379 <https://github.com/scipy/scipy/pull/18379>`__: TST/MAINT: remove vonmises fit correctnes test for extreme kappa...
+* `#18379 <https://github.com/scipy/scipy/pull/18379>`__: TST/MAINT: remove vonmises fit correctness test for extreme kappa...
 * `#18380 <https://github.com/scipy/scipy/pull/18380>`__: MAINT: Limit fittable data for von mises fisher distribution...
 * `#18382 <https://github.com/scipy/scipy/pull/18382>`__: TST: stats.cosine: modify test to silence failure
 * `#18383 <https://github.com/scipy/scipy/pull/18383>`__: MAINT: add smoke testing of signal.detrend
@@ -1107,7 +1107,7 @@ Pull requests for 1.11.0
 * `#18449 <https://github.com/scipy/scipy/pull/18449>`__: ENH: increase truncated exponential distribution sf/isf precision
 * `#18451 <https://github.com/scipy/scipy/pull/18451>`__: DEV: use number of physical cores in \`dev.py build\` by default
 * `#18454 <https://github.com/scipy/scipy/pull/18454>`__: DOC: add \`distance_transform_cdt\` example
-* `#18455 <https://github.com/scipy/scipy/pull/18455>`__: MAINT: simplifiy detrend
+* `#18455 <https://github.com/scipy/scipy/pull/18455>`__: MAINT: simplify detrend
 * `#18458 <https://github.com/scipy/scipy/pull/18458>`__: DOC: odr: clarify \`cov_beta\` is not scaled by the residual...
 * `#18459 <https://github.com/scipy/scipy/pull/18459>`__: DOC: optimize: add use of functools.partial to tutorial
 * `#18460 <https://github.com/scipy/scipy/pull/18460>`__: DOC: examples for \`ndimage.generic_filter\`

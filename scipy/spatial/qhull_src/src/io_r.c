@@ -324,7 +324,7 @@ void qh_countfacets(qhT *qh, facetT *facetlist, setT *facets, boolT printall,
       test that Voronoi vertices not in the simplex are still on the hyperplane
     free up temporary memory
 */
-pointT *qh_detvnorm(qhT *qh, vertexT *vertex, vertexT *vertexA, setT *centers, realT *offsetp) {
+pointT *qh_detvnorm(qhT *qh, vertexT *vertex, vertexT *vertexA, setT *centers, realT *offset) {
   facetT *facet, **facetp;
   int  i, k, pointid, pointidA, point_i, point_n;
   setT *simplex= NULL;
@@ -449,7 +449,7 @@ pointT *qh_detvnorm(qhT *qh, vertexT *vertex, vertexT *vertexA, setT *centers, r
       }
     }
   }
-  *offsetp= offset;
+  *offset= offset;
   if (simplex != points)
     qh_settempfree(qh, &simplex);
   qh_settempfree(qh, &points);
@@ -3699,7 +3699,7 @@ int qh_readfeasible(qhT *qh, int dim, const char *curline) {
 coordT *qh_readpoints(qhT *qh, int *numpoints, int *dimension, boolT *ismalloc) {
   coordT *points, *coords, *infinity= NULL;
   realT paraboloid, maxboloid= -REALmax, value;
-  realT *coordp= NULL, *offsetp= NULL, *normalp= NULL;
+  realT *coordp= NULL, *offset= NULL, *normalp= NULL;
   char *s= 0, *t, firstline[qh_MAXfirst+1];
   int diminput=0, numinput=0, dimfeasible= 0, newnum, k, tempi;
   int firsttext=0, firstshort=0, firstlong=0, firstpoint=0;
@@ -3818,11 +3818,11 @@ coordT *qh_readpoints(qhT *qh, int *numpoints, int *dimension, boolT *ismalloc) 
   if (qh->HALFspace) {
     qh->half_space= coordp= (coordT *)qh_malloc((size_t)qh->normal_size + sizeof(coordT));
     if (qh->CDDinput) {
-      offsetp= qh->half_space;
-      normalp= offsetp + 1;
+      offset= qh->half_space;
+      normalp= offset + 1;
     }else {
       normalp= qh->half_space;
-      offsetp= normalp + *dimension;
+      offset= normalp + *dimension;
     }
   }
   qh->maxline= diminput * (qh_REALdigits + 5);
@@ -3905,7 +3905,7 @@ coordT *qh_readpoints(qhT *qh, int *numpoints, int *dimension, boolT *ismalloc) 
           maximize_(maxboloid, paraboloid);
           paraboloid= 0.0;
         }else if (qh->HALFspace) {
-          if (!qh_sethalfspace(qh, *dimension, coords, &coords, normalp, offsetp, qh->feasible_point)) {
+          if (!qh_sethalfspace(qh, *dimension, coords, &coords, normalp, offset, qh->feasible_point)) {
             qh_fprintf(qh, qh->ferr, 8048, "The halfspace was on line %d\n", linecount);
             if (wasbegin)
               qh_fprintf(qh, qh->ferr, 8049, "The input appears to be in cdd format.  If so, you should use option 'Fd'\n");

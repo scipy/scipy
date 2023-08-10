@@ -2049,7 +2049,7 @@ class TestRegression:
         with np.errstate(invalid="ignore"):
             result = stats.linregress(x, x)
 
-        # Make sure the resut still comes back as `LinregressResult`
+        # Make sure the result still comes back as `LinregressResult`
         lr = stats._stats_mstats_common.LinregressResult
         assert_(isinstance(result, lr))
         assert_array_equal(result, (np.nan,)*5)
@@ -5697,7 +5697,7 @@ def test_normalitytests():
     assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
 
-    # regression test for issue gh-9033: x cleary non-normal but power of
+    # regression test for issue gh-9033: x clearly non-normal but power of
     # negtative denom needs to be handled correctly to reject normality
     counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
     x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
@@ -8445,7 +8445,7 @@ class TestExpectile:
         # For alpha = 0.5, i.e. the mean, strict equality holds.
         # For alpha < 0.5, one can use property 6. to show
         # T(X + Y) >= T(X) + T(Y)
-        y = rng.logistic(size=n, loc=10)  # different distibution than x
+        y = rng.logistic(size=n, loc=10)  # different distribution than x
         if alpha == 0.5:
             def assert_op(a, b):
                 assert_allclose(a, b)

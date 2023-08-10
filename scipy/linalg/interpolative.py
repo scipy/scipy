@@ -302,7 +302,7 @@ To compute an SVD to a fixed rank, use:
 
 >>> U, S, V = sli.svd(A, k)
 
-Both algorithms use random sampling; for the determinstic versions, issue the
+Both algorithms use random sampling; for the deterministic versions, issue the
 keyword ``rand=False`` as above.
 
 From matrix action

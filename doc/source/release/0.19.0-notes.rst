@@ -439,7 +439,7 @@ Issues closed for 0.19.0
 - `#4044 <https://github.com/scipy/scipy/issues/4044>`__: Inconsistent code book initialization in kmeans
 - `#4234 <https://github.com/scipy/scipy/issues/4234>`__: scipy.signal.flattop documentation doesn't list a source for...
 - `#4831 <https://github.com/scipy/scipy/issues/4831>`__: Bugs in C code in __quadpack.h
-- `#4908 <https://github.com/scipy/scipy/issues/4908>`__: bug: unnessesary validity check for block dimension in scipy.sparse.block_diag
+- `#4908 <https://github.com/scipy/scipy/issues/4908>`__: bug: unnecessary validity check for block dimension in scipy.sparse.block_diag
 - `#4917 <https://github.com/scipy/scipy/issues/4917>`__: BUG: indexing error for sparse matrix with ix\_
 - `#4938 <https://github.com/scipy/scipy/issues/4938>`__: Docs on extending ndimage need to be updated.
 - `#5056 <https://github.com/scipy/scipy/issues/5056>`__: sparse matrix element-wise multiplying dense matrix returns dense...
@@ -498,10 +498,10 @@ Issues closed for 0.19.0
 - `#6984 <https://github.com/scipy/scipy/issues/6984>`__: Assert raises test failure for test_ill_condition_warning
 - `#6990 <https://github.com/scipy/scipy/issues/6990>`__: BUG: sparse: Bad documentation of the `k` argument in `sparse.linalg.eigs`
 - `#6991 <https://github.com/scipy/scipy/issues/6991>`__: Division by zero in linregress()
-- `#7011 <https://github.com/scipy/scipy/issues/7011>`__: possible speed improvment in rv_continuous.fit()
+- `#7011 <https://github.com/scipy/scipy/issues/7011>`__: possible speed improvement in rv_continuous.fit()
 - `#7015 <https://github.com/scipy/scipy/issues/7015>`__: Test failure with Python 3.5 and numpy master
 - `#7055 <https://github.com/scipy/scipy/issues/7055>`__: SciPy 0.19.0rc1 test errors and failures on Windows
-- `#7096 <https://github.com/scipy/scipy/issues/7096>`__: macOS test failues for test_solve_continuous_are
+- `#7096 <https://github.com/scipy/scipy/issues/7096>`__: macOS test failures for test_solve_continuous_are
 - `#7100 <https://github.com/scipy/scipy/issues/7100>`__: test_distance.test_Xdist_deprecated_args test error in 0.19.0rc2
 
 
@@ -567,7 +567,7 @@ Pull requests for 0.19.0
 - `#6469 <https://github.com/scipy/scipy/pull/6469>`__: ENH: linalg: better handling of infinite eigenvalues in `eig`/`eigvals`
 - `#6475 <https://github.com/scipy/scipy/pull/6475>`__: DOC: calling interp1d/interp2d with NaNs is undefined
 - `#6477 <https://github.com/scipy/scipy/pull/6477>`__: Document magic numbers in optimize.py
-- `#6481 <https://github.com/scipy/scipy/pull/6481>`__: TST: Supress some warnings from test_windows
+- `#6481 <https://github.com/scipy/scipy/pull/6481>`__: TST: Suppress some warnings from test_windows
 - `#6485 <https://github.com/scipy/scipy/pull/6485>`__: DOC: spatial: correct typo in procrustes
 - `#6487 <https://github.com/scipy/scipy/pull/6487>`__: Fix Bray-Curtis formula in pdist docstring
 - `#6493 <https://github.com/scipy/scipy/pull/6493>`__: ENH: Add covariance functionality to scipy.optimize.curve_fit
@@ -586,7 +586,7 @@ Pull requests for 0.19.0
 - `#6540 <https://github.com/scipy/scipy/pull/6540>`__: DOC: add to documentation of orthogonal polynomials
 - `#6544 <https://github.com/scipy/scipy/pull/6544>`__: TST: Ensure tests for scipy._lib are run by scipy.test()
 - `#6546 <https://github.com/scipy/scipy/pull/6546>`__: updated docstring of stats.linregress
-- `#6553 <https://github.com/scipy/scipy/pull/6553>`__: commited changes that I originally submitted for scipy.signal.cspline…
+- `#6553 <https://github.com/scipy/scipy/pull/6553>`__: committed changes that I originally submitted for scipy.signal.cspline…
 - `#6561 <https://github.com/scipy/scipy/pull/6561>`__: BUG: modify signal.find_peaks_cwt() to return array and accept...
 - `#6562 <https://github.com/scipy/scipy/pull/6562>`__: DOC: Negative binomial distribution clarification
 - `#6563 <https://github.com/scipy/scipy/pull/6563>`__: MAINT: be more liberal in requiring numpy
@@ -756,7 +756,7 @@ Pull requests for 0.19.0
 - `#7000 <https://github.com/scipy/scipy/pull/7000>`__: DOC: clarify interp1d 'zero' argument
 - `#7007 <https://github.com/scipy/scipy/pull/7007>`__: BUG: Fix division by zero in linregress() for 2 data points
 - `#7009 <https://github.com/scipy/scipy/pull/7009>`__: BUG: Fix problem in passing drop_rule to scipy.sparse.linalg.spilu
-- `#7012 <https://github.com/scipy/scipy/pull/7012>`__: speed improvment in _distn_infrastructure.py
+- `#7012 <https://github.com/scipy/scipy/pull/7012>`__: speed improvement in _distn_infrastructure.py
 - `#7014 <https://github.com/scipy/scipy/pull/7014>`__: Fix Typo: add a single quotation mark to fix a slight typo
 - `#7021 <https://github.com/scipy/scipy/pull/7021>`__: MAINT: stats: use machine constants from np.finfo, not machar
 - `#7026 <https://github.com/scipy/scipy/pull/7026>`__: MAINT: update .mailmap
@@ -768,7 +768,7 @@ Pull requests for 0.19.0
 - `#7043 <https://github.com/scipy/scipy/pull/7043>`__: MAINT: refactory and code cleaning Xdist
 - `#7053 <https://github.com/scipy/scipy/pull/7053>`__: Fix msvc 9 and 10 compile errors
 - `#7060 <https://github.com/scipy/scipy/pull/7060>`__: DOC: updated release notes with #7043 and #6656
-- `#7062 <https://github.com/scipy/scipy/pull/7062>`__: MAINT: Change defaut STFT boundary kwarg to "zeros"
+- `#7062 <https://github.com/scipy/scipy/pull/7062>`__: MAINT: Change default STFT boundary kwarg to "zeros"
 - `#7064 <https://github.com/scipy/scipy/pull/7064>`__: Fix ValueError: path is on mount 'X:', start on mount 'D:' on...
 - `#7067 <https://github.com/scipy/scipy/pull/7067>`__: TST: Fix PermissionError: [Errno 13] Permission denied on Windows
 - `#7068 <https://github.com/scipy/scipy/pull/7068>`__: TST: Fix UnboundLocalError: local variable 'data' referenced...

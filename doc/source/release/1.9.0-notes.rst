@@ -936,7 +936,7 @@ Pull requests for 1.9.0
 * `#15561 <https://github.com/scipy/scipy/pull/15561>`__: MAINT: update HiGHS submodule to include fix for Windows segfault
 * `#15563 <https://github.com/scipy/scipy/pull/15563>`__: CI: add a Windows CI job on GitHub Actions using Meson
 * `#15564 <https://github.com/scipy/scipy/pull/15564>`__: DOC: stray backticks
-* `#15565 <https://github.com/scipy/scipy/pull/15565>`__: DOC: incorrect underline lenght in section.
+* `#15565 <https://github.com/scipy/scipy/pull/15565>`__: DOC: incorrect underline length in section.
 * `#15567 <https://github.com/scipy/scipy/pull/15567>`__: ENH: stats.pareto fit improvement for parameter combinations
 * `#15569 <https://github.com/scipy/scipy/pull/15569>`__: DOC: pip quickstart: setup.py -> meson
 * `#15570 <https://github.com/scipy/scipy/pull/15570>`__: MAINT: bump test tolerance in test_linprog
@@ -1029,7 +1029,7 @@ Pull requests for 1.9.0
 * `#15828 <https://github.com/scipy/scipy/pull/15828>`__: DEP: raise value error for object arrays
 * `#15830 <https://github.com/scipy/scipy/pull/15830>`__: MAINT: stats: collocate bootstrap/permutation_test/monte_carlo_test
 * `#15831 <https://github.com/scipy/scipy/pull/15831>`__: MAINT: stats.rv_generic: fix unnecessary call to \`_munp\` in...
-* `#15835 <https://github.com/scipy/scipy/pull/15835>`__: FIX: Incorect boschloo pvalue
+* `#15835 <https://github.com/scipy/scipy/pull/15835>`__: FIX: Incorrect boschloo pvalue
 * `#15837 <https://github.com/scipy/scipy/pull/15837>`__: DOC: Simplify conda command
 * `#15840 <https://github.com/scipy/scipy/pull/15840>`__: DOC: special: Add 'Examples' for wrightomega.
 * `#15842 <https://github.com/scipy/scipy/pull/15842>`__: DOC: Add examples for \`CGS\`, \`GCROTMK\` and \`BiCGSTAB\` iterative...

@@ -245,7 +245,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
         self.hess_inf = norm(self.hess, np.inf)
         self.hess_fro = norm(self.hess, 'fro')
 
-        # A constant such that for vectors smaler than that
+        # A constant such that for vectors smaller than that
         # backward substituition is not reliable. It was stabilished
         # based on Golub, G. H., Van Loan, C. F. (2013).
         # "Matrix computations". Forth Edition. JHU press., p.165.

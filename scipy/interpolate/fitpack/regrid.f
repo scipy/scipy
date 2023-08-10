@@ -170,7 +170,7 @@ c                        xb<tx(kx+2)<tx(kx+3)<...<tx(nx-kx-1)<xe
 c                        2*ky+2<=ny<=min(nyest,my+ky+1)
 c                        yb<ty(ky+2)<ty(ky+3)<...<ty(ny-ky-1)<ye
 c                    the schoenberg-whitney conditions, i.e. there must
-c                    be subset of grid co-ordinates xx(p) and yy(q) such
+c                    be subset of grid coordinates xx(p) and yy(q) such
 c                    that   tx(p) < xx(p) < tx(p+kx+1) ,p=1,...,nx-kx-1
 c                           ty(q) < yy(q) < ty(q+ky+1) ,q=1,...,ny-ky-1
 c            if iopt>=0: s>=0

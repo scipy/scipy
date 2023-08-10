@@ -583,7 +583,7 @@ class TestShgoArguments:
 
     @pytest.mark.slow
     def test_4_2_known_f_min(self):
-        """Test Global mode limiting local evalutions"""
+        """Test Global mode limiting local evaluations"""
         options = {  # Specify known function value
             'f_min': test4_1.expected_fun,
             'f_tol': 1e-6,

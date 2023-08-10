@@ -685,7 +685,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """Compute the trimmed minimum.
 
-    This function finds the miminum value of an array `a` along the
+    This function finds the minimum value of an array `a` along the
     specified axis, but only considering values greater than a specified
     lower limit.
 
@@ -1536,7 +1536,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> st_val = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(st_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def st_plot(ax):  # we'll re-use this
+    >>> def st_plot(ax):  # we'll reuse this
     ...     ax.plot(st_val, pdf)
     ...     ax.set_title("Skew Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -1730,7 +1730,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     >>> kt_val = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(kt_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def kt_plot(ax):  # we'll re-use this
+    >>> def kt_plot(ax):  # we'll reuse this
     ...     ax.plot(kt_val, pdf)
     ...     ax.set_title("Kurtosis Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -1925,7 +1925,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     >>> stat_vals = np.linspace(0, 16, 100)
     >>> pdf = dist.pdf(stat_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(stat_vals, pdf)
     ...     ax.set_title("Normality Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -2085,7 +2085,7 @@ def jarque_bera(x, *, axis=None):
     >>> jb_val = np.linspace(0, 11, 100)
     >>> pdf = dist.pdf(jb_val)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def jb_plot(ax):  # we'll re-use this
+    >>> def jb_plot(ax):  # we'll reuse this
     ...     ax.plot(jb_val, pdf)
     ...     ax.set_title("Jarque-Bera Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -5309,7 +5309,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> t_vals = np.linspace(-5, 5, 100)
     >>> pdf = dist.pdf(t_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(t_vals, pdf)
     ...     ax.set_title("Spearman's Rho Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -5720,7 +5720,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
 
     These data were analyzed in [7]_ using Spearman's correlation coefficient,
     a statistic similar to to Kendall's tau in that it is also sensitive to
-    ordinal correlation between the samples. Let's perform an analagous study
+    ordinal correlation between the samples. Let's perform an analogous study
     using Kendall's tau.
 
     >>> from scipy import stats
@@ -5749,7 +5749,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     >>> z_vals = np.linspace(-1.25, 1.25, 100)
     >>> pdf = dist.pdf(z_vals)
     >>> fig, ax = plt.subplots(figsize=(8, 5))
-    >>> def plot(ax):  # we'll re-use this
+    >>> def plot(ax):  # we'll reuse this
     ...     ax.plot(z_vals, pdf)
     ...     ax.set_title("Kendall Tau Test Null Distribution")
     ...     ax.set_xlabel("statistic")
@@ -10243,7 +10243,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
     :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probabilty of :math:`u` at position
+    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
     :math:`x`, and the same for :math:`v(x)`.
 
     In the 1-dimensional case, let :math:`U` and :math:`V` denote the
@@ -10276,7 +10276,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     The :math:`\text{vec}()` function denotes the Vectorization function
     that transforms a matrix into a column vector by vertically stacking
     the columns of the matrix.
-    The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
+    The transport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
     which :math:`\gamma_{ij}` is a positive value representing the amount of
     probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
     Summing over the rows of :math:`\Gamma` should give the source distribution
@@ -10288,7 +10288,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     :math:`d_{ij} = d(x_i, y_j)`.
 
     Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
-    tranformed into a linear programming problem by
+    transformed into a linear programming problem by
     taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
     target (sum of costs) , where matrix :math:`A` has the form
 

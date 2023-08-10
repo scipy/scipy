@@ -100,7 +100,7 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/methods/pinv.c',
   '../../_lib/unuran/unuran/src/methods/srou.c',
   '../../_lib/unuran/unuran/src/methods/ssr.c',
-  '../../_lib/unuran/unuran/src/methods/tabl.c',
+  '../../_lib/unuran/unuran/src/methods/table.c',
   '../../_lib/unuran/unuran/src/methods/tdr.c',
   '../../_lib/unuran/unuran/src/methods/unif.c',
   '../../_lib/unuran/unuran/src/methods/utdr.c',

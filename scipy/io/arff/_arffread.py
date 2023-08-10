@@ -822,7 +822,7 @@ def _loadarff(ofile):
     meta = MetaData(rel, attr)
 
     # XXX The following code is not great
-    # Build the type descriptor descr and the list of convertors to convert
+    # Build the type descriptor descr and the list of converters to convert
     # each attribute to the suitable type (which should match the one in
     # descr).
 

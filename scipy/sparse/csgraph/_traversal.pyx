@@ -289,7 +289,7 @@ cpdef breadth_first_order(csgraph, i_start,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
     return_predecessors : bool, optional
-        If True (default), then return the predecesor array (see below).
+        If True (default), then return the predecessor array (see below).
 
     Returns
     -------
@@ -470,7 +470,7 @@ cpdef depth_first_order(csgraph, i_start,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i].
     return_predecessors : bool, optional
-        If True (default), then return the predecesor array (see below).
+        If True (default), then return the predecessor array (see below).
 
     Returns
     -------

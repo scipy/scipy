@@ -68,7 +68,7 @@ arpack-ng is replacing arpack almost everywhere.
    The following instructions explain how to make the ARPACK library.
 
 4. Unlike ARPACK, ARPACK-NG is providing autotools based build system.
-   Therefor, the classical:
+   Therefore, the classical:
    $ sh bootstrap
    $ ./configure
    $ make

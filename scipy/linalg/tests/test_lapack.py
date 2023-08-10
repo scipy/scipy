@@ -1742,7 +1742,7 @@ def test_syequb():
         A += np.rot90(np.diag(d))
 
         syequb = get_lapack_funcs('syequb', dtype=dtype)
-        s, scond, amax, info = syequb(A)
+        s, second, amax, info = syequb(A)
 
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
@@ -1755,14 +1755,14 @@ def test_heequb():
     # Hence the zheequb test is customized accordingly to avoid
     # work scaling.
     A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
-    s, scond, amax, info = lapack.zheequb(A)
+    s, second, amax, info = lapack.zheequb(A)
     assert_equal(info, 0)
     assert_allclose(np.log2(s), [0., -1.]*2 + [0.] + [-4]*5)
 
     A = np.diag(2**np.abs(np.arange(-5, 6)) + 0j)
     A[5, 5] = 1024
     A[5, 0] = 16j
-    s, scond, amax, info = lapack.cheequb(A.astype(np.complex64), lower=1)
+    s, second, amax, info = lapack.cheequb(A.astype(np.complex64), lower=1)
     assert_equal(info, 0)
     assert_allclose(np.log2(s), [-2, -1, -1, 0, 0, -5, 0, -1, -1, -2, -2])
 
@@ -2420,7 +2420,7 @@ def test_geqrfp(dtype, matrix_size):
     # Tests for all dytpes, tall, wide, and square matrices.
     # Using the routine with random matrix A, Q and R are obtained and then
     # tested such that R is upper triangular and non-negative on the diagonal,
-    # and Q is an orthagonal matrix. Verifies that A=Q@R. It also
+    # and Q is an orthogonal matrix. Verifies that A=Q@R. It also
     # tests against a matrix that for which the  linalg.qr method returns
     # negative diagonals, and for error messaging.
 
@@ -2434,7 +2434,7 @@ def test_geqrfp(dtype, matrix_size):
 
     m, n = matrix_size
 
-    # create random matrix of dimentions m x n
+    # create random matrix of dimensions m x n
     A = generate_random_dtype_array((m, n), dtype=dtype)
     # create qr matrix using geqrfp
     qr_A, tau, info = geqrfp(A)
@@ -2633,10 +2633,10 @@ def test_gtsvx(dtype, trans_bool, fact):
     assert_(hasattr(rcond, "__len__") is not True,
             f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
-    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
+    assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but should be {},"
             .format(ferr.shape[0], b.shape[1]))
     # berr should be length of # of cols in x
-    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but shoud be {},"
+    assert_(berr.shape[0] == b.shape[1], "berr.shape is {} but should be {},"
             .format(berr.shape[0], b.shape[1]))
 
 
@@ -2825,10 +2825,10 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert not hasattr(rcond, "__len__"), \
         f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
-    assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
+    assert_(ferr.shape == (2,), "ferr.shape is {} but should be ({},)"
             .format(ferr.shape, x_soln.shape[1]))
     # berr should be length of # of cols in x
-    assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
+    assert_(berr.shape == (2,), "berr.shape is {} but should be ({},)"
             .format(berr.shape, x_soln.shape[1]))
 
 

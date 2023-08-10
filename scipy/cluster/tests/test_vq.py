@@ -321,9 +321,9 @@ class TestKMean:
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
         data = xp.asarray(TESTDATA_2D)
-        datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
+        data = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
-        for data in datas:
+        for data in data:
             # check that np.random.Generator can be used (numpy >= 1.17)
             if hasattr(np.random, 'default_rng'):
                 rng = np.random.default_rng(1234)

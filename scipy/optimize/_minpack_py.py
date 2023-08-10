@@ -484,7 +484,7 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=False,
             r = triu(transpose(retval[1]['fjac'])[:n, :])
             inv_triu = linalg.get_lapack_funcs('trtri', (r,))
             try:
-                # inverse of permuted matrix is a permuation of matrix inverse
+                # inverse of permuted matrix is a permutation of matrix inverse
                 invR, trtri_info = inv_triu(r)  # default: upper, non-unit diag
                 if trtri_info != 0:  # explicit comparison for readability
                     raise LinAlgError(f'trtri returned info {trtri_info}')
@@ -750,7 +750,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         A string message giving information about the solution.
 
         .. versionadded:: 1.9
-    ier : int (returnned only if `full_output` is True)
+    ier : int (returned only if `full_output` is True)
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
         optional output variable `mesg` gives more information.

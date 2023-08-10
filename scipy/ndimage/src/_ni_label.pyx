@@ -422,7 +422,7 @@ cpdef _label(np.ndarray input,
                     # we've compacted every label below this, and the
                     # mergetable has an invariant (from mark_for_merge()) that
                     # it always points downward.  Therefore, we can fetch the
-                    # final lable by two steps of indirection.
+                    # final label by two steps of indirection.
                     mergetable[src_label] = mergetable[mergetable[src_label]]
 
             PyArray_ITER_RESET(ito)

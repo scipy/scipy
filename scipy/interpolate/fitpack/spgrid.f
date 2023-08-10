@@ -227,7 +227,7 @@ c                           0<tu(5)<tu(6)<...<tu(nu-4)< pi
 c                           8<=nv<=min(nvest,mv+7)
 c                           v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
 c                    the schoenberg-whitney conditions, i.e. there must
-c                    be subset of grid co-ordinates uu(p) and vv(q) such
+c                    be subset of grid coordinates uu(p) and vv(q) such
 c                    that   tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
 c                     (iopt(2)=1 and iopt(3)=1 also count for a uu-value
 c                           tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4

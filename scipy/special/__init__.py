@@ -644,7 +644,7 @@ Spheroidal wave functions
 
    pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
    pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
-   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the second kind and its derivative.
    obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
    obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
    obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.

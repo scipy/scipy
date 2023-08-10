@@ -56,7 +56,7 @@ int
 ilu_cpivotL(
 	const int  jcol,     /* in */
 	const double u,      /* in - diagonal pivoting threshold */
-	int	   *usepr,   /* re-use the pivot sequence given by
+	int	   *usepr,   /* reuse the pivot sequence given by
 			      * perm_r/iperm_r */
 	int	   *perm_r,  /* may be modified */
 	int	   diagind,  /* diagonal of Pc*A*Pc' */

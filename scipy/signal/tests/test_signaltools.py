@@ -2383,7 +2383,7 @@ def filtfilt_gust_opt(b, a, x):
     This function computes the same result as
     `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
-    `_filtfilt_gust` is significanly faster than this implementation.
+    `_filtfilt_gust` is significantly faster than this implementation.
     """
     def filtfilt_gust_opt_func(ics, b, a, x):
         """Objective function used in filtfilt_gust_opt."""

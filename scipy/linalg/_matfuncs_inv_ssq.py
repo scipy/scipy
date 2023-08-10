@@ -340,7 +340,7 @@ def _inverse_squaring_helper(T0, theta):
     as lines 4--35 in algorithm (3.1) of [1]_, and
     as lines 3--34 in algorithm (4.1) of [2]_.
     The instances of 'goto line 38' in algorithm (3.1) of [1]_
-    probably mean 'goto line 36' and have been intepreted accordingly.
+    probably mean 'goto line 36' and have been interpreted accordingly.
 
     References
     ----------

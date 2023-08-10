@@ -34,7 +34,7 @@ New features
 A solver of two-point boundary value problems for ODE systems has been
 implemented in `scipy.integrate.solve_bvp`. The solver allows for non-separated
 boundary conditions, unknown parameters and certain singular terms. It finds
-a C1 continious solution using a fourth-order collocation algorithm.
+a C1 continuous solution using a fourth-order collocation algorithm.
 
 
 `scipy.interpolate` improvements
@@ -213,7 +213,7 @@ Spherical Bessel functions, ``sph_in``, ``sph_jn``, ``sph_kn``, ``sph_yn``,
 ``spherical_in``.
 
 The following functions in `scipy.constants` are deprecated: ``C2K``, ``K2C``,
-``C2F``, ``F2C``, ``F2K`` and ``K2F``.  They are superceded by a new function
+``C2F``, ``F2C``, ``F2K`` and ``K2F``.  They are superseded by a new function
 `scipy.constants.convert_temperature` that can perform all those conversions
 plus to/from the Rankine temperature scale.
 
@@ -644,7 +644,7 @@ Pull requests for 0.18.0
 - `#5847 <https://github.com/scipy/scipy/pull/5847>`__: Fix bugs in sparsetools
 - `#5848 <https://github.com/scipy/scipy/pull/5848>`__: BUG: sparse.linalg: add locks to ensure ARPACK threadsafety
 - `#5849 <https://github.com/scipy/scipy/pull/5849>`__: ENH: sparse.linalg: upgrade to superlu 5.1.1
-- `#5851 <https://github.com/scipy/scipy/pull/5851>`__: ENH: expose lapack's ilaver to python to allow lapack verion...
+- `#5851 <https://github.com/scipy/scipy/pull/5851>`__: ENH: expose lapack's ilaver to python to allow lapack version...
 - `#5852 <https://github.com/scipy/scipy/pull/5852>`__: MAINT: runtests.py: ensure Ctrl-C interrupts the build
 - `#5854 <https://github.com/scipy/scipy/pull/5854>`__: DOC: Minor update to documentation
 - `#5855 <https://github.com/scipy/scipy/pull/5855>`__: Pr 5640

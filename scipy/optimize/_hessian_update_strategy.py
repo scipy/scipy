@@ -341,7 +341,7 @@ class BFGS(FullHessianUpdateStrategy):
         Mw = self.dot(w)
         wMw = Mw.dot(w)
         # Guarantee that wMw > 0 by reinitializing matrix.
-        # While this is always true in exact arithmetics,
+        # While this is always true in exact arithmetic,
         # indefinite matrix may appear due to roundoff errors.
         if wMw <= 0.0:
             scale = self._auto_scale(delta_x, delta_grad)

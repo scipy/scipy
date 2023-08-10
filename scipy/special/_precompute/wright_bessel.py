@@ -36,7 +36,7 @@ def series_small_a():
         # set the whole bracket involving polygammas to 1
         x_part = (term.subs(polygamma(0, b), 1)
                   .replace(polygamma, lambda *args: 0))
-        # sign convetion: x part always positive
+        # sign convention: x part always positive
         x_part *= (-1)**n
 
         A.append(a**n/factorial(n))
@@ -99,7 +99,7 @@ def series_small_a_small_b():
         # set the whole bracket involving polygammas to 1
         x_part = (term.subs(polygamma(0, b), 1)
                   .replace(polygamma, lambda *args: 0))
-        # sign convetion: x part always positive
+        # sign convention: x part always positive
         x_part *= (-1)**n
         # expansion of polygamma part with 1/gamma(b)
         pg_part = term/x_part/gamma(b)

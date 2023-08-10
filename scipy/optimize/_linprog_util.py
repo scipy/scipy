@@ -1,5 +1,5 @@
 """
-Method agnostic utility functions for linear progamming
+Method agnostic utility functions for linear programming
 """
 
 import numpy as np

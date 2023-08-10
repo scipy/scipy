@@ -558,7 +558,7 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 /*  This routine accepts basic input information and puts it in
  *  the form expected by remez.
 
- *  Adpated from main() by Travis Oliphant
+ *  Adapted from main() by Travis Oliphant
  */
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,

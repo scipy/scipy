@@ -79,7 +79,7 @@ c          m >= 4-iopt(2)-iopt(3) unchanged on exit.
 c  x     : real array of dimension at least (m).
 c  y     : real array of dimension at least (m).
 c  z     : real array of dimension at least (m).
-c          before entry, x(i),y(i),z(i) must be set to the co-ordinates
+c          before entry, x(i),y(i),z(i) must be set to the coordinates
 c          of the i-th data point, for i=1,...,m. the order of the data
 c          points is immaterial. unchanged on exit.
 c  w     : real array of dimension at least (m). before entry, w(i) must
@@ -145,7 +145,7 @@ c          tv(5),...tv(nv-4) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  u     : real array of dimension at least (m).
 c  v     : real array of dimension at least (m).
-c          on successful exit, u(i),v(i) contains the co-ordinates of
+c          on successful exit, u(i),v(i) contains the coordinates of
 c          the i-th data point with respect to the transformed rectan-
 c          gular approximation domain, for i=1,2,...,m.
 c          if the computation mode iopt(1)=1 is used the values of

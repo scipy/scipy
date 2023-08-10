@@ -121,7 +121,7 @@ c
         call idd_rtransposer(n,kranki,proj(ira),proj(ira+kranki*n))
 c
 c
-c       Move the tranposed matrix to the beginning of proj.
+c       Move the transposed matrix to the beginning of proj.
 c
         do k = 1,kranki*n
           proj(k) = proj(ira+kranki*n+k-1)

@@ -32,13 +32,13 @@ trlib_int_t trlib_leftmost(
         trlib_int_t *timing, trlib_int_t *ileftmost, trlib_flt_t *leftmost) {
     trlib_int_t ret = 0, curit = 0;
     if(! warm) {
-        trlib_int_t curret = 0;
+        trlib_int_t current = 0;
         trlib_int_t ii = 0;
         ret = 0;
         for(ii = 0; ii < nirblk; ++ii) {
-            curret = trlib_leftmost_irreducible(irblk[ii+1]-irblk[ii], diag+irblk[ii], offdiag+irblk[ii], 0, 0.0, itmax,
+            current = trlib_leftmost_irreducible(irblk[ii+1]-irblk[ii], diag+irblk[ii], offdiag+irblk[ii], 0, 0.0, itmax,
                 tol_abs, verbose, unicode, prefix, fout, timing, leftmost+ii, &curit);
-            if (curret == 0) { ret = curret; }
+            if (current == 0) { ret = current; }
         }
         *ileftmost = 0;
         for(ii = 1; ii < nirblk; ++ii) {
@@ -110,7 +110,7 @@ trlib_int_t trlib_leftmost_irreducible(
           by eigenvalue interlacing theorem desired value <= provided leftmost
        on coldstart, start close lower bound as hopefully this is a good estimation */
     if ( warm ) {
-        // provided leftmost is an upper bound and a pole of Parlett-Reid Value, thus pertub a bit
+        // provided leftmost is an upper bound and a pole of Parlett-Reid Value, thus perturb a bit
         up = fmin(up, leftmost_minor); *leftmost = leftmost_minor - .1*(up-low); //*leftmost = leftmost_minor - TRLIB_EPS_POW_4;
     }
     else { leftmost_minor = 0.0; *leftmost = low + .1*(up-low); }; // ensure sanity on leftmost_minor and start with lower bound

@@ -231,7 +231,7 @@ at the top-level directory.
  *            obtained from MC64.
  *            If MC64 fails, sgsequ() is used to equilibrate the system,
  *            and A is scaled as above, but no permutation is involved.
- *            On exit, A is restored to the orginal row numbering, so
+ *            On exit, A is restored to the original row numbering, so
  *            Dr*A*Dc is returned.
  *
  * perm_c  (input/output) int*

@@ -34,7 +34,7 @@ Issues closed for 1.6.3
 Pull requests for 1.6.3
 -----------------------
 
-* `#13755 <https://github.com/scipy/scipy/pull/13755>`__: CI: fix the matplotlib warning emitted during builing docs
+* `#13755 <https://github.com/scipy/scipy/pull/13755>`__: CI: fix the matplotlib warning emitted during building docs
 * `#13773 <https://github.com/scipy/scipy/pull/13773>`__: BUG: Divide by zero in yule dissimilarity of constant vectors
 * `#13799 <https://github.com/scipy/scipy/pull/13799>`__: CI/MAINT: deprecated np.typeDict
 * `#13819 <https://github.com/scipy/scipy/pull/13819>`__: substitute np.math.factorial with math.factorial

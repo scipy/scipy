@@ -267,7 +267,7 @@ def _validate_int(k, name, minimum=None):
     """
     Validate a scalar integer.
 
-    This functon can be used to validate an argument to a function
+    This function can be used to validate an argument to a function
     that expects the value to be an integer.  It uses `operator.index`
     to validate the value (so, for example, k=2.0 results in a
     TypeError).

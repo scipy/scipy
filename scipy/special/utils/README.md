@@ -1,4 +1,4 @@
-This contains a few hacks to re-use BOOST C++ library
+This contains a few hacks to reuse BOOST C++ library
 [tests data](https://github.com/boostorg/math/tree/develop/test) for
 validating scipy.special functions.
 
@@ -17,7 +17,7 @@ git clone --depth=1 https://github.com/boostorg/math.git boostmath
 # Remove existing data
 rm -rf scipy/special/tests/data/boost/*
 
-# Run the coverter script (potentially also update exclude regexes)
+# Run the converter script (potentially also update exclude regexes)
 python scipy/special/utils/convert.py
 
 # Verify all the new files are used in test_data.py

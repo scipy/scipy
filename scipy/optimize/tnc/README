@@ -37,7 +37,7 @@ And many other small changes.
 This software has been tested on a large number of platforms and should run
 on any POSIX platform with an ANSI C compiler.
 
-The last version (and other software) is avalaible at the URL :
+The last version (and other software) is available at the URL :
 http://www.jeannot.org/~js/code/index.en.html
 
 A Python interface module is also provided.
@@ -65,7 +65,7 @@ To install the module in the current directory, use:
  python setup.py build_ext --inplace
 To test it, execute:
   python tnc.py
-To install it globaly, use:
+To install it globally, use:
  python setup.py install
 
 Thanks to eric jones <eric@enthought.com> for providing the setup script.

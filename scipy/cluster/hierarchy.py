@@ -2909,7 +2909,7 @@ def _plot_dendrogram(icoords, dcoords, ivl, p, n, mh, orientation,
         matplotlib.pylab.draw_if_interactive()
 
 
-# C0  is used for above threshhold color
+# C0  is used for above threshold color
 _link_line_colors_default = ('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9')
 _link_line_colors = list(_link_line_colors_default)
 

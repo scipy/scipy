@@ -111,7 +111,7 @@ class Complex:
 
     workers : int  optional
         Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
-         functions in parrallel.
+         functions in parallel.
     """
     def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
                  symmetry=None, constraints=None, workers=1):
@@ -396,7 +396,7 @@ class Complex:
         for example moving from the lower bound in C2 (dimension 2) to the
         higher bound in C2. During this operation connection all the vertices.
         Now repeat the N connections. Note that these elements can be connected
-        in parrallel.
+        in parallel.
         """
         # Inherit class arguments
         if symmetry is None:

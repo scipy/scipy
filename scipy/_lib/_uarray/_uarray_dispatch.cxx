@@ -344,9 +344,9 @@ struct BackendState {
     }
   }
 
-  template <typename T, typename Convertor>
+  template <typename T, typename Converter>
   static std::vector<T> convert_iter(
-      PyObject * input, Convertor item_convertor) {
+      PyObject * input, Converter item_convertor) {
     std::vector<T> output;
     py_ref iterator = py_ref::steal(PyObject_GetIter(input));
     if (!iterator)

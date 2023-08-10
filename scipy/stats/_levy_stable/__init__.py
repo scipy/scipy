@@ -790,7 +790,7 @@ class levy_stable_gen(rv_continuous):
 
     """
     # Configurable options as class variables
-    # (accesible from self by attribute lookup).
+    # (accessible from self by attribute lookup).
     parameterization = "S1"
     pdf_default_method = "piecewise"
     cdf_default_method = "piecewise"
@@ -1159,7 +1159,7 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
     h : Optional[float]
         Step size for Newton-Cotes integration. Default: 0.01
     q : Optional[int]
-        Use 2**q steps when peforming Newton-Cotes integration.
+        Use 2**q steps when performing Newton-Cotes integration.
         The infinite integral in the inverse Fourier transform will then
         be restricted to the interval [-2**q * h / 2, 2**q * h / 2]. Setting
         the number of steps equal to a power of 2 allows the fft to be

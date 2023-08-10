@@ -1284,7 +1284,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees.
 
@@ -1843,7 +1843,7 @@ cdef class Rotation:
         magnitude is equal to ``tan(theta / 4)``, where ``theta`` is the angle of rotation
         (in radians) [1]_.
 
-        MRPs have a singuarity at 360 degrees which can be avoided by ensuring the angle of
+        MRPs have a singularity at 360 degrees which can be avoided by ensuring the angle of
         rotation does not exceed 180 degrees, i.e. switching the direction of the rotation when
         it is past 180 degrees. This function will always return MRPs corresponding to a rotation
         of less than or equal to 180 degrees.

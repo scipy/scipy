@@ -110,7 +110,7 @@ def page_trend_test(data, ranked=False, predicted_ranks=None, method='auto'):
     [1]_, is:
 
     1. "Predetermine with careful logic the appropriate hypotheses
-       concerning the predicted ording of the experimental results.
+       concerning the predicted ordering of the experimental results.
        If no reasonable basis for ordering any treatments is known, the
        :math:`L` test is not appropriate."
     2. "As in other experiments, determine at what level of confidence

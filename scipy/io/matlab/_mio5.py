@@ -152,7 +152,7 @@ class MatFile5Reader(MatFileReader):
     uint16_codec - char codec to use for uint16 char arrays
         (defaults to system default codec)
 
-    Uses variable reader that has the following stardard interface (see
+    Uses variable reader that has the following standard interface (see
     abstract class in ``miobase``::
 
        __init__(self, file_reader)

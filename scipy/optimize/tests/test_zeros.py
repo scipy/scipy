@@ -848,7 +848,7 @@ def test_gh_5557():
 
 
 def test_brent_underflow_in_root_bracketing():
-    # Tetsing if an interval [a,b] brackets a zero of a function
+    # Testing if an interval [a,b] brackets a zero of a function
     # by checking f(a)*f(b) < 0 is not reliable when the product
     # underflows/overflows. (reported in issue# 13737)
 

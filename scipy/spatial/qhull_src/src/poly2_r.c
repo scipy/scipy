@@ -689,7 +689,7 @@ void qh_checkconvex(qhT *qh, facetT *facetlist, int fault) {
     if non-simplicial, at least as many ridges as neighbors
     neighbors are not duplicated
     ridges are not duplicated
-    in 3-d, ridges=verticies
+    in 3-d, ridges=vertices
     (qh.hull_dim-1) ridge vertices
     neighbors are reciprocated
     ridge neighbors are facet neighbors and a ridge for every neighbor
@@ -2091,7 +2091,7 @@ void qh_infiniteloop(qhT *qh, facetT *facet) {
 
   returns:
     qh_facetlist with initial hull
-    points partioned into outside sets, coplanar sets, or inside
+    points partitioned into outside sets, coplanar sets, or inside
     initializes qh.GOODpointp, qh.GOODvertexp,
 
   design:

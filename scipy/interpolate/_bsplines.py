@@ -910,7 +910,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     The system is solved with the following steps:
         1.  New systems of linear equations are constructed:
             A @ z_i = u_i,
-            u_i - columnn vector of U,
+            u_i - column vector of U,
             i = 1, ..., k - 1
         2.  Matrix Z is formed from vectors z_i:
             Z = [ z_1 | z_2 | ... | z_{k - 1} ]
@@ -986,7 +986,7 @@ def _periodic_knots(x, k):
 def _make_interp_per_full_matr(x, y, t, k):
     '''
     Returns a solution of a system for B-spline interpolation with periodic
-    boundary conditions. First ``k - 1`` rows of matrix are condtions of
+    boundary conditions. First ``k - 1`` rows of matrix are conditions of
     periodicity (continuity of ``k - 1`` derivatives at the boundary points).
     Last ``n`` rows are interpolation conditions.
     RHS is ``k - 1`` zeros and ``n`` ordinates in this case.

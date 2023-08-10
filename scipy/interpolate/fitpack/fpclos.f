@@ -121,7 +121,7 @@ c  routine.
       fpold = fpint(n-1)
       nplus = nrdata(n)
       if(fp0.gt.s) go to 50
-c  the case that s(u) is a fixed point is treated separetely.
+c  the case that s(u) is a fixed point is treated separately.
 c  fp0 denotes the corresponding sum of squared residuals.
   35  fp0 = 0.
       d1 = 0.

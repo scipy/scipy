@@ -504,7 +504,7 @@ dd_rand(void)
     int i;
 
     /* Strategy:  Generate 31 bits at a time, using lrand48
-       random number generator.  Shift the bits, and reapeat
+       random number generator.  Shift the bits, and repeat
        4 times. */
 
     for (i = 0; i < 4; i++, m *= m_const) {

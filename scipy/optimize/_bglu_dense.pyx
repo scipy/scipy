@@ -120,7 +120,7 @@ def _consider_refactor(method):
     will be rather high because PLU factorization is slow. For
     some number of factor updates, the average solve time is
     expected to decrease because the updates and solves are fast.
-    However, updates increase the compexity of the factorization,
+    However, updates increase the complexity of the factorization,
     so solve times are expected to increase with each update.
     When the average solve time stops decreasing and begins
     increasing, we perform PLU factorization from scratch rather

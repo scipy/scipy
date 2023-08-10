@@ -809,7 +809,7 @@ square matrix :math:`\mathbf{A}` as
 
     While this serves as a useful representation of a matrix function, it is
     rarely the best way to calculate a matrix function. In particular, if the
-    matrix is not diagonalizable, results may be innacurate.
+    matrix is not diagonalizable, results may be inaccurate.
 
 
 Exponential and logarithm functions

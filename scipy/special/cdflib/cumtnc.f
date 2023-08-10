@@ -35,7 +35,7 @@ C
 C                              Method
 C
 C     Upper tail    of  the  cumulative  noncentral t   using
-C     formulae from page 532  of Johnson, Kotz,  Balakrishnan, Coninuous
+C     formulae from page 532  of Johnson, Kotz,  Balakrishnan, Continuous
 C     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
 C
 C     This implementation starts the calculation at i = lambda,

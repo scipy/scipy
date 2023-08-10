@@ -45,12 +45,12 @@ namespace ellint_carlson { namespace arithmetic
      * write for both real and complex types (because there's no error in the
      * complex "i").
      * Algorithms 2.1 and 3.1 in Ref. [1] */
-    template<typename FPT>
-    inline typing::real_or_cplx<FPT, void>
-    eft_sum(const FPT& x, const FPT& y, FPT& s, FPT& corr)
+    template<typename FTP>
+    inline typing::real_or_cplx<FTP, void>
+    eft_sum(const FTP& x, const FTP& y, FTP& s, FTP& corr)
     {
 	s = x + y;
-	FPT z = s - x;
+	FTP z = s - x;
 	corr = (x - (s - z)) + (y - z);
     }
 
@@ -58,11 +58,11 @@ namespace ellint_carlson { namespace arithmetic
     /* TwoSum in accumulator style, with sum accumulated to acc and the
      * correction term to corr
      * Algorithm 4.1 in Ref. [2] */
-    template<typename FPT>
-    inline typing::real_or_cplx<FPT, void>
-    sum2_acc(const FPT& summand, FPT& acc, FPT& corr)
+    template<typename FTP>
+    inline typing::real_or_cplx<FTP, void>
+    sum2_acc(const FTP& summand, FTP& acc, FTP& corr)
     {
-	FPT tmp_s, tmp_e;
+	FTP tmp_s, tmp_e;
 	/* The tmp variables get their values from eft_sum called-by-reference.
 	 */
 	eft_sum(summand, acc, tmp_s, tmp_e);
@@ -78,11 +78,11 @@ namespace ellint_carlson { namespace arithmetic
     nsum2(const IterableT& x, std::size_t n) -> JUST_ELEM(std::begin(x))
     {
 	auto it = std::begin(x);
-	typedef JUST_ELEM(it) FPT;
-	static_assert(typing::is_real_or_complex_fp<FPT>::value,
+	typedef JUST_ELEM(it) FTP;
+	static_assert(typing::is_real_or_complex_fp<FTP>::value,
 		      "the sum2 function only works with real or complex "
 		      "floating-point numbers.");
-	FPT p(0.0), s(0.0);
+	FTP p(0.0), s(0.0);
 
 	for ( std::size_t i = 0; ( it != std::end(x) && i < n ); ++it, ++i )
 	{
@@ -93,9 +93,9 @@ namespace ellint_carlson { namespace arithmetic
     }
 
     /* Convenient wrapper for summing fixed-size array. */
-    template<typename FPT, std::size_t N>
-    inline typing::real_or_cplx<FPT, FPT>
-    sum2(const FPT(& arr)[N])
+    template<typename FTP, std::size_t N>
+    inline typing::real_or_cplx<FTP, FTP>
+    sum2(const FTP(& arr)[N])
     {
 	return nsum2(arr, N);
     }
@@ -220,9 +220,9 @@ namespace ellint_carlson { namespace arithmetic
     }
 
     /* Convenient wrapper for dot-product */
-    template<typename FPT, std::size_t M, std::size_t N>
-    inline FPT
-    dot2(const FPT(& x)[M], const FPT(& y)[N])
+    template<typename FTP, std::size_t M, std::size_t N>
+    inline FTP
+    dot2(const FTP(& x)[M], const FTP(& y)[N])
     {
 	constexpr std::size_t len = (M <= N ? M : N);
 	return ndot2(x, y, len);

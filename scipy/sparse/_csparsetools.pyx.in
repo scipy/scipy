@@ -69,7 +69,7 @@ cnp.import_array()
 
 
 @cython.wraparound(False)
-cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
+cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] data,
                cnp.npy_intp i, cnp.npy_intp j):
     """
     Get a single item from LIL matrix.
@@ -78,7 +78,7 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
 
     Parameters
     ----------
-    M, N, rows, datas
+    M, N, rows, data
         Shape and data arrays for a LIL matrix
     i, j : int
         Indices at which to get
@@ -102,7 +102,7 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
         j += N
 
     row = rows[i]
-    data = datas[i]
+    data = data[i]
     cdef cnp.npy_intp pos = bisect_left(row, j)
 
     if pos != len(data) and row[pos] == j:
@@ -113,7 +113,7 @@ cpdef lil_get1(cnp.npy_intp M, cnp.npy_intp N, object[:] rows, object[:] datas,
 
 @cython.wraparound(False)
 cpdef int lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows,
-                     object[:] datas, cnp.npy_intp i, cnp.npy_intp j,
+                     object[:] data, cnp.npy_intp i, cnp.npy_intp j,
                      object x) except -1:
     """
     Insert a single item to LIL matrix.
@@ -122,7 +122,7 @@ cpdef int lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows,
 
     Parameters
     ----------
-    M, N, rows, datas
+    M, N, rows, data
         Shape and data arrays for a LIL matrix
     i, j : int
         Indices at which to get
@@ -143,7 +143,7 @@ cpdef int lil_insert(cnp.npy_intp M, cnp.npy_intp N, object[:] rows,
         j += N
 
     row = rows[i]
-    data = datas[i]
+    data = data[i]
 
     cdef cnp.npy_intp pos = bisect_left(row, j)
     if x == 0:
@@ -206,7 +206,7 @@ def _lil_flatten_to_array_{{NAME}}(object[:] input not None, cnp.ndarray[{{T}}] 
 
 def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
                   object[:] rows,
-                  object[:] datas,
+                  object[:] data,
                   object[:] new_rows,
                   object[:] new_datas,
                   cnp.ndarray i_idx,
@@ -226,13 +226,13 @@ def lil_fancy_get(cnp.npy_intp M, cnp.npy_intp N,
         Indices of elements to insert to the new LIL matrix.
 
     """
-    return _LIL_FANCY_GET_DISPATCH[i_idx.dtype](M, N, rows, datas, new_rows, new_datas, i_idx, j_idx)
+    return _LIL_FANCY_GET_DISPATCH[i_idx.dtype](M, N, rows, data, new_rows, new_datas, i_idx, j_idx)
 
 
 {{for NAME, IDX_T in get_dispatch(IDX_TYPES)}}
 def _lil_fancy_get_{{NAME}}(cnp.npy_intp M, cnp.npy_intp N,
                             object[:] rows,
-                            object[:] datas,
+                            object[:] data,
                             object[:] new_rows,
                             object[:] new_datas,
                             {{IDX_T}}[:,:] i_idx,
@@ -251,7 +251,7 @@ def _lil_fancy_get_{{NAME}}(cnp.npy_intp M, cnp.npy_intp N,
             i = i_idx[x,y]
             j = j_idx[x,y]
 
-            value = lil_get1(M, N, rows, datas, i, j)
+            value = lil_get1(M, N, rows, data, i, j)
 
             if value is not 0:
                 # Object identity as shortcut
@@ -319,7 +319,7 @@ def _lil_fancy_set_{{PYIDX}}_{{PYVALUE}}(cnp.npy_intp M, cnp.npy_intp N,
 
 
 def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
-                       const obj_fused[:] rows, const obj_fused[:] datas,
+                       const obj_fused[:] rows, const obj_fused[:] data,
                        object[:] new_rows, object[:] new_datas,
                        object irows,
                        cnp.npy_intp j_start,
@@ -328,13 +328,13 @@ def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
                        cnp.npy_intp nj):
     """
     Column-slicing fast path for LIL matrices.
-    Extracts values from rows/datas and inserts in to
+    Extracts values from rows/data and inserts in to
     new_rows/new_datas.
     Parameters
     ----------
     M, N
          Shape of input array
-    rows, datas
+    rows, data
          LIL data for input array, shape (M, N)
     new_rows, new_datas
          LIL data for output array, shape (len(irows), nj)
@@ -360,11 +360,11 @@ def lil_get_row_ranges(cnp.npy_intp M, cnp.npy_intp N,
         if j_stride == 1 and nj == N:
             # full row slice
             new_rows[nk] = list(rows[k])
-            new_datas[nk] = list(datas[k])
+            new_datas[nk] = list(data[k])
         else:
             # partial row slice
             cur_row = rows[k]
-            cur_data = datas[k]
+            cur_data = data[k]
             new_row = new_rows[nk]
             new_data = new_datas[nk]
 

@@ -66,7 +66,7 @@ int
 zpivotL(
         const int  jcol,     /* in */
         const double u,      /* in - diagonal pivoting threshold */
-        int        *usepr,   /* re-use the pivot sequence given by perm_r/iperm_r */
+        int        *usepr,   /* reuse the pivot sequence given by perm_r/iperm_r */
         int        *perm_r,  /* may be modified */
         int        *iperm_r, /* in - inverse of perm_r */
         int        *iperm_c, /* in - used to find diagonal of Pc*A*Pc' */

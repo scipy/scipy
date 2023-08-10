@@ -26,7 +26,7 @@ C               iwhich = 4 : Calculate PR and OMPR from P,Q,S and XN
 C                    INTEGER WHICH
 C
 C     P <--> The cumulation from 0 to S of the binomial distribution.
-C            (Probablility of S or fewer successes in XN trials each
+C            (Probability of S or fewer successes in XN trials each
 C            with probability of success PR.)
 C            Input range: [0,1].
 C                    DOUBLE PRECISION P

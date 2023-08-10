@@ -93,7 +93,7 @@ New features
   algorithm. The ``lam=None`` (default) mode of this function is a clean-room
   reimplementation of the classic ``gcvspl.f`` Fortran algorithm for
   constructing GCV splines.
-- A new ``method="pchip"`` mode was aded to
+- A new ``method="pchip"`` mode was added to
   `scipy.interpolate.RegularGridInterpolator`. This mode constructs an
   interpolator using tensor products of C1-continuous monotone splines
   (essentially, a `scipy.interpolate.PchipInterpolator` instance per
@@ -695,7 +695,7 @@ Pull requests for 1.10.0
 * `#9072 <https://github.com/scipy/scipy/pull/9072>`__: ENH: Added rectangular integral to multivariate_normal
 * `#9932 <https://github.com/scipy/scipy/pull/9932>`__: ENH: stats.gaussian_kde: add method that returns marginal distribution
 * `#11712 <https://github.com/scipy/scipy/pull/11712>`__: BUG: trust-constr evaluates function out of bounds
-* `#12211 <https://github.com/scipy/scipy/pull/12211>`__: DOC: Dice similiarity index
+* `#12211 <https://github.com/scipy/scipy/pull/12211>`__: DOC: Dice similarity index
 * `#12312 <https://github.com/scipy/scipy/pull/12312>`__: ENH: Accelerate matrix normal sampling using matmul
 * `#12594 <https://github.com/scipy/scipy/pull/12594>`__: BUG: fixed indexing error when using bounds in Powell's method...
 * `#13053 <https://github.com/scipy/scipy/pull/13053>`__: ENH: add MLE for stats.powerlaw.fit
@@ -852,7 +852,7 @@ Pull requests for 1.10.0
 * `#16625 <https://github.com/scipy/scipy/pull/16625>`__: DOC: add \`import numpy as np\` to examples
 * `#16626 <https://github.com/scipy/scipy/pull/16626>`__: BUG: cluster: fix \`leaves_color_list\` issue
 * `#16627 <https://github.com/scipy/scipy/pull/16627>`__: TST: spatial.directed_hausdorff: Parametrized test_random_state_None_int
-* `#16629 <https://github.com/scipy/scipy/pull/16629>`__: DOC: Modifiy the scipy.stats.mode example to be nontrivial.
+* `#16629 <https://github.com/scipy/scipy/pull/16629>`__: DOC: Modify the scipy.stats.mode example to be nontrivial.
 * `#16631 <https://github.com/scipy/scipy/pull/16631>`__: MAINT: stats.gaussian_kde: raise informative message with degenerate...
 * `#16632 <https://github.com/scipy/scipy/pull/16632>`__: MAINT: signal:corrected peak_finding example
 * `#16633 <https://github.com/scipy/scipy/pull/16633>`__: DOC: update benchmarking docs to use dev.py user interface

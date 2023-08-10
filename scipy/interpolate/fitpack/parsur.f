@@ -63,7 +63,7 @@ c          along the v-axis, for j=1,2,...,mv. these values must be
 c          supplied in strictly ascending order. unchanged on exit.
 c  f     : real array of dimension at least (mu*mv*idim).
 c          before entry, f(mu*mv*(l-1)+mv*(i-1)+j) must be set to the
-c          l-th co-ordinate of the data point corresponding to the
+c          l-th coordinate of the data point corresponding to the
 c          the grid point (u(i),v(j)) for l=1,...,idim ,i=1,...,mu
 c          and j=1,...,mv. unchanged on exit.
 c          if ipar(1)=1 it is expected that f(mu*mv*(l-1)+mv*(mu-1)+j)
@@ -184,7 +184,7 @@ c                        u(1)<tu(5)<tu(6)<...<tu(nu-4)<u(mu)
 c                        8<=nv<=min(nvest,mv+4+2*ipar(2))
 c                        v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(mv)
 c                    the schoenberg-whitney conditions, i.e. there must
-c                    be subset of grid co-ordinates uu(p) and vv(q) such
+c                    be subset of grid coordinates uu(p) and vv(q) such
 c                    that   tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
 c                           tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4
 c                     (see fpchec or fpchep)

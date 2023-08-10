@@ -25,7 +25,7 @@ Authors
 Issues closed for 1.2.3
 -----------------------
 * `#4915 <https://github.com/scipy/scipy/issues/4915>`__: Bug in unique_roots in scipy.signal.signaltools.py for roots with same magnitude
-* `#5546 <https://github.com/scipy/scipy/issues/5546>`__: ValueError raised if scipy.sparse.linalg.expm recieves array larger than 200x200
+* `#5546 <https://github.com/scipy/scipy/issues/5546>`__: ValueError raised if scipy.sparse.linalg.expm receives array larger than 200x200
 * `#7117 <https://github.com/scipy/scipy/issues/7117>`__: Warn users when using float32 input data to curve_fit and friends
 * `#7906 <https://github.com/scipy/scipy/issues/7906>`__: Wrong result from scipy.interpolate.UnivariateSpline.integral for out-of-bounds 
 * `#9581 <https://github.com/scipy/scipy/issues/9581>`__: Least-squares minimization fails silently when x and y data are different types

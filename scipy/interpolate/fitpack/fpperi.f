@@ -104,7 +104,7 @@ c  routine.
       fpold = fpint(n-1)
       nplus = nrdata(n)
       if(fp0.gt.s) go to 50
-c  the case that s(x) is a constant function is treated separetely.
+c  the case that s(x) is a constant function is treated separately.
 c  find the least-squares constant c1 and compute fp0 at the same time.
   35  fp0 = 0.
       d1 = 0.

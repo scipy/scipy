@@ -20,13 +20,13 @@ c   nv    : integer, giving the total number of knots in the v-direction
 c   c     : real array, length (nu-4)*(nv-4)*idim, which contains the
 c           b-spline coefficients.
 c   u     : real array of dimension (mu).
-c           before entry u(i) must be set to the u co-ordinate of the
+c           before entry u(i) must be set to the u coordinate of the
 c           i-th grid point along the u-axis.
 c           tu(4)<=u(i-1)<=u(i)<=tu(nu-3), i=2,...,mu.
 c   mu    : on entry mu must specify the number of grid points along
 c           the u-axis. mu >=1.
 c   v     : real array of dimension (mv).
-c           before entry v(j) must be set to the v co-ordinate of the
+c           before entry v(j) must be set to the v coordinate of the
 c           j-th grid point along the v-axis.
 c           tv(4)<=v(j-1)<=v(j)<=tv(nv-3), j=2,...,mv.
 c   mv    : on entry mv must specify the number of grid points along
@@ -42,7 +42,7 @@ c
 c  output parameters:
 c   f     : real array of dimension (mf).
 c           on successful exit f(mu*mv*(l-1)+mv*(i-1)+j) contains the
-c           l-th co-ordinate of the bicubic spline surface at the
+c           l-th coordinate of the bicubic spline surface at the
 c           point (u(i),v(j)),l=1,...,idim,i=1,...,mu;j=1,...,mv.
 c   ier   : integer error flag
 c    ier=0 : normal return

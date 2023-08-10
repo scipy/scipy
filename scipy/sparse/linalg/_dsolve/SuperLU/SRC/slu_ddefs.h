@@ -54,7 +54,7 @@ at the top-level directory.
  *	values.
  *
  *	The last column structures (for pruning) will be removed
- *	after the numercial LU factorization phase.
+ *	after the numerical LU factorization phase.
  *
  *   (xlusup,lusup): lusup[*] contains the numerical values of the
  *	rectangular supernodes; xlusup[j] points to the starting

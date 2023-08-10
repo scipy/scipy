@@ -1739,7 +1739,7 @@ class PoissonDisk(QMCEngine):
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
     a seed sample, `ncandidates` are sampled in the hypersphere
-    surrounding the seed. Candidates bellow a certain `radius` or outside the
+    surrounding the seed. Candidates below a certain `radius` or outside the
     domain are rejected. New samples are added in a pool of sample seed. The
     process stops when the pool is empty or when the number of required
     samples is reached.

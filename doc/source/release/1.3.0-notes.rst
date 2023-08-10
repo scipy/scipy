@@ -403,7 +403,7 @@ Issues closed for 1.3.0
 * `#9835 <https://github.com/scipy/scipy/issues/9835>`__: scipy.signal.firls seems to be inefficient versus MATLAB firls
 * `#9864 <https://github.com/scipy/scipy/issues/9864>`__: Curve_fit does not check for empty input data if called with...
 * `#9869 <https://github.com/scipy/scipy/issues/9869>`__: scipy.ndimage.label: Minor documentation issue
-* `#9882 <https://github.com/scipy/scipy/issues/9882>`__: format at the wrong paranthesis in scipy.spatial.transform
+* `#9882 <https://github.com/scipy/scipy/issues/9882>`__: format at the wrong parenthesis in scipy.spatial.transform
 * `#9889 <https://github.com/scipy/scipy/issues/9889>`__: scipy.signal.find_peaks minor documentation issue
 * `#9890 <https://github.com/scipy/scipy/issues/9890>`__: Minkowski p-norm Issues in cKDTree For Values Other Than 2 Or...
 * `#9896 <https://github.com/scipy/scipy/issues/9896>`__: scipy.stats._argcheck sets (not just checks) values

@@ -3546,7 +3546,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3562,7 +3562,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3604,7 +3604,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3639,7 +3639,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3654,7 +3654,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3696,7 +3696,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -4107,7 +4107,7 @@ class TestGroupDelay:
 
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000

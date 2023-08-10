@@ -375,12 +375,12 @@ realT qh_detsimplex(qhT *qh, pointT *apex, setT *points, int dim, boolT *nearzer
   see:
     qh_distplane in geom_r.c
 */
-realT qh_distnorm(int dim, pointT *point, pointT *normal, realT *offsetp) {
+realT qh_distnorm(int dim, pointT *point, pointT *normal, realT *offset) {
   coordT *normalp= normal, *coordp= point;
   realT dist;
   int k;
 
-  dist= *offsetp;
+  dist= *offset;
   for (k=dim; k--; )
     dist += *(coordp++) * *(normalp++);
   return dist;
@@ -2087,7 +2087,7 @@ LABELerroroutside:
 coordT *qh_sethalfspace_all(qhT *qh, int dim, int count, coordT *halfspaces, pointT *feasible) {
   int i, newdim;
   pointT *newpoints;
-  coordT *coordp, *normalp, *offsetp;
+  coordT *coordp, *normalp, *offset;
 
   trace0((qh, qh->ferr, 12, "qh_sethalfspace_all: compute dual for halfspace intersection\n"));
   newdim= dim - 1;
@@ -2099,13 +2099,13 @@ coordT *qh_sethalfspace_all(qhT *qh, int dim, int count, coordT *halfspaces, poi
   coordp= newpoints;
   normalp= halfspaces;
   for (i=0; i < count; i++) {
-    offsetp= normalp + newdim;
-    if (!qh_sethalfspace(qh, newdim, coordp, &coordp, normalp, offsetp, feasible)) {
+    offset= normalp + newdim;
+    if (!qh_sethalfspace(qh, newdim, coordp, &coordp, normalp, offset, feasible)) {
       qh_free(newpoints);  /* feasible is not inside halfspace as reported by qh_sethalfspace */
       qh_fprintf(qh, qh->ferr, 8032, "The halfspace was at index %d\n", i);
       qh_errexit(qh, qh_ERRinput, NULL, NULL);
     }
-    normalp= offsetp + 1;
+    normalp= offset + 1;
   }
   return newpoints;
 } /* sethalfspace_all */
@@ -2196,7 +2196,7 @@ coordT qh_vertex_bestdist2(qhT *qh, setT *vertices, vertexT **vertexp/*= NULL*/,
 
   qh_voronoi_center(qh, dim, points )
     return Voronoi center for a set of points
-    dim is the orginal dimension of the points
+    dim is the original dimension of the points
     gh.gm_matrix/qh.gm_row are scratch buffers
 
   returns:

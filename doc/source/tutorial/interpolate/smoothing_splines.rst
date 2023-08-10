@@ -519,7 +519,7 @@ and constructs the knot vectors automatically given the input value of the
 smoothing factor `s`--- the default value is :math:`m`, the number of data points.
 
 The spline orders in the ``x`` and ``y`` directions are controlled by the optional
-parameteres ``kx`` and ``ky``, with the default of ``kx=ky=3``.
+parameters ``kx`` and ``ky``, with the default of ``kx=ky=3``.
 
 We illustrate the effect of the smoothing factor using the following example:
 
@@ -600,7 +600,7 @@ and ``y`` are understood as definifing a 2D grid (as their outer product),
 and the ``z`` array is 2D with the shape of ``len(x)`` by  ``len(y)``.
 
 The spline orders in the ``x`` and ``y`` directions are controlled by the optional
-parameteres ``kx`` and ``ky``, with the default of ``kx=ky=3``, i.e. a bicubic
+parameters ``kx`` and ``ky``, with the default of ``kx=ky=3``, i.e. a bicubic
 spline.
 
 The default value of the smoothing factor is ``s=0``. We nevertheless recommend

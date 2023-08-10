@@ -102,7 +102,7 @@ int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
    method would be too slow or would give overflow.
    */   
 
-   int32_t fak, addd;                    // used for undoing transformations
+   int32_t fak, add;                    // used for undoing transformations
    int32_t x;                            // result
 
    // check if parameters are valid
@@ -110,23 +110,23 @@ int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
       FatalError("Parameter out of range in hypergeometric function");}
 
    // symmetry transformations
-   fak = 1;  addd = 0;
+   fak = 1;  add = 0;
    if (m > N/2) {
       // invert m
       m = N - m;
-      fak = -1;  addd = n;
+      fak = -1;  add = n;
    }    
    if (n > N/2) {
       // invert n
       n = N - n;
-      addd += fak * m;  fak = - fak;
+      add += fak * m;  fak = - fak;
    }    
    if (n > m) {
       // swap n and m
       x = n;  n = m;  m = x;
    }    
    // cases with only one possible result end here
-   if (n == 0)  return addd;
+   if (n == 0)  return add;
 
    //------------------------------------------------------------------
    //                 choose method
@@ -140,7 +140,7 @@ int32_t StochasticLib1::Hypergeometric (int32_t n, int32_t m, int32_t N) {
       x = HypInversionMod (n, m, N);
    }
    // undo symmetry transformations  
-   return x * fak + addd;
+   return x * fak + add;
 }
 
 

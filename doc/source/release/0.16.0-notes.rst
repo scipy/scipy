@@ -397,7 +397,7 @@ Pull requests for 0.16.0
 - `#4200 <https://github.com/scipy/scipy/pull/4200>`__: ENH: Add t-test from descriptive stats function.
 - `#4202 <https://github.com/scipy/scipy/pull/4202>`__: Dendrogram threshold color
 - `#4205 <https://github.com/scipy/scipy/pull/4205>`__: BLD: fix a number of Bento build warnings.
-- `#4211 <https://github.com/scipy/scipy/pull/4211>`__: add an ufunc for the inverse Box-Cox transfrom
+- `#4211 <https://github.com/scipy/scipy/pull/4211>`__: add an ufunc for the inverse Box-Cox transform
 - `#4212 <https://github.com/scipy/scipy/pull/4212>`__: MRG:fix for gh-4208
 - `#4213 <https://github.com/scipy/scipy/pull/4213>`__: ENH: specific warning if matlab file is empty
 - `#4215 <https://github.com/scipy/scipy/pull/4215>`__: Issue #4209: splprep documentation updated to reflect dimensional...

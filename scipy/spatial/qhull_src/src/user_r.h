@@ -103,7 +103,7 @@ Code flags --
     set the size of floating point numbers
 
   qh_REALdigits
-    maximimum number of significant digits
+    maximum number of significant digits
 
   qh_REAL_1, qh_REAL_2n, qh_REAL_3n
     format strings for printf

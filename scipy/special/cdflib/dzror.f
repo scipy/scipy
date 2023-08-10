@@ -40,11 +40,11 @@ C            STATUS = 1.
 C                         DOUBLE PRECISION FX
 C
 C     XLO <-- When ZROR returns with STATUS = 0, XLO bounds the
-C             inverval in X containing the solution below.
+C             interval in X containing the solution below.
 C                         DOUBLE PRECISION XLO
 C
 C     XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
-C             inverval in X containing the solution above.
+C             interval in X containing the solution above.
 C                         DOUBLE PRECISION XHI
 C
 C     QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully

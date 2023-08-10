@@ -125,7 +125,7 @@ _within_tol(double x, double y, double atol, double rtol)
 
 #include "dd_real.h"
 
-/* Shorten some of the double-double names for readibility */
+/* Shorten some of the double-double names for readability */
 #define valueD dd_to_double
 #define add_dd dd_add_d_d
 #define sub_dd dd_sub_d_d

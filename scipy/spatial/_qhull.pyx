@@ -1293,7 +1293,7 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
                 _barycentric_coordinates(d.ndim, transform, x, c)
 
                 # Check that the point lies (almost) inside the
-                # neigbor simplex
+                # neighbor simplex
                 inside = 1
                 for m in range(d.ndim+1):
                     if d.neighbors[(d.ndim+1)*ineighbor + m] == isimplex:

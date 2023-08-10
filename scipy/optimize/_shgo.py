@@ -73,7 +73,7 @@ def shgo(
         sampling points are generated instead of the default `n=100`. For all
         other specified values `n` sampling points are generated. For
         ``sobol``, ``halton`` and other arbitrary `sampling_methods` `n=100` or
-        another speciefied number of sampling points are generated.
+        another specified number of sampling points are generated.
     iters : int, optional
         Number of iterations used in the construction of the simplicial
         complex. Default is 1.
@@ -797,7 +797,7 @@ class SHGO:
         else:
             self.symmetry = None
         # Algorithm functionality
-        # Only evaluate a few of the best candiates
+        # Only evaluate a few of the best candidates
         self.local_iter = options.get('local_iter', False)
         self.infty_cons_sampl = options.get('infty_constraints', True)
 
@@ -1029,7 +1029,7 @@ class SHGO:
             self.n_sampled += self.n
 
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Readd minimisers to complex
@@ -1101,7 +1101,7 @@ class SHGO:
         # Process all pools
         # Evaluate all constraints and functions
         if self.disp:
-            logging.info('Triangulation completed, evaluating all contraints '
+            logging.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Evaluate all constraints and functions
@@ -1175,7 +1175,7 @@ class SHGO:
         Parameters
         ----------
         force_iter : int
-                     Number of starting minimizers to process (can be sepcified
+                     Number of starting minimizers to process (can be specified
                      globally or locally)
 
         """

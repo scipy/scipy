@@ -1907,7 +1907,7 @@ class exponnorm_gen(rv_continuous):
     %(after_notes)s
 
     An alternative parameterization of this distribution (for example, in
-    the Wikpedia article [1]_) involves three parameters, :math:`\mu`,
+    the Wikipedia article [1]_) involves three parameters, :math:`\mu`,
     :math:`\lambda` and :math:`\sigma`.
 
     In the present parameterization this corresponds to having ``loc`` and
@@ -4755,10 +4755,10 @@ class invgauss_gen(rv_continuous):
                                                                    args, kwds)
         '''
         Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
-        and Peacock (2000), Page 121. Their shape parameter is equivilent to
+        and Peacock (2000), Page 121. Their shape parameter is equivalent to
         SciPy's with the conversion `fshape_s = fshape / scale`.
 
-        MLE formulas are not used in 3 condtions:
+        MLE formulas are not used in 3 conditions:
         - `loc` is not fixed
         - `mu` is fixed
         These cases fall back on the superclass fit method.
@@ -4898,7 +4898,7 @@ class geninvgauss_gen(rv_continuous):
             # `shp` is the shape of the blocks of random variates that are
             # generated for each combination of parameters associated with
             # broadcasting p and b.
-            # bc is a tuple the same lenth as size.  The values
+            # bc is a tuple the same length as size.  The values
             # in bc are bools.  If bc[j] is True, it means that
             # entire axis is filled in for a given combination of the
             # broadcast arguments.
@@ -10059,7 +10059,7 @@ class truncpareto_gen(rv_continuous):
 
             # Standardised values should be within the distribution support
             # when all parameters controlling it are fixed. If it not the case,
-            # `fc` is overidden by `c` determined from `floc` and `fscale` when
+            # `fc` is overridden by `c` determined from `floc` and `fscale` when
             # raising the exception.
             if fc and (floc is not None) and fscale:
                 if data.max() > fc*fscale + floc:
@@ -11172,7 +11172,7 @@ class argus_gen(rv_continuous):
         # only samples on [0, chi**2 / 2], and apply the inverse
         # transformation X = (1 - 2*Y/chi**2)**(1/2). Since we only
         # look at chi > 1.8, gamma(1.5).cdf(chi**2/2) is large enough such
-        # Y falls in the inteval [0, chi**2 / 2] with a high probability:
+        # Y falls in the interval [0, chi**2 / 2] with a high probability:
         # stats.gamma(1.5).cdf(1.8**2/2) = 0.644...
         #
         # The points to switch between the different methods are determined

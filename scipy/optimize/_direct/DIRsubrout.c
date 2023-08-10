@@ -444,7 +444,7 @@ L1010:
 /* | of the list, give out message, nothing to do.                         | */
 /* +-----------------------------------------------------------------------+ */
     if (*replace == start) {
-/*         write(logfile,*) 'No resorting of list necessarry, since new ', */
+/*         write(logfile,*) 'No resorting of list necessary, since new ', */
 /*     + 'point is already anchor of list .',l */
     } else {
 /* +-----------------------------------------------------------------------+ */
@@ -1226,7 +1226,7 @@ L50:
 /* L10: */
     }
     } else {
-/* JG 09/15/00 Initialiase levels to contain 1/j */
+/* JG 09/15/00 Initialise levels to contain 1/j */
     help2 = 3.;
     i__1 = *maxdeep;
     for (i__ = 1; i__ <= i__1; ++i__) {

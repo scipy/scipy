@@ -4,7 +4,7 @@
 #include <vector>
 
 /*
- * Determine connected compoments of a compressed sparse graph.
+ * Determine connected components of a compressed sparse graph.
  * Note:
  *   Output array flag must be preallocated
  */
