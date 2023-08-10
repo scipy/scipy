@@ -164,4 +164,5 @@ skip = '.git,*.pdf,*.svg'
 ignore-regex = 'mergeT | PositionOf'
 # ignore all short words up to length 4 found by codespell
 # then length up to 5 and then 7 (but not outut) found in .f files
-ignore-words-list = '2st,aas,adn,alog,ans,blok,boun,bu,cna,coo,coul,ded,delt,dorp,dum,edn,fied,flie,fo,fot,fro,hart,idel,inpu,iput,ist,lond,mone,mor,nd,ned,nin,ot,pres,rade,sav,seh,shat,siz,te,tha,thex,thie,thse,tne,trys,twon,ue,usin,vas,wew,whos,wth,zar,ative,chage,coner,crate,curev,formt,inate,inout,numer,ouput,prinf,reord,workd,implct,occured,stoped,valuess,weigths,equil,desig'
+# lamda - used as variable for functions/lambdas
+ignore-words-list = '2st,aas,adn,alog,ans,blok,boun,bu,cna,coo,coul,ded,delt,dorp,dum,edn,fied,flie,fo,fot,fro,hart,idel,inpu,iput,ist,lond,mone,mor,nd,ned,nin,ot,pres,rade,sav,seh,shat,siz,te,tha,thex,thie,thse,tne,trys,twon,ue,usin,vas,wew,whos,wth,zar,ative,chage,coner,crate,curev,formt,inate,inout,numer,ouput,prinf,reord,workd,implct,occured,stoped,valuess,weigths,equil,desig,lamda'
