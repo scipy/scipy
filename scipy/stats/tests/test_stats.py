@@ -3293,7 +3293,7 @@ def ttest_data_axis_strategy(draw):
                 var = stats.moment(data, moment=2, axis=axis)
                 if np.all(var > 0) and np.all(np.isfinite(var)):
                     ok_axes.append(axis)
-    hypothesis.assume(ok_axes)  # if there are no valid axes, let hypothesis know
+    hypothesis.assume(ok_axes)  # if there are no valid axes, tell hypothesis to try a different example
 
     # draw one of the valid axes
     axis = draw(hypothesis.strategies.sampled_from(ok_axes))
@@ -3399,6 +3399,7 @@ class TestStudentTest:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(confidence_level=10)
 
+    @pytest.mark.xslow
     @hypothesis.given(alpha=hypothesis.strategies.floats(1e-15, 1-1e-15),
                       data_axis=ttest_data_axis_strategy())
     @pytest.mark.parametrize('alternative', ['less', 'greater'])
