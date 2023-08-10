@@ -157,3 +157,8 @@ select = "*-win_amd64"
 # to the build correctly
 # environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
 environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
+
+[tool.codespell]
+skip = '.git,*.pdf,*.svg'
+#
+# ignore-words-list = ''
