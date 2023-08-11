@@ -14,11 +14,10 @@ from scipy.cluster import _vq
 from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api,
-    skip_if_array_api_gpu,
-    skip_if_array_api_backend,
+    skip_if_array_api_gpu
 )
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
+from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray, cov
 
 
 TESTDATA_2D = np.array([
@@ -281,7 +280,6 @@ class TestKMean:
         kmeans2(data1, code, iter=2)[0]
 
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     def test_kmeans2_rank1_2(self, xp):
         data = xp.asarray(TESTDATA_2D)
         data1 = data[:, 0]
@@ -297,7 +295,6 @@ class TestKMean:
 
     @skip_if_array_api_gpu
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     def test_kmeans2_init(self, xp):
         np.random.seed(12345)
         data = xp.asarray(TESTDATA_2D)
@@ -316,7 +313,6 @@ class TestKMean:
             kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
 
     @array_api_compatible
-    @skip_if_array_api_backend('numpy.array_api')
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
@@ -331,8 +327,8 @@ class TestKMean:
                 rng = np.random.RandomState(1234)
 
             init = _krandinit(data, k, rng, xp)
-            orig_cov = xp.cov(data.T)
-            init_cov = xp.cov(init.T)
+            orig_cov = cov(data.T)
+            init_cov = cov(init.T)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
 
     @array_api_compatible

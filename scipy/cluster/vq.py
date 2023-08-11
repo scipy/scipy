@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    as_xparray, array_namespace, size, atleast_nd
+    as_xparray, array_namespace, size, atleast_nd, cov
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -544,12 +544,13 @@ def _krandinit(data, k, rng, xp):
 
     """
     mu = xp.mean(data, axis=0)
+    k = np.asarray(k)
 
     if data.ndim == 1:
-        cov = xp.cov(data)
+        _cov = cov(data)
         x = rng.standard_normal(size=k)
         x = xp.asarray(x)
-        x *= xp.sqrt(cov)
+        x *= xp.sqrt(_cov)
     elif data.shape[1] > data.shape[0]:
         # initialize when the covariance matrix is rank deficient
         _, s, vh = xp.linalg.svd(data - mu, full_matrices=False)
@@ -559,13 +560,13 @@ def _krandinit(data, k, rng, xp):
         x = xp.matmul(x, sVh)
     else:
         # TODO ARRAY_API cov not supported
-        cov = atleast_nd(xp.cov(data.T), ndim=2, xp=xp)
+        _cov = atleast_nd(cov(data.T), ndim=2, xp=xp)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, size(mu)))
         x = xp.asarray(x)
-        x = xp.matmul(x, xp.linalg.cholesky(cov).T)
+        x = xp.matmul(x, xp.linalg.cholesky(_cov).T)
 
     x += mu
     return x
