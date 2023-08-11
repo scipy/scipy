@@ -17,8 +17,12 @@ from scipy.conftest import (
     skip_if_array_api_gpu
 )
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray, cov
-
+from scipy._lib._array_api import (
+    SCIPY_ARRAY_API,
+    as_xparray,
+    cov,
+    array_namespace
+)
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,
@@ -317,7 +321,9 @@ class TestKMean:
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
         data = xp.asarray(TESTDATA_2D)
-        datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
+        xp_test = array_namespace(data)
+        datas = [xp.reshape(data, (200, 2)),
+                 xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
             # check that np.random.Generator can be used (numpy >= 1.17)
@@ -326,9 +332,9 @@ class TestKMean:
             else:
                 rng = np.random.RandomState(1234)
 
-            init = _krandinit(data, k, rng, xp)
-            orig_cov = cov(data.T)
-            init_cov = cov(init.T)
+            init = _krandinit(data, k, rng, xp_test)
+            orig_cov = cov(data.T, xp=xp_test)
+            init_cov = cov(init.T, xp=xp_test)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
 
     @array_api_compatible

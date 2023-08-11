@@ -166,8 +166,10 @@ def copy(x, *, xp=None):
     return as_xparray(x, copy=True, xp=xp)
 
 
-def cov(x):
-    xp = array_namespace(x)
+def cov(x, *, xp=None):
+    if xp is None:
+        xp = array_namespace(x)
+
     X = copy(x, xp=xp)
     dtype = xp.result_type(X, xp.float64)
 
