@@ -1,3 +1,4 @@
+import os
 import operator
 import itertools
 
@@ -17,7 +18,7 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
-import os
+from scipy._lib._util import AxisError
 
 
 class TestBSpline:
@@ -412,7 +413,7 @@ class TestBSpline:
 
         # -c.ndim <= axis < c.ndim
         for ax in [-c.ndim - 1, c.ndim]:
-            assert_raises(np.AxisError, BSpline,
+            assert_raises(AxisError, BSpline,
                           **dict(t=t, c=c, k=k, axis=ax))
 
         # derivative, antiderivative keeps the axis

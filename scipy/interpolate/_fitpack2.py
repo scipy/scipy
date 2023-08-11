@@ -122,7 +122,7 @@ class UnivariateSpline:
         * if ext=0 or 'extrapolate', return the extrapolated value.
         * if ext=1 or 'zeros', return 0
         * if ext=2 or 'raise', raise a ValueError
-        * if ext=3 of 'const', return the boundary value.
+        * if ext=3 or 'const', return the boundary value.
 
         Default is 0.
 
