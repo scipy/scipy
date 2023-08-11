@@ -191,7 +191,7 @@ class _Interpolator1DWithDerivatives(_Interpolator1D):
 
     def derivative(self, x, der=1):
         """
-        Evaluate a single derivative of the polynomial at the point x.
+        Evaluate a single derivative of the polynomial at the point `x`.
 
         Parameters
         ----------
