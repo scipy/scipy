@@ -272,7 +272,9 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     m = sum(cons_lengths)
 
     # create the ScalarFunction, cobyla doesn't require derivative function
-    _jac = lambda x: None
+    def _jac(x, *args):
+        return None
+
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
     def calcfc(x, con):
