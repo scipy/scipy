@@ -73,7 +73,7 @@ class TestLaplacianNd:
     @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
     def test_eigenvalues(self, grid_shape, bc):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=np.float64)
-        eigenvalues = lap.eigenvalues
+        eigenvalues = lap.eigenvalues()
         L = lap.toarray()
         eigvals = eigh(L, eigvals_only=True)
         dtype = eigenvalues.dtype
