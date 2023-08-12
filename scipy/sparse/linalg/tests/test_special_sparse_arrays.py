@@ -19,7 +19,6 @@ class TestLaplacianNd:
 
     @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
     def test_1d_specific_shape(self, bc):
-        bc = "neumann"
         lap = LaplacianNd(grid_shape=(6, ), boundary_conditions=bc)
         lapa = lap.toarray()
         if bc == 'neumann':
