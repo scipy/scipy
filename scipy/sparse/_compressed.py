@@ -133,13 +133,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
-        """check whether the matrix format is valid
+        """Check whether the matrix respects the CSR or CSC format.
 
         Parameters
         ----------
         full_check : bool, optional
-            If `True`, rigorous check, O(N) operations. Otherwise
-            basic check, O(1) operations (default True).
+            If `True`, run rigorous check, scanning arrays for valid values.
+            Note that activating those check might copy arrays for casting,
+            modifying indices and index pointers' inplace.
+            If `False`, run basic checks on attributes. O(1) operations.
+            Default is `True`.
         """
         # use _swap to determine proper bounds
         major_name, minor_name = self._swap(('row', 'column'))
@@ -152,11 +155,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if self.indices.dtype.kind != 'i':
             warn("indices array has non-integer dtype ({})"
                  "".format(self.indices.dtype.name), stacklevel=3)
-
-        idx_dtype = self._get_index_dtype((self.indptr, self.indices))
-        self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
-        self.indices = np.asarray(self.indices, dtype=idx_dtype)
-        self.data = to_native(self.data)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -191,6 +189,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                      "non-decreasing sequence")
+
+            idx_dtype = self._get_index_dtype((self.indptr, self.indices))
+            self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
+            self.indices = np.asarray(self.indices, dtype=idx_dtype)
+            self.data = to_native(self.data)
 
         # if not self.has_sorted_indices():
         #    warn('Indices were not in sorted order.  Sorting indices.')

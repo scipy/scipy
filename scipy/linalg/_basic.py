@@ -14,6 +14,7 @@ from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1001,7 +1002,8 @@ def det(a, overwrite_a=False, check_finite=True):
     det : (...) float or complex
         Determinant of `a`. For stacked arrays, a scalar is returned for each
         (m, m) slice in the last two dimensions of the input. For example, an
-        input of shape (p, q, m, m) will produce a result of shape (p, q).
+        input of shape (p, q, m, m) will produce a result of shape (p, q). If
+        all dimensions are 1 a scalar is returned regardless of ndim.
 
     Notes
     -----
@@ -1066,11 +1068,17 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):
-        if a1.dtype.char in 'dD':
-            return np.squeeze(a1)
+        # Either ndarray with spurious singletons or a single element
+        if max(*a1.shape) > 1:
+            temp = np.squeeze(a1)
+            if a1.dtype.char in 'dD':
+                return temp
+            else:
+                return (temp.astype('d') if a1.dtype.char == 'f' else
+                        temp.astype('D'))
         else:
-            return (np.squeeze(a1).astype('d') if a1.dtype.char == 'f' else
-                    np.squeeze(a1).astype('D'))
+            return (np.float64(a1.item()) if a1.dtype.char in 'fd' else
+                    np.complex128(a1.item()))
 
     # Then check overwrite permission
     if not _datacopied(a1, a):  # "a"  still alive through "a1"
@@ -1309,8 +1317,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
-         cond=None, rcond=None):
+@_deprecate_positional_args(version="1.14")
+def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
+         cond=_NoValue, rcond=_NoValue):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
 
@@ -1351,9 +1360,9 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
         the tolerances above are recommended instead. In fact, if provided,
         atol, rtol takes precedence over these keywords.
 
-        .. versionchanged:: 1.7.0
+        .. deprecated:: 1.7.0
             Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in future versions of SciPy.
+            will be removed in SciPy 1.14.0.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
@@ -1428,14 +1437,15 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     t = u.dtype.char.lower()
     maxS = np.max(s)
 
-    if rcond or cond:
+    if rcond is not _NoValue or cond is not _NoValue:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in future versions of SciPy. Use "atol" and '
+             'will be removed in SciPy 1.14.0. Use "atol" and '
              '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
     # backwards compatible only atol and rtol are both missing
-    if (rcond or cond) and (atol is None) and (rtol is None):
-        atol = rcond or cond
+    if ((rcond not in (_NoValue, None) or cond not in (_NoValue, None))
+            and (atol is None) and (rtol is None)):
+        atol = rcond if rcond not in (_NoValue, None) else cond
         rtol = 0.
 
     atol = 0. if atol is None else atol

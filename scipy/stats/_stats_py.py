@@ -36,10 +36,15 @@ from numpy import array, asarray, ma
 from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
+from scipy import sparse
 from scipy.spatial.distance import cdist
+from scipy.spatial import distance_matrix
+
 from scipy.ndimage import _measurements
+from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
-                              rng_integers, _rename_parameter, _contains_nan)
+                              rng_integers, _rename_parameter, _contains_nan,
+                              AxisError)
 
 import scipy.special as special
 from scipy import linalg
@@ -49,7 +54,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from ._hypotests import _all_partitions
 from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
@@ -61,6 +66,13 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy._lib._util import normalize_axis_index
+
+# In __all__ but deprecated for removal in SciPy 1.13.0
+from scipy._lib._util import float_factorial  # noqa
+from scipy.stats._mstats_basic import (PointbiserialrResult, Ttest_1sampResult,  # noqa
+                                       Ttest_relResult)  # noqa
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -81,10 +93,10 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'kstest', 'ks_1samp', 'ks_2samp',
            'chisquare', 'power_divergence',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
-           'rankdata',
-           'combine_pvalues', 'wasserstein_distance', 'energy_distance',
+           'rankdata', 'combine_pvalues', 'quantile_test',
+           'wasserstein_distance', 'energy_distance',
            'brunnermunzel', 'alexandergovern',
-           'expectile', ]
+           'expectile']
 
 
 def _chk_asarray(a, axis):
@@ -1066,7 +1078,7 @@ def _moment(a, moment, axis, *, mean=None):
 
         # Starting point for exponentiation by squares
         mean = (a.mean(axis, keepdims=True) if mean is None
-                else dtype(mean))
+                else np.asarray(mean, dtype=dtype)[()])
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
@@ -1645,7 +1657,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         * 'propagate': returns nan
         * 'raise': throws an error
         * 'omit': performs the calculations ignoring nan values
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
@@ -3295,8 +3306,7 @@ def gstd(a, axis=0, ddof=1):
 
 # Private dictionary initialized only once at module level
 # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-_scale_conversions = {'raw': 1.0,
-                      'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+_scale_conversions = {'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
 @_axis_nan_policy_factory(
@@ -3332,18 +3342,15 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         Percentiles over which to compute the range. Each must be
         between 0 and 100, inclusive. The default is the true IQR:
         ``(25, 75)``. The order of the elements is not important.
-    scale : scalar or str, optional
+    scale : scalar or str or array_like of reals, optional
         The numerical value of scale will be divided out of the final
-        result. The following string values are recognized:
+        result. The following string value is also recognized:
 
-          * 'raw' : No scaling, just return the raw IQR.
-            **Deprecated!**  Use ``scale=1`` instead.
           * 'normal' : Scale by
             :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 1.0. The use of ``scale='raw'`` is deprecated infavor
-        of ``scale=1`` and will raise an error in SciPy 1.12.0.
-        Array-like `scale` is also allowed, as long
+        The default is 1.0.
+        Array-like `scale` of real dtype is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -3426,10 +3433,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         scale_key = scale.lower()
         if scale_key not in _scale_conversions:
             raise ValueError(f"{scale} not a valid scale for `iqr`")
-        if scale_key == 'raw':
-            msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
-                   "'scale=1' and will raise an error in SciPy 1.12.0.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -3966,7 +3969,7 @@ def _create_f_oneway_nan_result(shape, axis):
     in certain degenerate conditions.  It creates return values that are
     all nan with the appropriate shape for the given `shape` and `axis`.
     """
-    axis = np.core.multiarray.normalize_axis_index(axis, len(shape))
+    axis = normalize_axis_index(axis, len(shape))
     shp = shape[:axis] + shape[axis+1:]
     if shp == ():
         f = np.nan
@@ -4121,9 +4124,9 @@ def f_oneway(*samples, axis=0):
     num_groups = len(samples)
 
     # We haven't explicitly validated axis, but if it is bad, this call of
-    # np.concatenate will raise np.AxisError.  The call will raise ValueError
-    # if the dimensions of all the arrays, except the axis dimension, are not
-    # the same.
+    # np.concatenate will raise np.exceptions.AxisError. The call will raise
+    # ValueError if the dimensions of all the arrays, except the axis 
+    # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
@@ -5591,7 +5594,8 @@ def pointbiserialr(x, y):
     return res
 
 
-def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
+@_deprecate_positional_args(version="1.14")
+def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -5614,7 +5618,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
 
         .. deprecated:: 1.10.0
            `kendalltau` keyword argument `initial_lexsort` is deprecated as it
-           is unused and will be removed in SciPy 1.12.0.
+           is unused and will be removed in SciPy 1.14.0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5829,7 +5833,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     accurate results.
 
     """
-    if initial_lexsort is not None:
+    if initial_lexsort is not _NoValue:
         msg = ("'kendalltau' keyword argument 'initial_lexsort' is deprecated"
                " as it is unused and will be removed in SciPy 1.12.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
@@ -7672,7 +7676,7 @@ def _get_len(a, axis, msg):
     try:
         n = a.shape[axis]
     except IndexError:
-        raise np.AxisError(axis, a.ndim, msg) from None
+        raise AxisError(axis, a.ndim, msg) from None
     return n
 
 
@@ -9725,6 +9729,465 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     return SignificanceResult(statistic, pval)
 
 
+@dataclass
+class QuantileTestResult:
+    r"""
+    Result of `scipy.stats.quantile_test`.
+
+    Attributes
+    ----------
+    statistic: float
+        The statistic used to calculate the p-value; either ``T1``, the
+        number of observations less than or equal to the hypothesized quantile,
+        or ``T2``, the number of observations strictly less than the
+        hypothesized quantile. Two test statistics are required to handle the
+        possibility the data was generated from a discrete or mixed
+        distribution.
+
+    statistic_type : int
+        ``1`` or ``2`` depending on which of ``T1`` or ``T2`` was used to
+        calculate the p-value respectively. ``T1`` corresponds to the
+        ``"greater"`` alternative hypothesis and ``T2`` to the ``"less"``.  For
+        the ``"two-sided"`` case, the statistic type that leads to smallest
+        p-value is used.  For significant tests, ``statistic_type = 1`` means
+        there is evidence that the population quantile is significantly greater
+        than the hypothesized value and ``statistic_type = 2`` means there is
+        evidence that it is significantly less than the hypothesized value.
+
+    pvalue : float
+        The p-value of the hypothesis test.
+    """
+    statistic: float
+    statistic_type: int
+    pvalue: float
+    _alternative: list[str] = field(repr=False)
+    _x : np.ndarray = field(repr=False)
+    _p : float = field(repr=False)
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        Compute the confidence interval of the quantile.
+
+        Parameters
+        ----------
+        confidence_level : float, default: 0.95
+            Confidence level for the computed confidence interval
+            of the quantile. Default is 0.95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence interval.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import scipy.stats as stats
+        >>> p = 0.75  # quantile of interest
+        >>> q = 0  # hypothesized value of the quantile
+        >>> x = np.exp(np.arange(0, 1.01, 0.01))
+        >>> res = stats.quantile_test(x, q=q, p=p, alternative='less')
+        >>> lb, ub = res.confidence_interval()
+        >>> lb, ub
+        (-inf, 2.293318740264183)
+        >>> res = stats.quantile_test(x, q=q, p=p, alternative='two-sided')
+        >>> lb, ub = res.confidence_interval(0.9)
+        >>> lb, ub
+        (1.9542373206359396, 2.293318740264183)
+        """
+
+        alternative = self._alternative
+        p = self._p
+        x = np.sort(self._x)
+        n = len(x)
+        bd = stats.binom(n, p)
+
+        if confidence_level <= 0 or confidence_level >= 1:
+            message = "`confidence_level` must be a number between 0 and 1."
+            raise ValueError(message)
+
+        low_index = np.nan
+        high_index = np.nan
+
+        if alternative == 'less':
+            p = 1 - confidence_level
+            low = -np.inf
+            high_index = int(bd.isf(p))
+            high = x[high_index] if high_index < n else np.nan
+        elif alternative == 'greater':
+            p = 1 - confidence_level
+            low_index = int(bd.ppf(p)) - 1
+            low = x[low_index] if low_index >= 0 else np.nan
+            high = np.inf
+        elif alternative == 'two-sided':
+            p = (1 - confidence_level) / 2
+            low_index = int(bd.ppf(p)) - 1
+            low = x[low_index] if low_index >= 0 else np.nan
+            high_index = int(bd.isf(p))
+            high = x[high_index] if high_index < n else np.nan
+
+        return ConfidenceInterval(low, high)
+
+
+def quantile_test_iv(x, q, p, alternative):
+
+    x = np.atleast_1d(x)
+    message = '`x` must be a one-dimensional array of numbers.'
+    if x.ndim != 1 or not np.issubdtype(x.dtype, np.number):
+        raise ValueError(message)
+
+    q = np.array(q)[()]
+    message = "`q` must be a scalar."
+    if q.ndim != 0 or not np.issubdtype(q.dtype, np.number):
+        raise ValueError(message)
+
+    p = np.array(p)[()]
+    message = "`p` must be a float strictly between 0 and 1."
+    if p.ndim != 0 or p >= 1 or p <= 0:
+        raise ValueError(message)
+
+    alternatives = {'two-sided', 'less', 'greater'}
+    message = f"`alternative` must be one of {alternatives}"
+    if alternative not in alternatives:
+        raise ValueError(message)
+
+    return x, q, p, alternative
+
+
+def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
+    r"""
+    Perform a quantile test and compute a confidence interval of the quantile.
+
+    This function tests the null hypothesis that `q` is the value of the
+    quantile associated with probability `p` of the population underlying
+    sample `x`. For example, with default parameters, it tests that the
+    median of the population underlying `x` is zero. The function returns an
+    object including the test statistic, a p-value, and a method for computing
+    the confidence interval around the quantile.
+
+    Parameters
+    ----------
+    x : array_like
+        A one-dimensional sample.
+    q : float, default: 0
+        The hypothesized value of the quantile.
+    p : float, default: 0.5
+        The probability associated with the quantile; i.e. the proportion of
+        the population less than `q` is `p`. Must be strictly between 0 and
+        1.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis.
+        The following options are available (default is 'two-sided'):
+
+        * 'two-sided': the quantile associated with the probability `p` 
+          is not `q`.
+        * 'less': the quantile associated with the probability `p` is less
+          than `q`.
+        * 'greater': the quantile associated with the probability `p` is
+          greater than `q`.
+
+    Returns
+    -------
+    result : QuantileTestResult
+        An object with the following attributes:
+
+        statistic : float
+            One of two test statistics that may be used in the quantile test.
+            The first test statistic, ``T1``, is the proportion of samples in
+            `x` that are less than or equal to the hypothesized quantile
+            `q`. The second test statistic, ``T2``, is the proportion of
+            samples in `x` that are strictly less than the hypothesized
+            quantile `q`.
+
+            When ``alternative = 'greater'``, ``T1`` is used to calculate the
+            p-value and ``statistic`` is set to ``T1``.
+
+            When ``alternative = 'less'``, ``T2`` is used to calculate the
+            p-value and ``statistic`` is set to ``T2``.
+
+            When ``alternative = 'two-sided'``, both ``T1`` and ``T2`` are
+            considered, and the one that leads to the smallest p-value is used.
+
+        statistic_type : int
+            Either `1` or `2` depending on which of ``T1`` or ``T2`` was
+            used to calculate the p-value.
+
+        pvalue : float
+            The p-value associated with the given alternative.
+
+        The object also has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            Computes a confidence interval around the the
+            population quantile associated with the probability `p`. The
+            confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.  Values are `nan` when there are
+            not enough observations to compute the confidence interval at
+            the desired confidence.
+
+    Notes
+    -----
+    This test and its method for computing confidence intervals are
+    non-parametric. They are valid if and only if the observations are i.i.d.
+
+    The implementation of the test follows Conover [1]_. Two test statistics
+    are considered.
+
+    ``T1``: The number of observations in `x` less than or equal to `q`.
+
+        ``T1 = (x <= q).sum()``
+
+    ``T2``: The number of observations in `x` strictly less than `q`.
+
+        ``T2 = (x < q).sum()``
+
+    The use of two test statistics is necessary to handle the possibility that
+    `x` was generated from a discrete or mixed distribution.
+
+    The null hypothesis for the test is:
+
+        H0: The :math:`p^{\mathrm{th}}` population quantile is `q`.
+
+    and the null distribution for each test statistic is
+    :math:`\mathrm{binom}\left(n, p\right)`. When ``alternative='less'``,
+    the alternative hypothesis is:
+
+        H1: The :math:`p^{\mathrm{th}}` population quantile is less than `q`.
+
+    and the p-value is the probability that the binomial random variable
+
+    .. math::
+        Y \sim \mathrm{binom}\left(n, p\right)
+
+    is greater than or equal to the observed value ``T2``.
+
+    When ``alternative='greater'``, the alternative hypothesis is:
+
+        H1: The :math:`p^{\mathrm{th}}` population quantile is greater than `q`
+
+    and the p-value is the probability that the binomial random variable Y
+    is less than or equal to the observed value ``T1``.
+
+    When ``alternative='two-sided'``, the alternative hypothesis is
+
+        H1: `q` is not the :math:`p^{\mathrm{th}}` population quantile.
+
+    and the p-value is twice the smaller of the p-values for the ``'less'``
+    and ``'greater'`` cases. Both of these p-values can exceed 0.5 for the same
+    data, so the value is clipped into the interval :math:`[0, 1]`.
+
+    The approach for confidence intervals is attributed to Thompson [2]_ and
+    later proven to be applicable to any set of i.i.d. samples [3]_. The
+    computation is based on the observation that the probability of a quantile
+    :math:`q` to be larger than any observations :math:`x_m (1\leq m \leq N)`
+    can be computed as
+
+    .. math::
+
+        \mathbb{P}(x_m \leq q) = 1 - \sum_{k=0}^{m-1} \binom{N}{k}
+        q^k(1-q)^{N-k}
+
+    By default, confidence intervals are computed for a 95% confidence level.
+    A common interpretation of a 95% confidence intervals is that if i.i.d.
+    samples are drawn repeatedly from the same population and confidence
+    intervals are formed each time, the confidence interval will contain the
+    true value of the specified quantile in approximately 95% of trials.
+
+    A similar function is available in the QuantileNPCI R package [4]_. The
+    foundation is the same, but it computes the confidence interval bounds by
+    doing interpolations between the sample values, whereas this function uses
+    only sample values as bounds. Thus, ``quantile_test.confidence_interval``
+    returns more conservative intervals (i.e., larger).
+
+    The same computation of confidence intervals for quantiles is included in
+    the confintr package [5]_.
+
+    Two-sided confidence intervals are not guaranteed to be optimal; i.e.,
+    there may exist a tighter interval that may contain the quantile of
+    interest with probability larger than the confidence level.
+    Without further assumption on the samples (e.g., the nature of the
+    underlying distribution), the one-sided intervals are optimally tight.
+
+    References
+    ----------
+    .. [1] W. J. Conover. Practical Nonparametric Statistics, 3rd Ed. 1999.
+    .. [2] W. R. Thompson, "On Confidence Ranges for the Median and Other
+       Expectation Distributions for Populations of Unknown Distribution
+       Form," The Annals of Mathematical Statistics, vol. 7, no. 3,
+       pp. 122-128, 1936, Accessed: Sep. 18, 2019. [Online]. Available:
+       https://www.jstor.org/stable/2957563.
+    .. [3] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
+       Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
+       159-170. Available:
+       https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7.
+    .. [4] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
+       Confidence Intervals for Quantiles," R package,
+       https://cran.r-project.org/package=QuantileNPCI
+    .. [5] M. Mayer, "confintr: Confidence Intervals," R package,
+       https://cran.r-project.org/package=confintr
+
+
+    Examples
+    --------
+
+    Suppose we wish to test the null hypothesis that the median of a population
+    is equal to 0.5. We choose a confidence level of 99%; that is, we will
+    reject the null hypothesis in favor of the alternative if the p-value is
+    less than 0.01.
+
+    When testing random variates from the standard uniform distribution, which
+    has a median of 0.5, we expect the data to be consistent with the null
+    hypothesis most of the time.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng(6981396440634228121)
+    >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5)
+    QuantileTestResult(statistic=45, statistic_type=1, pvalue=0.36820161732669576)
+
+    As expected, the p-value is not below our threshold of 0.01, so
+    we cannot reject the null hypothesis.
+
+    When testing data from the standard *normal* distribution, which has a 
+    median of 0, we would expect the null hypothesis to be rejected.
+
+    >>> rvs = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5)
+    QuantileTestResult(statistic=67, statistic_type=2, pvalue=0.0008737198369123724)
+
+    Indeed, the p-value is lower than our threshold of 0.01, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the median
+    of the population is *not* equal to 0.5.
+
+    However, suppose we were to test the null hypothesis against the
+    one-sided alternative that the median of the population is *greater* than
+    0.5. Since the median of the standard normal is less than 0.5, we would not
+    expect the null hypothesis to be rejected.
+
+    >>> stats.quantile_test(rvs, q=0.5, p=0.5, alternative='greater')
+    QuantileTestResult(statistic=67, statistic_type=1, pvalue=0.9997956114162866)
+
+    Unsurprisingly, with a p-value greater than our threshold, we would not
+    reject the null hypothesis in favor of the chosen alternative.
+
+    The quantile test can be used for any quantile, not only the median. For
+    example, we can test whether the third quartile of the distribution
+    underlying the sample is greater than 0.6.
+
+    >>> rvs = stats.uniform.rvs(size=100, random_state=rng)
+    >>> stats.quantile_test(rvs, q=0.6, p=0.75, alternative='greater')
+    QuantileTestResult(statistic=64, statistic_type=1, pvalue=0.00940696592998271)
+
+    The p-value is lower than the threshold. We reject the null hypothesis in
+    favor of the alternative: the third quartile of the distribution underlying
+    our sample is greater than 0.6.
+
+    `quantile_test` can also compute confidence intervals for any quantile.
+
+    >>> rvs = stats.norm.rvs(size=100, random_state=rng)
+    >>> res = stats.quantile_test(rvs, q=0.6, p=0.75)
+    >>> ci = res.confidence_interval(confidence_level=0.95)
+    >>> ci
+    ConfidenceInterval(low=0.284491604437432, high=0.8912531024914844)
+
+    When testing a one-sided alternative, the confidence interval contains
+    all observations such that if passed as `q`, the p-value of the
+    test would be greater than 0.05, and therefore the null hypothesis
+    would not be rejected. For example:
+
+    >>> rvs.sort()
+    >>> q, p, alpha = 0.6, 0.75, 0.95
+    >>> res = stats.quantile_test(rvs, q=q, p=p, alternative='less')
+    >>> ci = res.confidence_interval(confidence_level=alpha)
+    >>> for x in rvs[rvs <= ci.high]:
+    ...     res = stats.quantile_test(rvs, q=x, p=p, alternative='less')
+    ...     assert res.pvalue > 1-alpha
+    >>> for x in rvs[rvs > ci.high]:
+    ...     res = stats.quantile_test(rvs, q=x, p=p, alternative='less')
+    ...     assert res.pvalue < 1-alpha
+
+    Also, if a 95% confidence interval is repeatedly generated for random
+    samples, the confidence interval will contain the true quantile value in
+    approximately 95% of replications.
+
+    >>> dist = stats.rayleigh() # our "unknown" distribution
+    >>> p = 0.2
+    >>> true_stat = dist.ppf(p) # the true value of the statistic
+    >>> n_trials = 1000
+    >>> quantile_ci_contains_true_stat = 0
+    >>> for i in range(n_trials):
+    ...     data = dist.rvs(size=100, random_state=rng)
+    ...     res = stats.quantile_test(data, p=p)
+    ...     ci = res.confidence_interval(0.95)
+    ...     if ci[0] < true_stat < ci[1]:
+    ...         quantile_ci_contains_true_stat += 1
+    >>> quantile_ci_contains_true_stat >= 950
+    True
+
+    This works with any distribution and any quantile, as long as the samples
+    are i.i.d.
+    """
+    # Implementation carefully follows [1] 3.2
+    # "H0: the p*th quantile of X is x*"
+    # To facilitate comparison with [1], we'll use variable names that
+    # best match Conover's notation
+    X, x_star, p_star, H1 = quantile_test_iv(x, q, p, alternative)
+
+    # "We will use two test statistics in this test. Let T1 equal "
+    # "the number of observations less than or equal to x*, and "
+    # "let T2 equal the number of observations less than x*."
+    T1 = (X <= x_star).sum()
+    T2 = (X < x_star).sum()
+
+    # "The null distribution of the test statistics T1 and T2 is "
+    # "the binomial distribution, with parameters n = sample size, and "
+    # "p = p* as given in the null hypothesis.... Y has the binomial "
+    # "distribution with parameters n and p*."
+    n = len(X)
+    Y = stats.binom(n=n, p=p_star)
+
+    # "H1: the p* population quantile is less than x*"
+    if H1 == 'less':
+        # "The p-value is the probability that a binomial random variable Y "
+        # "is greater than *or equal to* the observed value of T2...using p=p*"
+        pvalue = Y.sf(T2-1)  # Y.pmf(T2) + Y.sf(T2)
+        statistic = T2
+        statistic_type = 2
+    # "H1: the p* population quantile is greater than x*"
+    elif H1 == 'greater':
+        # "The p-value is the probability that a binomial random variable Y "
+        # "is less than or equal to the observed value of T1... using p = p*"
+        pvalue = Y.cdf(T1)
+        statistic = T1
+        statistic_type = 1
+    # "H1: x* is not the p*th population quantile"
+    elif H1 == 'two-sided':
+        # "The p-value is twice the smaller of the probabilities that a
+        # binomial random variable Y is less than or equal to the observed
+        # value of T1 or greater than or equal to the observed value of T2
+        # using p=p*."
+        # Note: both one-sided p-values can exceed 0.5 for the same data, so
+        # `clip`
+        pvalues = [Y.cdf(T1), Y.sf(T2 - 1)]  # [greater, less]
+        sorted_idx = np.argsort(pvalues)
+        pvalue = np.clip(2*pvalues[sorted_idx[0]], 0, 1)
+        if sorted_idx[0]:
+            statistic, statistic_type = T2, 2
+        else:
+            statistic, statistic_type = T1, 1
+
+    return QuantileTestResult(
+        statistic=statistic,
+        statistic_type=statistic_type,
+        pvalue=pvalue,
+        _alternative=H1,
+        _x=X,
+        _p=p_star
+    )
+
+
 #####################################
 #       STATISTICAL DISTANCES       #
 #####################################
@@ -9732,26 +10195,34 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the first Wasserstein distance between two 1D distributions.
+    Compute the Wasserstein-1 distance between two discrete distributions.
 
-    This distance is also known as the earth mover's distance, since it can be
-    seen as the minimum amount of "work" required to transform :math:`u` into
-    :math:`v`, where "work" is measured as the amount of distribution weight
-    that must be moved, multiplied by the distance it has to be moved.
+    The Wasserstein distance, also called the Earth mover's distance or the
+    optimal transport distance, is a similarity metric between two probability
+    distributions. In the discrete case, the Wasserstein distance can be
+    understood as the cost of an optimal transport plan to convert one
+    distribution into the other. The cost is calculated as the product of the
+    amount of probability mass being moved and the distance it is being moved.
+    A brief and intuitive introduction can be found at [2]_.
 
     .. versionadded:: 1.0.0
 
     Parameters
     ----------
-    u_values, v_values : array_like
-        Values observed in the (empirical) distribution.
-    u_weights, v_weights : array_like, optional
-        Weight for each value. If unspecified, each value is assigned the same
-        weight.
-        `u_weights` (resp. `v_weights`) must have the same length as
-        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
-        must still be positive and finite so that the weights can be normalized
-        to sum to 1.
+    u_values : 1d or 2d array_like
+        A sample from a probability distribution or the support (set of all
+        possible values) of a probability distribution. Each element along
+        axis 0 is an observation or possible value. If two-dimensional, axis
+        1 represents the dimensionality of the distribution; i.e., each row is
+        a vector observation or possible value.
+
+    v_values : 1d or 2d array_like
+        A sample from or the support of a second distribution.
+
+    u_weights, v_weights : 1d array_like, optional
+        Weights or counts corresponding with the sample or probability masses
+        corresponding with the support values. Sum of elements must be positive
+        and finite. If unspecified, each value is assigned the same weight.
 
     Returns
     -------
@@ -9760,8 +10231,9 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    The first Wasserstein distance between the distributions :math:`u` and
-    :math:`v` is:
+    Given two probability mass functions, :math:`u`
+    and :math:`v`, the first Wasserstein distance between the distributions
+    is:
 
     .. math::
 
@@ -9770,16 +10242,83 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
-    :math:`v` on the first and second factors respectively.
+    :math:`v` on the first and second factors respectively. For a given value
+    :math:`x`, :math:`u(x)` gives the probabilty of :math:`u` at position
+    :math:`x`, and the same for :math:`v(x)`.
 
-    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
-    :math:`v`, this distance also equals to:
+    In the 1-dimensional case, let :math:`U` and :math:`V` denote the
+    respective CDFs of :math:`u` and :math:`v`, this distance also equals to:
 
     .. math::
 
         l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
 
-    See [2]_ for a proof of the equivalence of both definitions.
+    See [3]_ for a proof of the equivalence of both definitions.
+
+    In the more general (higher dimensional) and discrete case, it is also
+    called the optimal transport problem or the Monge problem.
+    Let the finite point sets :math:`\{x_i\}` and :math:`\{y_j\}` denote
+    the support set of probability mass function :math:`u` and :math:`v`
+    respectively. The Monge problem can be expressed as follows,
+
+    Let :math:`\Gamma` denote the transport plan, :math:`D` denote the
+    distance matrix and,
+
+    .. math::
+
+        x = \text{vec}(\Gamma)          \\
+        c = \text{vec}(D)               \\
+        b = \begin{bmatrix}
+                u\\
+                v\\
+            \end{bmatrix}
+
+    The :math:`\text{vec}()` function denotes the Vectorization function
+    that transforms a matrix into a column vector by vertically stacking
+    the columns of the matrix.
+    The tranport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
+    which :math:`\gamma_{ij}` is a positive value representing the amount of
+    probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
+    Summing over the rows of :math:`\Gamma` should give the source distribution
+    :math:`u` : :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i`
+    and summing over the columns of :math:`\Gamma` should give the target
+    distribution :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all
+    :math:`j`.
+    The distance matrix :math:`D` is a matrix :math:`[d_{ij}]`, in which
+    :math:`d_{ij} = d(x_i, y_j)`.
+
+    Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
+    tranformed into a linear programming problem by
+    taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
+    target (sum of costs) , where matrix :math:`A` has the form
+
+    .. math::
+
+        \begin{array} {rrrr|rrrr|r|rrrr}
+            1 & 1 & \dots & 1 & 0 & 0 & \dots & 0 & \dots & 0 & 0 & \dots &
+                0 \cr
+            0 & 0 & \dots & 0 & 1 & 1 & \dots & 1 & \dots & 0 & 0 &\dots &
+                0 \cr
+            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots
+                & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots  \cr
+            0 & 0 & \dots & 0 & 0 & 0 & \dots & 0 & \dots & 1 & 1 & \dots &
+                1 \cr \hline
+
+            1 & 0 & \dots & 0 & 1 & 0 & \dots & \dots & \dots & 1 & 0 & \dots &
+                0 \cr
+            0 & 1 & \dots & 0 & 0 & 1 & \dots & \dots & \dots & 0 & 1 & \dots &
+                0 \cr
+            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots &
+                \vdots & \vdots & \vdots & \vdots & \ddots & \vdots \cr
+            0 & 0 & \dots & 1 & 0 & 0 & \dots & 1 & \dots & 0 & 0 & \dots & 1
+        \end{array}
+
+    By solving the dual form of the above linear programming problem (with
+    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)` can
+    be computed as :math:`b^T y^*`.
+
+    The above solution is inspired by Vincent Herrmann's blog [5]_ . For a
+    more thorough explanation, see [4]_ .
 
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
@@ -9788,9 +10327,19 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
-    .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
-           Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
+    .. [1] "Wasserstein metric",
+           https://en.wikipedia.org/wiki/Wasserstein_metric
+    .. [2] Lili Weng, "What is Wasserstein distance?", Lil'log,
+           https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-
+           wasserstein-distance.
+    .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and
+           Related Families of Nonparametric Tests" (2015).
+           :arXiv:`1509.02237`.
+    .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal
+           transport." Center for Research in Economics and Statistics
+           Working Papers 2017-86 (2017).
+    .. [5] Hermann, Vincent. "Wasserstein GAN and the Kantorovich-Rubinstein
+           Duality". https://vincentherrmann.github.io/blog/wasserstein/.
 
     Examples
     --------
@@ -9803,8 +10352,69 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
 
+    Compute the Wasserstein distance between two three-dimensional samples,
+    each with two observations.
+
+    >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
+    3.0
+
+    Compute the Wasserstein distance between two two-dimensional distributions
+    with three and two weighted observations, respectively.
+
+    >>> wasserstein_distance([[0, 2.75], [2, 209.3], [0, 0]],
+    ...                      [[0.2, 0.322], [4.5, 25.1808]],
+    ...                      [0.4, 5.2, 0.114], [0.8, 1.5])
+    174.15840245217169
     """
-    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+    m, n = len(u_values), len(v_values)
+    u_values = asarray(u_values)
+    v_values = asarray(v_values)
+
+    if u_values.ndim > 2 or v_values.ndim > 2:
+        raise ValueError('Invalid input values. The inputs must have either '
+                         'one or two dimensions.')
+    # if dimensions are not equal throw error
+    if u_values.ndim != v_values.ndim:
+        raise ValueError('Invalid input values. Dimensions of inputs must be '
+                         'equal.')
+    # if data is 1D then call the cdf_distance function
+    if u_values.ndim == 1 and v_values.ndim == 1:
+        return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+    # if number of columns is not equal throw error
+    if u_values.shape[1] != v_values.shape[1]:
+        raise ValueError('Invalid input values. If two-dimensional, '
+                         '`u_values` and `v_values` must have the same '
+                         'number of columns.')
+
+    # if data contains np.inf then return inf or nan
+    if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
+        return np.inf
+    elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
+        return np.nan
+
+    # create constraints
+    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
+    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
+    # sparse constraint matrix of size (m + n)*(m * n)
+    A = sparse.vstack((A_upper_part, A_lower_part))
+    A = sparse.coo_array(A)
+
+    # get cost matrix
+    D = distance_matrix(u_values, v_values, p=2)
+    cost = D.ravel()
+
+    # create the minimization target
+    p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
+    p_v = np.full(n, 1/n) if v_weights is None else v_weights/np.sum(v_weights)
+    b = np.concatenate((p_u, p_v), axis=0)
+
+    # solving LP
+    constraints = LinearConstraint(A=A.T, ub=cost)
+    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
+    return -opt_res.fun
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
@@ -10216,8 +10826,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         if a.size == 0:
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
-            # use scipy._lib._util._normalize_axis_index when available
-            np.core.multiarray.normalize_axis_index(axis, a.ndim)
+            normalize_axis_index(axis, a.ndim)
             dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method,

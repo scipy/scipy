@@ -25,7 +25,8 @@ import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_,
+        array_equal)
 
 import pytest
 from pytest import raises as assert_raises
@@ -38,7 +39,8 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import mathieu_odd_coef, mathieu_even_coef
+from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
+from scipy._lib.deprecation import _NoValue
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
     _FACTORIALK_LIMITS_32BITS
@@ -1325,12 +1327,12 @@ class TestCombinatorics:
         assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, None])
+    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
     @pytest.mark.parametrize("k", [3.5, 3])
     @pytest.mark.parametrize("N", [4.5, 4])
     def test_comb_legacy(self, N, k, legacy, repetition):
         # test is only relevant for exact=True
-        if legacy is not None:
+        if legacy is not _NoValue:
             with pytest.warns(
                 DeprecationWarning,
                 match=r"Using 'legacy' keyword is deprecated"
@@ -1352,7 +1354,7 @@ class TestCombinatorics:
                 N, k = int(N), int(k)
         # expected result is the same as with exact=False
         with suppress_warnings() as sup:
-            if legacy is not None:
+            if legacy is not _NoValue:
                 sup.filter(DeprecationWarning)
             expected = special.comb(N, k, legacy=legacy, repetition=repetition)
         assert_equal(result, expected)
@@ -1386,6 +1388,11 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
                 [0., 0., 0., 720.])
+
+    def test_positional_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_comb
+            special.comb([10, 10], [3, 4], False, False)
 
 
 class TestTrigonometric:
@@ -2129,6 +2136,8 @@ class TestFactorialFunctions:
     def test_factorial_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         result = None
         if not content:
@@ -2151,14 +2160,22 @@ class TestFactorialFunctions:
             # no error
             result = special.factorial(n, exact=exact)
 
+        # assert_equal does not distinguish scalars and 0-dim arrays of the same value, see
+        # https://github.com/numpy/numpy/issues/24050
+        def assert_really_equal(x, y):
+            assert type(x) == type(y), f"types not equal: {type(x)}, {type(y)}"
+            assert_equal(x, y)
+
         if result is not None:
             # expected result is empty if and only if n is empty,
             # and has the same dtype & dimension as n
             with suppress_warnings() as sup:
                 sup.filter(DeprecationWarning)
-                r = special.factorial(n.ravel(), exact=exact) if n.size else []
+                # keep 0-dim.; otherwise n.ravel().ndim==1, even if n.ndim==0
+                n_flat = n.ravel() if n.ndim else n
+                r = special.factorial(n_flat, exact=exact) if n.size else []
             expected = np.array(r, ndmin=dim, dtype=dtype)
-            assert_equal(result, expected)
+            assert_really_equal(result, expected)
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("n", [1, 1.1, 2 + 2j, np.nan, None],
@@ -2211,6 +2228,8 @@ class TestFactorialFunctions:
     def test_factorial2_array_corner_cases(self, content, dim, exact, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error
@@ -2262,6 +2281,8 @@ class TestFactorialFunctions:
     def test_factorialk_array_corner_cases(self, content, dim, dtype):
         if dtype == np.int64 and any(np.isnan(x) for x in content):
             pytest.skip("impossible combination")
+        # np.array(x, ndim=0) will not be 0-dim. unless x is too
+        content = content if (dim > 0 or len(content) != 1) else content[0]
         n = np.array(content, ndmin=dim, dtype=dtype)
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error; expected result is identical to n
@@ -3919,3 +3940,112 @@ def test_runtime_warning():
     with pytest.warns(RuntimeWarning,
                       match=r'Too many predicted coefficients'):
         mathieu_even_coef(1000, 1000)
+
+
+class TestStirling2:
+    table = [
+        [1],
+        [0, 1],
+        [0, 1, 1],
+        [0, 1, 3, 1],
+        [0, 1, 7, 6, 1],
+        [0, 1, 15, 25, 10, 1],
+        [0, 1, 31, 90, 65, 15, 1],
+        [0, 1, 63, 301, 350, 140, 21, 1],
+        [0, 1, 127, 966, 1701, 1050, 266, 28, 1],
+        [0, 1, 255, 3025, 7770, 6951, 2646, 462, 36, 1],
+        [0, 1, 511, 9330, 34105, 42525, 22827, 5880, 750, 45, 1],
+    ]
+
+    def test_table_cases(self):
+        for n in range(len(self.table)):
+            for k in range(len(self.table[n])):
+                assert_equal(self.table[n][k], stirling2(n, k))
+
+    def test_valid_single_integer(self):
+        assert_equal(stirling2(0, 0), self.table[0][0])
+        assert_equal(stirling2(4, 2), self.table[4][2])
+        # a single 2-tuple of integers as arguments must return an int and not
+        # an array whereas arrays of single values should return array
+        assert stirling2(5, 3) == 25
+        assert array_equal(stirling2([5], [3]), [25])
+
+    def test_negative_integer(self):
+        # negative integers for n or k arguments return 0
+        assert_equal(stirling2(-1, -1), 0)
+        assert_equal(stirling2(-1, 2), 0)
+        assert_equal(stirling2(2, -1), 0)
+
+    def test_array_inputs(self):
+        ans = [self.table[10][3], self.table[10][4]]
+        assert array_equal(stirling2(asarray([10, 10]), asarray([3, 4])), ans)
+        assert array_equal(stirling2([10, 10], asarray([3, 4])), ans)
+        assert array_equal(stirling2(asarray([10, 10]), [3, 4]), ans)
+
+    def test_mixed_values(self):
+        # negative values-of either n or k-should return 0 for the entry
+        ans = [0, 1, 3, 25, 1050, 5880, 9330]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_correct_parity(self):
+        """Test parity follows well known identity.
+
+        en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Parity
+        """
+        n, K = 100, np.arange(101)
+        assert_equal(
+            stirling2(n, K) % 2,
+            [math.comb(n - (k // 2) - 1, n - k) % 2 for k in K],
+        )
+
+    def test_big_numbers(self):
+        # via mpmath (bigger than 32bit)
+        ans = asarray([48063331393110, 48004081105038305])
+        n = [25, 30]
+        k = [17, 4]
+        assert array_equal(stirling2(n, k), ans)
+        # bigger than 64 bit
+        ans = asarray([2801934359500572414253157841233849412,
+                       14245032222277144547280648984426251])
+        n = [42, 43]
+        k = [17, 23]
+        assert array_equal(stirling2(n, k), ans)
+
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
+    def test_unsupported_input_types(self, N, K):
+        # object, float, string, complex are not supported and raise TypeError
+        # when exact=True
+        with pytest.raises(TypeError):
+            special.stirling2(N, K, exact=True)
+
+    def test_numpy_array_int_object_dtype(self):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=object)
+        k = asarray([1, 2, 3, 4], dtype=object)
+        with pytest.raises(TypeError):
+            array_equal(stirling2(n, k), ans)
+
+    def test_numpy_array_unsigned_int_dtype(self):
+        # numpy unsigned integers are allowed as dtype in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=np.uint)
+        k = asarray([1, 2, 3, 4], dtype=np.uint)
+        assert array_equal(stirling2(n, k), ans)
+
+    def test_broadcasting_arrays_correctly(self):
+        # broadcasting is handled by stirling2
+        # test leading 1s are replicated
+        ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
+        n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
+        k = asarray([1, 2, 3, 4])  # shape (4,)
+        assert array_equal(stirling2(n, k), ans)
+        # test that dims both mismatch broadcase correctly (5,1) & (6,)
+        n = asarray([[4], [4], [4], [4], [4]])
+        k = asarray([0, 1, 2, 3, 4, 5])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
+        assert array_equal(stirling2(n, k), ans)

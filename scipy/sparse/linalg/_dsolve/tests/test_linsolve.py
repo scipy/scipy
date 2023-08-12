@@ -21,6 +21,7 @@ from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import ComplexWarning
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -154,7 +155,7 @@ class TestFactorized:
         solve = factorized(self.A)
         b = random.rand(4)
         for t in [np.complex64, np.complex128]:
-            assert_warns(np.ComplexWarning, solve, b.astype(t))
+            assert_warns(ComplexWarning, solve, b.astype(t))
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_assume_sorted_indices_flag(self):
@@ -220,8 +221,11 @@ class TestLinsolve:
         except RuntimeError:
             pass
 
-    def test_twodiags(self):
-        A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
+    @pytest.mark.parametrize('format', ['csc', 'csr'])
+    @pytest.mark.parametrize('idx_dtype', [np.int32, np.int64])
+    def test_twodiags(self, format: str, idx_dtype: np.dtype):
+        A = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5,
+                    format=format)
         b = array([1, 2, 3, 4, 5])
 
         # condition number of A
@@ -230,13 +234,12 @@ class TestLinsolve:
         for t in ['f','d','F','D']:
             eps = finfo(t).eps  # floating point epsilon
             b = b.astype(t)
+            Asp = A.astype(t)
+            Asp.indices = Asp.indices.astype(idx_dtype, copy=False)
+            Asp.indptr = Asp.indptr.astype(idx_dtype, copy=False)
 
-            for format in ['csc','csr']:
-                Asp = A.astype(t).asformat(format)
-
-                x = spsolve(Asp,b)
-
-                assert_(norm(b - Asp@x) < 10 * cond_A * eps)
+            x = spsolve(Asp, b)
+            assert_(norm(b - Asp@x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
         Adense = array([[0., 1., 1.],
@@ -442,16 +445,18 @@ class TestSplu:
         n = 40
         d = arange(n) + 1
         self.n = n
-        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n)
+        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n, format='csc')
         random.seed(1234)
 
-    def _smoketest(self, spxlu, check, dtype):
+    def _smoketest(self, spxlu, check, dtype, idx_dtype):
         if np.issubdtype(dtype, np.complexfloating):
             A = self.A + 1j*self.A.T
         else:
             A = self.A
 
         A = A.astype(dtype)
+        A.indices = A.indices.astype(idx_dtype, copy=False)
+        A.indptr = A.indptr.astype(idx_dtype, copy=False)
         lu = spxlu(A)
 
         rng = random.RandomState(1234)
@@ -489,10 +494,9 @@ class TestSplu:
             r = A @ x
             assert_(abs(r - b).max() < 1e3*eps, msg)
 
-        self._smoketest(splu, check, np.float32)
-        self._smoketest(splu, check, np.float64)
-        self._smoketest(splu, check, np.complex64)
-        self._smoketest(splu, check, np.complex128)
+        for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
+            for idx_dtype in [np.int32, np.int64]:
+                self._smoketest(splu, check, dtype, idx_dtype)
 
     @sup_sparse_efficiency
     def test_spilu_smoketest(self):
@@ -508,10 +512,9 @@ class TestSplu:
             if b.dtype in (np.float64, np.complex128):
                 errors.append(err)
 
-        self._smoketest(spilu, check, np.float32)
-        self._smoketest(spilu, check, np.float64)
-        self._smoketest(spilu, check, np.complex64)
-        self._smoketest(spilu, check, np.complex128)
+        for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
+            for idx_dtype in [np.int32, np.int64]:
+                self._smoketest(spilu, check, dtype, idx_dtype)
 
         assert_(max(errors) > 1e-5)
 

@@ -17,7 +17,7 @@ from .common_tests import (check_normalization, check_moment,
                            check_meth_dtype, check_ppf_dtype,
                            check_cmplx_deriv,
                            check_pickling, check_rvs_broadcast,
-                           check_freezing,)
+                           check_freezing, check_munp_expect,)
 from scipy.stats._distr_params import distcont
 from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
@@ -72,8 +72,8 @@ slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
 fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                     'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                     'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
+                     'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
+                     'lomax', 'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
                      'tukeylambda', 'invweibull', 'rel_breitwigner']
                      + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                         'nct', 'pareto', 'powernorm', 'powerlognorm']
@@ -96,9 +96,9 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
 fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                         'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                         'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
-                         'truncpareto', 'invweibull']
+                         'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
+                         'lomax', 'mielke', 'nakagami', 'ncf', 'nct',
+                         'skewcauchy', 't', 'truncpareto', 'invweibull']
                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                            'pareto', 'powernorm', 'powerlognorm']
                         + ['pearson3'])
@@ -113,7 +113,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                'gausshyper', 'gengamma', 'genhyperbolic',
                'geninvgauss', 'gennorm', 'genpareto',
-               'halfcauchy', 'halfgennorm', 'invgamma',
+               'halfcauchy', 'halfgennorm', 'invgamma', 'jf_skew_t',
                'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                'logistic', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
@@ -168,6 +168,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
         check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
+    check_cdf_sf(distfn, arg, distname)
+    check_ppf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
     check_pdf_logpdf(distfn, arg, distname)
     check_pdf_logpdf_at_endpoints(distfn, arg, distname)
@@ -318,6 +320,8 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                    "The integral is probably divergent, or slowly convergent.")
         sup.filter(IntegrationWarning,
                    "The maximum number of subdivisions.")
+        sup.filter(IntegrationWarning,
+                   "The algorithm does not converge.")
 
         if is_xfailing:
             sup.filter(IntegrationWarning)
@@ -333,6 +337,7 @@ def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
                 check_skew_expect(distfn, arg, m, v, s, distname)
                 check_var_expect(distfn, arg, m, v, distname)
                 check_kurt_expect(distfn, arg, m, v, k, distname)
+                check_munp_expect(distfn, arg, distname)
 
         check_loc_scale(distfn, arg, m, v, distname)
 
@@ -583,10 +588,20 @@ def check_sf_isf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1, 0.5, 0.9], *arg), *arg),
                             [0.1, 0.5, 0.9], decimal=DECIMAL, err_msg=msg +
                             ' - sf-isf roundtrip')
+
+
+def check_cdf_sf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.cdf([0.1, 0.9], *arg),
                             1.0 - distfn.sf([0.1, 0.9], *arg),
                             decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
+
+
+def check_ppf_isf(distfn, arg, msg):
+    p = np.array([0.1, 0.9])
+    npt.assert_almost_equal(distfn.isf(p, *arg), distfn.ppf(1-p, *arg),
+                            decimal=DECIMAL, err_msg=msg +
+                            ' - ppf-isf relationship')
 
 
 def check_pdf(distfn, arg, msg):
@@ -699,7 +714,7 @@ def check_loc_scale(distfn, arg, m, v, msg):
     # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
     # `loc` and `scale` arrays improperly broadcast with shapes.
     loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
-    mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
+    mt, vt = distfn.stats(*arg, loc=loc, scale=scale)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
 

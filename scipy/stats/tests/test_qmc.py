@@ -746,10 +746,6 @@ class TestLHS(QMCEngineTests):
             engine = qmc.LatinHypercube(d=5, strength=2)
             engine.random(9)
 
-        message = r"'centered' is deprecated"
-        with pytest.warns(UserWarning, match=message):
-            qmc.LatinHypercube(1, centered=True)
-
 
 class TestSobol(QMCEngineTests):
     qmce = qmc.Sobol

@@ -28,12 +28,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']  # change to 3.12-dev when beta starts
+        python-version: ['3.10', '3.12-dev']
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.11'
+            python-version: '3.12-dev'
 
     steps:
     - uses: actions/checkout@v3
@@ -59,11 +59,11 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.11'
+      if: matrix.python-version == '3.12-dev'
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
-        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch "setuptools<67.3"
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
@@ -228,7 +228,7 @@ jobs:
 
       - name: Setup Python deps
         run: |
-          pip install "numpy==1.21.6" &&
+          pip install "numpy==1.22.4" &&
           # build deps
           pip install build meson-python ninja pythran pybind11 cython wheel
           # test deps
@@ -254,7 +254,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps and 64-bit BLAS
+    name: Prerelease deps, coverage, and 64-bit BLAS
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-latest
     strategy:
@@ -278,7 +278,7 @@ jobs:
 
         # Install OpenBLAS a la cibuildwheel.
         chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh .        
+        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
 
     - name: Caching Python dependencies
       uses: actions/cache@v3
@@ -292,9 +292,10 @@ jobs:
         python -m pip install "Cython>=3.0.0b3"
         python -m pip install ninja meson meson-python wheel click rich_click pydevtool
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
         # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
         # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
-        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 pythran threadpoolctl pooch matplotlib
+        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 threadpoolctl pooch matplotlib
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -356,6 +357,6 @@ jobs:
         python3.9 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
-        python -m pip install numpy==1.21.6 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env Pillow mpmath pythran pooch meson && \
-        python dev.py build && \
+        python -m pip install numpy==1.22.4 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson && \
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
