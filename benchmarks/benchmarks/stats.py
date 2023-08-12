@@ -213,7 +213,8 @@ class DistributionsAll(Benchmark):
     slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
                   'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
                   'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
-                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
+                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm',
+                  'studentized_range']
     slow_methods = ['moment']
 
     def setup(self, dist_name, method):
