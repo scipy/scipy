@@ -34,7 +34,7 @@ class LaplacianNd(LinearOperator):
     tosparse()
         Construct a sparse array from Laplacian data
     eigenvalues()
-        Construct an array of eigenvalues of the Laplacian matrix
+        Construct a 1D array of eigenvalues of the Laplacian matrix
         in ascending order.
 
     .. versionadded:: 1.12.0
@@ -101,6 +101,17 @@ of_the_second_derivative
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
+
+    Any number of extreme eigenvalues can be computed on demand.
+    
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions="periodic")
+    >>> eigenvalues = lap.eigenvalues
+    >>> eigenvalues()
+    array([-4., -3., -3., -1., -1.,  0.])
+    >>> eigenvalues()[-2:]
+    array([-1.,  0.])
+    >>> eigenvalues(2)
+    array([-1.,  0.])
 
     The two-dimensional Laplacian is illustrated on a regular grid with
     ``grid_shape = (2, 3)`` points in each dimension.
@@ -211,11 +222,14 @@ of_the_second_derivative
 
     def eigenvalues(self, m=0):
         grid_shape = self.grid_shape
-        indices = np.indices(grid_shape)
-        Leig = np.zeros(grid_shape)
-
         if m == 0:
-            pass
+            indices = np.indices(grid_shape)
+            Leig = np.zeros(grid_shape)
+        elif m > 0:
+            grid_shape_min = min(grid_shape,
+                                 tuple(np.ones_like(grid_shape) * m))
+            indices = np.indices(grid_shape_min)
+            Leig = np.zeros(grid_shape_min)
 
         for j, n in zip(indices, grid_shape):
             if self.boundary_conditions == "dirichlet":
@@ -226,6 +240,8 @@ of_the_second_derivative
                 Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
         _eigenvalues = np.sort(Leig.ravel())
+        if m > 0:
+            _eigenvalues = _eigenvalues[-m:]
 
         return _eigenvalues
 
