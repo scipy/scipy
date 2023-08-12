@@ -27,17 +27,15 @@ class LaplacianNd(LinearOperator):
     dtype : dtype
         Numerical type of the array. Default is ``np.int8``.
 
-    Attributes
-    ----------
-    eigenvalues : ndarray
-        Eigenvalues of the Laplacian matrix in ascending order.
-
     Methods
     -------
     toarray()
         Construct a dense array from Laplacian data
     tosparse()
         Construct a sparse array from Laplacian data
+    eigenvalues()
+        Construct an array of eigenvalues of the Laplacian matrix
+        in ascending order.
 
     .. versionadded:: 1.12.0
 
@@ -139,11 +137,11 @@ of_the_second_derivative
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigenvalues
+    >>> lap.eigenvalues()
     array([-6.41421356, -5.        , -4.41421356, -3.58578644, -3.        ,
            -1.58578644])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigenvalues, eigvals)
+    >>> np.allclose(lap.eigenvalues(), eigvals)
     True
 
     with ``"periodic"``
@@ -163,10 +161,10 @@ of_the_second_derivative
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigenvalues
+    >>> lap.eigenvalues()
     array([-7., -7., -4., -3., -3.,  0.])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigenvalues, eigvals)
+    >>> np.allclose(lap.eigenvalues(), eigvals)
     True
 
     and with ``"neumann"``
@@ -186,10 +184,10 @@ of_the_second_derivative
     True
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
-    >>> lap.eigenvalues
+    >>> lap.eigenvalues()
     array([-5., -3., -3., -2., -1.,  0.])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
-    >>> np.allclose(lap.eigenvalues, eigvals)
+    >>> np.allclose(lap.eigenvalues(), eigvals)
     True
 
     """
@@ -211,8 +209,13 @@ of_the_second_derivative
         N = np.prod(grid_shape)
         super().__init__(dtype=dtype, shape=(N, N))
 
+    def eigenvalues(self, m=0):
+        grid_shape = self.grid_shape
         indices = np.indices(grid_shape)
         Leig = np.zeros(grid_shape)
+
+        if m == 0:
+            pass
 
         for j, n in zip(indices, grid_shape):
             if boundary_conditions == "dirichlet":
@@ -222,16 +225,9 @@ of_the_second_derivative
             else:  # boundary_conditions == "periodic"
                 Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
-        self._eigenvalues = np.sort(Leig.ravel())
+        _eigenvalues = np.sort(Leig.ravel())
 
-    @property
-    def eigenvalues(self):
-        return self._eigenvalues
-
-    @eigenvalues.setter
-    def eigenvalues(self, value):
-        raise AttributeError("\"eigenvalues\" attribute is read-only and cannot "
-                             "be set.")
+        return _eigenvalues
 
     def toarray(self):
         """
