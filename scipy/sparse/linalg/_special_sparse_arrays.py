@@ -20,10 +20,10 @@ class LaplacianNd(LinearOperator):
         A tuple of integers of length ``N`` (corresponding to the dimension of
         the Lapacian), where each entry gives the size of that dimension. The
         Laplacian matrix is square of the size ``np.prod(grid_shape)``.
-    boundary_conditions : {'neumann', 'dirichlet', 'periodic'}, optional
+    boundary_conditions : {"neumann", "dirichlet", "periodic"}, optional
         The type of the boundary conditions on the boundaries of the grid.
-        Valid values are ``'dirichlet'`` or ``'neumann'``(default) or
-        ``'periodic'``.
+        Valid values are ``"dirichlet"`` or ``"neumann"``(default) or
+        ``"periodic"``.
     dtype : dtype
         Numerical type of the array. Default is ``np.int8``.
 
@@ -51,7 +51,7 @@ class LaplacianNd(LinearOperator):
 
     The Laplacian matrix of a graph (`scipy.sparse.csgraph.laplacian`) of a
     rectangular grid corresponds to the negative Laplacian with the Neumann
-    conditions, i.e., ``boundary_conditions = 'neumann'``.
+    conditions, i.e., ``boundary_conditions = "neumann"``.
 
     All eigenvalues and eigenvectors of the discrete Laplacian operator for
     an ``N``-dimensional  regular grid of shape `grid_shape` with the grid
@@ -82,11 +82,11 @@ of_the_second_derivative
     >>> G = diags(np.ones(n - 1), 1, format="csr")
     >>> Lf = csgraph.laplacian(G, symmetrized=True, form="function")
     >>> grid_shape = (n, )
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions='neumann')
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions="neumann")
     >>> np.array_equal(lap.matmat(np.eye(n)), -Lf(np.eye(n)))
     True
 
-    Since all matrix entries of the Laplacian are integers, ``'int8'`` is
+    Since all matrix entries of the Laplacian are integers, ``"int8"`` is
     the default dtype for storing matrix representations.
 
     >>> lap.tosparse()
@@ -121,10 +121,10 @@ of_the_second_derivative
             [4],
             [5]]])
 
-    Each of the boundary conditions ``'dirichlet'``, ``'periodic'``, and
-    ``'neumann'`` is illustrated separately; with ``'dirichlet'``
+    Each of the boundary conditions ``"dirichlet"``, ``"periodic"``, and
+    ``"neumann"`` is illustrated separately; with ``"dirichlet"``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions='dirichlet')
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions="dirichlet")
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 20 stored elements in Compressed Sparse Row format>
@@ -148,7 +148,7 @@ of_the_second_derivative
 
     with ``"periodic"``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions='periodic')
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions="periodic")
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 24 stored elements in Compressed Sparse Row format>
@@ -169,9 +169,9 @@ of_the_second_derivative
     >>> np.allclose(lap.eigenvalues, eigvals)
     True
 
-    and with ``'neumann'``
+    and with ``"neumann"``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions='neumann')
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions="neumann")
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 20 stored elements in Compressed Sparse Row format>
@@ -201,8 +201,8 @@ of_the_second_derivative
         if boundary_conditions not in ("dirichlet", "neumann", "periodic"):
             raise ValueError(
                 f"Unknown value {boundary_conditions!r} is given for "
-                "'boundary_conditions' parameter. The valid options are "
-                "'dirichlet', 'periodic', and 'neumann' (default)."
+                "\"boundary_conditions\" parameter. The valid options are "
+                "\"dirichlet\", \"periodic\", and \"neumann\" (default)."
             )
 
         self.grid_shape = grid_shape
@@ -230,8 +230,8 @@ of_the_second_derivative
 
     @eigenvalues.setter
     def eigenvalues(self, value):
-        raise AttributeError('"eigenvalues" attribute is read-only and cannot '
-                             'be set.')
+        raise AttributeError("\"eigenvalues\" attribute is read-only and cannot "
+                             "be set.")
 
     def toarray(self):
         """
