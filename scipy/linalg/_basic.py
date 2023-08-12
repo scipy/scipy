@@ -19,6 +19,8 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 # deprecated imports to be removed in SciPy 1.13.0
 from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
 
+from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
@@ -146,6 +148,29 @@ def solve(a, b, lower=False, overwrite_a=False,
     array([ True,  True,  True], dtype=bool)
 
     """
+    xp = array_namespace(a, b)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+        b = as_xparray(b, check_finite=True)
+    if is_numpy(xp):
+        return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
+                      overwrite_b=overwrite_b, check_finite=False,
+                      assume_a=assume_a, transposed=transposed)
+    if lower:
+        raise ValueError(arg_err_msg("lower"))
+    if assume_a != 'gen':
+        raise ValueError(arg_err_msg("assume_a"))
+    if transposed:
+        raise ValueError(arg_err_msg("transposed"))
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.solve(a, b)
+    a = np.asarray(a)
+    b = np.asarray(b)
+    return xp.asarray(_solve(a, b, check_finite=False))
+
+
+def _solve(a, b, lower=False, overwrite_a=False, overwrite_b=False,
+           check_finite=True, assume_a='gen', transposed=False):
     # Flags for 1-D or N-D right-hand side
     b_is_1D = False
 
@@ -944,6 +969,18 @@ def inv(a, overwrite_a=False, check_finite=True):
            [ 0.,  1.]])
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _inv(a, overwrite_a=overwrite_a, check_finite=False)
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.inv(a)
+    a = np.asarray(a)
+    return xp.asarray(_inv(a, check_finite=False))
+
+
+def _inv(a, overwrite_a=False, check_finite=True):
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
@@ -1042,6 +1079,18 @@ def det(a, overwrite_a=False, check_finite=True):
     >>> linalg.det(c[0, 0])  # Confirm the (0, 0) slice, [[1, 2], [3, 4]]
     -2.0
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _det(a, overwrite_a=overwrite_a, check_finite=False)
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.det(a)
+    a = np.asarray(a)
+    return xp.asarray(_det(a, check_finite=False))
+
+
+def _det(a, overwrite_a=False, check_finite=True):
     # The goal is to end up with a writable contiguous array to pass to Cython
 
     # First we check and make arrays.
@@ -1435,6 +1484,28 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     True
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
+                     check_finite=False, cond=cond, rcond=rcond)
+    if atol is not None:
+        raise ValueError(arg_err_msg("atol"))
+    if return_rank:
+        raise ValueError(arg_err_msg("return_rank"))
+    if cond != _NoValue:
+        raise ValueError(arg_err_msg("cond"))
+    if rcond != _NoValue:
+        raise ValueError(arg_err_msg("rcond"))
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.pinv(a, rtol=rtol)
+    a = np.asarray(a)
+    return xp.asarray(_pinv(a, rtol=rtol, check_finite=False))
+ 
+
+def _pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
+          cond=_NoValue, rcond=_NoValue):
     a = _asarray_validated(a, check_finite=check_finite)
     u, s, vh = _decomp_svd.svd(a, full_matrices=False, check_finite=False)
     t = u.dtype.char.lower()

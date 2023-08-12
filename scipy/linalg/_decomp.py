@@ -28,6 +28,7 @@ from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
+from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
 
 _I = numpy.array(1j, dtype='F')
 
@@ -439,6 +440,42 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     (5, 1)
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
+                     overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                     turbo=turbo, eigvals=eigvals, type=type,
+                     check_finite=False, subset_by_index=subset_by_index,
+                     subset_by_value=subset_by_value, driver=driver)
+    if b is not None:
+        raise ValueError(arg_err_msg("b"))
+    if not lower:
+        raise ValueError(arg_err_msg("lower"))
+    if eigvals_only:
+        raise ValueError(arg_err_msg("eigvals_only"))
+    if turbo != _NoValue:
+        raise ValueError(arg_err_msg("turbo"))
+    if eigvals != _NoValue:
+        raise ValueError(arg_err_msg("eigvals"))
+    if type != 1:
+        raise ValueError(arg_err_msg("type"))
+    if subset_by_index is not None:
+        raise ValueError(arg_err_msg("subset_by_index"))
+    if subset_by_value is not None:
+        raise ValueError(arg_err_msg("subset_by_value"))
+    if driver is not None:
+        raise ValueError(arg_err_msg("driver"))
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.eigh(a)
+    a = numpy.asarray(a)
+    return xp.asarray(_eigh(a, check_finite=False))
+
+
+def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
+          overwrite_b=False, turbo=_NoValue, eigvals=_NoValue, type=1,
+          check_finite=True, subset_by_index=None, subset_by_value=None, driver=None):
     if turbo is not _NoValue:
         warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
                       "driver=gvd' keyword instead and will be removed in "
@@ -1023,11 +1060,35 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     array([-3.74637491, -0.76263923,  6.08502336, 12.42399079])
 
     """
-    return eigh(a, b=b, lower=lower, eigvals_only=True,
-                overwrite_a=overwrite_a, overwrite_b=overwrite_b,
-                turbo=turbo, eigvals=eigvals, type=type,
-                check_finite=check_finite, subset_by_index=subset_by_index,
-                subset_by_value=subset_by_value, driver=driver)
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return eigh(a, b=b, lower=lower, eigvals_only=True,
+                    overwrite_a=overwrite_a, overwrite_b=overwrite_b,
+                    turbo=turbo, eigvals=eigvals, type=type,
+                    check_finite=False, subset_by_index=subset_by_index,
+                    subset_by_value=subset_by_value, driver=driver)
+    if b is not None:
+        raise ValueError(arg_err_msg("b"))
+    if not lower:
+        raise ValueError(arg_err_msg("lower"))
+    if turbo != _NoValue:
+        raise ValueError(arg_err_msg("turbo"))
+    if eigvals != _NoValue:
+        raise ValueError(arg_err_msg("eigvals"))
+    if type != 1:
+        raise ValueError(arg_err_msg("type"))
+    if subset_by_index is not None:
+        raise ValueError(arg_err_msg("subset_by_index"))
+    if subset_by_value is not None:
+        raise ValueError(arg_err_msg("subset_by_value"))
+    if driver is not None:
+        raise ValueError(arg_err_msg("driver"))
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.eigvalsh(a)
+    a = numpy.asarray(a)
+    return xp.asarray(_eigh(a, eigvals_only=True, check_finite=False))
 
 
 def eigvals_banded(a_band, lower=False, overwrite_a_band=False,

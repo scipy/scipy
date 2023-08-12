@@ -5,6 +5,8 @@ import numpy
 from .lapack import get_lapack_funcs
 from ._misc import _datacopied
 
+from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
+
 __all__ = ['qr', 'qr_multiply', 'rq']
 
 
@@ -118,6 +120,31 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     ((9, 6), (6, 6), (6,))
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
+                   pivoting=pivoting, check_finite=False)
+    if lwork is not None:
+        raise ValueError(arg_err_msg("lwork"))
+    if mode not in {'full', 'economic'}:
+        raise ValueError("Only 'full' and 'economic' modes are supported "
+                         "for non-numpy arrays.")
+    if pivoting:
+        raise ValueError(arg_err_msg("pivoting"))
+    if hasattr(xp, 'linalg'):
+        if mode == 'full':
+            mode = 'complete'
+        elif mode == 'economic':
+            mode = 'reduced'
+        return xp.linalg.qr(a, mode=mode)
+    a = numpy.asarray(a)
+    return xp.asarray(_qr(a, mode=mode, check_finite=False))
+
+
+def _qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
+        check_finite=True):
     # 'qr' was the old default, equivalent to 'full'. Neither 'full' nor
     # 'qr' are used below.
     # 'raw' is used internally by qr_multiply

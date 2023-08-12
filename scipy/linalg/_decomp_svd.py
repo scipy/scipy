@@ -7,6 +7,8 @@ from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
+from scipy._lib._array_api import array_namespace, is_numpy, as_xparray, arg_err_msg
+
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
 
 
@@ -105,6 +107,25 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     True
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
+                    overwrite_a=overwrite_a, check_finite=False,
+                    lapack_driver=lapack_driver)
+    if not compute_uv:
+        raise ValueError(arg_err_msg("compute_uv"))
+    if lapack_driver != 'gesdd':
+        raise ValueError(arg_err_msg("lapack_driver"))
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.svd(a, full_matrices=full_matrices)
+    a = numpy.asarray(a)
+    return xp.asarray(_svd(a, full_matrices=full_matrices, check_finite=False))
+
+
+def _svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
+         check_finite=True, lapack_driver='gesdd'):
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
@@ -222,6 +243,18 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 1.,  1.,  1.,  1.])
 
     """
+    xp = array_namespace(a)
+    if check_finite:
+        a = as_xparray(a, check_finite=True)
+    if is_numpy(xp):
+        return _svdvals(a, overwrite_a=overwrite_a, check_finite=False)
+    if hasattr(xp, 'linalg'):
+        return xp.linalg.svdvals(a)
+    a = numpy.asarray(a)
+    return xp.asarray(_svdvals(a, check_finite=False))
+
+
+def _svdvals(a, overwrite_a=False, check_finite=True):
     a = _asarray_validated(a, check_finite=check_finite)
     if a.size:
         return svd(a, compute_uv=0, overwrite_a=overwrite_a,
