@@ -7,7 +7,8 @@ py3.install_sources([
     'test_norm.py',
     'test_onenormest.py',
     'test_propack.py',
-    'test_pydata_sparse.py'
+    'test_pydata_sparse.py',
+    'test_special_sparse_arrays.py'
   ],
   subdir: 'scipy/sparse/linalg/tests'
 )
