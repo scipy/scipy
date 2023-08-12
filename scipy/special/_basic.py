@@ -2472,6 +2472,14 @@ def berp_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Example
+    -------
+    import numpy as np
+
+    Compute the first 5 zeros of the derivative of the Kelvin function ber
+    zeros = berp_zeros(5)
+    print("First 5 zeros of the derivative of ber:", zeros)
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
