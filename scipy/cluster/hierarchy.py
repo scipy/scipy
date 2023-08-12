@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, as_xparray
+from scipy._lib._array_api import array_namespace, as_xparray, copy
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -1358,7 +1358,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = as_xparray(last_group, copy=True, xp=xp)
+        this_group = copy(last_group, xp=xp)
         # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
@@ -1822,16 +1822,16 @@ def from_mlab_linkage(Z):
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
 
-    Zpart = as_xparray(Z, copy=True, xp=xp)
+    Zpart = copy(Z, xp=xp)
     if xp.min(Zpart[:, 0:2]) != 1.0 and xp.max(Zpart[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
 
@@ -1922,10 +1922,10 @@ def to_mlab_linkage(Z):
     Z = as_xparray(Z, order='C', dtype=xp.float64)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    ZP = as_xparray(Z[:, 0:3], copy=True, xp=xp)
+    ZP = copy(Z[:, 0:3], xp=xp)
     ZP[:, 0:2] += 1.0
 
     return ZP
