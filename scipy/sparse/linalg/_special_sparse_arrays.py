@@ -218,9 +218,9 @@ of_the_second_derivative
             pass
 
         for j, n in zip(indices, grid_shape):
-            if boundary_conditions == "dirichlet":
+            if self.boundary_conditions == "dirichlet":
                 Leig += -4 * np.sin(np.pi * (j + 1) / (2 * (n + 1))) ** 2
-            elif boundary_conditions == "neumann":
+            elif self.boundary_conditions == "neumann":
                 Leig += -4 * np.sin(np.pi * j / (2 * n)) ** 2
             else:  # boundary_conditions == "periodic"
                 Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
