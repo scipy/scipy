@@ -220,7 +220,7 @@ of_the_second_derivative
         N = np.prod(grid_shape)
         super().__init__(dtype=dtype, shape=(N, N))
 
-    def eigenvalues(self, m=0):
+    def __eigenvalue_ordering(self, m):
         grid_shape = self.grid_shape
         if m == 0:
             indices = np.indices(grid_shape)
@@ -239,10 +239,16 @@ of_the_second_derivative
             else:  # boundary_conditions == "periodic"
                 Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
-        _eigenvalues = np.sort(Leig.ravel())
+        Leig_ravel = Leig.ravel()
+        ind = np.argsort(Leig_ravel)
+        _eigenvalues = Leig_ravel[ind]
         if m > 0:
             _eigenvalues = _eigenvalues[-m:]
+        
+        return _eigenvalues, ind
 
+    def eigenvalues(self, m=0):
+        _eigenvalues, _ = self.__eigenvalue_ordering(m)
         return _eigenvalues
 
     def toarray(self):
