@@ -131,6 +131,5 @@ class TestLaplacianNd:
             assert y.dtype == dtype
 
 def test_boundary_conditions_value_error():
-    with pytest.raises(ValueError) as excinfo:
-        LaplacianNd(grid_shape=(6, ), boundary_conditions="Dirichlet")
-    assert str(excinfo.value).startswith("Unknown value 'Dirichlet'")
+    with pytest.raises(ValueError, match="Unknown value 'robin'"):
+        LaplacianNd(grid_shape=(6, ), boundary_conditions="robin")
