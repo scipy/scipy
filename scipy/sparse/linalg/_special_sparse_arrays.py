@@ -209,7 +209,7 @@ of_the_second_derivative
         if boundary_conditions not in ('dirichlet', 'neumann', 'periodic'):
             raise ValueError(
                 f"Unknown value {boundary_conditions!r} is given for "
-                ''boundary_conditions' parameter. The valid options are "
+                "'boundary_conditions' parameter. The valid options are "
                 "'dirichlet', 'periodic', and 'neumann' (default)."
             )
 
