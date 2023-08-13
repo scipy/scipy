@@ -82,8 +82,8 @@ class TestLaplacianNd:
         # test the default ``m = None``
         assert_allclose(eigenvalues, eigvals, atol=atol)
         # test every ``m > 0``
-        for m in np.arange(n) + 1:
-            assert_array_equal(lap.eigenvalues(m), eigenvalues()[-m: ])
+        for m in np.arange(1, n + 1):
+            assert_array_equal(lap.eigenvalues(m), eigenvalues[-m: ])
 
     @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
