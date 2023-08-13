@@ -221,7 +221,7 @@ of_the_second_derivative
 
     def __eigenvalue_ordering(self, m):
         grid_shape = self.grid_shape
-        if m == 0:
+        if m is None:
             indices = np.indices(grid_shape)
             Leig = np.zeros(grid_shape)
         elif m > 0:
