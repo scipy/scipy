@@ -17,7 +17,7 @@ class TestLaplacianNd:
     COMPLEX_DTYPES = [np.complex64, np.complex128]
     ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
-    @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_1d_specific_shape(self, bc):
         lap = LaplacianNd(grid_shape=(6, ), boundary_conditions=bc)
         lapa = lap.toarray()
@@ -58,19 +58,19 @@ class TestLaplacianNd:
 
     def test_1d_with_graph_laplacian(self):
         n = 6
-        G = diags(np.ones(n - 1), 1, format="dia")
-        Lf = csgraph.laplacian(G, symmetrized=True, form="function")
-        La = csgraph.laplacian(G, symmetrized=True, form="array")
+        G = diags(np.ones(n - 1), 1, format='dia')
+        Lf = csgraph.laplacian(G, symmetrized=True, form='function')
+        La = csgraph.laplacian(G, symmetrized=True, form='array')
         grid_shape = (n,)
-        bc = "neumann"
+        bc = 'neumann'
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         assert_array_equal(lap(np.eye(n)), -Lf(np.eye(n)))
         assert_array_equal(lap.toarray(), -La.toarray())
         # https://github.com/numpy/numpy/issues/24351
         assert_array_equal(lap.tosparse().toarray(), -La.toarray())
 
-    @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
-    @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
+    @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_eigenvalues(self, grid_shape, bc):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=np.float64)
         L = lap.toarray()
@@ -85,17 +85,17 @@ class TestLaplacianNd:
         for m in np.arange(1, n + 1):
             assert_array_equal(lap.eigenvalues(m), eigenvalues[-m: ])
 
-    @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
-    @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
+    @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_toarray_tosparse_consistency(self, grid_shape, bc):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         n = np.prod(grid_shape)
         assert_array_equal(lap.toarray(), lap(np.eye(n)))
         assert_array_equal(lap.tosparse().toarray(), lap.toarray())
 
-    @pytest.mark.parametrize("dtype", ALLDTYPES)
-    @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
-    @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_linearoperator_shape_dtype(self, grid_shape, bc, dtype):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=dtype)
         n = np.prod(grid_shape)
@@ -119,9 +119,9 @@ class TestLaplacianNd:
             .astype(dtype),
         )
 
-    @pytest.mark.parametrize("dtype", ALLDTYPES)
-    @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])
-    @pytest.mark.parametrize("bc", ['neumann', 'dirichlet', 'periodic'])
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_dot(self, grid_shape, bc, dtype):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         n = np.prod(grid_shape)
@@ -136,4 +136,4 @@ class TestLaplacianNd:
 
 def test_boundary_conditions_value_error():
     with pytest.raises(ValueError, match="Unknown value 'robin'"):
-        LaplacianNd(grid_shape=(6, ), boundary_conditions="robin")
+        LaplacianNd(grid_shape=(6, ), boundary_conditions='robin')
