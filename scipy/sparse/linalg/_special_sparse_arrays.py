@@ -224,7 +224,7 @@ of_the_second_derivative
         if m is None:
             indices = np.indices(grid_shape)
             Leig = np.zeros(grid_shape)
-        elif m > 0:
+        else:
             grid_shape_min = min(grid_shape,
                                  tuple(np.ones_like(grid_shape) * m))
             indices = np.indices(grid_shape_min)
@@ -241,7 +241,7 @@ of_the_second_derivative
         Leig_ravel = Leig.ravel()
         ind = np.argsort(Leig_ravel)
         _eigenvalues = Leig_ravel[ind]
-        if m > 0:
+        if m is not None:
             _eigenvalues = _eigenvalues[-m:]
         
         return _eigenvalues, ind
