@@ -20,10 +20,10 @@ class LaplacianNd(LinearOperator):
         A tuple of integers of length ``N`` (corresponding to the dimension of
         the Lapacian), where each entry gives the size of that dimension. The
         Laplacian matrix is square of the size ``np.prod(grid_shape)``.
-    boundary_conditions : {"neumann", "dirichlet", "periodic"}, optional
+    boundary_conditions : {'neumann', 'dirichlet', 'periodic'}, optional
         The type of the boundary conditions on the boundaries of the grid.
-        Valid values are ``"dirichlet"`` or ``"neumann"``(default) or
-        ``"periodic"``.
+        Valid values are ``'dirichlet'`` or ``'neumann'``(default) or
+        ``'periodic'``.
     dtype : dtype
         Numerical type of the array. Default is ``np.int8``.
 
@@ -49,7 +49,7 @@ class LaplacianNd(LinearOperator):
 
     The Laplacian matrix of a graph (`scipy.sparse.csgraph.laplacian`) of a
     rectangular grid corresponds to the negative Laplacian with the Neumann
-    conditions, i.e., ``boundary_conditions = "neumann"``.
+    conditions, i.e., ``boundary_conditions = 'neumann'``.
 
     All eigenvalues and eigenvectors of the discrete Laplacian operator for
     an ``N``-dimensional  regular grid of shape `grid_shape` with the grid
@@ -77,14 +77,14 @@ of_the_second_derivative
     famous tri-diagonal matrix:
 
     >>> n = 6
-    >>> G = diags(np.ones(n - 1), 1, format="csr")
-    >>> Lf = csgraph.laplacian(G, symmetrized=True, form="function")
+    >>> G = diags(np.ones(n - 1), 1, format='csr')
+    >>> Lf = csgraph.laplacian(G, symmetrized=True, form='function')
     >>> grid_shape = (n, )
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions="neumann")
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions='neumann')
     >>> np.array_equal(lap.matmat(np.eye(n)), -Lf(np.eye(n)))
     True
 
-    Since all matrix entries of the Laplacian are integers, ``"int8"`` is
+    Since all matrix entries of the Laplacian are integers, ``'int8'`` is
     the default dtype for storing matrix representations.
 
     >>> lap.tosparse()
@@ -104,7 +104,7 @@ of_the_second_derivative
 
     Any number of extreme eigenvalues can be computed on demand.
     
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions="periodic")
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions='periodic')
     >>> lap.eigenvalues()
     array([-4., -3., -3., -1., -1.,  0.])
     >>> lap.eigenvalues()[-2:]
@@ -129,10 +129,10 @@ of_the_second_derivative
             [4],
             [5]]])
 
-    Each of the boundary conditions ``"dirichlet"``, ``"periodic"``, and
-    ``"neumann"`` is illustrated separately; with ``"dirichlet"``
+    Each of the boundary conditions ``'dirichlet'``, ``'periodic'``, and
+    ``'neumann'`` is illustrated separately; with ``'dirichlet'``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions="dirichlet")
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions='dirichlet')
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 20 stored elements in Compressed Sparse Row format>
@@ -154,9 +154,9 @@ of_the_second_derivative
     >>> np.allclose(lap.eigenvalues(), eigvals)
     True
 
-    with ``"periodic"``
+    with ``'periodic'``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions="periodic")
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions='periodic')
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 24 stored elements in Compressed Sparse Row format>
@@ -177,9 +177,9 @@ of_the_second_derivative
     >>> np.allclose(lap.eigenvalues(), eigvals)
     True
 
-    and with ``"neumann"``
+    and with ``'neumann'``
 
-    >>> lap = LaplacianNd(grid_shape, boundary_conditions="neumann")
+    >>> lap = LaplacianNd(grid_shape, boundary_conditions='neumann')
     >>> lap.tosparse()
     <6x6 sparse array of type '<class 'numpy.int8'>'
         with 20 stored elements in Compressed Sparse Row format>
@@ -203,14 +203,14 @@ of_the_second_derivative
     """
 
     def __init__(self, grid_shape, *,
-                 boundary_conditions="neumann",
+                 boundary_conditions='neumann',
                  dtype=np.int8):
 
-        if boundary_conditions not in ("dirichlet", "neumann", "periodic"):
+        if boundary_conditions not in ('dirichlet', 'neumann', 'periodic'):
             raise ValueError(
                 f"Unknown value {boundary_conditions!r} is given for "
-                "\"boundary_conditions\" parameter. The valid options are "
-                "\"dirichlet\", \"periodic\", and \"neumann\" (default)."
+                ''boundary_conditions' parameter. The valid options are "
+                "'dirichlet', 'periodic', and 'neumann' (default)."
             )
 
         self.grid_shape = grid_shape
@@ -231,11 +231,11 @@ of_the_second_derivative
             Leig = np.zeros(grid_shape_min)
 
         for j, n in zip(indices, grid_shape):
-            if self.boundary_conditions == "dirichlet":
+            if self.boundary_conditions == 'dirichlet':
                 Leig += -4 * np.sin(np.pi * (j + 1) / (2 * (n + 1))) ** 2
-            elif self.boundary_conditions == "neumann":
+            elif self.boundary_conditions == 'neumann':
                 Leig += -4 * np.sin(np.pi * j / (2 * n)) ** 2
-            else:  # boundary_conditions == "periodic"
+            else:  # boundary_conditions == 'periodic'
                 Leig += -4 * np.sin(np.pi * np.floor((j + 1) / 2) / n) ** 2
 
         Leig_ravel = Leig.ravel()
@@ -289,10 +289,10 @@ of_the_second_derivative
             np.einsum("ii->i", L_i[: dim - 1, 1:dim])[:] = 1
             np.einsum("ii->i", L_i[1:dim, : dim - 1])[:] = 1
 
-            if self.boundary_conditions == "neumann":
+            if self.boundary_conditions == 'neumann':
                 L_i[0, 0] = -1
                 L_i[dim - 1, dim - 1] = -1
-            elif self.boundary_conditions == "periodic":
+            elif self.boundary_conditions == 'periodic':
                 if dim > 1:
                     L_i[0, dim - 1] += 1
                     L_i[dim - 1, 0] += 1
@@ -347,7 +347,7 @@ of_the_second_derivative
             data = np.ones([3, dim], dtype=np.int8)
             data[1, :] *= -2
 
-            if self.boundary_conditions == "neumann":
+            if self.boundary_conditions == 'neumann':
                 data[1, 0] = -1
                 data[1, -1] = -1
 
@@ -355,7 +355,7 @@ of_the_second_derivative
                             dtype=np.int8
                             )
 
-            if self.boundary_conditions == "periodic":
+            if self.boundary_conditions == 'periodic':
                 t = dia_array((dim, dim), dtype=np.int8)
                 t.setdiag([1], k=-dim+1)
                 t.setdiag([1], k=dim-1)
@@ -376,7 +376,7 @@ of_the_second_derivative
         for i in range(N):
             Y += np.roll(X, 1, axis=i)
             Y += np.roll(X, -1, axis=i)
-            if self.boundary_conditions in ("neumann", "dirichlet"):
+            if self.boundary_conditions in ('neumann', 'dirichlet'):
                 Y[(slice(None),)*i + (0,) + (slice(None),)*(N-i-1)
                   ] -= np.roll(X, 1, axis=i)[
                     (slice(None),) * i + (0,) + (slice(None),) * (N-i-1)
@@ -387,7 +387,7 @@ of_the_second_derivative
                     (slice(None),) * i + (-1,) + (slice(None),) * (N-i-1)
                 ]
 
-                if self.boundary_conditions == "neumann":
+                if self.boundary_conditions == 'neumann':
                     Y[
                         (slice(None),) * i + (0,) + (slice(None),) * (N-i-1)
                     ] += np.roll(X, 0, axis=i)[
