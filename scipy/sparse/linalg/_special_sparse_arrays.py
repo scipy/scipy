@@ -33,9 +33,9 @@ class LaplacianNd(LinearOperator):
         Construct a dense array from Laplacian data
     tosparse()
         Construct a sparse array from Laplacian data
-    eigenvalues()
-        Construct a 1D array of eigenvalues of the Laplacian matrix
-        in ascending order.
+    eigenvalues(m=None)
+        Construct a 1D array of `m` largest (smallest in absolute value)
+        eigenvalues of the Laplacian matrix in ascending order.
 
     .. versionadded:: 1.12.0
 
@@ -105,12 +105,11 @@ of_the_second_derivative
     Any number of extreme eigenvalues can be computed on demand.
     
     >>> lap = LaplacianNd(grid_shape, boundary_conditions="periodic")
-    >>> eigenvalues = lap.eigenvalues
-    >>> eigenvalues()
+    >>> lap.eigenvalues()
     array([-4., -3., -3., -1., -1.,  0.])
-    >>> eigenvalues()[-2:]
+    >>> lap.eigenvalues()[-2:]
     array([-1.,  0.])
-    >>> eigenvalues(2)
+    >>> lap.eigenvalues(2)
     array([-1.,  0.])
 
     The two-dimensional Laplacian is illustrated on a regular grid with
@@ -247,7 +246,20 @@ of_the_second_derivative
         
         return _eigenvalues, ind
 
-    def eigenvalues(self, m=0):
+    def eigenvalues(self, m=None):
+        """Return the requested number of eigenvalues.
+        
+        Parameters
+        ----------
+        m : int, optional
+            The positive number of eigenvalues to return. If not provided,
+            then all eigenvalues will be returned.
+            
+        Returns
+        -------
+        eigenvalues : float array
+            The requested `m` or all eigenvalues, in ascending order.
+        """
         _eigenvalues, _ = self.__eigenvalue_ordering(m)
         return _eigenvalues
 
