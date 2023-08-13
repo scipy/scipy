@@ -2974,7 +2974,7 @@ def set_link_color_palette(palette):
     if palette is None:
         # reset to its default
         palette = _link_line_colors_default
-    elif type(palette) not in (list, tuple):
+    elif not isinstance(palette, (list, tuple)):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, str) for p in palette]
 
@@ -3277,7 +3277,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
-    if type(p) in (int, float):
+    if isinstance(p, (int, float)):
         p = int(p)
     else:
         raise TypeError('The second argument must be a number')
@@ -4018,7 +4018,7 @@ def maxRstat(Z, R, i):
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
-    if type(i) is not int:
+    if not isinstance(i, int):
         raise TypeError('The third argument must be an integer.')
 
     if i < 0 or i > 3:
