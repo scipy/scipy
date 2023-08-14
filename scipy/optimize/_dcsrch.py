@@ -367,8 +367,8 @@ class DCSRCH:
             task = b"FG"
             return stp, f, g, task
 
-        else:
-            pass
+        # in the original Fortran this was a location to restore variables
+        # we don't need to do that because they're attributes.
 
         # If psi(stp) <= 0 and f'(stp) >= 0 for some step, then the
         # algorithm enters the second stage.
