@@ -37,9 +37,9 @@ at the top-level directory.
 /* 
  * Function prototypes 
  */
-void cusolve(int, int, complex*, complex*);
-void clsolve(int, int, complex*, complex*);
-void cmatvec(int, int, int, complex*, complex*, complex*);
+void cusolve(int, int, singlecomplex*, singlecomplex*);
+void clsolve(int, int, singlecomplex*, singlecomplex*);
+void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
 
 /*! \brief
  *
@@ -107,20 +107,20 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 #endif
     int      incx = 1, incy = 1;
 #ifdef USE_VENDOR_BLAS
-    complex   alpha = {1.0, 0.0}, beta = {1.0, 0.0};
-    complex   *work_col;
+    singlecomplex   alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+    singlecomplex   *work_col;
 #endif
-    complex   temp_comp;
+    singlecomplex   temp_comp;
     DNformat *Bstore;
-    complex   *Bmat;
+    singlecomplex   *Bmat;
     SCformat *Lstore;
     NCformat *Ustore;
-    complex   *Lval, *Uval;
+    singlecomplex   *Lval, *Uval;
     int      fsupc, nrow, nsupr, nsupc, luptr, istart, irow;
     int      i, j, k, iptr, jcol, n, ldb, nrhs;
-    complex   *work, *rhs_work, *soln;
+    singlecomplex   *work, *rhs_work, *soln;
     flops_t  solve_ops;
-    void cprint_soln(int n, int nrhs, complex *soln);
+    void cprint_soln(int n, int nrhs, singlecomplex *soln);
 
     /* Test input parameters ... */
     *info = 0;
@@ -351,7 +351,7 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
  * Diagnostic print of the solution vector 
  */
 void
-cprint_soln(int n, int nrhs, complex *soln)
+cprint_soln(int n, int nrhs, singlecomplex *soln)
 {
     int i;
 
