@@ -219,7 +219,7 @@ of_the_second_derivative
         N = np.prod(grid_shape)
         super().__init__(dtype=dtype, shape=(N, N))
 
-    def __eigenvalue_ordering(self, m):
+    def _eigenvalue_ordering(self, m):
         grid_shape = self.grid_shape
         if m is None:
             indices = np.indices(grid_shape)
@@ -240,11 +240,11 @@ of_the_second_derivative
 
         Leig_ravel = Leig.ravel()
         ind = np.argsort(Leig_ravel)
-        _eigenvalues = Leig_ravel[ind]
+        eigenvalues = Leig_ravel[ind]
         if m is not None:
-            _eigenvalues = _eigenvalues[-m:]
+            eigenvalues = eigenvalues[-m:]
         
-        return _eigenvalues, ind
+        return eigenvalues, ind
 
     def eigenvalues(self, m=None):
         """Return the requested number of eigenvalues.
@@ -260,8 +260,8 @@ of_the_second_derivative
         eigenvalues : float array
             The requested `m` or all eigenvalues, in ascending order.
         """
-        _eigenvalues, _ = self.__eigenvalue_ordering(m)
-        return _eigenvalues
+        eigenvalues, _ = self._eigenvalue_ordering(m)
+        return eigenvalues
 
     def toarray(self):
         """
