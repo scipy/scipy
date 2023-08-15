@@ -346,10 +346,10 @@ of_the_second_derivative
         """
         _, ind = self._eigenvalue_ordering(m)
         if m is None:
-            grid_shape_min = grid_shape
+            grid_shape_min = self.grid_shape
         else:
-            grid_shape_min = min(grid_shape,
-                                tuple(np.ones_like(grid_shape) * m))
+            grid_shape_min = min(self.grid_shape,
+                                tuple(np.ones_like(self.grid_shape) * m))
 
         N_indices = np.unravel_index(ind, grid_shape_min)
         N_indices = [tuple(x) for x in zip(*N_indices)]
