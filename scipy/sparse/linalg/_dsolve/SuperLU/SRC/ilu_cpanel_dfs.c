@@ -60,7 +60,7 @@ ilu_cpanel_dfs(
    SuperMatrix *A,	   /* in - original matrix */
    int	      *perm_r,	   /* in */
    int	      *nseg,	   /* out */
-   complex     *dense,	   /* out */
+   singlecomplex     *dense,	   /* out */
    float     *amax,	   /* out - max. abs. value of each column in panel */
    int	      *panel_lsub, /* out */
    int	      *segrep,	   /* out */
@@ -73,7 +73,7 @@ ilu_cpanel_dfs(
 {
 
     NCPformat *Astore;
-    complex    *a;
+    singlecomplex    *a;
     int       *asub;
     int       *xa_begin, *xa_end;
     int       krep, chperm, chmark, chrep, oldrep, kchild, myfnz;
@@ -83,7 +83,7 @@ ilu_cpanel_dfs(
     int       *marker1;    /* marker1[jj] >= jcol if vertex jj was visited
 			      by a previous column within this panel. */
     int       *repfnz_col; /* start of each column in the panel */
-    complex    *dense_col;  /* start of each column in the panel */
+    singlecomplex    *dense_col;  /* start of each column in the panel */
     int       nextl_col;   /* next available position in panel_lsub[*,jj] */
     int       *xsup, *supno;
     int       *lsub, *xlsub;

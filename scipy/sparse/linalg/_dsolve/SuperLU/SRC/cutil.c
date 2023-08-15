@@ -37,7 +37,7 @@ at the top-level directory.
 
 void
 cCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz, 
-		       complex *nzval, int *rowind, int *colptr,
+		       singlecomplex *nzval, int *rowind, int *colptr,
 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     NCformat *Astore;
@@ -58,7 +58,7 @@ cCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz,
 
 void
 cCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz, 
-		       complex *nzval, int *colind, int *rowptr,
+		       singlecomplex *nzval, int *colind, int *rowptr,
 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     NRformat *Astore;
@@ -93,14 +93,14 @@ cCopy_CompCol_Matrix(SuperMatrix *A, SuperMatrix *B)
     Bstore   = (NCformat *) B->Store;
     Bstore->nnz = nnz = Astore->nnz;
     for (i = 0; i < nnz; ++i)
-	((complex *)Bstore->nzval)[i] = ((complex *)Astore->nzval)[i];
+	((singlecomplex *)Bstore->nzval)[i] = ((singlecomplex *)Astore->nzval)[i];
     for (i = 0; i < nnz; ++i) Bstore->rowind[i] = Astore->rowind[i];
     for (i = 0; i <= ncol; ++i) Bstore->colptr[i] = Astore->colptr[i];
 }
 
 
 void
-cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, complex *x, int ldx,
+cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, singlecomplex *x, int ldx,
 		    Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     DNformat    *Xstore;
@@ -114,12 +114,12 @@ cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, complex *x, int ldx,
     if ( !(X->Store) ) ABORT("SUPERLU_MALLOC fails for X->Store");
     Xstore = (DNformat *) X->Store;
     Xstore->lda = ldx;
-    Xstore->nzval = (complex *) x;
+    Xstore->nzval = (singlecomplex *) x;
 }
 
 void
-cCopy_Dense_Matrix(int M, int N, complex *X, int ldx,
-			complex *Y, int ldy)
+cCopy_Dense_Matrix(int M, int N, singlecomplex *X, int ldx,
+			singlecomplex *Y, int ldy)
 {
 /*! \brief Copies a two-dimensional matrix X to another matrix Y.
  */
@@ -132,7 +132,7 @@ cCopy_Dense_Matrix(int M, int N, complex *X, int ldx,
 
 void
 cCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz, 
-			complex *nzval, int *nzval_colptr, int *rowind,
+			singlecomplex *nzval, int *nzval_colptr, int *rowind,
 			int *rowind_colptr, int *col_to_sup, int *sup_to_col,
 			Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
@@ -162,14 +162,14 @@ cCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz,
  */
 void
 cCompRow_to_CompCol(int m, int n, int nnz, 
-		    complex *a, int *colind, int *rowptr,
-		    complex **at, int **rowind, int **colptr)
+		    singlecomplex *a, int *colind, int *rowptr,
+		    singlecomplex **at, int **rowind, int **colptr)
 {
     register int i, j, col, relpos;
     int *marker;
 
     /* Allocate storage for another copy of the matrix. */
-    *at = (complex *) complexMalloc(nnz);
+    *at = (singlecomplex *) complexMalloc(nnz);
     *rowind = (int *) intMalloc(nnz);
     *colptr = (int *) intMalloc(n+1);
     marker = (int *) intCalloc(n);
@@ -299,18 +299,18 @@ cprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
     int     i, k, fsupc;
     int     *xsup, *supno;
     int     *xlsub, *lsub;
-    complex  *lusup;
+    singlecomplex  *lusup;
     int     *xlusup;
-    complex  *ucol;
+    singlecomplex  *ucol;
     int     *usub, *xusub;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = (complex *) Glu->lusup;
+    lusup   = (singlecomplex *) Glu->lusup;
     xlusup  = Glu->xlusup;
-    ucol    = (complex *) Glu->ucol;
+    ucol    = (singlecomplex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     
@@ -335,7 +335,7 @@ cprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
 
 /*! \brief Check whether tempv[] == 0. This should be true before and after calling any numeric routines, i.e., "panel_bmod" and "column_bmod". 
  */
-void ccheck_tempv(int n, complex *tempv)
+void ccheck_tempv(int n, singlecomplex *tempv)
 {
     int i;
 	
@@ -350,7 +350,7 @@ void ccheck_tempv(int n, complex *tempv)
 
 
 void
-cGenXtrue(int n, int nrhs, complex *x, int ldx)
+cGenXtrue(int n, int nrhs, singlecomplex *x, int ldx)
 {
     int  i, j;
     for (j = 0; j < nrhs; ++j)
@@ -363,20 +363,20 @@ cGenXtrue(int n, int nrhs, complex *x, int ldx)
 /*! \brief Let rhs[i] = sum of i-th row of A, so the solution vector is all 1's
  */
 void
-cFillRHS(trans_t trans, int nrhs, complex *x, int ldx,
+cFillRHS(trans_t trans, int nrhs, singlecomplex *x, int ldx,
          SuperMatrix *A, SuperMatrix *B)
 {
     NCformat *Astore;
-    complex   *Aval;
+    singlecomplex   *Aval;
     DNformat *Bstore;
-    complex   *rhs;
-    complex one = {1.0, 0.0};
-    complex zero = {0.0, 0.0};
+    singlecomplex   *rhs;
+    singlecomplex one = {1.0, 0.0};
+    singlecomplex zero = {0.0, 0.0};
     int      ldc;
     char transc[1];
 
     Astore = A->Store;
-    Aval   = (complex *) Astore->nzval;
+    Aval   = (singlecomplex *) Astore->nzval;
     Bstore = B->Store;
     rhs    = Bstore->nzval;
     ldc    = Bstore->lda;
@@ -392,7 +392,7 @@ cFillRHS(trans_t trans, int nrhs, complex *x, int ldx,
 /*! \brief Fills a complex precision array with a given value.
  */
 void 
-cfill(complex *a, int alen, complex dval)
+cfill(singlecomplex *a, int alen, singlecomplex dval)
 {
     register int i;
     for (i = 0; i < alen; i++) a[i] = dval;
@@ -402,12 +402,12 @@ cfill(complex *a, int alen, complex dval)
 
 /*! \brief Check the inf-norm of the error vector 
  */
-void cinf_norm_error(int nrhs, SuperMatrix *X, complex *xtrue)
+void cinf_norm_error(int nrhs, SuperMatrix *X, singlecomplex *xtrue)
 {
     DNformat *Xstore;
     float err, xnorm;
-    complex *Xmat, *soln_work;
-    complex temp;
+    singlecomplex *Xmat, *soln_work;
+    singlecomplex temp;
     int i, j;
 
     Xstore = X->Store;
@@ -475,7 +475,7 @@ cPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 
 
 int
-print_complex_vec(char *what, int n, complex *vec)
+print_complex_vec(char *what, int n, singlecomplex *vec)
 {
     int i;
     printf("%s: n %d\n", what, n);

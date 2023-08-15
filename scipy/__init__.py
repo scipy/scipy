@@ -62,7 +62,7 @@ _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
 # deprecate callable objects from numpy, skipping classes and modules
 import types as _types  # noqa: E402
 for _key in np.__all__:
-    if _key.startswith('_'):
+    if _key.startswith('_') or _key in ['distutils', 'array_api']:
         continue
     _fun = getattr(np, _key)
     if isinstance(_fun, _types.ModuleType):
