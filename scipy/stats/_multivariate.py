@@ -817,40 +817,25 @@ class multivariate_normal_gen(multi_rv_generic):
 
         n_vectors, dim = x.shape
 
-        # convenience variables for checking if parameters are fixed
-        mean_fixed = fix_mean is not None
-        cov_fixed = fix_cov is not None
-
-        # if both parameters are fixed, there is nothing to fit
-        if mean_fixed and cov_fixed:
-            error_msg = "Both parameters are fixed. There is nothing to fit."
-            raise ValueError(error_msg)
-
         # parameter estimation
         # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
-        if mean_fixed:
+        if fix_mean is not None:
             # input validation for `fix_mean`
-            fix_mean = np.asarray(fix_mean)
-            if fix_mean.ndim != 1:
-                raise ValueError("`fix_mean` must be one-dimensional.")
-            if fix_mean.shape[0] != dim:
-                msg = ("`fix_mean` must be of the same length as "
-                       "the vectors `x`.")
+            fix_mean = np.atleast_1d(fix_mean)
+            if fix_mean.shape != (dim, ):
+                msg = ("`fix_mean` must be a one-dimensional array the same "
+                       "length as the dimensionality of the vectors `x`.")
                 raise ValueError(msg)
             mean = fix_mean
         else:
             mean = x.mean(axis=0)
-        if cov_fixed:
+        if fix_cov is not None:
             # input validation for `fix_cov`
-            fix_cov = np.asarray(fix_cov)
-            if fix_cov.ndim != 2:
-                raise ValueError("`fix_cov` must be two-dimensional.")
-            cov_rows, cov_cols = fix_cov.shape
-            if cov_rows != cov_cols:
-                raise ValueError("`fix_cov` must be a square matrix.")
-            if cov_rows != dim:
-                msg = ("`fix_cov` must be a square matrix of the same "
-                       "side length as the vectors `x`.")
+            fix_cov = np.atleast_2d(fix_cov)
+            if fix_cov.shape != (dim, dim):
+                msg = ("`fix_cov` must be a two-dimensional square matrix "
+                       "of same side length as the dimensionality of the "
+                       "vectors `x`.")
                 raise ValueError(msg)
             cov = fix_cov
         else:
