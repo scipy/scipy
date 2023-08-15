@@ -328,6 +328,8 @@ def test_api_importable():
                           ('scipy.interpolate.ndgriddata', None),
                           ('scipy.interpolate.polyint', None),
                           ('scipy.interpolate.rbf', None),
+                          ('scipy.odr.models', None),
+                          ('scipy.odr.odrpack', None),
                           ('scipy.optimize.cobyla', None),
                           ('scipy.optimize.lbfgsb', None),
                           ('scipy.optimize.linesearch', None),
