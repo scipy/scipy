@@ -36,6 +36,9 @@ class LaplacianNd(LinearOperator):
     eigenvalues(m=None)
         Construct a 1D array of `m` largest (smallest in absolute value)
         eigenvalues of the Laplacian matrix in ascending order.
+    eigenvectors(m=None):
+        Construct the array of `m` eigenvectors (``float``) of the
+        ``Nd`` Laplacian corresponding to the `m` ordered eigenvalues.
 
     .. versionadded:: 1.12.0
 
@@ -220,6 +223,9 @@ of_the_second_derivative
         super().__init__(dtype=dtype, shape=(N, N))
 
     def _eigenvalue_ordering(self, m):
+        """Compute `m` largest eigenvalues in each of the ``N`` directions,
+        i.e., up to ``m * N`` total, order them and return `m` largest.
+        """
         grid_shape = self.grid_shape
         if m is None:
             indices = np.indices(grid_shape)
@@ -262,6 +268,53 @@ of_the_second_derivative
         """
         eigenvalues, _ = self._eigenvalue_ordering(m)
         return eigenvalues
+
+    
+    def _ev1d(self, j, n):
+        """Return 1 eigenvector in 1d with index `j`
+        and number of grid points `n` where ``j < n``. 
+        """
+        if self.boundary_conditions == 'dirichlet':
+            i = np.pi * (np.arange(n) + 1) / (n + 1)
+            ev = np.sqrt(2. / (n + 1.)) * np.sin(i * (j + 1))
+        elif self.boundary_conditions == 'neumann':
+            i = np.pi * (np.arange(n) + 0.5) / n
+            ev = np.sqrt((1. if j == 0 else 2.) / n) * np.cos(i * j)
+        else:  # boundary_conditions == 'periodic'
+            if j == 0:
+                ev = np.sqrt(1. / n) * np.ones(n)
+            elif j + 1 == n and n % 2 == 0:
+                ev = np.sqrt(1. / n) * np.tile([1, -1], n//2)
+            else:
+                i = 2. * np.pi * (np.arange(n) + 0.5) / n
+                ev = np.sqrt(2. / n) * np.cos(i * np.floor((j + 1) / 2))
+        return ev
+
+    def _one_eve(self, k):
+        """Return 1 eigenvector in Nd with multi-index `j`
+        as a tensor product of the corresponding 1d eigenvectors. 
+        """
+        phi = [self._ev1d(j, n) for j, n in zip(k, self.grid_shape)]
+        result = phi[0]
+        for phi in phi[1:]:
+            result = np.tensordot(result, phi, axes=0)
+        return np.asarray(result).ravel()
+
+    def eigenvectors(self, m=None):
+        """Return `m` eigenvectors of Nd Laplacian computed
+        one-by-one according to the `m` ordered eigenvalues. 
+        """
+        _, ind = self._eigenvalue_ordering(m)
+        if m is None:
+            grid_shape_min = grid_shape
+        else:
+            grid_shape_min = min(grid_shape,
+                                tuple(np.ones_like(grid_shape) * m))
+
+        N_indices = np.unravel_index(ind, grid_shape_min)
+        N_indices = [tuple(x) for x in zip(*N_indices)]
+        eigenvectors_list = [self._one_eve(k) for k in N_indices]
+        return np.asarray(eigenvectors_list).T
 
     def toarray(self):
         """
