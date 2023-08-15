@@ -105,7 +105,7 @@ of_the_second_derivative
     >>> np.array_equal(lap.tosparse().toarray(), lap.toarray())
     True
 
-    Any number of extreme eigenvalues can be computed on demand.
+    Any number of extreme eigenvalues and/or eigenvectors can be computed.
     
     >>> lap = LaplacianNd(grid_shape, boundary_conditions='periodic')
     >>> lap.eigenvalues()
@@ -114,6 +114,33 @@ of_the_second_derivative
     array([-1.,  0.])
     >>> lap.eigenvalues(2)
     array([-1.,  0.])
+    >>> lap.eigenvectors(1)
+    array([[0.40824829],
+           [0.40824829],
+           [0.40824829],
+           [0.40824829],
+           [0.40824829],
+           [0.40824829]])
+    >>> lap.eigenvectors(2)
+    array([[ 0.5       ,  0.40824829],
+           [ 0.        ,  0.40824829],
+           [-0.5       ,  0.40824829],
+           [-0.5       ,  0.40824829],
+           [ 0.        ,  0.40824829],
+           [ 0.5       ,  0.40824829]])
+    >>> lap.eigenvectors()
+    array([[ 0.40824829,  0.28867513,  0.28867513,  0.5       ,  0.5       ,
+             0.40824829],
+           [-0.40824829, -0.57735027, -0.57735027,  0.        ,  0.        ,
+             0.40824829],
+           [ 0.40824829,  0.28867513,  0.28867513, -0.5       , -0.5       ,
+             0.40824829],
+           [-0.40824829,  0.28867513,  0.28867513, -0.5       , -0.5       ,
+             0.40824829],
+           [ 0.40824829, -0.57735027, -0.57735027,  0.        ,  0.        ,
+             0.40824829],
+           [-0.40824829,  0.28867513,  0.28867513,  0.5       ,  0.5       ,
+             0.40824829]])
 
     The two-dimensional Laplacian is illustrated on a regular grid with
     ``grid_shape = (2, 3)`` points in each dimension.
@@ -156,6 +183,9 @@ of_the_second_derivative
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
     >>> np.allclose(lap.eigenvalues(), eigvals)
     True
+    >>> np.allclose(lap.toarray() @ lap.eigenvectors(),
+    ...             lap.eigenvectors() @ np.diag(lap.eigenvalues()))
+    True
 
     with ``'periodic'``
 
@@ -179,6 +209,9 @@ of_the_second_derivative
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
     >>> np.allclose(lap.eigenvalues(), eigvals)
     True
+    >>> np.allclose(lap.toarray() @ lap.eigenvectors(),
+    ...             lap.eigenvectors() @ np.diag(lap.eigenvalues()))
+    True
 
     and with ``'neumann'``
 
@@ -201,6 +234,9 @@ of_the_second_derivative
     array([-5., -3., -3., -2., -1.,  0.])
     >>> eigvals = eigvalsh(lap.toarray().astype(np.float64))
     >>> np.allclose(lap.eigenvalues(), eigvals)
+    True
+    >>> np.allclose(lap.toarray() @ lap.eigenvectors(),
+    ...             lap.eigenvectors() @ np.diag(lap.eigenvalues()))
     True
 
     """
@@ -249,7 +285,9 @@ of_the_second_derivative
         eigenvalues = Leig_ravel[ind]
         if m is not None:
             eigenvalues = eigenvalues[-m:]
-        
+
+        # make small values exact zeros
+        eigenvalues[np.abs(eigenvalues) < np.finfo(np.float64).eps] = 0.
         return eigenvalues, ind
 
     def eigenvalues(self, m=None):
@@ -288,6 +326,8 @@ of_the_second_derivative
             else:
                 i = 2. * np.pi * (np.arange(n) + 0.5) / n
                 ev = np.sqrt(2. / n) * np.cos(i * np.floor((j + 1) / 2))
+        # make small values exact zeros
+        ev[np.abs(ev) < np.finfo(np.float64).eps] = 0.
         return ev
 
     def _one_eve(self, k):
