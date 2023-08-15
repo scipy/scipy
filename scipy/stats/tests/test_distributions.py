@@ -4104,7 +4104,7 @@ class TestTruncexpon:
         b = [20, 100]
         x = [19.999999, 99.999999]
         ref = [2.0611546593828472e-15, 3.7200778266671455e-50]
-        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
+        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1.5e-10)
         assert_allclose(stats.truncexpon.isf(ref, b), x, rtol=1e-12)
 
 

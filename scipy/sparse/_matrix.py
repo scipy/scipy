@@ -1,6 +1,3 @@
-from ._sputils import isintlike, isscalarlike
-
-
 class spmatrix:
     """This class provides a base class for all sparse matrix classes.
 
@@ -50,32 +47,10 @@ class spmatrix:
         return self._rmul_dispatch(other)
 
     # Restore matrix power
-    def __pow__(self, other):
-        M, N = self.shape
-        if M != N:
-            raise TypeError('sparse matrix is not square')
+    def __pow__(self, power):
+        from .linalg import matrix_power
 
-        if isintlike(other):
-            other = int(other)
-            if other < 0:
-                raise ValueError('exponent must be >= 0')
-
-            if other == 0:
-                from ._construct import eye
-                return eye(M, dtype=self.dtype)
-
-            if other == 1:
-                return self.copy()
-
-            tmp = self.__pow__(other // 2)
-            if other % 2:
-                return self @ tmp @ tmp
-            else:
-                return tmp @ tmp
-
-        if isscalarlike(other):
-            raise ValueError('exponent must be an integer')
-        return NotImplemented
+        return matrix_power(self, power)
 
     ## Backward compatibility
 

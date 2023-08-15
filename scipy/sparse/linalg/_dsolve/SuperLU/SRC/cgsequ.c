@@ -98,7 +98,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
 
     /* Local variables */
     NCformat *Astore;
-    complex   *Aval;
+    singlecomplex   *Aval;
     int i, j, irow;
     float rcmin, rcmax;
     float bignum, smlnum;

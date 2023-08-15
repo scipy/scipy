@@ -16,7 +16,7 @@ on:
   #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
   #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
   #        │  │ │ │ │
-  - cron: "9  9 * * 6"
+  - cron: "9  9 * * *"
   push:
     branches:
       - maintenance/**
