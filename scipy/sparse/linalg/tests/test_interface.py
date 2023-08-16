@@ -276,7 +276,7 @@ class TestAsLinearOperator:
                        for M, A in make_cases(original.T, np.float64)]
 
         original = np.array([[1, 2j, 3j], [4j, 5j, 6]])
-        self.cases += make_cases(original, np.comcomplex128plex_)
+        self.cases += make_cases(original, np.complex128)
         self.cases += [(interface.aslinearoperator(M).T, A.T)
                        for M, A in make_cases(original.T, np.complex128)]
         self.cases += [(interface.aslinearoperator(M).H, A.T.conj())
