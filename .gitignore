@@ -19,6 +19,7 @@
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 
@@ -94,10 +95,6 @@ build-install/*
 .doit.db.db
 .doit.db
 
-# Paver generated files #
-#########################
-/release
-
 # Logs and databases #
 ######################
 *.log
@@ -139,6 +136,7 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/reference/generated
+**/.ipynb_checkpoints
 
 # Things specific to this project #
 ###################################

@@ -7,6 +7,9 @@ import pkgutil
 import types
 import importlib
 import warnings
+from importlib import import_module
+
+import pytest
 
 import scipy
 
@@ -65,11 +68,12 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "stats.sampling"
 ]]
 
-# The PRIVATE_BUT_PRESENT_MODULES list contains modules that look public (lack
-# of underscores) but should not be used.  For many of those modules the
-# current status is fine.  For others it may make sense to work on making them
-# private, to clean up our public API and avoid confusion.
-# These private modules support will be removed in SciPy v2.0.0
+# The PRIVATE_BUT_PRESENT_MODULES list contains modules that lacked underscores
+# in their name and hence looked public, but weren't meant to be. All these
+# namespace were deprecated in the 1.8.0 release - see "clear split between
+# public and private API" in the 1.8.0 release notes.
+# These private modules support will be removed in SciPy v2.0.0, as the
+# deprecation messages emitted by each of these modules say.
 PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.constants.codata',
     'scipy.constants.constants',
@@ -78,10 +82,10 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.fftpack.helper',
     'scipy.fftpack.pseudo_diffs',
     'scipy.fftpack.realtransforms',
-    'scipy.integrate.odepack',
-    'scipy.integrate.quadpack',
     'scipy.integrate.dop',
     'scipy.integrate.lsoda',
+    'scipy.integrate.odepack',
+    'scipy.integrate.quadpack',
     'scipy.integrate.vode',
     'scipy.interpolate.dfitpack',
     'scipy.interpolate.fitpack',
@@ -94,8 +98,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.arff.arffread',
     'scipy.io.harwell_boeing',
     'scipy.io.idl',
-    'scipy.io.mmio',
-    'scipy.io.netcdf',
     'scipy.io.matlab.byteordercodes',
     'scipy.io.matlab.mio',
     'scipy.io.matlab.mio4',
@@ -105,6 +107,8 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.io.matlab.mio_utils',
     'scipy.io.matlab.miobase',
     'scipy.io.matlab.streams',
+    'scipy.io.mmio',
+    'scipy.io.netcdf',
     'scipy.linalg.basic',
     'scipy.linalg.decomp',
     'scipy.linalg.decomp_cholesky',
@@ -185,7 +189,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.stats.mstats_basic',
     'scipy.stats.mstats_extras',
     'scipy.stats.mvn',
-    'scipy.stats.statlib',
     'scipy.stats.stats',
 ]
 
@@ -311,3 +314,77 @@ def test_api_importable():
         raise AssertionError("Modules that are not really public but looked "
                              "public and can not be imported: "
                              "{}".format(module_names))
+
+
+@pytest.mark.parametrize(("module_name", "correct_module"),
+                         [('scipy.integrate.dop', None),
+                          ('scipy.integrate.lsoda', None),
+                          ('scipy.integrate.odepack', None),
+                          ('scipy.integrate.quadpack', None),
+                          ('scipy.integrate.vode', None),
+                          ('scipy.interpolate.fitpack', None),
+                          ('scipy.interpolate.fitpack2', None),
+                          ('scipy.interpolate.interpolate', None),
+                          ('scipy.interpolate.ndgriddata', None),
+                          ('scipy.interpolate.polyint', None),
+                          ('scipy.interpolate.rbf', None),
+                          ('scipy.linalg.basic', None),
+                          ('scipy.linalg.decomp', None),
+                          ('scipy.linalg.decomp_cholesky', None),
+                          ('scipy.linalg.decomp_lu', None),
+                          ('scipy.linalg.decomp_qr', None),
+                          ('scipy.linalg.decomp_schur', None),
+                          ('scipy.linalg.decomp_svd', None),
+                          ('scipy.linalg.matfuncs', None),
+                          ('scipy.linalg.misc', None),
+                          ('scipy.linalg.special_matrices', None),
+                          ('scipy.odr.models', None),
+                          ('scipy.odr.odrpack', None),
+                          ('scipy.optimize.cobyla', None),
+                          ('scipy.optimize.lbfgsb', None),
+                          ('scipy.optimize.linesearch', None),
+                          ('scipy.optimize.minpack', None),
+                          ('scipy.optimize.minpack2', None),
+                          ('scipy.optimize.moduleTNC', None),
+                          ('scipy.optimize.nonlin', None),
+                          ('scipy.optimize.optimize', None),
+                          ('scipy.optimize.slsqp', None),
+                          ('scipy.optimize.tnc', None),
+                          ('scipy.optimize.zeros', None),
+                          ('scipy.stats.biasedurn', None),
+                          ('scipy.stats.kde', None),
+                          ('scipy.stats.morestats', None),
+                          ('scipy.stats.mstats_basic', 'mstats'),
+                          ('scipy.stats.mstats_extras', 'mstats'),
+                          ('scipy.stats.mvn', None),
+                          ('scipy.stats.stats', None)])
+def test_private_but_present_deprecation(module_name, correct_module):
+    # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
+    # for imports from private modules
+    # were misleading. Check that this is resolved.
+    module = import_module(module_name)
+    if correct_module is None:
+        import_name = f'scipy.{module_name.split(".")[1]}'
+    else:
+        import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
+    
+    correct_import = import_module(import_name)
+
+    # Attributes that were formerly in `module_name` can still be imported from
+    # `module_name`, albeit with a deprecation warning. The specific message
+    # depends on whether the attribute is public in `scipy.xxx` or not.
+    for attr_name in module.__all__:
+        attr = getattr(correct_import, attr_name, None)
+        if attr is None:
+            message = f"`{module_name}.{attr_name}` is deprecated..."
+        else:
+            message = f"Please import `{attr_name}` from the `{import_name}`..."
+        with pytest.deprecated_call(match=message):
+            getattr(module, attr_name)
+
+    # Attributes that were not in `module_name` get an error notifying the user
+    # that the attribute is not in `module_name` and that `module_name` is
+    # deprecated.
+    message = f"`{module_name}` is deprecated..."
+    with pytest.raises(AttributeError, match=message):
+        getattr(module, "ekki")

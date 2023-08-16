@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
@@ -7,9 +9,14 @@ from pytest import raises as assert_raises
 
 from scipy import signal
 from scipy.fft import fftfreq
-from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA, check_NOLA)
+from scipy.signal import (periodogram, welch, lombscargle, coherence,
+                          spectrogram, check_COLA, check_NOLA)
 from scipy.signal._spectral_py import _spectral_helper
+
+# Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
+from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
+from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 
 
 class TestPeriodogram:
@@ -94,6 +101,10 @@ class TestPeriodogram:
         assert_raises(ValueError, periodogram, np.zeros(4, np.complex128),
                 scaling='foo')
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_m1(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((2,1,10))
@@ -104,6 +115,10 @@ class TestPeriodogram:
         f0, p0 = periodogram(x[0,0,:])
         assert_array_almost_equal_nulp(p0[np.newaxis,:], p[1,:], 60)
 
+    @pytest.mark.skipif(
+        sys.maxsize <= 2**32,
+        reason="On some 32-bit tolerance issue"
+    )
     def test_nd_axis_0(self):
         x = np.zeros(20, dtype=np.float64)
         x = x.reshape((10,2,1))

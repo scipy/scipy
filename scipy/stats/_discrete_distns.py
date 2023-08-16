@@ -3,7 +3,6 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-import warnings
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
@@ -247,7 +246,7 @@ class betabinom_gen(rv_discrete):
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
-            g2 = a + b
+            g2 = (a + b).astype(e_p.dtype)
             g2 *= (a + b - 1 + 6 * n)
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
@@ -355,16 +354,11 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _nbinom_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _nbinom_ppf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
@@ -446,6 +440,9 @@ class geom_gen(rv_discrete):
         g1 = (2.0-p) / sqrt(qr)
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
+
+    def _entropy(self, p):
+        return -np.log(p) - np.log1p(-p) * (1.0-p) / p
 
 
 geom = geom_gen(a=1, name='geom', longname="A geometric")
@@ -1054,7 +1051,47 @@ class randint_gen(rv_discrete):
 
     %(after_notes)s
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import randint
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Calculate the first four moments:
+
+    >>> low, high = 7, 31
+    >>> mean, var, skew, kurt = randint.stats(low, high, moments='mvsk')
+
+    Display the probability mass function (``pmf``):
+
+    >>> x = np.arange(low - 5, high + 5)
+    >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
+    >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
+    
+    Alternatively, the distribution object can be called (as a function) to 
+    fix the shape and location. This returns a "frozen" RV object holding the
+    given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pmf``:
+
+    >>> rv = randint(low, high)
+    >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-',
+    ...           lw=1, label='frozen pmf')
+    >>> ax.legend(loc='lower center')
+    >>> plt.show()
+    
+    Check the relationship between the cumulative distribution function
+    (``cdf``) and its inverse, the percent point function (``ppf``):
+
+    >>> q = np.arange(low, high)
+    >>> p = randint.cdf(q, low, high)
+    >>> np.allclose(q, randint.ppf(p, low, high))
+    True
+
+    Generate random numbers:
+
+    >>> r = randint.rvs(low, high, size=1000)
 
     """
 
@@ -1427,9 +1464,7 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _ncx2_pdf"
-            warnings.filterwarnings("ignore", message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
                           _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
                           _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
@@ -1438,9 +1473,10 @@ class skellam_gen(rv_discrete):
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

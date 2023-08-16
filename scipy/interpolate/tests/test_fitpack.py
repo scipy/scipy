@@ -231,7 +231,7 @@ class TestSplder:
         self.spl = splrep(x, y)
 
         # double check that knots are non-uniform
-        assert_(np.diff(self.spl[0]).ptp() > 0)
+        assert_(np.ptp(np.diff(self.spl[0])) > 0)
 
     def test_inverse(self):
         # Check that antiderivative + derivative is identity.
@@ -451,6 +451,29 @@ def test_bisplev_integer_overflow():
     assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
 
 
+@pytest.mark.xslow
+def test_gh_1766():
+    # this should fail gracefully instead of segfaulting (int overflow)
+    size = 22
+    kx, ky = 3, 3
+    def f2(x, y):
+        return np.sin(x+y)
+
+    x = np.linspace(0, 10, size)
+    y = np.linspace(50, 700, size)
+    xy = makepairs(x, y)
+    tck = bisplrep(xy[0], xy[1], f2(xy[0], xy[1]), s=0, kx=kx, ky=ky)
+    # the size value here can either segfault
+    # or produce a MemoryError on main
+    tx_ty_size = 500000
+    tck[0] = np.arange(tx_ty_size)
+    tck[1] = np.arange(tx_ty_size) * 4
+    tt_0 = np.arange(50)
+    tt_1 = np.arange(50) * 3
+    with pytest.raises(MemoryError):
+        bisplev(tt_0, tt_1, tck, 1, 1)
+
+
 def test_spalde_scalar_input():
     # Ticket #629
     x = np.linspace(0, 10)
@@ -459,3 +482,21 @@ def test_spalde_scalar_input():
     res = spalde(np.float64(1), tck)
     des = np.array([1., 3., 6., 6.])
     assert_almost_equal(res, des)
+
+
+def test_spalde_nc():
+    # regression test for https://github.com/scipy/scipy/issues/19002
+    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1) 
+    x = np.asarray([-10., -9., -8., -7., -6., -5., -4., -3., -2.5, -2., -1.5,
+                    -1., -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 4., 5., 6.],
+                    dtype="float")
+    t = [-10.0, -10.0, -10.0, -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0,
+         -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0,
+         5.0, 6.0, 6.0, 6.0, 6.0]
+    c = np.asarray([1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    k = 3
+
+    res = spalde(x, (t, c, k))
+    res_splev = np.asarray([splev(x, (t, c, k), nu) for nu in range(4)])
+    assert_allclose(res, res_splev.T, atol=1e-15)

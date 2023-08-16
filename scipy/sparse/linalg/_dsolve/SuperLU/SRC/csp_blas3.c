@@ -80,7 +80,7 @@ at the top-level directory.
  *	     be at least  zero.   
  *           Unchanged on exit.
  *      
- *   ALPHA  - (input) complex
+ *   ALPHA  - (input) singlecomplex
  *            On entry, ALPHA specifies the scalar alpha.   
  * 
  *   A      - (input) SuperMatrix*
@@ -102,7 +102,7 @@ at the top-level directory.
  *            in the calling (sub) program. LDB must be at least max( 1, n ).  
  *            Unchanged on exit.   
  * 
- *   BETA   - (input) complex
+ *   BETA   - (input) singlecomplex
  *            On entry, BETA specifies the scalar beta. When BETA is   
  *            supplied as zero then C need not be set on input.   
  *  
@@ -124,8 +124,8 @@ at the top-level directory.
 
 int
 sp_cgemm(char *transa, char *transb, int m, int n, int k, 
-         complex alpha, SuperMatrix *A, complex *b, int ldb, 
-         complex beta, complex *c, int ldc)
+         singlecomplex alpha, SuperMatrix *A, singlecomplex *b, int ldb, 
+         singlecomplex beta, singlecomplex *c, int ldc)
 {
     int    incx = 1, incy = 1;
     int    j;

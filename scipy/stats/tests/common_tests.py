@@ -62,7 +62,8 @@ def check_mean_expect(distfn, arg, m, msg):
 
 
 def check_var_expect(distfn, arg, m, v, msg):
-    kwargs = {'rtol': 5e-6} if msg == "rv_histogram_instance" else {}
+    dist_looser_tolerances = {"rv_histogram_instance" , "ksone"}
+    kwargs = {'rtol': 5e-6} if msg in dist_looser_tolerances else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
         npt.assert_allclose(m2, v + m*m, **kwargs)
@@ -85,6 +86,19 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
                             err_msg=msg + ' - kurtosis')
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
+
+
+def check_munp_expect(dist, args, msg):
+    # If _munp is overridden, test a higher moment. (Before gh-18634, some
+    # distributions had issues with moments 5 and higher.)
+    if dist._munp.__func__ != stats.rv_continuous._munp:
+        res = dist.moment(5, *args)  # shouldn't raise an error
+        ref = dist.expect(lambda x: x ** 5, args, lb=-np.inf, ub=np.inf)
+        if not np.isfinite(res):  # could be valid; automated test can't know
+            return
+        # loose tolerance, mostly to see whether _munp returns *something*
+        assert_allclose(res, ref, atol=1e-10, rtol=1e-4,
+                        err_msg=msg + ' - higher moment / _munp')
 
 
 def check_entropy(distfn, arg, msg):

@@ -25,13 +25,13 @@ int cfill_diag(int n, NCformat *Astore)
 /* fill explicit zeros on the diagonal entries, so that the matrix is not
    structurally singular. */
 {
-    complex *nzval = (complex *)Astore->nzval;
+    singlecomplex *nzval = (singlecomplex *)Astore->nzval;
     int *rowind = Astore->rowind;
     int *colptr = Astore->colptr;
     int nnz = colptr[n];
     int fill = 0;
-    complex *nzval_new;
-    complex zero = {0.0, 0.0};
+    singlecomplex *nzval_new;
+    singlecomplex zero = {0.0, 0.0};
     int *rowind_new;
     int i, j, diag;
 
@@ -75,12 +75,12 @@ int cfill_diag(int n, NCformat *Astore)
 int cdominate(int n, NCformat *Astore)
 /* make the matrix diagonally dominant */
 {
-    complex *nzval = (complex *)Astore->nzval;
+    singlecomplex *nzval = (singlecomplex *)Astore->nzval;
     int *rowind = Astore->rowind;
     int *colptr = Astore->colptr;
     int nnz = colptr[n];
     int fill = 0;
-    complex *nzval_new;
+    singlecomplex *nzval_new;
     int *rowind_new;
     int i, j, diag;
     double s;

@@ -17,6 +17,10 @@ from scipy.optimize._minimize import Bounds
 
 error = _minpack.error
 
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import dot, eye, take  # noqa
+from numpy.linalg import inv  # noqa
+
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
 
@@ -278,8 +282,8 @@ LEASTSQ_SUCCESS = [1, 2, 3, 4]
 LEASTSQ_FAILURE = [5, 6, 7, 8]
 
 
-def leastsq(func, x0, args=(), Dfun=None, full_output=0,
-            col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
+def leastsq(func, x0, args=(), Dfun=None, full_output=False,
+            col_deriv=False, ftol=1.49012e-8, xtol=1.49012e-8,
             gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
     """
     Minimize the sum of squares of a set of equations.
@@ -303,9 +307,9 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         A function or method to compute the Jacobian of func with derivatives
         across the rows. If this is None, the Jacobian will be estimated.
     full_output : bool, optional
-        non-zero to return all optional outputs.
+        If ``True``, return all optional outputs (not just `x` and `ier`).
     col_deriv : bool, optional
-        non-zero to specify that the Jacobian function computes derivatives
+        If ``True``, specify that the Jacobian function computes derivatives
         down the columns (faster, because there is no transpose operation).
     ftol : float, optional
         Relative error desired in the sum of squares.
@@ -340,7 +344,8 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         estimate of the Hessian. A value of None indicates a singular matrix,
         which means the curvature in parameters `x` is numerically flat. To
         obtain the covariance matrix of the parameters `x`, `cov_x` must be
-        multiplied by the variance of the residuals -- see curve_fit.
+        multiplied by the variance of the residuals -- see curve_fit. Only
+        returned if `full_output` is ``True``.
     infodict : dict
         a dictionary of optional outputs with the keys:
 
@@ -364,8 +369,10 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         ``qtf``
             The vector (transpose(q) * fvec).
 
+        Only returned if `full_output` is ``True``.
     mesg : str
         A string message giving information about the cause of failure.
+        Only returned if `full_output` is ``True``.
     ier : int
         An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
         found. Otherwise, the solution was not found. In either case, the
@@ -495,11 +502,17 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
 
 
 def _lightweight_memoizer(f):
-    # very shallow memoization - only remember the first set of parameters
-    # and corresponding function value to address gh-13670
+    # very shallow memoization to address gh-13670: only remember the first set
+    # of parameters and corresponding function value, and only attempt to use
+    # them twice (the number of times the function is evaluated at x0).
     def _memoized_func(params):
+        if _memoized_func.skip_lookup:
+            return f(params)
+
         if np.all(_memoized_func.last_params == params):
             return _memoized_func.last_val
+        elif _memoized_func.last_params is not None:
+            _memoized_func.skip_lookup = True
 
         val = f(params)
 
@@ -511,6 +524,7 @@ def _lightweight_memoizer(f):
 
     _memoized_func.last_params = None
     _memoized_func.last_val = None
+    _memoized_func.skip_lookup = False
     return _memoized_func
 
 
@@ -518,7 +532,7 @@ def _wrap_func(func, xdata, ydata, transform):
     if transform is None:
         def func_wrapped(params):
             return func(xdata, *params) - ydata
-    elif transform.ndim == 1:
+    elif transform.size == 1 or transform.ndim == 1:
         def func_wrapped(params):
             return transform * (func(xdata, *params) - ydata)
     else:
@@ -592,12 +606,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         initial values will all be 1 (if the number of parameters for the
         function can be determined using introspection, otherwise a
         ValueError is raised).
-    sigma : None or M-length sequence or MxM array, optional
+    sigma : None or scalar or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
         depends on its number of dimensions:
 
-            - A 1-D `sigma` should contain values of standard deviations of
+            - A scalar or 1-D `sigma` should contain values of standard deviations of
               errors in `ydata`. In this case, the optimized function is
               ``chisq = sum((r / sigma) ** 2)``.
 
@@ -624,8 +638,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         If True, check that the input arrays do not contain nans of infs,
         and raise a ValueError if they do. Setting this parameter to
         False may silently produce nonsensical results if the input arrays
-        do contain nans. Default is True. Note that if `nan_policy` is
-        specified explicitly (not None), this value will be ignored.
+        do contain nans. Default is True if `nan_policy` is not specified
+        explicitly and False otherwise.
     bounds : 2-tuple of array_like or `Bounds`, optional
         Lower and upper bounds on parameters. Defaults to no bounds.
         There are two ways to specify the bounds:
@@ -904,8 +918,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             raise ValueError("`nan_policy='propagate'` is not supported "
                              "by this function.")
 
-        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy)
-        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy)
+        policies = [None, 'raise', 'omit']
+        x_contains_nan, nan_policy = _contains_nan(xdata, nan_policy,
+                                                   policies=policies)
+        y_contains_nan, nan_policy = _contains_nan(ydata, nan_policy,
+                                                   policies=policies)
 
         if (x_contains_nan or y_contains_nan) and nan_policy == 'omit':
             # ignore NaNs for N dimensional arrays
@@ -920,8 +937,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     if sigma is not None:
         sigma = np.asarray(sigma)
 
-        # if 1-D, sigma are errors, define transform = 1/sigma
-        if sigma.shape == (ydata.size, ):
+        # if 1-D or a scalar, sigma are errors, define transform = 1/sigma
+        if sigma.size == 1 or sigma.shape == (ydata.size, ):
             transform = 1.0 / sigma
         # if 2-D, sigma is the covariance matrix,
         # define transform = L such that L L^T = C

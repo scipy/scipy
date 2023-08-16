@@ -4,20 +4,22 @@
 from itertools import product
 
 import numpy as np
-from numpy import (Inf, dot, diag, prod, logical_not, ravel, transpose,
-                   conjugate, absolute, amax, sign, isfinite)
+from numpy import (dot, diag, prod, logical_not, ravel, transpose,
+                   conjugate, absolute, amax, sign, isfinite, triu)
 from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
-from ._special_matrices import triu
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
+
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import single  # noqa
 
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
@@ -728,7 +730,7 @@ def funm(A, func, disp=True):
         minden = tol
     err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
     if prod(ravel(logical_not(isfinite(F))),axis=0):
-        err = Inf
+        err = np.inf
     if disp:
         if err > 1000*tol:
             print("funm result may be inaccurate, approximate err =", err)

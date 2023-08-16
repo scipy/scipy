@@ -91,7 +91,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     pgtol : float, optional
         The iteration will stop when
         ``max{|proj g_i | i = 1, ..., n} <= pgtol``
-        where ``pg_i`` is the i-th component of the projected gradient.
+        where ``proj g_i`` is the i-th component of the projected gradient.
     epsilon : float, optional
         Step size used when `approx_grad` is True, for numerically
         calculating the gradient
@@ -234,7 +234,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= ftol``.
     gtol : float
         The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
-        <= gtol`` where ``pg_i`` is the i-th component of the
+        <= gtol`` where ``proj g_i`` is the i-th component of the
         projected gradient.
     eps : float or ndarray
         If `jac is None` the absolute step size used for numerical
@@ -348,6 +348,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_iterations = 0
 
     while 1:
+        # g may become float32 if a user provides a function that calculates
+        # the Jacobian in float32 (see gh-18730). The underlying Fortran code
+        # expects float64, so upcast it
+        g = g.astype(np.float64)
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,

@@ -24,7 +24,7 @@ at the top-level directory.
 
 void
 creadtriple(int *m, int *n, int *nonz,
-	    complex **nzval, int **rowind, int **colptr)
+	    singlecomplex **nzval, int **rowind, int **colptr)
 {
 /*
  * Output parameters
@@ -35,7 +35,7 @@ creadtriple(int *m, int *n, int *nonz,
  *
  */
     int    j, k, jsize, nnz, nz;
-    complex *a, *val;
+    singlecomplex *a, *val;
     int    *asub, *xa, *row, *col;
     int    zero_base = 0, s_count = 0;
 
@@ -54,7 +54,7 @@ creadtriple(int *m, int *n, int *nonz,
     asub = *rowind;
     xa   = *colptr;
 
-    val = (complex *) SUPERLU_MALLOC(*nonz * sizeof(complex));
+    val = (singlecomplex *) SUPERLU_MALLOC(*nonz * sizeof(singlecomplex));
     row = (int *) SUPERLU_MALLOC(*nonz * sizeof(int));
     col = (int *) SUPERLU_MALLOC(*nonz * sizeof(int));
 
@@ -133,7 +133,7 @@ creadtriple(int *m, int *n, int *nonz,
 }
 
 
-void creadrhs(int m, complex *b)
+void creadrhs(int m, singlecomplex *b)
 {
     FILE *fp, *fopen();
     int i, f_count = 0;

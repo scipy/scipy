@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 """
 Wrappers to allow unit tests of internal C code.
 
@@ -8,7 +10,7 @@ This module includes wrappers for:
 """
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_
 
 from libc.math cimport isnan
 

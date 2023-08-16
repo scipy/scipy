@@ -22,8 +22,8 @@ double fellint_RC(double x, double y)
 npy_cdouble cellint_RC(npy_cdouble x, npy_cdouble y)
 {
     sf_error_t status;
-    std::complex<double> xx{x.real, x.imag};
-    std::complex<double> yy{y.real, y.imag};
+    std::complex<double> xx{npy_creal(x), npy_cimag(x)};
+    std::complex<double> yy{npy_creal(y), npy_cimag(y)};
     std::complex<double> res;
 
     status = static_cast<sf_error_t>(ellint_carlson::rc(xx, yy,
@@ -47,9 +47,9 @@ double fellint_RD(double x, double y, double z)
 npy_cdouble cellint_RD(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
     sf_error_t status;
-    std::complex<double> xx{x.real, x.imag};
-    std::complex<double> yy{y.real, y.imag};
-    std::complex<double> zz{z.real, z.imag};
+    std::complex<double> xx{npy_creal(x), npy_cimag(x)};
+    std::complex<double> yy{npy_creal(y), npy_cimag(y)};
+    std::complex<double> zz{npy_creal(z), npy_cimag(z)};
     std::complex<double> res;
 
     status = static_cast<sf_error_t>(ellint_carlson::rd(xx, yy, zz,
@@ -73,9 +73,9 @@ double fellint_RF(double x, double y, double z)
 npy_cdouble cellint_RF(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
     sf_error_t status;
-    std::complex<double> xx{x.real, x.imag};
-    std::complex<double> yy{y.real, y.imag};
-    std::complex<double> zz{z.real, z.imag};
+    std::complex<double> xx{npy_creal(x), npy_cimag(x)};
+    std::complex<double> yy{npy_creal(y), npy_cimag(y)};
+    std::complex<double> zz{npy_creal(z), npy_cimag(z)};
     std::complex<double> res;
 
     status = static_cast<sf_error_t>(ellint_carlson::rf(xx, yy, zz,
@@ -99,9 +99,9 @@ double fellint_RG(double x, double y, double z)
 npy_cdouble cellint_RG(npy_cdouble x, npy_cdouble y, npy_cdouble z)
 {
     sf_error_t status;
-    std::complex<double> xx{x.real, x.imag};
-    std::complex<double> yy{y.real, y.imag};
-    std::complex<double> zz{z.real, z.imag};
+    std::complex<double> xx{npy_creal(x), npy_cimag(x)};
+    std::complex<double> yy{npy_creal(y), npy_cimag(y)};
+    std::complex<double> zz{npy_creal(z), npy_cimag(z)};
     std::complex<double> res;
 
     status = static_cast<sf_error_t>(ellint_carlson::rg(xx, yy, zz,
@@ -125,10 +125,10 @@ double fellint_RJ(double x, double y, double z, double p)
 npy_cdouble cellint_RJ(npy_cdouble x, npy_cdouble y, npy_cdouble z, npy_cdouble p)
 {
     sf_error_t status;
-    std::complex<double> xx{x.real, x.imag};
-    std::complex<double> yy{y.real, y.imag};
-    std::complex<double> zz{z.real, z.imag};
-    std::complex<double> pp{p.real, p.imag};
+    std::complex<double> xx{npy_creal(x), npy_cimag(x)};
+    std::complex<double> yy{npy_creal(y), npy_cimag(y)};
+    std::complex<double> zz{npy_creal(z), npy_cimag(z)};
+    std::complex<double> pp{npy_creal(p), npy_cimag(p)};
     std::complex<double> res;
 
     status = static_cast<sf_error_t>(ellint_carlson::rj(xx, yy, zz, pp,

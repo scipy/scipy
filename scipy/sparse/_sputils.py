@@ -4,7 +4,7 @@
 import sys
 import operator
 import numpy as np
-from scipy._lib._util import prod
+from math import prod
 import scipy.sparse as sp
 
 
@@ -132,7 +132,7 @@ def getdtype(dtype, a=None, default=None):
     return newdtype
 
 
-def getdata(obj, dtype=None, copy=False):
+def getdata(obj, dtype=None, copy=False) -> np.ndarray:
     """
     This is a wrapper of `np.array(obj, dtype=dtype, copy=copy)`
     that will generate a warning if the result is an object array.
@@ -208,12 +208,12 @@ def get_sum_dtype(dtype):
     return dtype
 
 
-def isscalarlike(x):
+def isscalarlike(x) -> bool:
     """Is x either a scalar, an array scalar, or a 0-dim array?"""
     return np.isscalar(x) or (isdense(x) and x.ndim == 0)
 
 
-def isintlike(x):
+def isintlike(x) -> bool:
     """Is x appropriate as an index into a sparse matrix? Returns True
     if it can be cast safely to a machine int.
     """
@@ -235,61 +235,60 @@ def isintlike(x):
     return True
 
 
-def isshape(x, nonneg=False):
-    """Is x a valid 2-tuple of dimensions?
+def isshape(x, nonneg=False, allow_ndim=False) -> bool:
+    """Is x a valid tuple of dimensions?
 
     If nonneg, also checks that the dimensions are non-negative.
+    If allow_ndim, shapes of any dimensionality are allowed.
     """
-    try:
-        # Assume it's a tuple of matrix dimensions (M, N)
-        (M, N) = x
-    except Exception:
+    ndim = len(x)
+    if not allow_ndim and ndim != 2:
         return False
-    else:
-        if isintlike(M) and isintlike(N):
-            if np.ndim(M) == 0 and np.ndim(N) == 0:
-                if not nonneg or (M >= 0 and N >= 0):
-                    return True
-        return False
+    for d in x:
+        if not isintlike(d):
+            return False
+        if nonneg and d < 0:
+            return False
+    return True
 
 
-def issequence(t):
+def issequence(t) -> bool:
     return ((isinstance(t, (list, tuple)) and
             (len(t) == 0 or np.isscalar(t[0]))) or
             (isinstance(t, np.ndarray) and (t.ndim == 1)))
 
 
-def ismatrix(t):
+def ismatrix(t) -> bool:
     return ((isinstance(t, (list, tuple)) and
              len(t) > 0 and issequence(t[0])) or
             (isinstance(t, np.ndarray) and t.ndim == 2))
 
 
-def isdense(x):
+def isdense(x) -> bool:
     return isinstance(x, np.ndarray)
 
 
-def validateaxis(axis):
-    if axis is not None:
-        axis_type = type(axis)
+def validateaxis(axis) -> None:
+    if axis is None:
+        return
+    axis_type = type(axis)
 
-        # In NumPy, you can pass in tuples for 'axis', but they are
-        # not very useful for sparse matrices given their limited
-        # dimensions, so let's make it explicit that they are not
-        # allowed to be passed in
-        if axis_type == tuple:
-            raise TypeError("Tuples are not accepted for the 'axis' "
-                             "parameter. Please pass in one of the "
-                             "following: {-2, -1, 0, 1, None}.")
+    # In NumPy, you can pass in tuples for 'axis', but they are
+    # not very useful for sparse matrices given their limited
+    # dimensions, so let's make it explicit that they are not
+    # allowed to be passed in
+    if axis_type == tuple:
+        raise TypeError("Tuples are not accepted for the 'axis' parameter. "
+                        "Please pass in one of the following: "
+                        "{-2, -1, 0, 1, None}.")
 
-        # If not a tuple, check that the provided axis is actually
-        # an integer and raise a TypeError similar to NumPy's
-        if not np.issubdtype(np.dtype(axis_type), np.integer):
-            raise TypeError("axis must be an integer, not {name}"
-                            .format(name=axis_type.__name__))
+    # If not a tuple, check that the provided axis is actually
+    # an integer and raise a TypeError similar to NumPy's
+    if not np.issubdtype(np.dtype(axis_type), np.integer):
+        raise TypeError(f"axis must be an integer, not {axis_type.__name__}")
 
-        if not (-2 <= axis <= 1):
-            raise ValueError("axis out of range")
+    if not (-2 <= axis <= 1):
+        raise ValueError("axis out of range")
 
 
 def check_shape(args, current_shape=None):
@@ -297,7 +296,7 @@ def check_shape(args, current_shape=None):
     if len(args) == 0:
         raise TypeError("function missing 1 required positional argument: "
                         "'shape'")
-    elif len(args) == 1:
+    if len(args) == 1:
         try:
             shape_iter = iter(args[0])
         except TypeError:
@@ -312,27 +311,26 @@ def check_shape(args, current_shape=None):
             raise ValueError('shape must be a 2-tuple of positive integers')
         elif any(d < 0 for d in new_shape):
             raise ValueError("'shape' elements cannot be negative")
-
     else:
         # Check the current size only if needed
         current_size = prod(current_shape)
 
         # Check for negatives
         negative_indexes = [i for i, x in enumerate(new_shape) if x < 0]
-        if len(negative_indexes) == 0:
+        if not negative_indexes:
             new_size = prod(new_shape)
             if new_size != current_size:
                 raise ValueError('cannot reshape array of size {} into shape {}'
                                  .format(current_size, new_shape))
         elif len(negative_indexes) == 1:
             skip = negative_indexes[0]
-            specified = prod(new_shape[0:skip] + new_shape[skip+1:])
+            specified = prod(new_shape[:skip] + new_shape[skip+1:])
             unspecified, remainder = divmod(current_size, specified)
             if remainder != 0:
                 err_shape = tuple('newshape' if x < 0 else x for x in new_shape)
                 raise ValueError('cannot reshape array of size {} into shape {}'
                                  ''.format(current_size, err_shape))
-            new_shape = new_shape[0:skip] + (unspecified,) + new_shape[skip+1:]
+            new_shape = new_shape[:skip] + (unspecified,) + new_shape[skip+1:]
         else:
             raise ValueError('can only specify one unknown dimension')
 
@@ -359,7 +357,7 @@ def check_reshape_kwargs(kwargs):
     return order, copy
 
 
-def is_pydata_spmatrix(m):
+def is_pydata_spmatrix(m) -> bool:
     """
     Check whether object is pydata/sparse matrix, avoiding importing the module.
     """
@@ -385,13 +383,13 @@ def asmatrix(data, dtype=None):
 ###############################################################################
 
 
-def _todata(s: 'sp.spmatrix') -> np.ndarray:
+def _todata(s) -> np.ndarray:
     """Access nonzero values, possibly after summing duplicates.
 
     Parameters
     ----------
-    s : sparse matrix
-        Input sparse matrix.
+    s : sparse array
+        Input sparse array.
 
     Returns
     -------
@@ -402,10 +400,10 @@ def _todata(s: 'sp.spmatrix') -> np.ndarray:
     if isinstance(s, sp._data._data_matrix):
         return s._deduped_data()
 
-    if isinstance(s, sp.dok_matrix):
+    if isinstance(s, sp.dok_array):
         return np.fromiter(s.values(), dtype=s.dtype, count=s.nnz)
 
-    if isinstance(s, sp.lil_matrix):
+    if isinstance(s, sp.lil_array):
         data = np.empty(s.nnz, dtype=s.dtype)
         sp._csparsetools.lil_flatten_to_array(s.data, data)
         return data

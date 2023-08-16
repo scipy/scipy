@@ -58,7 +58,7 @@ class UNURANError(RuntimeError):
     pass
 
 
-ctypedef double (*URNG_FUNCT)(void *) nogil
+ctypedef double (*URNG_FUNCT)(void *) noexcept nogil
 
 cdef object get_numpy_rng(object seed = None):
     """
@@ -101,7 +101,7 @@ cdef class _URNG:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef double _next_qdouble(self) nogil:
+    cdef double _next_qdouble(self) noexcept nogil:
         self.i += 1
         return self.qrvs_array[self.i-1]
 
@@ -229,7 +229,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pdf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     return max(0, self.dist.dist._pdf(x, *self.args)/self.scale)
                 def logpdf(self, x):
                     # some distributions require array inputs.
@@ -238,7 +238,7 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                         return self.dist.dist._logpdf(x, *self.args) - np.log(self.scale)
                     return -np.inf
                 def cdf(self, x):
-                    x = np.atleast_1d((x-self.loc)/self.scale)
+                    x = np.asarray((x-self.loc)/self.scale)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -255,10 +255,10 @@ cdef dict _unpack_dist(object dist, str dist_type, list meths = None,
                     self.support = dist.support
                 def pmf(self, x):
                     # some distributions require array inputs.
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     return max(0, self.dist.dist._pmf(x, *self.args))
                 def cdf(self, x):
-                    x = np.atleast_1d(x-self.loc)
+                    x = np.asarray(x-self.loc)
                     res = self.dist.dist._cdf(x, *self.args)
                     if res < 0:
                         return 0
@@ -838,11 +838,6 @@ cdef class TransformedDensityRejection(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -1130,11 +1125,6 @@ cdef class SimpleRatioUniforms(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["pdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -1412,11 +1402,6 @@ cdef class NumericalInversePolynomial(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         # either logpdf or pdf are required: use meths = None and check separately
         self.callbacks = _unpack_dist(dist, "cont", meths=None, optional_meths=["cdf", "pdf", "logpdf"])
         if not ("pdf" in self.callbacks or "logpdf" in self.callbacks):
@@ -1537,7 +1522,7 @@ cdef class NumericalInversePolynomial(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -1979,10 +1964,6 @@ cdef class NumericalInverseHermite(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-
         self.callbacks = _unpack_dist(dist, "cont", meths=["cdf"], optional_meths=["pdf", "dpdf"])
         def _callback_wrapper(x, name):
             return self.callbacks[name](x)
@@ -2027,7 +2008,7 @@ cdef class NumericalInverseHermite(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):
@@ -2399,11 +2380,6 @@ cdef class DiscreteAliasUrn(Method):
         # save all the arguments for pickling support
         self._kwargs = {'dist': dist, 'domain': domain, 'urn_factor': urn_factor, 'random_state': random_state}
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self._messages = MessageStream()
         _lock.acquire()
         try:
@@ -2672,11 +2648,6 @@ cdef class DiscreteGuideTable(Method):
             'random_state': random_state
         }
 
-        cdef:
-            unur_distr *distr
-            unur_par *par
-            unur_gen *rng
-
         self._messages = MessageStream()
         _lock.acquire()
 
@@ -2745,7 +2716,7 @@ cdef class DiscreteGuideTable(Method):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef inline void _ppf(self, const double *u, double *out, size_t N):
+    cdef inline void _ppf(self, const double *u, double *out, size_t N) noexcept:
         cdef:
             size_t i
         for i in range(N):

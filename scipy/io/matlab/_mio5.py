@@ -103,7 +103,7 @@ from ._streams import ZlibInputStream
 
 def _has_struct(elem):
     """Determine if elem is an array and if first array item is a struct."""
-    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and (elem.ndim > 0) and
             isinstance(elem[0], mat_struct))
 
 
@@ -490,7 +490,10 @@ def to_writeable(source):
         else:
             return EmptyStructMarker
     # Next try and convert to an array
-    narr = np.asanyarray(source)
+    try:
+        narr = np.asanyarray(source)
+    except ValueError:
+        narr = np.asanyarray(source, dtype=object)
     if narr.dtype.type in (object, np.object_) and \
        narr.shape == () and narr == source:
         # No interesting conversion possible

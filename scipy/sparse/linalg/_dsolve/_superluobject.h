@@ -8,8 +8,8 @@
 #ifndef __SUPERLU_OBJECT
 #define __SUPERLU_OBJECT
 
-#include <setjmp.h>
 #include <Python.h>
+#include <setjmp.h>
 
 /* Undef a macro from Python which conflicts with superlu */
 #ifdef c_abs

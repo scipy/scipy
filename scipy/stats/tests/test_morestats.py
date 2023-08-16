@@ -4,6 +4,7 @@
 #
 import warnings
 import sys
+from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
@@ -225,6 +226,22 @@ class TestShapiro:
 
         assert_allclose(res, ref, rtol=1e-5)
 
+    def test_length_3_gh18322(self):
+        # gh-18322 reported that the p-value could be negative for input of
+        # length 3. Check that this is resolved.
+        res = stats.shapiro([0.6931471805599453, 0.0, 0.0])
+        assert res.pvalue >= 0
+
+        # R `shapiro.test` doesn't produce an accurate p-value in the case
+        # above. Check that the formula used in `stats.shapiro` is not wrong.
+        # options(digits=16)
+        # x = c(-0.7746653110021126, -0.4344432067942129, 1.8157053280290931)
+        # shapiro.test(x)
+        x = [-0.7746653110021126, -0.4344432067942129, 1.8157053280290931]
+        res = stats.shapiro(x)
+        assert_allclose(res.statistic, 0.84658770645509)
+        assert_allclose(res.pvalue, 0.2313666489882, rtol=1e-6)
+
 
 class TestAnderson:
     def test_normal(self):
@@ -343,7 +360,7 @@ class TestAnderson:
         # This is also an example in which an error occurs during fitting
         x = -np.array([225, 75, 57, 168, 107, 12, 61, 43, 29])
         wmessage = "Critical values of the test statistic are given for the..."
-        emessage = "An error occured while fitting the Weibull distribution..."
+        emessage = "An error occurred while fitting the Weibull distribution..."
         wcontext = pytest.warns(UserWarning, match=wmessage)
         econtext = pytest.raises(ValueError, match=emessage)
         with wcontext, econtext:
@@ -437,8 +454,8 @@ class TestAndersonKSamp:
         assert_allclose(p, 0.0041, atol=0.00025)
 
         rng = np.random.default_rng(6989860141921615054)
-        res = stats.anderson_ksamp(samples, midrank=False,
-                                   n_resamples=9999, random_state=rng)
+        method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+        res = stats.anderson_ksamp(samples, midrank=False, method=method)
         assert_array_equal(res.statistic, Tk)
         assert_array_equal(res.critical_values, tm)
         assert_allclose(res.pvalue, p, atol=6e-4)
@@ -806,67 +823,6 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomTestP:
-    """
-    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
-
-    def test_data(self):
-        pval = self.binom_test_func(100, 250)
-        assert_almost_equal(pval, 0.0018833009350757682, 11)
-        pval = self.binom_test_func(201, 405)
-        assert_almost_equal(pval, 0.92085205962670713, 11)
-        pval = self.binom_test_func([682, 243], p=3/4)
-        assert_almost_equal(pval, 0.38249155957481695, 11)
-
-    def test_bad_len_x(self):
-        # Length of x must be 1 or 2.
-        assert_raises(ValueError, self.binom_test_func, [1, 2, 3])
-
-    def test_bad_n(self):
-        # len(x) is 1, but n is invalid.
-        # Missing n
-        assert_raises(ValueError, self.binom_test_func, [100])
-        # n less than x[0]
-        assert_raises(ValueError, self.binom_test_func, [100], n=50)
-
-    def test_bad_p(self):
-        assert_raises(ValueError,
-                      self.binom_test_func, [50, 50], p=2.0)
-
-    def test_alternatives(self):
-        res = self.binom_test_func(51, 235, p=1/6, alternative='less')
-        assert_almost_equal(res, 0.982022657605858)
-
-        res = self.binom_test_func(51, 235, p=1/6, alternative='greater')
-        assert_almost_equal(res, 0.02654424571169085)
-
-        res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
-        assert_almost_equal(res, 0.0437479701823997)
-
-    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
-    def test_boost_overflow_raises(self):
-        # Boost.Math error policy should raise exceptions in Python
-        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
 class TestBinomTest:
     """Tests for stats.binomtest."""
 
@@ -1066,6 +1022,18 @@ class TestBinomTest:
                            match="k must not be greater than n"):
             stats.binomtest(11, 10, 0.25)
 
+    def test_invalid_k_wrong_type(self):
+        with pytest.raises(TypeError,
+                           match="k must be an integer."):
+            stats.binomtest([10, 11], 21, 0.25)
+
+    def test_invalid_p_range(self):
+        message = 'p must be in range...'
+        with pytest.raises(ValueError, match=message):
+            stats.binomtest(50, 150, p=-0.5)
+        with pytest.raises(ValueError, match=message):
+            stats.binomtest(50, 150, p=1.5)
+
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="must be in the interval"):
@@ -1079,6 +1047,12 @@ class TestBinomTest:
     def test_alias(self):
         res = stats.binomtest(3, n=10, p=0.1)
         assert_equal(res.proportion_estimate, res.statistic)
+
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
+    def test_boost_overflow_raises(self):
+        # Boost.Math error policy should raise exceptions in Python
+        with pytest.raises(OverflowError, match='Error in function...'):
+            stats.binomtest(5, 6, p=sys.float_info.min)
 
 
 class TestFligner:
@@ -1997,9 +1971,18 @@ class TestBoxcox:
         def optimizer(fun):
             return 1
 
-        message = "`optimizer` must return an object containing the optimal..."
+        message = "return an object containing the optimal `lmbda`"
         with pytest.raises(ValueError, match=message):
             stats.boxcox(_boxcox_data, lmbda=None, optimizer=optimizer)
+
+    @pytest.mark.parametrize(
+            "bad_x", [np.array([1, -42, 12345.6]), np.array([np.nan, 42, 1])]
+        )
+    def test_negative_x_value_raises_error(self, bad_x):
+        """Test boxcox_normmax raises ValueError if x contains non-positive values."""
+        message = "only positive, finite, real numbers"
+        with pytest.raises(ValueError, match=message):
+            stats.boxcox_normmax(bad_x)
 
 
 class TestBoxcoxNormmax:
@@ -2254,6 +2237,79 @@ class TestYeojohnson:
         xt_box, lam_box = stats.boxcox(x + 1)
         assert_allclose(xt_yeo, xt_box, rtol=1e-6)
         assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+
+    @pytest.mark.parametrize('x', [
+        np.array([1.0, float("nan"), 2.0]),
+        np.array([1.0, float("inf"), 2.0]),
+        np.array([1.0, -float("inf"), 2.0]),
+        np.array([-1.0, float("nan"), float("inf"), -float("inf"), 1.0])
+    ])
+    def test_nonfinite_input(self, x):
+        with pytest.raises(ValueError, match='Yeo-Johnson input must be finite'):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+
+    @pytest.mark.parametrize('x', [
+        # Attempt to trigger overflow in power expressions.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        # Attempt to trigger overflow with a large optimal lambda.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        # Attempt to trigger overflow with large data.
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+    ])
+    def test_overflow(self, x):
+        # non-regression test for gh-18389
+
+        def optimizer(fun, lam_yeo):
+            out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
+            result = optimize.OptimizeResult()
+            result.x = out
+            return result
+
+        with np.errstate(all="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+            xt_box, lam_box = stats.boxcox(
+                x + 1, optimizer=partial(optimizer, lam_yeo=lam_yeo))
+            assert np.isfinite(np.var(xt_yeo))
+            assert np.isfinite(np.var(xt_box))
+            assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+            assert_allclose(xt_yeo, xt_box, rtol=1e-4)
+
+    @pytest.mark.parametrize('x', [
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
+    ])
+    @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
+    @pytest.mark.parametrize('sign', [1, -1])
+    def test_overflow_underflow_signed_data(self, x, scale, sign):
+        # non-regression test for gh-18389
+        with np.errstate(all="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(sign * x * scale)
+            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
+            assert np.isfinite(lam_yeo)
+            assert np.isfinite(np.var(xt_yeo))
+
+    @pytest.mark.parametrize('x', [
+        np.array([0, 1, 2, 3]),
+        np.array([0, -1, 2, -3]),
+        np.array([0, 0, 0])
+    ])
+    @pytest.mark.parametrize('sign', [1, -1])
+    @pytest.mark.parametrize('brack', [None, (-2, 2)])
+    def test_integer_signed_data(self, x, sign, brack):
+        with np.errstate(all="raise"):
+            x_int = sign * x
+            x_float = x_int.astype(np.float64)
+            lam_yeo_int = stats.yeojohnson_normmax(x_int, brack=brack)
+            xt_yeo_int = stats.yeojohnson(x_int, lmbda=lam_yeo_int)
+            lam_yeo_float = stats.yeojohnson_normmax(x_float, brack=brack)
+            xt_yeo_float = stats.yeojohnson(x_float, lmbda=lam_yeo_float)
+            assert np.all(np.sign(x_int) == np.sign(xt_yeo_int))
+            assert np.isfinite(lam_yeo_int)
+            assert np.isfinite(np.var(xt_yeo_int))
+            assert lam_yeo_int == lam_yeo_float
+            assert np.all(xt_yeo_int == xt_yeo_float)
 
 
 class TestYeojohnsonNormmax:
@@ -2587,7 +2643,7 @@ class TestMedianTest:
         assert_allclose(s, 0.31250000000000006)
         assert_allclose(p, 0.57615012203057869)
         assert_equal(m, 4.0)
-        assert_equal(t, np.array([[0, 2],[2, 1]]))
+        assert_equal(t, np.array([[0, 2], [2, 1]]))
         assert_raises(ValueError, stats.median_test, x, y, nan_policy='raise')
 
     def test_basic(self):

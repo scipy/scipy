@@ -12,7 +12,7 @@ set_upload_vars() {
         export ANACONDA_UPLOAD="true"
     elif [[ "$IS_SCHEDULE_DISPATCH" == "true" ]]; then
         echo scheduled or dispatched event
-        export ANACONDA_ORG="scipy-wheels-nightly"
+        export ANACONDA_ORG="scientific-python-nightly-wheels"
         export TOKEN="$SCIPY_NIGHTLY_UPLOAD_TOKEN"
         export ANACONDA_UPLOAD="true"
     else
@@ -20,14 +20,13 @@ set_upload_vars() {
         export ANACONDA_UPLOAD="false"
     fi
 }
+
 upload_wheels() {
     echo ${PWD}
     if [[ ${ANACONDA_UPLOAD} == true ]]; then
         if [ -z ${TOKEN} ]; then
             echo no token set, not uploading
         else
-            python -m pip install \
-            git+https://github.com/Anaconda-Platform/anaconda-client.git@be1e14936a8e947da94d026c990715f0596d7043
             # sdists are located under dist folder
             if compgen -G "./dist/*.gz"; then
                 echo "Found sdist"

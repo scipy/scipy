@@ -87,6 +87,19 @@ private return classes, please see  how `~scipy.stats.binomtest` summarizes
 `~scipy.stats._result_classes.BinomTestResult` and links to its documentation,
 and note that ``BinomTestResult`` cannot be imported from `~scipy.stats`.
 
+Depending on the complexity of "MyResultObject", a normal class or a dataclass
+can be used. When using dataclasses, do not use ``dataclasses.make_dataclass``,
+instead use a proper declaration. This allows autocompletion to list all
+the attributes of the result object and improves static analysis.
+Finally, hide private attributes if any::
+
+    @dataclass
+    class MyResultObject:
+        statistic: np.ndarray
+        pvalue: np.ndarray
+        confidence_interval: ConfidenceInterval
+        _rho: np.ndarray = field(repr=False)
+
 
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

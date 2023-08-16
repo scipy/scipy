@@ -283,8 +283,11 @@ Spectral analysis
    spectrogram    -- Compute the spectrogram.
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
-   stft           -- Compute the Short Time Fourier Transform.
-   istft          -- Compute the Inverse Short Time Fourier Transform.
+   ShortTimeFFT   -- Interface for calculating the \
+                     :ref:`Short Time Fourier Transform <tutorial_stft>` and \
+                     its inverse.
+   stft           -- Compute the Short Time Fourier Transform (legacy).
+   istft          -- Compute the Inverse Short Time Fourier Transform (legacy).
    check_COLA     -- Check the COLA constraint for iSTFT reconstruction.
    check_NOLA     -- Check the NOLA constraint for iSTFT reconstruction.
 
@@ -306,6 +309,8 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
+import warnings
+
 from . import _sigtools, windows
 from ._waveforms import *
 from ._max_len_seq import max_len_seq
@@ -327,6 +332,7 @@ from ._lti_conversion import *
 from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
+from ._short_time_fft import *
 from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *
@@ -351,6 +357,11 @@ def deco(name):
     # Add deprecation to docstring
 
     def wrapped(*args, **kwargs):
+        warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
+                      "and will raise an error in SciPy 1.13.0. Please use "
+                      f"'scipy.signal.windows.{name}' or the convenience "
+                      "function 'scipy.signal.get_window' instead.",
+                      DeprecationWarning, stacklevel=2)
         return f(*args, **kwargs)
 
     wrapped.__name__ = name
@@ -379,7 +390,7 @@ for name in deprecated_windows:
 
 del deprecated_windows, name, deco
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir() if not s.startswith('_') and s != "warnings"]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

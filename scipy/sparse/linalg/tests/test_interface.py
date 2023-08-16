@@ -113,8 +113,23 @@ class TestLinearOperator:
             assert_(isinstance(A+A, interface._SumLinearOperator))
             assert_(isinstance(-A, interface._ScaledLinearOperator))
             assert_(isinstance(A-A, interface._SumLinearOperator))
+            assert_(isinstance(A/2, interface._ScaledLinearOperator))
+            assert_(isinstance(A/2j, interface._ScaledLinearOperator))
+            assert_(((A * 3) / 3).args[0] is A)  # check for simplification
+
+            # Test that prefactor is of _ScaledLinearOperator is not mutated
+            # when the operator is multiplied by a number
+            result = A @ np.array([1, 2, 3])
+            B = A * 3
+            C = A / 5
+            assert_equal(A @ np.array([1, 2, 3]), result)
 
             assert_((2j*A).dtype == np.complex_)
+
+            # Test division by non-scalar
+            msg = "Can only divide a linear operator by a scalar."
+            with assert_raises(ValueError, match=msg):
+                A / np.array([1, 2])
 
             assert_raises(ValueError, A.matvec, np.array([1,2]))
             assert_raises(ValueError, A.matvec, np.array([1,2,3,4]))
@@ -174,13 +189,17 @@ class TestLinearOperator:
              'rmatmat': lambda x: np.dot(self.A.T.conj(), x),
              'matmat': lambda x: np.dot(self.A, x)}
         A = interface.LinearOperator(**D)
-        B = np.array([[1, 2, 3],
+        B = np.array([[1 + 1j, 2, 3],
                       [4, 5, 6],
                       [7, 8, 9]])
         b = B[0]
 
         assert_equal(operator.matmul(A, b), A * b)
+        assert_equal(operator.matmul(A, b.reshape(-1, 1)), A * b.reshape(-1, 1))
         assert_equal(operator.matmul(A, B), A * B)
+        assert_equal(operator.matmul(b, A.H), b * A.H)
+        assert_equal(operator.matmul(b.reshape(1, -1), A.H), b.reshape(1, -1) * A.H)
+        assert_equal(operator.matmul(B, A.H), B * A.H)
         assert_raises(ValueError, operator.matmul, A, 2)
         assert_raises(ValueError, operator.matmul, 2, A)
 
@@ -447,3 +466,16 @@ def test_transpose_noconjugate():
 
     assert_equal(B.dot(v), Y.dot(v))
     assert_equal(B.T.dot(v), Y.T.dot(v))
+
+def test_sparse_matmat_exception():
+    A = interface.LinearOperator((2, 2), matvec=lambda x: x)
+    B = sparse.identity(2)
+    msg = "Unable to multiply a LinearOperator with a sparse matrix."
+    with assert_raises(TypeError, match=msg):
+        A @ B
+    with assert_raises(TypeError, match=msg):
+        B @ A
+    with assert_raises(ValueError):
+        A @ np.identity(4)
+    with assert_raises(ValueError):
+        np.identity(4) @ A

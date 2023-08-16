@@ -7,7 +7,7 @@
 import numpy as np
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
-from scipy._lib._util import _contains_nan
+from scipy._lib._util import _contains_nan, AxisError
 import inspect
 
 
@@ -42,8 +42,8 @@ def _broadcast_shapes(shapes, axis=None):
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
-            raise np.AxisError('`axis` must be an integer, a '
-                               'tuple of integers, or `None`.')
+            raise AxisError('`axis` must be an integer, a '
+                            'tuple of integers, or `None`.')
         axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.
@@ -59,10 +59,10 @@ def _broadcast_shapes(shapes, axis=None):
         if axis[-1] >= n_dims or axis[0] < 0:
             message = (f"`axis` is out of bounds "
                        f"for array of dimension {n_dims}")
-            raise np.AxisError(message)
+            raise AxisError(message)
 
         if len(np.unique(axis)) != len(axis):
-            raise np.AxisError("`axis` must contain only distinct elements")
+            raise AxisError("`axis` must contain only distinct elements")
 
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
@@ -403,12 +403,17 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # Note that *args can't be provided as a keyword argument
                 params = [f"arg{i}" for i in range(len(args))] + params[1:]
 
+            # raise if there are too many positional args
+            maxarg = (np.inf if inspect.getfullargspec(hypotest_fun_in).varargs
+                      else len(inspect.getfullargspec(hypotest_fun_in).args))
+            if len(args) > maxarg:  # let the function raise the right error
+                hypotest_fun_in(*args, **kwds)
+
+            # raise if multiple values passed for same parameter
             d_args = dict(zip(params, args))
             intersection = set(d_args) & set(kwds)
-            if intersection:
-                message = (f"{hypotest_fun_in.__name__}() got multiple values "
-                           f"for argument '{list(intersection)[0]}'")
-                raise TypeError(message)
+            if intersection:  # let the function raise the right error
+                hypotest_fun_in(*args, **kwds)
 
             # Consolidate other positional and keyword args into `kwds`
             kwds.update(d_args)
@@ -442,8 +447,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return hypotest_fun_in(*samples[:n_samp], **kwds)
 
             # Extract the things we need here
-            samples = [np.atleast_1d(kwds.pop(param))
-                       for param in (params[:n_samp] + kwd_samp)]
+            try:  # if something is missing
+                samples = [np.atleast_1d(kwds.pop(param))
+                           for param in (params[:n_samp] + kwd_samp)]
+            except KeyError:  # let the function raise the right error
+                # might need to revisit this if required arg is not a "sample"
+                hypotest_fun_in(*args, **kwds)
             vectorized = True if 'axis' in params else False
             vectorized = vectorized and not override['vectorization']
             axis = kwds.pop('axis', default_axis)
@@ -484,21 +493,23 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             ndims = np.array([sample.ndim for sample in samples])
             if np.all(ndims <= 1):
                 # Addresses nan_policy == "raise"
-                contains_nans = []
-                for sample in samples:
-                    contains_nan, _ = _contains_nan(sample, nan_policy)
-                    contains_nans.append(contains_nan)
+                if nan_policy != 'propagate' or override['nan_propagation']:
+                    contains_nan = [_contains_nan(sample, nan_policy)[0]
+                                    for sample in samples]
+                else:
+                    # Behave as though there are no NaNs (even if there are)
+                    contains_nan = [False]*len(samples)
 
                 # Addresses nan_policy == "propagate"
-                if any(contains_nans) and (nan_policy == 'propagate'
-                                           and override['nan_propagation']):
+                if any(contains_nan) and (nan_policy == 'propagate'
+                                          and override['nan_propagation']):
                     res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
-                if any(contains_nans) and nan_policy == 'omit':
-                    # consider passing in contains_nans
+                if any(contains_nan) and nan_policy == 'omit':
+                    # consider passing in contains_nan
                     samples = _remove_nans(samples, paired)
 
                 # ideally, this is what the behavior would be:
@@ -531,7 +542,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             x = _broadcast_concatenate(samples, axis)
 
             # Addresses nan_policy == "raise"
-            contains_nan, _ = _contains_nan(x, nan_policy)
+            if nan_policy != 'propagate' or override['nan_propagation']:
+                contains_nan, _ = _contains_nan(x, nan_policy)
+            else:
+                contains_nan = False  # behave like there are no NaNs
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)

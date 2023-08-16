@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
-from scipy.sparse import csc_array, vstack
+from scipy.sparse import csc_array, vstack, issparse
+from scipy._lib._util import VisibleDeprecationWarning
 from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
@@ -43,7 +44,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except (TypeError, ValueError, np.VisibleDeprecationWarning):
+            except (TypeError, ValueError, VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 
@@ -61,7 +62,7 @@ def _constraints_to_components(constraints):
         b_us.append(np.atleast_1d(constraint.ub).astype(np.double))
 
     if len(As) > 1:
-        A = vstack(As)
+        A = vstack(As, format="csc")
         b_l = np.concatenate(b_ls)
         b_u = np.concatenate(b_us)
     else:  # avoid unnecessary copying
@@ -74,6 +75,8 @@ def _constraints_to_components(constraints):
 
 def _milp_iv(c, integrality, bounds, constraints, options):
     # objective IV
+    if issparse(c):
+        raise ValueError("`c` must be a dense array.")
     c = np.atleast_1d(c).astype(np.double)
     if c.ndim != 1 or c.size == 0 or not np.all(np.isfinite(c)):
         message = ("`c` must be a one-dimensional array of finite numbers "
@@ -81,6 +84,8 @@ def _milp_iv(c, integrality, bounds, constraints, options):
         raise ValueError(message)
 
     # integrality IV
+    if issparse(integrality):
+        raise ValueError("`integrality` must be a dense array.")
     message = ("`integrality` must contain integers 0-3 and be broadcastable "
                "to `c.shape`.")
     if integrality is None:
@@ -181,11 +186,11 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     Parameters
     ----------
-    c : 1D array_like
+    c : 1D dense array_like
         The coefficients of the linear objective function to be minimized.
         `c` is converted to a double precision array before the problem is
         solved.
-    integrality : 1D array_like, optional
+    integrality : 1D dense array_like, optional
         Indicates the type of integrality constraint on each decision variable.
 
         ``0`` : Continuous variable; no integrality constraint.

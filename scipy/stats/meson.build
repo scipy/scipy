@@ -12,40 +12,21 @@ stats_special_cython_gen = generator(cython,
     _cython_tree,
     _ufuncs_pxi_pxd_sources,
     _stats_pxd,
-    cython_special])
-
-statlib_lib = static_library('statlib_lib',
-  [
-    'statlib/ansari.f',
-    'statlib/spearman.f',
-    'statlib/swilk.f'
-  ],
-  fortran_args: _fflag_Wno_unused_variable
-)
-
-statlib_module = custom_target('statlib_module',
-  output: ['_statlib-f2pywrappers.f', '_statlibmodule.c'],
-  input: 'statlib.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-statlib = py3.extension_module('_statlib',
-  statlib_module,
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
-  link_with: statlib_lib,
-  dependencies: [fortranobject_dep],
-  include_directories: [inc_np, inc_f2py],
-  link_args: version_link_args,
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/stats'
-)
+    cython_special_pxd])
 
 _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
-  include_directories: [inc_np],
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/stats'
+)
+
+_ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
+  cython_gen.process('_ansari_swilk_statistics.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -64,7 +45,6 @@ mvn = py3.extension_module('_mvn',
   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
   dependencies: [fortranobject_dep],
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -74,7 +54,7 @@ mvn = py3.extension_module('_mvn',
 _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
-  include_directories: [inc_np],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -89,8 +69,7 @@ py3.install_sources([
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
-  dependencies: thread_dep,
-  include_directories: [inc_np],
+  dependencies: [np_dep, thread_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats'
@@ -115,10 +94,18 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   depends: _stats_pxd
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+_stats_gen_pyx_dummy = custom_target('_dummy_stats_gen_pyx',
+  output: '_dummy_stats_gen.pxd',
+  input: _stats_gen_pyx[2],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
 cython_stats_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _stats_gen_pyx])
+  depends : [_cython_tree, _stats_gen_pyx_dummy])
 
 # Build recipes defined here to get correct output path when used from
 # other subdirs.
@@ -146,10 +133,9 @@ biasedurn = py3.extension_module('_biasedurn',
     'biasedurn/wnchyppr.cpp',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
-  include_directories: [inc_np],
   link_args: version_link_args,
   # Note that we're not using npymath directly, it is needed to use npyrandom
-  dependencies: [npyrandom_lib, npymath_lib],
+  dependencies: [np_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
 )
@@ -164,7 +150,7 @@ if use_pythran
   _stats_pythran = py3.extension_module('_stats_pythran',
     _stats_pythran_cpp,
     cpp_args: cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
+    dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/stats'
@@ -182,6 +168,7 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
+    '_bws_test.py',
     '_censored_data.py',
     '_common.py',
     '_constants.py',
@@ -201,17 +188,21 @@ py3.install_sources([
     '_morestats.py',
     '_mstats_basic.py',
     '_mstats_extras.py',
+    '_multicomp.py',
     '_multivariate.py',
     '_odds_ratio.py',
     '_page_trend_test.py',
     '_qmc.py',
+    '_qmvnt.py',
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
+    '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
+    '_survival.py',
     '_tukeylambda_stats.py',
     '_variation.py',
     '_warnings_errors.py',
@@ -226,7 +217,6 @@ py3.install_sources([
     'mvn.py',
     'qmc.py',
     'sampling.py',
-    'statlib.py',
     'stats.py'
   ],
   subdir: 'scipy/stats'

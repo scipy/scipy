@@ -16,7 +16,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_, assert_warns)
+                           assert_equal, assert_, assert_warns, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -34,6 +34,8 @@ from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
     EmptyStructMarker)
 import scipy.io.matlab._mio5_params as mio5p
+from scipy._lib._util import VisibleDeprecationWarning
+
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -1290,6 +1292,12 @@ def test_opaque():
     assert isinstance(data['parabola'].item()[3].item()[3], MatlabOpaque)
 
 
+def test_opaque_simplify():
+    """Test that we can read a MatlabOpaque object when simplify_cells=True."""
+    data = loadmat(pjoin(test_data_path, 'parabola.mat'), simplify_cells=True)
+    assert isinstance(data['parabola'], MatlabFunction)
+
+
 def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
@@ -1299,3 +1307,24 @@ def test_deprecation():
     # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
         from scipy.io.matlab.miobase import MatReadError  # noqa
+
+
+def test_gh_17992(tmp_path):
+    rng = np.random.default_rng(12345)
+    outfile = tmp_path / "lists.mat"
+    array_one = rng.random((5,3))
+    array_two = rng.random((6,3))
+    list_of_arrays = [array_one, array_two]
+    # warning suppression only needed for NumPy < 1.24.0
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(VisibleDeprecationWarning)
+        savemat(outfile,
+                {'data': list_of_arrays},
+                long_field_names=True,
+                do_compression=True)
+    # round trip check
+    new_dict = {}
+    loadmat(outfile,
+            new_dict)
+    assert_allclose(new_dict["data"][0][0], array_one)
+    assert_allclose(new_dict["data"][0][1], array_two)

@@ -477,16 +477,16 @@ def asjacobian(J):
 
         return Jacobian(matvec=lambda v: dot(J, v),
                         rmatvec=lambda v: dot(J.conj().T, v),
-                        solve=lambda v: solve(J, v),
-                        rsolve=lambda v: solve(J.conj().T, v),
+                        solve=lambda v, tol=0: solve(J, v),
+                        rsolve=lambda v, tol=0: solve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
-    elif scipy.sparse.isspmatrix(J):
+    elif scipy.sparse.issparse(J):
         if J.shape[0] != J.shape[1]:
             raise ValueError('matrix must be square')
-        return Jacobian(matvec=lambda v: J*v,
-                        rmatvec=lambda v: J.conj().T * v,
-                        solve=lambda v: spsolve(J, v),
-                        rsolve=lambda v: spsolve(J.conj().T, v),
+        return Jacobian(matvec=lambda v: J @ v,
+                        rmatvec=lambda v: J.conj().T @ v,
+                        solve=lambda v, tol=0: spsolve(J, v),
+                        rsolve=lambda v, tol=0: spsolve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
     elif hasattr(J, 'shape') and hasattr(J, 'dtype') and hasattr(J, 'solve'):
         return Jacobian(matvec=getattr(J, 'matvec'),
@@ -507,7 +507,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -516,8 +516,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m*v
+                elif scipy.sparse.issparse(m):
+                    return m @ v
                 else:
                     raise ValueError("Unknown matrix type")
 
@@ -525,7 +525,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m.conj().T, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -534,8 +534,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m.conj().T * v
+                elif scipy.sparse.issparse(m):
+                    return m.conj().T @ v
                 else:
                     raise ValueError("Unknown matrix type")
         return Jac()

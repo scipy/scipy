@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize._optimize import _status_message
+from scipy.optimize._optimize import _status_message, _wrap_callback
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
@@ -116,12 +116,32 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the best solution found so far. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(intermediate_result: OptimizeResult)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence: float=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+        When ``val`` is greater than ``1.0``, the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -239,9 +259,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     res : OptimizeResult
         The optimization result represented as a `OptimizeResult` object.
         Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes. If `polish`
+        Boolean flag indicating if the optimizer exited successfully,
+        ``message`` which describes the cause of the termination,
+        ``population`` the solution vectors present in the population, and
+        ``population_energies`` the value of the objective function for each
+        entry in ``population``.
+        See `OptimizeResult` for a description of other attributes. If `polish`
         was employed, and a lower minimum was obtained by the polishing, then
         OptimizeResult also contains the ``jac`` attribute.
         If the eventual solution does not satisfy the applied constraints
@@ -308,7 +331,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [3] http://www1.icsi.berkeley.edu/~storn/code.html
+    .. [3] https://www.sciencedirect.com/science/article/pii/S111001682100613X#s0030
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
@@ -489,12 +512,32 @@ class DifferentialEvolutionSolver:
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence. When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(intermediate_result: OptimizeResult)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence: float=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+         When ``val`` is greater than ``1.0``, the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -624,7 +667,7 @@ class DifferentialEvolutionSolver:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
-        self.callback = callback
+        self.callback = _wrap_callback(callback, "differential_evolution")
         self.polish = polish
 
         # set the updating / parallelisation options
@@ -700,7 +743,7 @@ class DifferentialEvolutionSolver:
 
         if (np.size(self.limits, 0) != 2 or not
                 np.all(np.isfinite(self.limits))):
-            raise ValueError('bounds should be a sequence containing '
+            raise ValueError('bounds should be a sequence containing finite '
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
@@ -968,7 +1011,7 @@ class DifferentialEvolutionSolver:
         if np.any(np.isinf(self.population_energies)):
             return np.inf
         return (np.std(self.population_energies) /
-                np.abs(np.mean(self.population_energies) + _MACHEPS))
+                (np.abs(np.mean(self.population_energies)) + _MACHEPS))
 
     def converged(self):
         """
@@ -988,13 +1031,18 @@ class DifferentialEvolutionSolver:
         Returns
         -------
         res : OptimizeResult
-            The optimization result represented as a ``OptimizeResult`` object.
+            The optimization result represented as a `OptimizeResult` object.
             Important attributes are: ``x`` the solution array, ``success`` a
-            Boolean flag indicating if the optimizer exited successfully and
-            ``message`` which describes the cause of the termination. See
-            `OptimizeResult` for a description of other attributes.  If `polish`
-            was employed, and a lower minimum was obtained by the polishing,
-            then OptimizeResult also contains the ``jac`` attribute.
+            Boolean flag indicating if the optimizer exited successfully,
+            ``message`` which describes the cause of the termination,
+            ``population`` the solution vectors present in the population, and
+            ``population_energies`` the value of the objective function for
+            each entry in ``population``.
+            See `OptimizeResult` for a description of other attributes. If
+            `polish` was employed, and a lower minimum was obtained by the
+            polishing, then OptimizeResult also contains the ``jac`` attribute.
+            If the eventual solution does not satisfy the applied constraints
+            ``success`` will be `False`.
         """
         nit, warning_flag = 0, False
         status_message = _status_message['success']
@@ -1030,16 +1078,21 @@ class DifferentialEvolutionSolver:
                 break
 
             if self.disp:
-                print("differential_evolution step %d: f(x)= %g"
-                      % (nit,
-                         self.population_energies[0]))
+                print(f"differential_evolution step {nit}: f(x)="
+                      f" {self.population_energies[0]}"
+                      )
 
             if self.callback:
                 c = self.tol / (self.convergence + _MACHEPS)
-                warning_flag = bool(self.callback(self.x, convergence=c))
+                res = self._result(nit=nit, message="in progress")
+                res.convergence = c
+                try:
+                    warning_flag = bool(self.callback(res))
+                except StopIteration:
+                    warning_flag = True
+
                 if warning_flag:
-                    status_message = ('callback function requested stop early'
-                                      ' by returning True')
+                    status_message = 'callback function requested stop early'
 
             # should the solver terminate?
             if warning_flag or self.converged():
@@ -1049,13 +1102,9 @@ class DifferentialEvolutionSolver:
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        DE_result = OptimizeResult(
-            x=self.x,
-            fun=self.population_energies[0],
-            nfev=self._nfev,
-            nit=nit,
-            message=status_message,
-            success=(warning_flag is not True))
+        DE_result = self._result(
+            nit=nit, message=status_message, warning_flag=warning_flag
+        )
 
         if self.polish and not np.all(self.integrality):
             # can't polish if all the parameters are integers
@@ -1115,6 +1164,31 @@ class DifferentialEvolutionSolver:
                                      f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
+
+    def _result(self, **kwds):
+        # form an intermediate OptimizeResult
+        nit = kwds.get('nit', None)
+        message = kwds.get('message', None)
+        warning_flag = kwds.get('warning_flag', False)
+        result = OptimizeResult(
+            x=self.x,
+            fun=self.population_energies[0],
+            nfev=self._nfev,
+            nit=nit,
+            message=message,
+            success=(warning_flag is not True),
+            population=self._scale_parameters(self.population),
+            population_energies=self.population_energies
+        )
+        if self._wrapped_constraints:
+            result.constr = [c.violation(result.x)
+                             for c in self._wrapped_constraints]
+            result.constr_violation = np.max(np.concatenate(result.constr))
+            result.maxcv = result.constr_violation
+            if result.maxcv > 0:
+                result.success = False
+
+        return result
 
     def _calculate_population_energies(self, population):
         """
@@ -1521,6 +1595,7 @@ class DifferentialEvolutionSolver:
             i = 0
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count
@@ -1580,10 +1655,16 @@ class DifferentialEvolutionSolver:
         obtain random integers from range(self.num_population_members),
         without replacement. You can't have the original candidate either.
         """
-        idxs = list(range(self.num_population_members))
-        idxs.remove(candidate)
-        self.random_number_generator.shuffle(idxs)
-        idxs = idxs[:number_samples]
+        pool = np.arange(self.num_population_members)
+        self.random_number_generator.shuffle(pool)
+
+        idxs = []
+        while len(idxs) < number_samples and len(pool) > 0:
+            idx = pool[0]
+            pool = pool[1:]
+            if idx != candidate:
+                idxs.append(idx)
+        
         return idxs
 
 

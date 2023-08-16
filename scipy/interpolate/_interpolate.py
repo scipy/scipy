@@ -1,5 +1,7 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
+from math import prod
+import warnings
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
@@ -7,7 +9,6 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
 
 import scipy.special as spec
 from scipy.special import comb
-from scipy._lib._util import prod
 
 from . import _fitpack_py
 from . import dfitpack
@@ -15,6 +16,10 @@ from ._polyint import _Interpolator1D
 from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
+
+# even though this is a stdlib module, it got accidentally exposed in __all__
+# in the past. It is now deprecated and scheduled to be removed in SciPy 1.13.0
+import itertools  # noqa
 
 
 def lagrange(x, w):
@@ -92,7 +97,7 @@ def lagrange(x, w):
 
 
 dep_mesg = """\
-`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.12.0.
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.13.0.
 
 For legacy code, nearly bug-for-bug compatible replacements are
 `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -103,7 +108,7 @@ For scattered data, prefer `LinearNDInterpolator` or
 `CloughTocher2DInterpolator`.
 
 For more details see
-`https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+`https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html`
 """
 
 class interp2d:
@@ -114,7 +119,7 @@ class interp2d:
     .. deprecated:: 1.10.0
 
         `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy
-        1.12.0.
+        1.13.0.
 
         For legacy code, nearly bug-for-bug compatible replacements are
         `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -125,7 +130,8 @@ class interp2d:
         `CloughTocher2DInterpolator`.
 
         For more details see
-        `https://gist.github.com/ev-br/8544371b40f414b7eaf3fe6217209bff`
+        `https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html
+        <https://scipy.github.io/devdocs/notebooks/interp_transition_guide.html>`_
 
 
     Interpolate over a 2-D grid.
@@ -236,9 +242,10 @@ class interp2d:
     >>> plt.show()
     """
 
-    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=None):
+        warnings.warn(dep_mesg, DeprecationWarning, stacklevel=2)
+
         x = ravel(x)
         y = ravel(y)
         z = asarray(z)
@@ -294,7 +301,6 @@ class interp2d:
         self.x_min, self.x_max = np.amin(x), np.amax(x)
         self.y_min, self.y_max = np.amin(y), np.amax(y)
 
-    @np.deprecate(old_name='interp2d', message=dep_mesg)
     def __call__(self, x, y, dx=0, dy=0, assume_sorted=False):
         """Interpolate the function.
 
@@ -319,6 +325,7 @@ class interp2d:
         z : 2-D array with shape (len(y), len(x))
             The interpolated values.
         """
+        warnings.warn(dep_mesg, DeprecationWarning, stacklevel=2)
 
         x = atleast_1d(x)
         y = atleast_1d(y)
@@ -384,17 +391,24 @@ class interp1d(_Interpolator1D):
     """
     Interpolate a 1-D function.
 
+    .. legacy:: class
+
+        For a guide to the intended replacements for `interp1d` see
+        :ref:`tutorial-interpolate_1Dsection`.
+
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``. This class returns a function whose call method uses
     interpolation to find the value of new points.
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : (npoints, ) array_like
         A 1-D array of real values.
-    y : (...,N,...) array_like
+    y : (..., npoints, ...) array_like
         A N-D array of real values. The length of `y` along the interpolation
-        axis must be equal to the length of `x`.
+        axis must be equal to the length of `x`. Use the ``axis`` parameter
+        to select correct axis. Unlike other interpolators, the default
+        interpolation axis is the last axis of `y`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string or as an integer
         specifying the order of the spline interpolator to use.
@@ -407,8 +421,8 @@ class interp1d(_Interpolator1D):
         in that 'nearest-up' rounds up and 'nearest' rounds down. Default
         is 'linear'.
     axis : int, optional
-        Specifies the axis of `y` along which to interpolate.
-        Interpolation defaults to the last axis of `y`.
+        Axis in the ``y`` array corresponding to the x-coordinate values. Unlike
+        other interpolators, defaults to ``axis=-1``.
     copy : bool, optional
         If True, the class makes internal copies of x and y.
         If False, references to `x` and `y` are used. The default is to copy.
