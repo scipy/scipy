@@ -87,6 +87,27 @@ class TestLaplacianNd:
 
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
+    def test_eigenvectors(self, grid_shape, bc):
+        lap = LaplacianNd(grid_shape, boundary_conditions=bc, dtype=np.float64)
+        L = lap.toarray()
+        n = np.prod(grid_shape)
+        eigenvalues = lap.eigenvalues()
+        eigenvectors = lap.eigenvectors()
+        dtype = eigenvectors.dtype
+        atol = n * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
+        # test the default ``m = None`` every individual eigenvector
+        for i in np.arange(n):
+            r = lap.toarray() @ eigenvectors[:,i] - eigenvectors[:,i] * eigenvalues[i]
+            assert_allclose(r, np.zeros_like(r), atol=atol)
+        # test every ``m > 0``
+        for m in np.arange(1, n + 1):
+            e = lap.eigenvalues(m)
+            ev = lap.eigenvectors(m)
+            r = lap.toarray() @ ev - ev @ np.diag(e)
+            assert_allclose(r, np.zeros_like(r), atol=atol)
+
+    @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
+    @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_toarray_tosparse_consistency(self, grid_shape, bc):
         lap = LaplacianNd(grid_shape, boundary_conditions=bc)
         n = np.prod(grid_shape)
