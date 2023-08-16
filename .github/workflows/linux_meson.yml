@@ -230,9 +230,9 @@ jobs:
         run: |
           pip install "numpy==1.21.6" &&
           # build deps
-          pip install build meson-python ninja pythran pybind11 "cython<3.0.0" wheel
+          pip install build meson-python ninja pythran "pybind11<2.11.0" "cython<3.0.0" "wheel<0.41.0"
           # test deps
-          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout
+          pip install gmpy2 threadpoolctl mpmath pooch pythran "pybind11<2.11.0" pytest pytest-xdist==2.5.0 pytest-timeout
 
       - name: Build wheel and install
         run: |
@@ -255,7 +255,7 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps and 64-bit BLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'scipy/skip_on_release_branch'"
     runs-on: ubuntu-latest
     strategy:
       matrix:
