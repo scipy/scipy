@@ -156,7 +156,7 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
 }
 
 /*! \brief Read complex numbers as pairs of (real, imaginary) */
-static int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
+static int cReadValues(FILE *fp, int n, singlecomplex *destination, int perline, int persize)
 {
     register int i, j, k, s, pair;
     register float realpart;
@@ -200,12 +200,12 @@ static int cReadValues(FILE *fp, int n, complex *destination, int perline, int p
  * </pre>
  */
 static void
-FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+FormFullA(int n, int *nonz, singlecomplex **nzval, int **rowind, int **colptr)
 {
     register int i, j, k, col, new_nnz;
     int *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
     int *marker;
-    complex *t_val, *al_val, *a_val;
+    singlecomplex *t_val, *al_val, *a_val;
 
     al_rowind = *rowind;
     al_colptr = *colptr;
@@ -217,7 +217,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
 	ABORT("SUPERLU_MALLOC t_colptr[]");
     if ( !(t_rowind = (int *) SUPERLU_MALLOC( *nonz * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
-    if ( !(t_val = (complex*) SUPERLU_MALLOC( *nonz * sizeof(complex)) ) )
+    if ( !(t_val = (singlecomplex*) SUPERLU_MALLOC( *nonz * sizeof(singlecomplex)) ) )
 	ABORT("SUPERLU_MALLOC fails for t_val[]");
 
     /* Get counts of each column of T, and set up column pointers */
@@ -246,7 +246,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
 	ABORT("SUPERLU_MALLOC a_colptr[]");
     if ( !(a_rowind = (int *) SUPERLU_MALLOC( new_nnz * sizeof(int)) ) )
 	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
-    if ( !(a_val = (complex*) SUPERLU_MALLOC( new_nnz * sizeof(complex)) ) )
+    if ( !(a_val = (singlecomplex*) SUPERLU_MALLOC( new_nnz * sizeof(singlecomplex)) ) )
 	ABORT("SUPERLU_MALLOC fails for a_val[]");
 
     a_colptr[0] = 0;
@@ -296,7 +296,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
 
 void
 creadrb(int *nrow, int *ncol, int *nonz,
-        complex **nzval, int **rowind, int **colptr)
+        singlecomplex **nzval, int **rowind, int **colptr)
 {
 
     register int i, numer_lines = 0;

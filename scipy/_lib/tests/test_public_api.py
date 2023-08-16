@@ -338,6 +338,8 @@ def test_api_importable():
                           ('scipy.linalg.matfuncs', None),
                           ('scipy.linalg.misc', None),
                           ('scipy.linalg.special_matrices', None),
+                          ('scipy.odr.models', None),
+                          ('scipy.odr.odrpack', None),
                           ('scipy.optimize.cobyla', None),
                           ('scipy.optimize.lbfgsb', None),
                           ('scipy.optimize.linesearch', None),
