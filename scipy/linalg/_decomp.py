@@ -28,9 +28,6 @@ from ._misc import LinAlgError, _datacopied, norm
 from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import cast  # noqa
-
 
 _I = numpy.array(1j, dtype='F')
 
