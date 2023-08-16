@@ -7,12 +7,12 @@ __all__ = ['LaplacianNd']
 
 class LaplacianNd(LinearOperator):
     """
-    The grid Laplacian in ``N`` dimensions and its eigenvalues.
+    The grid Laplacian in ``N`` dimensions and its eigenvalues/eigenvectors.
 
     Construct Laplacian on a uniform rectangular grid in `N` dimensions
-    and output its eigenvalues. The Laplacian ``L`` is square, negative
-    definite, real symmetric, array with signed integer entries and zeros
-    otherwise.
+    and output its eigenvalues and eigenvectors.
+    The Laplacian ``L`` is square, negative definite, real symmetric array
+    with signed integer entries and zeros otherwise.
 
     Parameters
     ----------
@@ -37,8 +37,8 @@ class LaplacianNd(LinearOperator):
         Construct a 1D array of `m` largest (smallest in absolute value)
         eigenvalues of the Laplacian matrix in ascending order.
     eigenvectors(m=None):
-        Construct the array of `m` eigenvectors (``float``) of the
-        ``Nd`` Laplacian corresponding to the `m` ordered eigenvalues.
+        Construct the array with columns made of `m` eigenvectors (``float``)
+        of the ``Nd`` Laplacian corresponding to the `m` ordered eigenvalues.
 
     .. versionadded:: 1.12.0
 
@@ -47,8 +47,7 @@ class LaplacianNd(LinearOperator):
     Compared to the MATLAB/Octave implementation [1] of 1-, 2-, and 3-D
     Laplacian, this code allows the arbitrary N-D case and the matrix-free
     callable option, but is currently limited to pure Dirichlet, Neumann or
-    Periodic boundary conditions only and outputs just the eigenvalues,
-    no eigenvectors.
+    Periodic boundary conditions only.
 
     The Laplacian matrix of a graph (`scipy.sparse.csgraph.laplacian`) of a
     rectangular grid corresponds to the negative Laplacian with the Neumann
@@ -341,8 +340,19 @@ of_the_second_derivative
         return np.asarray(result).ravel()
 
     def eigenvectors(self, m=None):
-        """Return `m` eigenvectors of Nd Laplacian computed
-        one-by-one according to the `m` ordered eigenvalues. 
+        """Return the requested number of eigenvectors for ordered eigenvalues.
+        
+        Parameters
+        ----------
+        m : int, optional
+            The positive number of eigenvectors to return. If not provided,
+            then all eigenvectors will be returned.
+            
+        Returns
+        -------
+        eigenvectors : float array
+            An array with columns made of the requested `m` or all eigenvectors.
+            The columns are ordered according to the `m` ordered eigenvalues. 
         """
         _, ind = self._eigenvalue_ordering(m)
         if m is None:
@@ -358,7 +368,7 @@ of_the_second_derivative
 
     def toarray(self):
         """
-        Converts the Laplacian data to a dense array
+        Converts the Laplacian data to a dense array.
 
         Returns
         -------
