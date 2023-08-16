@@ -284,6 +284,7 @@ of_the_second_derivative
         eigenvalues = Leig_ravel[ind]
         if m is not None:
             eigenvalues = eigenvalues[-m:]
+            ind = ind[-m:]
 
         # make small values exact zeros
         eigenvalues[np.abs(eigenvalues) < np.finfo(np.float64).eps] = 0.
@@ -306,7 +307,6 @@ of_the_second_derivative
         eigenvalues, _ = self._eigenvalue_ordering(m)
         return eigenvalues
 
-    
     def _ev1d(self, j, n):
         """Return 1 eigenvector in 1d with index `j`
         and number of grid points `n` where ``j < n``. 
