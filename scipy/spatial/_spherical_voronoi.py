@@ -172,7 +172,7 @@ class SphericalVoronoi:
                              '(i.e. `radius=1`).')
 
         self.radius = float(radius)
-        self.points = np.array(points).astype(np.double)
+        self.points = np.array(points).astype(np.float64)
         self._dim = self.points.shape[1]
         if center is None:
             self.center = np.zeros(self._dim)

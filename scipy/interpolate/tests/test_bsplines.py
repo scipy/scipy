@@ -1142,7 +1142,7 @@ class TestInterp:
 
     def test_quintic_derivs(self):
         k, n = 5, 7
-        x = np.arange(n).astype(np.float_)
+        x = np.arange(n).astype(np.float64)
         y = np.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
@@ -1398,7 +1398,7 @@ def make_interp_full_matr(x, y, t, k):
     assert t.size == x.size + k + 1
     n = x.size
 
-    A = np.zeros((n, n), dtype=np.float_)
+    A = np.zeros((n, n), dtype=np.float64)
 
     for j in range(n):
         xval = x[j]
@@ -1421,7 +1421,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     m = x.size
     n = t.size - k - 1
 
-    A = np.zeros((m, n), dtype=np.float_)
+    A = np.zeros((m, n), dtype=np.float64)
 
     for j in range(m):
         xval = x[j]

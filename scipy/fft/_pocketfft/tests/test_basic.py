@@ -157,14 +157,14 @@ class _TestFFTBase:
 
 class TestLongDoubleFFT(_TestFFTBase):
     def setup_method(self):
-        self.cdt = np.longcomplex
+        self.cdt = np.clongdouble
         self.rdt = np.longdouble
 
 
 class TestDoubleFFT(_TestFFTBase):
     def setup_method(self):
         self.cdt = np.cdouble
-        self.rdt = np.double
+        self.rdt = np.float64
 
 
 class TestSingleFFT(_TestFFTBase):
@@ -273,7 +273,7 @@ class _TestIFFTBase:
                     reason="Long double is aliased to double")
 class TestLongDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
-        self.cdt = np.longcomplex
+        self.cdt = np.clongdouble
         self.rdt = np.longdouble
         self.rtol = 1e-10
         self.atol = 1e-10
@@ -281,8 +281,8 @@ class TestLongDoubleIFFT(_TestIFFTBase):
 
 class TestDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
         self.rtol = 1e-10
         self.atol = 1e-10
 
@@ -348,18 +348,18 @@ class _TestRFFTBase:
         assert_equal(x, expected)
         assert_equal(xs.data, expected)
 
-@pytest.mark.skipif(np.longfloat is np.float64,
+@pytest.mark.skipif(np.longdouble is np.float64,
                     reason="Long double is aliased to double")
 class TestRFFTLongDouble(_TestRFFTBase):
     def setup_method(self):
-        self.cdt = np.longcomplex
-        self.rdt = np.longfloat
+        self.cdt = np.clongdouble
+        self.rdt = np.longdouble
 
 
 class TestRFFTDouble(_TestRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestRFFTSingle(_TestRFFTBase):
@@ -435,19 +435,19 @@ class _TestIRFFTBase:
 # self.ndec is bogus; we should have a assert_array_approx_equal for number of
 # significant digits
 
-@pytest.mark.skipif(np.longfloat is np.float64,
+@pytest.mark.skipif(np.longdouble is np.float64,
                     reason="Long double is aliased to double")
 class TestIRFFTLongDouble(_TestIRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
         self.ndec = 14
 
 
 class TestIRFFTDouble(_TestIRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
         self.ndec = 14
 
 
@@ -872,8 +872,8 @@ class FakeArray2:
 class TestOverwrite:
     """Check input overwrite behavior of the FFT functions."""
 
-    real_dtypes = [np.float32, np.float64, np.longfloat]
-    dtypes = real_dtypes + [np.complex64, np.complex128, np.longcomplex]
+    real_dtypes = [np.float32, np.float64, np.longdouble]
+    dtypes = real_dtypes + [np.complex64, np.complex128, np.clongdouble]
     fftsizes = [8, 16, 32]
 
     def _check(self, x, routine, fftsize, axis, overwrite_x, should_overwrite):
@@ -909,7 +909,7 @@ class TestOverwrite:
                                             ((16, 2), 0),
                                             ((2, 16), 1)])
     def test_fft_ifft(self, dtype, fftsize, overwrite_x, shape, axes):
-        overwritable = (np.longcomplex, np.complex128, np.complex64)
+        overwritable = (np.clongdouble, np.complex128, np.complex64)
         self._check_1d(fft, dtype, shape, axes, overwritable,
                        fftsize, overwrite_x)
         self._check_1d(ifft, dtype, shape, axes, overwritable,
@@ -984,7 +984,7 @@ class TestOverwrite:
                                             ((8, 16, 2), None),
                                             ((8, 16, 2), (0, 1, 2))])
     def test_fftn_ifftn(self, dtype, overwrite_x, shape, axes):
-        overwritable = (np.longcomplex, np.complex128, np.complex64)
+        overwritable = (np.clongdouble, np.complex128, np.complex64)
         self._check_nd_one(fftn, dtype, shape, axes, overwritable,
                            overwrite_x)
         self._check_nd_one(ifftn, dtype, shape, axes, overwritable,

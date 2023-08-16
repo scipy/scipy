@@ -17,8 +17,8 @@ from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
 
 IMPRECISE = {np.single, np.csingle}
 REAL_DTYPES = {np.intc, np.int_, np.longlong,
-               np.single, np.double, np.longdouble}
-COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+               np.float32, np.float64, np.longdouble}
+COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
 DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 

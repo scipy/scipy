@@ -2880,7 +2880,7 @@ class TestMultivariateHypergeom:
         assert_equal(cov3, cov4)
 
         cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
-        cov6 = np.array([], dtype=np.float_).reshape(0, 0)
+        cov6 = np.array([], dtype=np.float64).reshape(0, 0)
         assert_allclose(cov5, cov6, rtol=1e-17)
         assert_(cov5.shape == (0, 0))
 

@@ -26,8 +26,8 @@ class TestGriddata:
 
     def test_alternative_call(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = (np.arange(x.shape[0], dtype=np.double)[:,None]
+                     dtype=np.float64)
+        y = (np.arange(x.shape[0], dtype=np.float64)[:,None]
              + np.array([0,1])[None,:])
 
         for method in ('nearest', 'linear', 'cubic'):
@@ -39,8 +39,8 @@ class TestGriddata:
 
     def test_multivalue_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = (np.arange(x.shape[0], dtype=np.double)[:,None]
+                     dtype=np.float64)
+        y = (np.arange(x.shape[0], dtype=np.float64)[:,None]
              + np.array([0,1])[None,:])
 
         for method in ('nearest', 'linear', 'cubic'):
@@ -51,8 +51,8 @@ class TestGriddata:
 
     def test_multipoint_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
 
         xi = x[:,None,:] + np.array([0,0,0])[None,:,None]
 
@@ -67,8 +67,8 @@ class TestGriddata:
 
     def test_complex_2d(self):
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 2j*y[::-1]
 
         xi = x[:,None,:] + np.array([0,0,0])[None,:,None]
@@ -129,9 +129,9 @@ class TestGriddata:
                             err_msg=method, atol=1e-10)
 
     def test_square_rescale_manual(self):
-        points = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.double)
-        points_rescaled = np.array([(0,0), (0,1), (1,1), (1,0), (0.1, 0.05)], dtype=np.double)
-        values = np.array([1., 2., -3., 5., 9.], dtype=np.double)
+        points = np.array([(0,0), (0,100), (10,100), (10,0), (1, 5)], dtype=np.float64)
+        points_rescaled = np.array([(0,0), (0,1), (1,1), (1,0), (0.1, 0.05)], dtype=np.float64)
+        values = np.array([1., 2., -3., 5., 9.], dtype=np.float64)
 
         xx, yy = np.broadcast_arrays(np.linspace(0, 10, 14)[:,None],
                                      np.linspace(0, 100, 14)[None,:])
@@ -151,8 +151,8 @@ class TestGriddata:
     def test_xi_1d(self):
         # Check that 1-D xi is interpreted as a coordinate
         x = np.array([(0,0), (-0.5,-0.5), (-0.5,0.5), (0.5, 0.5), (0.25, 0.3)],
-                     dtype=np.double)
-        y = np.arange(x.shape[0], dtype=np.double)
+                     dtype=np.float64)
+        y = np.arange(x.shape[0], dtype=np.float64)
         y = y - 2j*y[::-1]
 
         xi = np.array([0.5, 0.5])

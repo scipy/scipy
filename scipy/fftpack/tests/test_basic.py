@@ -148,8 +148,8 @@ class _TestFFTBase:
 
 class TestDoubleFFT(_TestFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestSingleFFT(_TestFFTBase):
@@ -255,8 +255,8 @@ class _TestIFFTBase:
 
 class TestDoubleIFFT(_TestIFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestSingleIFFT(_TestIFFTBase):
@@ -311,8 +311,8 @@ class _TestRFFTBase:
 
 class TestRFFTDouble(_TestRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
 
 
 class TestRFFTSingle(_TestRFFTBase):
@@ -381,8 +381,8 @@ class _TestIRFFTBase:
 
 class TestIRFFTDouble(_TestIRFFTBase):
     def setup_method(self):
-        self.cdt = np.cdouble
-        self.rdt = np.double
+        self.cdt = np.complex128
+        self.rdt = np.float64
         self.ndec = 14
 
 

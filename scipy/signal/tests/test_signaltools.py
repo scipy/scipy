@@ -1038,7 +1038,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
-    @pytest.mark.parametrize('dtype', [np.longfloat, np.longcomplex])
+    @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
         y = np.random.random((4, 4)).astype(dtype)
@@ -1102,7 +1102,7 @@ class TestMedFilt:
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
 
-    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+    @pytest.mark.parametrize('dtype', [np.bool_, np.complex128,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
@@ -1937,7 +1937,7 @@ class TestCorrelateReal:
         # FFT implementations convert longdouble arguments down to
         # double so don't expect better precision, see gh-9520
         if res_dt == np.longdouble:
-            return self.equal_tolerance(np.double)
+            return self.equal_tolerance(np.float64)
         else:
             return self.equal_tolerance(res_dt)
 

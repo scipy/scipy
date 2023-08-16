@@ -805,7 +805,7 @@ class TestInterp1D:
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
-    def _check_complex(self, dtype=np.complex_, kind='linear'):
+    def _check_complex(self, dtype=np.complex128, kind='linear'):
         x = np.array([1, 2.5, 3, 3.1, 4, 6.4, 7.9, 8.0, 9.5, 10])
         y = x * x ** (1 + 2j)
         y = y.astype(dtype)

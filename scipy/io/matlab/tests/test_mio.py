@@ -288,7 +288,7 @@ def _check_level(label, expected, actual):
                          expected[fn], actual[fn])
         return
     if ex_dtype.type in (str,  # string or bool
-                         np.unicode_,
+                         np.str_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
         return

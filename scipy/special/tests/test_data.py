@@ -605,7 +605,7 @@ def test_local(test):
     _test_factory(test)
 
 
-def _test_factory(test, dtype=np.double):
+def _test_factory(test, dtype=np.float64):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")

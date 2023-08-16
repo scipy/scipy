@@ -242,7 +242,7 @@ def check_meth_dtype(distfn, arg, meths):
         x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_ppf_dtype(distfn, arg):
@@ -251,7 +251,7 @@ def check_ppf_dtype(distfn, arg):
     for q in q_cast:
         for meth in [distfn.ppf, distfn.isf]:
             val = meth(q, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_cmplx_deriv(distfn, arg):

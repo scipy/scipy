@@ -226,7 +226,7 @@ class TestKMean:
         x = 10000 * np.random.randn(n, d) - 20000 * m1
         y = 10000 * np.random.randn(n, d) + 20000 * m2
 
-        data = np.empty((x.shape[0] + y.shape[0], d), np.double)
+        data = np.empty((x.shape[0] + y.shape[0], d), np.float64)
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 

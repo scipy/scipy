@@ -107,9 +107,10 @@ class Benchmark:
             return True
 
         # the solution should still be in bounds, otherwise immediate fail.
-        if np.any(x > np.asfarray(self.bounds)[:, 1]):
+        bounds = np.asarray(self.bounds, dtype=np.float64)
+        if np.any(x > bounds[:, 1]):
             return False
-        if np.any(x < np.asfarray(self.bounds)[:, 0]):
+        if np.any(x < bounds[:, 0]):
             return False
 
         # you found a lower global minimum.  This shouldn't happen.

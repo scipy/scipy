@@ -100,7 +100,7 @@ class NominalAttribute(Attribute):
         super().__init__(name)
         self.values = values
         self.range = values
-        self.dtype = (np.string_, max(len(i) for i in values))
+        self.dtype = (np.bytes_, max(len(i) for i in values))
 
     @staticmethod
     def _get_nom_val(atrv):
@@ -172,7 +172,7 @@ class NumericAttribute(Attribute):
     def __init__(self, name):
         super().__init__(name)
         self.type_name = 'numeric'
-        self.dtype = np.float_
+        self.dtype = np.float64
 
     @classmethod
     def parse_attribute(cls, name, attr_string):

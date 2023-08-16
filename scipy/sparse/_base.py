@@ -640,8 +640,8 @@ class _spbase:
                 else:
                     return np.divide(other, self.todense())
 
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_)._mul_scalar(1./other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1./other)
             else:
                 r = self._mul_scalar(1./other)
 
@@ -669,8 +669,8 @@ class _spbase:
                 return other._divide(self, true_divide, rdivide=False)
 
             self_csr = self.tocsr()
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self_csr.astype(np.float_)._divide_sparse(other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self_csr.astype(np.float64)._divide_sparse(other)
             else:
                 return self_csr._divide_sparse(other)
         else:

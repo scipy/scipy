@@ -518,7 +518,7 @@ class VarWriter4:
             raise TypeError('Cannot save object arrays in Mat4')
         elif dtt is np.void:
             raise TypeError('Cannot save void type arrays')
-        elif dtt in (np.unicode_, np.string_):
+        elif dtt in (np.str_, np.bytes_):
             self.write_char(arr, name)
             return
         self.write_numeric(arr, name)

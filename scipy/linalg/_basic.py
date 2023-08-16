@@ -1771,7 +1771,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         raise ValueError('Incompatible dimensions.')
 
     is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.double
+    dtype = np.complex128 if is_cmplx else np.float64
     r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
 
     if b.ndim == 1 and not keep_b_shape:

@@ -25,7 +25,7 @@ import sys
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_,
+        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
         array_equal)
 
 import pytest
@@ -1660,7 +1660,7 @@ class TestEllipCarlson:
         assert np.isinf(elliprd(1, 1, 0))
         assert np.isinf(elliprd(1, 1, complex(0, 0)))
         assert np.isinf(elliprd(0, 1, complex(0, 0)))
-        assert isnan(elliprd(1, 1, -np.finfo(np.double).tiny / 2.0))
+        assert isnan(elliprd(1, 1, -np.finfo(np.float64).tiny / 2.0))
         assert isnan(elliprd(1, 1, complex(-1, 0)))
         args = array([[0.0, 2.0, 1.0],
                       [2.0, 3.0, 4.0],
@@ -1775,7 +1775,7 @@ class TestEllipLegendreCarlsonIdentities:
     def setup_class(self):
         self.m_n1_1 = np.arange(-1., 1., 0.01)
         # For double, this is -(2**1024)
-        self.max_neg = finfo(float_).min
+        self.max_neg = finfo(double).min
         # Lots of very negative numbers
         self.very_neg_m = -1. * 2.**arange(-1 +
                                            np.log2(-self.max_neg), 0.,
@@ -1797,7 +1797,7 @@ class TestEllipLegendreCarlsonIdentities:
         But with the ellipkm1 function
         """
         # For double, this is 2**-1022
-        tiny = finfo(float_).tiny
+        tiny = finfo(double).tiny
         # All these small powers of 2, up to 2**-1
         m1 = tiny * 2.**arange(0., -np.log2(tiny))
         assert_allclose(ellipkm1(m1), elliprf(0., m1, 1.))
@@ -2152,7 +2152,7 @@ class TestFactorialFunctions:
             with pytest.warns(DeprecationWarning, match="Non-integer array.*"):
                 result = special.factorial(n, exact=exact)
                 # expected dtype is integer, unless there are NaNs
-                dtype = np.float_ if np.any(np.isnan(n)) else np.int_
+                dtype = np.float64 if np.any(np.isnan(n)) else np.int_
         elif exact and not np.issubdtype(n.dtype, np.integer):
             with pytest.raises(ValueError, match="factorial with exact=.*"):
                 special.factorial(n, exact=exact)
@@ -3181,11 +3181,11 @@ class TestBessel:
         assert_allclose(special.iv(-0.5, 1), 1.231200214592967)
 
     def iv_series(self, v, z, n=200):
-        k = arange(0, n).astype(float_)
+        k = arange(0, n).astype(double)
         r = (v+2*k)*log(.5*z) - special.gammaln(k+1) - special.gammaln(v+k+1)
         r[isnan(r)] = inf
         r = exp(r)
-        err = abs(r).max() * finfo(float_).eps * n + abs(r[-1])*10
+        err = abs(r).max() * finfo(double).eps * n + abs(r[-1])*10
         return r.sum(), err
 
     def test_i0_series(self):
@@ -3674,7 +3674,7 @@ class TestStruve:
         """Compute Struve function & error estimate from its power series."""
         k = arange(0, n)
         r = (-1)**k * (.5*z)**(2*k+v+1)/special.gamma(k+1.5)/special.gamma(k+v+1.5)
-        err = abs(r).max() * finfo(float_).eps * n
+        err = abs(r).max() * finfo(double).eps * n
         return r.sum(), err
 
     def test_vs_series(self):

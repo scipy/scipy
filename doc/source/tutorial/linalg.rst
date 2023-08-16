@@ -48,14 +48,14 @@ multiplication as default for the ``*`` operator, and contains ``I``
 and ``T`` members that serve as shortcuts for inverse and transpose:
 
     >>> import numpy as np
-    >>> A = np.mat('[1 2;3 4]')
+    >>> A = np.asmatrix('[1 2;3 4]')
     >>> A
     matrix([[1, 2],
             [3, 4]])
     >>> A.I
     matrix([[-2. ,  1. ],
             [ 1.5, -0.5]])
-    >>> b = np.mat('[5 6]')
+    >>> b = np.asmatrix('[5 6]')
     >>> b
     matrix([[5, 6]])
     >>> b.T
@@ -723,7 +723,7 @@ functions of matrices.
 The following example illustrates the Schur decomposition:
 
     >>> from scipy import linalg
-    >>> A = np.mat('[1 3 2; 1 4 5; 2 3 6]')
+    >>> A = np.asmatrix('[1 3 2; 1 4 5; 2 3 6]')
     >>> T, Z = linalg.schur(A)
     >>> T1, Z1 = linalg.schur(A, 'complex')
     >>> T2, Z2 = linalg.rsf2csf(T, Z)
@@ -746,7 +746,7 @@ The following example illustrates the Schur decomposition:
     array([[ 0.06833781,  0.88091091,  0.79568503],    # may vary
            [ 0.11857169,  0.44491892,  0.99594171],
            [ 0.12624999,  0.60264117,  0.77257633]])
-    >>> T, Z, T1, Z1, T2, Z2 = map(np.mat,(T,Z,T1,Z1,T2,Z2))
+    >>> T, Z, T1, Z1, T2, Z2 = map(np.asmatrix,(T,Z,T1,Z1,T2,Z2))
     >>> abs(A - Z*T*Z.H)  # same
     matrix([[  5.55111512e-16,   1.77635684e-15,   2.22044605e-15],
             [  0.00000000e+00,   3.99680289e-15,   8.88178420e-16],

@@ -5104,7 +5104,7 @@ class geninvgauss_gen(rv_continuous):
                    "involving scipy.special.kve. Values replaced by NaN to "
                    "avoid incorrect results.")
             warnings.warn(msg, RuntimeWarning)
-            m = np.full_like(num, np.nan, dtype=np.double)
+            m = np.full_like(num, np.nan, dtype=np.float64)
             m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
         else:
             m = num / denom

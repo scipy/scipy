@@ -90,7 +90,7 @@ def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
     n : int
         The number of observations.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     cluster_monocrit(Z, max_dists, T, cutoff, n)
 
@@ -114,7 +114,7 @@ def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
     n : int
         The number of observations.
     """
-    cdef double[:] max_inconsists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_inconsists = np.ndarray(n, dtype=np.float64)
     get_max_Rfield_for_each_cluster(Z, R, max_inconsists, n, 3)
     cluster_monocrit(Z, max_inconsists, T, cutoff, n)
 
@@ -135,7 +135,7 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
     mc : int
         The maximum number of clusters.
     """
-    cdef double[:] max_dists = np.ndarray(n, dtype=np.double)
+    cdef double[:] max_dists = np.ndarray(n, dtype=np.float64)
     get_max_dist_for_each_cluster(Z, max_dists, n)
     # should use an O(n) algorithm
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
@@ -698,7 +698,7 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
     cdef np.npy_int64 i_start
     cdef double current_min
     # inter-cluster dists
-    cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
+    cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.float64)
     # map the indices to node ids
     cdef int[:] id_map = np.ndarray(n, dtype=np.intc)
     cdef linkage_distance_update new_dist

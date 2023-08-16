@@ -90,7 +90,7 @@ def test_fortranfile_read_mixed_record():
     with FortranFile(filename, 'r', '<u4') as f:
         record = f.read_record('(3,3)<f8', '2<i4')
 
-    ax = np.arange(3*3).reshape(3, 3).astype(np.double)
+    ax = np.arange(3*3).reshape(3, 3).astype(np.float64)
     bx = np.array([-1, -2], dtype=np.int32)
 
     assert_equal(record[0], ax.T)

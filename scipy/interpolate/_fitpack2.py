@@ -1917,7 +1917,7 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
+        if issubclass(w, float):
             w = ones(len(theta)) * w
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
                                                                 r, w=w, s=s,
@@ -2070,7 +2070,7 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
+        if issubclass(w, float):
             w = ones(len(theta)) * w
         nt_, np_ = 8 + len(tt), 8 + len(tp)
         tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
