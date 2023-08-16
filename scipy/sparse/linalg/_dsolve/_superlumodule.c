@@ -275,6 +275,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
   PyArrayObject *U_nzvals=NULL, *U_rowind=NULL, *U_colptr=NULL;
   /* right hand side / solution */
   PyObject *X_py=NULL;
+  volatile jmp_buf* jmpbuf_ptr;
+  SLU_BEGIN_THREADS_DEF;
 
 
   static char* kwlist[] = {"L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
@@ -365,7 +367,6 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
   } /* X and X_arr share the same data but X_arr "owns" it. */
 
   /* Call SuperLU functions. */
-  volatile jmp_buf* jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
   int info=0;
   SuperLUStat_t stat = { 0 };
   StatInit((SuperLUStat_t *)&stat);
@@ -374,7 +375,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     perm_c[i] = i;
   }
   int* perm_r = perm_c;
-  SLU_BEGIN_THREADS_DEF;
+
+  jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
   SLU_BEGIN_THREADS;
   if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
       SLU_END_THREADS;
