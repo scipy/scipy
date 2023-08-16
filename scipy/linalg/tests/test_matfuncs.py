@@ -410,6 +410,12 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    def test_gh17918(self):
+        M = np.empty((19, 19))
+        M.fill(0.94)
+        np.fill_diagonal(M, 1)
+        assert np.isrealobj(sqrtm(M))
+
     def test_data_size_preservation_uint_in_float_out(self):
         M = np.zeros((10, 10), dtype=np.uint8)
         # input bit size is 8, but minimum float bit size is 16
