@@ -5,11 +5,6 @@ SciPy: A scientific computing package for Python
 Documentation is available in the docstrings and
 online at https://docs.scipy.org.
 
-Contents
---------
-SciPy imports all the functions from the NumPy namespace, and in
-addition provides:
-
 Subpackages
 -----------
 Using any of these subpackages requires an explicit import. For example,
