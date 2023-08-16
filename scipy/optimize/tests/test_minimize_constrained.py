@@ -639,7 +639,7 @@ class TestTrustRegionConstr(TestCase):
                 x0=x0,
                 bounds=bounds)
 
-        assert(result.get('success'))
+        assert result['success']
 
 class TestEmptyConstraint(TestCase):
     """
