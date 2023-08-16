@@ -14,7 +14,7 @@ def __getattr__(name):
     if name not in __all__:
         raise AttributeError(
             "scipy.linalg.flinalg is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.linalg instead.")
+            f"{name}.")
 
     warnings.warn("The `scipy.linalg.flinalg` namespace is deprecated and "
                   "will be removed in SciPy v2.0.0.",

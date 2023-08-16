@@ -16,6 +16,9 @@ from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
+# deprecated imports to be removed in SciPy 1.13.0
+from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
