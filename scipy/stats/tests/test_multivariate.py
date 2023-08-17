@@ -835,12 +835,15 @@ class TestMultivariateNormal:
         with pytest.raises(ValueError, match=msg):
             multivariate_normal.fit(np.eye(2), fix_mean=fix_mean)
 
-    """
-    def test_fit_fix_mean_dimension_mismatch(self):
-        msg = "`fix_mean` must be of the same length as the vectors `x`."
+    @pytest.mark.parametrize('fix_cov', [np.zeros((2, )),
+                                          np.zeros((3, 2))])
+    def test_fit_fix_cov_input_validation_dimension(self, fix_cov):
+        msg = ("`fix_cov` must be a two-dimensional square matrix "
+                "of same side length as the dimensionality of the "
+                "vectors `x`.")
         with pytest.raises(ValueError, match=msg):
-            multivariate_normal.fit(np.eye(3), fix_mean=)
-
+            multivariate_normal.fit(np.eye(3), fix_cov=fix_cov)
+    """
     def test_fit_fix_cov_wrong_dimension(self):
         error_msg = "`fix_cov` must be two-dimensional."
         with pytest.raises(ValueError, match=error_msg):
