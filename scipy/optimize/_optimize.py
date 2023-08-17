@@ -271,6 +271,12 @@ class OptimizeWarning(UserWarning):
     pass
 
 
+def _check_c1_c2(c1, c2):
+    if not (0 < c1 < c2 < 1):
+        raise ValueError("'c1' and 'c2' do not satisfy"
+                         "'0 < c1 < c2 < 1'.")
+
+
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -1287,10 +1293,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Relative tolerance for `x`. Terminate successfully if step
         size is less than ``xk * xrtol`` where ``xk`` is the current
         parameter vector.
-    c1 : float, default: 1e-4
-        Parameter for Armijo condition rule.
-    c2 : float, default: 0.9
-        Parameter for curvature condition rule.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .9 for `c2`.
 
     Returns
     -------
@@ -1419,12 +1424,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step size is
         less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
-    c1 : float, default: 1e-4
-        Parameter for Armijo condition rule.
-    c2 : float, default: .9
-        Parameter for curvature condition rule.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .9 for `c2`.
 
     """
+    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
     retall = return_all
 
@@ -1555,7 +1560,7 @@ def _print_success_message_or_warn(warnflag, message, warntype=None):
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
-            callback=None):
+            callback=None, c1=1e-4, c2=.4):
     """
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -1600,6 +1605,9 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     callback : callable, optional
         An optional user-supplied function, called after each iteration.
         Called as ``callback(xk)``, where ``xk`` is the current value of `x0`.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .4 for `c2`.
 
     Returns
     -------
@@ -1715,7 +1723,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'return_all': retall}
 
     callback = _wrap_callback(callback)
-    res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
+    res = _minimize_cg(f, x0, args, fprime, callback=callback, c1=c1, c2=c2,
+                       **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
@@ -1732,7 +1741,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
-                 **unknown_options):
+                 c1=1e-3, c2=.4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1761,7 +1770,11 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .4 for `c2`.
     """
+    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
 
     retall = return_all
@@ -1827,7 +1840,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100,
+                                          old_old_fval, c1=c1, c2=c2, amin=1e-100, amax=1e100,
                                           extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
@@ -1877,7 +1890,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
-             callback=None):
+             callback=None, c1=1e-3, c2=.9):
     """
     Unconstrained minimization of a function using the Newton-CG method.
 
@@ -1915,6 +1928,9 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         If True, print convergence message.
     retall : bool, optional
         If True, return a list of results at each iteration.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .9 for `c2`.
 
     Returns
     -------
@@ -1974,7 +1990,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     callback = _wrap_callback(callback)
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
-                             callback=callback, **opts)
+                             callback=callback, c1=c1, c2=c2, **opts)
 
     if full_output:
         retlist = (res['x'], res['fun'], res['nfev'], res['njev'],
@@ -1991,7 +2007,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False,
+                       disp=False, return_all=False, c1=1e-3, c2=.9,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2013,7 +2029,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
+    c1, c2 : float, optional
+        Armijo condition rule and curvature condition rule. Must satisfy
+        ``0 < c1 < c2 < 1``. Default values are 1e-4 for `c1` and .9 for `c2`.
     """
+    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
     if jac is None:
         raise ValueError('Jacobian is required for Newton-CG method')
@@ -2146,7 +2166,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         try:
             alphak, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, fprime, xk, pk, gfk,
-                                          old_fval, old_old_fval)
+                                          old_fval, old_old_fval, c1=c1, c2=c2)
         except _LineSearchError:
             # Line search failed to find a better solution.
             msg = "Warning: " + _status_message['pr_loss']
