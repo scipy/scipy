@@ -20,10 +20,9 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API,
-    as_xparray,
-    cov,
     array_namespace,
-    copy
+    copy,
+    cov
 )
 
 TESTDATA_2D = np.array([
