@@ -1101,7 +1101,7 @@ class levy_stable_gen(rv_continuous):
                     density_x, np.real(density), k=fft_interpolation_degree
                 )
                 data_out[data_mask] = np.array(
-                    [f.integral(self.a, x_1) for x_1 in _x]
+                    [f.integral(self.a, float(x_1.squeeze())) for x_1 in _x]
                 ).reshape(data_out[data_mask].shape)
 
         return data_out.T[0]

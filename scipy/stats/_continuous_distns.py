@@ -11147,7 +11147,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_moment, 3, 1)
-        return np.float64(ufunc(K, k, df))
+        return np.asarray(ufunc(K, k, df), dtype=np.float64)[()]
 
     def _pdf(self, x, k, df):
 
@@ -11172,7 +11172,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
-        return np.float64(ufunc(x, k, df))
+        return np.asarray(ufunc(x, k, df), dtype=np.float64)[()]
 
     def _cdf(self, x, k, df):
 
@@ -11201,7 +11201,7 @@ class studentized_range_gen(rv_continuous):
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
 
         # clip p-values to ensure they are in [0, 1].
-        return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
+        return np.clip(np.asarray(ufunc(x, k, df), dtype=np.float64)[()], 0, 1)
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,

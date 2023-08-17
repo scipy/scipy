@@ -46,8 +46,8 @@ requires = [
     # we specify an unpinned NumPy which allows source distributions
     # to be used and allows wheels to be used as soon as they
     # become available.
-    "numpy; python_version>='3.12'",
     "numpy; python_version>='3.9' and platform_python_implementation=='PyPy'",
+    "numpy==1.26.0b1; python_version>='3.12.0.rc1'",
 ]
 
 [project]
