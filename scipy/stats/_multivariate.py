@@ -832,10 +832,19 @@ class multivariate_normal_gen(multi_rv_generic):
         if fix_cov is not None:
             # input validation for `fix_cov`
             fix_cov = np.atleast_2d(fix_cov)
+            # validate shape
             if fix_cov.shape != (dim, dim):
                 msg = ("`fix_cov` must be a two-dimensional square matrix "
                        "of same side length as the dimensionality of the "
                        "vectors `x`.")
+                raise ValueError(msg)
+            # validate positive semidefiniteness
+            # a trimmed down copy from _PSD
+            s, u = scipy.linalg.eigh(fix_cov, lower=True, check_finite=True)
+            eps = _eigvalsh_to_eps(s)
+            d = s[s > eps]
+            if np.min(s) < -eps or len(d) < len(s):
+                msg = "`fix_cov` must be symmetric positive semidefinite."
                 raise ValueError(msg)
             cov = fix_cov
         else:

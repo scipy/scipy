@@ -836,33 +836,24 @@ class TestMultivariateNormal:
             multivariate_normal.fit(np.eye(2), fix_mean=fix_mean)
 
     @pytest.mark.parametrize('fix_cov', [np.zeros((2, )),
-                                          np.zeros((3, 2))])
+                                         np.zeros((3, 2)),
+                                         np.zeros((4, 4))])
     def test_fit_fix_cov_input_validation_dimension(self, fix_cov):
         msg = ("`fix_cov` must be a two-dimensional square matrix "
                 "of same side length as the dimensionality of the "
                 "vectors `x`.")
         with pytest.raises(ValueError, match=msg):
             multivariate_normal.fit(np.eye(3), fix_cov=fix_cov)
-    """
-    def test_fit_fix_cov_wrong_dimension(self):
-        error_msg = "`fix_cov` must be two-dimensional."
+    
+    def test_fit_fix_cov_not_positive_semidefinite(self):
+        error_msg = "`fix_cov` must be symmetric positive semidefinite."
         with pytest.raises(ValueError, match=error_msg):
-            multivariate_normal.fit(np.eye(2), fix_cov=np.zeros((2, 2, 2)))
-
-    def test_fit_fix_cov_dimension_mismatch(self):
-        msg = ("`fix_cov` must be a square matrix of the same "
-               "side length as the vectors `x`.")
-        with pytest.raises(ValueError, match=msg):
-            multivariate_normal.fit(np.eye(3), fix_cov=np.zeros((2, 2)))
-
-    def test_fit_fix_cov_not_square(self):
-        msg = "`fix_cov` must be a square matrix."
-        with pytest.raises(ValueError, match=msg):
-            multivariate_normal.fit(np.eye(3), fix_cov=)
-    """
+            fix_cov = np.array([[1., 1.], [-1., 1.]])
+            multivariate_normal.fit(np.eye(2), fix_cov=fix_cov)
+    
     def test_fit_fix_mean(self):
         rng = np.random.default_rng(4385269356937404)
-        loc = np.zeros((3, ))
+        loc = rng.random(3)
         samples = multivariate_normal.rvs(mean=loc, cov=np.eye(3), size=100,
                                           random_state=rng)
         mean_free, cov_free = multivariate_normal.fit(samples)
@@ -885,7 +876,7 @@ class TestMultivariateNormal:
         logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
                                                cov=cov_free).sum()
         mean_fix, cov_fix = multivariate_normal.fit(samples, fix_cov=cov)
-        assert_allclose(mean_fix, np.mean(samples, axis=1), rtol=0, atol=0)
+        assert_allclose(mean_fix, np.mean(samples, axis=0), rtol=0, atol=0)
         assert_allclose(cov_fix, cov, rtol=0, atol=0)
         logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
                                               cov=cov_fix).sum()
