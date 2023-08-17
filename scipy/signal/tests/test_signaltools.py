@@ -1102,7 +1102,7 @@ class TestMedFilt:
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
 
-    @pytest.mark.parametrize('dtype', [np.bool_, np.complex128,
+    @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)

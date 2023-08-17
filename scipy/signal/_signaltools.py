@@ -1569,7 +1569,7 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.complex128, np.clongdouble,
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
                         np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
