@@ -17,11 +17,13 @@ from scipy.conftest import (
     skip_if_array_api_gpu
 )
 from scipy.sparse._sputils import matrix
+
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API,
     as_xparray,
     cov,
-    array_namespace
+    array_namespace,
+    copy
 )
 
 TESTDATA_2D = np.array([
@@ -279,7 +281,7 @@ class TestKMean:
         data1 = data[:, 0]
 
         initc = data1[:3]
-        code = as_xparray(initc, copy=True, xp=xp)
+        code = copy(initc, xp=xp)
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
