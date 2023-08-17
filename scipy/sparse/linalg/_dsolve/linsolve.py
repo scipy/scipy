@@ -699,7 +699,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             'the size of the first dimension of b but the shape of A is '
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
-    A = A.asfptype()  # upcast to a floating point format
+    A = A._asfptype()  # upcast to a floating point format
     result_dtype = np.promote_types(A.dtype, b.dtype)
     if A.dtype != result_dtype:
         A = A.astype(result_dtype)
