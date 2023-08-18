@@ -84,6 +84,8 @@ linux_aarch64_test_task:
 
 
 macos_arm64_test_task:
+  depends_on:
+    - linux_aarch64_test
   macos_instance:
     image: ghcr.io/cirruslabs/macos-monterey-xcode:latest
 

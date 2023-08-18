@@ -214,6 +214,7 @@ jobs:
 
       - name: Build
         run: |
+          cp _setup.py setup.py
           python setup.py bdist_wheel
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel 

@@ -237,6 +237,26 @@ class CheckOptimizeParameterized(CheckOptimize):
                                 x0, method='bfgs', options={'gtol': 1e-3})
         assert res.nit != ref.nit
 
+    def test_bfgs_c1(self):
+        # test for #18977 insufficiently low value of c1 leads to precision loss
+        # for poor starting parameters
+        x0 = [10.3, 20.7, 10.8, 1.9, -1.2]
+        res_c1_small = optimize.minimize(optimize.rosen,
+                                         x0, method='bfgs', options={'c1': 1e-8})
+        res_c1_big = optimize.minimize(optimize.rosen,
+                                       x0, method='bfgs', options={'c1': 1e-1})
+
+        assert res_c1_small.nfev > res_c1_big.nfev
+
+    def test_bfgs_c2(self):
+        # test that modification of c2 parameter results in different number of iterations
+        x0 = [1.3, 0.7, 0.8, 1.9, 1.2]
+        res_default = optimize.minimize(optimize.rosen,
+                                        x0, method='bfgs', options={'c2': .9})
+        res_mod = optimize.minimize(optimize.rosen,
+                                    x0, method='bfgs', options={'c2': 1e-2})
+        assert res_default.nit > res_mod.nit
+
     def test_powell(self):
         # Powell (direction set) optimization routine
         if self.use_wrapper:

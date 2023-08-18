@@ -400,9 +400,9 @@ class TestFFT1D:
 
 @skip_if_array_api
 @pytest.mark.parametrize(
-    "dtype",
-    [np.float32, np.float64, np.longfloat,
-     np.complex64, np.complex128, np.longcomplex])
+        "dtype",
+        [np.float32, np.float64, np.longdouble,
+         np.complex64, np.complex128, np.clongdouble])
 @pytest.mark.parametrize("order", ["F", 'non-contiguous'])
 @pytest.mark.parametrize(
     "fft",

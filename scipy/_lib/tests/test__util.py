@@ -1,6 +1,5 @@
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
-import os
 import re
 import math
 from fractions import Fraction
@@ -8,9 +7,8 @@ from fractions import Fraction
 import numpy as np
 from numpy.testing import assert_equal, assert_
 import pytest
-from pytest import raises as assert_raises, deprecated_call
+from pytest import raises as assert_raises
 
-import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -140,54 +138,6 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
-
-
-# get our custom ones and a few from the "import *" cases
-@pytest.mark.parametrize(
-    'key', ('ifft', 'diag', 'arccos', 'randn', 'rand', 'array'))
-def test_numpy_deprecation(key):
-    """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('ifft', 'diag', 'arccos'):
-        arg = [1.0, 0.]
-    elif key == 'finfo':
-        arg = float
-    else:
-        arg = 2
-    func = getattr(scipy, key)
-    match = r'scipy\.%s is deprecated.*2\.0\.0' % key
-    with deprecated_call(match=match) as dep:
-        func(arg)  # deprecated
-    # in case we catch more than one dep warning
-    fnames = [os.path.splitext(d.filename)[0] for d in dep.list]
-    basenames = [os.path.basename(fname) for fname in fnames]
-    assert 'test__util' in basenames
-    if key in ('rand', 'randn'):
-        root = np.random
-    elif key == 'ifft':
-        root = np.fft
-    else:
-        root = np
-    func_np = getattr(root, key)
-    func_np(arg)  # not deprecated
-    assert func_np is not func
-    # classes should remain classes
-    if isinstance(func_np, type):
-        assert isinstance(func, type)
-
-
-def test_numpy_deprecation_functionality():
-    # Check that the deprecation wrappers don't break basic NumPy
-    # functionality
-    with deprecated_call():
-        x = scipy.array([1, 2, 3], dtype=scipy.float64)
-        assert x.dtype == scipy.float64
-        assert x.dtype == np.float64
-
-        x = scipy.finfo(scipy.float32)
-        assert x.eps == np.finfo(np.float32).eps
-
-        assert scipy.float64 == np.float64
-        assert issubclass(np.float64, scipy.float64)
 
 
 def test_rng_integers():

@@ -16,6 +16,9 @@ from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
+# deprecated imports to be removed in SciPy 1.13.0
+from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
@@ -1768,7 +1771,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         raise ValueError('Incompatible dimensions.')
 
     is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.double
+    dtype = np.complex128 if is_cmplx else np.float64
     r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
 
     if b.ndim == 1 and not keep_b_shape:

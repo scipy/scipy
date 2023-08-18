@@ -134,7 +134,7 @@ from collections import deque
 import numpy as np
 from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
-from scipy._lib._array_api import array_namespace, as_xparray
+from scipy._lib._array_api import array_namespace, as_xparray, copy
 from scipy._lib._disjoint_set import DisjointSet
 
 
@@ -1358,7 +1358,7 @@ def cut_tree(Z, n_clusters=None, height=None):
 
     for i, node in enumerate(nodes):
         idx = node.pre_order()
-        this_group = as_xparray(last_group, copy=True, xp=xp)
+        this_group = copy(last_group, xp=xp)
         # TODO ARRAY_API complex indexing not supported
         this_group[idx] = xp.min(last_group[idx])
         this_group[this_group > xp.max(last_group[idx])] -= 1
@@ -1652,7 +1652,7 @@ def cophenet(Z, Y=None):
     Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
+    zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
 
     Z = np.asarray(Z)
     _hierarchy.cophenetic_distances(Z, zz, int(n))
@@ -1738,7 +1738,7 @@ def inconsistent(Z, d=2):
                          'integer value.')
 
     n = Z.shape[0] + 1
-    R = np.zeros((n - 1, 4), dtype=np.double)
+    R = np.zeros((n - 1, 4), dtype=np.float64)
 
     Z = np.asarray(Z)
     _hierarchy.inconsistent(Z, R, int(n), int(d))
@@ -1822,21 +1822,21 @@ def from_mlab_linkage(Z):
 
     # If it's empty, return it.
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
 
     if len(Zs) != 2:
         raise ValueError("The linkage array must be rectangular.")
 
     # If it contains no rows, return it.
     if Zs[0] == 0:
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
 
-    Zpart = as_xparray(Z, copy=True, xp=xp)
+    Zpart = copy(Z, xp=xp)
     if xp.min(Zpart[:, 0:2]) != 1.0 and xp.max(Zpart[:, 0:2]) != 2 * Zs[0]:
         raise ValueError('The format of the indices is not 1..N')
 
     Zpart[:, 0:2] -= 1.0
-    CS = np.zeros((Zs[0],), dtype=np.double)
+    CS = np.zeros((Zs[0],), dtype=np.float64)
     Zpart = np.asarray(Zpart)
     _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
     res = np.hstack([Zpart, CS.reshape(Zs[0], 1)])
@@ -1922,10 +1922,10 @@ def to_mlab_linkage(Z):
     Z = as_xparray(Z, order='C', dtype=xp.float64)
     Zs = Z.shape
     if len(Zs) == 0 or (len(Zs) == 1 and Zs[0] == 0):
-        return as_xparray(Z, copy=True, xp=xp)
+        return copy(Z, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
 
-    ZP = as_xparray(Z[:, 0:3], copy=True, xp=xp)
+    ZP = copy(Z[:, 0:3], xp=xp)
     ZP[:, 0:2] += 1.0
 
     return ZP
@@ -2974,7 +2974,7 @@ def set_link_color_palette(palette):
     if palette is None:
         # reset to its default
         palette = _link_line_colors_default
-    elif type(palette) not in (list, tuple):
+    elif not isinstance(palette, (list, tuple)):
         raise TypeError("palette must be a list or tuple")
     _ptypes = [isinstance(p, str) for p in palette]
 
@@ -3277,7 +3277,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     is_valid_linkage(Z, throw=True, name='Z')
     Zs = Z.shape
     n = Zs[0] + 1
-    if type(p) in (int, float):
+    if isinstance(p, (int, float)):
         p = int(p)
     else:
         raise TypeError('The second argument must be a number')
@@ -4018,7 +4018,7 @@ def maxRstat(Z, R, i):
     is_valid_linkage(Z, throw=True, name='Z')
     is_valid_im(R, throw=True, name='R')
 
-    if type(i) is not int:
+    if not isinstance(i, int):
         raise TypeError('The third argument must be an integer.')
 
     if i < 0 or i > 3:
