@@ -1430,7 +1430,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
-        Parameter for curvature condition rule
+        Parameter for curvature condition rule.
 
     Notes
     -----
@@ -1615,7 +1615,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
     c2 : float, default: 0.4
-        Parameter for curvature condition rule
+        Parameter for curvature condition rule.
 
     Returns
     -------
@@ -1783,7 +1783,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
     c2 : float, default: 0.4
-        Parameter for curvature condition rule
+        Parameter for curvature condition rule.
 
     Notes
     -----
@@ -2050,7 +2050,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     c1 : float, default: 1e-4
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
-        Parameter for curvature condition rule
+        Parameter for curvature condition rule.
 
     Notes
     -----
