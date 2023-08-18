@@ -3,7 +3,6 @@
 # included below.
 
 from scipy._lib.deprecation import _sub_module_deprecation
-from scipy.optimize import minpack2
 
 
 __all__ = [  # noqa: F822
