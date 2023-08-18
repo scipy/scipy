@@ -78,7 +78,7 @@ class TestLaplacianNd:
         eigvals = eigh(L, eigvals_only=True)
         dtype = eigenvalues.dtype
         n = np.prod(grid_shape)
-        atol = n * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
+        atol = n * n * max(np.finfo(dtype).eps, np.finfo(np.float64).eps)
         assert_allclose(eigenvalues, eigvals, atol=atol)
 
     @pytest.mark.parametrize("grid_shape", [(6, ), (2, 3), (2, 3, 4)])

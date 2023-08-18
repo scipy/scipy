@@ -723,7 +723,7 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = np.asfarray([dx, dx])
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))

@@ -1652,7 +1652,7 @@ def cophenet(Z, Y=None):
     Z = as_xparray(Z, order='C', dtype=xp.float64, xp=xp)
     is_valid_linkage(Z, throw=True, name='Z')
     n = Z.shape[0] + 1
-    zz = np.zeros((n * (n-1)) // 2, dtype=np.double)
+    zz = np.zeros((n * (n-1)) // 2, dtype=np.float64)
 
     Z = np.asarray(Z)
     _hierarchy.cophenetic_distances(Z, zz, int(n))
@@ -1738,7 +1738,7 @@ def inconsistent(Z, d=2):
                          'integer value.')
 
     n = Z.shape[0] + 1
-    R = np.zeros((n - 1, 4), dtype=np.double)
+    R = np.zeros((n - 1, 4), dtype=np.float64)
 
     Z = np.asarray(Z)
     _hierarchy.inconsistent(Z, R, int(n), int(d))
@@ -1836,7 +1836,7 @@ def from_mlab_linkage(Z):
         raise ValueError('The format of the indices is not 1..N')
 
     Zpart[:, 0:2] -= 1.0
-    CS = np.zeros((Zs[0],), dtype=np.double)
+    CS = np.zeros((Zs[0],), dtype=np.float64)
     Zpart = np.asarray(Zpart)
     _hierarchy.calculate_cluster_sizes(Zpart, CS, int(Zs[0]) + 1)
     res = np.hstack([Zpart, CS.reshape(Zs[0], 1)])

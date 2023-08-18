@@ -823,7 +823,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     x0 = np.atleast_1d(x0).flatten()
-    x0 = np.asfarray(x0, x0.dtype)
+    dtype = x0.dtype if np.issubdtype(x0.dtype, np.inexact) else np.float64
+    x0 = np.asarray(x0, dtype=dtype)
 
     if adaptive:
         dim = float(len(x0))
@@ -866,7 +867,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             sim[k + 1] = y
     else:
         sim = np.atleast_2d(initial_simplex).copy()
-        sim = np.asfarray(sim, sim.dtype)
+        dtype = sim.dtype if np.issubdtype(sim.dtype, np.inexact) else np.float64
+        sim = np.asarray(sim, dtype=dtype)
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
         if len(x0) != sim.shape[1]:

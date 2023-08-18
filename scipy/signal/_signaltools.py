@@ -1569,7 +1569,7 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.cfloat, np.cdouble, np.clongdouble,
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
                         np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
@@ -1946,7 +1946,7 @@ def medfilt2d(input, kernel_size=3):
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
-    if image.dtype.type not in (np.ubyte, np.single, np.double):
+    if image.dtype.type not in (np.ubyte, np.float32, np.float64):
         return medfilt(image, kernel_size)
 
     if kernel_size is None:
