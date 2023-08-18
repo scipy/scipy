@@ -21,7 +21,7 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, ravel, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array, ones  # noqa:F401
 import numpy as np
 
 from . import _fitpack_impl

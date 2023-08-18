@@ -2,10 +2,7 @@
 import numpy as np
 from numpy import abs, asarray
 
-from ..common import safe_import
-
-with safe_import():
-    from scipy.special import factorial
+from ..common import safe_import  # noqa:F401
 
 
 class Benchmark:
