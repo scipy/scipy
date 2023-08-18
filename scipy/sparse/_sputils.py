@@ -13,8 +13,8 @@ __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
 
 supported_dtypes = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc,
                     np.uintc, np.int_, np.uint, np.longlong, np.ulonglong,
-                    np.single, np.double,
-                    np.longdouble, np.csingle, np.cdouble, np.clongdouble]
+                    np.float32, np.float64, np.longdouble, 
+                    np.complex64, np.complex128, np.clongdouble]
 
 _upcast_memo = {}
 

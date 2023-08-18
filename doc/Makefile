@@ -8,6 +8,10 @@ PYTHON = python3
 SPHINXOPTS    =
 SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 
+# Environment variables needed for notebooks (see gh-17322):
+export SQLALCHEMY_SILENCE_UBER_WARNING?=1
+export JUPYTER_PLATFORM_DIRS?=1
+
 FILES=
 
 # Internal variables.

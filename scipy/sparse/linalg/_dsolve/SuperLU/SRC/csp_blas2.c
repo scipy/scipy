@@ -31,9 +31,9 @@ at the top-level directory.
 /* 
  * Function prototypes 
  */
-void cusolve(int, int, complex*, complex*);
-void clsolve(int, int, complex*, complex*);
-void cmatvec(int, int, int, complex*, complex*, complex*);
+void cusolve(int, int, singlecomplex*, singlecomplex*);
+void clsolve(int, int, singlecomplex*, singlecomplex*);
+void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
 
 /*! \brief Solves one of the systems of equations A*x = b,   or   A'*x = b
  * 
@@ -80,7 +80,7 @@ void cmatvec(int, int, int, complex*, complex*, complex*);
  *	        The factor U from the factorization Pr*A*Pc=L*U.
  *	        U has types: Stype = NC, Dtype = SLU_C, Mtype = TRU.
  *    
- *   x       - (input/output) complex*
+ *   x       - (input/output) singlecomplex*
  *             Before entry, the incremented array X must contain the n   
  *             element right-hand side vector b. On exit, X is overwritten 
  *             with the solution vector x.
@@ -91,7 +91,7 @@ void cmatvec(int, int, int, complex*, complex*, complex*);
  */
 int
 sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
-         SuperMatrix *U, complex *x, SuperLUStat_t *stat, int *info)
+         SuperMatrix *U, singlecomplex *x, SuperLUStat_t *stat, int *info)
 {
 #ifdef _CRAY
     _fcd ftcs1 = _cptofcd("L", strlen("L")),
@@ -100,15 +100,15 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
 #endif
     SCformat *Lstore;
     NCformat *Ustore;
-    complex   *Lval, *Uval;
+    singlecomplex   *Lval, *Uval;
     int incx = 1, incy = 1;
-    complex temp;
-    complex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
-    complex comp_zero = {0.0, 0.0};
+    singlecomplex temp;
+    singlecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+    singlecomplex comp_zero = {0.0, 0.0};
     int nrow;
     int fsupc, nsupr, nsupc, luptr, istart, irow;
     int i, k, iptr, jcol;
-    complex *work;
+    singlecomplex *work;
     flops_t solve_ops;
 
     /* Test the input parameters */
@@ -428,14 +428,14 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *               TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
  *               TRANS = 'C' or 'c'   y := alpha*A^H*x + beta*y.   
  *
- *   ALPHA  - (input) complex
+ *   ALPHA  - (input) singlecomplex
  *            On entry, ALPHA specifies the scalar alpha.   
  *
  *   A      - (input) SuperMatrix*
  *            Before entry, the leading m by n part of the array A must   
  *            contain the matrix of coefficients.   
  *
- *   X      - (input) complex*, array of DIMENSION at least   
+ *   X      - (input) singlecomplex*, array of DIMENSION at least   
  *            ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
  *           and at least   
  *            ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
@@ -446,11 +446,11 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  *            On entry, INCX specifies the increment for the elements of   
  *            X. INCX must not be zero.   
  *
- *   BETA   - (input) complex
+ *   BETA   - (input) singlecomplex
  *            On entry, BETA specifies the scalar beta. When BETA is   
  *            supplied as zero then Y need not be set on input.   
  *
- *   Y      - (output) complex*,  array of DIMENSION at least   
+ *   Y      - (output) singlecomplex*,  array of DIMENSION at least   
  *            ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
  *            and at least   
  *            ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
@@ -466,20 +466,20 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
  * </pre>
 */
 int
-sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x, 
-	 int incx, complex beta, complex *y, int incy)
+sp_cgemv(char *trans, singlecomplex alpha, SuperMatrix *A, singlecomplex *x, 
+	 int incx, singlecomplex beta, singlecomplex *y, int incy)
 {
 
     /* Local variables */
     NCformat *Astore;
-    complex   *Aval;
+    singlecomplex   *Aval;
     int info;
-    complex temp, temp1;
+    singlecomplex temp, temp1;
     int lenx, leny, i, j, irow;
     int iy, jx, jy, kx, ky;
     int notran;
-    complex comp_zero = {0.0, 0.0};
-    complex comp_one = {1.0, 0.0};
+    singlecomplex comp_zero = {0.0, 0.0};
+    singlecomplex comp_one = {1.0, 0.0};
 
     notran = ( strncmp(trans, "N", 1)==0 || strncmp(trans, "n", 1)==0 );
     Astore = A->Store;
@@ -582,7 +582,7 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
 	}
     } else { /* trans == 'C' or 'c' */
 	/* Form  y := alpha * conj(A) * x + y. */
-	complex temp2;
+	singlecomplex temp2;
 	jy = ky;
 	if (incx == 1) {
 	    for (j = 0; j < A->ncol; ++j) {

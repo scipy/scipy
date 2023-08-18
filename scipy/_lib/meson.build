@@ -8,6 +8,9 @@ endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('array_api_compat/README.md')
+  error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
+endif
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -98,6 +101,7 @@ py3.extension_module('messagestream',
 
 python_sources = [
   '__init__.py',
+  '_array_api.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
@@ -117,6 +121,33 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
+  subdir: 'scipy/_lib'
+)
+
+python_sources = [
+  'array_api_compat/array_api_compat/__init__.py',
+  'array_api_compat/array_api_compat/_internal.py',
+  'array_api_compat/array_api_compat/common/__init__.py',
+  'array_api_compat/array_api_compat/common/_aliases.py',
+  'array_api_compat/array_api_compat/common/_helpers.py',
+  'array_api_compat/array_api_compat/common/_linalg.py',
+  'array_api_compat/array_api_compat/common/_typing.py',
+  'array_api_compat/array_api_compat/cupy/__init__.py',
+  'array_api_compat/array_api_compat/cupy/_aliases.py',
+  'array_api_compat/array_api_compat/cupy/_typing.py',
+  'array_api_compat/array_api_compat/cupy/linalg.py',
+  'array_api_compat/array_api_compat/numpy/__init__.py',
+  'array_api_compat/array_api_compat/numpy/_aliases.py',
+  'array_api_compat/array_api_compat/numpy/_typing.py',
+  'array_api_compat/array_api_compat/numpy/linalg.py',
+  'array_api_compat/array_api_compat/torch/__init__.py',
+  'array_api_compat/array_api_compat/torch/_aliases.py',
+  'array_api_compat/array_api_compat/torch/linalg.py',
+]
+
+py3.install_sources(
+  python_sources,
+  preserve_path: true,
   subdir: 'scipy/_lib'
 )
 

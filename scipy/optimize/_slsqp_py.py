@@ -25,6 +25,9 @@ from ._optimize import (OptimizeResult, _check_unknown_options,
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import exp, inf  # noqa
+
 
 __docformat__ = "restructuredtext en"
 

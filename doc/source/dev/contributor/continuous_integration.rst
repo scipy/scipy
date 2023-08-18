@@ -42,6 +42,7 @@ GitHub Actions
   dependencies and check coverage
 * ``gcc-8``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
+* ``Array API``: test Array API support
 
 The test suite runs on GitHub Actions and other platforms cover a range of
 test/environment conditions: Python and NumPy versions
@@ -84,7 +85,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 Of course, you can combine these to skip multiple workflows.
 
 This skip information should be placed on a new line. In this example, we
-just updated a ``.rst`` file in the documentation and ask to skip Azure and
+just updated a ``.rst`` file in the documentation and ask to skip Cirrus and
 GitHub Actions' workflows::
 
     DOC: improve QMCEngine examples.

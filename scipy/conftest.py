@@ -1,13 +1,17 @@
 # Pytest customization
+import json
 import os
-import pytest
 import warnings
 
 import numpy as np
+import numpy.array_api
 import numpy.testing as npt
+import pytest
+
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 
 def pytest_configure(config):
@@ -93,3 +97,77 @@ def check_fpu_mode(request):
         warnings.warn("FPU mode changed from {:#x} to {:#x} during "
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)
+
+
+# Array API backend handling
+xp_available_backends = {'numpy': np}
+
+if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
+    # fill the dict of backends with available libraries
+    xp_available_backends.update({'numpy.array_api': numpy.array_api})
+
+    try:
+        import torch  # type: ignore[import]
+        xp_available_backends.update({'pytorch': torch})
+        # can use `mps` or `cpu`
+        torch.set_default_device(SCIPY_DEVICE)
+    except ImportError:
+        pass
+
+    try:
+        import cupy  # type: ignore[import]
+        xp_available_backends.update({'cupy': cupy})
+    except ImportError:
+        pass
+
+    # by default, use all available backends
+    if SCIPY_ARRAY_API.lower() not in ("1", "true"):
+        SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
+
+        if 'all' in SCIPY_ARRAY_API_:
+            pass  # same as True
+        else:
+            # only select a subset of backend by filtering out the dict
+            try:
+                xp_available_backends = {
+                    backend: xp_available_backends[backend]
+                    for backend in SCIPY_ARRAY_API_
+                }
+            except KeyError:
+                msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
+                raise ValueError(msg)
+
+if 'cupy' in xp_available_backends:
+    SCIPY_DEVICE = 'cuda'
+
+array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
+
+skip_if_array_api = pytest.mark.skipif(
+    SCIPY_ARRAY_API,
+    reason="do not run with Array API on",
+)
+
+skip_if_array_api_gpu = pytest.mark.skipif(
+    SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
+    reason="do not run with Array API on and not on CPU",
+)
+
+
+def skip_if_array_api_backend(backend):
+    def wrapper(func):
+        reason = (
+            f"do not run with Array API backend: {backend}"
+        )
+        # method gets there as a function so we cannot use inspect.ismethod
+        if '.' in func.__qualname__:
+            def wrapped(self, *args, xp, **kwargs):
+                if xp.__name__ == backend:
+                    pytest.skip(reason=reason)
+                return func(self, *args, xp, **kwargs)
+        else:
+            def wrapped(*args, xp, **kwargs):  # type: ignore[misc]
+                if xp.__name__ == backend:
+                    pytest.skip(reason=reason)
+                return func(*args, xp, **kwargs)
+        return wrapped
+    return wrapper

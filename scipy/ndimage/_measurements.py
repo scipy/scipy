@@ -116,6 +116,13 @@ def label(input, structure=None, output=None):
     entry 2 in the input is connected to 1,
     but 1 is not connected to 2.
 
+    References
+    ----------
+    .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
+       matrices, their basic properties, eigenvalues, and
+       eigenvectors." The American Mathematical Monthly 92.10
+       (1985): 711-717.
+
     Examples
     --------
     Create an image with some features, then label it using the default
@@ -164,14 +171,6 @@ def label(input, structure=None, output=None):
            [0, 0, 0, 1, 0, 0],
            [2, 2, 0, 0, 1, 0],
            [0, 0, 0, 1, 0, 0]])
-
-    References
-    ----------
-
-    .. [1] James R. Weaver, "Centrosymmetric (cross-symmetric)
-       matrices, their basic properties, eigenvalues, and
-       eigenvectors." The American Mathematical Monthly 92.10
-       (1985): 711-717.
 
     """
     input = numpy.asarray(input)
@@ -332,6 +331,11 @@ def value_indices(arr, *, ignore_value=None):
         This dictionary can occupy significant memory, usually several times
         the size of the input array.
 
+    See Also
+    --------
+    label, maximum, median, minimum_position, extrema, sum, mean, variance,
+    standard_deviation, numpy.where, numpy.unique
+
     Notes
     -----
     For a small array with few distinct values, one might use
@@ -359,11 +363,6 @@ def value_indices(arr, *, ignore_value=None):
     function).
 
     .. versionadded:: 1.10.0
-
-    See Also
-    --------
-    label, maximum, median, minimum_position, extrema, sum, mean, variance,
-    standard_deviation, numpy.where, numpy.unique
 
     Examples
     --------
@@ -1345,7 +1344,7 @@ def maximum_position(input, labels=None, index=None):
         returned specifying the location of the ``first`` maximal value
         of `input`.
 
-    See also
+    See Also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation

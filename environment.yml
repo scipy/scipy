@@ -1,15 +1,15 @@
+# Please refer to https://scipy.github.io/devdocs/building/index.html
 # To use:
 #   $ conda env create -f environment.yml  # `mamba` works too for this command
 #   $ conda activate scipy-dev
 #
-# Also used to build the `scipy-dev` Docker image via GitHub Actions
 name: scipy-dev
 channels:
   - conda-forge
 dependencies:
   - python
   - cython
-  - compilers # Currently unavailable for Windows. Comment out this line and download Rtools and add <path>\ucrt64\bin\ to your path: https://cran.r-project.org/bin/windows/Rtools/rtools40.html
+  - compilers  # Currently unavailable for Windows. Comment out this line and download Rtools and add <path>\ucrt64\bin\ to your path: https://cran.r-project.org/bin/windows/Rtools/rtools40.html
   - meson
   - meson-python
   - ninja
@@ -20,6 +20,7 @@ dependencies:
   - pybind11
   # scipy.datasets dependency
   - pooch
+  # ---
   - pythran
   # For testing and benchmarking
   - pytest

@@ -68,7 +68,7 @@ ilu_cpivotL(
 	double	   fill_tol, /* in - fill tolerance of current column
 			      * used for a singular column */
 	milu_t	   milu,     /* in */
-	complex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
+	singlecomplex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
                                 (MILU only) */
 	GlobalLU_t *Glu,     /* modified - global LU data structures */
 	SuperLUStat_t *stat  /* output */
@@ -84,23 +84,23 @@ ilu_cpivotL(
     int		 old_pivptr, diag, ptr0;
     register float  pivmax, rtemp;
     float	 thresh;
-    complex	 temp;
-    complex	 *lu_sup_ptr;
-    complex	 *lu_col_ptr;
+    singlecomplex	 temp;
+    singlecomplex	 *lu_sup_ptr;
+    singlecomplex	 *lu_col_ptr;
     int		 *lsub_ptr;
     register int	 isub, icol, k, itemp;
     int		 *lsub, *xlsub;
-    complex	 *lusup;
+    singlecomplex	 *lusup;
     int		 *xlusup;
     flops_t	 *ops = stat->ops;
     int		 info;
-    complex one = {1.0, 0.0};
+    singlecomplex one = {1.0, 0.0};
 
     /* Initialize pointers */
     n	       = Glu->n;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = (complex *) Glu->lusup;
+    lusup      = (singlecomplex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
     nsupc      = jcol - fsupc;		/* excluding jcol; nsupc >= 0 */

@@ -1,8 +1,9 @@
+import warnings
+
 from numpy import (logical_and, asarray, pi, zeros_like,
                    piecewise, array, arctan2, tan, zeros, arange, floor)
-from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
-                              less_equal, greater_equal)
-import numpy as np
+from numpy import (sqrt, exp, greater, less, cos, add, sin, less_equal,
+                   greater_equal)
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
@@ -154,9 +155,21 @@ The exact equivalent (for a float array `x`) is
 """
 
 
-@np.deprecate(message=msg_bspline)
 def bspline(x, n):
-    """B-spline basis function of order n.
+    """
+    .. deprecated:: 1.11.0
+
+        `scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
+        removed in SciPy 1.13.
+
+        The exact equivalent (for a float array `x`) is::
+
+            >>> from scipy.interpolate import BSpline
+            >>> knots = np.arange(-(n+1)/2, (n+3)/2))
+            >>> out = BSpline.basis_element(knots)(x)
+            >>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
+    
+    B-spline basis function of order n.
 
     Parameters
     ----------
@@ -199,6 +212,8 @@ def bspline(x, n):
     True
 
     """
+    warnings.warn(msg_bspline, DeprecationWarning, stacklevel=2)
+
     ax = -abs(asarray(x, dtype=float))
     # number of pieces on the left-side is (n+1)/2
     funclist, condfuncs = _bspline_piecefunctions(n)
@@ -269,9 +284,20 @@ The exact equivalent (for a float array `x`) is
 """
 
 
-@np.deprecate(message=msg_cubic)
 def cubic(x):
-    """A cubic B-spline.
+    """
+    .. deprecated:: 1.11.0
+
+        `scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
+        removed in SciPy 1.13.
+
+        The exact equivalent (for a float array `x`) is::
+
+            >>> from scipy.interpolate import BSpline
+            >>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
+            >>> out[(x < -2 | (x > 2)] = 0.0
+
+    A cubic B-spline.
 
     This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
 
@@ -310,6 +336,8 @@ def cubic(x):
     True
 
     """
+    warnings.warn(msg_cubic, DeprecationWarning, stacklevel=2)
+
     ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 1)
@@ -342,9 +370,20 @@ The exact equivalent (for a float array `x`) is
 """
 
 
-@np.deprecate(message=msg_quadratic)
 def quadratic(x):
-    """A quadratic B-spline.
+    """
+    .. deprecated:: 1.11.0
+
+        `scipy.signal.quadratic` is deprecated in SciPy 1.11 and
+        will be removed in SciPy 1.13.
+
+        The exact equivalent (for a float array `x`) is::
+
+            >>> from scipy.interpolate import BSpline
+            >>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
+            >>> out[(x < -1.5 | (x > 1.5)] = 0.0
+
+    A quadratic B-spline.
 
     This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
 
@@ -383,6 +422,8 @@ def quadratic(x):
     True
 
     """
+    warnings.warn(msg_quadratic, DeprecationWarning, stacklevel=2)
+
     ax = abs(asarray(x, dtype=float))
     res = zeros_like(ax)
     cond1 = less(ax, 0.5)

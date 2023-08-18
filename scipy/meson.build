@@ -4,7 +4,7 @@ if is_mingw and ff.get_id() != 'gcc'
   error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
 endif
 
-cython_c_args = []
+cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
@@ -223,7 +223,7 @@ python_sources = [
   'conftest.py',
   'linalg.pxd',
   'optimize.pxd',
-  'special.pxd'
+  'special.pxd',
 ]
 
 py3.install_sources(
@@ -413,12 +413,18 @@ conf_data = configuration_data()
 
 # Set compiler information
 foreach name, compiler : compilers
-  # conf_data.set(name + '_COMP_CMD_ARRAY', compiler.cmd_array())
-  conf_data.set(name + '_COMP_CMD_ARRAY', compiler.get_id())
   conf_data.set(name + '_COMP', compiler.get_id())
   conf_data.set(name + '_COMP_LINKER_ID', compiler.get_linker_id())
   conf_data.set(name + '_COMP_VERSION', compiler.version())
   conf_data.set(name + '_COMP_CMD_ARRAY', ', '.join(compiler.cmd_array()))
+  conf_data.set(name + '_COMP_ARGS', ', '.join(
+      get_option(name.to_lower() + '_args')
+    )
+  )
+  conf_data.set(name + '_COMP_LINK_ARGS', ', '.join(
+      get_option(name.to_lower() + '_link_args')
+    )
+  )
 endforeach
 # Add `pythran` information if present
 if use_pythran

@@ -29,7 +29,7 @@ import warnings
 import sys
 import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt, Inf)
+                   asarray, sqrt)
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
@@ -40,6 +40,9 @@ from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
+
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import asfarray  # noqa
 
 
 # standard status messages of optimizers
@@ -145,6 +148,9 @@ def _wrap_callback(callback, method=None):
     elif method == 'trust-constr':
         def wrapped_callback(res):
             return callback(np.copy(res.x), res)
+    elif method == 'differential_evolution':
+        def wrapped_callback(res):
+            return callback(np.copy(res.x), res.convergence)
     else:
         def wrapped_callback(res):
             return callback(np.copy(res.x))
@@ -285,9 +291,9 @@ _epsilon = sqrt(np.finfo(float).eps)
 
 
 def vecnorm(x, ord=2):
-    if ord == Inf:
+    if ord == np.inf:
         return np.amax(np.abs(x))
-    elif ord == -Inf:
+    elif ord == -np.inf:
         return np.amin(np.abs(x))
     else:
         return np.sum(np.abs(x)**ord, axis=0)**(1.0 / ord)
@@ -334,7 +340,7 @@ def _prepare_scalar_function(fun, x0, jac=None, args=(), bounds=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     hess : {callable,  '2-point', '3-point', 'cs', None}
@@ -817,7 +823,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     x0 = np.atleast_1d(x0).flatten()
-    x0 = np.asfarray(x0, x0.dtype)
+    dtype = x0.dtype if np.issubdtype(x0.dtype, np.inexact) else np.float64
+    x0 = np.asarray(x0, dtype=dtype)
 
     if adaptive:
         dim = float(len(x0))
@@ -860,7 +867,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             sim[k + 1] = y
     else:
         sim = np.atleast_2d(initial_simplex).copy()
-        sim = np.asfarray(sim, sim.dtype)
+        dtype = sim.dtype if np.issubdtype(sim.dtype, np.inexact) else np.float64
+        sim = np.asarray(sim, dtype=dtype)
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
         if len(x0) != sim.shape[1]:
@@ -1242,9 +1250,9 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
     return ret
 
 
-def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
+def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1281,6 +1289,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
         Relative tolerance for `x`. Terminate successfully if step
         size is less than ``xk * xrtol`` where ``xk`` is the current
         parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.9
+        Parameter for curvature condition rule.
 
     Returns
     -------
@@ -1354,7 +1366,10 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
             'eps': epsilon,
             'disp': disp,
             'maxiter': maxiter,
-            'return_all': retall}
+            'return_all': retall,
+            'xrtol': xrtol,
+            'c1': c1,
+            'c2': c2            }
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
@@ -1373,9 +1388,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
 
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
-                   gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                   gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=0.9, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1400,12 +1415,17 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step size is
         less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: .9
+        Parameter for curvature condition rule.
+
     """
     _check_unknown_options(unknown_options)
     retall = return_all
@@ -1443,7 +1463,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
+                                          old_fval, old_old_fval, amin=1e-100,
+                                          amax=1e100, c1=c1, c2=c2)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1534,8 +1555,9 @@ def _print_success_message_or_warn(warnflag, message, warntype=None):
         warnings.warn(message, warntype or OptimizeWarning, stacklevel=3)
 
 
-def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
-            maxiter=None, full_output=0, disp=1, retall=0, callback=None):
+def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
+            epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
+            callback=None):
     """
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -1710,7 +1732,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
 
 
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
-                 gtol=1e-5, norm=Inf, eps=_epsilon, maxiter=None,
+                 gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
                  **unknown_options):
     """
@@ -1738,7 +1760,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
         size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
-        possibly adjusted to fit into the bounds. For ``method='3-point'``
+        possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
     """

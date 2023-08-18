@@ -231,11 +231,13 @@ class TestQuadrature:
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
-    def test_simpson_even_is_deprecated(self):
+    def test_simpson_deprecations(self):
         x = np.linspace(0, 3, 4)
         y = x**2
-        with pytest.deprecated_call():
+        with pytest.deprecated_call(match="The 'even' keyword is deprecated"):
             simpson(y, x=x, even='first')
+        with pytest.deprecated_call(match="use keyword arguments"):
+            simpson(y, x)
 
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):
