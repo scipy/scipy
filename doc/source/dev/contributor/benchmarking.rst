@@ -188,7 +188,5 @@ check out the ``asv find`` command and the ``--quick``,
 .. |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32| replace:: ``7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32``
 .. _7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32: https://github.com/scipy/scipy/commit/7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32
 
-.. _ccurevisions documentation: https://git-scm.com/docs/gitrevisions#_specifying_ranges
-
 .. _ccache: https://ccache.dev
 .. _f90cache: https://perso.univ-rennes1.fr/edouard.canot/f90cache/
