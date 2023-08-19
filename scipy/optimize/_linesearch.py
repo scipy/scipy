@@ -24,6 +24,12 @@ class LineSearchWarning(RuntimeWarning):
     pass
 
 
+def _check_c1_c2(c1, c2):
+    if not (0 < c1 < c2 < 1):
+        raise ValueError("'c1' and 'c2' do not satisfy"
+                         "'0 < c1 < c2 < 1'.")
+
+
 #------------------------------------------------------------------------------
 # Minpack's Wolfe line and scalar searches
 #------------------------------------------------------------------------------
@@ -131,6 +137,7 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Uses routine DCSRCH from MINPACK.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)
@@ -378,6 +385,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     1999, pp. 59-61.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)

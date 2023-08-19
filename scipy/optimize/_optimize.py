@@ -271,12 +271,6 @@ class OptimizeWarning(UserWarning):
     pass
 
 
-def _check_c1_c2(c1, c2):
-    if not (0 < c1 < c2 < 1):
-        raise ValueError("'c1' and 'c2' do not satisfy"
-                         "'0 < c1 < c2 < 1'.")
-
-
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -1436,7 +1430,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
-    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
     retall = return_all
 
@@ -1751,7 +1744,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
-                 c1=1e-3, c2=0.4, **unknown_options):
+                 c1=1e-4, c2=0.4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1789,7 +1782,6 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
-    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
 
     retall = return_all
@@ -2056,7 +2048,6 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
-    _check_c1_c2(c1, c2)
     _check_unknown_options(unknown_options)
     if jac is None:
         raise ValueError('Jacobian is required for Newton-CG method')
