@@ -182,9 +182,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Right-hand side of the system: the time derivative of the state ``y``
         at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
         scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. Additional
-        arguments need to be passed if ``args`` is used (see below). ``fun`` must
-        return an array of the same shape as ``y``. See `vectorized` for more
-        information.
+        arguments need to be passed if ``args`` is used (see documentation of
+        ``args`` argument). ``fun`` must return an array of the same shape as
+        ``y``. See `vectorized` for more information.
     t_span : 2-member sequence
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf. Both t0 and tf must be floats
@@ -247,13 +247,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Events to track. If None (default), no events will be tracked.
         Each event occurs at the zeros of a continuous function of time and
         state. Each function must have the signature ``event(t, y)`` where
-        additional argument have to be passed if ``args`` is used (see below).
-        Each function must return a float. The solver will find an accurate
-        value of `t` at which ``event(t, y(t)) = 0`` using a root-finding
-        algorithm. By default, all zeros will be found. The solver looks for
-        a sign change over each step, so if multiple zero crossings occur
-        within one step, events may be missed. Additionally each `event`
-        function might have the following attributes:
+        additional argument have to be passed if ``args`` is used (see
+        documentation of ``args`` argument). Each function must return a
+        float. The solver will find an accurate value of `t` at which
+        ``event(t, y(t)) = 0`` using a root-finding algorithm. By default,
+        all zeros will be found. The solver looks for a sign change over
+        each step, so if multiple zero crossings occur within one step,
+        events may be missed. Additionally each `event` function might
+        have the following attributes:
 
             terminal: bool, optional
                 Whether to terminate integration if this event occurs.
@@ -322,7 +323,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             * If callable, the Jacobian is assumed to depend on both
               t and y; it will be called as ``jac(t, y)``, as necessary.
               Additional arguments have to be passed if ``args`` is
-              used (see above).
+              used (see documentation of ``args`` argument).
               For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
