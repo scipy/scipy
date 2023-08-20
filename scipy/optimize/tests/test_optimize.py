@@ -236,7 +236,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         opts = {'disp': self.disp, 'h0': 1e-2 * np.eye(5)}
         res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options=opts)
         res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options={'disp': self.disp})
-        assert_allclose(fun(res.x), fun(res_true.x), atol=1e-6)
+        assert_allclose(res.fun, res_true.fun, atol=1e-6)
             
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
