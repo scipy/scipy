@@ -2720,6 +2720,26 @@ class TestZmapZscore:
                     1.136670895503])
         assert_allclose(desired, z)
 
+    def test_zscore_masked_element_0_gh19039(self):
+        # zscore returned all NaNs when 0th element was masked. See gh-19039.
+        rng = np.random.default_rng(8675309)
+        x = rng.standard_normal(10)
+        mask = np.zeros_like(x)
+        y = np.ma.masked_array(x, mask)
+        y.mask[0] = True
+
+        ref = stats.zscore(x[1:])  # compute reference from non-masked elements
+        assert not np.any(np.isnan(ref))
+        res = stats.zscore(y)
+        assert_allclose(res[1:], ref)
+        res = stats.zscore(y, axis=None)
+        assert_allclose(res[1:], ref)
+
+        y[1:] = y[1]  # when non-masked elements are identical, result is nan
+        res = stats.zscore(y)
+        assert_equal(res[1:], np.nan)
+        res = stats.zscore(y, axis=None)
+        assert_equal(res[1:], np.nan)
 
 class TestMedianAbsDeviation:
     def setup_class(self):
