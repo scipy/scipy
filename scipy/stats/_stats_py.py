@@ -3147,10 +3147,13 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     else:
         mn = a.mean(axis=axis, keepdims=True)
         std = a.std(axis=axis, ddof=ddof, keepdims=True)
-        if axis is None:
-            isconst = (a.item(0) == a).all()
-        else:
-            isconst = (_first(a, axis) == a).all(axis=axis, keepdims=True)
+        # The intent is to check whether all elements of `a` along `axis` are
+        # identical. Due to finite precision arithmetic, comparing elements
+        # against `mn` doesn't work. Previously, this compared elements to
+        # `_first`, but that extracts the element at index 0 regardless of
+        # whether it is masked. As a simple fix, compare against `min`.
+        a0 = a.min(axis=axis, keepdims=True)
+        isconst = (a == a0).all(axis=axis, keepdims=True)
 
     # Set std deviations that are 0 to 1 to avoid division by 0.
     std[isconst] = 1.0
