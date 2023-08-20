@@ -78,7 +78,7 @@ class TestLaplacianNd:
         n = np.prod(grid_shape)
         eigenvalues = lap.eigenvalues()
         dtype = eigenvalues.dtype
-        atol = n * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
+        atol = n * n * np.finfo(dtype).eps
         # test the default ``m = None``
         assert_allclose(eigenvalues, eigvals, atol=atol)
         # test every ``m > 0``
