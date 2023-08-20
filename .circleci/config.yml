@@ -151,7 +151,7 @@ jobs:
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json dev -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
