@@ -211,14 +211,33 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
     
-    def test_bfgs_hk(self):
-        # Ensure that BFGS only accepts positive definite initial inverse Hessian estimate.
-        with pytest.raises(ValueError, match="'hk_init' matrix must be positive definite."):
+    def test_bfgs_h0_neg(self):
+        # Ensure that BFGS only does not accept neg. def. initial inverse Hessian estimate.
+        with pytest.raises(ValueError, match="'h0' matrix must be positive definite."):
             x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-            opts = {'disp': self.disp, 'hk_init': -np.eye(5)}
+            opts = {'disp': self.disp, 'h0': -np.eye(5)}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-
+    
+    def test_bfgs_h0_semipos(self):
+        # Ensure that BFGS does not accepts semi pos. def. initial inverse Hessian estimate.
+        with pytest.raises(ValueError, match="'h0' matrix must be positive definite."):
+            x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+            h0 = np.eye(5)
+            h0[0, 0] = 0
+            opts = {'disp': self.disp, 'h0': h0}
+            optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
+                              options=opts)
+    
+    def test_bfgs_h0_sanity(self):
+        # Ensure that BFGS handles `h0` parameter correctly.
+        fun = optimize.rosen
+        x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+        opts = {'disp': self.disp, 'h0': 1e-2 * np.eye(5)}
+        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options=opts)
+        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options={'disp': self.disp})
+        assert_allclose(fun(res.x), fun(res_true.x), atol=1e-6)
+            
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
