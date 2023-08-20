@@ -83,7 +83,7 @@ class TestLaplacianNd:
         assert_allclose(eigenvalues, eigvals, atol=atol)
         # test every ``m > 0``
         for m in np.arange(1, n + 1):
-            assert_array_equal(lap.eigenvalues(m), eigenvalues[-m: ])
+            assert_array_equal(lap.eigenvalues(m), eigenvalues[-m:])
 
     @pytest.mark.parametrize('grid_shape', [(6, ), (2, 3), (2, 3, 4)])
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
@@ -96,7 +96,7 @@ class TestLaplacianNd:
         atol = n * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
         # test the default ``m = None`` every individual eigenvector
         for i in np.arange(n):
-            r = lap.toarray() @ eigenvectors[:,i] - eigenvectors[:,i] * eigenvalues[i]
+            r = lap.toarray() @ eigenvectors[:, i] - eigenvectors[:, i] * eigenvalues[i]
             assert_allclose(r, np.zeros_like(r), atol=atol)
         # test every ``m > 0``
         for m in np.arange(1, n + 1):
