@@ -273,7 +273,7 @@ class OptimizeWarning(UserWarning):
 
 def _check_positive_definite(Hk):
     def is_pos_def(A):
-        if issymmetric(A, rtol=1e-05, atol=1e-08):
+        if issymmetric(A):
             try:
                 cholesky(A)
                 return True
