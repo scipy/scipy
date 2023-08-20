@@ -1899,7 +1899,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
-             callback=None, c1=1e-3, c2=0.9):
+             callback=None, c1=1e-4, c2=0.9):
     """
     Unconstrained minimization of a function using the Newton-CG method.
 
@@ -2019,7 +2019,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False, c1=1e-3, c2=0.9,
+                       disp=False, return_all=False, c1=1e-4, c2=0.9,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
