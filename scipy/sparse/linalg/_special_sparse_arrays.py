@@ -323,7 +323,8 @@ of_the_second_derivative
             else:
                 i = 2. * np.pi * (np.arange(n) + 0.5) / n
                 ev = np.sqrt(2. / n) * np.cos(i * np.floor((j + 1) / 2))
-        # make small values exact zeros
+        # make small values exact zeros correcting round-off errors
+        # due to symmetry of eigenvectors the exact 0. is correct 
         ev[np.abs(ev) < np.finfo(np.float64).eps] = 0.
         return ev
 
@@ -362,7 +363,7 @@ of_the_second_derivative
         N_indices = np.unravel_index(ind, grid_shape_min)
         N_indices = [tuple(x) for x in zip(*N_indices)]
         eigenvectors_list = [self._one_eve(k) for k in N_indices]
-        return np.asarray(eigenvectors_list).T
+        return np.column_stack(eigenvectors_list)
 
     def toarray(self):
         """
