@@ -51,7 +51,6 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Current point
     pk : array_like
         Search direction
-
     gfk : array_like, optional
         Gradient of `f` at point `xk`
     old_fval : float, optional
@@ -67,6 +66,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         As in `line_search_wolfe1`
     gval : array
         Gradient of `f` at the final point
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     """
     if gfk is None:
@@ -135,6 +138,8 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
+    
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     """
     _check_c1_c2(c1, c2)
