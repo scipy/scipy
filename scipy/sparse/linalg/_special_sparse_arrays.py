@@ -286,8 +286,6 @@ of_the_second_derivative
             eigenvalues = eigenvalues[-m:]
             ind = ind[-m:]
 
-        # make small values exact zeros
-        eigenvalues[np.abs(eigenvalues) < np.finfo(np.float64).eps] = 0.
         return eigenvalues, ind
 
     def eigenvalues(self, m=None):
