@@ -59,4 +59,4 @@ dependencies:
   - pympler
   - pip
   - pip:
-      - "git+https://github.com/airspeed-velocity/asv@d4c868e52943894688e2db6abbf1ba2ab179cb84"
+      - asv>=0.6.0
