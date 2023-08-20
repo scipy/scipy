@@ -139,7 +139,15 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     -----
     Uses routine DCSRCH from MINPACK.
     
-    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
+
+    References
+    ----------
+    
+    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
+       In Springer Series in Operations Research and Financial Engineering.
+       (Springer Series in Operations Research and Financial Engineering).
+       Springer Nature.
 
     """
     _check_c1_c2(c1, c2)
