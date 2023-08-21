@@ -9,7 +9,7 @@ from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies
+from hypothesis import given, strategies, reproduce_failure  # noqa
 from scipy.conftest import array_api_compatible
 
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
@@ -356,33 +356,42 @@ def test__rng_html_rewrite():
 
 class TestLazywhere:
     # Mixing floats and integers does not work in np.array_api, so don't try
+    n_arrays = strategies.integers(min_value=1, max_value=3)
+    rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
     dtype = strategies.sampled_from((np.float32, np.float64))
-    arrays = npst.arrays(dtype=dtype, shape=npst.array_shapes())
-    fillvalue = npst.arrays(dtype=dtype, shape=tuple())
     p = strategies.floats(min_value=0, max_value=1)
+    data = strategies.data()
 
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @array_api_compatible
-    @given(arrays=arrays, fillvalue=fillvalue, p=p)
-    def test_basic(self, arrays, fillvalue, p, xp):
-        arrays = (xp.asarray(arrays),)
+    @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
+    def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
+        mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
+                                                 min_side=0)
+        input_shapes, result_shape = data.draw(mbs)
+        cond_shape, *shapes = input_shapes
+        fillvalue = data.draw(npst.arrays(dtype=dtype, shape=tuple()))
+        arrays = [data.draw(npst.arrays(dtype=dtype, shape=shape))
+                  for shape in shapes]
 
         def f(*args):
-            return args[0]
+            return sum(arg for arg in args)
 
         def f2(*args):
-            return args[0] / 2
+            return sum(arg for arg in args) / 2
 
+        rng = np.random.default_rng(rng_seed)
+        cond = rng.random(size=cond_shape) > p
 
-        rng = np.random.default_rng(84268954369357456)
-        shape = arrays[0].shape
-        cond = xp.asarray(rng.random(size=shape) > p)
+        xp_arrays = [xp.asarray(arr) for arr in arrays]
+        res1 = _lazywhere(xp.asarray(cond), xp_arrays, f, xp.asarray(fillvalue))
+        res2 = _lazywhere(xp.asarray(cond), xp_arrays, f, f2=f2)
+        type(res1) == type(res2) == type(xp.asarray([]))
 
-        res = _lazywhere(cond, arrays, f, fillvalue)  # `Array`s not iterable
-        ref = np.where(cond, f(*arrays),
-                       # broadcast to follow sane type promotion rules
-                       np.broadcast_to(fillvalue, shape))
-        assert_equal(res, ref)
+        # Ensure arrays are at least 1d to follow sane type promotion rules.
+        cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
+        ref1 = np.where(cond, f(*arrays), fillvalue).reshape(result_shape)
+        ref2 = np.where(cond, f(*arrays), f2(*arrays)).reshape(result_shape)
 
-        res = _lazywhere(cond, arrays, f, f2=f2)
-        ref = np.where(cond, f(*arrays), f2(*arrays))
-        assert_equal(res, ref)
+        assert_equal(np.asarray(res1), ref1)
+        assert_equal(np.asarray(res2), ref2)
