@@ -358,19 +358,66 @@ class TestCumulative_trapezoid:
 
 
 class TestTrapezoid:
-    """This function is tested in NumPy more extensive, just do some
-    basic due diligence here."""
-    def test_trapezoid(self):
-        y = np.arange(17)
-        assert_equal(trapezoid(y), 128)
-        assert_equal(trapezoid(y, dx=0.5), 64)
-        assert_equal(trapezoid(y, x=np.linspace(0, 4, 17)), 32)
+    def test_simple(self):
+        x = np.arange(-10, 10, .1)
+        r = trapezoid(np.exp(-.5 * x ** 2) / np.sqrt(2 * np.pi), dx=0.1)
+        # check integral of normal equals 1
+        assert_almost_equal(r, 1, 7)
 
-        y = np.arange(4)
-        x = 2**y
-        assert_equal(trapezoid(y, x=x, dx=0.1), 13.5)
+    def test_ndim(self):
+        x = np.linspace(0, 1, 3)
+        y = np.linspace(0, 2, 8)
+        z = np.linspace(0, 3, 13)
 
-    def test_trapz(self):
+        wx = np.ones_like(x) * (x[1] - x[0])
+        wx[0] /= 2
+        wx[-1] /= 2
+        wy = np.ones_like(y) * (y[1] - y[0])
+        wy[0] /= 2
+        wy[-1] /= 2
+        wz = np.ones_like(z) * (z[1] - z[0])
+        wz[0] /= 2
+        wz[-1] /= 2
+
+        q = x[:, None, None] + y[None,:, None] + z[None, None,:]
+
+        qx = (q * wx[:, None, None]).sum(axis=0)
+        qy = (q * wy[None, :, None]).sum(axis=1)
+        qz = (q * wz[None, None, :]).sum(axis=2)
+
+        # n-d `x`
+        r = trapezoid(q, x=x[:, None, None], axis=0)
+        assert_almost_equal(r, qx)
+        r = trapezoid(q, x=y[None,:, None], axis=1)
+        assert_almost_equal(r, qy)
+        r = trapezoid(q, x=z[None, None,:], axis=2)
+        assert_almost_equal(r, qz)
+
+        # 1-d `x`
+        r = trapezoid(q, x=x, axis=0)
+        assert_almost_equal(r, qx)
+        r = trapezoid(q, x=y, axis=1)
+        assert_almost_equal(r, qy)
+        r = trapezoid(q, x=z, axis=2)
+        assert_almost_equal(r, qz)
+
+    def test_masked(self):
+        # Testing that masked arrays behave as if the function is 0 where
+        # masked
+        x = np.arange(5)
+        y = x * x
+        mask = x == 2
+        ym = np.ma.array(y, mask=mask)
+        r = 13.0  # sum(0.5 * (0 + 1) * 1.0 + 0.5 * (9 + 16))
+        assert_almost_equal(trapezoid(ym, x), r)
+
+        xm = np.ma.array(x, mask=mask)
+        assert_almost_equal(trapezoid(ym, xm), r)
+
+        xm = np.ma.array(x, mask=mask)
+        assert_almost_equal(trapezoid(y, xm), r)
+
+    def test_trapz_alias(self):
         # Basic coverage test for the alias
         y = np.arange(4)
         x = 2**y
