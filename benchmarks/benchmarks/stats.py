@@ -35,13 +35,13 @@ class CorrelationFunctions(Benchmark):
         self.a = a
 
     def time_fisher_exact(self, alternative):
-        oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
+        stats.fisher_exact(self.a, alternative=alternative)
 
     def time_barnard_exact(self, alternative):
-        resBarnard = stats.barnard_exact(self.a, alternative=alternative)
+        stats.barnard_exact(self.a, alternative=alternative)
 
     def time_boschloo_exact(self, alternative):
-        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+        stats.boschloo_exact(self.a, alternative=alternative)
 
 
 class ANOVAFunction(Benchmark):
@@ -52,8 +52,8 @@ class ANOVAFunction(Benchmark):
         self.c = rng.random((6,3)) * 10
 
     def time_f_oneway(self):
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+        stats.f_oneway(self.a, self.b, self.c)
+        stats.f_oneway(self.a, self.b, self.c, axis=1)
 
 
 class Kendalltau(Benchmark):
@@ -612,7 +612,7 @@ class BenchQMCDiscrepancy(Benchmark):
         self.sample = sample
 
     def time_discrepancy(self, method):
-        disc = stats.qmc.discrepancy(self.sample, method=method)
+        stats.qmc.discrepancy(self.sample, method=method)
 
 
 class BenchQMCHalton(Benchmark):
@@ -663,14 +663,12 @@ class DistanceFunctions(Benchmark):
         self.v_weights = rng.random(n_size // 2) * 10
 
     def time_energy_distance(self, n_size):
-        distance = stats.energy_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.energy_distance(self.u_values, self.v_values,
+                              self.u_weights, self.v_weights)
 
     def time_wasserstein_distance(self, n_size):
-        distance = stats.wasserstein_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.wasserstein_distance(self.u_values, self.v_values,
+                                   self.u_weights, self.v_weights)
 
 
 class Somersd(Benchmark):
@@ -685,7 +683,7 @@ class Somersd(Benchmark):
         self.y = rng.choice(n_size, size=n_size)
 
     def time_somersd(self, n_size):
-        res = stats.somersd(self.x, self.y)
+        stats.somersd(self.x, self.y)
 
 
 class KolmogorovSmirnov(Benchmark):
