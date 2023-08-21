@@ -127,6 +127,8 @@ Hypothesis, Python, or the test function are updated. To better use
 Hypothesis' abilities to find counterexamples, select the ``nondeterministic``
 profile by setting the environment variable
 ``SCIPY_HYPOTHESIS_PROFILE=nondeterministic`` before running the test suite.
+The number of examples that are run can be configured by editing the selected
+configuration, e.g. adding ``max_examples=100_000``.
 
 .. |pytest-cov| replace:: ``pytest-cov``
 .. _pytest-cov: https://pypi.org/project/pytest-cov/
