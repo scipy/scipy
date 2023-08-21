@@ -8,7 +8,7 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
@@ -521,8 +521,8 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = np.float64(h[sl0])
-        h1 = np.float64(h[sl1])
+        h0 = h[sl0].astype(float, copy=False)
+        h1 = h[sl1].astype(float, copy=False)
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
@@ -550,10 +550,12 @@ def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
     msg = ("'scipy.integrate.simps' is deprecated in favour of "
            "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
+    # we don't deprecate positional use as the wrapper is going away completely
     return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
-def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
+@_deprecate_positional_args(version="1.14")
+def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -721,7 +723,7 @@ def simpson(y, x=None, dx=1.0, axis=-1, even=_NoValue):
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = np.asfarray([dx, dx])
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))

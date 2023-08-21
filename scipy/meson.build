@@ -4,7 +4,7 @@ if is_mingw and ff.get_id() != 'gcc'
   error('If you are using GCC on Windows, you must also use GFortran! Detected ' + ff.get_id())
 endif
 
-cython_c_args = []
+cython_c_args = ['-DCYTHON_CCOMPLEX=0'] # see gh-18975 for why we need this
 if is_mingw
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']

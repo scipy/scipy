@@ -16,7 +16,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
 from ._comb import _comb_int
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = [
@@ -2638,7 +2638,8 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False, legacy=_NoValue):
+@_deprecate_positional_args(version="1.14")
+def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2707,7 +2708,7 @@ def comb(N, k, exact=False, repetition=False, legacy=_NoValue):
             stacklevel=2
         )
     if repetition:
-        return comb(N + k - 1, k, exact, legacy=legacy)
+        return comb(N + k - 1, k, exact=exact, legacy=legacy)
     if exact:
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here

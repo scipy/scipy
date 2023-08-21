@@ -6,13 +6,15 @@ import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import get_blas_funcs
 from .utils import make_system
+from scipy._lib.deprecation import _deprecate_positional_args
 
 from ._gcrotmk import _fgmres
 
 __all__ = ['lgmres']
 
 
-def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
+@_deprecate_positional_args(version="1.14.0")
+def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
            prepend_outer_v=False, atol=None):
     """

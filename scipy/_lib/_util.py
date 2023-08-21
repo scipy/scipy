@@ -11,17 +11,26 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    Type,
     TypeVar,
 )
 
 import numpy as np
-
 from scipy._lib._array_api import array_namespace
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import AxisError
-else:
-    from numpy import AxisError
 
+
+AxisError: Type[Exception]
+ComplexWarning: Type[Warning]
+VisibleDeprecationWarning: Type[Warning]
+
+if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
+    from numpy.exceptions import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+else:
+    from numpy import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
 
 
 IntNumber = Union[int, np.integer]
@@ -91,20 +100,18 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
         raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
 
-    # Array API does not require that arrays be iterable, apparently
-    arrays = [arrays[i, ...] for i in range(arrays.shape[0])]
-
     args = xp.broadcast_arrays(cond, *arrays)
     cond, arrays = xp.astype(args[0], bool, copy=False), args[1:]
 
-    temp1 = f(*(arr[cond] for arr in arrays))
+    temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
 
     if f2 is None:
+        fillvalue = xp.asarray(fillvalue)
         dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
         out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
     else:
         ncond = ~cond
-        temp2 = f2(*(arr[ncond] for arr in arrays))
+        temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
         dtype = xp.result_type(temp1, temp2)
         out = xp.empty(cond.shape, dtype=dtype)
         out[ncond] = temp2
@@ -282,7 +289,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float_)
+            a = toarray(a, dtype=np.float64)
     return a
 
 
