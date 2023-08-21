@@ -824,11 +824,13 @@ from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
 
-depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
-            'removed in SciPy 1.14.0.')
+_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
+             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
+
 
 def btdtr(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(depr_msg, category=DeprecationWarning, stacklevel=2)
+    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
+                  stacklevel=2)
     return _ufuncs.btdtr(*args, **kwargs)
 
 
@@ -836,7 +838,8 @@ btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
 
 
 def btdtri(*args, **kwargs):  # type: ignore [no-redef]
-    warnings.warn(depr_msg, category=DeprecationWarning, stacklevel=2)
+    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
+                  stacklevel=2)
     return _ufuncs.btdtri(*args, **kwargs)
 
 
