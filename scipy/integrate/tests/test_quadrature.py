@@ -362,7 +362,7 @@ class TestTrapezoid:
         x = np.arange(-10, 10, .1)
         r = trapezoid(np.exp(-.5 * x ** 2) / np.sqrt(2 * np.pi), dx=0.1)
         # check integral of normal equals 1
-        assert_almost_equal(r, 1, 7)
+        assert_allclose(r, 1)
 
     def test_ndim(self):
         x = np.linspace(0, 1, 3)
@@ -387,19 +387,19 @@ class TestTrapezoid:
 
         # n-d `x`
         r = trapezoid(q, x=x[:, None, None], axis=0)
-        assert_almost_equal(r, qx)
+        assert_allclose(r, qx)
         r = trapezoid(q, x=y[None,:, None], axis=1)
-        assert_almost_equal(r, qy)
+        assert_allclose(r, qy)
         r = trapezoid(q, x=z[None, None,:], axis=2)
-        assert_almost_equal(r, qz)
+        assert_allclose(r, qz)
 
         # 1-d `x`
         r = trapezoid(q, x=x, axis=0)
-        assert_almost_equal(r, qx)
+        assert_allclose(r, qx)
         r = trapezoid(q, x=y, axis=1)
-        assert_almost_equal(r, qy)
+        assert_allclose(r, qy)
         r = trapezoid(q, x=z, axis=2)
-        assert_almost_equal(r, qz)
+        assert_allclose(r, qz)
 
     def test_masked(self):
         # Testing that masked arrays behave as if the function is 0 where
@@ -409,13 +409,13 @@ class TestTrapezoid:
         mask = x == 2
         ym = np.ma.array(y, mask=mask)
         r = 13.0  # sum(0.5 * (0 + 1) * 1.0 + 0.5 * (9 + 16))
-        assert_almost_equal(trapezoid(ym, x), r)
+        assert_allclose(trapezoid(ym, x), r)
 
         xm = np.ma.array(x, mask=mask)
-        assert_almost_equal(trapezoid(ym, xm), r)
+        assert_allclose(trapezoid(ym, xm), r)
 
         xm = np.ma.array(x, mask=mask)
-        assert_almost_equal(trapezoid(y, xm), r)
+        assert_allclose(trapezoid(y, xm), r)
 
     def test_trapz_alias(self):
         # Basic coverage test for the alias
