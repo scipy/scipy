@@ -13,7 +13,7 @@ repository.
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
-import optparse
+import argparse
 import re
 import sys
 import os
@@ -26,18 +26,16 @@ MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
 
 
 def main():
-    p = optparse.OptionParser(__doc__.strip())
-    p.add_option("-d", "--debug", action="store_true",
-                 help="print debug output")
-    p.add_option("-n", "--new", action="store_true",
-                 help="print debug output")
-    options, args = p.parse_args()
-
-    if len(args) != 1:
-        p.error("invalid number of arguments")
+    p = argparse.ArgumentParser(__doc__.strip())
+    p.add_argument("range", help=argparse.SUPPRESS)
+    p.add_argument("-d", "--debug", action="store_true",
+                   help="print debug output")
+    p.add_argument("-n", "--new", action="store_true",
+                   help="print debug output")
+    options = p.parse_args()
 
     try:
-        rev1, rev2 = args[0].split('..')
+        rev1, rev2 = options.range.split('..')
     except ValueError:
         p.error("argument is not a revision range")
 

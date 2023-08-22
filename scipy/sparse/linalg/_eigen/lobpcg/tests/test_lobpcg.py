@@ -21,8 +21,8 @@ _IS_32BIT = (sys.maxsize < 2**32)
 
 INT_DTYPES = {np.intc, np.int_, np.longlong, np.uintc, np.uint, np.ulonglong}
 # np.half is unsupported on many test systems so excluded
-REAL_DTYPES = {np.single, np.double, np.longdouble}
-COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+REAL_DTYPES = {np.float32, np.float64, np.longdouble}
+COMPLEX_DTYPES = {np.complex64, np.complex128, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
 VDTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 MDTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
@@ -119,7 +119,7 @@ def test_b_orthonormalize(n, m, Vdtype, Bdtype, BVdtype):
     BX = BX.astype(BVdtype)
     dtype = min(X.dtype, B.dtype, BX.dtype)
     # np.longdouble tol cannot be achieved on most systems
-    atol = m * n * max(np.finfo(dtype).eps, np.finfo(np.double).eps)
+    atol = m * n * max(np.finfo(dtype).eps, np.finfo(np.float64).eps)
 
     Xo, BXo, _ = _b_orthonormalize(lambda v: B @ v, X, BX)
     # Check in-place.

@@ -53,5 +53,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="nonlin",
-                                   private_module="_nonlin", all=__all__,
+                                   private_modules=["_nonlin"], all=__all__,
                                    attribute=name)

@@ -2,6 +2,7 @@
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import VisibleDeprecationWarning
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
@@ -639,8 +640,8 @@ class _spbase:
                 else:
                     return np.divide(other, self.todense())
 
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_)._mul_scalar(1./other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1./other)
             else:
                 r = self._mul_scalar(1./other)
 
@@ -668,8 +669,8 @@ class _spbase:
                 return other._divide(self, true_divide, rdivide=False)
 
             self_csr = self.tocsr()
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self_csr.astype(np.float_)._divide_sparse(other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self_csr.astype(np.float64)._divide_sparse(other)
             else:
                 return self_csr._divide_sparse(other)
         else:
@@ -714,7 +715,7 @@ class _spbase:
     @property
     def A(self) -> np.ndarray:
         if isinstance(self, sparray):
-            warn(np.VisibleDeprecationWarning(
+            warn(VisibleDeprecationWarning(
                 "`.A` is deprecated and will be removed in v1.13.0. "
                 "Use `.toarray()` instead."
             ))
@@ -727,7 +728,7 @@ class _spbase:
     @property
     def H(self):
         if isinstance(self, sparray):
-            warn(np.VisibleDeprecationWarning(
+            warn(VisibleDeprecationWarning(
                 "`.H` is deprecated and will be removed in v1.13.0. "
                 "Please use `.T.conjugate()` instead."
             ))

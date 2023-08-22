@@ -21,6 +21,7 @@ C         - SF_ERROR_NO_RESULT = 6: no result obtained
 C         - SF_ERROR_DOMAIN    = 7: out of domain
 C         - SF_ERROR_ARG       = 8: invalid input parameter
 C         - SF_ERROR_OTHER     = 9: unclassified error
+C       - Improved initial guesses for roots in JYZO.
 C
         FUNCTION DNAN()
         DOUBLE PRECISION DNAN
@@ -10007,112 +10008,120 @@ C
         DIMENSION RJ0(NT),RJ1(NT),RY0(NT),RY1(NT)
         PI=3.141592653589793D0
 C       -- Newton method for j_{N,L}
-C       1) initial guess for j_{N,1}
-        IF (N.LE.20) THEN
-           X=2.82141+1.15859*N
+C       initial guess for j_{N,1}
+        IF (N.EQ.0) THEN
+           X=2.4
         ELSE
-C          Abr & Stg (9.5.14)
+C          https://dlmf.nist.gov/10.21#E40
            X=N+1.85576*N**0.33333+1.03315/N**0.33333
         ENDIF
+C       iterate
         L=0
-C       2) iterate
-        XGUESS=X
 10      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BJN/DJN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
-C       3) initial guess for j_{N,L+1}
-        IF (L.GE.1)THEN
-           IF (X.LE.RJ0(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 10
-           ENDIF
-        END IF
         L=L+1
         RJ0(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.0972d0+0.0679*N-0.000354*N**2)/L, 0d0)
-        IF (L.LT.NT) GO TO 10
-C       -- Newton method for j_{N,L}'
-        IF (N.LE.20) THEN
-           X=0.961587+1.07703*N
+C       initial guess for j_{N,L+1}
+        IF (L.EQ.1) THEN
+           IF (N.EQ.0) THEN
+              X=5.52
+           ELSE
+C             Expansion from https://dlmf.nist.gov/10.21#E32 and
+C             coefficients from Olver 1951
+              X=N+3.24460*N**0.33333+3.15824/N**0.33333
+           ENDIF
         ELSE
+C          growth of roots is approximately linear (https://dlmf.nist.gov/10.21#E19)
+           X=RJ0(L) + (RJ0(L) - RJ0(L-1))
+        ENDIF
+        IF (L.LE.N+10) THEN
+           CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
+           H=DATAN(DABS(DJN)/DSQRT(DABS(FJN * BJN)))
+           B=-DJN / (BJN * DTAN(H))
+           X=X - (H - PI/2) / B
+        ENDIF
+        IF (L.LT.NT) GO TO 10
+
+C       -- Newton method for j_{N,L+1}'
+        IF (N.EQ.0) THEN
+           X=3.8317
+        ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+0.80861*N**0.33333+0.07249/N**0.33333
         ENDIF
-        IF (N.EQ.0) X=3.8317
+C       iterate
         L=0
-        XGUESS=X
 15      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DJN/FJN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
-        IF (L.GE.1)THEN
-           IF (X.LE.RJ1(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 15
-           ENDIF
-        END IF
         L=L+1
         RJ1(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.4955d0+0.0915*N-0.000435*N**2)/L, 0d0)
-        IF (L.LT.NT) GO TO 15
+        IF (L.LT.NT) THEN
+C          https://dlmf.nist.gov/10.21#E20
+           X=RJ1(L) + (RJ0(L+1) - RJ0(L))
+           GO TO 15
+        ENDIF
+
 C       -- Newton method for y_{N,L}
-        IF (N.LE.20) THEN
-           X=1.19477+1.08933*N
+C       initial guess for y_{N,1}
+        IF (N.EQ.0) THEN
+           X=0.89357697
         ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+0.93158*N**0.33333+0.26035/N**0.33333
         ENDIF
+C       iterate
         L=0
-        XGUESS=X
 20      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BYN/DYN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
-        IF (L.GE.1)THEN
-           IF (X.LE.RY0(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 20
-           END IF
-        END IF
         L=L+1
         RY0(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N**2)/L,0d0)
-        IF (L.LT.NT) GO TO 20
-C       -- Newton method for y_{N,L}'
-        IF (N.LE.20) THEN
-           X=2.67257+1.16099*N
+C       initial guess for y_{N,L+1}
+        IF (L.EQ.1) THEN
+           IF (N.EQ.0) THEN
+              X=3.957678419314858
+           ELSE
+C             Expansion from https://dlmf.nist.gov/10.21#E33 and
+C             coefficients from Olver 1951
+              X=N+2.59626*N**0.33333+2.022183/N**0.33333
+           ENDIF
         ELSE
+C          growth of roots is approximately linear (https://dlmf.nist.gov/10.21#E19)
+           X=RY0(L) + (RY0(L) - RY0(L-1))
+        ENDIF
+        IF (L.LE.N+10) THEN
+           CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
+           H=DATAN(DABS(DYN)/DSQRT(DABS(FYN * BYN)))
+           B=-DYN / (BYN * DTAN(H))
+           X=X - (H - PI/2) / B
+        ENDIF
+        IF (L.LT.NT) GO TO 20
+
+C       -- Newton method for y_{N,L+1}'
+        IF (N.EQ.0) THEN
+           X=2.67257
+        ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+1.8211*N**0.33333+0.94001/N**0.33333
         ENDIF
+C       iterate
         L=0
-        XGUESS=X
 25      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1) THEN
-           IF (X.LE.RY1(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 25
-           END IF
-        END IF
         L=L+1
         RY1(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N**2)/L,0d0)
-        IF (L.LT.NT) GO TO 25
+        IF (L.LT.NT) THEN
+C          https://dlmf.nist.gov/10.21#E20
+           X=RY1(L) + (RY0(L+1) - RY0(L))
+           GO TO 25
+        ENDIF
         RETURN
         END
 

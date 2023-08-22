@@ -24,6 +24,12 @@ class LineSearchWarning(RuntimeWarning):
     pass
 
 
+def _check_c1_c2(c1, c2):
+    if not (0 < c1 < c2 < 1):
+        raise ValueError("'c1' and 'c2' do not satisfy"
+                         "'0 < c1 < c2 < 1'.")
+
+
 #------------------------------------------------------------------------------
 # Minpack's Wolfe line and scalar searches
 #------------------------------------------------------------------------------
@@ -45,7 +51,6 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         Current point
     pk : array_like
         Search direction
-
     gfk : array_like, optional
         Gradient of `f` at point `xk`
     old_fval : float, optional
@@ -61,6 +66,10 @@ def line_search_wolfe1(f, fprime, xk, pk, gfk=None,
         As in `line_search_wolfe1`
     gval : array
         Gradient of `f` at the final point
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     """
     if gfk is None:
@@ -129,8 +138,19 @@ def scalar_search_wolfe1(phi, derphi, phi0=None, old_phi0=None, derphi0=None,
     Notes
     -----
     Uses routine DCSRCH from MINPACK.
+    
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1`` as described in [1]_.
+
+    References
+    ----------
+    
+    .. [1] Nocedal, J., & Wright, S. J. (2006). Numerical optimization.
+       In Springer Series in Operations Research and Financial Engineering.
+       (Springer Series in Operations Research and Financial Engineering).
+       Springer Nature.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)
@@ -378,6 +398,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
     1999, pp. 59-61.
 
     """
+    _check_c1_c2(c1, c2)
 
     if phi0 is None:
         phi0 = phi(0.)

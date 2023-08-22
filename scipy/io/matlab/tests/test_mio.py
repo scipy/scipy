@@ -34,6 +34,8 @@ from scipy.io.matlab._mio5 import (
     MatFile5Writer, MatFile5Reader, varmats_from_mat, to_writeable,
     EmptyStructMarker)
 import scipy.io.matlab._mio5_params as mio5p
+from scipy._lib._util import VisibleDeprecationWarning
+
 
 test_data_path = pjoin(dirname(__file__), 'data')
 
@@ -286,7 +288,7 @@ def _check_level(label, expected, actual):
                          expected[fn], actual[fn])
         return
     if ex_dtype.type in (str,  # string or bool
-                         np.unicode_,
+                         np.str_,
                          np.bool_):
         assert_equal(actual, expected, err_msg=label)
         return
@@ -1315,7 +1317,7 @@ def test_gh_17992(tmp_path):
     list_of_arrays = [array_one, array_two]
     # warning suppression only needed for NumPy < 1.24.0
     with np.testing.suppress_warnings() as sup:
-        sup.filter(np.VisibleDeprecationWarning)
+        sup.filter(VisibleDeprecationWarning)
         savemat(outfile,
                 {'data': list_of_arrays},
                 long_field_names=True,
