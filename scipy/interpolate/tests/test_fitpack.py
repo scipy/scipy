@@ -204,7 +204,7 @@ class TestSplev:
         z = splev(t, tck)
         z0 = splev(t[0], tck)
         z1 = splev(t[1], tck)
-        assert_equal(z, np.row_stack((z0, z1)))
+        assert_equal(z, np.vstack((z0, z1)))
 
     def test_extrapolation_modes(self):
         # test extrapolation modes
