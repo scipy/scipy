@@ -621,7 +621,7 @@ def read(filename, mmap=False):
     Load the .wav file contents.
 
     >>> samplerate, data = wavfile.read(wav_fname)
-    >>> print(f"number of channels = {data.shape[1]}")
+    >>> print(f"number of channels = {len(data.shape)}")
     number of channels = 2
     >>> length = data.shape[0] / samplerate
     >>> print(f"length = {length}s")
