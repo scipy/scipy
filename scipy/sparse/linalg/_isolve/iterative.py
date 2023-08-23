@@ -86,7 +86,7 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     >>> from scipy.sparse.linalg import bicg
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = bicg(A, b)
+    >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -219,7 +219,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
     ...               [0, 2, 1, 0]])
     >>> A = csc_matrix(R)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = bicgstab(A, b)
+    >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -362,7 +362,7 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
     ...               [0, 0, 2, 4]])
     >>> A = csc_matrix(P)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = cg(A, b)
+    >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -667,7 +667,7 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import gmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = gmres(A, b)
+    >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -918,7 +918,7 @@ def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
     >>> from scipy.sparse.linalg import qmr
     >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = qmr(A, b)
+    >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
