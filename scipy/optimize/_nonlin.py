@@ -15,7 +15,7 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'diagbroyden', 'excitingmixing', 'newton_krylov', 'exact_newton_krylov',
     'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
@@ -1509,6 +1509,30 @@ class KrylovJacobian(Jacobian):
             if hasattr(self.preconditioner, 'setup'):
                 self.preconditioner.setup(x, f, func)
 
+class ExactKrylovJacobian(KrylovJacobian):
+    '''
+        Fgradp(x,v) => dF / dx . v
+
+    '''
+
+    def __init__(self, Fgradp=None, rdiff=None, method='lgmres',
+                 inner_maxiter=20,inner_M=None, outer_k=10, **kw):
+
+        scipy.optimize.nonlin.KrylovJacobian.__init__(self, rdiff, method, inner_maxiter,inner_M, outer_k, **kw)
+
+        if Fgradp is None:
+            raise ValueError('Fgradp was not provided')
+        else:
+            self.Fgradp = Fgradp
+
+    def matvec(self, v):
+        return self.Fgradp(self.x0,v)
+
+    def update(self, x, f):
+        if self.preconditioner is not None:
+            if hasattr(self.preconditioner, 'update'):
+                self.preconditioner.update(x, f)
+
 
 #------------------------------------------------------------------------------
 # Wrapper functions
@@ -1565,3 +1589,4 @@ linearmixing = _nonlin_wrapper('linearmixing', LinearMixing)
 diagbroyden = _nonlin_wrapper('diagbroyden', DiagBroyden)
 excitingmixing = _nonlin_wrapper('excitingmixing', ExcitingMixing)
 newton_krylov = _nonlin_wrapper('newton_krylov', KrylovJacobian)
+exact_newton_krylov = _nonlin_wrapper('exact_newton_krylov', ExactKrylovJacobian)
