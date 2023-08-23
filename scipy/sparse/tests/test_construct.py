@@ -485,6 +485,9 @@ class TestConstructUtils:
     def test_block_return_type(self):
         block = construct.block
 
+        # csr format ensures we hit _compressed_sparse_stack
+        # shape of F,G ensure we hit _stack_along_minor_axis
+        # list version ensure we hit the path with neither helper function
         Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
         Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
         assert isinstance(block([[None, Fl], [Gl, None]], format="csr"), sparray)
