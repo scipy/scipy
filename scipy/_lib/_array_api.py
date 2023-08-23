@@ -37,15 +37,23 @@ def compliance_scipy(*arrays):
     - `numpy.matrix`
     - Any array-like which is not Array API compatible
     """
+    _arrays = ()
+    converted = False
     for array in arrays:
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("'numpy.ma.MaskedArray' are not supported")
         elif isinstance(array, np.matrix):
             raise TypeError("'numpy.matrix' are not supported")
         elif not array_api_compat.is_array_api_obj(array):
-            raise TypeError("Only support Array API compatible arrays")
+            try:
+                _arrays += (np.asanyarray(array),)
+                converted = True
+            except TypeError:
+                raise TypeError("Array is not Array API compatible or"
+                                " coercible by numpy")
         elif array.dtype is np.dtype('O'):
             raise TypeError('object arrays are not supported')
+    return _arrays if converted else arrays
 
 
 def _check_finite(array, xp):
@@ -90,7 +98,7 @@ def array_namespace(*arrays):
 
     arrays = [array for array in arrays if array is not None]
 
-    compliance_scipy(*arrays)
+    arrays = compliance_scipy(*arrays)
 
     return array_api_compat.array_namespace(*arrays)
 
