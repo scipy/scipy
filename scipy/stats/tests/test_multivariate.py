@@ -803,6 +803,21 @@ class TestMultivariateNormal:
         ref = multivariate_normal.pdf(x, [1, 1, 1], cov_object)
         assert_equal(multivariate_normal.pdf(x, 1, cov=cov_object), ref)
 
+    def test_fit_error(self):
+        data = [1, 3]
+        error_msg = "`x` must be two-dimensional."
+        with pytest.raises(ValueError, match=error_msg):
+            multivariate_normal.fit(data)
+
+    @pytest.mark.parametrize('dim', (3, 5))
+    def test_fit_correctness(self, dim):
+        rng = np.random.default_rng(4385269356937404)
+        x = rng.random((100, dim))
+        mean_est, cov_est = multivariate_normal.fit(x)
+        mean_ref, cov_ref = np.mean(x, axis=0), np.cov(x.T, ddof=0)
+        assert_allclose(mean_est, mean_ref, atol=1e-15)
+        assert_allclose(cov_est, cov_ref, rtol=1e-15)
+
 
 class TestMatrixNormal:
 
@@ -2865,7 +2880,7 @@ class TestMultivariateHypergeom:
         assert_equal(cov3, cov4)
 
         cov5 = multivariate_hypergeom.cov(m=np.array([], np.int_), n=0)
-        cov6 = np.array([], dtype=np.float_).reshape(0, 0)
+        cov6 = np.array([], dtype=np.float64).reshape(0, 0)
         assert_allclose(cov5, cov6, rtol=1e-17)
         assert_(cov5.shape == (0, 0))
 

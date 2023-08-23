@@ -5,6 +5,8 @@ import operator
 import math
 from math import prod as _prod
 import timeit
+import warnings
+
 from scipy.spatial import cKDTree
 from . import _sigtools
 from ._ltisys import dlti
@@ -19,7 +21,6 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-import warnings
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -1568,7 +1569,7 @@ def medfilt(volume, kernel_size=None):
     numels = np.prod(kernel_size, axis=0)
     order = numels // 2
 
-    if volume.dtype in [np.bool_, np.cfloat, np.cdouble, np.clongdouble,
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
                         np.float16]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
@@ -1945,7 +1946,7 @@ def medfilt2d(input, kernel_size=3):
 
     # checking dtype.type, rather than just dtype, is necessary for
     # excluding np.longdouble with MS Visual C.
-    if image.dtype.type not in (np.ubyte, np.single, np.double):
+    if image.dtype.type not in (np.ubyte, np.float32, np.float64):
         return medfilt(image, kernel_size)
 
     if kernel_size is None:
@@ -2469,8 +2470,8 @@ in SciPy 1.14. The exact equivalent for a numpy array argument is
 ...    return np.take(p, idx, 0), idx
 """
 
-@np.deprecate(message=_msg_cplx_sort)
 def cmplx_sort(p):
+    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
     return _cmplx_sort(p)
 
 

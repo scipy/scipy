@@ -256,3 +256,8 @@ Files: scipy/stats/_rcont/[logfactorial.h,logfactorial.c]
 License 3-Clause BSD
   For details, see header inside scipy/stats/_rcont/logfactorial.h
   and scipy/stats/_rcont/logfactorial.c
+
+Name: array-api-compat
+Files: scipy/_lib/array-api-compat/*
+License: MIT
+  For details, see scipy/_lib/array-api-compat/LICENCE

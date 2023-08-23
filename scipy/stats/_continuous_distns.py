@@ -1231,8 +1231,12 @@ class burr12_gen(rv_continuous):
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
 
     def _munp(self, n, c, d):
-        nc = 1. * n / c
-        return d * sc.beta(1.0 + nc, d - nc)
+        def moment_if_exists(n, c, d):
+            nc = 1. * n / c
+            return d * sc.beta(1.0 + nc, d - nc)
+
+        return _lazywhere(c * d > n, (n, c, d), moment_if_exists,
+                          fillvalue=np.nan)
 
 
 burr12 = burr12_gen(a=0.0, name='burr12')
@@ -1271,6 +1275,10 @@ class fisk_gen(burr_gen):
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
 
     `fisk` is a special case of `burr` or `burr12` with ``d=1``.
+
+    Suppose ``X`` is a logistic random variable with location ``l``
+    and scale ``s``. Then ``Y = exp(X)`` is a Fisk (log-logistic)
+    random variable with ``scale = exp(l)`` and shape ``c = 1/s``.
 
     %(after_notes)s
 
@@ -2249,6 +2257,11 @@ class f_gen(rv_continuous):
 
     Notes
     -----
+    The F distribution with :math:`df_1 > 0` and :math:`df_2 > 0` degrees of freedom is the
+    distribution of the ratio of two independent chi-squared distributions with
+    :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
+    :math:`df_2 / df_1`.
+    
     The probability density function for `f` is:
 
     .. math::
@@ -2257,9 +2270,11 @@ class f_gen(rv_continuous):
                                 {(df_2+df_1 x)^{(df_1+df_2)/2}
                                  B(df_1/2, df_2/2)}
 
-    for :math:`x > 0` and parameters :math:`df_1, df_2 > 0` .
+    for :math:`x > 0`.
 
-    `f` takes ``dfn`` and ``dfd`` as shape parameters.
+    `f` accepts shape parameters ``dfn`` and ``dfd`` for :math:`df_1`, the degrees of
+    freedom of the chi-squared distribution in the numerator, and :math:`df_2`, the
+    degrees of freedom of the chi-squared distribution in the denominator, respectively.
 
     %(after_notes)s
 
@@ -4189,6 +4204,47 @@ class halfcauchy_gen(rv_continuous):
     def _entropy(self):
         return np.log(2*np.pi)
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        if kwds.pop('superfit', False):
+            return super().fit(data, *args, **kwds)
+
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+
+        # location is independent from the scale
+        data_min = np.min(data)
+        if floc is not None:
+            if data_min < floc:
+                # There are values that are less than the specified loc.
+                raise FitDataError("halfcauchy", lower=floc, upper=np.inf)
+            loc = floc
+        else:
+            # if not provided, location MLE is the minimal data point
+            loc = data_min
+
+        # find scale
+        def find_scale(loc, data):
+            shifted_data = data - loc
+            n = data.size
+            shifted_data_squared = np.square(shifted_data)
+
+            def fun_to_solve(scale):
+                denominator = scale**2 + shifted_data_squared
+                return 2 * np.sum(shifted_data_squared/denominator) - n
+
+            small = np.finfo(1.0).tiny**0.5  # avoid underflow
+            res = root_scalar(fun_to_solve, bracket=(small, np.max(shifted_data)))
+            return res.root
+
+        if fscale is not None:
+            scale = fscale
+        else:
+            scale = find_scale(loc, data)
+
+        return loc, scale
+
 
 halfcauchy = halfcauchy_gen(a=0.0, name='halfcauchy')
 
@@ -4500,10 +4556,9 @@ class gausshyper_gen(rv_continuous):
         return [ia, ib, ic, iz]
 
     def _pdf(self, x, a, b, c, z):
-        # gausshyper.pdf(x, a, b, c, z) =
-        #   C * x**(a-1) * (1-x)**(b-1) * (1+z*x)**(-c)
-        Cinv = sc.gamma(a)*sc.gamma(b)/sc.gamma(a+b)*sc.hyp2f1(c, a, a+b, -z)
-        return 1.0/Cinv * x**(a-1.0) * (1.0-x)**(b-1.0) / (1.0+z*x)**c
+        normalization_constant = sc.beta(a, b) * sc.hyp2f1(c, a, a + b, -z)
+        return (1./normalization_constant * x**(a - 1.) * (1. - x)**(b - 1.0)
+                / (1.0 + z*x)**c)
 
     def _munp(self, n, a, b, c, z):
         fac = sc.beta(n+a, b) / sc.beta(a, b)
@@ -5049,7 +5104,7 @@ class geninvgauss_gen(rv_continuous):
                    "involving scipy.special.kve. Values replaced by NaN to "
                    "avoid incorrect results.")
             warnings.warn(msg, RuntimeWarning)
-            m = np.full_like(num, np.nan, dtype=np.double)
+            m = np.full_like(num, np.nan, dtype=np.float64)
             m[~inf_vals] = num[~inf_vals] / denom[~inf_vals]
         else:
             m = num / denom
@@ -5277,6 +5332,103 @@ class invweibull_gen(rv_continuous):
 
 
 invweibull = invweibull_gen(a=0, name='invweibull')
+
+
+class jf_skew_t_gen(rv_continuous):
+    r"""Jones and Faddy skew-t distribution.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `jf_skew_t` is:
+
+    .. math::
+
+        f(x; a, b) = C_{a,b}^{-1}
+                    \left(1+\frac{x}{\left(a+b+x^2\right)^{1/2}}\right)^{a+1/2}
+                    \left(1-\frac{x}{\left(a+b+x^2\right)^{1/2}}\right)^{b+1/2}
+
+    for real numbers :math:`a>0` and :math:`b>0`, where
+    :math:`C_{a,b} = 2^{a+b-1}B(a,b)(a+b)^{1/2}`, and :math:`B` denotes the
+    beta function (`scipy.special.beta`).
+
+    When :math:`a<b`, the distribution is negatively skewed, and when
+    :math:`a>b`, the distribution is positively skewed. If :math:`a=b`, then
+    we recover the `t` distribution with :math:`2a` degrees of freedom.
+
+    `jf_skew_t` takes :math:`a` and :math:`b` as shape parameters.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] M.C. Jones and M.J. Faddy. "A skew extension of the t distribution,
+           with applications" *Journal of the Royal Statistical Society*.
+           Series B (Statistical Methodology) 65, no. 1 (2003): 159-174.
+           :doi:`10.1111/1467-9868.00378`
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ia, ib]
+
+    def _pdf(self, x, a, b):
+        c = 2 ** (a + b - 1) * sc.beta(a, b) * np.sqrt(a + b)
+        d1 = (1 + x / np.sqrt(a + b + x ** 2)) ** (a + 0.5)
+        d2 = (1 - x / np.sqrt(a + b + x ** 2)) ** (b + 0.5)
+        return d1 * d2 / c
+
+    def _rvs(self, a, b, size=None, random_state=None):
+        d1 = random_state.beta(a, b, size)
+        d2 = (2 * d1 - 1) * np.sqrt(a + b)
+        d3 = 2 * np.sqrt(d1 * (1 - d1))
+        return d2 / d3
+
+    def _cdf(self, x, a, b):
+        y = (1 + x / np.sqrt(a + b + x ** 2)) * 0.5
+        return sc.betainc(a, b, y)
+
+    def _ppf(self, q, a, b):
+        d1 = beta.ppf(q, a, b)
+        d2 = (2 * d1 - 1) * np.sqrt(a + b)
+        d3 = 2 * np.sqrt(d1 * (1 - d1))
+        return d2 / d3
+
+    def _munp(self, n, a, b):
+        """Returns the n-th moment(s) where all the following hold:
+            - n >= 0
+            - a > n / 2
+            - b > n / 2
+        The result is np.nan in all other cases.
+        """
+        def nth_moment(n_k, a_k, b_k):
+            """Computes E[T^(n_k)] where T is skew-t distributed with
+            parameters a_k and b_k.
+            """
+            num = (a_k + b_k) ** (0.5 * n_k)
+            denom = 2 ** n_k * sc.beta(a_k, b_k)
+
+            indices = np.arange(n_k + 1)
+            sgn = np.where(indices % 2 > 0, -1, 1)
+            d = sc.beta(a_k + 0.5 * n_k - indices, b_k - 0.5 * n_k + indices)
+            sum_terms = sc.comb(n_k, indices) * sgn * d
+
+            return num / denom * sum_terms.sum()
+
+        nth_moment_valid = (a > 0.5 * n) & (b > 0.5 * n) & (n >= 0)
+        return _lazywhere(
+            nth_moment_valid,
+            (n, a, b),
+            np.vectorize(nth_moment, otypes=[np.float64]),
+            np.nan,
+        )
+
+
+jf_skew_t = jf_skew_t_gen(name='jf_skew_t')
 
 
 class johnsonsb_gen(rv_continuous):
@@ -6194,6 +6346,21 @@ class lognorm_gen(rv_continuous):
 
     %(example)s
 
+    The logarithm of a log-normally distributed random variable is
+    normally distributed:
+
+    >>> from scipy import stats
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> mu, sigma = 2, 0.5
+    >>> X = stats.norm(loc=mu, scale=sigma)
+    >>> Y = stats.lognorm(s=sigma, scale=np.exp(mu))
+    >>> x = np.linspace(*X.interval(0.999))
+    >>> y = Y.rvs(size=10000)
+    >>> ax.plot(x, X.pdf(x), label='X (pdf)')
+    >>> ax.hist(np.log(y), density=True, bins=x, label='log(Y) (histogram)')
+    >>> ax.legend()
+    >>> plt.show()
+
     """
     _support_mask = rv_continuous._open_support_mask
 
@@ -6864,8 +7031,29 @@ class kappa3_gen(rv_continuous):
     def _cdf(self, x, a):
         return x*(a + x**a)**(-1.0/a)
 
+    def _sf(self, x, a):
+        x, a = np.broadcast_arrays(x, a)  # some code paths pass scalars
+        sf = super()._sf(x, a)
+
+        # When the SF is small, another formulation is typically more accurate.
+        # However, it blows up for large `a`, so use it only if it also returns
+        # a small value of the SF.
+        cutoff = 0.01
+        i = sf < cutoff
+        sf2 = -sc.expm1(sc.xlog1py(-1.0 / a[i], a[i] * x[i]**-a[i]))
+        i2 = sf2 > cutoff
+        sf2[i2] = sf[i][i2]  # replace bad values with original values
+
+        sf[i] = sf2
+        return sf
+
     def _ppf(self, q, a):
         return (a/(q**-a - 1.0))**(1.0/a)
+
+    def _isf(self, q, a):
+        lg = sc.xlog1py(-a, -q)
+        denom = sc.expm1(lg)
+        return (a / denom)**(1.0 / a)
 
     def _stats(self, a):
         outputs = [None if np.any(i < a) else np.nan for i in range(1, 5)]
@@ -11387,7 +11575,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_moment, 3, 1)
-        return np.float64(ufunc(K, k, df))
+        return np.asarray(ufunc(K, k, df), dtype=np.float64)[()]
 
     def _pdf(self, x, k, df):
 
@@ -11412,7 +11600,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
-        return np.float64(ufunc(x, k, df))
+        return np.asarray(ufunc(x, k, df), dtype=np.float64)[()]
 
     def _cdf(self, x, k, df):
 
@@ -11441,7 +11629,7 @@ class studentized_range_gen(rv_continuous):
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
 
         # clip p-values to ensure they are in [0, 1].
-        return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
+        return np.clip(np.asarray(ufunc(x, k, df), dtype=np.float64)[()], 0, 1)
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,

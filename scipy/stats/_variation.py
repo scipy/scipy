@@ -1,6 +1,5 @@
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
-from scipy._lib._util import _nan_allsame, _contains_nan
+from scipy._lib._util import _nan_allsame, _contains_nan, normalize_axis_index
 from ._stats_py import _chk_asarray
 
 

@@ -615,6 +615,32 @@ class TestTrustRegionConstr(TestCase):
         # compatibility
         assert_(result.get('niter', -1) == 1)
 
+    def test_issue_15093(self):
+        # scipy docs define bounds as inclusive, so it shouldn't be
+        # an issue to set x0 on the bounds even if keep_feasible is
+        # True. Previously, trust-constr would treat bounds as
+        # exclusive.
+
+        x0 = np.array([0., 0.5])
+
+        def obj(x):
+            x1 = x[0]
+            x2 = x[1]
+            return x1 ** 2 + x2 ** 2
+
+        bounds = Bounds(np.array([0., 0.]), np.array([1., 1.]),
+                        keep_feasible=True)
+
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            result = minimize(
+                method='trust-constr',
+                fun=obj,
+                x0=x0,
+                bounds=bounds)
+
+        assert result['success']
+
 class TestEmptyConstraint(TestCase):
     """
     Here we minimize x^2+y^2 subject to x^2-y^2>1.

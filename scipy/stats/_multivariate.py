@@ -787,6 +787,39 @@ class multivariate_normal_gen(multi_rv_generic):
         dim, mean, cov_object = self._process_parameters(mean, cov)
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
 
+    def fit(self, x):
+        """Fit a multivariate normal distribution to data.
+
+        Parameters
+        ----------
+        x : ndarray (m, n)
+            Data the distribution is fitted to. Must have two axes.
+            The first axis of length `m` represents the number of vectors
+            the distribution is fitted to. The second axis of length `n`
+            determines the dimensionality of the fitted distribution.
+
+        Returns
+        -------
+        mean : ndarray (n, )
+            Maximum likelihood estimate of the mean vector
+        cov : ndarray (n, n)
+            Maximum likelihood estimate of the covariance matrix
+
+        """
+        # input validation
+        x = np.asarray(x)
+        if x.ndim != 2:
+            raise ValueError("`x` must be two-dimensional.")
+
+        n_vectors, dim = x.shape
+
+        # parameter estimation
+        # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
+        mean = x.mean(axis=0)
+        centered_data = x - mean
+        cov = centered_data.T @ centered_data / n_vectors
+        return mean, cov
+
 
 multivariate_normal = multivariate_normal_gen()
 
@@ -5058,8 +5091,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
-        num = np.zeros_like(m, dtype=np.float_)
-        den = np.zeros_like(n, dtype=np.float_)
+        num = np.zeros_like(m, dtype=np.float64)
+        den = np.zeros_like(n, dtype=np.float64)
         m, x = m[~mxcond], x[~mxcond]
         M, n = M[~ncond], n[~ncond]
         num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))

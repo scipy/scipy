@@ -11,10 +11,26 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    Type,
     TypeVar,
 )
 
 import numpy as np
+
+
+AxisError: Type[Exception]
+ComplexWarning: Type[Warning]
+VisibleDeprecationWarning: Type[Warning]
+
+if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
+    from numpy.exceptions import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+else:
+    from numpy import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
@@ -243,7 +259,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float_)
+            a = toarray(a, dtype=np.float64)
     return a
 
 
@@ -729,3 +745,14 @@ def _get_nan(*data):
     data = [np.asarray(item) for item in data]
     dtype = np.result_type(*data, np.half)  # must be a float16 at least
     return np.array(np.nan, dtype=dtype)[()]
+
+
+def normalize_axis_index(axis, ndim):
+    # Check if `axis` is in the correct range and normalize it
+    if axis < -ndim or axis >= ndim:
+        msg = f"axis {axis} is out of bounds for array of dimension {ndim}"
+        raise AxisError(msg)
+
+    if axis < 0:
+        axis = axis + ndim
+    return axis

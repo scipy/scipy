@@ -1496,18 +1496,20 @@ def _yeojohnson_transform(x, lmbda):
     """Returns `x` transformed by the Yeo-Johnson power transform with given
     parameter `lmbda`.
     """
-    out = np.zeros_like(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+    out = np.zeros_like(x, dtype=dtype)
     pos = x >= 0  # binary mask
 
     # when x >= 0
     if abs(lmbda) < np.spacing(1.):
         out[pos] = np.log1p(x[pos])
     else:  # lmbda != 0
-        out[pos] = (np.power(x[pos] + 1, lmbda) - 1) / lmbda
+        # more stable version of: ((x + 1) ** lmbda - 1) / lmbda
+        out[pos] = np.expm1(lmbda * np.log1p(x[pos])) / lmbda
 
     # when x < 0
     if abs(lmbda - 2) > np.spacing(1.):
-        out[~pos] = -(np.power(-x[~pos] + 1, 2 - lmbda) - 1) / (2 - lmbda)
+        out[~pos] = -np.expm1((2 - lmbda) * np.log1p(-x[~pos])) / (2 - lmbda)
     else:  # lmbda == 2
         out[~pos] = -np.log1p(-x[~pos])
 
@@ -1613,11 +1615,11 @@ def yeojohnson_llf(lmb, data):
     loglike[~tiny_variance] = (
         -n_samples / 2 * np.log(trans_var[~tiny_variance]))
     loglike[~tiny_variance] += (
-        (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0))
+        (lmb - 1) * (np.sign(data) * np.log1p(np.abs(data))).sum(axis=0))
     return loglike
 
 
-def yeojohnson_normmax(x, brack=(-2, 2)):
+def yeojohnson_normmax(x, brack=None):
     """Compute optimal Yeo-Johnson transform parameter.
 
     Compute optimal Yeo-Johnson transform parameter for input data, using
@@ -1630,7 +1632,8 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     brack : 2-tuple, optional
         The starting interval for a downhill bracket search with
         `optimize.brent`. Note that this is in most cases not critical; the
-        final result is allowed to be outside this bracket.
+        final result is allowed to be outside this bracket. If None,
+        `optimize.fminbound` is used with bounds that avoid overflow.
 
     Returns
     -------
@@ -1673,7 +1676,36 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
         return -llf
 
     with np.errstate(invalid='ignore'):
-        return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        if not np.all(np.isfinite(x)):
+            raise ValueError('Yeo-Johnson input must be finite.')
+        if np.all(x == 0):
+            return 1.0
+        if brack is not None:
+            return optimize.brent(_neg_llf, brack=brack, args=(x,))
+        x = np.asarray(x)
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        # Allow values up to 20 times the maximum observed value to be safely
+        # transformed without over- or underflow.
+        log1p_max_x = np.log1p(20 * np.max(np.abs(x)))
+        # Use half of floating point's exponent range to allow safe computation
+        # of the variance of the transformed data.
+        log_eps = np.log(np.finfo(dtype).eps)
+        log_tiny_float = (np.log(np.finfo(dtype).tiny) - log_eps) / 2
+        log_max_float = (np.log(np.finfo(dtype).max) + log_eps) / 2
+        # Compute the bounds by approximating the inverse of the Yeo-Johnson
+        # transform on the smallest and largest floating point exponents, given
+        # the largest data we expect to observe. See [1] for further details.
+        # [1] https://github.com/scipy/scipy/pull/18852#issuecomment-1630286174
+        lb = log_tiny_float / log1p_max_x
+        ub = log_max_float / log1p_max_x
+        # Convert the bounds if all or some of the data is negative.
+        if np.all(x < 0):
+            lb, ub = 2 - ub, 2 - lb
+        elif np.any(x < 0):
+            lb, ub = max(2 - ub, lb), min(2 - lb, ub)
+        # Match `optimize.brent`'s tolerance.
+        tol_brent = 1.48e-08
+        return optimize.fminbound(_neg_llf, lb, ub, args=(x,), xtol=tol_brent)
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
@@ -2295,7 +2327,7 @@ Anderson_ksampResult = _make_tuple_bunch(
 )
 
 
-def anderson_ksamp(samples, midrank=True):
+def anderson_ksamp(samples, midrank=True, *, method=None):
     """The Anderson-Darling test for k-samples.
 
     The k-sample Anderson-Darling test is a modification of the
@@ -2313,6 +2345,12 @@ def anderson_ksamp(samples, midrank=True):
         (True) is the midrank test applicable to continuous and
         discrete populations. If False, the right side empirical
         distribution is used.
+    method : PermutationMethod, optional
+        Defines the method used to compute the p-value. If `method` is an
+        instance of `PermutationMethod`, the p-value is computed using
+        `scipy.stats.permutation_test` with the provided configuration options
+        and other appropriate settings. Otherwise, the p-value is interpolated
+        from tabulated values.
 
     Returns
     -------
@@ -2325,13 +2363,13 @@ def anderson_ksamp(samples, midrank=True):
             The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
             0.5%, 0.1%.
         pvalue : float
-            The approximate p-value of the test. The value is floored / capped
-            at 0.1% / 25%.
+            The approximate p-value of the test. If `method` is not
+            provided, the value is floored / capped at 0.1% / 25%.
 
     Raises
     ------
     ValueError
-        If less than 2 samples are provided, a sample is empty, or no
+        If fewer than 2 samples are provided, a sample is empty, or no
         distinct observations are in the samples.
 
     See Also
@@ -2384,8 +2422,9 @@ def anderson_ksamp(samples, midrank=True):
     not at the 2.5% level. The interpolation gives an approximate
     p-value of 4.99%.
 
-    >>> res = stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> samples = [rng.normal(size=50), rng.normal(size=30),
+    ...            rng.normal(size=20)]
+    >>> res = stats.anderson_ksamp(samples)
     >>> res.statistic, res.pvalue
     (-0.29103725200789504, 0.25)
     >>> res.critical_values
@@ -2397,7 +2436,15 @@ def anderson_ksamp(samples, midrank=True):
     may not be very accurate (since it corresponds to the value 0.449
     whereas the statistic is -0.291).
 
-    """
+    In such cases where the p-value is capped or when sample sizes are
+    small, a permutation test may be more accurate.
+
+    >>> method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+    >>> res = stats.anderson_ksamp(samples, method=method)
+    >>> res.pvalue
+    0.5254
+
+    """  # noqa
     k = len(samples)
     if (k < 2):
         raise ValueError("anderson_ksamp needs at least two samples")
@@ -2416,9 +2463,17 @@ def anderson_ksamp(samples, midrank=True):
                          "observations")
 
     if midrank:
-        A2kN = _anderson_ksamp_midrank(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_midrank
     else:
-        A2kN = _anderson_ksamp_right(samples, Z, Zstar, k, n, N)
+        A2kN_fun = _anderson_ksamp_right
+    A2kN = A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    def statistic(*samples):
+        return A2kN_fun(samples, Z, Zstar, k, n, N)
+
+    if method is not None:
+        res = stats.permutation_test(samples, statistic, **method._asdict(),
+                                     alternative='greater')
 
     H = (1. / n).sum()
     hs_cs = (1. / arange(N - 1, 1, -1)).cumsum()
@@ -2441,18 +2496,25 @@ def anderson_ksamp(samples, midrank=True):
     critical = b0 + b1 / math.sqrt(m) + b2 / m
 
     sig = np.array([0.25, 0.1, 0.05, 0.025, 0.01, 0.005, 0.001])
-    if A2 < critical.min():
+
+    if A2 < critical.min() and method is None:
         p = sig.max()
-        warnings.warn("p-value capped: true value larger than {}".format(p),
-                      stacklevel=2)
-    elif A2 > critical.max():
+        msg = (f"p-value capped: true value larger than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif A2 > critical.max() and method is None:
         p = sig.min()
-        warnings.warn("p-value floored: true value smaller than {}".format(p),
-                      stacklevel=2)
-    else:
+        msg = (f"p-value floored: true value smaller than {p}. Consider "
+               "specifying `method` "
+               "(e.g. `method=stats.PermutationMethod()`.)")
+        warnings.warn(msg, stacklevel=2)
+    elif method is None:
         # interpolation of probit of significance level
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
+    else:
+        p = res.pvalue if method is not None else p
 
     # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)

@@ -28,6 +28,7 @@ dependencies:
   - pytest-xdist
   - pytest-timeout
   - asv<0.5
+  - hypothesis
   # For type annotations
   - mypy
   - typing_extensions
