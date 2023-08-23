@@ -557,7 +557,7 @@ def _krandinit(data, k, rng, xp):
         x = rng.standard_normal(size=(k, size(s)))
         x = xp.asarray(x)
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
-        x = xp.matmul(x, sVh)
+        x = x @ sVh
     else:
         _cov = atleast_nd(cov(data.T, xp=xp), ndim=2, xp=xp)
 
@@ -565,7 +565,7 @@ def _krandinit(data, k, rng, xp):
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = rng.standard_normal(size=(k, size(mu)))
         x = xp.asarray(x)
-        x = xp.matmul(x, xp.linalg.cholesky(_cov).T)
+        x = x @ xp.linalg.cholesky(_cov).T
 
     x += mu
     return x
