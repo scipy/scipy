@@ -230,7 +230,7 @@ class TestKMean:
         x = 10000 * np.random.randn(n, d) - 20000 * m1
         y = 10000 * np.random.randn(n, d) + 20000 * m2
 
-        data = np.empty((x.shape[0] + y.shape[0], d), np.double)
+        data = np.empty((x.shape[0] + y.shape[0], d), np.float64)
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
@@ -327,12 +327,7 @@ class TestKMean:
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
-            # check that np.random.Generator can be used (numpy >= 1.17)
-            if hasattr(np.random, 'default_rng'):
-                rng = np.random.default_rng(1234)
-            else:
-                rng = np.random.RandomState(1234)
-
+            rng = np.random.default_rng(1234)
             init = _krandinit(data, k, rng, xp_test)
             orig_cov = cov(data.T, xp=xp_test)
             init_cov = cov(init.T, xp=xp_test)

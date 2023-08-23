@@ -135,10 +135,10 @@ class _Interpolator1D:
     def _set_dtype(self, dtype, union=False):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.dtype, np.complexfloating):
-            self.dtype = np.complex_
+            self.dtype = np.complex128
         else:
-            if not union or self.dtype != np.complex_:
-                self.dtype = np.float_
+            if not union or self.dtype != np.complex128:
+                self.dtype = np.float64
 
 
 class _Interpolator1DWithDerivatives(_Interpolator1D):
@@ -624,7 +624,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
         
         random_state = check_random_state(random_state)
 
-        self.xi = np.asfarray(xi)
+        self.xi = np.asarray(xi, dtype=np.float64)
         self.set_yi(yi)
         self.n = len(self.xi)
 

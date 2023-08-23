@@ -972,7 +972,7 @@ class DifferentialEvolutionSolver:
             The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
-        popn = np.asfarray(init)
+        popn = np.asarray(init, dtype=np.float64)
 
         if (np.size(popn, 0) < 5 or
                 popn.shape[1] != self.parameter_count or

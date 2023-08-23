@@ -256,6 +256,15 @@ class CheckOptimizeParameterized(CheckOptimize):
         res_mod = optimize.minimize(optimize.rosen,
                                     x0, method='bfgs', options={'c2': 1e-2})
         assert res_default.nit > res_mod.nit
+    
+    @pytest.mark.parametrize(["c1", "c2"], [[0.5, 2],
+                                            [-0.1, 0.1],
+                                            [0.2, 0.1]])
+    def test_invalid_c1_c2(self, c1, c2):
+        with pytest.raises(ValueError, match="'c1' and 'c2'"):
+            x0 = [10.3, 20.7, 10.8, 1.9, -1.2]
+            optimize.minimize(optimize.rosen, x0, method='cg',
+                              options={'c1': c1, 'c2': c2})
 
     def test_powell(self):
         # Powell (direction set) optimization routine
