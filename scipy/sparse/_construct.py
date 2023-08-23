@@ -893,7 +893,8 @@ def block_diag(mats, format=None, dtype=None):
     Returns
     -------
     res : sparse matrix or array
-        If any inputs are arrays, the output is an array
+        If at least one input is a sparse array, the output is a sparse array.
+        Otherwise the output is a sparse matrix.
 
     Notes
     -----
