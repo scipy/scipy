@@ -632,6 +632,7 @@ class AttrDict(dict):
     A case-insensitive dictionary with access via item, attribute, and call
     notations:
 
+        >>> from scipy.io._idl import AttrDict
         >>> d = AttrDict()
         >>> d['Variable'] = 123
         >>> d['Variable']

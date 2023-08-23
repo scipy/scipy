@@ -166,8 +166,9 @@ def bspline(x, n):
 
         The exact equivalent (for a float array `x`) is::
 
+            >>> import numpy as np
             >>> from scipy.interpolate import BSpline
-            >>> knots = np.arange(-(n+1)/2, (n+3)/2))
+            >>> knots = np.arange(-(n+1)/2, (n+3)/2)
             >>> out = BSpline.basis_element(knots)(x)
             >>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
 
