@@ -154,6 +154,6 @@ class TestLaplacianNd:
             assert x.shape == y.shape
             assert y.dtype == dtype
 
-def test_boundary_conditions_value_error():
-    with pytest.raises(ValueError, match="Unknown value 'robin'"):
-        LaplacianNd(grid_shape=(6, ), boundary_conditions='robin')
+    def test_boundary_conditions_value_error(self):
+        with pytest.raises(ValueError, match="Unknown value 'robin'"):
+            LaplacianNd(grid_shape=(6, ), boundary_conditions='robin')
