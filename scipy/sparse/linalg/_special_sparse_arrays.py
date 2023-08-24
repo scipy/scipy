@@ -379,3 +379,354 @@ of_the_second_derivative
 
     def _transpose(self):
         return self
+
+class Sakurai(LinearOperator):
+    """
+    Construct a Sakurai matrix in various formats and its eigenvalues.
+
+    Constructs the "Sakurai" matrix motivated by reference [1]_.
+    The matrix is square real symmetric positive definite and banded
+    with analytically known eigenvalues.
+    The matrix gets ill-conditioned with its size growing.
+    See the notes below for details.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix.
+    dtype: numerial numpy type
+        The `dtype` of the array, matrix, or banded output.
+        The default ``dtype="float"``
+
+    Returns
+    -------
+    sakurai_lo: `LinearOperator` custom object
+        The object containing the output standard for `LinearOperator`:
+        sakurai_lo.toarray() : (n, n) ndarray
+        sakurai_lo.tosparse() : (n, n) DIAgonal sparse format
+        sakurai_lo._matvec and sakurai_lo._matmat: callable objects
+            The handle to a function that multiplies the Sakurai matrix
+            `s` of the shape `n`-by-`n` on the right by an input matrix `x`
+            of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
+    sakurai_lo.tobanded() : (3, n) ndarray
+        The Sakurai matrix in the format for banded symmetric matrices,
+        i.e., 3 upper diagonals with the main diagonal at the bottom
+    sakurai_lo.eigenvalues : (n, ) ndarray, float
+        Eigenvalues of the Sakurai matrix ordered ascending
+
+    Notes
+    -----
+    Reference [1]_ introduces a generalized eigenproblem for the matrix pair
+    `A` and `B` where `A` is the identity so we turn it into an eigenproblem
+    just for the matrix `B` that this function outputs in various formats
+    together with its eigenvalues.
+    
+    .. versionadded:: 1.12.0
+
+    References
+    ----------
+    .. [1] T. Sakurai, H. Tadano, Y. Inadomi, and U. Nagashima,
+       "A moment-based method for large-scale generalized
+       eigenvalue problems",
+       Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.linalg._special_sparse_arrays import Sakurai
+    >>> from scipy.linalg import eig_banded
+    >>> n = 6
+    >>> sak = Sakurai(n)
+    >>> sak.toarray()
+    array([[ 5., -4.,  1.,  0.,  0.,  0.],
+           [-4.,  6., -4.,  1.,  0.,  0.],
+           [ 1., -4.,  6., -4.,  1.,  0.],
+           [ 0.,  1., -4.,  6., -4.,  1.],
+           [ 0.,  0.,  1., -4.,  6., -4.],
+           [ 0.,  0.,  0.,  1., -4.,  5.]])
+    >>> sak.tobanded()
+    array([[ 1.,  1.,  1.,  1.,  1.,  1.],
+           [-4., -4., -4., -4., -4., -4.],
+           [ 5.,  6.,  6.,  6.,  6.,  5.]])
+    >>> sak.tosparse()
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 24 stored elements (5 diagonals) in DIAgonal format>
+    >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
+    True
+    >>> np.array_equal(sak(np.eye(n)), sak.tosparse().toarray())
+    True
+    >>> sak.eigenvalues
+    array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
+           10.54287655, 14.45473055])
+
+    The entries of the matrix are all integers so can use ``dtype='int'``.
+
+    >>> sak = Sakurai(n, dtype='int')
+    >>> sak.tobanded()
+    array([[ 1,  1,  1,  1,  1,  1],
+           [-4, -4, -4, -4, -4, -4],
+           [ 5,  6,  6,  6,  6,  5]])
+    >>> sak.tosparse()
+    <6x6 sparse matrix of type '<class 'numpy.int32'>'
+        with 24 stored elements (5 diagonals) in DIAgonal format>
+
+    The banded form can be used in scipy functions for banded matrices, e.g.,
+
+    >>> e = eig_banded(sak.tobanded(), eigvals_only=True)
+    >>> np.allclose(sak.eigenvalues, e, atol= n * n * n * np.finfo(float).eps)
+    True
+
+    """
+    def __init__(self, n, dtype=np.float64) -> None:
+        self.n = n
+        self.dtype = dtype
+        shape = (n, n)
+        super().__init__(dtype, shape)
+
+        k = np.arange(1, n + 1)
+        e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
+        self.eigenvalues = e
+
+
+    def tosparse(self):
+        from scipy.sparse import spdiags
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        d2 = np.ones(self.n, dtype=self.dtype)
+        return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
+
+
+    def tobanded(self):
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n, dtype=self.dtype)
+        d2 = np.ones(self.n, dtype=self.dtype)
+        return np.array([d2, d1, d0])
+
+
+    def toarray(self):
+        d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
+        d1 = -4 * np.ones(self.n - 1, dtype=self.dtype)
+        d2 = np.ones(self.n - 2, dtype=self.dtype)
+        a = np.diag(d0)
+        a += np.diag(d1, 1) + np.diag(d1, -1)
+        a += np.diag(d2, 2) + np.diag(d2, -2)
+        return a
+
+    
+    def _matvec(self, x):
+        n = self.n
+        assert n == x.shape[0]
+        x = x.reshape(n, -1)
+        sx = np.zeros_like(x)
+        sx[0,:] = 5*x[0,:] - 4*x[1,:] + x[2,:]
+        sx[-1,:] = 5*x[-1,:] - 4*x[-2,:] + x[-3,:]
+        sx[1:-1,:] = (6*x[1:-1,:] - 4*(x[:-2,:] + x[2:,:])
+                      + np.pad(x[:-3,:], ((1,0),(0,0)))
+                      + np.pad(x[3:,:], ((0,1),(0,0))))
+        return sx
+
+
+    def _matmat(self, x):
+        return self._matvec(x)
+
+
+    def _adjoint(self):
+        return self
+
+
+    def _transpose(self):
+        return self
+
+
+class Mikota_pair:
+    """
+    Construct the Mikota pair of matrices in various formats and
+    eigenvalues of the generalized eigenproblem with them.
+
+    The Mikota pair of matrices [1, 2]_ models a vibration problem
+    of a linear mass-spring system with the ends attached where
+    the stiffness of the springs and the masses increase along
+    the system length such that vibration frequencies are subsequent
+    integers 1, 2, ..., `n` where `n` is the number of the masses. Thus,
+    eigenvalues of the generalized eigenvalue problem for
+    the matrix pair `K` and `M` where `K` is he system stiffness matrix
+    and `M` is the system mass matrix are the squares of the integers,
+    i.e., 1, 4, 9, ..., ``n * n``.
+
+    The stiffness matrix `K` is square real tri-diagonal symmetric
+    positive definite. The mass matrix `M` is diagonal with diagonal
+    entries 1, 1/2, 1/3, ...., ``1/n``. Both matrices get
+    ill-conditioned with `n` growing.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrices of the Mikota pair.
+
+    Returns
+    -------
+    mikota_obj: custom object
+        The object containing the `LinearOperator` custom objects
+        mikota_obj.k and mikota_obj.m for the stiffness and the mass
+        matrices as well as
+    mikota_obj.eigenvalues : (n, ) ndarray, float
+        Eigenvalues of the Mikota matrix pair: 1, 4, 9, ..., ``n * n``
+    mikota_obj.k and mikota_obj.m: `LinearOperator` custom objects
+        An instance `inst` of each of these two classes includes methods standard
+        for `LinearOperator` instances:
+            inst.toarray() : (n, n) ndarray
+            inst.tosparse() : (n, n) DIAgonal sparse format
+            inst._matvec and inst._matmat: callable objects
+                The handle to a function that multiplies the Sakurai matrix
+                `s` of the shape `n`-by-`n` on the right by an input matrix `x`
+                of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
+        inst.tobanded() : (3, n) ndarray
+            The custom method creating the format for banded symmetric matrices,
+            i.e., 3 upper diagonals with the main diagonal at the bottom
+
+    
+    .. versionadded:: 1.12.0
+
+    References
+    ----------
+    .. [1] J. Mikota, "Frequency tuning of chain structure multibody oscillators
+       to place the natural frequencies at omega1 and N-1 integer multiples
+       omega2,..., omegaN", Z. Angew. Math. Mech. 81 (2001), S2, S201-S202.
+       Appl. Num. Anal. Comp. Math. Vol. 1 No. 2 (2004).
+    .. [2] Peter C. Muller and Metin Gurgoze,
+       "Natural frequencies of a multi-degree-of-freedom vibration system",
+       Proc. Appl. Math. Mech. 6, 319-320 (2006).
+       http://dx.doi.org/10.1002/pamm.200610141.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse.linalg._special_sparse_arrays import Mikota_pair
+    >>> n = 6
+    >>> mik = Mikota_pair(n)
+    >>> mik_k = mik.k
+    >>> mik_m = mik.m
+    >>> mik_k.toarray()
+    array([[11., -5.,  0.,  0.,  0.,  0.],
+           [-5.,  9., -4.,  0.,  0.,  0.],
+           [ 0., -4.,  7., -3.,  0.,  0.],
+           [ 0.,  0., -3.,  5., -2.,  0.],
+           [ 0.,  0.,  0., -2.,  3., -1.],
+           [ 0.,  0.,  0.,  0., -1.,  1.]])
+    >>> mik_k.tobanded()
+    array([[ 0, -5, -4, -3, -2, -1],
+           [11,  9,  7,  5,  3,  1]])
+    >>> mik_m.tobanded()
+    array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
+        0.16666667])
+    >>> mik_k.tosparse()
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 16 stored elements (3 diagonals) in DIAgonal format>
+    >>> mik_m.tosparse()
+    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+        with 6 stored elements (1 diagonals) in DIAgonal format>
+    >>> np.array_equal(mik_k.tosparse().toarray(), mik_k.toarray())
+    True
+    >>> np.array_equal(mik_m.tosparse().toarray(), mik_m.toarray())
+    True
+    >>> np.array_equal(mik_k(np.eye(n)), mik_k.toarray())
+    True
+    >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())
+    True
+    >>> mik.eigenvalues
+    array([ 1.,  4.,  9., 16., 25., 36.])  
+
+    """
+    def __init__(self, n, dtype=np.float64) -> None:
+        self.n = n
+        self.dtype = dtype
+
+        aranp1 = np.arange(1, n + 1)
+        self.eigenvalues = aranp1 * aranp1.astype(float)
+        self.m = self.M(n, dtype)
+        self.k = self.K(n, dtype)
+
+    class M(LinearOperator):
+        def __init__(self, n, dtype) -> None:
+            self.n = n
+            self.dtype = dtype
+            shape = (n, n)
+            super().__init__(dtype, shape)
+
+        def tosparse(self):
+            from scipy.sparse import diags
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            aranp1_inv = 1. / aranp1
+            return diags([aranp1_inv], [0], shape=(self.n, self.n))
+
+        def tobanded(self):
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            return 1. / aranp1
+
+        def toarray(self):
+            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
+            aranp1_inv = 1. / aranp1
+            return np.diag(aranp1_inv)
+
+        def _matvec(self, x):
+            n = self.n
+            assert n == x.shape[0]
+            aranp1_inv = 1. / np.arange(1, n + 1)
+            # linearoperator requires 2D array
+            if len(x.shape) == 1:
+                x = x.reshape(-1, 1)
+            return aranp1_inv[:, np.newaxis] * x
+
+        def _matmat(self, x):
+            return self._matvec(x)
+
+        def _adjoint(self):
+            return self
+
+        def _transpose(self):
+            return self
+
+
+    class K(LinearOperator):
+        def __init__(self, n, dtype):
+            self.n = n
+            self.dtype = dtype
+            shape = (n, n)
+            super().__init__(dtype, shape)
+
+        def tosparse(self):
+            from scipy.sparse import diags
+            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
+            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
+            return diags([y, z, y], [-1, 0, 1], shape=(self.n, self.n))
+
+        def tobanded(self):
+            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
+            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
+            return np.array([np.pad(y, (1, 0), 'constant'), z])
+
+        def toarray(self):
+            return self.tosparse().toarray()
+
+        def _matvec(self, x):
+            n = self.n
+            assert n == x.shape[0]
+            x = x.reshape(n, -1)
+            kx = np.zeros_like(x)
+            y = - np.arange(n - 1, 0, -1)
+            z = np.arange(2 * n - 1, 0, -2)
+            kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
+            kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
+            kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
+                            + z[1: -1, None] * x[1: -1, :]
+                            + y[1:, None] * x[2:, :])
+            return kx
+
+        def _matmat(self, x):
+            return self._matvec(x)
+
+        def _adjoint(self):
+            return self
+
+        def _transpose(self):
+            return self
