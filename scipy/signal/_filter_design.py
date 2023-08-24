@@ -891,6 +891,7 @@ def _cplxreal(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxreal
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
     >>> print(zc)
@@ -998,6 +999,7 @@ def _cplxpair(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxpair
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> z = _cplxpair(a)
     >>> print(z)
@@ -4537,6 +4539,7 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
+    >>> from scipy.signal._filter_design import _bessel_poly
     >>> i = 0
     >>> for n in range(51):
     ...     for x in _bessel_poly(n, reverse=True):

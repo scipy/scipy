@@ -119,7 +119,7 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     >>> from scipy.sparse.linalg import lgmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = lgmres(A, b)
+    >>> x, exitCode = lgmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)

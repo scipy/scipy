@@ -808,6 +808,17 @@ class TestNewton(TestScalarRootFinders):
                 != res_newton_default.iterations
                 == res_newton_default.function_calls/2)  # newton 2-point diff
 
+    @pytest.mark.parametrize('kwargs', [dict(), {'method': 'newton'}])
+    def test_args_gh19090(self, kwargs):
+        def f(x, a, b):
+            assert a == 3
+            assert b == 1
+            return (x ** a - b)
+
+        res = optimize.root_scalar(f, x0=3, args=(3, 1), **kwargs)
+        assert res.converged
+        assert_allclose(res.root, 1)
+
 
 def test_gh_5555():
     root = 0.1

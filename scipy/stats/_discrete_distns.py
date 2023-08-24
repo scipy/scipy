@@ -1192,7 +1192,7 @@ class zipf_gen(rv_discrete):
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
     >>> import numpy as np
-    >>> from scipy.stats import zipfian
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
     True
@@ -1289,7 +1289,7 @@ class zipfian_gen(rv_discrete):
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
     >>> import numpy as np
-    >>> from scipy.stats import zipf
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
     True

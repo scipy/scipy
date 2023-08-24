@@ -42,6 +42,9 @@ class _dok_base(_spbase, IndexMixin):
         Number of dimensions (this is always 2)
     nnz
         Number of nonzero elements
+    size
+    T
+
 
     Notes
     -----
