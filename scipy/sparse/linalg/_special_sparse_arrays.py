@@ -394,25 +394,26 @@ class Sakurai(LinearOperator):
     ----------
     n : int
         The size of the matrix.
-    dtype: numerial numpy type
-        The `dtype` of the array, matrix, or banded output.
-        The default ``dtype="float"``
+    dtype : dtype
+        Numerical type of the array. Default is ``np.int64``.
 
-    Returns
+    Attributes
+    ----------
+    eigenvalues : ndarray, float
+        Eigenvalues of the Sakurai matrix  ordered ascending.
+
+    Methods
     -------
-    sakurai_lo: `LinearOperator` custom object
-        The object containing the output standard for `LinearOperator`:
-        sakurai_lo.toarray() : (n, n) ndarray
-        sakurai_lo.tosparse() : (n, n) DIAgonal sparse format
-        sakurai_lo._matvec and sakurai_lo._matmat: callable objects
-            The handle to a function that multiplies the Sakurai matrix
-            `s` of the shape `n`-by-`n` on the right by an input matrix `x`
-            of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
-    sakurai_lo.tobanded() : (3, n) ndarray
+    toarray()
+        Construct a dense array from Laplacian data
+    tosparse()
+        Construct a sparse array from Laplacian data
+    tobanded()
         The Sakurai matrix in the format for banded symmetric matrices,
-        i.e., 3 upper diagonals with the main diagonal at the bottom
-    sakurai_lo.eigenvalues : (n, ) ndarray, float
-        Eigenvalues of the Sakurai matrix ordered ascending
+        i.e., (3, n) ndarray with 3 upper diagonals
+        with the main diagonal at the bottom.
+
+    .. versionadded:: 1.12.0
 
     Notes
     -----
@@ -438,18 +439,18 @@ class Sakurai(LinearOperator):
     >>> n = 6
     >>> sak = Sakurai(n)
     >>> sak.toarray()
-    array([[ 5., -4.,  1.,  0.,  0.,  0.],
-           [-4.,  6., -4.,  1.,  0.,  0.],
-           [ 1., -4.,  6., -4.,  1.,  0.],
-           [ 0.,  1., -4.,  6., -4.,  1.],
-           [ 0.,  0.,  1., -4.,  6., -4.],
-           [ 0.,  0.,  0.,  1., -4.,  5.]])
+    array([[ 5, -4,  1,  0,  0,  0],
+           [-4,  6, -4,  1,  0,  0],
+           [ 1, -4,  6, -4,  1,  0],
+           [ 0,  1, -4,  6, -4,  1],
+           [ 0,  0,  1, -4,  6, -4],
+           [ 0,  0,  0,  1, -4,  5]])
     >>> sak.tobanded()
-    array([[ 1.,  1.,  1.,  1.,  1.,  1.],
-           [-4., -4., -4., -4., -4., -4.],
-           [ 5.,  6.,  6.,  6.,  6.,  5.]])
+    array([[ 1,  1,  1,  1,  1,  1],
+           [-4, -4, -4, -4, -4, -4],
+           [ 5,  6,  6,  6,  6,  5]])
     >>> sak.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.float64'>'
+    <6x6 sparse matrix of type '<class 'numpy.int64'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
     >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
     True
@@ -459,17 +460,6 @@ class Sakurai(LinearOperator):
     array([0.03922866, 0.56703972, 2.41789479, 5.97822974,
            10.54287655, 14.45473055])
 
-    The entries of the matrix are all integers so can use ``dtype='int'``.
-
-    >>> sak = Sakurai(n, dtype='int')
-    >>> sak.tobanded()
-    array([[ 1,  1,  1,  1,  1,  1],
-           [-4, -4, -4, -4, -4, -4],
-           [ 5,  6,  6,  6,  6,  5]])
-    >>> sak.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.int32'>'
-        with 24 stored elements (5 diagonals) in DIAgonal format>
-
     The banded form can be used in scipy functions for banded matrices, e.g.,
 
     >>> e = eig_banded(sak.tobanded(), eigvals_only=True)
@@ -477,7 +467,7 @@ class Sakurai(LinearOperator):
     True
 
     """
-    def __init__(self, n, dtype=np.float64) -> None:
+    def __init__(self, n, dtype=np.int64):
         self.n = n
         self.dtype = dtype
         shape = (n, n)
@@ -485,7 +475,16 @@ class Sakurai(LinearOperator):
 
         k = np.arange(1, n + 1)
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
-        self.eigenvalues = e
+        self._eigenvalues = e
+
+    @property
+    def eigenvalues(self):
+        return self._eigenvalues
+
+    @eigenvalues.setter
+    def eigenvalues(self, value):
+        raise AttributeError('"eigenvalues" attribute is read-only and cannot '
+                             'be set.')
 
     def tosparse(self):
         from scipy.sparse import spdiags
@@ -514,9 +513,9 @@ class Sakurai(LinearOperator):
         assert n == x.shape[0]
         x = x.reshape(n, -1)
         sx = np.zeros_like(x)
-        sx[0,:] = 5*x[0,:] - 4*x[1,:] + x[2,:]
-        sx[-1,:] = 5*x[-1,:] - 4*x[-2,:] + x[-3,:]
-        sx[1:-1,:] = (6*x[1:-1,:] - 4*(x[:-2,:] + x[2:,:])
+        sx[0,:] = 5 * x[0,:] - 4 * x[1,:] + x[2,:]
+        sx[-1,:] = 5 * x[-1,:] - 4 * x[-2,:] + x[-3,:]
+        sx[1:-1,:] = (6 * x[1:-1,:] - 4 * (x[:-2,:] + x[2:,:])
                       + np.pad(x[:-3,:], ((1,0),(0,0)))
                       + np.pad(x[3:,:], ((0,1),(0,0))))
         return sx
