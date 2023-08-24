@@ -280,33 +280,20 @@ class Mikota_pair:
             shape = (n, n)
             super().__init__(dtype, shape)
 
-def _mikota_pair(n):
-    # Mikota pair acts as a nice test since the eigenvalues
-    # are the squares of the integers n, n=1,2,...
-    x = np.arange(1, n + 1)
-    B = np.diag(1. / x)
-    y = np.arange(n - 1, 0, -1)
-    z = np.arange(2 * n - 1, 0, -2)
-    A = np.diag(z) - np.diag(y, -1) - np.diag(y, 1)
-    return A.astype(float), B.astype(float)
-
         def tosparse(self):
             from scipy.sparse import diags
             aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
             aranp1_inv = 1. / aranp1
             return diags([aranp1_inv], [0], shape=(self.n, self.n))
 
-
         def tobanded(self):
             aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
             return 1. / aranp1
-
 
         def toarray(self):
             aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
             aranp1_inv = 1. / aranp1
             return np.diag(aranp1_inv)
-
 
         def _matvec(self, x):
             n = self.n
@@ -317,14 +304,11 @@ def _mikota_pair(n):
                 x = x.reshape(-1, 1)
             return aranp1_inv[:, np.newaxis] * x
 
-
         def _matmat(self, x):
             return self._matvec(x)
 
-
         def _adjoint(self):
             return self
-
 
         def _transpose(self):
             return self
@@ -343,7 +327,6 @@ def _mikota_pair(n):
             z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
             return diags([y, z, y], [-1, 0, 1], shape=(self.n, self.n))
 
-
         def tobanded(self):
             y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
             z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
@@ -351,7 +334,6 @@ def _mikota_pair(n):
 
         def toarray(self):
             return self.tosparse().toarray()
-
 
         def _matvec(self, x):
             n = self.n
@@ -367,14 +349,11 @@ def _mikota_pair(n):
                             + y[1:, None] * x[2:, :])
             return kx
 
-
         def _matmat(self, x):
             return self._matvec(x)
 
-
         def _adjoint(self):
             return self
-
 
         def _transpose(self):
             return self
@@ -417,7 +396,6 @@ class Bench(Benchmark):
         #     # skip: slow, and not useful to benchmark
         #     raise NotImplementedError()
 
-
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n, dtype='int')
@@ -425,13 +403,11 @@ class Bench(Benchmark):
         self.Aa = sakurai_obj.toarray()
         self.eigenvalues = sakurai_obj.eigenvalues
 
-
     def setup_sakuraii(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n)
         self.A = sakurai_obj.tobanded()
         self.eigenvalues = sakurai_obj.eigenvalues
-
     
     def time_mikota(self, n, solver):
         def a(x):
@@ -461,7 +437,6 @@ class Bench(Benchmark):
             # accuracy = max(abs(ee - ed) / ee)
             # assert accuracy < tol
 
-
     def time_sakurai(self, n, solver):
         m = 3
         ee = self.eigenvalues[:m]
@@ -482,7 +457,6 @@ class Bench(Benchmark):
             ed, _ = eigh(self.Aa, subset_by_index=(0, m - 1))
             # accuracy = max(abs(ee - ed) / ee)
             # assert accuracy < tol
-
 
     def time_sakuraii(self, n, solver):
         def a(x):
