@@ -270,7 +270,6 @@ class Mikota_pair:
 
         aranp1 = np.arange(1, n + 1)
         self.eigenvalues = aranp1 * aranp1.astype(float)
-
         self.m = self.M(n, dtype)
         self.k = self.K(n, dtype)
 
@@ -281,6 +280,15 @@ class Mikota_pair:
             shape = (n, n)
             super().__init__(dtype, shape)
 
+def _mikota_pair(n):
+    # Mikota pair acts as a nice test since the eigenvalues
+    # are the squares of the integers n, n=1,2,...
+    x = np.arange(1, n + 1)
+    B = np.diag(1. / x)
+    y = np.arange(n - 1, 0, -1)
+    z = np.arange(2 * n - 1, 0, -2)
+    A = np.diag(z) - np.diag(y, -1) - np.diag(y, 1)
+    return A.astype(float), B.astype(float)
 
         def tosparse(self):
             from scipy.sparse import diags

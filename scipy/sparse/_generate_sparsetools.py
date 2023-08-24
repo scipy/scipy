@@ -18,7 +18,7 @@ Type codes used:
 See sparsetools.cxx for more details.
 
 """
-import optparse
+import argparse
 import os
 from stat import ST_MTIME
 
@@ -352,12 +352,13 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
-    p.add_option("--no-force", action="store_false",
-                 dest="force", default=True)
-    p.add_option("-o", "--outdir", type=str,
-                 help="Relative path to the output directory")
-    options, args = p.parse_args()
+    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
+
+    p.add_argument("--no-force", action="store_false",
+                   dest="force", default=True)
+    p.add_argument("-o", "--outdir", type=str,
+                   help="Relative path to the output directory")
+    options = p.parse_args()
 
     names = []
 

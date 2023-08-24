@@ -21,7 +21,7 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, ravel, diff, array, ones
+from numpy import zeros, concatenate, ravel, diff, array, ones  # noqa:F401
 import numpy as np
 
 from . import _fitpack_impl
@@ -122,7 +122,7 @@ class UnivariateSpline:
         * if ext=0 or 'extrapolate', return the extrapolated value.
         * if ext=1 or 'zeros', return 0
         * if ext=2 or 'raise', raise a ValueError
-        * if ext=3 of 'const', return the boundary value.
+        * if ext=3 or 'const', return the boundary value.
 
         Default is 0.
 
@@ -1917,8 +1917,6 @@ class SmoothSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
-            w = ones(len(theta)) * w
         nt_, tt_, np_, tp_, c, fp, ier = dfitpack.spherfit_smth(theta, phi,
                                                                 r, w=w, s=s,
                                                                 eps=eps)
@@ -2070,8 +2068,6 @@ class LSQSphereBivariateSpline(SphereBivariateSpline):
         if not 0.0 < eps < 1.0:
             raise ValueError('eps should be between (0, 1)')
 
-        if np.issubclass_(w, float):
-            w = ones(len(theta)) * w
         nt_, np_ = 8 + len(tt), 8 + len(tp)
         tt_, tp_ = zeros((nt_,), float), zeros((np_,), float)
         tt_[4:-4], tp_[4:-4] = tt, tp

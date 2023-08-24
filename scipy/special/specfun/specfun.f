@@ -21,6 +21,7 @@ C         - SF_ERROR_NO_RESULT = 6: no result obtained
 C         - SF_ERROR_DOMAIN    = 7: out of domain
 C         - SF_ERROR_ARG       = 8: invalid input parameter
 C         - SF_ERROR_OTHER     = 9: unclassified error
+C       - Improved initial guesses for roots in JYZO.
 C
         FUNCTION DNAN()
         DOUBLE PRECISION DNAN
@@ -800,93 +801,93 @@ C
         Q2=Q*Q
         IF (M.EQ.0) THEN
            IF (Q.LE.1.0) THEN
-              A0=(((.0036392*Q2-.0125868)*Q2+.0546875)*Q2-.5)*Q2
+              A0=(((.0036392D0*Q2-.0125868D0)*Q2+.0546875D0)*Q2-.5D0)*Q2
            ELSE IF (Q.LE.10.0) THEN
-              A0=((3.999267D-3*Q-9.638957D-2)*Q-.88297)*Q
-     &           +.5542818
+              A0=((3.999267D-3*Q-9.638957D-2)*Q-.88297D0)*Q
+     &           +.5542818D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.1) THEN
            IF (Q.LE.1.0.AND.KD.EQ.2) THEN
-              A0=(((-6.51E-4*Q-.015625)*Q-.125)*Q+1.0)*Q+1.0
+              A0=(((-6.51E-4*Q-.015625D0)*Q-.125D0)*Q+1.0)*Q+1.0
            ELSE IF (Q.LE.1.0.AND.KD.EQ.3) THEN
-              A0=(((-6.51E-4*Q+.015625)*Q-.125)*Q-1.0)*Q+1.0
+              A0=(((-6.51E-4*Q+.015625D0)*Q-.125D0)*Q-1.0)*Q+1.0
            ELSE IF (Q.LE.10.0.AND. KD.EQ.2) THEN
-              A0=(((-4.94603D-4*Q+1.92917D-2)*Q-.3089229)
-     &           *Q+1.33372)*Q+.811752
+              A0=(((-4.94603D-4*Q+1.92917D-2)*Q-.3089229D0)
+     &           *Q+1.33372D0)*Q+.811752D0
            ELSE IF (Q.LE.10.0.AND.KD.EQ.3) THEN
               A0=((1.971096D-3*Q-5.482465D-2)*Q-1.152218)
-     &           *Q+1.10427
+     &           *Q+1.10427D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.2) THEN
            IF (Q.LE.1.0.AND.KD.EQ.1) THEN
-              A0=(((-.0036391*Q2+.0125888)*Q2-.0551939)*Q2
-     &           +.416667)*Q2+4.0
+              A0=(((-.0036391D0*Q2+.0125888D0)*Q2-.0551939D0)*Q2
+     &           +.416667D0)*Q2+4.0D0
            ELSE IF (Q.LE.1.0.AND.KD.EQ.4) THEN
-              A0=(.0003617*Q2-.0833333)*Q2+4.0
+              A0=(.0003617D0*Q2-.0833333D0)*Q2+4.0
            ELSE IF (Q.LE.15.AND.KD.EQ.1) THEN
               A0=(((3.200972D-4*Q-8.667445D-3)*Q
-     &           -1.829032D-4)*Q+.9919999)*Q+3.3290504
+     &           -1.829032D-4)*Q+.9919999D0)*Q+3.3290504D0
            ELSE IF (Q.LE.10.0.AND.KD.EQ.4) THEN
-              A0=((2.38446D-3*Q-.08725329)*Q-4.732542D-3)
-     &           *Q+4.00909
+              A0=((2.38446D-3*Q-.08725329D0)*Q-4.732542D-3)
+     &           *Q+4.00909D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.3) THEN
            IF (Q.LE.1.0.AND.KD.EQ.2) THEN
-              A0=((6.348E-4*Q+.015625)*Q+.0625)*Q2+9.0
+              A0=((6.348E-4*Q+.015625D0)*Q+.0625D0)*Q2+9.0
            ELSE IF (Q.LE.1.0.AND.KD.EQ.3) THEN
-              A0=((6.348E-4*Q-.015625)*Q+.0625)*Q2+9.0
+              A0=((6.348E-4*Q-.015625D0)*Q+.0625D0)*Q2+9.0
            ELSE IF (Q.LE.20.0.AND.KD.EQ.2) THEN
               A0=(((3.035731D-4*Q-1.453021D-2)*Q
-     &           +.19069602)*Q-.1039356)*Q+8.9449274
+     &           +.19069602D0)*Q-.1039356D0)*Q+8.9449274D0
            ELSE IF (Q.LE.15.0.AND.KD.EQ.3) THEN
-              A0=((9.369364D-5*Q-.03569325)*Q+.2689874)*Q
-     &           +8.771735
+              A0=((9.369364D-5*Q-.03569325D0)*Q+.2689874D0)*Q
+     &           +8.771735D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.4) THEN
            IF (Q.LE.1.0.AND.KD.EQ.1) THEN
-              A0=((-2.1E-6*Q2+5.012E-4)*Q2+.0333333)*Q2+16.0
+              A0=((-2.1E-6*Q2+5.012E-4)*Q2+.0333333D0)*Q2+16.0
            ELSE IF (Q.LE.1.0.AND.KD.EQ.4) THEN
-              A0=((3.7E-6*Q2-3.669E-4)*Q2+.0333333)*Q2+16.0
+              A0=((3.7E-6*Q2-3.669E-4)*Q2+.0333333D0)*Q2+16.0
            ELSE IF (Q.LE.25.0.AND.KD.EQ.1) THEN
               A0=(((1.076676D-4*Q-7.9684875D-3)*Q
-     &           +.17344854)*Q-.5924058)*Q+16.620847
+     &           +.17344854D0)*Q-.5924058D0)*Q+16.620847D0
            ELSE IF (Q.LE.20.0.AND.KD.EQ.4) THEN
               A0=((-7.08719D-4*Q+3.8216144D-3)*Q
-     &           +.1907493)*Q+15.744
+     &           +.1907493D0)*Q+15.744D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.5) THEN
            IF (Q.LE.1.0.AND.KD.EQ.2) THEN
-              A0=((6.8E-6*Q+1.42E-5)*Q2+.0208333)*Q2+25.0
+              A0=((6.8E-6*Q+1.42E-5)*Q2+.0208333D0)*Q2+25.0
            ELSE IF (Q.LE.1.0.AND.KD.EQ.3) THEN
-              A0=((-6.8E-6*Q+1.42E-5)*Q2+.0208333)*Q2+25.0
+              A0=((-6.8E-6*Q+1.42E-5)*Q2+.0208333D0)*Q2+25.0
            ELSE IF (Q.LE.35.0.AND.KD.EQ.2) THEN
               A0=(((2.238231D-5*Q-2.983416D-3)*Q
-     &           +.10706975)*Q-.600205)*Q+25.93515
+     &           +.10706975D0)*Q-.600205D0)*Q+25.93515D0
            ELSE IF (Q.LE.25.0.AND.KD.EQ.3) THEN
               A0=((-7.425364D-4*Q+2.18225D-2)*Q
-     &           +4.16399D-2)*Q+24.897
+     &           +4.16399D-2)*Q+24.897D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
         ELSE IF (M.EQ.6) THEN
            IF (Q.LE.1.0) THEN
-              A0=(.4D-6*Q2+.0142857)*Q2+36.0
+              A0=(.4D-6*Q2+.0142857D0)*Q2+36.0
            ELSE IF (Q.LE.40.0.AND.KD.EQ.1) THEN
               A0=(((-1.66846D-5*Q+4.80263D-4)*Q
-     &           +2.53998D-2)*Q-.181233)*Q+36.423
+     &           +2.53998D-2)*Q-.181233D0)*Q+36.423D0
            ELSE IF (Q.LE.35.0.AND.KD.EQ.4) THEN
               A0=((-4.57146D-4*Q+2.16609D-2)*Q-2.349616D-2)*Q
-     &           +35.99251
+     &           +35.99251D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
@@ -895,10 +896,10 @@ C
               CALL CVQM(M,Q,A0)
            ELSE IF (Q.LE.50.0.AND.KD.EQ.2) THEN
               A0=(((-1.411114D-5*Q+9.730514D-4)*Q
-     &           -3.097887D-3)*Q+3.533597D-2)*Q+49.0547
+     &           -3.097887D-3)*Q+3.533597D-2)*Q+49.0547D0
            ELSE IF (Q.LE.40.0.AND.KD.EQ.3) THEN
               A0=((-3.043872D-4*Q+2.05511D-2)*Q
-     &           -9.16292D-2)*Q+49.19035
+     &           -9.16292D-2)*Q+49.19035D0
            ELSE
               CALL CVQL(KD,M,Q,A0)
            ENDIF
@@ -909,34 +910,34 @@ C
               CALL CVQL(KD,M,Q,A0)
            ELSE
               IF (M.EQ.8.AND.KD.EQ.1) THEN
-                 A0=(((8.634308D-6*Q-2.100289D-3)*Q+.169072)*Q
-     &              -4.64336)*Q+109.4211
+                 A0=(((8.634308D-6*Q-2.100289D-3)*Q+.169072D0)*Q
+     &              -4.64336D0)*Q+109.4211D0
               ELSE IF (M.EQ.8.AND.KD.EQ.4) THEN
-                 A0=((-6.7842D-5*Q+2.2057D-3)*Q+.48296)*Q+56.59
+                 A0=((-6.7842D-5*Q+2.2057D-3)*Q+.48296D0)*Q+56.59D0
               ELSE IF (M.EQ.9.AND.KD.EQ.2) THEN
-                 A0=(((2.906435D-6*Q-1.019893D-3)*Q+.1101965)*Q
-     &              -3.821851)*Q+127.6098
+                 A0=(((2.906435D-6*Q-1.019893D-3)*Q+.1101965D0)*Q
+     &              -3.821851D0)*Q+127.6098D0
               ELSE IF (M.EQ.9.AND.KD.EQ.3) THEN
-                 A0=((-9.577289D-5*Q+.01043839)*Q+.06588934)*Q
-     &              +78.0198
+                 A0=((-9.577289D-5*Q+.01043839D0)*Q+.06588934D0)*Q
+     &              +78.0198D0
               ELSE IF (M.EQ.10.AND.KD.EQ.1) THEN
-                 A0=(((5.44927D-7*Q-3.926119D-4)*Q+.0612099)*Q
-     &              -2.600805)*Q+138.1923
+                 A0=(((5.44927D-7*Q-3.926119D-4)*Q+.0612099D0)*Q
+     &              -2.600805D0)*Q+138.1923D0
               ELSE IF (M.EQ.10.AND.KD.EQ.4) THEN
-                 A0=((-7.660143D-5*Q+.01132506)*Q-.09746023)*Q
-     &              +99.29494
+                 A0=((-7.660143D-5*Q+.01132506D0)*Q-.09746023D0)*Q
+     &              +99.29494D0
               ELSE IF (M.EQ.11.AND.KD.EQ.2) THEN
-                 A0=(((-5.67615D-7*Q+7.152722D-6)*Q+.01920291)*Q
-     &              -1.081583)*Q+140.88
+                 A0=(((-5.67615D-7*Q+7.152722D-6)*Q+.01920291D0)*Q
+     &              -1.081583D0)*Q+140.88D0
               ELSE IF (M.EQ.11.AND.KD.EQ.3) THEN
-                 A0=((-6.310551D-5*Q+.0119247)*Q-.2681195)*Q
-     &              +123.667
+                 A0=((-6.310551D-5*Q+.0119247D0)*Q-.2681195D0)*Q
+     &              +123.667D0
               ELSE IF (M.EQ.12.AND.KD.EQ.1) THEN
-                 A0=(((-2.38351D-7*Q-2.90139D-5)*Q+.02023088)*Q
-     &              -1.289)*Q+171.2723
+                 A0=(((-2.38351D-7*Q-2.90139D-5)*Q+.02023088D0)*Q
+     &              -1.289D0)*Q+171.2723D0
               ELSE IF (M.EQ.12.AND.KD.EQ.4) THEN
-                 A0=(((3.08902D-7*Q-1.577869D-4)*Q+.0247911)*Q
-     &              -1.05454)*Q+161.471
+                 A0=(((3.08902D-7*Q-1.577869D-4)*Q+.0247911D0)*Q
+     &              -1.05454D0)*Q+161.471D0
               ENDIF
            ENDIF
         ENDIF
@@ -1839,7 +1840,7 @@ C
            MJ=MJ+1
            X=X1-(X1-X0)/(1.0D0-F0/F1)
            CALL CVF(KD,M,Q,X,MJ,F)
-           IF (ABS(1.0-X1/X).LT.EPS.OR.F.EQ.0.0) GO TO 15
+           IF (ABS(1.0D0-X1/X).LT.EPS.OR.F.EQ.0.0) GO TO 15
            X0=X1
            F0=F1
            X1=X
@@ -9185,7 +9186,7 @@ C
 60            CONTINUE
 65         R=-0.25D0*X*X2
            GS=1.5D0
-           HER=1.5D0*R-BER/X-(DLOG(X/2.D0)+EL)*DER+0.25*PI*DEI
+           HER=1.5D0*R-BER/X-(DLOG(X/2.D0)+EL)*DER+0.25D0*PI*DEI
            DO 70 M=1,60
               R=-0.25D0*R/M/(M+1.0D0)/(2.0D0*M+1.0D0)**2*X4
               GS=GS+1.0D0/(2*M+1.0D0)+1.0D0/(2*M+2.0D0)
@@ -9194,7 +9195,7 @@ C
 70         CONTINUE
 75         R=0.5D0*X
            GS=1.0D0
-           HEI=0.5D0*X-BEI/X-(DLOG(X/2.D0)+EL)*DEI-0.25*PI*DER
+           HEI=0.5D0*X-BEI/X-(DLOG(X/2.D0)+EL)*DEI-0.25D0*PI*DER
            DO 80 M=1,60
               R=-0.25D0*R/(M*M)/(2*M-1.0D0)/(2*M+1.0D0)*X4
               GS=GS+1.0D0/(2.0D0*M)+1.0D0/(2*M+1.0D0)
@@ -9825,14 +9826,14 @@ C       ====================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION ZO(NT),RT0(8)
-        RT0(1)=2.84891
-        RT0(2)=5.02622
-        RT0(3)=1.71854
-        RT0(4)=3.91467
-        RT0(5)=6.03871
-        RT0(6)=3.77268
-        RT0(7)=2.66584
-        RT0(8)=4.93181
+        RT0(1)=2.84891D0
+        RT0(2)=5.02622D0
+        RT0(3)=1.71854D0
+        RT0(4)=3.91467D0
+        RT0(5)=6.03871D0
+        RT0(6)=3.77268D0
+        RT0(7)=2.66584D0
+        RT0(8)=4.93181D0
         RT=RT0(KD)
         DO 15 M=1,NT
 10         CALL KLVNA(RT,BER,BEI,GER,GEI,DER,DEI,HER,HEI)
@@ -10007,112 +10008,120 @@ C
         DIMENSION RJ0(NT),RJ1(NT),RY0(NT),RY1(NT)
         PI=3.141592653589793D0
 C       -- Newton method for j_{N,L}
-C       1) initial guess for j_{N,1}
-        IF (N.LE.20) THEN
-           X=2.82141+1.15859*N
+C       initial guess for j_{N,1}
+        IF (N.EQ.0) THEN
+           X=2.4
         ELSE
-C          Abr & Stg (9.5.14)
+C          https://dlmf.nist.gov/10.21#E40
            X=N+1.85576*N**0.33333+1.03315/N**0.33333
         ENDIF
+C       iterate
         L=0
-C       2) iterate
-        XGUESS=X
 10      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BJN/DJN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 10
-C       3) initial guess for j_{N,L+1}
-        IF (L.GE.1)THEN
-           IF (X.LE.RJ0(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 10
-           ENDIF
-        END IF
         L=L+1
         RJ0(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.0972d0+0.0679*N-0.000354*N**2)/L, 0d0)
-        IF (L.LT.NT) GO TO 10
-C       -- Newton method for j_{N,L}'
-        IF (N.LE.20) THEN
-           X=0.961587+1.07703*N
+C       initial guess for j_{N,L+1}
+        IF (L.EQ.1) THEN
+           IF (N.EQ.0) THEN
+              X=5.52
+           ELSE
+C             Expansion from https://dlmf.nist.gov/10.21#E32 and
+C             coefficients from Olver 1951
+              X=N+3.24460*N**0.33333+3.15824/N**0.33333
+           ENDIF
         ELSE
+C          growth of roots is approximately linear (https://dlmf.nist.gov/10.21#E19)
+           X=RJ0(L) + (RJ0(L) - RJ0(L-1))
+        ENDIF
+        IF (L.LE.N+10) THEN
+           CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
+           H=DATAN(DABS(DJN)/DSQRT(DABS(FJN * BJN)))
+           B=-DJN / (BJN * DTAN(H))
+           X=X - (H - PI/2) / B
+        ENDIF
+        IF (L.LT.NT) GO TO 10
+
+C       -- Newton method for j_{N,L+1}'
+        IF (N.EQ.0) THEN
+           X=3.8317
+        ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+0.80861*N**0.33333+0.07249/N**0.33333
         ENDIF
-        IF (N.EQ.0) X=3.8317
+C       iterate
         L=0
-        XGUESS=X
 15      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DJN/FJN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 15
-        IF (L.GE.1)THEN
-           IF (X.LE.RJ1(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 15
-           ENDIF
-        END IF
         L=L+1
         RJ1(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.4955d0+0.0915*N-0.000435*N**2)/L, 0d0)
-        IF (L.LT.NT) GO TO 15
+        IF (L.LT.NT) THEN
+C          https://dlmf.nist.gov/10.21#E20
+           X=RJ1(L) + (RJ0(L+1) - RJ0(L))
+           GO TO 15
+        ENDIF
+
 C       -- Newton method for y_{N,L}
-        IF (N.LE.20) THEN
-           X=1.19477+1.08933*N
+C       initial guess for y_{N,1}
+        IF (N.EQ.0) THEN
+           X=0.89357697
         ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+0.93158*N**0.33333+0.26035/N**0.33333
         ENDIF
+C       iterate
         L=0
-        XGUESS=X
 20      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-BYN/DYN
-        IF (X-X0.LT.-1) X=X0-1
-        IF (X-X0.GT.1) X=X0+1
         IF (DABS(X-X0).GT.1.0D-11) GO TO 20
-        IF (L.GE.1)THEN
-           IF (X.LE.RY0(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 20
-           END IF
-        END IF
         L=L+1
         RY0(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.312d0+0.0852*N-0.000403*N**2)/L,0d0)
-        IF (L.LT.NT) GO TO 20
-C       -- Newton method for y_{N,L}'
-        IF (N.LE.20) THEN
-           X=2.67257+1.16099*N
+C       initial guess for y_{N,L+1}
+        IF (L.EQ.1) THEN
+           IF (N.EQ.0) THEN
+              X=3.957678419314858
+           ELSE
+C             Expansion from https://dlmf.nist.gov/10.21#E33 and
+C             coefficients from Olver 1951
+              X=N+2.59626*N**0.33333+2.022183/N**0.33333
+           ENDIF
         ELSE
+C          growth of roots is approximately linear (https://dlmf.nist.gov/10.21#E19)
+           X=RY0(L) + (RY0(L) - RY0(L-1))
+        ENDIF
+        IF (L.LE.N+10) THEN
+           CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
+           H=DATAN(DABS(DYN)/DSQRT(DABS(FYN * BYN)))
+           B=-DYN / (BYN * DTAN(H))
+           X=X - (H - PI/2) / B
+        ENDIF
+        IF (L.LT.NT) GO TO 20
+
+C       -- Newton method for y_{N,L+1}'
+        IF (N.EQ.0) THEN
+           X=2.67257
+        ELSE
+C          https://dlmf.nist.gov/10.21#E40
            X=N+1.8211*N**0.33333+0.94001/N**0.33333
         ENDIF
+C       iterate
         L=0
-        XGUESS=X
 25      X0=X
         CALL JYNDD(N,X,BJN,DJN,FJN,BYN,DYN,FYN)
         X=X-DYN/FYN
         IF (DABS(X-X0).GT.1.0D-11) GO TO 25
-        IF (L.GE.1) THEN
-           IF (X.LE.RY1(L)+0.5) THEN
-              X=XGUESS+PI
-              XGUESS=X
-              GO TO 25
-           END IF
-        END IF
         L=L+1
         RY1(L)=X
-C       XXX: should have a better initial guess for large N ~> 100 here
-        X=X+PI+MAX((0.197d0+0.0643*N-0.000286*N**2)/L,0d0)
-        IF (L.LT.NT) GO TO 25
+        IF (L.LT.NT) THEN
+C          https://dlmf.nist.gov/10.21#E20
+           X=RY1(L) + (RY0(L+1) - RY0(L))
+           GO TO 25
+        ENDIF
         RETURN
         END
 

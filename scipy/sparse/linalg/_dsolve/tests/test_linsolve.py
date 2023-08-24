@@ -21,6 +21,7 @@ from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import ComplexWarning
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -154,7 +155,7 @@ class TestFactorized:
         solve = factorized(self.A)
         b = random.rand(4)
         for t in [np.complex64, np.complex128]:
-            assert_warns(np.ComplexWarning, solve, b.astype(t))
+            assert_warns(ComplexWarning, solve, b.astype(t))
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_assume_sorted_indices_flag(self):

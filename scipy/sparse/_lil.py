@@ -45,11 +45,13 @@ class _lil_base(_spbase, IndexMixin):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of stored values, including explicit zeros
+    size
     data
         LIL format data array of the matrix
     rows
         LIL format row index array of the matrix
+    T
+
 
     Notes
     -----

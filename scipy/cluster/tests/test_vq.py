@@ -18,7 +18,7 @@ from scipy.conftest import (
     skip_if_array_api_backend,
 )
 from scipy.sparse._sputils import matrix
-from scipy._lib._array_api import SCIPY_ARRAY_API, as_xparray
+from scipy._lib._array_api import SCIPY_ARRAY_API, copy
 
 
 TESTDATA_2D = np.array([
@@ -226,7 +226,7 @@ class TestKMean:
         x = 10000 * np.random.randn(n, d) - 20000 * m1
         y = 10000 * np.random.randn(n, d) + 20000 * m2
 
-        data = np.empty((x.shape[0] + y.shape[0], d), np.double)
+        data = np.empty((x.shape[0] + y.shape[0], d), np.float64)
         data[:x.shape[0]] = x
         data[x.shape[0]:] = y
 
@@ -276,7 +276,7 @@ class TestKMean:
         data1 = data[:, 0]
 
         initc = data1[:3]
-        code = as_xparray(initc, copy=True, xp=xp)
+        code = copy(initc, xp=xp)
         kmeans2(data1, code, iter=1)[0]
         kmeans2(data1, code, iter=2)[0]
 
@@ -324,12 +324,7 @@ class TestKMean:
         datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
-            # check that np.random.Generator can be used (numpy >= 1.17)
-            if hasattr(np.random, 'default_rng'):
-                rng = np.random.default_rng(1234)
-            else:
-                rng = np.random.RandomState(1234)
-
+            rng = np.random.default_rng(1234)
             init = _krandinit(data, k, rng, xp)
             orig_cov = xp.cov(data.T)
             init_cov = xp.cov(init.T)

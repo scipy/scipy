@@ -13,6 +13,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
+from scipy._lib._util import AxisError
 
 
 def unpack_ttest_result(res):
@@ -971,13 +972,13 @@ def test_other_axis_tuples(axis):
 
     if len(set(axis)) != len(axis):
         message = "`axis` must contain only distinct elements"
-        with pytest.raises(np.AxisError, match=re.escape(message)):
+        with pytest.raises(AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 
     if axis[0] < 0 or axis[-1] > 2:
         message = "`axis` is out of bounds for array of dimension 3"
-        with pytest.raises(np.AxisError, match=re.escape(message)):
+        with pytest.raises(AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 

@@ -33,7 +33,7 @@ def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
 
 
 @_deprecate_positional_args(version="1.14")
-def bicg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
          atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
@@ -86,7 +86,7 @@ def bicg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     >>> from scipy.sparse.linalg import bicg
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = bicg(A, b)
+    >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -219,7 +219,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
     ...               [0, 2, 1, 0]])
     >>> A = csc_matrix(R)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = bicgstab(A, b)
+    >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -305,7 +305,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def cg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
        atol=0., rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
@@ -362,7 +362,7 @@ def cg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     ...               [0, 0, 2, 4]])
     >>> A = csc_matrix(P)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = cg(A, b)
+    >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -420,7 +420,7 @@ def cg(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def cgs(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
@@ -573,7 +573,7 @@ def cgs(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
+def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
           callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
@@ -667,7 +667,7 @@ def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import gmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = gmres(A, b)
+    >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -860,7 +860,7 @@ def gmres(A, b, *, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
 
 
 @_deprecate_positional_args(version="1.14")
-def qmr(A, b, *, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
+def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
         callback=None, atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -918,7 +918,7 @@ def qmr(A, b, *, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
     >>> from scipy.sparse.linalg import qmr
     >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = qmr(A, b)
+    >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)

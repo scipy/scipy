@@ -6,7 +6,7 @@ import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, OptimizeResult
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen, minimize
@@ -259,16 +259,97 @@ class TestDifferentialEvolutionSolver:
         result = solver.solve()
         assert_equal(result.x, solver.x)
 
+    def test_intermediate_result(self):
+        # Check that intermediate result object passed into the callback
+        # function contains the expected information and that raising
+        # `StopIteration` causes the expected behavior.
+        maxiter = 10
+
+        def func(x):
+            val = rosen(x)
+            if val < func.val:
+                func.x = x
+                func.val = val
+            return val
+        func.x = None
+        func.val = np.inf
+
+        def callback(intermediate_result):
+            callback.nit += 1
+            callback.intermediate_result = intermediate_result
+            assert intermediate_result.population.ndim == 2
+            assert intermediate_result.population.shape[1] == 2
+            assert intermediate_result.nit == callback.nit
+
+            # Check that `x` and `fun` attributes are the best found so far
+            assert_equal(intermediate_result.x, callback.func.x)
+            assert_equal(intermediate_result.fun, callback.func.val)
+
+            # Check for consistency between `fun`, `population_energies`,
+            # `x`, and `population`
+            assert_equal(intermediate_result.fun, rosen(intermediate_result.x))
+            for i in range(len(intermediate_result.population_energies)):
+                res = intermediate_result.population_energies[i]
+                ref = rosen(intermediate_result.population[i])
+                assert_equal(res, ref)
+            assert_equal(intermediate_result.x,
+                         intermediate_result.population[0])
+            assert_equal(intermediate_result.fun,
+                         intermediate_result.population_energies[0])
+
+            assert intermediate_result.message == 'in progress'
+            assert intermediate_result.success is True
+            assert isinstance(intermediate_result, OptimizeResult)
+            if callback.nit == maxiter:
+                raise StopIteration
+        callback.nit = 0
+        callback.intermediate_result = None
+        callback.func = func
+
+        bounds = [(0, 2), (0, 2)]
+        kwargs = dict(func=func, bounds=bounds, seed=838245, polish=False)
+        res = differential_evolution(**kwargs, callback=callback)
+        ref = differential_evolution(**kwargs, maxiter=maxiter)
+
+        # Check that final `intermediate_result` is equivalent to returned
+        # result object and that terminating with callback `StopIteration`
+        # after `maxiter` iterations is equivalent to terminating with
+        # `maxiter` parameter.
+        assert res.success is ref.success is False
+        assert callback.nit == res.nit == maxiter
+        assert res.message == 'callback function requested stop early'
+        assert ref.message == 'Maximum number of iterations has been exceeded.'
+        for field, val in ref.items():
+            if field in {'message', 'success'}:  # checked separately
+                continue
+            assert_equal(callback.intermediate_result[field], val)
+            assert_equal(res[field], val)
+
+        # Check that polish occurs after `StopIteration` as advertised
+        callback.nit = 0
+        func.val = np.inf
+        kwargs['polish'] = True
+        res = differential_evolution(**kwargs, callback=callback)
+        assert res.fun < ref.fun
+
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
         bounds = [(0, 2), (0, 2)]
-        expected_msg = 'callback function requested stop early by returning True'
-
+        expected_msg = 'callback function requested stop early'
         def callback_python_true(param, convergence=0.):
             return True
 
-        result = differential_evolution(rosen, bounds, callback=callback_python_true)
+        result = differential_evolution(
+            rosen, bounds, callback=callback_python_true
+        )
         assert_string_equal(result.message, expected_msg)
+
+        # if callback raises StopIteration then solve should be interrupted
+        def callback_stop(intermediate_result):
+            raise StopIteration
+
+        result = differential_evolution(rosen, bounds, callback=callback_stop)
+        assert not result.success
 
         def callback_evaluates_true(param, convergence=0.):
             # DE should stop if bool(self.callback) is True
@@ -276,6 +357,7 @@ class TestDifferentialEvolutionSolver:
 
         result = differential_evolution(rosen, bounds, callback=callback_evaluates_true)
         assert_string_equal(result.message, expected_msg)
+        assert not result.success
 
         def callback_evaluates_false(param, convergence=0.):
             return []

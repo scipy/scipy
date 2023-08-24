@@ -1080,8 +1080,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                          self.data)
         self.prune()  # nnz may have changed
 
-    def __get_has_canonical_format(self):
-        """Determine whether the matrix has sorted indices and no duplicates
+    @property
+    def has_canonical_format(self) -> bool:
+        """Whether the matrix has sorted indices and no duplicates
 
         Returns
             - True: if the above applies
@@ -1091,7 +1092,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         is False, so will the former be; if the former is found True, the
         latter flag is also set.
         """
-
         # first check to see if result was cached
         if not getattr(self, '_has_sorted_indices', True):
             # not sorted => not canonical
@@ -1099,16 +1099,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif not hasattr(self, '_has_canonical_format'):
             self.has_canonical_format = bool(
                 _sparsetools.csr_has_canonical_format(
-                    len(self.indptr) - 1, self.indptr, self.indices))
+                    len(self.indptr) - 1, self.indptr, self.indices)
+                )
         return self._has_canonical_format
 
-    def __set_has_canonical_format(self, val):
+    @has_canonical_format.setter
+    def has_canonical_format(self, val: bool):
         self._has_canonical_format = bool(val)
         if val:
             self.has_sorted_indices = True
-
-    has_canonical_format = property(fget=__get_has_canonical_format,
-                                    fset=__set_has_canonical_format)
 
     def sum_duplicates(self):
         """Eliminate duplicate matrix entries by adding them together
@@ -1126,26 +1125,26 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         self.prune()  # nnz may have changed
         self.has_canonical_format = True
 
-    def __get_sorted(self):
-        """Determine whether the matrix has sorted indices
+    @property
+    def has_sorted_indices(self) -> bool:
+        """Whether the indices are sorted
 
         Returns
             - True: if the indices of the matrix are in sorted order
             - False: otherwise
-
         """
-
         # first check to see if result was cached
         if not hasattr(self, '_has_sorted_indices'):
             self._has_sorted_indices = bool(
                 _sparsetools.csr_has_sorted_indices(
-                    len(self.indptr) - 1, self.indptr, self.indices))
+                    len(self.indptr) - 1, self.indptr, self.indices)
+                )
         return self._has_sorted_indices
 
-    def __set_sorted(self, val):
+    @has_sorted_indices.setter
+    def has_sorted_indices(self, val: bool):
         self._has_sorted_indices = bool(val)
 
-    has_sorted_indices = property(fget=__get_sorted, fset=__set_sorted)
 
     def sorted_indices(self):
         """Return a copy of this matrix with sorted indices
