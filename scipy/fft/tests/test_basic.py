@@ -13,13 +13,13 @@ from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api,
     skip_if_array_api_gpu,
-    skip_if_array_api_backend,
-    set_assert_allclose
+    skip_if_array_api_backend
 )
 from scipy._lib._array_api import (
     _assert_matching_namespace,
     array_namespace,
-    size
+    size,
+    set_assert_allclose
 )
 
 

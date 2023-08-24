@@ -12,13 +12,13 @@ import numpy as np
 import sys
 from scipy.conftest import (
     array_api_compatible,
-    skip_if_array_api_gpu,
-    set_assert_allclose
+    skip_if_array_api_gpu
 )
 from scipy._lib._array_api import(
     array_namespace,
     size,
-    _assert_matching_namespace
+    _assert_matching_namespace,
+    set_assert_allclose
 )
 from scipy import fft
 

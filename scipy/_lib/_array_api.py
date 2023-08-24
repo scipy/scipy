@@ -178,3 +178,13 @@ def _assert_matching_namespace(actual, expected):
     else:
         actual_space = array_api_compat.array_namespace(actual)
         assert actual_space == expected_space
+
+
+def set_assert_allclose(xp=None):
+    if xp is None:
+        return np.testing.assert_allclose
+    if 'cupy' in xp.__name__:
+        return xp.testing.assert_allclose
+    elif 'torch' in xp.__name__:
+        return xp.testing.assert_close
+    return np.testing.assert_allclose

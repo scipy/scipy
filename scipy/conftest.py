@@ -171,13 +171,3 @@ def skip_if_array_api_backend(backend):
                 return func(*args, xp, **kwargs)
         return wrapped
     return wrapper
-
-
-def set_assert_allclose(xp=None):
-    if xp is None:
-        return npt.assert_allclose
-    if 'cupy' in xp.__name__:
-        return xp.testing.assert_allclose
-    elif 'torch' in xp.__name__:
-        return xp.testing.assert_close
-    return npt.assert_allclose
