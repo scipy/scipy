@@ -1385,7 +1385,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     See Also
     --------
-    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+    pinvh : Moore-Penrose pseudoinverse of a hermitian matrix.
 
     Notes
     -----
@@ -1414,7 +1414,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
     pseudoinverse is a unique ``B`` that satisfies all four of these
     conditions and exists for any ``A``. Note that, unlike the standard
-    matrix inverse, ``A`` does not have to be square or have
+    matrix inverse, ``A`` does not have to be square matrix and have linearly
     independant columns/rows.
 
     As an example, we can calculate the Moore-Penrose pseudoinverse of a
