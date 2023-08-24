@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from .common import Benchmark, safe_import
 
 with safe_import():
@@ -61,6 +62,7 @@ class Bench(Benchmark):
     def time_mikota(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
+        warnings.filterwarnings("ignore")
         m = 10
         # ee = self.eigenvalues[:m]
         # tol = m * n * n * n* np.finfo(float).eps
@@ -87,6 +89,7 @@ class Bench(Benchmark):
             # assert accuracy < tol
 
     def time_sakurai(self, n, solver):
+        warnings.filterwarnings("ignore")
         m = 3
         # ee = self.eigenvalues[:m]
         # tol = 100 * n * n * n* np.finfo(float).eps
@@ -110,6 +113,7 @@ class Bench(Benchmark):
     def time_sakuraii(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
+        warnings.filterwarnings("ignore")
         m = 3
         # ee = self.eigenvalues[:m]
         # tol = 10 * n * n * n* np.finfo(float).eps
