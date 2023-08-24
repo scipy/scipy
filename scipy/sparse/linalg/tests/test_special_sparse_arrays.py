@@ -8,16 +8,15 @@ from scipy.linalg import eigh
 from scipy.sparse.linalg import LaplacianNd
 from scipy.sparse.linalg._special_sparse_arrays import Sakurai
 
+INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
+REAL_DTYPES = [np.float32, np.float64]
+COMPLEX_DTYPES = [np.complex64, np.complex128]
+ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
 
 class TestLaplacianNd:
     """
     LaplacianNd tests
     """
-    INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
-    REAL_DTYPES = [np.float32, np.float64]
-    COMPLEX_DTYPES = [np.complex64, np.complex128]
-    ALLDTYPES = INT_DTYPES + REAL_DTYPES + COMPLEX_DTYPES
-
     @pytest.mark.parametrize('bc', ['neumann', 'dirichlet', 'periodic'])
     def test_1d_specific_shape(self, bc):
         lap = LaplacianNd(grid_shape=(6, ), boundary_conditions=bc)
@@ -165,8 +164,8 @@ class TestSakurai:
     Sakurai tests
     """
     def test_specific_shape(self):
-        n = 6
-        sak = Sakurai(n)
+        sak = Sakurai(6)
+        assert_array_equal(sak.toarray(), sak(np.eye(6)))
         a = np.array(
             [
                 [ 5, -4,  1,  0,  0,  0],
@@ -194,3 +193,15 @@ class TestSakurai:
             )
         np.array_equal(e, sak.eigenvalues)
 
+    @pytest.mark.parametrize('dtype', REAL_DTYPES + COMPLEX_DTYPES)
+    def test_dot(self, dtype):
+        n = 5
+        sak = Sakurai(n)
+        x0 = np.arange(n)
+        x1 = x0.reshape((-1, 1))
+        x2 = np.arange(2 * n).reshape((n, 2))
+        input_set = [x0, x1, x2]
+        for x in input_set:
+            y = sak.dot(x.astype(dtype))
+            assert x.shape == y.shape
+            assert y.dtype == dtype
