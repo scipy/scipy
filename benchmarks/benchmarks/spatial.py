@@ -331,7 +331,7 @@ class Xdist(Benchmark):
                'hamming', 'jaccard', 'jensenshannon', 'chebyshev', 'canberra',
                'braycurtis', 'mahalanobis', 'yule', 'dice', 'kulczynski1',
                'rogerstanimoto', 'russellrao', 'sokalmichener', 'sokalsneath',
-               'wminkowski', 'minkowski-P3'])
+               'minkowski-P3'])
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
@@ -342,9 +342,6 @@ class Xdist(Benchmark):
             # p=2 is just the euclidean metric, try another p value as well
             self.kwargs = {'p': 3.0}
             self.metric = 'minkowski'
-        elif metric == 'wminkowski':
-            # use an equal weight vector since weights are required
-            self.kwargs = {'w': np.ones(3)}
         else:
             self.kwargs = {}
 
