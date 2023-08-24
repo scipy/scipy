@@ -518,7 +518,7 @@ class Sakurai(LinearOperator):
 
     Constructs the "Sakurai" matrix motivated by reference [1]_.
     The matrix is square real symmetric positive definite and banded
-    with analytically known eigenvalues.
+    with integer entries and analytically known eigenvalues.
     The matrix gets ill-conditioned with its size growing.
     See the notes below for details.
 
@@ -543,9 +543,7 @@ class Sakurai(LinearOperator):
     tobanded()
         The Sakurai matrix in the format for banded symmetric matrices,
         i.e., (3, n) ndarray with 3 upper diagonals
-        with the main diagonal at the bottom.
-
-    .. versionadded:: 1.12.0
+        placing the main diagonal at the bottom.
 
     Notes
     -----
@@ -570,6 +568,10 @@ class Sakurai(LinearOperator):
     >>> from scipy.linalg import eig_banded
     >>> n = 6
     >>> sak = Sakurai(n)
+
+    Since all matrix entries are integers, ``'int64'`` is
+    the default dtype for storing matrix representations.
+
     >>> sak.toarray()
     array([[ 5, -4,  1,  0,  0,  0],
            [-4,  6, -4,  1,  0,  0],
@@ -663,6 +665,29 @@ class Sakurai(LinearOperator):
 
 
 class MikotaM(LinearOperator):
+    """
+    Construct a mass matrix in various formats of Mikota pair.
+
+    The mass matrix `M` is square real diagonal
+    positive definite with entries that are reciprocal to integers.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the matrix.
+    dtype : dtype
+        Numerical type of the array. Default is ``np.int64``.
+
+    Methods
+    -------
+    toarray()
+        Construct a dense array from Laplacian data
+    tosparse()
+        Construct a sparse array from Laplacian data
+    tobanded()
+        The format for banded symmetric matrices,
+        i.e., (1, n) ndarray with the main diagonal.
+    """
     def __init__(self, shape, dtype):
         self.shape = shape
         self.dtype = dtype
@@ -705,6 +730,30 @@ class MikotaM(LinearOperator):
 
 
 class MikotaK(LinearOperator):
+    """
+    Construct a stiffness matrix in various formats of Mikota pair.
+
+    The stiffness matrix `K` is square real tri-diagonal symmetric
+    positive definite with integer entries. 
+
+    Parameters
+    ----------
+    shape : tuple of int
+        The shape of the matrix.
+    dtype : dtype
+        Numerical type of the array. Default is ``np.int64``.
+
+    Methods
+    -------
+    toarray()
+        Construct a dense array from Laplacian data
+    tosparse()
+        Construct a sparse array from Laplacian data
+    tobanded()
+        The format for banded symmetric matrices,
+        i.e., (2, n) ndarray with 2 upper diagonals
+        placing the main diagonal at the bottom.
+    """
     def __init__(self, shape, dtype):
         self.shape = shape
         self.dtype = dtype
@@ -774,27 +823,17 @@ class Mikota_pair:
     n : int
         The size of the matrices of the Mikota pair.
 
-    Returns
-    -------
-    mikota_obj: custom object
-        The object containing the `LinearOperator` custom objects
-        mikota_obj.k and mikota_obj.m for the stiffness and the mass
-        matrices as well as
-    mikota_obj.eigenvalues : (n, ) ndarray, float
-        Eigenvalues of the Mikota matrix pair: 1, 4, 9, ..., ``n * n``
-    mikota_obj.k and mikota_obj.m: `LinearOperator` custom objects
-        An instance `inst` of each of these two classes includes methods standard
-        for `LinearOperator` instances:
-            inst.toarray() : (n, n) ndarray
-            inst.tosparse() : (n, n) DIAgonal sparse format
-            inst._matvec and inst._matmat: callable objects
-                The handle to a function that multiplies the Sakurai matrix
-                `s` of the shape `n`-by-`n` on the right by an input matrix `x`
-                of the shape `n`-by-`k` to output ``s @ x`` without constructing `s`
-        inst.tobanded() : (3, n) ndarray
-            The custom method creating the format for banded symmetric matrices,
-            i.e., 3 upper diagonals with the main diagonal at the bottom
+    Attributes
+    ----------
+    eigenvalues : ndarray, float
+        Eigenvalues of the Mikota pair ordered ascending.
 
+    Methods
+    -------
+    MikotaK()
+        A `LinearOperator` custom object for the stiffness matrix.
+    MikotaM()
+        A `LinearOperator` custom object for the mass matrix.
     
     .. versionadded:: 1.12.0
 
