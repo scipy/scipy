@@ -6,6 +6,7 @@ from scipy.sparse import diags, csgraph
 from scipy.linalg import eigh
 
 from scipy.sparse.linalg import LaplacianNd
+from scipy.sparse.linalg._special_sparse_arrays import Sakurai
 
 
 class TestLaplacianNd:
@@ -129,3 +130,38 @@ class TestLaplacianNd:
             y = lap.dot(x.astype(dtype))
             assert x.shape == y.shape
             assert y.dtype == dtype
+
+class TestSakurai:
+    """
+    Sakurai tests
+    """
+    def test_specific_shape(self):
+        n = 6
+        sak = Sakurai(n)
+        a = np.array(
+            [
+                [ 5, -4,  1,  0,  0,  0],
+                [-4,  6, -4,  1,  0,  0],
+                [ 1, -4,  6, -4,  1,  0],
+                [ 0,  1, -4,  6, -4,  1],
+                [ 0,  0,  1, -4,  6, -4],
+                [ 0,  0,  0,  1, -4,  5]
+            ]
+        )
+
+        np.array_equal(a, sak.toarray())
+        np.array_equal(sak.tosparse().toarray(), sak.toarray())
+        ab = np.array(
+            [
+                [ 1,  1,  1,  1,  1,  1],
+                [-4, -4, -4, -4, -4, -4],
+                [ 5,  6,  6,  6,  6,  5]
+            ]
+        )
+        np.array_equal(ab, sak.tobanded())
+        e = np.array(
+                [0.03922866, 0.56703972, 2.41789479, 5.97822974,
+                 10.54287655, 14.45473055]
+            )
+        np.array_equal(e, sak.eigenvalues)
+
