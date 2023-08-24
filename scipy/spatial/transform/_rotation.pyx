@@ -85,7 +85,7 @@ cdef inline const double[:] _elementary_basis_vector(uchar axis):
     if axis == b'x': return _ex
     elif axis == b'y': return _ey
     elif axis == b'z': return _ez
-
+    
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef inline int _elementary_basis_index(uchar axis):
@@ -244,9 +244,9 @@ cdef double[:, :] _compute_euler_from_quat(
     # The algorithm assumes extrinsic frame transformations. The algorithm
     # in the paper is formulated for rotation quaternions, which are stored
     # directly by Rotation.
-    # Adapt the algorithm for our case by reversing both axis sequence and
+    # Adapt the algorithm for our case by reversing both axis sequence and 
     # angles for intrinsic rotations when needed
-
+    
     # intrinsic/extrinsic conversion helpers
     cdef int angle_first, angle_third
     if extrinsic:
@@ -256,7 +256,7 @@ cdef double[:, :] _compute_euler_from_quat(
         seq = seq[::-1]
         angle_first = 2
         angle_third = 0
-
+        
     cdef int i = _elementary_basis_index(seq[0])
     cdef int j = _elementary_basis_index(seq[1])
     cdef int k = _elementary_basis_index(seq[2])
@@ -264,9 +264,9 @@ cdef double[:, :] _compute_euler_from_quat(
     cdef bint symmetric = i == k
     if symmetric:
         k = 3 - i - j # get third axis
-
+        
     # Step 0
-    # Check if permutation is even (+1) or odd (-1)
+    # Check if permutation is even (+1) or odd (-1)     
     cdef int sign = (i - j) * (j - k) * (k - i) // 2
 
     cdef Py_ssize_t num_rotations = quat.shape[0]
@@ -283,7 +283,7 @@ cdef double[:, :] _compute_euler_from_quat(
         _angles = angles[ind, :]
 
         # Step 1
-        # Permutate quaternion elements
+        # Permutate quaternion elements            
         if symmetric:
             a = quat[ind, 3]
             b = quat[ind, i]
@@ -294,7 +294,7 @@ cdef double[:, :] _compute_euler_from_quat(
             b = quat[ind, i] + quat[ind, k] * sign
             c = quat[ind, j] + quat[ind, 3]
             d = quat[ind, k] * sign - quat[ind, i]
-
+        
         # Step 2
         # Compute second angle...
         _angles[1] = 2 * atan2(hypot(c, d), hypot(a, b))
@@ -311,18 +311,18 @@ cdef double[:, :] _compute_euler_from_quat(
         # compute first and third angles, according to case
         half_sum = atan2(b, a)
         half_diff = atan2(d, c)
-
+        
         if case == 0:  # no singularities
             _angles[angle_first] = half_sum - half_diff
             _angles[angle_third] = half_sum + half_diff
-
+        
         else:  # any degenerate case
             _angles[2] = 0
             if case == 1:
                 _angles[0] = 2 * half_sum
             else:
                 _angles[0] = 2 * half_diff * (-1 if extrinsic else 1)
-
+                
         # for Tait-Bryan angles
         if not symmetric:
             _angles[angle_third] *= sign
@@ -1766,7 +1766,7 @@ cdef class Rotation:
         (2, 3)
 
         """
-
+        
         cdef Py_ssize_t num_rotations = len(self._quat)
         cdef double angle, scale, angle2
         cdef double[:, :] rotvec = _empty2(num_rotations, 3)
@@ -1803,7 +1803,7 @@ cdef class Rotation:
     @cython.embedsignature(True)
     def _compute_euler(self, seq, degrees, algorithm):
         # Prepare axis sequence to call Euler angles conversion algorithm.
-
+        
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
 
@@ -1819,7 +1819,7 @@ cdef class Rotation:
                              "got {}".format(seq))
 
         seq = seq.lower()
-
+            
         if algorithm == 'from_matrix':
             matrix = self.as_matrix()
             if matrix.ndim == 2:
@@ -1835,7 +1835,7 @@ cdef class Rotation:
         else:
             # algorithm can only be 'from_quat' or 'from_matrix'
             assert False
-
+            
         if degrees:
             angles = np.rad2deg(angles)
 
@@ -1903,7 +1903,7 @@ cdef class Rotation:
         rotations. Once the axis sequence has been chosen, Euler angles define
         the angle of rotation around each respective axis [1]_.
 
-        The algorithm from [2]_ has been used to calculate Euler angles for the
+        The algorithm from [2]_ has been used to calculate Euler angles for the 
         rotation about a given sequence of axes.
 
         Euler angles suffer from the problem of gimbal lock [3]_, where the
@@ -1941,9 +1941,9 @@ cdef class Rotation:
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Euler_angles#Definition_by_intrinsic_rotations
-        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles
-               conversion: A direct, general and computationally efficient
-               method. PLoS ONE 17(11): e0276302.
+        .. [2] Bernardes E, Viollet S (2022) Quaternion to Euler angles 
+               conversion: A direct, general and computationally efficient 
+               method. PLoS ONE 17(11): e0276302. 
                https://doi.org/10.1371/journal.pone.0276302
         .. [3] https://en.wikipedia.org/wiki/Gimbal_lock#In_applied_mathematics
 
