@@ -487,7 +487,6 @@ class Sakurai(LinearOperator):
         e = np.sort(16. * np.power(np.cos(0.5 * k * np.pi / (n + 1)), 4))
         self.eigenvalues = e
 
-
     def tosparse(self):
         from scipy.sparse import spdiags
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
@@ -495,13 +494,11 @@ class Sakurai(LinearOperator):
         d2 = np.ones(self.n, dtype=self.dtype)
         return spdiags([d2, d1, d0, d1, d2], [-2, -1, 0, 1, 2], self.n, self.n)
 
-
     def tobanded(self):
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
         d1 = -4 * np.ones(self.n, dtype=self.dtype)
         d2 = np.ones(self.n, dtype=self.dtype)
         return np.array([d2, d1, d0])
-
 
     def toarray(self):
         d0 = np.r_[5, 6 * np.ones(self.n - 2, dtype=self.dtype), 5]
@@ -511,7 +508,6 @@ class Sakurai(LinearOperator):
         a += np.diag(d1, 1) + np.diag(d1, -1)
         a += np.diag(d2, 2) + np.diag(d2, -2)
         return a
-
     
     def _matvec(self, x):
         n = self.n
@@ -525,14 +521,98 @@ class Sakurai(LinearOperator):
                       + np.pad(x[3:,:], ((0,1),(0,0))))
         return sx
 
-
     def _matmat(self, x):
         return self._matvec(x)
-
 
     def _adjoint(self):
         return self
 
+    def _transpose(self):
+        return self
+
+
+class MikotaM(LinearOperator):
+    def __init__(self, shape, dtype):
+        self.shape = shape
+        self.dtype = dtype
+        super().__init__(dtype, shape)
+
+    def tosparse(self):
+        from scipy.sparse import diags
+        n = self.shape[0]
+        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
+        aranp1_inv = 1. / aranp1
+        return diags([aranp1_inv], [0], shape=(n, n))
+
+    def tobanded(self):
+        n = self.shape[0]
+        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
+        return 1. / aranp1
+
+    def toarray(self):
+        n = self.shape[0]
+        aranp1 = np.arange(1, n + 1, dtype=self.dtype)
+        aranp1_inv = 1. / aranp1
+        return np.diag(aranp1_inv)
+
+    def _matvec(self, x):
+        n = self.shape[0]
+        aranp1_inv = 1. / np.arange(1, n + 1)
+        # linearoperator requires 2D array
+        if len(x.shape) == 1:
+            x = x.reshape(-1, 1)
+        return aranp1_inv[:, np.newaxis] * x
+
+    def _matmat(self, x):
+        return self._matvec(x)
+
+    def _adjoint(self):
+        return self
+
+    def _transpose(self):
+        return self
+
+
+class MikotaK(LinearOperator):
+    def __init__(self, shape, dtype):
+        self.shape = shape
+        self.dtype = dtype
+        super().__init__(dtype, shape)
+
+    def tosparse(self):
+        from scipy.sparse import diags
+        n = self.shape[0]
+        y = - np.arange(n - 1, 0, -1, dtype=self.dtype)
+        z = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
+        return diags([y, z, y], [-1, 0, 1], shape=(n, n))
+
+    def tobanded(self):
+        n = self.shape[0]
+        y = - np.arange(n - 1, 0, -1, dtype=self.dtype)
+        z = np.arange(2 * n - 1, 0, -2, dtype=self.dtype)
+        return np.array([np.pad(y, (1, 0), 'constant'), z])
+
+    def toarray(self):
+        return self.tosparse().toarray()
+
+    def _matvec(self, x):
+        n = self.shape[0]
+        x = x.reshape(n, -1)
+        kx = np.zeros_like(x)
+        y = - np.arange(n - 1, 0, -1)
+        z = np.arange(2 * n - 1, 0, -2)
+        kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
+        kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
+        kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
+                        + z[1: -1, None] * x[1: -1, :]
+                        + y[1:, None] * x[2:, :])
+        return kx
+
+    def _matmat(self, x):
+        return self._matvec(x)
+
+    def _adjoint(self):
+        return self
 
     def _transpose(self):
         return self
@@ -637,96 +717,12 @@ class Mikota_pair:
     array([ 1.,  4.,  9., 16., 25., 36.])  
 
     """
-    def __init__(self, n, dtype=np.float64) -> None:
+    def __init__(self, n, dtype=np.float64):
         self.n = n
         self.dtype = dtype
+        self.shape = (n, n)
 
         aranp1 = np.arange(1, n + 1)
         self.eigenvalues = aranp1 * aranp1.astype(float)
-        self.m = self.M(n, dtype)
-        self.k = self.K(n, dtype)
-
-    class M(LinearOperator):
-        def __init__(self, n, dtype) -> None:
-            self.n = n
-            self.dtype = dtype
-            shape = (n, n)
-            super().__init__(dtype, shape)
-
-        def tosparse(self):
-            from scipy.sparse import diags
-            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
-            aranp1_inv = 1. / aranp1
-            return diags([aranp1_inv], [0], shape=(self.n, self.n))
-
-        def tobanded(self):
-            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
-            return 1. / aranp1
-
-        def toarray(self):
-            aranp1 = np.arange(1, self.n + 1, dtype=self.dtype)
-            aranp1_inv = 1. / aranp1
-            return np.diag(aranp1_inv)
-
-        def _matvec(self, x):
-            n = self.n
-            assert n == x.shape[0]
-            aranp1_inv = 1. / np.arange(1, n + 1)
-            # linearoperator requires 2D array
-            if len(x.shape) == 1:
-                x = x.reshape(-1, 1)
-            return aranp1_inv[:, np.newaxis] * x
-
-        def _matmat(self, x):
-            return self._matvec(x)
-
-        def _adjoint(self):
-            return self
-
-        def _transpose(self):
-            return self
-
-
-    class K(LinearOperator):
-        def __init__(self, n, dtype):
-            self.n = n
-            self.dtype = dtype
-            shape = (n, n)
-            super().__init__(dtype, shape)
-
-        def tosparse(self):
-            from scipy.sparse import diags
-            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
-            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
-            return diags([y, z, y], [-1, 0, 1], shape=(self.n, self.n))
-
-        def tobanded(self):
-            y = - np.arange(self.n - 1, 0, -1, dtype=self.dtype)
-            z = np.arange(2 * self.n - 1, 0, -2, dtype=self.dtype)
-            return np.array([np.pad(y, (1, 0), 'constant'), z])
-
-        def toarray(self):
-            return self.tosparse().toarray()
-
-        def _matvec(self, x):
-            n = self.n
-            assert n == x.shape[0]
-            x = x.reshape(n, -1)
-            kx = np.zeros_like(x)
-            y = - np.arange(n - 1, 0, -1)
-            z = np.arange(2 * n - 1, 0, -2)
-            kx[0, :] = z[0] * x[0, :] + y[0] * x[1, :]
-            kx[-1, :] = y[-1] * x[-2, :] + z[-1] * x[-1, :]
-            kx[1: -1, :] = (y[:-1, None] * x[: -2,:]
-                            + z[1: -1, None] * x[1: -1, :]
-                            + y[1:, None] * x[2:, :])
-            return kx
-
-        def _matmat(self, x):
-            return self._matvec(x)
-
-        def _adjoint(self):
-            return self
-
-        def _transpose(self):
-            return self
+        self.m = MikotaM(self.shape, self.dtype)
+        self.k = MikotaK(self.shape, self.dtype)
