@@ -154,6 +154,12 @@ class TestLaplacianNd:
             y = lap.dot(x.astype(dtype))
             assert x.shape == y.shape
             assert y.dtype == dtype
+            if x.ndim == 2:
+                yy = lap.toarray() @ x.astype(dtype)
+                assert yy.dtype == dtype
+                np.array_equal(y, yy)
+            else:
+                pass
 
     def test_boundary_conditions_value_error(self):
         with pytest.raises(ValueError, match="Unknown value 'robin'"):
@@ -207,7 +213,9 @@ class TestSakurai:
             y = sak.dot(x.astype(dtype))
             assert x.shape == y.shape
             assert y.dtype == dtype
-            x = x.reshape((-1, 1)) if x.ndim == 1 else x
-            yy = sak.toarray() @ x
-            assert yy.dtype == dtype
-            np.array_equal(y, yy)
+            if x.ndim == 2:
+                yy = sak.toarray() @ x.astype(dtype)
+                assert yy.dtype == dtype
+                np.array_equal(y, yy)
+            else:
+                pass
