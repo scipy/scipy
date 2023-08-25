@@ -207,7 +207,7 @@ class TestSakurai:
             y = sak.dot(x.astype(dtype))
             assert x.shape == y.shape
             assert y.dtype == dtype
-            x = x.reshape((-1, 1)) if x.ndim == 1 else pass
+            x = x.reshape((-1, 1)) if x.ndim == 1 else x
             yy = sak.toarray() @ x
             assert yy.dtype == dtype
             np.array_equal(y, yy)
