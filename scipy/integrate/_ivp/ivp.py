@@ -520,8 +520,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> plt.title('Lotka-Volterra System')
     >>> plt.show()
 
-    A couple examples of using solve_ivp to solve the differential equation ``y' = Ay``
-    with complex matrix ``A``.
+    A couple examples of using solve_ivp to solve the differential
+    equation ``y' = Ay`` with complex matrix ``A``.
 
     >>> A = np.array([[-0.25 + 0.14j, 0, 0.33 + 0.44j],
     ...               [0.25 + 0.58j, -0.2 + 0.14j, 0],
