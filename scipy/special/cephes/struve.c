@@ -255,7 +255,7 @@ double struve_power_series(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_TINY * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_TINY * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }
@@ -310,7 +310,7 @@ double struve_bessel_series(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }
@@ -374,7 +374,7 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
         if (fabs(term) > maxterm) {
             maxterm = fabs(term);
         }
-        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !npy_isfinite(sum)) {
+        if (fabs(term) < SUM_EPS * fabs(sum) || term == 0 || !isfinite(sum)) {
             break;
         }
     }

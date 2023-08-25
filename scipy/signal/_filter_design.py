@@ -6,8 +6,8 @@ import warnings
 import numpy
 import numpy as np
 from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
-                   resize, pi, absolute, logspace, r_, sqrt, tan, log10,
-                   arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
+                   resize, pi, absolute, sqrt, tan, log10,
+                   arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
                    zeros, sinh, append, concatenate, prod, ones, full, array,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
@@ -102,17 +102,15 @@ def findfreqs(num, den, N, kind='ba'):
     if len(ep) == 0:
         ep = atleast_1d(-1000) + 0j
 
-    ez = r_['-1',
-            numpy.compress(ep.imag >= 0, ep, axis=-1),
-            numpy.compress((abs(tz) < 1e5) & (tz.imag >= 0), tz, axis=-1)]
+    ez = np.r_[ep[ep.imag >= 0], tz[(np.abs(tz) < 1e5) & (tz.imag >= 0)]]
 
-    integ = abs(ez) < 1e-10
-    hfreq = numpy.around(numpy.log10(numpy.max(3 * abs(ez.real + integ) +
-                                               1.5 * ez.imag)) + 0.5)
-    lfreq = numpy.around(numpy.log10(0.1 * numpy.min(abs(real(ez + integ)) +
-                                                     2 * ez.imag)) - 0.5)
+    integ = np.abs(ez) < 1e-10
+    hfreq = np.round(np.log10(np.max(3 * np.abs(ez.real + integ) +
+                                     1.5 * ez.imag)) + 0.5)
+    lfreq = np.round(np.log10(0.1 * np.min(np.abs((ez + integ).real) +
+                                           2 * ez.imag)) - 0.5)
 
-    w = logspace(lfreq, hfreq, N)
+    w = np.logspace(lfreq, hfreq, N)
     return w
 
 
@@ -443,7 +441,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         N = operator.index(worN)
         del worN
         if N < 0:
-            raise ValueError('worN must be nonnegative, got %s' % (N,))
+            raise ValueError(f'worN must be nonnegative, got {N}')
         lastpoint = 2 * pi if whole else pi
         # if include_nyquist is true and whole is false, w should
         # include end point
@@ -697,16 +695,16 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if np.any(singular):
         gd[singular] = 0
         warnings.warn(
-            "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            "The group delay is singular at frequencies [{}], setting to 0".
+            format(", ".join(f"{ws:.3f}" for ws in w[singular])),
             stacklevel=2
         )
 
     elif np.any(near_singular):
         warnings.warn(
-            "The filter's denominator is extremely small at frequencies [{0}], \
+            "The filter's denominator is extremely small at frequencies [{}], \
             around which a singularity may be present".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            format(", ".join(f"{ws:.3f}" for ws in w[near_singular])),
             stacklevel=2
         )
 
@@ -893,6 +891,7 @@ def _cplxreal(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxreal
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
     >>> print(zc)
@@ -1000,6 +999,7 @@ def _cplxpair(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxpair
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> z = _cplxpair(a)
     >>> print(z)
@@ -2095,7 +2095,7 @@ def bilinear(b, a, fs=1.0):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -2340,7 +2340,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                              " (fs={} -> fs/2={})".format(fs, fs/2))
 
     if wp.shape[0] == 2:
-        if not((ws[0] < wp[0] and wp[1] < ws[1]) or
+        if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
             raise ValueError("Passband must lie strictly inside stopband"
                              " or vice versa")
@@ -2492,7 +2492,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
-    ftype, btype, output = [x.lower() for x in (ftype, btype, output)]
+    ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
         if analog:
@@ -2615,7 +2615,7 @@ def bilinear_zpk(z, p, k, fs):
     Return a digital IIR filter from an analog one using a bilinear transform.
 
     Transform a set of poles and zeros from the analog s-plane to the digital
-    z-plane using Tustin's method, which substitutes ``(z-1) / (z+1)`` for
+    z-plane using Tustin's method, which substitutes ``2*fs*(z-1) / (z+1)`` for
     ``s``, maintaining the shape of the frequency response.
 
     Parameters
@@ -3047,6 +3047,13 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     the polynomial coefficients is a numerically sensitive operation,
     even for N >= 4. It is recommended to work with the SOS
     representation.
+
+    .. warning::
+        Designing high-order and narrowband IIR filters in TF form can
+        result in unstable or incorrect filtering due to floating point
+        numerical precision issues. Consider inspecting output filter
+        characteristics `freqz` or designing the filters with second-order
+        sections via ``output='sos'``.
 
     Examples
     --------
@@ -3680,6 +3687,73 @@ def band_stop_obj(wp, ind, passb, stopb, gpass, gstop, type):
     return n
 
 
+def _pre_warp(wp, ws, analog):
+    # Pre-warp frequencies for digital filter design
+    if not analog:
+        passb = np.tan(pi * wp / 2.0)
+        stopb = np.tan(pi * ws / 2.0)
+    else:
+        passb = wp * 1.0
+        stopb = ws * 1.0
+    return passb, stopb
+
+
+def _validate_wp_ws(wp, ws, fs, analog):
+    wp = atleast_1d(wp)
+    ws = atleast_1d(ws)
+    if fs is not None:
+        if analog:
+            raise ValueError("fs cannot be specified for an analog filter")
+        wp = 2 * wp / fs
+        ws = 2 * ws / fs
+
+    filter_type = 2 * (len(wp) - 1) + 1
+    if wp[0] >= ws[0]:
+        filter_type += 1
+
+    return wp, ws, filter_type
+
+
+def _find_nat_freq(stopb, passb, gpass, gstop, filter_type, filter_kind):
+    if filter_type == 1:            # low
+        nat = stopb / passb
+    elif filter_type == 2:          # high
+        nat = passb / stopb
+    elif filter_type == 3:          # stop
+
+       ### breakpoint()
+
+        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
+                                 args=(0, passb, stopb, gpass, gstop,
+                                       filter_kind),
+                                 disp=0)
+        passb[0] = wp0
+        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
+                                 args=(1, passb, stopb, gpass, gstop,
+                                       filter_kind),
+                                 disp=0)
+        passb[1] = wp1
+        nat = ((stopb * (passb[0] - passb[1])) /
+               (stopb ** 2 - passb[0] * passb[1]))
+    elif filter_type == 4:          # pass
+        nat = ((stopb ** 2 - passb[0] * passb[1]) /
+               (stopb * (passb[0] - passb[1])))
+    else:
+        raise ValueError(f"should not happen: {filter_type =}.")
+
+    nat = min(abs(nat))
+    return nat, passb
+
+
+def _postprocess_wn(WN, analog, fs):
+    wn = WN if analog else np.arctan(WN) * 2.0 / pi
+    if len(wn) == 1:
+        wn = wn[0]
+    if fs is not None:
+        wn = wn * fs / 2
+    return wn
+
+
 def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     """Butterworth filter order selection.
 
@@ -3758,52 +3832,10 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
-    if wp[0] >= ws[0]:
-        filter_type += 1
-
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
-
-    if filter_type == 1:            # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:          # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop,
-                                       'butter'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop,
-                                       'butter'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:          # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
+    passb, stopb = _pre_warp(wp, ws, analog)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
@@ -3841,16 +3873,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     else:
         raise ValueError("Bad type: %s" % filter_type)
 
-    if not analog:
-        wn = (2.0 / pi) * arctan(WN)
-    else:
-        wn = WN
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(WN, analog, fs)
 
     return ord, wn
 
@@ -3931,68 +3954,18 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
-        filter_type += 1
-    else:
-        filter_type += 2
-
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
+    passb, stopb = _pre_warp(wp, ws, analog)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
-    ord = int(ceil(arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) /
-                   arccosh(nat)))
+    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(ceil(v_pass_stop / np.arccosh(nat)))
 
     # Natural frequencies are just the passband edges
-    if not analog:
-        wn = (2.0 / pi) * arctan(passb)
-    else:
-        wn = passb
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(passb, analog, fs)
 
     return ord, wn
 
@@ -4075,61 +4048,20 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    if wp[0] < ws[0]:
-        filter_type += 1
-    else:
-        filter_type += 2
-
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'cheby'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
+    passb, stopb = _pre_warp(wp, ws, analog)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'cheby')
 
     GSTOP = 10 ** (0.1 * abs(gstop))
     GPASS = 10 ** (0.1 * abs(gpass))
-    ord = int(ceil(arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))) /
-                   arccosh(nat)))
+    v_pass_stop = np.arccosh(np.sqrt((GSTOP - 1.0) / (GPASS - 1.0)))
+    ord = int(ceil(v_pass_stop / arccosh(nat)))
 
     # Find frequency where analog response is -gpass dB.
     # Then convert back from low-pass prototype to the original filter.
 
-    new_freq = cosh(1.0 / ord * arccosh(sqrt((GSTOP - 1.0) / (GPASS - 1.0))))
+    new_freq = cosh(1.0 / ord * v_pass_stop)
     new_freq = 1.0 / new_freq
 
     if filter_type == 1:
@@ -4149,16 +4081,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
                        passb[1] * passb[0]))
         nat[1] = passb[0] * passb[1] / nat[0]
 
-    if not analog:
-        wn = (2.0 / pi) * arctan(nat)
-    else:
-        wn = nat
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(nat, analog, fs)
 
     return ord, wn
 
@@ -4249,48 +4172,9 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     """
 
     _validate_gpass_gstop(gpass, gstop)
-
-    wp = atleast_1d(wp)
-    ws = atleast_1d(ws)
-    if fs is not None:
-        if analog:
-            raise ValueError("fs cannot be specified for an analog filter")
-        wp = 2*wp/fs
-        ws = 2*ws/fs
-
-    filter_type = 2 * (len(wp) - 1)
-    filter_type += 1
-    if wp[0] >= ws[0]:
-        filter_type += 1
-
-    # Pre-warp frequencies for digital filter design
-    if not analog:
-        passb = tan(pi * wp / 2.0)
-        stopb = tan(pi * ws / 2.0)
-    else:
-        passb = wp * 1.0
-        stopb = ws * 1.0
-
-    if filter_type == 1:           # low
-        nat = stopb / passb
-    elif filter_type == 2:          # high
-        nat = passb / stopb
-    elif filter_type == 3:     # stop
-        wp0 = optimize.fminbound(band_stop_obj, passb[0], stopb[0] - 1e-12,
-                                 args=(0, passb, stopb, gpass, gstop, 'ellip'),
-                                 disp=0)
-        passb[0] = wp0
-        wp1 = optimize.fminbound(band_stop_obj, stopb[1] + 1e-12, passb[1],
-                                 args=(1, passb, stopb, gpass, gstop, 'ellip'),
-                                 disp=0)
-        passb[1] = wp1
-        nat = ((stopb * (passb[0] - passb[1])) /
-               (stopb ** 2 - passb[0] * passb[1]))
-    elif filter_type == 4:  # pass
-        nat = ((stopb ** 2 - passb[0] * passb[1]) /
-               (stopb * (passb[0] - passb[1])))
-
-    nat = min(abs(nat))
+    wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
+    passb, stopb = _pre_warp(wp, ws, analog)
+    nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'ellip')
 
     arg1_sq = _pow10m1(0.1 * gpass) / _pow10m1(0.1 * gstop)
     arg0 = 1.0 / nat
@@ -4298,16 +4182,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     d1 = special.ellipk(arg1_sq), special.ellipkm1(arg1_sq)
     ord = int(ceil(d0[0] * d1[1] / (d0[1] * d1[0])))
 
-    if not analog:
-        wn = arctan(passb) * 2.0 / pi
-    else:
-        wn = passb
-
-    if len(wn) == 1:
-        wn = wn[0]
-
-    if fs is not None:
-        wn = wn*fs/2
+    wn = _postprocess_wn(passb, analog, fs)
 
     return ord, wn
 
@@ -4365,7 +4240,7 @@ def cheb1ap(N, rp):
 
     k = numpy.prod(-p, axis=0).real
     if N % 2 == 0:
-        k = k / sqrt((1 + eps * eps))
+        k = k / sqrt(1 + eps * eps)
 
     return z, p, k
 
@@ -4498,7 +4373,7 @@ def _arc_jac_sn(w, m):
         if niter > _ARC_JAC_SN_MAXITER:
             raise ValueError('Landen transformation not converging')
 
-    K = np.product(1 + np.array(ks[1:])) * np.pi/2
+    K = np.prod(1 + np.array(ks[1:])) * np.pi/2
 
     wns = [w]
 
@@ -4614,7 +4489,7 @@ def ellipap(N, rp, rs):
 
     k = (numpy.prod(-p, axis=0) / numpy.prod(-z, axis=0)).real
     if N % 2 == 0:
-        k = k / numpy.sqrt((1 + eps_sq))
+        k = k / numpy.sqrt(1 + eps_sq)
 
     return z, p, k
 
@@ -4664,6 +4539,7 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
+    >>> from scipy.signal._filter_design import _bessel_poly
     >>> i = 0
     >>> for n in range(51):
     ...     for x in _bessel_poly(n, reverse=True):

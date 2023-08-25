@@ -6,7 +6,7 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
-from scipy.optimize._optimize import _status_message
+from scipy.optimize._optimize import _status_message, _wrap_callback
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
 from scipy.optimize._constraints import (Bounds, new_bounds_to_old,
@@ -45,11 +45,16 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         to ``len(x)``.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`.
+
+            1. Instance of `Bounds` class.
+            2. ``(min, max)`` pairs for each element in ``x``, defining the
+               finite lower and upper bounds for the optimizing argument of
+               `func`.
+
         The total number of bounds is used to determine the number of
-        parameters, N.
+        parameters, N. If there are parameters whose bounds are equal the total
+        number of free parameters is ``N - N_equal``.
+
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -74,13 +79,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * N``
+        is: ``(maxiter + 1) * popsize * (N - N_equal)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * N`` individuals. This keyword is overridden if an
-        initial population is supplied via the `init` keyword. When using
+        ``popsize * (N - N_equal)`` individuals. This keyword is overridden if
+        an initial population is supplied via the `init` keyword. When using
         ``init='sobol'`` the population size is calculated as the next power
-        of 2 after ``popsize * N``.
+        of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -112,12 +117,32 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the best solution found so far. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(intermediate_result: OptimizeResult)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence: float=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+        When ``val`` is greater than ``1.0``, the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -144,8 +169,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
         size which is calculated as the next power of 2 after
-        ``popsize * N``. 'halton' has no requirements but is a bit less
-        efficient. See `scipy.stats.qmc` for more details.
+        ``popsize * (N - N_equal)``. 'halton' has no requirements but is a bit
+        less efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -235,9 +260,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     res : OptimizeResult
         The optimization result represented as a `OptimizeResult` object.
         Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes. If `polish`
+        Boolean flag indicating if the optimizer exited successfully,
+        ``message`` which describes the cause of the termination,
+        ``population`` the solution vectors present in the population, and
+        ``population_energies`` the value of the objective function for each
+        entry in ``population``.
+        See `OptimizeResult` for a description of other attributes. If `polish`
         was employed, and a lower minimum was obtained by the polishing, then
         OptimizeResult also contains the ``jac`` attribute.
         If the eventual solution does not satisfy the applied constraints
@@ -291,7 +319,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             randtobest1* : b' = x_{r_0} + mutation*(x_0 − x_{r_0}
                                                       + x_{r_1} − x_{r_2})
 
-
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
     the original candidate having index `i`.
@@ -321,7 +348,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ``'vectorized'`` may aid by only calling the objective function once per
     iteration, rather than multiple times for all the population members; the
     interpreter overhead is reduced.
-
 
     .. versionadded:: 0.15.0
 
@@ -444,11 +470,15 @@ class DifferentialEvolutionSolver:
         to ``len(x)``.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`.
+
+            1. Instance of `Bounds` class.
+            2. ``(min, max)`` pairs for each element in ``x``, defining the
+               finite lower and upper bounds for the optimizing argument of
+               `func`.
+
         The total number of bounds is used to determine the number of
-        parameters, N.
+        parameters, N. If there are parameters whose bounds are equal the total
+        number of free parameters is ``N - N_equal``.
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
@@ -473,13 +503,13 @@ class DifferentialEvolutionSolver:
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
-        is: ``(maxiter + 1) * popsize * N``
+        is: ``(maxiter + 1) * popsize * (N - N_equal)``
     popsize : int, optional
         A multiplier for setting the total population size. The population has
-        ``popsize * N`` individuals. This keyword is overridden if an
-        initial population is supplied via the `init` keyword. When using
+        ``popsize * (N - N_equal)`` individuals. This keyword is overridden if
+        an initial population is supplied via the `init` keyword. When using
         ``init='sobol'`` the population size is calculated as the next power
-        of 2 after ``popsize * N``.
+        of 2 after ``popsize * (N - N_equal)``.
     tol : float, optional
         Relative tolerance for convergence, the solving stops when
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
@@ -511,12 +541,32 @@ class DifferentialEvolutionSolver:
         Specify `seed` for repeatable minimizations.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence. When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
+    callback : callable, optional
+        A callable called after each iteration. Has the signature:
+
+            ``callback(intermediate_result: OptimizeResult)``
+
+        where ``intermediate_result`` is a keyword parameter containing an
+        `OptimizeResult` with attributes ``x`` and ``fun``, the best solution
+        found so far and the objective function. Note that the name
+        of the parameter must be ``intermediate_result`` for the callback
+        to be passed an `OptimizeResult`.
+
+        The callback also supports a signature like:
+
+            ``callback(x, convergence: float=val)``
+
+        ``val`` represents the fractional value of the population convergence.
+         When ``val`` is greater than ``1.0``, the function halts.
+
+        Introspection is used to determine which of the signatures is invoked.
+
+        Global minimization will halt if the callback raises ``StopIteration``
+        or returns ``True``; any polishing is still carried out.
+
+        .. versionchanged:: 1.12.0
+            callback accepts the ``intermediate_result`` keyword.
+
     polish : bool, optional
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
@@ -546,8 +596,8 @@ class DifferentialEvolutionSolver:
         'sobol' and 'halton' are superior alternatives and maximize even more
         the parameter space. 'sobol' will enforce an initial population
         size which is calculated as the next power of 2 after
-        ``popsize * N``. 'halton' has no requirements but is a bit less
-        efficient. See `scipy.stats.qmc` for more details.
+        ``popsize * (N - N_equal)``. 'halton' has no requirements but is a bit
+        less efficient. See `scipy.stats.qmc` for more details.
 
         'random' initializes the population randomly - this has the drawback
         that clustering can occur, preventing the whole of parameter space
@@ -646,7 +696,7 @@ class DifferentialEvolutionSolver:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
-        self.callback = callback
+        self.callback = _wrap_callback(callback, "differential_evolution")
         self.polish = polish
 
         # set the updating / parallelisation options
@@ -722,7 +772,7 @@ class DifferentialEvolutionSolver:
 
         if (np.size(self.limits, 0) != 2 or not
                 np.all(np.isfinite(self.limits))):
-            raise ValueError('bounds should be a sequence containing '
+            raise ValueError('bounds should be a sequence containing finite '
                              'real valued (min, max) pairs for each value'
                              ' in x')
 
@@ -739,6 +789,12 @@ class DifferentialEvolutionSolver:
         # _unscale_parameter. This is an optimization
         self.__scale_arg1 = 0.5 * (self.limits[0] + self.limits[1])
         self.__scale_arg2 = np.fabs(self.limits[0] - self.limits[1])
+        with np.errstate(divide='ignore'):
+            # if lb == ub then the following line will be 1/0, which is why
+            # we ignore the divide by zero warning. The result from 1/0 is
+            # inf, so replace those values by 0.
+            self.__recip_scale_arg2 = 1 / self.__scale_arg2
+            self.__recip_scale_arg2[~np.isfinite(self.__recip_scale_arg2)] = 0
 
         self.parameter_count = np.size(self.limits, 1)
 
@@ -773,11 +829,20 @@ class DifferentialEvolutionSolver:
         else:
             self.integrality = False
 
+        # check for equal bounds
+        eb = self.limits[0] == self.limits[1]
+        eb_count = np.count_nonzero(eb)
+
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
         # the minimum is 5 because 'best2bin' requires a population that's at
         # least 5 long
-        self.num_population_members = max(5, popsize * self.parameter_count)
+        # 202301 - reduced population size to account for parameters with
+        # equal bounds. If there are no varying parameters set N to at least 1
+        self.num_population_members = max(
+            5,
+            popsize * max(1, self.parameter_count - eb_count)
+        )
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
 
@@ -936,7 +1001,7 @@ class DifferentialEvolutionSolver:
             The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
-        popn = np.asfarray(init)
+        popn = np.asarray(init, dtype=np.float64)
 
         if (np.size(popn, 0) < 5 or
                 popn.shape[1] != self.parameter_count or
@@ -975,7 +1040,7 @@ class DifferentialEvolutionSolver:
         if np.any(np.isinf(self.population_energies)):
             return np.inf
         return (np.std(self.population_energies) /
-                np.abs(np.mean(self.population_energies) + _MACHEPS))
+                (np.abs(np.mean(self.population_energies)) + _MACHEPS))
 
     def converged(self):
         """
@@ -995,13 +1060,18 @@ class DifferentialEvolutionSolver:
         Returns
         -------
         res : OptimizeResult
-            The optimization result represented as a ``OptimizeResult`` object.
+            The optimization result represented as a `OptimizeResult` object.
             Important attributes are: ``x`` the solution array, ``success`` a
-            Boolean flag indicating if the optimizer exited successfully and
-            ``message`` which describes the cause of the termination. See
-            `OptimizeResult` for a description of other attributes.  If `polish`
-            was employed, and a lower minimum was obtained by the polishing,
-            then OptimizeResult also contains the ``jac`` attribute.
+            Boolean flag indicating if the optimizer exited successfully,
+            ``message`` which describes the cause of the termination,
+            ``population`` the solution vectors present in the population, and
+            ``population_energies`` the value of the objective function for
+            each entry in ``population``.
+            See `OptimizeResult` for a description of other attributes. If
+            `polish` was employed, and a lower minimum was obtained by the
+            polishing, then OptimizeResult also contains the ``jac`` attribute.
+            If the eventual solution does not satisfy the applied constraints
+            ``success`` will be `False`.
         """
         nit, warning_flag = 0, False
         status_message = _status_message['success']
@@ -1037,16 +1107,21 @@ class DifferentialEvolutionSolver:
                 break
 
             if self.disp:
-                print("differential_evolution step %d: f(x)= %g"
-                      % (nit,
-                         self.population_energies[0]))
+                print(f"differential_evolution step {nit}: f(x)="
+                      f" {self.population_energies[0]}"
+                      )
 
             if self.callback:
                 c = self.tol / (self.convergence + _MACHEPS)
-                warning_flag = bool(self.callback(self.x, convergence=c))
+                res = self._result(nit=nit, message="in progress")
+                res.convergence = c
+                try:
+                    warning_flag = bool(self.callback(res))
+                except StopIteration:
+                    warning_flag = True
+
                 if warning_flag:
-                    status_message = ('callback function requested stop early'
-                                      ' by returning True')
+                    status_message = 'callback function requested stop early'
 
             # should the solver terminate?
             if warning_flag or self.converged():
@@ -1056,13 +1131,9 @@ class DifferentialEvolutionSolver:
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        DE_result = OptimizeResult(
-            x=self.x,
-            fun=self.population_energies[0],
-            nfev=self._nfev,
-            nit=nit,
-            message=status_message,
-            success=(warning_flag is not True))
+        DE_result = self._result(
+            nit=nit, message=status_message, warning_flag=warning_flag
+        )
 
         if self.polish and not np.all(self.integrality):
             # can't polish if all the parameters are integers
@@ -1122,6 +1193,31 @@ class DifferentialEvolutionSolver:
                                      f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
+
+    def _result(self, **kwds):
+        # form an intermediate OptimizeResult
+        nit = kwds.get('nit', None)
+        message = kwds.get('message', None)
+        warning_flag = kwds.get('warning_flag', False)
+        result = OptimizeResult(
+            x=self.x,
+            fun=self.population_energies[0],
+            nfev=self._nfev,
+            nit=nit,
+            message=message,
+            success=(warning_flag is not True),
+            population=self._scale_parameters(self.population),
+            population_energies=self.population_energies
+        )
+        if self._wrapped_constraints:
+            result.constr = [c.violation(result.x)
+                             for c in self._wrapped_constraints]
+            result.constr_violation = np.max(np.concatenate(result.constr))
+            result.maxcv = result.constr_violation
+            if result.maxcv > 0:
+                result.success = False
+
+        return result
 
     def _calculate_population_energies(self, population):
         """
@@ -1492,7 +1588,7 @@ class DifferentialEvolutionSolver:
 
     def _unscale_parameters(self, parameters):
         """Scale from parameters to a number between 0 and 1."""
-        return (parameters - self.__scale_arg1) / self.__scale_arg2 + 0.5
+        return (parameters - self.__scale_arg1) * self.__recip_scale_arg2 + 0.5
 
     def _ensure_constraint(self, trial):
         """Make sure the parameters lie between the limits."""
@@ -1528,6 +1624,7 @@ class DifferentialEvolutionSolver:
             i = 0
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
             while (i < self.parameter_count and crossovers[i]):
                 trial[fill_point] = bprime[fill_point]
                 fill_point = (fill_point + 1) % self.parameter_count
@@ -1587,10 +1684,16 @@ class DifferentialEvolutionSolver:
         obtain random integers from range(self.num_population_members),
         without replacement. You can't have the original candidate either.
         """
-        idxs = list(range(self.num_population_members))
-        idxs.remove(candidate)
-        self.random_number_generator.shuffle(idxs)
-        idxs = idxs[:number_samples]
+        pool = np.arange(self.num_population_members)
+        self.random_number_generator.shuffle(pool)
+
+        idxs = []
+        while len(idxs) < number_samples and len(pool) > 0:
+            idx = pool[0]
+            pool = pool[1:]
+            if idx != candidate:
+                idxs.append(idx)
+        
         return idxs
 
 

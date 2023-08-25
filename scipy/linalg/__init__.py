@@ -5,6 +5,15 @@ Linear algebra (:mod:`scipy.linalg`)
 
 .. currentmodule:: scipy.linalg
 
+.. toctree::
+   :hidden:
+
+   linalg.blas
+   linalg.cython_blas
+   linalg.cython_lapack
+   linalg.interpolative
+   linalg.lapack
+
 Linear algebra functions.
 
 .. eventually, we should replace the numpy.linalg HTML link with just `numpy.linalg`

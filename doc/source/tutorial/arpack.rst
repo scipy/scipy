@@ -307,4 +307,4 @@ operator.
 
 References
 ----------
-.. [1] http://www.caam.rice.edu/software/ARPACK/
+.. [1] https://github.com/opencollab/arpack-ng

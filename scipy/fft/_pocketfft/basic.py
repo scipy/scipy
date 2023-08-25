@@ -23,7 +23,7 @@ def c2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
         tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
+        raise ValueError("invalid number of data points ({}) specified"
                          .format(tmp.shape[axis]))
 
     out = (tmp if overwrite_x and tmp.dtype.kind == 'c' else None)
@@ -55,7 +55,7 @@ def r2c(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     if n is not None:
         tmp, _ = _fix_shape_1d(tmp, n, axis)
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
+        raise ValueError("invalid number of data points ({}) specified"
                          .format(tmp.shape[axis]))
 
     # Note: overwrite_x is not utilised
@@ -88,7 +88,7 @@ def c2r(forward, x, n=None, axis=-1, norm=None, overwrite_x=False,
     if n is None:
         n = (tmp.shape[axis] - 1) * 2
         if n < 1:
-            raise ValueError("Invalid number of data points ({0}) specified"
+            raise ValueError("Invalid number of data points ({}) specified"
                              .format(n))
     else:
         tmp, _ = _fix_shape_1d(tmp, (n//2) + 1, axis)
@@ -283,7 +283,7 @@ def r2r_fftpack(forward, x, n=None, axis=-1, norm=None, overwrite_x=False):
         tmp, copied = _fix_shape_1d(tmp, n, axis)
         overwrite_x = overwrite_x or copied
     elif tmp.shape[axis] < 1:
-        raise ValueError("invalid number of data points ({0}) specified"
+        raise ValueError("invalid number of data points ({}) specified"
                          .format(tmp.shape[axis]))
 
     out = (tmp if overwrite_x else None)

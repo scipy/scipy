@@ -36,8 +36,9 @@ Functions
 import numpy as np
 from numpy import array, asarray, float64, zeros
 from . import _lbfgsb
-from ._optimize import (MemoizeJac, OptimizeResult,
-                       _check_unknown_options, _prepare_scalar_function)
+from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
+                        _wrap_callback, _check_unknown_options,
+                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
 
 from scipy.sparse.linalg import LinearOperator
@@ -90,7 +91,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     pgtol : float, optional
         The iteration will stop when
         ``max{|proj g_i | i = 1, ..., n} <= pgtol``
-        where ``pg_i`` is the i-th component of the projected gradient.
+        where ``proj g_i`` is the i-th component of the projected gradient.
     epsilon : float, optional
         Step size used when `approx_grad` is True, for numerically
         calculating the gradient
@@ -183,6 +184,7 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
         jac = fprime
 
     # build options
+    callback = _wrap_callback(callback)
     opts = {'disp': disp,
             'iprint': iprint,
             'maxcor': m,
@@ -232,7 +234,7 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= ftol``.
     gtol : float
         The iteration will stop when ``max{|proj g_i | i = 1, ..., n}
-        <= gtol`` where ``pg_i`` is the i-th component of the
+        <= gtol`` where ``proj g_i`` is the i-th component of the
         projected gradient.
     eps : float or ndarray
         If `jac is None` the absolute step size used for numerical
@@ -346,6 +348,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
     n_iterations = 0
 
     while 1:
+        # g may become float32 if a user provides a function that calculates
+        # the Jacobian in float32 (see gh-18730). The underlying Fortran code
+        # expects float64, so upcast it
+        g = g.astype(np.float64)
         # x, f, g, wa, iwa, task, csave, lsave, isave, dsave = \
         _lbfgsb.setulb(m, x, low_bnd, upper_bnd, nbd, f, g, factr,
                        pgtol, wa, iwa, task, iprint, csave, lsave,
@@ -360,9 +366,10 @@ def _minimize_lbfgsb(fun, x0, args=(), jac=None, bounds=None,
         elif task_str.startswith(b'NEW_X'):
             # new iteration
             n_iterations += 1
-            if callback is not None:
-                callback(np.copy(x))
 
+            intermediate_result = OptimizeResult(x=x, fun=f)
+            if _call_callback_maybe_halt(callback, intermediate_result):
+                task[:] = 'STOP: CALLBACK REQUESTED HALT'
             if n_iterations >= maxiter:
                 task[:] = 'STOP: TOTAL NO. of ITERATIONS REACHED LIMIT'
             elif sf.nfev > maxfun:

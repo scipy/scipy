@@ -275,9 +275,9 @@ def diagsvd(s, M, N):
     typ = part.dtype.char
     MorN = len(s)
     if MorN == M:
-        return r_['-1', part, zeros((M, N-M), typ)]
+        return numpy.hstack((part, zeros((M, N - M), dtype=typ)))
     elif MorN == N:
-        return r_[part, zeros((M-N, N), typ)]
+        return r_[part, zeros((M - N, N), dtype=typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
@@ -465,16 +465,16 @@ def subspace_angles(A, B):
     # 1. Compute orthonormal bases of column-spaces
     A = _asarray_validated(A, check_finite=True)
     if len(A.shape) != 2:
-        raise ValueError('expected 2D array, got shape %s' % (A.shape,))
+        raise ValueError(f'expected 2D array, got shape {A.shape}')
     QA = orth(A)
     del A
 
     B = _asarray_validated(B, check_finite=True)
     if len(B.shape) != 2:
-        raise ValueError('expected 2D array, got shape %s' % (B.shape,))
+        raise ValueError(f'expected 2D array, got shape {B.shape}')
     if len(B) != len(QA):
         raise ValueError('A and B must have the same number of rows, got '
-                         '%s and %s' % (QA.shape[0], B.shape[0]))
+                         '{} and {}'.format(QA.shape[0], B.shape[0]))
     QB = orth(B)
     del B
 

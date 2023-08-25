@@ -14,10 +14,10 @@ from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCAL
 # PyCapsule helpers
 #
 
-cdef void raw_capsule_destructor(object capsule):
-    cdef char *name
+cdef void raw_capsule_destructor(object capsule) noexcept:
+    cdef const char *name
     name = PyCapsule_GetName(capsule)
-    free(name)
+    free(<char*>name)
 
 
 def get_raw_capsule(func_obj, name_obj, context_obj):
@@ -40,9 +40,9 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
     cdef:
         void *func
         void *context
-        char *capsule_name
-        char *name
-        char *name_copy
+        const char *capsule_name
+        const char *name
+        const char *name_copy
 
     if name_obj is None:
         name = NULL
@@ -84,7 +84,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
 
 
 def get_capsule_signature(capsule_obj):
-    cdef char *name
+    cdef const char *name
     name = PyCapsule_GetName(capsule_obj)
     if name == NULL:
         raise ValueError("Capsule has no signature")
@@ -132,7 +132,7 @@ for idx, sig in enumerate(sigs):
 signatures[idx + 1].signature = NULL
 
 
-cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil except? -1.0:
+cdef double test_thunk_cython(double a, int *error_flag, void *data) except? -1.0 nogil:
     """
     Implementation of a thunk routine in Cython
     """
@@ -169,7 +169,6 @@ def test_call_cython(callback_obj, double value):
     cdef:
         ccallback_t callback
         int error_flag = 0
-        int ret
         double result
 
     ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS)
@@ -182,7 +181,7 @@ def test_call_cython(callback_obj, double value):
     return result
 
 
-cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil except *:
+cdef double plus1_cython(double a, int *error_flag, void *user_data) except * nogil:
     """
     Implementation of a callable in Cython
     """
@@ -196,13 +195,13 @@ cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil excep
     else:
         return a + (<double *>user_data)[0]
 
-cdef double plus1b_cython(double a, double b, int *error_flag, void *user_data) nogil except *:
+cdef double plus1b_cython(double a, double b, int *error_flag, void *user_data) except * nogil:
     return plus1_cython(a, error_flag, user_data) + b
 
-cdef double plus1bc_cython(double a, double b, double c, int *error_flag, void *user_data) nogil except *:
+cdef double plus1bc_cython(double a, double b, double c, int *error_flag, void *user_data) except * nogil:
     return plus1_cython(a, error_flag, user_data) + b + c
 
-cdef double sine(double x, void *user_data) nogil except *:
+cdef double sine(double x, void *user_data) except * nogil:
     return sin(x)
 
 

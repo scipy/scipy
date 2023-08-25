@@ -82,10 +82,10 @@ from scipy import linalg
 from scipy.special import airy
 
 # Local imports.
-from . import _ufuncs
-_gam = _ufuncs.gamma
 # There is no .pyi file for _specfun
 from . import _specfun  # type: ignore
+from . import _ufuncs
+_gam = _ufuncs.gamma
 
 _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
              'jacobi', 'laguerre', 'genlaguerre', 'hermite',
@@ -123,7 +123,8 @@ class orthopoly1d(np.poly1d):
             evf = eval_func
             if evf:
                 knn = kn
-                eval_func = lambda x: evf(x) / knn
+                def eval_func(x):
+                    return evf(x) / knn
             mu = mu / abs(kn)
             kn = 1.0
 
@@ -268,17 +269,19 @@ def roots_jacobi(n, alpha, beta, mu=False):
     a = alpha
     b = beta
     if a + b == 0.0:
-        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b), 0.0)
+        def an_func(k):
+            return np.where(k == 0, (b - a) / (2 + a + b), 0.0)
     else:
-        an_func = lambda k: np.where(k == 0, (b-a)/(2+a+b),
-                  (b*b - a*a) / ((2.0*k+a+b)*(2.0*k+a+b+2)))
+        def an_func(k):
+            return np.where(k == 0, (b - a) / (2 + a + b), (b * b - a * a) / ((2.0 * k + a + b) * (2.0 * k + a + b + 2)))
 
-    bn_func = lambda k: 2.0 / (2.0*k+a+b)*np.sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
-              * np.where(k == 1, 1.0, np.sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
+    def bn_func(k):
+        return 2.0 / (2.0 * k + a + b) * np.sqrt((k + a) * (k + b) / (2 * k + a + b + 1)) * np.where(k == 1, 1.0, np.sqrt(k * (k + a + b) / (2.0 * k + a + b - 1)))
 
-    f = lambda n, x: _ufuncs.eval_jacobi(n, a, b, x)
-    df = lambda n, x: (0.5 * (n + a + b + 1)
-                       * _ufuncs.eval_jacobi(n-1, a+1, b+1, x))
+    def f(n, x):
+        return _ufuncs.eval_jacobi(n, a, b, x)
+    def df(n, x):
+        return 0.5 * (n + a + b + 1) * _ufuncs.eval_jacobi(n - 1, a + 1, b + 1, x)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -360,7 +363,8 @@ def jacobi(n, alpha, beta, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: (1 - x)**alpha * (1 + x)**beta
+    def wfunc(x):
+        return (1 - x) ** alpha * (1 + x) ** beta
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
@@ -472,7 +476,8 @@ def sh_jacobi(n, p, q, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: (1.0 - x)**(p - q) * (x)**(q - 1.)
+    def wfunc(x):
+        return (1.0 - x) ** (p - q) * x ** (q - 1.0)
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
@@ -546,11 +551,14 @@ def roots_genlaguerre(n, alpha, mu=False):
         else:
             return x, w
 
-    an_func = lambda k: 2 * k + alpha + 1
-    bn_func = lambda k: -np.sqrt(k * (k + alpha))
-    f = lambda n, x: _ufuncs.eval_genlaguerre(n, alpha, x)
-    df = lambda n, x: (n*_ufuncs.eval_genlaguerre(n, alpha, x)
-                       - (n + alpha)*_ufuncs.eval_genlaguerre(n-1, alpha, x))/x
+    def an_func(k):
+        return 2 * k + alpha + 1
+    def bn_func(k):
+        return -np.sqrt(k * (k + alpha))
+    def f(n, x):
+        return _ufuncs.eval_genlaguerre(n, alpha, x)
+    def df(n, x):
+        return (n * _ufuncs.eval_genlaguerre(n, alpha, x) - (n + alpha) * _ufuncs.eval_genlaguerre(n - 1, alpha, x)) / x
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -582,6 +590,11 @@ def genlaguerre(n, alpha, monic=False):
     L : orthopoly1d
         Generalized Laguerre polynomial.
 
+    See Also
+    --------
+    laguerre : Laguerre polynomial.
+    hyp1f1 : confluent hypergeometric function
+
     Notes
     -----
     For fixed :math:`\alpha`, the polynomials :math:`L_n^{(\alpha)}`
@@ -590,11 +603,6 @@ def genlaguerre(n, alpha, monic=False):
 
     The Laguerre polynomials are the special case where :math:`\alpha
     = 0`.
-
-    See Also
-    --------
-    laguerre : Laguerre polynomial.
-    hyp1f1 : confluent hypergeometric function
 
     References
     ----------
@@ -645,7 +653,8 @@ def genlaguerre(n, alpha, monic=False):
     else:
         n1 = n
     x, w = roots_genlaguerre(n1, alpha)
-    wfunc = lambda x: exp(-x) * x**alpha
+    def wfunc(x):
+        return exp(-x) * x ** alpha
     if n == 0:
         x, w = [], []
     hn = _gam(n + alpha + 1) / _gam(n + 1)
@@ -722,14 +731,14 @@ def laguerre(n, monic=False):
     L : orthopoly1d
         Laguerre Polynomial.
 
+    See Also
+    --------
+    genlaguerre : Generalized (associated) Laguerre polynomial.
+
     Notes
     -----
     The polynomials :math:`L_n` are orthogonal over :math:`[0,
     \infty)` with weight function :math:`e^{-x}`.
-
-    See Also
-    --------
-    genlaguerre : Generalized (associated) Laguerre polynomial.
 
     References
     ----------
@@ -822,6 +831,13 @@ def roots_hermite(n, mu=False):
     mu : float
         Sum of the weights
 
+    See Also
+    --------
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
+    numpy.polynomial.hermite.hermgauss
+    roots_hermitenorm
+
     Notes
     -----
     For small n up to 150 a modified version of the Golub-Welsch
@@ -833,13 +849,6 @@ def roots_hermite(n, mu=False):
     which computes nodes and weights in a numerically stable manner.
     The algorithm has linear runtime making computation for very
     large n (several thousand or more) feasible.
-
-    See Also
-    --------
-    scipy.integrate.quadrature
-    scipy.integrate.fixed_quad
-    numpy.polynomial.hermite.hermgauss
-    roots_hermitenorm
 
     References
     ----------
@@ -864,10 +873,13 @@ def roots_hermite(n, mu=False):
 
     mu0 = np.sqrt(np.pi)
     if n <= 150:
-        an_func = lambda k: 0.0*k
-        bn_func = lambda k: np.sqrt(k/2.0)
+        def an_func(k):
+            return 0.0 * k
+        def bn_func(k):
+            return np.sqrt(k / 2.0)
         f = _ufuncs.eval_hermite
-        df = lambda n, x: 2.0 * n * _ufuncs.eval_hermite(n-1, x)
+        def df(n, x):
+            return 2.0 * n * _ufuncs.eval_hermite(n - 1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -905,8 +917,10 @@ def _compute_tauk(n, k, maxit=5):
     """
     a = n % 2 - 0.5
     c = (4.0*floor(n/2.0) - 4.0*k + 3.0)*pi / (4.0*floor(n/2.0) + 2.0*a + 2.0)
-    f = lambda x: x - sin(x) - c
-    df = lambda x: 1.0 - cos(x)
+    def f(x):
+        return x - sin(x) - c
+    def df(x):
+        return 1.0 - cos(x)
     xi = 0.5*pi
     for i in range(maxit):
         xi = xi - f(xi)/df(xi)
@@ -1298,7 +1312,8 @@ def hermite(n, monic=False):
     else:
         n1 = n
     x, w = roots_hermite(n1)
-    wfunc = lambda x: exp(-x * x)
+    def wfunc(x):
+        return exp(-x * x)
     if n == 0:
         x, w = [], []
     hn = 2**n * _gam(n + 1) * sqrt(pi)
@@ -1337,6 +1352,12 @@ def roots_hermitenorm(n, mu=False):
     mu : float
         Sum of the weights
 
+    See Also
+    --------
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
+    numpy.polynomial.hermite_e.hermegauss
+
     Notes
     -----
     For small n up to 150 a modified version of the Golub-Welsch
@@ -1348,12 +1369,6 @@ def roots_hermitenorm(n, mu=False):
     which computes nodes and weights in a numerical stable manner.
     The algorithm has linear runtime making computation for very
     large n (several thousand or more) feasible.
-
-    See Also
-    --------
-    scipy.integrate.quadrature
-    scipy.integrate.fixed_quad
-    numpy.polynomial.hermite_e.hermegauss
 
     References
     ----------
@@ -1368,10 +1383,13 @@ def roots_hermitenorm(n, mu=False):
 
     mu0 = np.sqrt(2.0*np.pi)
     if n <= 150:
-        an_func = lambda k: 0.0*k
-        bn_func = lambda k: np.sqrt(k)
+        def an_func(k):
+            return 0.0 * k
+        def bn_func(k):
+            return np.sqrt(k)
         f = _ufuncs.eval_hermitenorm
-        df = lambda n, x: n * _ufuncs.eval_hermitenorm(n-1, x)
+        def df(n, x):
+            return n * _ufuncs.eval_hermitenorm(n - 1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -1423,7 +1441,8 @@ def hermitenorm(n, monic=False):
     else:
         n1 = n
     x, w = roots_hermitenorm(n1)
-    wfunc = lambda x: exp(-x * x / 2.0)
+    def wfunc(x):
+        return exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
     hn = sqrt(2 * pi) * _gam(n + 1)
@@ -1504,14 +1523,14 @@ def roots_gegenbauer(n, alpha, mu=False):
         for term in range(1, len(coeffs)):
             mu0 = mu0 * inv_alpha + coeffs[term]
         mu0 = mu0 * np.sqrt(np.pi / alpha)
-    an_func = lambda k: 0.0 * k
-    bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
-                        / (4 * (k + alpha) * (k + alpha - 1)))
-    f = lambda n, x: _ufuncs.eval_gegenbauer(n, alpha, x)
-    df = lambda n, x: ((-n*x*_ufuncs.eval_gegenbauer(n, alpha, x)
-                        + ((n + 2*alpha - 1)
-                           * _ufuncs.eval_gegenbauer(n - 1, alpha, x)))
-                       / (1 - x**2))
+    def an_func(k):
+        return 0.0 * k
+    def bn_func(k):
+        return np.sqrt(k * (k + 2 * alpha - 1) / (4 * (k + alpha) * (k + alpha - 1)))
+    def f(n, x):
+        return _ufuncs.eval_gegenbauer(n, alpha, x)
+    def df(n, x):
+        return (-n * x * _ufuncs.eval_gegenbauer(n, alpha, x) + (n + 2 * alpha - 1) * _ufuncs.eval_gegenbauer(n - 1, alpha, x)) / (1 - x ** 2)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -1670,14 +1689,14 @@ def chebyt(n, monic=False):
     T : orthopoly1d
         Chebyshev polynomial of the first kind.
 
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind.
+
     Notes
     -----
     The polynomials :math:`T_n` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x^2)^{-1/2}`.
-
-    See Also
-    --------
-    chebyu : Chebyshev polynomial of the second kind.
 
     References
     ----------
@@ -1740,7 +1759,8 @@ def chebyt(n, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: 1.0 / sqrt(1 - x * x)
+    def wfunc(x):
+        return 1.0 / sqrt(1 - x * x)
     if n == 0:
         return orthopoly1d([], [], pi, 1.0, wfunc, (-1, 1), monic,
                            lambda x: _ufuncs.eval_chebyt(n, x))
@@ -1831,14 +1851,14 @@ def chebyu(n, monic=False):
     U : orthopoly1d
         Chebyshev polynomial of the second kind.
 
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
     Notes
     -----
     The polynomials :math:`U_n` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x^2)^{1/2}`.
-
-    See Also
-    --------
-    chebyt : Chebyshev polynomial of the first kind.
 
     References
     ----------
@@ -1974,14 +1994,14 @@ def chebyc(n, monic=False):
     C : orthopoly1d
         Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
     Notes
     -----
     The polynomials :math:`C_n(x)` are orthogonal over :math:`[-2, 2]`
     with weight function :math:`1/\sqrt{1 - (x/2)^2}`.
-
-    See Also
-    --------
-    chebyt : Chebyshev polynomial of the first kind.
 
     References
     ----------
@@ -2080,14 +2100,14 @@ def chebys(n, monic=False):
     S : orthopoly1d
         Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind
+
     Notes
     -----
     The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
     with weight function :math:`\sqrt{1 - (x/2)}^2`.
-
-    See Also
-    --------
-    chebyu : Chebyshev polynomial of the second kind
 
     References
     ----------
@@ -2397,11 +2417,13 @@ def roots_legendre(n, mu=False):
         raise ValueError("n must be a positive integer.")
 
     mu0 = 2.0
-    an_func = lambda k: 0.0 * k
-    bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
+    def an_func(k):
+        return 0.0 * k
+    def bn_func(k):
+        return k * np.sqrt(1.0 / (4 * k * k - 1))
     f = _ufuncs.eval_legendre
-    df = lambda n, x: (-n*x*_ufuncs.eval_legendre(n, x)
-                       + n*_ufuncs.eval_legendre(n-1, x))/(1-x**2)
+    def df(n, x):
+        return (-n * x * _ufuncs.eval_legendre(n, x) + n * _ufuncs.eval_legendre(n - 1, x)) / (1 - x ** 2)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -2538,7 +2560,8 @@ def sh_legendre(n, monic=False):
     if n < 0:
         raise ValueError("n must be nonnegative.")
 
-    wfunc = lambda x: 0.0 * x + 1.0
+    def wfunc(x):
+        return 0.0 * x + 1.0
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
                            lambda x: _ufuncs.eval_sh_legendre(n, x))

@@ -535,7 +535,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     """
     known_stats = ['mean', 'median', 'count', 'sum', 'std', 'min', 'max']
     if not callable(statistic) and statistic not in known_stats:
-        raise ValueError('invalid statistic %r' % (statistic,))
+        raise ValueError(f'invalid statistic {statistic!r}')
 
     try:
         bins = index(bins)
@@ -546,7 +546,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
 
     # NOTE: for _bin_edges(), see e.g. gh-11365
     if isinstance(bins, int) and not np.isfinite(sample).all():
-        raise ValueError('%r contains non-finite values.' % (sample,))
+        raise ValueError(f'{sample!r} contains non-finite values.')
 
     # `Ndim` is the number of dimensions (e.g. `2` for `binned_statistic_2d`)
     # `Dlen` is the length of elements along each dimension.
@@ -567,7 +567,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
-    if(statistic != 'count' and Vlen != Dlen):
+    if statistic != 'count' and Vlen != Dlen:
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
 
@@ -673,7 +673,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     result = result[core]
 
     # Unravel binnumbers into an ndarray, each row the bins for each dimension
-    if(expand_binnumbers and Ndim > 1):
+    if expand_binnumbers and Ndim > 1:
         binnumbers = np.asarray(np.unravel_index(binnumbers, nbin))
 
     if np.any(result.shape[1:] != nbin - 2):

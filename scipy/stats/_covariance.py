@@ -541,9 +541,12 @@ class CovViaCholesky(Covariance):
         self._factor = L
         self._log_pdet = 2*np.log(np.diag(self._factor)).sum(axis=-1)
         self._rank = L.shape[-1]  # must be full rank for cholesky
-        self._covariance = L @ L.T
         self._shape = L.shape
         self._allow_singular = False
+
+    @cached_property
+    def _covariance(self):
+        return self._factor @ self._factor.T
 
     def _whiten(self, x):
         res = linalg.solve_triangular(self._factor, x.T, lower=True).T
@@ -607,6 +610,7 @@ class CovViaEigendecomposition(Covariance):
         residual = np.linalg.norm(x @ self._null_basis, axis=-1)
         in_support = residual < self._eps
         return in_support
+
 
 class CovViaPSD(Covariance):
     """

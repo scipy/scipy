@@ -1025,7 +1025,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         raise ValueError("`p` must be 1 dimensional.")
 
     if tol < 100 * EPS:
-        warn("`tol` is too low, setting to {:.2e}".format(100 * EPS))
+        warn(f"`tol` is too low, setting to {100 * EPS:.2e}")
         tol = 100 * EPS
 
     if verbose not in [0, 1, 2]:
@@ -1107,7 +1107,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if m + nodes_added > max_nodes:
             status = 1
             if verbose == 2:
-                nodes_added = "({})".format(nodes_added)
+                nodes_added = f"({nodes_added})"
                 print_iteration_progress(iteration, max_rms_res, max_bc_res,
                                          m, nodes_added)
             break

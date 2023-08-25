@@ -1,7 +1,7 @@
-.. image:: doc/source/_static/logo.svg
+.. image:: https://raw.githubusercontent.com/scipy/scipy/main/doc/source/_static/logo.svg
   :target: https://scipy.org
-  :width: 100
-  :height: 100
+  :width: 110
+  :height: 110
   :align: left 
 
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
@@ -45,7 +45,7 @@ manipulate numbers on a computer and display or publish the results, give
 SciPy a try!
 
 For the installation instructions, see `our install
-guide <https://docs.scipy.org/doc/scipy/getting_started.html#installation>`__.
+guide <https://scipy.org/install/>`__.
 
 
 Call for Contributions

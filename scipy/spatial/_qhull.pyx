@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 """
 Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 
@@ -10,6 +12,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -19,8 +22,6 @@ from libc cimport stdlib
 from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
-
-import warnings
 
 np.import_array()
 
@@ -332,7 +333,6 @@ cdef class _Qhull:
         self._messages.clear()
 
         cdef coordT* coord
-        cdef int i
         with nogil:
             self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
             if self._qh == NULL:
@@ -543,7 +543,7 @@ cdef class _Qhull:
         cdef facetT* neighbor
         cdef vertexT *vertex
         cdef pointT *point
-        cdef int i, j, ipoint, ipoint2, ncoplanar
+        cdef int i, j, ipoint, ncoplanar
         cdef object tmp
         cdef np.ndarray[np.npy_int, ndim=2] facets
         cdef np.ndarray[np.npy_int, ndim=1] good
@@ -808,7 +808,6 @@ cdef class _Qhull:
         cdef np.ndarray[np.double_t, ndim=2] voronoi_vertices
         cdef np.ndarray[np.intp_t, ndim=1] point_region
         cdef int nvoronoi_vertices
-        cdef pointT infty_point[NPY_MAXDIMS+1]
         cdef pointT *point
         cdef pointT *center
         cdef double dist
@@ -988,7 +987,7 @@ cdef class _Qhull:
 
 
 cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
-                         setT *centers, boolT unbounded):
+                         setT *centers, boolT unbounded) noexcept:
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
     cdef list cur_vertices
@@ -1024,7 +1023,7 @@ cdef void _visit_voronoi(qhT *_qh, FILE *ptr, vertexT *vertex, vertexT *vertexA,
     return
 
 
-cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex):
+cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex) noexcept:
     if nd == 3:
         qh_order_vertexneighbors(qh, vertex)
     elif nd >= 4:
@@ -1080,19 +1079,12 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     cdef CBLAS_INT info = 0
     cdef CBLAS_INT ipiv[NPY_MAXDIMS+1]
     cdef int ndim, nsimplex
-    cdef double centroid[NPY_MAXDIMS]
-    cdef double c[NPY_MAXDIMS+1]
-    cdef double *transform
     cdef double anorm
     cdef double rcond = 0.0
     cdef double rcond_limit
 
     cdef double work[4*NPY_MAXDIMS]
     cdef CBLAS_INT iwork[NPY_MAXDIMS]
-
-    cdef double x1, x2, x3
-    cdef double y1, y2, y3
-    cdef double det
 
     ndim = points.shape[1]
     nsimplex = simplices.shape[0]
@@ -1147,7 +1139,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
     return Tinvs
 
 @cython.boundscheck(False)
-cdef double _matrix_norm1(int n, double *a) nogil:
+cdef double _matrix_norm1(int n, double *a) noexcept nogil:
     """Compute the 1-norm of a square matrix given in in Fortran order"""
     cdef double maxsum = 0, colsum
     cdef int i, j
@@ -1162,7 +1154,7 @@ cdef double _matrix_norm1(int n, double *a) nogil:
     return maxsum
 
 cdef int _barycentric_inside(int ndim, double *transform,
-                             double *x, double *c, double eps) nogil:
+                             const double *x, double *c, double eps) noexcept nogil:
     """
     Check whether point is inside a simplex, using barycentric
     coordinates.  `c` will be filled with barycentric coordinates, if
@@ -1184,7 +1176,7 @@ cdef int _barycentric_inside(int ndim, double *transform,
     return 1
 
 cdef void _barycentric_coordinate_single(int ndim, double *transform,
-                                         double *x, double *c, int i) nogil:
+                                         const double *x, double *c, int i) noexcept nogil:
     """
     Compute a single barycentric coordinate.
 
@@ -1204,7 +1196,7 @@ cdef void _barycentric_coordinate_single(int ndim, double *transform,
             c[i] += transform[ndim*i + j] * (x[j] - transform[ndim*ndim + j])
 
 cdef void _barycentric_coordinates(int ndim, double *transform,
-                                   double *x, double *c) nogil:
+                                   const double *x, double *c) noexcept nogil:
     """
     Compute barycentric coordinates.
 
@@ -1222,7 +1214,7 @@ cdef void _barycentric_coordinates(int ndim, double *transform,
 # N-D geometry
 #------------------------------------------------------------------------------
 
-cdef void _lift_point(DelaunayInfo_t *d, double *x, double *z) nogil:
+cdef void _lift_point(DelaunayInfo_t *d, const double *x, double *z) noexcept nogil:
     cdef int i
     z[d.ndim] = 0
     for i in range(d.ndim):
@@ -1231,7 +1223,7 @@ cdef void _lift_point(DelaunayInfo_t *d, double *x, double *z) nogil:
     z[d.ndim] *= d.paraboloid_scale
     z[d.ndim] += d.paraboloid_shift
 
-cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
+cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) noexcept nogil:
     """
     qh_distplane
     """
@@ -1247,8 +1239,8 @@ cdef double _distplane(DelaunayInfo_t *d, int isimplex, double *point) nogil:
 # Finding simplices
 #------------------------------------------------------------------------------
 
-cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
-                                 double eps) nogil:
+cdef int _is_point_fully_outside(DelaunayInfo_t *d, const double *x,
+                                 double eps) noexcept nogil:
     """
     Is the point outside the bounding box of the triangulation?
 
@@ -1261,8 +1253,8 @@ cdef int _is_point_fully_outside(DelaunayInfo_t *d, double *x,
     return 0
 
 cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
-                                  double *x, double eps,
-                                  double eps_broad) nogil:
+                                  const double *x, double eps,
+                                  double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` by going through all simplices.
 
@@ -1319,8 +1311,8 @@ cdef int _find_simplex_bruteforce(DelaunayInfo_t *d, double *c,
     return -1
 
 cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
-                                double *x, int *start, double eps,
-                                double eps_broad) nogil:
+                                const double *x, int *start, double eps,
+                                double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` via a directed walk in the tessellation.
 
@@ -1420,8 +1412,8 @@ cdef int _find_simplex_directed(DelaunayInfo_t *d, double *c,
     return isimplex
 
 cdef int _find_simplex(DelaunayInfo_t *d, double *c,
-                       double *x, int *start, double eps,
-                       double eps_broad) nogil:
+                       const double *x, int *start, double eps,
+                       double eps_broad) noexcept nogil:
     """
     Find simplex containing point `x` by walking the triangulation.
 
@@ -1713,12 +1705,6 @@ class Delaunay(_QhullUser):
         If option "Qc" is not specified, this list is not computed.
 
         .. versionadded:: 0.12.0
-    vertices
-        Same as `simplices`, but deprecated.
-
-        .. deprecated:: 0.12.0
-            Delaunay attribute `vertices` is deprecated in favour of `simplices`
-            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1858,17 +1844,7 @@ class Delaunay(_QhullUser):
         self._vertex_to_simplex = None
         self._vertex_neighbor_vertices = None
 
-        # Backwards compatibility (Scipy < 0.12.0)
-        self._vertices = self.simplices
-
         _QhullUser._update(self, qhull)
-
-    @property
-    def vertices(self):
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-        return self._vertices
 
     def add_points(self, points, restart=False):
         self._add_points(points, restart)
@@ -1924,9 +1900,6 @@ class Delaunay(_QhullUser):
             arr = self._vertex_to_simplex
             simplices = self.simplices
 
-            coplanar = self.coplanar
-            ncoplanar = coplanar.shape[0]
-
             nsimplex = self.nsimplex
             ndim = self.ndim
 
@@ -1950,7 +1923,7 @@ class Delaunay(_QhullUser):
         ``indices[indptr[k]:indptr[k+1]]``.
 
         """
-        cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
+        cdef int i, j, k
         cdef int nsimplex, npoints, ndim
         cdef np.ndarray[np.npy_int, ndim=2] simplices
         cdef setlist.setlist_t sets
@@ -2130,7 +2103,7 @@ class Delaunay(_QhullUser):
         cdef np.ndarray[np.double_t, ndim=2] out_
         cdef DelaunayInfo_t info
         cdef double z[NPY_MAXDIMS+1]
-        cdef int i, j, k
+        cdef int i, j
 
         if xi.shape[-1] != self.ndim:
             raise ValueError("xi has different dimensionality than "

@@ -3,8 +3,6 @@
 
 #include <cstddef>
 #include <stdexcept>
-#include <boost/static_assert.hpp>
-#define UFUNC_STATIC_ASSERT(cond, msg) BOOST_STATIC_ASSERT_MSG(cond, msg)
 #define UFUNC_CALLFUNC(RealType, NINPUTS, func, inputs) \
     *output = callfunc<RealType, NINPUTS>(func, inputs);
 
@@ -38,7 +36,7 @@ static void
 PyUFunc_T(char **args, npy_intp const *dimensions, npy_intp const *steps,
 	  void *func)
 {
-    UFUNC_STATIC_ASSERT(NINPUTS > 0, "numpy.ufunc demands NINPUT > 0!");
+    static_assert(NINPUTS > 0, "numpy.ufunc demands NINPUT > 0!");
     RealType *inputs[NINPUTS];
     for (std::size_t ii = 0; ii < NINPUTS; ++ii) {
         inputs[ii] = (RealType*)args[ii];

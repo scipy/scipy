@@ -207,10 +207,10 @@ double ndtr(double a)
         return NAN;
     }
 
-    x = a * NPY_SQRT1_2;
+    x = a * M_SQRT1_2;
     z = fabs(x);
 
-    if (z < NPY_SQRT1_2) {
+    if (z < M_SQRT1_2) {
         y = 0.5 + 0.5 * erf(x);
     }
     else {

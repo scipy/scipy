@@ -3,7 +3,7 @@ import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from .._differentiable_functions import VectorFunction
 from .._constraints import (
-    NonlinearConstraint, LinearConstraint, PreparedConstraint, strict_bounds)
+    NonlinearConstraint, LinearConstraint, PreparedConstraint, Bounds, strict_bounds)
 from .._hessian_update_strategy import BFGS
 from .._optimize import OptimizeResult
 from .._differentiable_functions import ScalarFunction
@@ -323,6 +323,11 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
         verbose = 1
 
     if bounds is not None:
+        modified_lb = np.nextafter(bounds.lb, -np.inf, where=bounds.lb > -np.inf)
+        modified_ub = np.nextafter(bounds.ub, np.inf, where=bounds.ub < np.inf)
+        modified_lb = np.where(np.isfinite(bounds.lb), modified_lb, bounds.lb)
+        modified_ub = np.where(np.isfinite(bounds.ub), modified_ub, bounds.ub)
+        bounds = Bounds(modified_lb, modified_ub, keep_feasible=bounds.keep_feasible)
         finite_diff_bounds = strict_bounds(bounds.lb, bounds.ub,
                                            bounds.keep_feasible, n_vars)
     else:
@@ -428,9 +433,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                           state.cg_stop_cond)
             state.status = None
             state.niter = state.nit  # Alias for callback (backward-compatibility)
-            if callback is not None and callback(np.copy(state.x), state):
-                state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            if callback is not None:
+                callback_stop = False
+                try:
+                    callback_stop = callback(state)
+                except StopIteration:
+                    callback_stop = True
+                if callback_stop:
+                    state.status = 3
+                    return True
+            if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.tr_radius < xtol:
                 state.status = 2
@@ -466,9 +478,16 @@ def _minimize_trustregion_constr(fun, x0, args, grad,
                                          state.cg_stop_cond)
             state.status = None
             state.niter = state.nit  # Alias for callback (backward compatibility)
-            if callback is not None and callback(np.copy(state.x), state):
-                state.status = 3
-            elif state.optimality < gtol and state.constr_violation < gtol:
+            if callback is not None:
+                callback_stop = False
+                try:
+                    callback_stop = callback(state)
+                except StopIteration:
+                    callback_stop = True
+                if callback_stop:
+                    state.status = 3
+                    return True
+            if state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif (state.tr_radius < xtol
                   and state.barrier_parameter < barrier_tol):

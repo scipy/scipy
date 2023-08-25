@@ -3,42 +3,89 @@ cimport cython
 import numpy as np
 from scipy.linalg._cythonized_array_utils cimport (
     lapack_t,
-	np_complex_numeric_t,
-	np_numeric_t
+    np_complex_numeric_t,
+    np_numeric_t
     )
+from scipy.linalg.cython_lapack cimport sgetrf, dgetrf, cgetrf, zgetrf
+from libc.stdlib cimport malloc, free
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 
 
-# ====================== swap_c_and_f_layout : s, d, c, z ====================
-@cython.cdivision(True)
+# =========================== find_det_from_lu : s, d, c, z ==================
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) nogil:
-    """Recursive matrix transposition for square arrays"""
-    cdef int i, j, ith_row, r2, c2
-    cdef lapack_t *bb=b
-    cdef lapack_t *aa=a
-    if r < 16:
-        for j in range(c):
-            ith_row = 0
-            for i in range(r):
-            # Basically b[i*n+j] = a[j*n+i] without index math
-                bb[ith_row] = aa[i]
-                ith_row += n
-            aa += n
-            bb += 1
-    else:
-        # If tall
-        if (r > c):
-            r2 = r//2
-            swap_c_and_f_layout(a, b, r2, c, n)
-            swap_c_and_f_layout(a + r2, b+(r2)*n, r-r2, c, n)
-        else:  # Nope
-            c2 = c//2
-            swap_c_and_f_layout(a, b, r, c2, n);
-            swap_c_and_f_layout(a+(c2)*n, b+c2, r, c-c2, n)
+def find_det_from_lu(lapack_t[:, ::1] a):
+    cdef int n = a.shape[0], k, perm = 0, info = 0
+    cdef double det = 1.
+    cdef double complex detj = 1.+0.j
+    cdef int *piv = <int *>malloc(<int>n * sizeof(int))
+    try:
+        if not piv:
+            raise MemoryError('Internal memory allocation request for LU '
+                              'factorization failed in "find_det_from_lu".')
+
+        if lapack_t is float:
+            sgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is double:
+            dgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.
+        elif lapack_t is floatcomplex:
+            cgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+        else:
+            zgetrf(&n, &n, &a[0,0], &n, &piv[0], &info)
+            if info > 0:
+                return 0.+0.j
+
+        if info < 0:
+            raise ValueError('find_det_from_lu has encountered an internal'
+                             ' error in ?getrf routine with invalid'
+                             f' value at {-info}-th parameter.'
+                             )
+        if lapack_t is float or lapack_t is double:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                det *= a[k, k]
+            return -det if perm % 2 else det
+        else:
+            for k in range(n):
+                if piv[k] != (k + 1):
+                    perm += 1
+                detj *= a[k, k]
+            return -detj if perm % 2 else detj
+    finally:
+        free(piv)
+# ============================================================================
+
+
+# ====================== swap_c_and_f_layout : s, d, c, z ====================
+@cython.nonecheck(False)
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.initializedcheck(False)
+cdef inline void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noexcept nogil:
+    """
+    Swap+copy the memory layout of same sized buffers mainly
+    for Cython LAPACK interfaces.
+    """
+    cdef int row, col, ith_row
+    cdef lapack_t *bb = b
+    cdef lapack_t *aa = a
+
+    for col in range(c):
+        ith_row = 0
+        for row in range(r):
+            bb[row] = aa[ith_row]
+            ith_row += c
+        aa += 1
+        bb += r
 # ============================================================================
 
 
@@ -129,7 +176,7 @@ def bandwidth_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
+cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -160,7 +207,7 @@ cdef inline (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) nogil:
+cdef inline (int, int) band_check_internal_noncontig(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], m = A.shape[1]
     cdef Py_ssize_t lower_band = 0, upper_band = 0, r, c
     cdef np_numeric_t zero = 0
@@ -227,7 +274,7 @@ def issymmetric(a, atol=None, rtol=None):
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored. However,
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -295,7 +342,7 @@ def is_sym_her_real_noncontig(np_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -308,7 +355,7 @@ cdef inline bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil:
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_real_noncontig_internal(np_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -353,7 +400,7 @@ def ishermitian(a, atol=None, rtol=None):
     For square empty arrays the result is returned True by convention.
 
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -438,7 +485,7 @@ def is_sym_her_complex_noncontig(np_complex_numeric_t[:, :]A):
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) nogil:
+cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):
@@ -450,7 +497,7 @@ cdef inline bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) no
 @cython.initializedcheck(False)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) nogil:
+cdef inline bint is_sym_her_complex_noncontig_internal(np_complex_numeric_t[:, :]A) noexcept nogil:
     cdef Py_ssize_t n = A.shape[0], r, c
 
     for r in xrange(n):

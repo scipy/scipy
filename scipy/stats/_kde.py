@@ -33,6 +33,9 @@ import numpy as np
 from . import _mvn
 from ._stats import gaussian_kernel_estimate, gaussian_kernel_estimate_log
 
+# deprecated import to be removed in SciPy 1.13.0
+from scipy.special import logsumexp  # noqa
+
 
 __all__ = ['gaussian_kde']
 
@@ -209,6 +212,16 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be of length n")
             self._neff = 1/sum(self._weights**2)
 
+        # This can be converted to a warning once gh-10205 is resolved
+        if self.d > self.n:
+            msg = ("Number of dimensions is greater than number of samples. "
+                   "This results in a singular data covariance matrix, which "
+                   "cannot be treated using the algorithms implemented in "
+                   "`gaussian_kde`. Note that `gaussian_kde` interprets each "
+                   "*column* of `dataset` to be a point; consider transposing "
+                   "the input to `dataset`.")
+            raise ValueError(msg)
+
         try:
             self.set_bandwidth(bw_method=bw_method)
         except linalg.LinAlgError as e:
@@ -250,8 +263,8 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = (f"points have dimension {d}, "
+                       f"dataset has dimension {self.d}")
                 raise ValueError(msg)
 
         output_dtype, spec = _get_output_dtype(self.covariance, points)
@@ -375,8 +388,8 @@ class gaussian_kde:
             extra_kwds = {}
 
         value, inform = _mvn.mvnun_weighted(low_bounds, high_bounds,
-                                           self.dataset, self.weights,
-                                           self.covariance, **extra_kwds)
+                                            self.dataset, self.weights,
+                                            self.covariance, **extra_kwds)
         if inform:
             msg = ('An integral in _mvn.mvnun requires more points than %s' %
                    (self.d * 1000))

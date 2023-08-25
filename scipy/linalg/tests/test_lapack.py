@@ -18,13 +18,16 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 from numpy.random import rand, randint, seed
 
 from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
-                          solve, ldl, norm, block_diag, qr, eigh)
+                          solve, ldl, norm, block_diag, qr, eigh, qz)
 
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
-
 import scipy.sparse as sps
+try:
+    from scipy.__config__ import CONFIG
+except ImportError:
+    CONFIG = None
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -36,6 +39,11 @@ from scipy.linalg.blas import get_blas_funcs
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+blas_provider = blas_version = None
+if CONFIG is not None:
+    blas_provider = CONFIG['Build Dependencies']['blas']['name']
+    blas_version = CONFIG['Build Dependencies']['blas']['version']
 
 
 def generate_random_dtype_array(shape, dtype):
@@ -51,10 +59,10 @@ def test_lapack_documented():
     if lapack.__doc__ is None:  # just in case there is a python -OO
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
-    ignore_list = set([
+    ignore_list = {
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
         'flapack', 'print_function', 'HAS_ILP64',
-    ])
+    }
     missing = list()
     for name in dir(lapack):
         if (not name.startswith('_') and name not in ignore_list and
@@ -1467,7 +1475,7 @@ class TestBlockedQR:
             geqrt, gemqrt = get_lapack_funcs(('geqrt', 'gemqrt'), dtype=dtype)
 
             a, t, info = geqrt(n, A)
-            assert(info == 0)
+            assert info == 0
 
             # Extract elementary reflectors from lower triangle, adding the
             # main diagonal of ones.
@@ -1491,7 +1499,7 @@ class TestBlockedQR:
             for side in ('L', 'R'):
                 for trans in ('N', transpose):
                     c, info = gemqrt(a, t, C, side=side, trans=trans)
-                    assert(info == 0)
+                    assert info == 0
 
                     if trans == transpose:
                         q = Q.T.conj()
@@ -1508,7 +1516,7 @@ class TestBlockedQR:
                     # Test default arguments
                     if (side, trans) == ('L', 'N'):
                         c_default, info = gemqrt(a, t, C)
-                        assert(info == 0)
+                        assert info == 0
                         assert_equal(c_default, c)
 
             # Test invalid side/trans
@@ -1534,7 +1542,7 @@ class TestBlockedQR:
             # triangular
             for l in (0, n // 2, n):
                 a, b, t, info = tpqrt(l, n, A, B)
-                assert(info == 0)
+                assert info == 0
 
                 # Check that lower triangular part of A has not been modified
                 assert_equal(np.tril(a, -1), np.tril(A, -1))
@@ -1570,7 +1578,7 @@ class TestBlockedQR:
                     for trans in ('N', transpose):
                         c, d, info = tpmqrt(l, b, t, C, D, side=side,
                                             trans=trans)
-                        assert(info == 0)
+                        assert info == 0
 
                         if trans == transpose:
                             q = Q.T.conj()
@@ -1590,7 +1598,7 @@ class TestBlockedQR:
 
                         if (side, trans) == ('L', 'N'):
                             c_default, d_default, info = tpmqrt(l, b, t, C, D)
-                            assert(info == 0)
+                            assert info == 0
                             assert_equal(c_default, c)
                             assert_equal(d_default, d)
 
@@ -2175,7 +2183,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # test to assure that the inputs of ?pttrf are unmodified
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
-    assert_equal(info, 0, err_msg="pttrf: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrf: info = {info}, should be 0")
 
     # test that the factors from pttrf can be recombined to make A
     L = np.diag(_e, -1) + np.diag(np.ones(n))
@@ -2191,7 +2199,7 @@ def test_pttrf_pttrs(ddtype, dtype):
     # determine _x from pttrs
     pttrs = get_lapack_funcs('pttrs', dtype=dtype)
     _x, info = pttrs(_d, _e.conj(), b)
-    assert_equal(info, 0, err_msg="pttrs: info = {}, should be 0".format(info))
+    assert_equal(info, 0, err_msg=f"pttrs: info = {info}, should be 0")
 
     # test that _x from pttrs matches the expected x
     assert_allclose(x, _x, atol=atol)
@@ -2322,7 +2330,7 @@ def test_pteqr(dtype, realtype, compute_z):
     d, e, A, z = pteqr_get_d_e_A_z(dtype, realtype, n, compute_z)
 
     d_pteqr, e_pteqr, z_pteqr, info = pteqr(d=d, e=e, z=z, compute_z=compute_z)
-    assert_equal(info, 0, "info = {}, should be 0.".format(info))
+    assert_equal(info, 0, f"info = {info}, should be 0.")
 
     # compare the routine's eigenvalues with scipy.linalg.eig's.
     assert_allclose(np.sort(eigh(A)[0]), np.sort(d_pteqr), atol=atol)
@@ -2609,7 +2617,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     gtsvx_out = gtsvx(dl, d, du, b, fact=fact, trans=trans, dlf=dlf_, df=df_,
                       duf=duf_, du2=du2f_, ipiv=ipiv_)
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
-    assert_(info == 0, "?gtsvx info = {}, should be zero".format(info))
+    assert_(info == 0, f"?gtsvx info = {info}, should be zero")
 
     # assure that inputs are unmodified
     assert_array_equal(dl, inputs_cpy[0])
@@ -2623,7 +2631,7 @@ def test_gtsvx(dtype, trans_bool, fact):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert_(hasattr(rcond, "__len__") is not True,
-            "rcond should be scalar but is {}".format(rcond))
+            f"rcond should be scalar but is {rcond}")
     # ferr should be length of # of cols in x
     assert_(ferr.shape[0] == b.shape[1], "ferr.shape is {} but shoud be {},"
             .format(ferr.shape[0], b.shape[1]))
@@ -2804,7 +2812,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     assert_array_equal(d, diag_cpy[0])
     assert_array_equal(e, diag_cpy[1])
     assert_array_equal(b, diag_cpy[2])
-    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_(info == 0, f"info should be 0 but is {info}.")
     assert_array_almost_equal(x_soln, x)
 
     # test that the factors from ptsvx can be recombined to make A
@@ -2815,7 +2823,7 @@ def test_ptsvx(dtype, realtype, fact, df_de_lambda):
     # assert that the outputs are of correct type or shape
     # rcond should be a scalar
     assert not hasattr(rcond, "__len__"), \
-        "rcond should be scalar but is {}".format(rcond)
+        f"rcond should be scalar but is {rcond}"
     # ferr should be length of # of cols in x
     assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
             .format(ferr.shape, x_soln.shape[1]))
@@ -3052,7 +3060,12 @@ def test_trexc_NAG(t, ifst, ilst, expect):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgexc(dtype):
-    if dtype == np.float32 and sys.platform == 'darwin':
+    if (
+        dtype == np.float32 and
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < '0.3.21.dev'
+    ):
         pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
 
     seed(1234)
@@ -3224,7 +3237,12 @@ def test_trsen_NAG(t, q, select, expect, expect_s, expect_sep):
 
 @pytest.mark.parametrize('dtype', DTYPES)
 def test_gges_tgsen(dtype):
-    if dtype == np.float32 and sys.platform == 'darwin':
+    if (
+        dtype == np.float32 and
+        sys.platform == 'darwin' and
+        blas_provider == 'openblas' and
+        blas_version < '0.3.21.dev'
+    ):
         pytest.xfail("gges[float32] broken for OpenBLAS on macOS, see gh-16949")
 
     seed(1234)
@@ -3280,3 +3298,106 @@ def test_gges_tgsen(dtype):
 
     assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
     assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
+
+
+@pytest.mark.parametrize(
+    "a, b, c, d, e, f, rans, lans",
+    [(np.array([[4.0,   1.0,  1.0,  2.0],
+                [0.0,   3.0,  4.0,  1.0],
+                [0.0,   1.0,  3.0,  1.0],
+                [0.0,   0.0,  0.0,  6.0]]),
+      np.array([[1.0,   1.0,  1.0,  1.0],
+                [0.0,   3.0,  4.0,  1.0],
+                [0.0,   1.0,  3.0,  1.0],
+                [0.0,   0.0,  0.0,  4.0]]),
+      np.array([[-4.0,  7.0,  1.0, 12.0],
+                [-9.0,  2.0, -2.0, -2.0],
+                [-4.0,  2.0, -2.0,  8.0],
+                [-7.0,  7.0, -6.0, 19.0]]),
+      np.array([[2.0,   1.0,  1.0,  3.0],
+                [0.0,   1.0,  2.0,  1.0],
+                [0.0,   0.0,  1.0,  1.0],
+                [0.0,   0.0,  0.0,  2.0]]),
+      np.array([[1.0,   1.0,  1.0,  2.0],
+                [0.0,   1.0,  4.0,  1.0],
+                [0.0,   0.0,  1.0,  1.0],
+                [0.0,   0.0,  0.0,  1.0]]),
+      np.array([[-7.0,  5.0,  0.0,  7.0],
+                [-5.0,  1.0, -8.0,  0.0],
+                [-1.0,  2.0, -3.0,  5.0],
+                [-3.0,  2.0,  0.0,  5.0]]),
+      np.array([[1.0,   1.0,  1.0,  1.0],
+                [-1.0,  2.0, -1.0, -1.0],
+                [-1.0,  1.0,  3.0,  1.0],
+                [-1.0,  1.0, -1.0,  4.0]]),
+      np.array([[4.0,  -1.0,  1.0, -1.0],
+                [1.0,   3.0, -1.0,  1.0],
+                [-1.0,  1.0,  2.0, -1.0],
+                [1.0,  -1.0,  1.0,  1.0]]))])
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+def test_tgsyl_NAG(a, b, c, d, e, f, rans, lans, dtype):
+    atol = 1e-4
+
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+    rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f)
+
+    assert_equal(info, 0)
+    assert_allclose(scale, 1.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                    err_msg="SCALE must be 1.0")
+    assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                    err_msg="DIF must be nearly 0")
+    assert_allclose(rout, rans, atol=atol,
+                    err_msg="Solution for R is incorrect")
+    assert_allclose(lout, lans, atol=atol,
+                    err_msg="Solution for L is incorrect")
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('trans', ('N', 'T'))
+@pytest.mark.parametrize('ijob', [0, 1, 2, 3, 4])
+def test_tgsyl(dtype, trans, ijob):
+
+    atol = 1e-3 if dtype == np.float32 else 1e-10
+    rng = np.random.default_rng(1685779866898198)
+    m, n = 10, 15
+
+    a, d, *_ = qz(rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  rng.uniform(-10, 10, [m, m]).astype(dtype),
+                  output='real')
+
+    b, e, *_ = qz(rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  rng.uniform(-10, 10, [n, n]).astype(dtype),
+                  output='real')
+
+    c = rng.uniform(-2, 2, [m, n]).astype(dtype)
+    f = rng.uniform(-2, 2, [m, n]).astype(dtype)
+
+    tgsyl = get_lapack_funcs(('tgsyl'), dtype=dtype)
+    rout, lout, scale, dif, info = tgsyl(a, b, c, d, e, f,
+                                         trans=trans, ijob=ijob)
+
+    assert info == 0, "INFO is non-zero"
+    assert scale >= 0.0, "SCALE must be non-negative"
+    if ijob == 0:
+        assert_allclose(dif, 0.0, rtol=0, atol=np.finfo(dtype).eps*100,
+                        err_msg="DIF must be 0 for ijob =0")
+    else:
+        assert dif >= 0.0, "DIF must be non-negative"
+
+    # Only DIF is calculated for ijob = 3/4
+    if ijob <= 2:
+        if trans == 'N':
+            lhs1 = a @ rout - lout @ b
+            rhs1 = scale*c
+            lhs2 = d @ rout - lout @ e
+            rhs2 = scale*f
+        elif trans == 'T':
+            lhs1 = np.transpose(a) @ rout + np.transpose(d) @ lout
+            rhs1 = scale*c
+            lhs2 = rout @ np.transpose(b) + lout @ np.transpose(e)
+            rhs2 = -1.0*scale*f
+
+        assert_allclose(lhs1, rhs1, atol=atol, rtol=0.,
+                        err_msg='lhs1 and rhs1 do not match')
+        assert_allclose(lhs2, rhs2, atol=atol, rtol=0.,
+                        err_msg='lhs2 and rhs2 do not match')

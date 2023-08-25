@@ -1,4 +1,3 @@
-
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
     config = Configuration('_build_utils', parent_package, top_path)

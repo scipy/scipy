@@ -119,7 +119,6 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/specfunct/cephes_polevl.c',
   '../../_lib/unuran/unuran/src/specfunct/cgamma.c',
   '../../_lib/unuran/unuran/src/specfunct/hypot.c',
-  '../../_lib/unuran/unuran/src/specfunct/log1p.c',
   '../../_lib/unuran/unuran/src/tests/chi2test.c',
   '../../_lib/unuran/unuran/src/tests/correlation.c',
   '../../_lib/unuran/unuran/src/tests/countpdf.c',
@@ -215,7 +214,8 @@ statlib = py3.extension_module('unuran_wrapper',
     unuran_sources
   ],
   c_args: [unuran_defines, cython_c_args],
-  include_directories: [inc_np, unuran_include_dirs],
+  include_directories: [unuran_include_dirs],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats/_unuran'

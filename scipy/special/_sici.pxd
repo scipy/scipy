@@ -12,9 +12,6 @@ cimport numpy as np
 
 from . cimport sf_error
 
-cdef extern from "numpy/npy_math.h":
-    double NPY_EULER
-
 from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
     zabs, zlog, zpack)
@@ -24,9 +21,10 @@ cdef extern from "specfun_wrappers.h":
 
 DEF MAXITER = 100
 DEF TOL = 2.220446092504131e-16
+DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
-cdef inline double complex zexpi(double complex z) nogil:
+cdef inline double complex zexpi(double complex z) noexcept nogil:
     cdef np.npy_cdouble r
     r = cexpi_wrap(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(r)
@@ -34,7 +32,7 @@ cdef inline double complex zexpi(double complex z) nogil:
 
 @cython.cdivision(True)
 cdef inline void power_series(int sgn, double complex z,
-                             double complex *s, double complex *c) nogil:
+                             double complex *s, double complex *c) noexcept nogil:
     """DLMF 6.6.5 and 6.6.6. If sgn = -1 computes si/ci, and if sgn = 1
     computes shi/chi.
 
@@ -58,7 +56,7 @@ cdef inline void power_series(int sgn, double complex z,
 
     
 cdef inline int csici(double complex z,
-                      double complex *si, double complex *ci) nogil:
+                      double complex *si, double complex *ci) noexcept nogil:
     """Compute sin/cos integrals at complex arguments. The algorithm
     largely follows that of [1].
 
@@ -80,7 +78,7 @@ cdef inline int csici(double complex z,
             sf_error.error("sici", sf_error.DOMAIN, NULL)
             ci[0] = zpack(-INFINITY, NAN)
         else:
-            ci[0] += NPY_EULER + zlog(z)
+            ci[0] += EULER + zlog(z)
         return 0
     
     # DLMF 6.5.5/6.5.6 plus DLMF 6.4.4/6.4.6/6.4.7
@@ -107,7 +105,7 @@ cdef inline int csici(double complex z,
 
 
 cdef inline int cshichi(double complex z,
-                        double complex *shi, double complex *chi) nogil:
+                        double complex *shi, double complex *chi) noexcept nogil:
     """Compute sinh/cosh integrals at complex arguments. The algorithm
     largely follows that of [1].
 
@@ -129,7 +127,7 @@ cdef inline int cshichi(double complex z,
             sf_error.error("shichi", sf_error.DOMAIN, NULL)
             chi[0] = zpack(-INFINITY, NAN)
         else:
-            chi[0] += NPY_EULER + zlog(z)
+            chi[0] += EULER + zlog(z)
         return 0
 
     term1 = zexpi(z)

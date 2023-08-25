@@ -16,7 +16,7 @@ import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
-from scipy.sparse import coo_matrix, isspmatrix
+from scipy.sparse import coo_matrix, issparse
 
 __all__ = ['mminfo', 'mmread', 'mmwrite', 'MMFile']
 
@@ -372,7 +372,7 @@ class MMFile:
             # read and validate header line
             line = stream.readline()
             mmid, matrix, format, field, symmetry = \
-                [asstr(part.strip()) for part in line.split()]
+                (asstr(part.strip()) for part in line.split())
             if not mmid.startswith('%%MatrixMarket'):
                 raise ValueError('source is not in Matrix Market format')
             if not matrix.lower() == 'matrix':
@@ -386,8 +386,11 @@ class MMFile:
 
             # skip comments
             # line.startswith('%')
-            while line and line[0] in ['%', 37]:
-                line = stream.readline()
+            while line:
+                if line.lstrip() and line.lstrip()[0] in ['%', 37]:
+                    line = stream.readline()
+                else:
+                    break
 
             # skip empty lines
             while not line.strip():
@@ -487,7 +490,7 @@ class MMFile:
         isherm = a.dtype.char in 'FD'
 
         # sparse input
-        if isspmatrix(a):
+        if issparse(a):
             # check if number of nonzero entries of lower and upper triangle
             # matrix are equal
             a = a.tocoo()
@@ -629,8 +632,8 @@ class MMFile:
         invalid_keys = set(kwargs.keys()) - set(public_attrs)
 
         if invalid_keys:
-            raise ValueError('''found %s invalid keyword arguments, please only
-                                use %s''' % (tuple(invalid_keys),
+            raise ValueError('''found {} invalid keyword arguments, please only
+                                use {}'''.format(tuple(invalid_keys),
                                              public_attrs))
 
         for attr in attrs:
@@ -648,11 +651,6 @@ class MMFile:
         rows, cols, entries, format, field, symm = (self.rows, self.cols,
                                                     self.entries, self.format,
                                                     self.field, self.symmetry)
-
-        try:
-            from scipy.sparse import coo_matrix
-        except ImportError:
-            coo_matrix = None
 
         dtype = self.DTYPES_BY_FIELD.get(field, None)
 
@@ -712,39 +710,6 @@ class MMFile:
             else:
                 if not (i in [0, j] and j == cols):
                     raise ValueError("Parse error, did not read all lines.")
-
-        elif format == self.FORMAT_COORDINATE and coo_matrix is None:
-            # Read sparse matrix to dense when coo_matrix is not available.
-            a = zeros((rows, cols), dtype=dtype)
-            line = 1
-            k = 0
-            while line:
-                line = stream.readline()
-                # line.startswith('%')
-                if not line or line[0] in ['%', 37] or not line.strip():
-                    continue
-                l = line.split()
-                i, j = map(int, l[:2])
-                i, j = i-1, j-1
-                if is_integer:
-                    aij = int(l[2])
-                elif is_unsigned_integer:
-                    aij = int(l[2])
-                elif is_complex:
-                    aij = complex(*map(float, l[2:]))
-                else:
-                    aij = float(l[2])
-                a[i, j] = aij
-                if has_symmetry and i != j:
-                    if is_skew:
-                        a[j, i] = -aij
-                    elif is_herm:
-                        a[j, i] = conj(aij)
-                    else:
-                        a[j, i] = aij
-                k = k + 1
-            if not k == entries:
-                ValueError("Did not read all entries")
 
         elif format == self.FORMAT_COORDINATE:
             # Read sparse COOrdinate format
@@ -843,7 +808,7 @@ class MMFile:
                         a = a.astype('D')
 
         else:
-            if not isspmatrix(a):
+            if not issparse(a):
                 raise ValueError('unknown matrix type: %s' % type(a))
 
             rep = 'coordinate'

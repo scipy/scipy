@@ -64,7 +64,7 @@ def next_fast_len(target, real=False):
 
 # Directly wrap the c-function good_size but take the docstring etc., from the
 # next_fast_len function above
-next_fast_len = update_wrapper(lru_cache()(_helper.good_size), next_fast_len)
+next_fast_len = update_wrapper(lru_cache(_helper.good_size), next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 
 
@@ -95,7 +95,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     shape : array
         The shape of the result. It is a 1-D integer array.
     axes : array
-        The shape of the result. It is a 1-D integer array.
+        Axes along which the calculation is computed. It is a 1-D integer array.
 
     """
     return _helper._init_nd_shape_and_axes(x, shape, axes)

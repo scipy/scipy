@@ -54,7 +54,6 @@
 #define CEPHES_MCONF_H
 
 #include <Python.h>
-#include <numpy/npy_math.h>
 #include <math.h>
 
 #include "cephes_names.h"
@@ -100,7 +99,11 @@
 #ifndef cephes_isnan
 #define cephes_isnan(x) isnan(x)
 #define cephes_isinf(x) isinf(x)
-#define cephes_isfinite(x) npy_isfinite(x)
+#define cephes_isfinite(x) isfinite(x)
 #endif
+
+/* Constants needed that are not available in the C standard library */
+#define SCIPY_EULER     0.577215664901532860606512090082402431   /* Euler constant */
+#define SCIPY_El        2.718281828459045235360287471352662498L  /* e as long double */
 
 #endif				/* CEPHES_MCONF_H */

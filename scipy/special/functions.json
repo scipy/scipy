@@ -549,6 +549,11 @@
             "exp1_wrap": "d->d"
         }
     },
+    "_scaled_exp1": {
+        "scaled_exp1.h": {
+            "scaled_exp1": "d->d"
+        }
+    },
     "exp10": {
         "cephes.h": {
             "exp10": "d->d"

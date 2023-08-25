@@ -1,6 +1,6 @@
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.system_info import get_info
-    lapack_opt = get_info("lapack_opt")
+    get_info("lapack_opt")
 
     from numpy.distutils.misc_util import Configuration
     config = Configuration('scipy',parent_package,top_path)

@@ -32,7 +32,7 @@ import itertools
 import warnings
 
 import numpy
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 
 from scipy import special
 from . import _ni_support
@@ -71,6 +71,10 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     spline_filter1d : ndarray
         The filtered input.
 
+    See Also
+    --------
+    spline_filter : Multidimensional spline filter.
+
     Notes
     -----
     All of the interpolation functions in `ndimage` do spline interpolation of
@@ -88,10 +92,6 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
     .. versionadded:: 1.6.0
         Complex-valued support added.
-
-    See Also
-    --------
-    spline_filter : Multidimensional spline filter.
 
     Examples
     --------
@@ -132,12 +132,28 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
         _nd_image.spline_filter1d(input, order, axis, output, mode)
     return output
 
-
+@docfiller
 def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     """
     Multidimensional spline filter.
 
-    For more details, see `spline_filter1d`.
+    Parameters
+    ----------
+    %(input)s
+    order : int, optional
+        The order of the spline, default is 3.
+    axis : int, optional
+        The axis along which the spline filter is applied. Default is the last
+        axis.
+    output : ndarray or dtype, optional
+        The array in which to place the output, or the dtype of the returned
+        array. Default is ``numpy.float64``.
+    %(mode_interp_mirror)s
+
+    Returns
+    -------
+    spline_filter : ndarray
+        Filtered array. Has the same shape as `input`.
 
     See Also
     --------
@@ -584,8 +600,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             exptd = [0] * input.ndim + [1]
             if not numpy.all(matrix[input.ndim] == exptd):
                 msg = ('Expected homogeneous transformation matrix with '
-                       'shape %s for image shape %s, but bottom row was '
-                       'not equal to %s' % (matrix.shape, input.shape, exptd))
+                       'shape {} for image shape {}, but bottom row was '
+                       'not equal to {}'.format(matrix.shape, input.shape, exptd))
                 raise ValueError(msg)
         # assume input is homogeneous coordinate transformation matrix
         offset = matrix[:input.ndim, input.ndim]
@@ -923,7 +939,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True, output=None, order=3,
         out_bounds = rot_matrix @ [[0, 0, iy, iy],
                                    [0, ix, 0, ix]]
         # Compute the shape of the transformed input plane
-        out_plane_shape = (out_bounds.ptp(axis=1) + 0.5).astype(int)
+        out_plane_shape = (numpy.ptp(out_bounds, axis=1) + 0.5).astype(int)
     else:
         out_plane_shape = img_shape[axes]
 

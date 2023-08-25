@@ -93,6 +93,7 @@ extern const double2 DD_C_LOG2;
 extern const double2 DD_C_LOG10;
 extern const double2 DD_C_ZERO;
 extern const double2 DD_C_ONE;
+extern const double2 DD_C_NEGONE;
 
 /* NAN definition in AIX's math.h doesn't make it qualify as constant literal. */
 #if defined(__STDC__) && defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && defined(NAN) && !defined(_AIX)
@@ -126,6 +127,9 @@ double2 dd_log_d(double a);
 /* Returns the exponent of the double precision number.
    Returns INT_MIN is x is zero, and INT_MAX if x is INF or NaN. */
 int get_double_expn(double x);
+
+/*********** Polynomial Functions ************/
+double2 dd_polyeval(const double2 *c, int n, const double2 x);
 
 /*********** Random number generator ************/
 extern double2 dd_rand(void);

@@ -1,13 +1,19 @@
 # Pytest customization
+import json
 import os
-import pytest
 import warnings
+import tempfile
 
 import numpy as np
+import numpy.array_api
 import numpy.testing as npt
+import pytest
+import hypothesis
+
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
+from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 
 def pytest_configure(config):
@@ -43,7 +49,7 @@ def pytest_runtest_setup(item):
             pytest.skip("very slow test; set environment variable SCIPY_XSLOW=1 to run it")
     mark = _get_mark(item, 'xfail_on_32bit')
     if mark is not None and np.intp(0).itemsize < 8:
-        pytest.xfail('Fails on our 32-bit test platform(s): %s' % (mark.args[0],))
+        pytest.xfail(f'Fails on our 32-bit test platform(s): {mark.args[0]}')
 
     # Older versions of threadpoolctl have an issue that may lead to this
     # warning being emitted, see gh-14441
@@ -90,6 +96,107 @@ def check_fpu_mode(request):
     new_mode = get_fpu_mode()
 
     if old_mode != new_mode:
-        warnings.warn("FPU mode changed from {0:#x} to {1:#x} during "
+        warnings.warn("FPU mode changed from {:#x} to {:#x} during "
                       "the test".format(old_mode, new_mode),
                       category=FPUModeChangeWarning, stacklevel=0)
+
+
+# Array API backend handling
+xp_available_backends = {'numpy': np}
+
+if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
+    # fill the dict of backends with available libraries
+    xp_available_backends.update({'numpy.array_api': numpy.array_api})
+
+    try:
+        import torch  # type: ignore[import]
+        xp_available_backends.update({'pytorch': torch})
+        # can use `mps` or `cpu`
+        torch.set_default_device(SCIPY_DEVICE)
+    except ImportError:
+        pass
+
+    try:
+        import cupy  # type: ignore[import]
+        xp_available_backends.update({'cupy': cupy})
+    except ImportError:
+        pass
+
+    # by default, use all available backends
+    if SCIPY_ARRAY_API.lower() not in ("1", "true"):
+        SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
+
+        if 'all' in SCIPY_ARRAY_API_:
+            pass  # same as True
+        else:
+            # only select a subset of backend by filtering out the dict
+            try:
+                xp_available_backends = {
+                    backend: xp_available_backends[backend]
+                    for backend in SCIPY_ARRAY_API_
+                }
+            except KeyError:
+                msg = f"'--array-api-backend' must be in {xp_available_backends.keys()}"
+                raise ValueError(msg)
+
+if 'cupy' in xp_available_backends:
+    SCIPY_DEVICE = 'cuda'
+
+array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
+
+skip_if_array_api = pytest.mark.skipif(
+    SCIPY_ARRAY_API,
+    reason="do not run with Array API on",
+)
+
+skip_if_array_api_gpu = pytest.mark.skipif(
+    SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
+    reason="do not run with Array API on and not on CPU",
+)
+
+
+# Following the approach of NumPy's conftest.py...
+# Use a known and persistent tmpdir for hypothesis' caches, which
+# can be automatically cleared by the OS or user.
+hypothesis.configuration.set_hypothesis_home_dir(
+    os.path.join(tempfile.gettempdir(), ".hypothesis")
+)
+
+# We register two custom profiles for SciPy - for details see
+# https://hypothesis.readthedocs.io/en/latest/settings.html
+# The first is designed for our own CI runs; the latter also
+# forces determinism and is designed for use via scipy.test()
+hypothesis.settings.register_profile(
+    name="nondeterministic", deadline=None, print_blob=True,
+)
+hypothesis.settings.register_profile(
+    name="deterministic",
+    deadline=None, print_blob=True, database=None, derandomize=True,
+    suppress_health_check=list(hypothesis.HealthCheck),
+)
+
+# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+# In the future, it would be good to work the choice into dev.py.
+SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                          "deterministic")
+hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
+
+
+def skip_if_array_api_backend(backend):
+    def wrapper(func):
+        reason = (
+            f"do not run with Array API backend: {backend}"
+        )
+        # method gets there as a function so we cannot use inspect.ismethod
+        if '.' in func.__qualname__:
+            def wrapped(self, *args, xp, **kwargs):
+                if xp.__name__ == backend:
+                    pytest.skip(reason=reason)
+                return func(self, *args, xp, **kwargs)
+        else:
+            def wrapped(*args, xp, **kwargs):  # type: ignore[misc]
+                if xp.__name__ == backend:
+                    pytest.skip(reason=reason)
+                return func(*args, xp, **kwargs)
+        return wrapped
+    return wrapper

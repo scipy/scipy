@@ -1,6 +1,6 @@
 """
-Cython optimize zeros API
-=========================
+Cython optimize root finding API
+================================
 The underlying C functions for the following root finders can be accessed
 directly using Cython:
 
@@ -9,8 +9,8 @@ directly using Cython:
 - `~scipy.optimize.brenth`
 - `~scipy.optimize.brentq`
 
-The Cython API for the zeros functions is similar except there is no ``disp``
-argument. Import the zeros functions using ``cimport`` from
+The Cython API for the root finding functions is similar except there is no
+``disp`` argument. Import the root finding functions using ``cimport`` from
 `scipy.optimize.cython_optimize`. ::
 
     from scipy.optimize.cython_optimize cimport bisect, ridder, brentq, brenth
@@ -35,8 +35,9 @@ These are the basic steps:
 
 1. Create a Cython ``.pyx`` file, for example: ``myexample.pyx``.
 2. Import the desired root finder from `~scipy.optimize.cython_optimize`.
-3. Write the callback function, and call the selected zeros function passing
-   the callback, any extra arguments, and the other solver parameters. ::
+3. Write the callback function, and call the selected root finding function
+   passing the callback, any extra arguments, and the other solver
+   parameters. ::
 
        from scipy.optimize.cython_optimize cimport brentq
 

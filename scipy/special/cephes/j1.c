@@ -213,7 +213,7 @@ double x;
 	}
 	z = x * x;
 	w = x * (polevl(z, YP, 5) / p1evl(z, YQ, 8));
-	w += NPY_2_PI * (j1(x) * log(x) - 1.0 / x);
+	w += M_2_PI * (j1(x) * log(x) - 1.0 / x);
 	return (w);
     }
 

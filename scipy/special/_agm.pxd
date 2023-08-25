@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 import cython
 
 from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
@@ -5,7 +7,7 @@ from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
 from ._cephes cimport ellpk
 
 
-cdef inline double _agm_iter(double a, double b) nogil:
+cdef inline double _agm_iter(double a, double b) noexcept nogil:
     # Arithmetic-geometric mean, iterative implementation
     # a and b must be positive (not zero, not nan).
 
@@ -23,7 +25,7 @@ cdef inline double _agm_iter(double a, double b) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double agm(double a, double b) nogil:
+cdef inline double agm(double a, double b) noexcept nogil:
     # Arithmetic-geometric mean
 
     # sqrthalfmax is sqrt(np.finfo(1.0).max/2)

@@ -5,8 +5,6 @@ Base classes for MATLAB file stream reading.
 
 MATLAB is a registered trademark of the Mathworks inc.
 """
-import operator
-import functools
 
 import numpy as np
 from scipy._lib import doccer
@@ -280,6 +278,8 @@ def matdims(arr, oned_as='column'):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.io.matlab._miobase import matdims
     >>> matdims(np.array(1)) # NumPy scalar
     (1, 1)
     >>> matdims(np.array([1])) # 1-D array, 1 element

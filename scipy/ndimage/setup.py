@@ -12,7 +12,8 @@ def configuration(parent_package='', top_path=None):
 
     include_dirs = ['src',
                     get_include(),
-                    os.path.join(os.path.dirname(__file__), '..', '_lib', 'src')]
+                    os.path.join(os.path.dirname(__file__), '..', '_lib', 'src'),
+                    os.path.join(os.path.dirname(__file__), '..', '_build_utils', 'src')]
 
     config.add_extension("_nd_image",
         sources=["src/nd_image.c",

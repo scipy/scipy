@@ -24,7 +24,7 @@ for y < ~ -745.1.
 When p > 1 - exp(-2), the Cephes implementation of ndtri uses the symmetry
 of the normal distribution and calculates ndtri(p) as -ndtri(1 - p) allowing
 for the use of the same approximation. When y > log(1 - exp(-2)) this
-implementation calculates ndtri_exp as -ndtri(-exp1m(y)).
+implementation calculates ndtri_exp as -ndtri(-expm1(y)).
 
 
 Accuracy
@@ -109,7 +109,7 @@ cdef extern from "cephes/polevl.h":
 from ._cephes cimport ndtri
 
 @cython.cdivision(True)
-cdef inline double _ndtri_exp_small_y(double y) nogil:
+cdef inline double _ndtri_exp_small_y(double y) noexcept nogil:
     """Return inverse of log CDF of normal distribution for very small y
 
     For p sufficiently small, the inverse of the CDF of the normal
@@ -160,7 +160,7 @@ cdef inline double _ndtri_exp_small_y(double y) nogil:
     return x1 - x0
 
 
-cdef inline double ndtri_exp(double y) nogil:
+cdef inline double ndtri_exp(double y) noexcept nogil:
     """Return inverse of logarithm of Normal CDF evaluated at y."""
     if y < -DBL_MAX:
         return -INFINITY

@@ -1,7 +1,8 @@
 from scipy import stats, linalg, integrate
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_, assert_equal,
-    assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
+                           assert_array_almost_equal,
+                           assert_array_almost_equal_nulp, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -306,6 +307,7 @@ def test_kde_integer_input():
 
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
+
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
 @pytest.mark.parametrize("dtype", _ftypes)
 def test_kde_output_dtype(dtype, bw_type):
@@ -418,7 +420,7 @@ def test_marginal_1_axis():
     assert_allclose(pdf, ref, rtol=1e-6)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_marginal_2_axis():
     rng = np.random.default_rng(6111799263660870475)
     n_data = 30
@@ -589,3 +591,16 @@ def test_singular_data_covariance_gh10205():
         msg = "The data appears to lie in a lower-dimensional subspace..."
         with assert_raises(linalg.LinAlgError, match=msg):
             stats.gaussian_kde(data.T)
+
+
+def test_fewer_points_than_dimensions_gh17436():
+    # When the number of points is fewer than the number of dimensions, the
+    # the covariance matrix would be singular, and the exception tested in
+    # test_singular_data_covariance_gh10205 would occur. However, sometimes
+    # this occurs when the user passes in the transpose of what `gaussian_kde`
+    # expects. This can result in a huge covariance matrix, so bail early.
+    rng = np.random.default_rng(2046127537594925772)
+    rvs = rng.multivariate_normal(np.zeros(3), np.eye(3), size=5)
+    message = "Number of dimensions is greater than number of samples..."
+    with pytest.raises(ValueError, match=message):
+        stats.gaussian_kde(rvs)

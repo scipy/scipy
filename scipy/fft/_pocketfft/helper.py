@@ -6,7 +6,7 @@ import contextlib
 
 import numpy as np
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size
+from .pypocketfft import good_size  # noqa: F401
 
 _config = threading.local()
 _cpu_count = os.cpu_count()
@@ -72,7 +72,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
     if any(s < 1 for s in shape):
         raise ValueError(
-            "invalid number of data points ({0}) specified".format(shape))
+            f"invalid number of data points ({shape}) specified")
 
     return shape, axes
 
@@ -139,7 +139,7 @@ def _fix_shape(x, shape, axes):
 def _fix_shape_1d(x, n, axis):
     if n < 1:
         raise ValueError(
-            "invalid number of data points ({0}) specified".format(n))
+            f"invalid number of data points ({n}) specified")
 
     return _fix_shape(x, (n,), (axis,))
 

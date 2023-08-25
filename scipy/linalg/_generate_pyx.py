@@ -46,7 +46,7 @@ def arg_names_and_types(args):
 pyx_func_template = """
 cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
-cdef {ret_type} {name}({args}) nogil:
+cdef {ret_type} {name}({args}) noexcept nogil:
     cdef {ret_type} out
     _fortran_{name}(&out, {argnames})
     return out
@@ -63,7 +63,7 @@ def arg_casts(arg):
     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
                '_zselect1', '_zselect2']:
-        return '<{0}*>'.format(arg)
+        return f'<{arg}*>'
     return ''
 
 
@@ -94,7 +94,7 @@ def pyx_decl_func(name, ret_type, args, header_name):
 
 pyx_sub_template = """cdef extern from "{header_name}":
     void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-cdef void {name}({args}) nogil:
+cdef void {name}({args}) noexcept nogil:
     _fortran_{name}({argnames})
 """
 
@@ -222,30 +222,30 @@ blas_py_wrappers = """
 
 # Python-accessible wrappers for testing:
 
-cdef inline bint _is_contiguous(double[:,:] a, int axis) nogil:
+cdef inline bint _is_contiguous(double[:,:] a, int axis) noexcept nogil:
     return (a.strides[axis] == sizeof(a[0,0]) or a.shape[axis] == 1)
 
-cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) nogil:
+cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
     return cdotc(&n, &cx[0], &incx, &cy[0], &incy)
 
-cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) nogil:
+cpdef float complex _test_cdotu(float complex[:] cx, float complex[:] cy) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
         int incy = cy.strides[0] // sizeof(cy[0])
     return cdotu(&n, &cx[0], &incx, &cy[0], &incy)
 
-cpdef double _test_dasum(double[:] dx) nogil:
+cpdef double _test_dasum(double[:] dx) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
     return dasum(&n, &dx[0], &incx)
 
-cpdef double _test_ddot(double[:] dx, double[:] dy) nogil:
+cpdef double _test_ddot(double[:] dx, double[:] dy) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
@@ -253,7 +253,7 @@ cpdef double _test_ddot(double[:] dx, double[:] dy) nogil:
     return ddot(&n, &dx[0], &incx, &dy[0], &incy)
 
 cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
-                double[:,:] c) nogil except -1:
+                double[:,:] c) except -1 nogil:
     cdef:
         char *transa
         char *transb
@@ -331,87 +331,87 @@ cpdef int _test_dgemm(double alpha, double[:,:] a, double[:,:] b, double beta,
             raise ValueError("Input 'c' is neither C nor Fortran contiguous.")
     return 0
 
-cpdef double _test_dnrm2(double[:] x) nogil:
+cpdef double _test_dnrm2(double[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return dnrm2(&n, &x[0], &incx)
 
-cpdef double _test_dzasum(double complex[:] zx) nogil:
+cpdef double _test_dzasum(double complex[:] zx) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
     return dzasum(&n, &zx[0], &incx)
 
-cpdef double _test_dznrm2(double complex[:] x) nogil:
+cpdef double _test_dznrm2(double complex[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return dznrm2(&n, &x[0], &incx)
 
-cpdef int _test_icamax(float complex[:] cx) nogil:
+cpdef int _test_icamax(float complex[:] cx) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
     return icamax(&n, &cx[0], &incx)
 
-cpdef int _test_idamax(double[:] dx) nogil:
+cpdef int _test_idamax(double[:] dx) noexcept nogil:
     cdef:
         int n = dx.shape[0]
         int incx = dx.strides[0] // sizeof(dx[0])
     return idamax(&n, &dx[0], &incx)
 
-cpdef int _test_isamax(float[:] sx) nogil:
+cpdef int _test_isamax(float[:] sx) noexcept nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
     return isamax(&n, &sx[0], &incx)
 
-cpdef int _test_izamax(double complex[:] zx) nogil:
+cpdef int _test_izamax(double complex[:] zx) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
     return izamax(&n, &zx[0], &incx)
 
-cpdef float _test_sasum(float[:] sx) nogil:
+cpdef float _test_sasum(float[:] sx) noexcept nogil:
     cdef:
         int n = sx.shape[0]
-        int incx = sx.shape[0] // sizeof(sx[0])
+        int incx = sx.strides[0] // sizeof(sx[0])
     return sasum(&n, &sx[0], &incx)
 
-cpdef float _test_scasum(float complex[:] cx) nogil:
+cpdef float _test_scasum(float complex[:] cx) noexcept nogil:
     cdef:
         int n = cx.shape[0]
         int incx = cx.strides[0] // sizeof(cx[0])
     return scasum(&n, &cx[0], &incx)
 
-cpdef float _test_scnrm2(float complex[:] x) nogil:
+cpdef float _test_scnrm2(float complex[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
         int incx = x.strides[0] // sizeof(x[0])
     return scnrm2(&n, &x[0], &incx)
 
-cpdef float _test_sdot(float[:] sx, float[:] sy) nogil:
+cpdef float _test_sdot(float[:] sx, float[:] sy) noexcept nogil:
     cdef:
         int n = sx.shape[0]
         int incx = sx.strides[0] // sizeof(sx[0])
         int incy = sy.strides[0] // sizeof(sy[0])
     return sdot(&n, &sx[0], &incx, &sy[0], &incy)
 
-cpdef float _test_snrm2(float[:] x) nogil:
+cpdef float _test_snrm2(float[:] x) noexcept nogil:
     cdef:
         int n = x.shape[0]
-        int incx = x.shape[0] // sizeof(x[0])
+        int incx = x.strides[0] // sizeof(x[0])
     return snrm2(&n, &x[0], &incx)
 
-cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) nogil:
+cpdef double complex _test_zdotc(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
         int incy = zy.strides[0] // sizeof(zy[0])
     return zdotc(&n, &zx[0], &incx, &zy[0], &incy)
 
-cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) nogil:
+cpdef double complex _test_zdotu(double complex[:] zx, double complex[:] zy) noexcept nogil:
     cdef:
         int n = zx.shape[0]
         int incx = zx.strides[0] // sizeof(zx[0])
@@ -457,10 +457,10 @@ def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     return preamble + funcs + subs + lapack_py_wrappers
 
 
-pxd_template = """ctypedef {ret_type} {name}_t({args}) nogil
+pxd_template = """ctypedef {ret_type} {name}_t({args}) noexcept nogil
 cdef {name}_t *{name}_f
 """
-pxd_template = """cdef {ret_type} {name}({args}) nogil
+pxd_template = """cdef {ret_type} {name}({args}) noexcept nogil
 """
 
 
@@ -578,7 +578,7 @@ def fort_subroutine_wrapper(name, ret_type, args):
     argnames = ',\n     +    '.join(names)
 
     names = [process_fortran_name(n, name) for n in names]
-    argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
+    argdecls = '\n        '.join(f'{fortran_types[t]} {n}'
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
                                    argnames=argnames, argdecls=argdecls,
@@ -592,7 +592,7 @@ def generate_fortran(func_sigs):
 def make_c_args(args):
     types, names = arg_names_and_types(args)
     types = [c_types[arg] for arg in types]
-    return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
+    return ', '.join(f'{t} *{n}' for t, n in zip(types, names))
 
 
 c_func_template = ("void F_FUNC({name}wrp, {upname}WRP)"
@@ -730,7 +730,7 @@ def make_all(outdir,
                         for line in comments]) + '\n'
     pyxcomment = ''.join(['# ' + line for line in comments]) + '\n'
     fcomment = ''.join(['c     ' + line for line in comments]) + '\n'
-    with open(blas_signature_file, 'r') as f:
+    with open(blas_signature_file) as f:
         blas_sigs = f.readlines()
     blas_sigs = filter_lines(blas_sigs)
     blas_pyx = generate_blas_pyx(*(blas_sigs + (blas_header_name,)))
@@ -749,7 +749,7 @@ def make_all(outdir,
     with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
         f.write(blas_c_header)
-    with open(lapack_signature_file, 'r') as f:
+    with open(lapack_signature_file) as f:
         lapack_sigs = f.readlines()
     lapack_sigs = filter_lines(lapack_sigs)
     lapack_pyx = generate_lapack_pyx(*(lapack_sigs + (lapack_header_name,)))

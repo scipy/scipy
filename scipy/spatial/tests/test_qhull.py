@@ -17,10 +17,6 @@ def sorted_tuple(x):
     return tuple(sorted(x))
 
 
-def sorted_unique_tuple(x):
-    return tuple(np.unique(x))
-
-
 def assert_unordered_tuple_list_equal(a, b, tpl=tuple):
     if isinstance(a, np.ndarray):
         a = a.tolist()
@@ -63,7 +59,7 @@ pathological_data_1 = np.array([
 pathological_data_2 = np.array([
     [-1, -1], [-1, 0], [-1, 1],
     [0, -1], [0, 0], [0, 1],
-    [1, -1 - np.finfo(np.float_).eps], [1, 0], [1, 1],
+    [1, -1 - np.finfo(np.float64).eps], [1, 0], [1, 1],
 ])
 
 bug_2850_chunks = [np.random.rand(10, 2),
@@ -177,7 +173,7 @@ class TestUtilities:
 
     def test_find_simplex(self):
         # Simple check that simplex finding works
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
         # +---+
@@ -192,7 +188,7 @@ class TestUtilities:
                   (0.75, 0.75, 0),
                   (0.3, 0.2, 1)]:
             i = tri.find_simplex(p[:2])
-            assert_equal(i, p[2], err_msg='%r' % (p,))
+            assert_equal(i, p[2], err_msg=f'{p!r}')
             j = qhull.tsearch(tri, p[:2])
             assert_equal(i, j)
 
@@ -200,8 +196,8 @@ class TestUtilities:
         # Compare plane distance from hyperplane equations obtained from Qhull
         # to manually computed plane equations
         x = np.array([(0,0), (1, 1), (1, 0), (0.99189033, 0.37674127),
-                      (0.99440079, 0.45182168)], dtype=np.double)
-        p = np.array([0.99966555, 0.15685619], dtype=np.double)
+                      (0.99440079, 0.45182168)], dtype=np.float64)
+        p = np.array([0.99966555, 0.15685619], dtype=np.float64)
 
         tri = qhull.Delaunay(x)
 
@@ -225,7 +221,7 @@ class TestUtilities:
 
     def test_convex_hull(self):
         # Simple check that the convex hull seems to works
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
         # +---+
@@ -306,20 +302,20 @@ class TestUtilities:
         with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
 
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Invalid simplices must be (nearly) zero volume
         q = vertices[:,:-1,:] - vertices[:,-1,None,:]
         volume = np.array([np.linalg.det(q[k,:,:])
                            for k in range(tri.nsimplex)])
         ok = np.isfinite(tri.transform[:,0,0]) | (volume < np.sqrt(eps))
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         # Also, find_simplex for the centroid should end up in some
         # simplex for the non-degenerate cases
         j = tri.find_simplex(centroids)
         ok = (j != -1) | np.isnan(tri.transform[:,0,0])
-        assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+        assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
         if unit_cube:
             # If in unit cube, no interior point should be marked out of hull
@@ -327,7 +323,7 @@ class TestUtilities:
             at_boundary |= (centroids >= 1 - unit_cube_tol).any(axis=1)
 
             ok = (j != -1) | at_boundary
-            assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
+            assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
@@ -397,21 +393,21 @@ class TestVertexNeighborVertices:
         got = [set(map(int, indices[indptr[j]:indptr[j+1]]))
                for j in range(tri.points.shape[0])]
 
-        assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
+        assert_equal(got, expected, err_msg=f"{got!r} != {expected!r}")
 
     def test_triangle(self):
-        points = np.array([(0,0), (0,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
     def test_rectangle(self):
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
     def test_complicated(self):
         points = np.array([(0,0), (0,1), (1,1), (1,0),
-                           (0.5, 0.5), (0.9, 0.5)], dtype=np.double)
+                           (0.5, 0.5), (0.9, 0.5)], dtype=np.float64)
         tri = qhull.Delaunay(points)
         self._check(tri)
 
@@ -426,7 +422,7 @@ class TestDelaunay:
         assert_raises(ValueError, qhull.Delaunay, masked_array)
 
     def test_array_with_nans_fails(self):
-        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.double)
+        points_with_nan = np.array([(0,0), (0,1), (1,1), (1,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.Delaunay, points_with_nan)
 
     def test_nd_simplex(self):
@@ -446,7 +442,7 @@ class TestDelaunay:
 
     def test_2d_square(self):
         # simple smoke test: 2d square
-        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
+        points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.float64)
         tri = qhull.Delaunay(points)
 
         assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
@@ -543,13 +539,6 @@ class TestDelaunay:
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
 
-    def test_vertices_deprecation(self):
-        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
-        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-               "'simplices' and will be removed in Scipy 1.11.0.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            tri.vertices
-
 
 def assert_hulls_equal(points, facets_1, facets_2):
     # Check that two convex hulls constructed from the same point set
@@ -612,7 +601,7 @@ class TestConvexHull:
         assert_raises(ValueError, qhull.ConvexHull, masked_array)
 
     def test_array_with_nans_fails(self):
-        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.double)
+        points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.float64)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
 
     @pytest.mark.parametrize("name", sorted(DATASETS))
@@ -1004,7 +993,7 @@ class TestVoronoi:
 
             def remap(x):
                 if hasattr(x, '__len__'):
-                    return tuple(set([remap(y) for y in x]))
+                    return tuple({remap(y) for y in x})
                 try:
                     return vertex_map[x]
                 except KeyError as e:

@@ -278,7 +278,7 @@ double x, *ai, *aip, *bi, *bip;
 	zz = z * z;
 	uf = 1.0 + zz * polevl(zz, AFN, 8) / p1evl(zz, AFD, 9);
 	ug = z * polevl(zz, AGN, 10) / p1evl(zz, AGD, 10);
-	theta = zeta + 0.25 * NPY_PI;
+	theta = zeta + 0.25 * M_PI;
 	f = sin(theta);
 	g = cos(theta);
 	*ai = k * (f * uf - g * ug);

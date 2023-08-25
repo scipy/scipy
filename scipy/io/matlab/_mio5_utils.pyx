@@ -2,15 +2,13 @@
 
 '''
 
-'''
-Programmer's notes
-------------------
-Routines here have been reasonably optimized.
+# Programmer's notes
+# ------------------
+# Routines here have been reasonably optimized.
 
-The char matrix reading is not very fast, but it's not usually a
-bottleneck. See comments in ``read_char`` for possible ways to go if you
-want to optimize.
-'''
+# The char matrix reading is not very fast, but it's not usually a
+# bottleneck. See comments in ``read_char`` for possible ways to go if you
+# want to optimize.
 
 import sys
 
@@ -109,7 +107,7 @@ cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
 cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
-cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
+cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
     return ((u4 << 24) |
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
@@ -140,6 +138,19 @@ cdef class VarHeader5:
 
 
 cdef class VarReader5:
+    """Initialize from file reader object
+
+    preader needs the following fields defined:
+
+    * mat_stream (file-like)
+    * byte_order (str)
+    * uint16_codec (str)
+    * struct_as_record (bool)
+    * chars_as_strings (bool)
+    * mat_dtype (bool)
+    * squeeze_me (bool)
+    """
+
     cdef public int is_swapped, little_endian
     cdef int struct_as_record
     cdef object codecs, uint16_codec
@@ -155,18 +166,6 @@ cdef class VarReader5:
         int squeeze_me
         int chars_as_strings
 
-    """ Initialize from file reader object
-
-    preader needs the following fields defined:
-
-    * mat_stream (file-like)
-    * byte_order (str)
-    * uint16_codec (str)
-    * struct_as_record (bool)
-    * chars_as_strings (bool)
-    * mat_dtype (bool)
-    * squeeze_me (bool)
-    """
     def __cinit__(self, preader):
         byte_order = preader.byte_order
         self.is_swapped = byte_order == swapped_code
@@ -406,7 +405,7 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
-    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
+    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1) noexcept:
         ''' Read numeric data element into ndarray
 
         Reads element, then casts to ndarray.
@@ -558,7 +557,7 @@ cdef class VarReader5:
             byte_count[0] = u4s[1]
         return 0
 
-    cpdef VarHeader5 read_header(self, int check_stream_limit):
+    cpdef VarHeader5 read_header(self, int check_stream_limit) noexcept:
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
@@ -609,7 +608,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header):
+    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in
@@ -750,7 +749,7 @@ cdef class VarReader5:
             shape = tuple([x for x in shape if x != 1])
         return shape
 
-    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
+    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header) noexcept:
         ''' Read real / complex matrices from stream '''
         cdef:
             cnp.ndarray res, res_j
@@ -787,42 +786,44 @@ cdef class VarReader5:
             data = self.read_numeric(True, nnz)
         else:
             data = self.read_numeric()
-        ''' From the matlab (TM) API documentation, last found here:
-        https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
-        rowind are simply the row indices for all the (nnz) non-zero
-        entries in the sparse array.  rowind has nzmax entries, so
-        may well have more entries than nnz, the actual number of
-        non-zero entries, but rowind[nnz:] can be discarded and
-        should be 0. indptr has length (number of columns + 1), and
-        is such that, if D = diff(colind), D[j] gives the number of
-        non-zero entries in column j. Because rowind values are
-        stored in column order, this gives the column corresponding
-        to each rowind
-        '''
+
+        # From the matlab (TM) API documentation, last found here:
+        # https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
+        # rowind are simply the row indices for all the (nnz) non-zero
+        # entries in the sparse array.  rowind has nzmax entries, so
+        # may well have more entries than nnz, the actual number of
+        # non-zero entries, but rowind[nnz:] can be discarded and
+        # should be 0. indptr has length (number of columns + 1), and
+        # is such that, if D = diff(colind), D[j] gives the number of
+        # non-zero entries in column j. Because rowind values are
+        # stored in column order, this gives the column corresponding
+        # to each rowind
+
         return csc_matrix(
             (data[:nnz], rowind[:nnz], indptr),
             shape=(M, N))
 
-    cpdef cnp.ndarray read_char(self, VarHeader5 header):
+    cpdef cnp.ndarray read_char(self, VarHeader5 header) noexcept:
         ''' Read char matrices from stream as arrays
 
         Matrices of char are likely to be converted to matrices of
         string by later processing in ``array_from_header``
         '''
-        '''Notes to friendly fellow-optimizer
 
-        This routine is not much optimized.  If I was going to do it,
-        I'd store the codecs as an object pointer array, as for the
-        .dtypes, I might use python_string.PyBytes_Decode for decoding,
-        I'd do something with pointers to pull the LSB out of the uint16
-        dtype, without using an intermediate array, I guess I'd consider
-        using the numpy C-API for array creation. I'd try and work out
-        how to deal with UCS-2 and UCS-4 builds of python, and how numpy
-        deals with unicode strings passed as memory,
+        # Notes to friendly fellow-optimizer
+        #
+        # This routine is not much optimized.  If I was going to do it,
+        # I'd store the codecs as an object pointer array, as for the
+        # .dtypes, I might use python_string.PyBytes_Decode for decoding,
+        # I'd do something with pointers to pull the LSB out of the uint16
+        # dtype, without using an intermediate array, I guess I'd consider
+        # using the numpy C-API for array creation. I'd try and work out
+        # how to deal with UCS-2 and UCS-4 builds of python, and how numpy
+        # deals with unicode strings passed as memory,
+        #
+        # My own unicode introduction here:
+        # http://matthew-brett.github.com/pydagogue/python_unicode.html
 
-        My own unicode introduction here:
-        http://matthew-brett.github.com/pydagogue/python_unicode.html
-        '''
         cdef:
             cnp.uint32_t mdtype, byte_count
             char *data_ptr
@@ -871,7 +872,7 @@ cdef class VarReader5:
                           buffer=arr,
                           order='F')
 
-    cpdef cnp.ndarray read_cells(self, VarHeader5 header):
+    cpdef cnp.ndarray read_cells(self, VarHeader5 header) noexcept:
         ''' Read cell array from stream '''
         cdef:
             size_t i
@@ -927,7 +928,7 @@ cdef class VarReader5:
         n_names_ptr[0] = n_names
         return field_names
 
-    cpdef cnp.ndarray read_struct(self, VarHeader5 header):
+    cpdef cnp.ndarray read_struct(self, VarHeader5 header) noexcept:
         ''' Read struct or object array from stream
 
         Objects are just structs with an extra field *classname*,

@@ -1382,7 +1382,6 @@ class TestWatershedIft:
 
     def test_watershed_ift08(self):
         # Test cost larger than uint8. See gh-10069.
-        shape = (2, 2)
         data = np.array([[256, 0],
                          [0, 0]], np.uint16)
         markers = np.array([[1, 0],

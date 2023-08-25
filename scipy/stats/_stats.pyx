@@ -1,11 +1,12 @@
+# cython: cpow=True
+
 from cpython cimport bool
 from libc cimport math
+from libc.math cimport NAN, INFINITY, M_PI as PI
 cimport cython
 cimport numpy as np
-from numpy.math cimport PI
-from numpy.math cimport INFINITY
-from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
+
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
@@ -14,7 +15,7 @@ cimport scipy.special.cython_special as cs
 
 np.import_array()
 
-cdef double von_mises_cdf_series(double k, double x, unsigned int p):
+cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     cdef double s, c, sn, cn, R, V
     cdef unsigned int n
     s = math.sin(x)
@@ -490,11 +491,11 @@ def _local_correlations(distx, disty, global_corr='mgc'):
     return corr_mat
 
 
-cpdef double geninvgauss_logpdf(double x, double p, double b) nogil:
+cpdef double geninvgauss_logpdf(double x, double p, double b) noexcept nogil:
     return _geninvgauss_logpdf_kernel(x, p, b)
 
 
-cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) nogil:
+cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) noexcept nogil:
     cdef double z, c
 
     if x <= 0:
@@ -508,7 +509,7 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) nogil:
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
 
 
-cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
+cdef double _geninvgauss_pdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, b
 
@@ -521,19 +522,19 @@ cdef double _geninvgauss_pdf(double x, void *user_data) nogil except *:
     return math.exp(_geninvgauss_logpdf_kernel(x, p, b))
 
 
-cdef double _phi(double z) nogil:
+cdef double _phi(double z) noexcept nogil:
     """evaluates the normal PDF. Used in `studentized_range`"""
     cdef double inv_sqrt_2pi = 0.3989422804014327
     return inv_sqrt_2pi * math.exp(-0.5 * z * z)
 
 
-cdef double _logphi(double z) nogil:
+cdef double _logphi(double z) noexcept nogil:
     """evaluates the log of the normal PDF. Used in `studentized_range`"""
     cdef double log_inv_sqrt_2pi = -0.9189385332046727
     return log_inv_sqrt_2pi - 0.5 * z * z
 
 
-cdef double _Phi(double z) nogil:
+cdef double _Phi(double z) noexcept nogil:
     """evaluates the normal CDF. Used in `studentized_range`"""
     # use a custom function because using cs.ndtr results in incorrect PDF at
     # q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant rather than
@@ -542,14 +543,14 @@ cdef double _Phi(double z) nogil:
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
 
-cpdef double _studentized_range_cdf_logconst(double k, double df):
+cpdef double _studentized_range_cdf_logconst(double k, double df) noexcept:
     """Evaluates log of constant terms in the cdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + (df / 2) * math.log(df)
             - (math.lgamma(df / 2) + (df / 2 - 1) * log_2))
 
 
-cpdef double _studentized_range_pdf_logconst(double k, double df):
+cpdef double _studentized_range_pdf_logconst(double k, double df) noexcept:
     """Evaluates log of constant terms in the pdf integrand"""
     cdef double log_2 = 0.6931471805599453
     return (math.log(k) + math.log(k - 1) + (df / 2) * math.log(df)
@@ -557,7 +558,7 @@ cpdef double _studentized_range_pdf_logconst(double k, double df):
 
 
 cdef double _studentized_range_cdf(int n, double[2] integration_var,
-                                   void *user_data) nogil:
+                                   void *user_data) noexcept nogil:
     # evaluates the integrand of Equation (3) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -578,7 +579,7 @@ cdef double _studentized_range_cdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(z + q * s) - _Phi(z), k - 1)
 
 
-cdef double _studentized_range_cdf_asymptotic(double z, void *user_data) nogil:
+cdef double _studentized_range_cdf_asymptotic(double z, void *user_data) noexcept nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -588,7 +589,7 @@ cdef double _studentized_range_cdf_asymptotic(double z, void *user_data) nogil:
 
 
 cdef double _studentized_range_pdf(int n, double[2] integration_var,
-                                   void *user_data) nogil:
+                                   void *user_data) noexcept nogil:
     # evaluates the integrand of equation (4) by Batista, et al [2]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -610,7 +611,7 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
 
 
-cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
+cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) noexcept nogil:
     # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
     # destined to be used in a LowLevelCallable
     q = (<double *> user_data)[0]
@@ -620,7 +621,7 @@ cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
 
 
 cdef double _studentized_range_moment(int n, double[3] integration_var,
-                                      void *user_data) nogil:
+                                      void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     K = (<double *> user_data)[0]  # the Kth moment to calc.
     k = (<double *> user_data)[1]
@@ -640,11 +641,11 @@ cdef double _studentized_range_moment(int n, double[3] integration_var,
             _studentized_range_pdf(4, integration_var, pdf_data))
 
 
-cpdef double genhyperbolic_pdf(double x, double p, double a, double b) nogil:
+cpdef double genhyperbolic_pdf(double x, double p, double a, double b) noexcept nogil:
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cdef double _genhyperbolic_pdf(double x, void *user_data) nogil except *:
+cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -657,10 +658,11 @@ cdef double _genhyperbolic_pdf(double x, void *user_data) nogil except *:
 
 cpdef double genhyperbolic_logpdf(
         double x, double p, double a, double b
-        ) nogil:
+        ) noexcept nogil:
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
-cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
+
+cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -673,27 +675,26 @@ cdef double _genhyperbolic_logpdf(double x, void *user_data) nogil except *:
 
 cdef double _genhyperbolic_logpdf_kernel(
         double x, double p, double a, double b
-        ) nogil:
+        ) noexcept nogil:
     cdef double t1, t2, t3, t4, t5
 
     t1 = _log_norming_constant(p, a, b)
-
-    t2 = math.pow(1, 2) + math.pow(x, 2)
-    t2 = math.pow(t2, 0.5)
+    t2 = math.sqrt(1.0 + x*x)
     t3 = (p - 0.5) * math.log(t2)
-    t4 = math.log(cs.kve(p-0.5, a * t2)) - a * t2
+    t4 = math.log(cs.kve(p - 0.5, a * t2)) - a * t2
     t5 = b * x
 
     return t1 + t3 + t4 + t5
 
-cdef double _log_norming_constant(double p, double a, double b) nogil:
+
+cdef double _log_norming_constant(double p, double a, double b) noexcept nogil:
     cdef double t1, t2, t3, t4, t5, t6
 
-    t1 = math.pow(a, 2) - math.pow(b, 2)
+    t1 = (a + b)*(a - b)
     t2 = p * 0.5 * math.log(t1)
     t3 = 0.5 * math.log(2 * PI)
     t4 = (p - 0.5) * math.log(a)
-    t5 = math.pow(t1, 0.5)
+    t5 = math.sqrt(t1)
     t6 = math.log(cs.kve(p, t5)) - t5
 
     return t2 - t3 - t4 - t6
@@ -713,7 +714,7 @@ cdef inline int gaussian_kernel_estimate_inner(
     real[:, :] points_,  real[:, :] values_, real[:, :] xi_,
     real[:, :] estimate, real[:, :] cho_cov,
     int n, int m, int d, int p,
-) nogil:
+) noexcept nogil:
     cdef:
         int i, j, k
         real residual, arg, norm
@@ -762,9 +763,7 @@ def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
     """
     cdef:
         real[:, :] points_, xi_, values_, estimate, cho_cov_
-        int i, j, k
         int n, d, m, p
-        real arg, residual, norm
 
     n = points.shape[0]
     d = points.shape[1]
@@ -829,7 +828,7 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_, estimate, cho_cov_
+        real[:, :] points_, xi_, values_, log_values_, estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -845,7 +844,6 @@ def gaussian_kernel_estimate_log(points, values, xi, cho_cov, dtype, real _=0):
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    cho_cov_ = cho_cov.astype(dtype, copy=False)
     points_ = np.asarray(solve_triangular(cho_cov, points.T, lower=True).T,
                          dtype=dtype)
     xi_ = np.asarray(solve_triangular(cho_cov, xi.T, lower=True).T,

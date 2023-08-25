@@ -121,9 +121,15 @@ class TestRankData:
         assert_array_equal(r, expected)
 
     def test_rankdata_object_string(self):
-        min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
-        max_rank = lambda a: [sum(i <= j for i in a) for j in a]
-        ordinal_rank = lambda a: min_rank([(x, i) for i, x in enumerate(a)])
+
+        def min_rank(a):
+            return [1 + sum(i < j for i in a) for j in a]
+
+        def max_rank(a):
+            return [sum(i <= j for i in a) for j in a]
+
+        def ordinal_rank(a):
+            return min_rank([(x, i) for i, x in enumerate(a)])
 
         def average_rank(a):
             return [(i + j) / 2.0 for i, j in zip(min_rank(a), max_rank(a))]
@@ -223,6 +229,17 @@ class TestRankData:
         res0 = rank_omit(a, method, axis=axis)
 
         assert_array_equal(res, res0)
+
+    def test_nan_policy_2d_axis_none(self):
+        # 2 2d-array test with axis=None
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [1, 2, 2]]
+        assert_array_equal(rankdata(data, axis=None, nan_policy='omit'),
+                           [1., np.nan, 6., 7., 4., np.nan, 2., 4., 4.])
+        assert_array_equal(rankdata(data, axis=None, nan_policy='propagate'),
+                           [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan,
+                            np.nan, np.nan, np.nan])
 
     def test_nan_policy_raise(self):
         # 1 1d-array test
