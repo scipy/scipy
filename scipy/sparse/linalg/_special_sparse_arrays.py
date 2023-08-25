@@ -527,7 +527,7 @@ class Sakurai(LinearOperator):
     n : int
         The size of the matrix.
     dtype : dtype
-        Numerical type of the array. Default is ``np.int64``.
+        Numerical type of the array. Default is ``np.int32``.
 
     Attributes
     ----------
@@ -569,7 +569,7 @@ class Sakurai(LinearOperator):
     >>> n = 6
     >>> sak = Sakurai(n)
 
-    Since all matrix entries are integers, ``'int64'`` is
+    Since all matrix entries are integers, ``'int32'`` is
     the default dtype for storing matrix representations.
 
     >>> sak.toarray()
@@ -584,7 +584,7 @@ class Sakurai(LinearOperator):
            [-4, -4, -4, -4, -4, -4],
            [ 5,  6,  6,  6,  6,  5]])
     >>> sak.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.int64'>'
+    <6x6 sparse matrix of type '<class 'numpy.int32'>'
         with 24 stored elements (5 diagonals) in DIAgonal format>
     >>> np.array_equal(sak.tosparse().toarray(), sak.toarray())
     True
@@ -601,7 +601,7 @@ class Sakurai(LinearOperator):
     True
 
     """
-    def __init__(self, n, dtype=np.int64):
+    def __init__(self, n, dtype=np.int32):
         self.n = n
         self.dtype = dtype
         shape = (n, n)
@@ -676,7 +676,7 @@ class MikotaM(LinearOperator):
     shape : tuple of int
         The shape of the matrix.
     dtype : dtype
-        Numerical type of the array. Default is ``np.int64``.
+        Numerical type of the array. Default is ``np.float64``.
 
     Methods
     -------
@@ -741,7 +741,7 @@ class MikotaK(LinearOperator):
     shape : tuple of int
         The shape of the matrix.
     dtype : dtype
-        Numerical type of the array. Default is ``np.int64``.
+        Numerical type of the array. Default is ``np.int32``.
 
     Methods
     -------
@@ -754,7 +754,7 @@ class MikotaK(LinearOperator):
         i.e., (2, n) ndarray with 2 upper diagonals
         placing the main diagonal at the bottom.
     """
-    def __init__(self, shape, dtype):
+    def __init__(self, shape, dtype=np.int32):
         self.shape = shape
         self.dtype = dtype
         super().__init__(dtype, shape)
@@ -822,6 +822,8 @@ class Mikota_pair:
     ----------
     n : int
         The size of the matrices of the Mikota pair.
+    dtype : dtype
+        Numerical type of the array. Default is ``np.float64``.
 
     Attributes
     ----------
