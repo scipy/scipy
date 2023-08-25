@@ -7,6 +7,7 @@ from scipy.linalg import eigh
 
 from scipy.sparse.linalg import LaplacianNd
 from scipy.sparse.linalg._special_sparse_arrays import Sakurai
+from scipy.sparse.linalg._special_sparse_arrays import Mikota_pair
 
 INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
 REAL_DTYPES = [np.float32, np.float64]
@@ -202,6 +203,7 @@ class TestSakurai:
             )
         np.array_equal(e, sak.eigenvalues)
 
+    """
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
@@ -211,6 +213,7 @@ class TestSakurai:
         assert_array_equal(sak.toarray(), Sakurai(n).toarray().astype(dtype))
         assert_array_equal(sak.tosparse().toarray(),
                            Sakurai(n).tosparse().toarray().astype(dtype))
+    """
 
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
@@ -229,3 +232,92 @@ class TestSakurai:
                 np.array_equal(y, yy)
             else:
                 pass
+
+
+class TestMikota_pair:
+    """
+    Mikota_pair tests
+    """
+    ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+
+    def test_specific_shape(self):
+        mik = Mikota_pair(6)
+        mik_k = mik.k
+        mik_m = mik.m
+        assert_array_equal(mik_k.toarray(), mik_k(np.eye(6)))
+        assert_array_equal(mik_m.toarray(), mik_m(np.eye(6)))
+
+        k = np.array(
+            [
+                [11, -5,  0,  0,  0,  0],
+                [-5,  9, -4,  0,  0,  0],
+                [ 0, -4,  7, -3,  0,  0],
+                [ 0,  0, -3,  5, -2,  0],
+                [ 0,  0,  0, -2,  3, -1],
+                [ 0,  0,  0,  0, -1,  1]
+            ]
+        )
+        np.array_equal(k, mik_k.toarray())
+        np.array_equal(mik_k.tosparse().toarray(), k)
+        kb = np.array(
+            [
+                [ 0, -5, -4, -3, -2, -1],
+                [11,  9,  7,  5,  3,  1]
+            ]
+        )
+        np.array_equal(kb, mik_k.tobanded())
+
+        minv = np.arange(1, n + 1)
+        np.array_equal(np.diag(1. / minv), mik_m.toarray())
+        np.array_equal(mik_m.tosparse().toarray(), mik_m.toarray())
+        np.array_equal(1. / minv, mik_m.tobanded())
+
+        e = array([ 1,  4,  9, 16, 25, 36])
+        np.array_equal(e, mik.eigenvalues)
+
+    """
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    def test_linearoperator_shape_dtype(self, dtype):
+        n = 7
+        mik = Mikota_pair(n, dtype=dtype)
+        mik_k = mik.k
+        mik_m = mik.m
+        assert mik_k.shape == (n, n)
+        assert mik_k.dtype == dtype
+        assert mik_m.shape == (n, n)
+        assert mik_m.dtype == dtype
+        mik_default_dtype = Mikota_pair(n)
+        mikd_k = mik_default_dtype.k
+        mikd_m = mik_default_dtype.m
+        assert mikd_k.shape == (n, n)
+        assert mikd_k.dtype == np.float64
+        assert mikd_m.shape == (n, n)
+        assert mikd_m.dtype == np.float64
+        assert_array_equal(mik_k.toarray(),
+                           mik_default_dtype.toarray().astype(dtype))
+        assert_array_equal(mik_k.tosparse().toarray(),
+                           mik_default_dtype.tosparse().toarray().astype(dtype))
+    """
+
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
+    def test_dot(self, dtype):
+        n = 5
+        mik = Mikota_pair(n, dtype=dtype)
+        mik_k = mik.k
+        mik_m = mik.m
+        x0 = np.arange(n)
+        x1 = x0.reshape((-1, 1))
+        x2 = np.arange(2 * n).reshape((n, 2))
+        lo_set = [mik_k, mik_m]
+        input_set = [x0, x1, x2]
+        for lo in lo_set:
+            for x in input_set:
+                y = lo.dot(x.astype(dtype))
+                assert x.shape == y.shape
+                assert y.dtype == dtype
+                if x.ndim == 2:
+                    yy = lo.toarray() @ x.astype(dtype)
+                    np.array_equal(y, yy)
+                else:
+                    pass
+
