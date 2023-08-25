@@ -9629,6 +9629,18 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         pvalue : float
             The combined p-value.
 
+    Examples
+    --------
+    >>> pvalues = [0.1, 0.05, 0.02, 0.3]
+    >>> result = combine_pvalues(pvalues, method='fisher')
+    >>> print(result.pvalue)
+    0.21907768033406858
+
+    >>> weights = [1, 2, 3, 4]
+    >>> result_stouffer = combine_pvalues(pvalues, method='stouffer', weights=weights)
+    >>> print(result_stouffer.pvalue)
+    0.0481915898358349
+
     Notes
     -----
     If this function is applied to tests with a discrete statistics such as

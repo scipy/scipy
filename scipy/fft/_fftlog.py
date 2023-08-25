@@ -334,6 +334,16 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
         Optimal offset of the uniform logarithmic spacing of the transform that
         fulfils a low-ringing condition.
 
+    Examples
+    --------
+    >>> dln = 0.1
+    >>> mu = 2.0
+    >>> initial = 0.5
+    >>> bias = 0.0
+    >>> offset = fhtoffset(dln, mu, initial, bias)
+    >>> print(offset)
+    0.539805138227967
+
     See Also
     --------
     fht : Definition of the fast Hankel transform.
