@@ -303,21 +303,21 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Mitchell (2014) [3]_.
 
     .. math::
-            rand1* : b' = x_{r_0} + mutation*(x_{r_1} − x_{r_2})
+            rand1* : b' = x_{r_0} + mutation*(x_{r_1} - x_{r_2})
 
             rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
-                                                - x_{r_3} − x_{r_4})
+                                                - x_{r_3} - x_{r_4})
 
-            best1* : b' = x_0 + mutation*(x_{r_0} − x_{r_1})
+            best1* : b' = x_0 + mutation*(x_{r_0} - x_{r_1})
 
             best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
-                                            - x_{r_2} − x_{r_3})
+                                            - x_{r_2} - x_{r_3})
 
-            currenttobest1* : b' = x_i + mutation*(x_0 − x_i
-                                                     + x_{r_0} − x_{r_1})
+            currenttobest1* : b' = x_i + mutation*(x_0 - x_i
+                                                     + x_{r_0} - x_{r_1})
 
-            randtobest1* : b' = x_{r_0} + mutation*(x_0 − x_{r_0}
-                                                      + x_{r_1} − x_{r_2})
+            randtobest1* : b' = x_{r_0} + mutation*(x_0 - x_{r_0}
+                                                      + x_{r_1} - x_{r_2})
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
