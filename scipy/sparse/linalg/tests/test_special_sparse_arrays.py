@@ -241,11 +241,12 @@ class TestMikota_pair:
     ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
-        mik = Mikota_pair(6)
+        n = 6
+        mik = Mikota_pair(n)
         mik_k = mik.k
         mik_m = mik.m
-        assert_array_equal(mik_k.toarray(), mik_k(np.eye(6)))
-        assert_array_equal(mik_m.toarray(), mik_m(np.eye(6)))
+        assert_array_equal(mik_k.toarray(), mik_k(np.eye(n)))
+        assert_array_equal(mik_m.toarray(), mik_m(np.eye(n)))
 
         k = np.array(
             [
@@ -272,7 +273,7 @@ class TestMikota_pair:
         np.array_equal(mik_m.tosparse().toarray(), mik_m.toarray())
         np.array_equal(1. / minv, mik_m.tobanded())
 
-        e = array([ 1,  4,  9, 16, 25, 36])
+        e = np.array([ 1,  4,  9, 16, 25, 36])
         np.array_equal(e, mik.eigenvalues)
 
     """
