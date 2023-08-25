@@ -854,7 +854,9 @@ class TestMultivariateNormal:
     def test_fit_fix_mean(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
-        samples = multivariate_normal.rvs(mean=loc, cov=np.eye(3), size=100,
+        A = rng.random((3, 3))
+        cov = np.dot(A, A.T)
+        samples = multivariate_normal.rvs(mean=loc, cov=cov, size=100,
                                           random_state=rng)
         mean_free, cov_free = multivariate_normal.fit(samples)
         logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
@@ -866,11 +868,24 @@ class TestMultivariateNormal:
         # test that fixed parameters result in lower likelihood than free
         # parameters
         assert logp_fix < logp_free
+        # test that a small perturbation of the resulting parameters
+        # has lower likelihood than the estimated parameters
+        A = rng.random((3, 3))
+        m = 1e-8 * np.dot(A, A.T)
+        cov_perturbed = cov_fix + m
+        logp_perturbed = (multivariate_normal.logpdf(samples,
+                                                     mean=mean_fix,
+                                                     cov=cov_perturbed)
+                                                     ).sum()
+        assert logp_perturbed < logp_fix
+
 
     def test_fit_fix_cov(self):
         rng = np.random.default_rng(4385269356937404)
-        cov = np.eye(3)
-        samples = multivariate_normal.rvs(mean=np.zeros((3, )), cov=cov,
+        loc = rng.random(3)
+        A = rng.random((3, 3))
+        cov = np.dot(A, A.T)
+        samples = multivariate_normal.rvs(mean=loc, cov=cov,
                                           size=100, random_state=rng)
         mean_free, cov_free = multivariate_normal.fit(samples)
         logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
@@ -883,6 +898,14 @@ class TestMultivariateNormal:
         # test that fixed parameters result in lower likelihood than free
         # parameters
         assert logp_fix < logp_free
+        # test that a small perturbation of the resulting parameters
+        # has lower likelihood than the estimated parameters
+        mean_perturbed = mean_fix + 1e-8 * rng.random(3)
+        logp_perturbed = (multivariate_normal.logpdf(samples,
+                                                     mean=mean_perturbed,
+                                                     cov=cov_fix)
+                                                     ).sum()
+        assert logp_perturbed < logp_fix
 
 
 class TestMatrixNormal:
