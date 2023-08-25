@@ -170,7 +170,8 @@ class TestSakurai:
     """
     Sakurai tests
     """
-    ALLDTYPES = [np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+    ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
+
     def test_specific_shape(self):
         sak = Sakurai(6)
         assert_array_equal(sak.toarray(), sak(np.eye(6)))
@@ -202,6 +203,16 @@ class TestSakurai:
         np.array_equal(e, sak.eigenvalues)
 
     @pytest.mark.parametrize('dtype', ALLDTYPES)
+    def test_linearoperator_shape_dtype(self, dtype):
+        n = 7
+        sak = Sakurai(n, dtype=dtype)
+        assert sak.shape == (n, n)
+        assert sak.dtype == dtype
+        assert_array_equal(sak.toarray(), Sakurai(n).toarray().astype(dtype))
+        assert_array_equal(sak.tosparse().toarray(),
+                           Sakurai(n).tosparse().toarray().astype(dtype))
+
+    @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
         n = 5
         sak = Sakurai(n)
@@ -215,7 +226,6 @@ class TestSakurai:
             assert y.dtype == dtype
             if x.ndim == 2:
                 yy = sak.toarray() @ x.astype(dtype)
-                # assert yy.dtype == dtype
                 np.array_equal(y, yy)
             else:
                 pass
