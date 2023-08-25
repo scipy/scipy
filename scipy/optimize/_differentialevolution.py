@@ -253,11 +253,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     more than others. The 'best1bin' strategy is a good starting point for
     many systems. In this strategy two members of the population are randomly
     chosen. Their difference is used to mutate the best member (the 'best' in
-    'best1bin'), :math:`b_0`, so far:
+    'best1bin'), :math:`x_0`, so far:
 
     .. math::
 
-        b' = b_0 + mutation * (population[rand0] - population[rand1])
+        b' = x_0 + mutation * (x_{r_0} - x_{r_1})
 
     A trial vector is then constructed. Starting with a randomly chosen ith
     parameter the trial is sequentially filled (in modulo) with parameters
@@ -270,57 +270,35 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
+
+    The other strategies available are outlined in Qiang and
+    Mitchell (2014) [3]_.
+
+    .. math::
+            rand1* : b' = x_{r_0} + mutation*(x_{r_1} − x_{r_2})
+
+            rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
+                                                - x_{r_3} − x_{r_4})
+
+            best1* : b' = x_0 + mutation*(x_{r_0} − x_{r_1})
+
+            best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
+                                            - x_{r_2} − x_{r_3})
+
+            currenttobest1* : b' = x_i + mutation*(x_0 − x_i
+                                                     + x_{r_0} − x_{r_1})
+
+            randtobest1* : b' = x_{r_0} + mutation*(x_0 − x_{r_0}
+                                                      + x_{r_1} − x_{r_2})
+
+
+    where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
+    from the interval [0, NP) and are different from the current index i.
+
     To improve your chances of finding a global minimum use higher `popsize`
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
-
-    An outline of the strategies and their strengths and weaknesses is given by 
-    Qiang and Mitchell (2014) [3]_
-
-    .. math::
-            rand1* : b' = x_{r_1} + mutation *(b_{r_2} − b_{r_3})
-
-            rand2* : b' = x_{r_1} + mutation * (b_{r_2} − b_{r_3}) 
-                                    + mutation * (b_{r_4} − b_{r_5})
-
-            best1* : b' = b_0 + mutation * (b_{r_1} − b_{r_2})
-
-            best2* : b' = b_0 + mutation * (b_{r_1} − b_{r_2})
-                                    + mutation * (b_{r_3 − b_{r_4})
-
-            currenttobest1* : b' = b_i + recombination * (b_0 − b_i)
-                                    + mutation * (b_{r_1} − b_{r_2})
-
-            randtobest1* : b' = b_{r_1} + recombination * (b_0 − b_i)
-                                    + mutation * (b_{r_2} − b_{r_3})
-
-
-    where the integers :math:`r_1, r_2, r_3, r_4, r_5` are chosen randomly 
-    from the interval [1, NP] and are different from the
-    current index i, :math:`mutation` is a real scaling factor that controls
-    the amplification of the differential variation, :math:`b_0` is the best
-    solution among the NP population members at the generation
-    G, and :math:`recombination` is a weight for the combination between the
-    original target vector and the best parent vector or the random
-    parent vector. The strategy rand1 is the most widely used
-    mutation strategy proposed in the original paper of Storn and
-    Price. It has stronger exploration capability but may converge
-    more slowly than the strategies that use the best solution
-    from the parent generation. The strategy rand2 uses two
-    difference vectors and may result in better perturbation than
-    the strategies that use one difference vector. The strategies
-    best1 and best2 take advantage of the best solution
-    found in the parent population and have a faster convergence
-    towards the optimal solution. However, they may become
-    stuck at a local minimum point during multimodal function 
-    optimization. The currenttobest1 strategy provides a 
-    compromise between exploitation of the best solution and 
-    exploration of the parameter space. The randtobest 
-    strategies are similar to the currenttobest strategies, 
-    but a larger diversity of the mutant vector is attained by
-    using a randomly selected parent vector instead of the current
-    target parent vector.
 
     By default the best solution vector is updated continuously within a single
     iteration (``updating='immediate'``). This is a modification [4]_ of the
