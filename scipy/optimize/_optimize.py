@@ -283,7 +283,7 @@ def _check_positive_definite(Hk):
             return False
     if Hk is not None:
         if not is_pos_def(Hk):
-            raise ValueError("'h0' matrix must be positive definite.")
+            raise ValueError("'hess_inv0' matrix must be positive definite.")
         
 def _check_unknown_options(unknown_options):
     if unknown_options:
@@ -1267,7 +1267,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
               retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9, 
-              h0=None):
+              hess_inv0=None):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1308,7 +1308,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
-    h0 : None or ndarray, optional
+    hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate. If None (default) then the identity
         matrix is used.
 
@@ -1388,7 +1388,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'xrtol': xrtol,
             'c1': c1,
             'c2': c2,
-            'h0': h0}
+            'hess_inv0': hess_inv0}
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
@@ -1410,7 +1410,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
                    xrtol=0, c1=1e-4, c2=0.9, 
-                   h0=None, **unknown_options):
+                   hess_inv0=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1445,13 +1445,13 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: .9
         Parameter for curvature condition rule.
-    h0 : None or ndarray, optional
+    hess_inv0 : None or ndarray, optional
         Initial inverse hessian estimate. If None (default) then the identity
         matrix is used.
 
     """
     _check_unknown_options(unknown_options)
-    _check_positive_definite(h0)
+    _check_positive_definite(hess_inv0)
     retall = return_all
 
     x0 = asarray(x0).flatten()
@@ -1472,7 +1472,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     k = 0
     N = len(x0)
     I = np.eye(N, dtype=int)
-    Hk = I if h0 is None else h0
+    Hk = I if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2

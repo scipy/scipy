@@ -211,29 +211,29 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
     
-    def test_bfgs_h0_neg(self):
+    def test_bfgs_hess_inv0_neg(self):
         # Ensure that BFGS only does not accept neg. def. initial inverse Hessian estimate.
-        with pytest.raises(ValueError, match="'h0' matrix must be positive definite."):
+        with pytest.raises(ValueError, match="'hess_inv0' matrix must be positive definite."):
             x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-            opts = {'disp': self.disp, 'h0': -np.eye(5)}
+            opts = {'disp': self.disp, 'hess_inv0': -np.eye(5)}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
     
-    def test_bfgs_h0_semipos(self):
+    def test_bfgs_hess_inv0_semipos(self):
         # Ensure that BFGS does not accepts semi pos. def. initial inverse Hessian estimate.
-        with pytest.raises(ValueError, match="'h0' matrix must be positive definite."):
+        with pytest.raises(ValueError, match="'hess_inv0' matrix must be positive definite."):
             x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-            h0 = np.eye(5)
-            h0[0, 0] = 0
-            opts = {'disp': self.disp, 'h0': h0}
+            hess_inv0 = np.eye(5)
+            hess_inv0[0, 0] = 0
+            opts = {'disp': self.disp, 'hess_inv0': hess_inv0}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
     
-    def test_bfgs_h0_sanity(self):
-        # Ensure that BFGS handles `h0` parameter correctly.
+    def test_bfgs_hess_inv0_sanity(self):
+        # Ensure that BFGS handles `hess_inv0` parameter correctly.
         fun = optimize.rosen
         x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
-        opts = {'disp': self.disp, 'h0': 1e-2 * np.eye(5)}
+        opts = {'disp': self.disp, 'hess_inv0': 1e-2 * np.eye(5)}
         res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options=opts)
         res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), options={'disp': self.disp})
         assert_allclose(res.fun, res_true.fun, atol=1e-6)
