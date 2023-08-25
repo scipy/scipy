@@ -1661,6 +1661,7 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> a = np.array([[0, 1], [0, 0]])
@@ -1738,6 +1739,7 @@ class StateSpaceDiscrete(StateSpace, dlti):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     >>> a = np.array([[1, 0.1], [0, 1]])

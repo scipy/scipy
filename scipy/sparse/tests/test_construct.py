@@ -537,7 +537,7 @@ class TestConstructUtils:
                 assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
-            assert_equal(x1.dtype, np.double)
+            assert_equal(x1.dtype, np.float64)
 
             x2 = f(5, 10, density=0.1,
                    random_state=np.random.RandomState(4321))

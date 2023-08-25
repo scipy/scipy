@@ -56,6 +56,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.signal._peak_finding import _boolrelextrema
     >>> testdata = np.array([1,2,3,2,1])
     >>> _boolrelextrema(testdata, np.greater, axis=0)
     array([False, False,  True, False, False], dtype=bool)
@@ -1047,6 +1048,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.signal._peak_finding import _identify_ridge_lines
     >>> rng = np.random.default_rng()
     >>> data = rng.random((5,5))
     >>> max_dist = 3

@@ -1094,9 +1094,9 @@ def evaluate_bernstein(const double_or_complex[:,:,::1] c,
 
     if nu > 0:
         if double_or_complex is double_complex:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex128)
         else:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float64)
 
 
     interval = 0

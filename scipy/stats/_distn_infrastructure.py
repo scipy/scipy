@@ -441,6 +441,8 @@ def _sum_finite(x):
 
     Examples
     --------
+    >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import _sum_finite
     >>> tot, nbad = _sum_finite(np.array([-2, -np.inf, 5, 1]))
     >>> tot
     4.0
@@ -568,6 +570,7 @@ def argsreduce(cond, *args):
     Examples
     --------
     >>> import numpy as np
+    >>> from scipy.stats._distn_infrastructure import argsreduce
     >>> rng = np.random.default_rng()
     >>> A = rng.random((4, 5))
     >>> B = 2
@@ -1210,6 +1213,7 @@ class rv_generic:
         Entropy is defined base `e`:
 
         >>> import numpy as np
+        >>> from scipy.stats._distn_infrastructure import rv_discrete
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -3825,6 +3829,7 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
     Handles both x0 < x1 and x0 > x1. In the latter case, iterates downwards
     (make sure to set inc < 0.)
 
+    >>> from scipy.stats._distn_infrastructure import _iter_chunked
     >>> [x for x in _iter_chunked(2, 5, inc=2)]
     [array([2, 4])]
     >>> [x for x in _iter_chunked(2, 11, inc=2)]

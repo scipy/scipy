@@ -76,7 +76,7 @@ class NDInterpolatorBase:
         points = _ndim_coords_from_arrays(points)
 
         if need_contiguous:
-            points = np.ascontiguousarray(points, dtype=np.double)
+            points = np.ascontiguousarray(points, dtype=np.float64)
 
         if not rescale:
             self.scale = None
@@ -121,7 +121,9 @@ class NDInterpolatorBase:
             self.fill_value = complex(fill_value)
         else:
             if need_contiguous:
-                self.values = np.ascontiguousarray(self.values, dtype=np.double)
+                self.values = np.ascontiguousarray(
+                    self.values, dtype=np.float64
+                )
             self.fill_value = float(fill_value)
 
     def _check_call_shape(self, xi):
@@ -141,7 +143,7 @@ class NDInterpolatorBase:
         xi = self._check_call_shape(xi)
         interpolation_points_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
-        xi = np.ascontiguousarray(xi, dtype=np.double)
+        xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
     
     @cython.boundscheck(False)
@@ -586,7 +588,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
         y = y[:,None]
 
     y = y.reshape(tri.npoints, -1).T
-    y = np.ascontiguousarray(y, dtype=np.double)
+    y = np.ascontiguousarray(y, dtype=np.float64)
     yi = np.empty((y.shape[0], y.shape[1], 2))
 
     data = y

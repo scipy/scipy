@@ -31,6 +31,7 @@ are:
 - mpmath_ (for more extended tests in ``special``)
 - pydata/sparse (compatibility support in ``scipy.sparse``)
 - threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
+- Hypothesis_ (to run certain unit tests)
 
 *Unconditional build-time dependencies:*
 
@@ -213,3 +214,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _manylinux: https://github.com/pypa/manylinux/
 .. _threadpoolctl: https://github.com/joblib/threadpoolctl
 .. _MyST-NB: https://myst-nb.readthedocs.io/
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/index.html
