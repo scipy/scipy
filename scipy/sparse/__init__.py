@@ -88,9 +88,11 @@ Building sparse matrices:
 
    eye - Sparse MxN matrix whose k-th diagonal is all ones
    identity - Identity matrix in sparse format
+   identity_array - Identity array in sparse format
    kron - kronecker product of two sparse matrices
    kronsum - kronecker sum of sparse matrices
    diags - Return a sparse matrix from diagonals
+   diags_array - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
    block_diag - Build a block diagonal sparse matrix
    tril - Lower triangular portion of a matrix in sparse format
@@ -101,6 +103,7 @@ Building sparse matrices:
    vstack - Stack sparse matrices vertically (row wise)
    rand - Random values in a given shape
    random - Random values in a given shape
+   random_array - Random values in a given shape
 
 Save and load sparse matrices:
 

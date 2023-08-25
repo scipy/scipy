@@ -28,6 +28,14 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
+def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+    # Helper function for testing.
+    random_state = check_random_state(random_state)
+    data_rng = random_state.standard_normal
+    return construct.random_array(m, n, density=density, format=format, dtype=dtype,
+                                  random_state=random_state, data_random_state=data_rng)
+
+
 class TestConstructUtils:
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
@@ -225,7 +233,8 @@ class TestConstructUtils:
         x = construct.diags([])
         assert_equal(x.shape, (0, 0))
 
-    def test_identity(self):
+    @pytest.mark.parametrize("identity", [construct.identity, construct.eye_array])
+    def test_identity(self, identity):
         assert_equal(construct.identity(1).toarray(), [[1]])
         assert_equal(construct.identity(2).toarray(), [[1,0],[0,1]])
 
@@ -238,13 +247,14 @@ class TestConstructUtils:
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
-    def test_eye(self):
-        assert_equal(construct.eye(1,1).toarray(), [[1]])
-        assert_equal(construct.eye(2,3).toarray(), [[1,0,0],[0,1,0]])
-        assert_equal(construct.eye(3,2).toarray(), [[1,0],[0,1],[0,0]])
-        assert_equal(construct.eye(3,3).toarray(), [[1,0,0],[0,1,0],[0,0,1]])
+    @pytest.mark.parametrize("eye", [construct.eye, construct.eye_array])
+    def test_eye(self, eye):
+        assert_equal(eye(1,1).toarray(), [[1]])
+        assert_equal(eye(2,3).toarray(), [[1,0,0],[0,1,0]])
+        assert_equal(eye(3,2).toarray(), [[1,0],[0,1],[0,0]])
+        assert_equal(eye(3,3).toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
-        assert_equal(construct.eye(3,3,dtype='int16').dtype, np.dtype('int16'))
+        assert_equal(eye(3,3,dtype='int16').dtype, np.dtype('int16'))
 
         for m in [3, 5]:
             for n in [3, 5]:
@@ -260,29 +270,30 @@ class TestConstructUtils:
                         with pytest.raises(
                             ValueError, match="Offset.*out of bounds"
                         ):
-                            construct.eye(m, n, k=k)
+                            eye(m, n, k=k)
 
                     else:
                         assert_equal(
-                            construct.eye(m, n, k=k).toarray(),
+                            eye(m, n, k=k).toarray(),
                             np.eye(m, n, k=k)
                         )
                         if m == n:
                             assert_equal(
-                                construct.eye(m, k=k).toarray(),
+                                eye(m, k=k).toarray(),
                                 np.eye(m, n, k=k)
                             )
 
-    def test_eye_one(self):
-        assert_equal(construct.eye(1).toarray(), [[1]])
-        assert_equal(construct.eye(2).toarray(), [[1,0],[0,1]])
+    @pytest.mark.parametrize("eye", [construct.eye, construct.eye_array])
+    def test_eye_one(self, eye):
+        assert_equal(eye(1).toarray(), [[1]])
+        assert_equal(eye(2).toarray(), [[1,0],[0,1]])
 
-        I = construct.eye(3, dtype='int8', format='dia')
+        I = eye(3, dtype='int8', format='dia')
         assert_equal(I.dtype, np.dtype('int8'))
         assert_equal(I.format, 'dia')
 
         for fmt in sparse_formats:
-            I = construct.eye(3, format=fmt)
+            I = eye(3, format=fmt)
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
@@ -303,18 +314,44 @@ class TestConstructUtils:
         cases.append(array([[0,1,0,2,0,5,8]]))
         cases.append(array([[0.5,0.125,0,3.25],[0,2.5,0,0]]))
 
+        # test all cases with some formats
         for a in cases:
+            ca = csr_array(a)
             for b in cases:
+                cb = csr_array(b)
                 expected = np.kron(a, b)
-                for fmt in sparse_formats:
-                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt)
+                for fmt in sparse_formats[1:4]:
+                    result = construct.kron(ca, cb, format=fmt)
                     assert_equal(result.format, fmt)
                     assert_array_equal(result.toarray(), expected)
+                    assert isinstance(result, sparray)
+
+        # test one case with all formats
+        a = cases[-1]
+        b = cases[-3]
+        ca = csr_array(a)
+        cb = csr_array(b)
+
+        expected = np.kron(a, b)
+        for fmt in sparse_formats:
+            result = construct.kron(ca, cb, format=fmt)
+            assert_equal(result.format, fmt)
+            assert_array_equal(result.toarray(), expected)
+            assert isinstance(result, sparray)
+
+        # check that spmatrix returned when both inputs are spmatrix
+        result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt)
+        assert_equal(result.format, fmt)
+        assert_array_equal(result.toarray(), expected)
+        assert isinstance(result, spmatrix)
 
     def test_kron_large(self):
         n = 2**16
-        a = construct.eye(1, n, n-1)
-        b = construct.eye(n, 1, 1-n)
+        # pre-sparse-array setup
+        # a = construct.eye(1, n, n-1)
+        # b = construct.eye(n, 1, 1-n)
+        a = construct.diags_array([1], shape=(1, n), offsets=n-1)
+        b = construct.diags_array([1], shape=(n, 1), offsets=1-n)
 
         construct.kron(a, a)
         construct.kron(b, b)
@@ -331,13 +368,16 @@ class TestConstructUtils:
         cases.append(array([[0,2,-6],[8,0,14],[0,3,0]]))
         cases.append(array([[1,0,0],[0,5,-1],[4,-2,8]]))
 
+        # test all cases with default format
         for a in cases:
             for b in cases:
-                result = construct.kronsum(
-                    csr_matrix(a), csr_matrix(b)).toarray()
-                expected = np.kron(np.eye(len(b)), a) + \
-                        np.kron(b, np.eye(len(a)))
-                assert_array_equal(result,expected)
+                result = construct.kronsum(csr_array(a), csr_array(b)).toarray()
+                expected = np.kron(np.eye(b.shape[0]), a) + np.kron(b, np.eye(a.shape[0]))
+                assert_array_equal(result, expected)
+
+        # check that spmatrix returned when both inputs are spmatrix
+        result = construct.kronsum(csr_matrix(a), csr_matrix(b)).toarray()
+        assert_array_equal(result, expected)
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
     def test_vstack(self, coo_cls):
@@ -353,14 +393,14 @@ class TestConstructUtils:
 
         assert_equal(construct.vstack([A.tocsr(), B.tocsr()]).toarray(),
                      expected)
-        result = construct.vstack([A.tocsr(), B.tocsr()], dtype=np.float32)
+        result = construct.vstack([A.tocsr(), B.tocsr()], format="csr", dtype=np.float32)
         assert_equal(result.dtype, np.float32)
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
         assert_equal(construct.vstack([A.tocsc(), B.tocsc()]).toarray(),
                      expected)
-        result = construct.vstack([A.tocsc(), B.tocsc()], dtype=np.float32)
+        result = construct.vstack([A.tocsc(), B.tocsc()], format="csc", dtype=np.float32)
         assert_equal(result.dtype, np.float32)
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
@@ -655,9 +695,11 @@ class TestConstructUtils:
         except AttributeError:
             pass
 
-        for random_state in random_states:
-            x = _sprandn(10, 20, density=0.5, dtype=np.float64,
-                         random_state=random_state)
+        for rs in random_states:
+            x = _sprandn(10, 20, density=0.5, dtype=np.float64, random_state=rs)
+            assert_(np.any(np.less(x.data, 0)))
+            assert_(np.any(np.less(1, x.data)))
+            x = _sprandn_array(10, 20, density=0.5, dtype=np.float64, random_state=rs)
             assert_(np.any(np.less(x.data, 0)))
             assert_(np.any(np.less(1, x.data)))
 
@@ -665,12 +707,16 @@ class TestConstructUtils:
         # anything that np.dtype can convert to a dtype should be accepted
         # for the dtype
         construct.random(10, 10, dtype='d')
+        construct.random_array(10, 10, dtype='d')
 
     def test_random_sparse_matrix_returns_correct_number_of_non_zero_elements(self):
         # A 10 x 10 matrix, with density of 12.65%, should have 13 nonzero elements.
         # 10 x 10 x 0.1265 = 12.65, which should be rounded up to 13, not 12.
         sparse_matrix = construct.random(10, 10, density=0.1265)
         assert_equal(sparse_matrix.count_nonzero(),13)
+        # check random_array
+        sparse_array = construct.random_array(10, 10, density=0.1265)
+        assert_equal(sparse_array.count_nonzero(),13)
 
 
 def test_diags_array():
