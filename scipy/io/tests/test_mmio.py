@@ -1,4 +1,4 @@
-from tempfile import mkdtemp, mktemp
+from tempfile import mkdtemp
 import os
 import io
 import shutil
@@ -694,9 +694,12 @@ class TestMMIOCoordinate:
         b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
-    def test_sparse_formats(self):
-        mats = []
+    def test_sparse_formats(self, tmp_path):
+        # Note: `tmp_path` is a pytest fixture, it handles cleanup
+        tmpdir = tmp_path / 'sparse_formats'
+        tmpdir.mkdir()
 
+        mats = []
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
@@ -710,10 +713,9 @@ class TestMMIOCoordinate:
         for mat in mats:
             expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
-                fn = mktemp(dir=self.tmpdir)  # safe, we own tmpdir
-                mmwrite(fn, mat.asformat(fmt))
-
-                result = mmread(fn).toarray()
+                fname = tmpdir / (fmt + '.mtx')
+                mmwrite(fname, mat.asformat(fmt))
+                result = mmread(fname).toarray()
                 assert_array_almost_equal(result, expected)
 
     def test_precision(self):
@@ -755,3 +757,15 @@ def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
                        "1 1 -2.1846000000000e+02  0.0000000000000e+00"))
+
+
+def test_gh18123(tmp_path):
+    lines = [" %%MatrixMarket matrix coordinate real general\n",
+             "5 5 3\n",
+             "2 3 1.0\n",
+             "3 4 2.0\n",
+             "3 5 3.0\n"]
+    test_file = tmp_path / "test.mtx"
+    with open(test_file, "w") as f:
+        f.writelines(lines)
+    mmread(test_file)

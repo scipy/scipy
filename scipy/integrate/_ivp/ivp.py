@@ -179,18 +179,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here `t` is a scalar, and there are two options for the ndarray `y`:
-        It can either have shape (n,); then `fun` must return array_like with
-        shape (n,). Alternatively, it can have shape (n, k); then `fun`
-        must return an array_like with shape (n, k), i.e., each column
-        corresponds to a single column in `y`. The choice between the two
-        options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows a faster approximation of the Jacobian
-        by finite differences (required for stiff solvers).
-    t_span : 2-tuple of floats
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. Additional
+        arguments need to be passed if ``args`` is used (see documentation of
+        ``args`` argument). ``fun`` must return an array of the same shape as
+        ``y``. See `vectorized` for more information.
+    t_span : 2-member sequence
         Interval of integration (t0, tf). The solver starts with t=t0 and
-        integrates until it reaches t=tf.
+        integrates until it reaches t=tf. Both t0 and tf must be floats
+        or values interpretable by the float conversion function.
     y0 : array_like, shape (n,)
         Initial state. For problems in the complex domain, pass `y0` with a
         complex data type (even if the initial value is purely real).
@@ -248,13 +246,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     events : callable, or list of callables, optional
         Events to track. If None (default), no events will be tracked.
         Each event occurs at the zeros of a continuous function of time and
-        state. Each function must have the signature ``event(t, y)`` and return
-        a float. The solver will find an accurate value of `t` at which
-        ``event(t, y(t)) = 0`` using a root-finding algorithm. By default, all
-        zeros will be found. The solver looks for a sign change over each step,
-        so if multiple zero crossings occur within one step, events may be
-        missed. Additionally each `event` function might have the following
-        attributes:
+        state. Each function must have the signature ``event(t, y)`` where
+        additional argument have to be passed if ``args`` is used (see
+        documentation of ``args`` argument). Each function must return a
+        float. The solver will find an accurate value of `t` at which
+        ``event(t, y(t)) = 0`` using a root-finding algorithm. By default,
+        all zeros will be found. The solver looks for a sign change over
+        each step, so if multiple zero crossings occur within one step,
+        events may be missed. Additionally each `event` function might
+        have the following attributes:
 
             terminal: bool, optional
                 Whether to terminate integration if this event occurs.
@@ -268,7 +268,21 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         You can assign attributes like ``event.terminal = True`` to any
         function in Python.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for other methods and for 'Radau' and
+        'BDF' in some circumstances (e.g. small ``len(y0)``).
     args : tuple, optional
         Additional arguments to pass to the user-defined functions.  If given,
         the additional arguments are passed to all user-defined functions.
@@ -289,11 +303,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
@@ -308,6 +322,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               be constant. Not supported by 'LSODA'.
             * If callable, the Jacobian is assumed to depend on both
               t and y; it will be called as ``jac(t, y)``, as necessary.
+              Additional arguments have to be passed if ``args`` is
+              used (see documentation of ``args`` argument).
               For 'Radau' and 'BDF' methods, the return value might be a
               sparse matrix.
             * If None (default), the Jacobian will be approximated by
@@ -416,6 +432,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     --------
     Basic exponential decay showing automatically chosen time points.
 
+    >>> import numpy as np
     >>> from scipy.integrate import solve_ivp
     >>> def exponential_decay(t, y): return -0.5 * y
     >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])
@@ -558,7 +575,17 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         # Wrap the user's fun (and jac, if given) in lambdas to hide the
         # additional parameters.  Pass in the original fun as a keyword
         # argument to keep it in the scope of the lambda.
-        fun = lambda t, x, fun=fun: fun(t, x, *args)
+        try:
+            _ = [*(args)]
+        except TypeError as exp:
+            suggestion_tuple = (
+                "Supplied 'args' cannot be unpacked. Please supply `args`"
+                f" as a tuple (e.g. `args=({args},)`)"
+            )
+            raise TypeError(suggestion_tuple) from exp
+
+        def fun(t, x, fun=fun):
+            return fun(t, x, *args)
         jac = options.get('jac')
         if callable(jac):
             options['jac'] = lambda t, x: jac(t, x, *args)
@@ -699,9 +726,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
     if dense_output:
         if t_eval is None:
-            sol = OdeSolution(ts, interpolants)
+            sol = OdeSolution(
+                ts, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+            )
         else:
-            sol = OdeSolution(ti, interpolants)
+            sol = OdeSolution(
+                ti, interpolants, alt_segment=True if method in [BDF, LSODA] else False
+            )
     else:
         sol = None
 

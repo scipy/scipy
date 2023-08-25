@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+from itertools import zip_longest
 
 import numpy as np
 from numpy.testing import assert_
@@ -277,9 +278,9 @@ class MpmathData:
 
     def __repr__(self):
         if self.is_complex:
-            return "<MpmathData: %s (complex)>" % (self.name,)
+            return f"<MpmathData: {self.name} (complex)>"
         else:
-            return "<MpmathData: %s>" % (self.name,)
+            return f"<MpmathData: {self.name}>"
 
 
 def assert_mpmath_equal(*a, **kw):
@@ -319,7 +320,7 @@ def trace_args(func):
             return float(x)
 
     def wrap(*a, **kw):
-        sys.stderr.write("%r: " % (tuple(map(tofloat, a)),))
+        sys.stderr.write(f"{tuple(map(tofloat, a))!r}: ")
         sys.stderr.flush()
         try:
             r = func(*a, **kw)
@@ -332,7 +333,6 @@ def trace_args(func):
 
 
 try:
-    import posix
     import signal
     POSIX = ('setitimer' in dir(signal))
 except ImportError:
@@ -419,36 +419,28 @@ def mp_assert_allclose(res, std, atol=0, rtol=1e-17):
     """
     Compare lists of mpmath.mpf's or mpmath.mpc's directly so that it
     can be done to higher precision than double.
-
     """
-    try:
-        len(res)
-    except TypeError:
-        res = list(res)
-
-    n = len(std)
-    if len(res) != n:
-        raise AssertionError("Lengths of inputs not equal.")
-
     failures = []
-    for k in range(n):
-        try:
-            assert_(mpmath.fabs(res[k] - std[k]) <= atol + rtol*mpmath.fabs(std[k]))
-        except AssertionError:
-            failures.append(k)
+    for k, (resval, stdval) in enumerate(zip_longest(res, std)):
+        if resval is None or stdval is None:
+            raise ValueError('Lengths of inputs res and std are not equal.')
+        if mpmath.fabs(resval - stdval) > atol + rtol*mpmath.fabs(stdval):
+            failures.append((k, resval, stdval))
 
-    ndigits = int(abs(np.log10(rtol)))
-    msg = [""]
-    msg.append("Bad results ({} out of {}) for the following points:"
-               .format(len(failures), n))
-    for k in failures:
-        resrep = mpmath.nstr(res[k], ndigits, min_fixed=0, max_fixed=0)
-        stdrep = mpmath.nstr(std[k], ndigits, min_fixed=0, max_fixed=0)
-        if std[k] == 0:
-            rdiff = "inf"
-        else:
-            rdiff = mpmath.fabs((res[k] - std[k])/std[k])
-            rdiff = mpmath.nstr(rdiff, 3)
-        msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep, rdiff))
-    if failures:
+    nfail = len(failures)
+    if nfail > 0:
+        ndigits = int(abs(np.log10(rtol)))
+        msg = [""]
+        msg.append("Bad results ({} out of {}) for the following points:"
+                   .format(nfail, k + 1))
+        for k, resval, stdval in failures:
+            resrep = mpmath.nstr(resval, ndigits, min_fixed=0, max_fixed=0)
+            stdrep = mpmath.nstr(stdval, ndigits, min_fixed=0, max_fixed=0)
+            if stdval == 0:
+                rdiff = "inf"
+            else:
+                rdiff = mpmath.fabs((resval - stdval)/stdval)
+                rdiff = mpmath.nstr(rdiff, 3)
+            msg.append("{}: {} != {} (rdiff {})".format(k, resrep, stdrep,
+                                                        rdiff))
         assert_(False, "\n".join(msg))

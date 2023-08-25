@@ -85,6 +85,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import schur, eigvals
     >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
     >>> T, Z = schur(A)
@@ -138,19 +139,24 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     if sort is None:
         sort_t = 0
-        sfunction = lambda x: None
+        def sfunction(x):
+            return None
     else:
         sort_t = 1
         if callable(sort):
             sfunction = sort
         elif sort == 'lhp':
-            sfunction = lambda x: (x.real < 0.0)
+            def sfunction(x):
+                return x.real < 0.0
         elif sort == 'rhp':
-            sfunction = lambda x: (x.real >= 0.0)
+            def sfunction(x):
+                return x.real >= 0.0
         elif sort == 'iuc':
-            sfunction = lambda x: (abs(x) <= 1.0)
+            def sfunction(x):
+                return abs(x) <= 1.0
         elif sort == 'ouc':
-            sfunction = lambda x: (abs(x) > 1.0)
+            def sfunction(x):
+                return abs(x) > 1.0
         else:
             raise ValueError("'sort' parameter must either be 'None', or a "
                              "callable, or one of ('lhp','rhp','iuc','ouc')")
@@ -238,6 +244,7 @@ def rsf2csf(T, Z, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import schur, rsf2csf
     >>> A = np.array([[0, 2, 2], [0, 1, 2], [1, 0, 1]])
     >>> T, Z = schur(A)

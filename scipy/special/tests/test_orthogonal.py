@@ -133,8 +133,7 @@ class TestHermite:
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre:
-
+class TestShLegendre:
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
         psub = np.poly1d([2,-1])
@@ -158,8 +157,7 @@ class _test_sh_legendre:
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt:
-
+class TestShChebyt:
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
         psub = np.poly1d([2,-1])
@@ -183,8 +181,7 @@ class _test_sh_chebyt:
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu:
-
+class TestShChebyu:
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
         psub = np.poly1d([2,-1])
@@ -208,10 +205,11 @@ class _test_sh_chebyu:
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi:
+class TestShJacobi:
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
-        conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
+        def conv(n, p):
+            return gamma(n + 1) * gamma(n + p) / gamma(2 * n + p)
         psub = np.poly1d([2,-1])
         q = 4 * np.random.random()
         p = q-1 + 2*np.random.random()
@@ -291,16 +289,20 @@ def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
     assert_allclose(w.sum(), mu, rtol, atol)
 
     # compare the results of integrating a function with quad.
-    f = lambda x: x**3 - 3*x**2 + x - 2
+    def f(x):
+        return x ** 3 - 3 * x ** 2 + x - 2
     resI = integrate.quad(lambda x: f(x)*weight_func(x), a, b)
     resG = np.vdot(f(x), w)
     rtol = 1e-6 if 1e-6 < resI[1] else resI[1] * 10
     assert_allclose(resI[0], resG, rtol=rtol)
 
 def test_roots_jacobi():
-    rf = lambda a, b: lambda n, mu: sc.roots_jacobi(n, a, b, mu)
-    ef = lambda a, b: lambda n, x: sc.eval_jacobi(n, a, b, x)
-    wf = lambda a, b: lambda x: (1 - x)**a * (1 + x)**b
+    def rf(a, b):
+        return lambda n, mu: sc.roots_jacobi(n, a, b, mu)
+    def ef(a, b):
+        return lambda n, x: sc.eval_jacobi(n, a, b, x)
+    def wf(a, b):
+        return lambda x: (1 - x) ** a * (1 + x) ** b
 
     vgq = verify_gauss_quad
     vgq(rf(-0.5, -0.75), ef(-0.5, -0.75), wf(-0.5, -0.75), -1., 1., 5)
@@ -332,10 +334,37 @@ def test_roots_jacobi():
     vgq(rf(47.1, -0.2), ef(47.1, -0.2), wf(47.1, -0.2), -1., 1.,
         100, atol=1e-11)
 
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 5, atol=2e-13)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 25, atol=1e-12)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 100, atol=1e-11)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 250, atol=1e-11)
+
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 100,
+        atol=1e-10)
+
     vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 5)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25, atol=1e-13)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1.,
-        100, atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25,
+        atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 100,
+        atol=1e-13)
 
     # when alpha == beta == 0, P_n^{a,b}(x) == P_n(x)
     xj, wj = sc.roots_jacobi(6, 0.0, 0.0)
@@ -364,9 +393,12 @@ def test_roots_jacobi():
     assert_raises(ValueError, sc.roots_jacobi, 3, -2, -2)
 
 def test_roots_sh_jacobi():
-    rf = lambda a, b: lambda n, mu: sc.roots_sh_jacobi(n, a, b, mu)
-    ef = lambda a, b: lambda n, x: sc.eval_sh_jacobi(n, a, b, x)
-    wf = lambda a, b: lambda x: (1. - x)**(a - b) * (x)**(b - 1.)
+    def rf(a, b):
+        return lambda n, mu: sc.roots_sh_jacobi(n, a, b, mu)
+    def ef(a, b):
+        return lambda n, x: sc.eval_sh_jacobi(n, a, b, x)
+    def wf(a, b):
+        return lambda x: (1.0 - x) ** (a - b) * x ** (b - 1.0)
 
     vgq = verify_gauss_quad
     vgq(rf(-0.5, 0.25), ef(-0.5, 0.25), wf(-0.5, 0.25), 0., 1., 5)
@@ -493,9 +525,12 @@ def test_roots_hermitenorm():
     assert_raises(ValueError, sc.roots_hermitenorm, 3.3)
 
 def test_roots_gegenbauer():
-    rootf = lambda a: lambda n, mu: sc.roots_gegenbauer(n, a, mu)
-    evalf = lambda a: lambda n, x: sc.eval_gegenbauer(n, a, x)
-    weightf = lambda a: lambda x: (1 - x**2)**(a - 0.5)
+    def rootf(a):
+        return lambda n, mu: sc.roots_gegenbauer(n, a, mu)
+    def evalf(a):
+        return lambda n, x: sc.eval_gegenbauer(n, a, x)
+    def weightf(a):
+        return lambda x: (1 - x ** 2) ** (a - 0.5)
 
     vgq = verify_gauss_quad
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 5)
@@ -517,6 +552,22 @@ def test_roots_gegenbauer():
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 5, atol=1e-13)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 25, atol=1e-12)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 100, atol=1e-11)
+
+    # Alpha=170 is where the approximation used in roots_gegenbauer changes
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 100, atol=1e-11)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1.25e-13)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 100, atol=1e-11)
+
+    # Test for failures, e.g. overflows, resulting from large alphas
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 5, atol=1e-13)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 25, atol=1e-12)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 100, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 5, atol=1e-12)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 25, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 100, atol=1e-10)
 
     # this is a special case that the old code supported.
     # when alpha = 0, the gegenbauer polynomial is uniformly 0. but it goes
@@ -705,9 +756,12 @@ def test_roots_laguerre():
     assert_raises(ValueError, sc.roots_laguerre, 3.3)
 
 def test_roots_genlaguerre():
-    rootf = lambda a: lambda n, mu: sc.roots_genlaguerre(n, a, mu)
-    evalf = lambda a: lambda n, x: sc.eval_genlaguerre(n, a, x)
-    weightf = lambda a: lambda x: x**a * np.exp(-x)
+    def rootf(a):
+        return lambda n, mu: sc.roots_genlaguerre(n, a, mu)
+    def evalf(a):
+        return lambda n, x: sc.eval_genlaguerre(n, a, x)
+    def weightf(a):
+        return lambda x: x ** a * np.exp(-x)
 
     vgq = verify_gauss_quad
     vgq(rootf(-0.5), evalf(-0.5), weightf(-0.5), 0., np.inf, 5)

@@ -5,11 +5,6 @@ SciPy: A scientific computing package for Python
 Documentation is available in the docstrings and
 online at https://docs.scipy.org.
 
-Contents
---------
-SciPy imports all the functions from the NumPy namespace, and in
-addition provides:
-
 Subpackages
 -----------
 Using any of these subpackages requires an explicit import. For example,
@@ -18,91 +13,36 @@ Using any of these subpackages requires an explicit import. For example,
 ::
 
  cluster                      --- Vector Quantization / Kmeans
+ constants                    --- Physical and mathematical constants and units
+ datasets                     --- Dataset methods
  fft                          --- Discrete Fourier transforms
  fftpack                      --- Legacy discrete Fourier transforms
  integrate                    --- Integration routines
  interpolate                  --- Interpolation Tools
  io                           --- Data input and output
  linalg                       --- Linear algebra routines
- linalg.blas                  --- Wrappers to BLAS library
- linalg.lapack                --- Wrappers to LAPACK library
- misc                         --- Various utilities that don't have
-                                  another home.
+ misc                         --- Utilities that don't have another home.
  ndimage                      --- N-D image package
  odr                          --- Orthogonal Distance Regression
  optimize                     --- Optimization Tools
  signal                       --- Signal Processing Tools
- signal.windows               --- Window functions
  sparse                       --- Sparse Matrices
- sparse.linalg                --- Sparse Linear Algebra
- sparse.linalg.dsolve         --- Linear Solvers
- sparse.linalg.dsolve.umfpack --- :Interface to the UMFPACK library:
-                                  Conjugate Gradient Method (LOBPCG)
- sparse.linalg.eigen          --- Sparse Eigenvalue Solvers
- sparse.linalg.eigen.lobpcg   --- Locally Optimal Block Preconditioned
-                                  Conjugate Gradient Method (LOBPCG)
  spatial                      --- Spatial data structures and algorithms
  special                      --- Special functions
  stats                        --- Statistical Functions
 
-Utility tools
--------------
+Public API in the main SciPy namespace
+--------------------------------------
 ::
 
- test              --- Run scipy unittests
- show_config       --- Show scipy build configuration
- show_numpy_config --- Show numpy build configuration
  __version__       --- SciPy version string
- __numpy_version__ --- Numpy version string
+ LowLevelCallable  --- Low-level callback function
+ show_config       --- Show scipy build configuration
+ test              --- Run scipy unittests
 
 """
 
-from numpy import show_config as show_numpy_config
-if show_numpy_config is None:
-    raise ImportError(
-        "Cannot import SciPy when running from NumPy source directory.")
 from numpy import __version__ as __numpy_version__
-
-# Import numpy symbols to scipy name space (DEPRECATED)
-from ._lib.deprecation import _deprecated
-import numpy as np
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.{0} instead')
-
-# deprecate callable objects from numpy, skipping classes and modules
-import types as _types  # noqa: E402
-for _key in np.__all__:
-    if _key.startswith('_'):
-        continue
-    _fun = getattr(np, _key)
-    if isinstance(_fun, _types.ModuleType):
-        continue
-    if callable(_fun) and not isinstance(_fun, type):
-        _fun = _deprecated(_msg.format(_key))(_fun)
-    globals()[_key] = _fun
-del np, _types
-
-from numpy.random import rand, randn
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.random.{0} instead')
-rand = _deprecated(_msg.format('rand'))(rand)
-randn = _deprecated(_msg.format('randn'))(randn)
-
-# fft is especially problematic, so was removed in SciPy 1.6.0
-from numpy.fft import ifft
-ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
-                   '2.0.0, use scipy.fft.ifft instead')(ifft)
-
-from numpy.lib import scimath  # noqa: E402
-_msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
-        'use numpy.lib.scimath.{0} instead')
-for _key in scimath.__all__:
-    _fun = getattr(scimath, _key)
-    if callable(_fun):
-        _fun = _deprecated(_msg.format(_key))(_fun)
-    globals()[_key] = _fun
-del scimath
-del _msg, _fun, _key, _deprecated
 
 # We first need to detect if we're being called as part of the SciPy
 # setup procedure itself in a reliable manner.
@@ -134,18 +74,28 @@ else:
     from scipy._lib import _pep440
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.18.5'
+    np_minversion = '1.22.4'
     np_maxversion = '9.9.99'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
         import warnings
         warnings.warn(f"A NumPy version >={np_minversion} and <{np_maxversion}"
                       f" is required for this version of SciPy (detected "
-                      f"version {__numpy_version__}",
+                      f"version {__numpy_version__})",
                       UserWarning)
     del _pep440
 
-    from scipy._lib._ccallback import LowLevelCallable
+    # This is the first import of an extension module within SciPy. If there's
+    # a general issue with the install, such that extension modules are missing
+    # or cannot be imported, this is where we'll get a failure - so give an
+    # informative error message.
+    try:
+        from scipy._lib._ccallback import LowLevelCallable
+    except ImportError as e:
+        msg = "The `scipy` install you are using seems to be broken, " + \
+              "(extension modules cannot be imported), " + \
+              "please try reinstalling."
+        raise ImportError(msg) from e
 
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
@@ -153,6 +103,8 @@ else:
 
     submodules = [
         'cluster',
+        'constants',
+        'datasets',
         'fft',
         'fftpack',
         'integrate',
@@ -175,7 +127,6 @@ else:
         'test',
         'show_config',
         '__version__',
-        '__numpy_version__'
     ]
 
     def __dir__():

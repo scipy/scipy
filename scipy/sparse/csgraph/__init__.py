@@ -77,6 +77,7 @@ weight 2, and nodes 0 and 2 are connected by an edge of weight 1.
 We can construct the dense, masked, and sparse representations as follows,
 keeping in mind that an undirected graph is represented by a symmetric matrix::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 2, 1],
     ...                     [2, 0, 0],
     ...                     [1, 0, 0]])
@@ -101,6 +102,7 @@ leads to ambiguities: how can non-edges be represented if zero is a meaningful
 value? In this case, either a masked or sparse representation must be used
 to eliminate the ambiguity::
 
+    >>> import numpy as np
     >>> G2_data = np.array([[np.inf, 2,      0     ],
     ...                     [2,      np.inf, np.inf],
     ...                     [0,      np.inf, np.inf]])
@@ -124,6 +126,7 @@ assumed to be directed by default. In a directed graph, traversal from node
 i to node j can be accomplished over the edge G[i, j], but not the edge
 G[j, i].  Consider the following dense graph::
 
+    >>> import numpy as np
     >>> G_dense = np.array([[0, 1, 0],
     ...                     [2, 0, 3],
     ...                     [0, 4, 0]])

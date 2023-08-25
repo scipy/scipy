@@ -26,10 +26,10 @@ at the top-level directory.
 int num_drop_U;
 #endif
 
-extern void ccopy_(int *, complex [], int *, complex [], int *);
+extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
 
 #if 0
-static complex *A;  /* used in _compare_ only */
+static singlecomplex *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
     register int *x = (int *)a, *y = (int *)b;
@@ -47,12 +47,12 @@ ilu_ccopy_to_ucol(
 	      int	 *segrep,  /* in */
 	      int	 *repfnz,  /* in */
 	      int	 *perm_r,  /* in */
-	      complex	 *dense,   /* modified - reset to zero on return */
+	      singlecomplex	 *dense,   /* modified - reset to zero on return */
 	      int  	 drop_rule,/* in */
 	      milu_t	 milu,	   /* in */
 	      double	 drop_tol, /* in */
 	      int	 quota,    /* maximum nonzero entries allowed */
-	      complex	 *sum,	   /* out - the sum of dropped entries */
+	      singlecomplex	 *sum,	   /* out - the sum of dropped entries */
 	      int	 *nnzUj,   /* in - out */
 	      GlobalLU_t *Glu,	   /* modified */
 	      float	 *work	   /* working space with minimum size n,
@@ -69,20 +69,20 @@ ilu_ccopy_to_ucol(
     int       new_next, mem_error;
     int       *xsup, *supno;
     int       *lsub, *xlsub;
-    complex    *ucol;
+    singlecomplex    *ucol;
     int       *usub, *xusub;
     int       nzumax;
     int       m; /* number of entries in the nonzero U-segments */
     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
     register double tmp = 0.0;
-    complex zero = {0.0, 0.0};
+    singlecomplex zero = {0.0, 0.0};
     int i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = (complex *) Glu->ucol;
+    ucol    = (singlecomplex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;

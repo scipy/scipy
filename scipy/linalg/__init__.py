@@ -5,6 +5,15 @@ Linear algebra (:mod:`scipy.linalg`)
 
 .. currentmodule:: scipy.linalg
 
+.. toctree::
+   :hidden:
+
+   linalg.blas
+   linalg.cython_blas
+   linalg.cython_lapack
+   linalg.interpolative
+   linalg.lapack
+
 Linear algebra functions.
 
 .. eventually, we should replace the numpy.linalg HTML link with just `numpy.linalg`
@@ -36,7 +45,6 @@ Basics
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
-   pinv2 - Pseudo-inverse using svd
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays

@@ -364,7 +364,7 @@ cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 
 
     DNformat  *Bstore, *Xstore;
-    complex    *Bmat, *Xmat;
+    singlecomplex    *Bmat, *Xmat;
     int       ldb, ldx, nrhs;
     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */

@@ -1,11 +1,13 @@
 import numpy as np
 from .utils import make_system
+from scipy._lib.deprecation import _deprecate_positional_args
 
 
 __all__ = ['tfqmr']
 
 
-def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
+@_deprecate_positional_args(version="1.14.0")
+def tfqmr(A, b, x0=None, *, tol=1e-5, maxiter=None, M=None,
           callback=None, atol=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
@@ -81,6 +83,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import tfqmr
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
@@ -110,10 +113,12 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     ndofs = A.shape[0]
     if maxiter is None:
         maxiter = min(10000, ndofs * 10)
-    if x0 is None:
-        x0 = x.copy()
 
-    u = r = b - A.matvec(x)
+    if x0 is None:
+        r = b.copy()
+    else:
+        r = b - A.matvec(x)
+    u = r
     w = r.copy()
     # Take rstar as b - Ax0, that is rstar := r = b - Ax0 mathematically
     rstar = r

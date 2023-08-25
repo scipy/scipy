@@ -1,10 +1,9 @@
 import math
 import numpy as np
-import pytest
 
 from numpy.testing import assert_allclose, assert_, assert_array_equal
 
-from scipy.optimize import fmin_cobyla, minimize
+from scipy.optimize import fmin_cobyla, minimize, Bounds
 
 
 class TestCobyla:
@@ -79,13 +78,11 @@ class TestCobyla:
         cons = ({'type': 'ineq', 'fun': c1},
                 {'type': 'ineq', 'fun': c2},
                 {'type': 'ineq', 'fun': c3})
-        w0 = np.zeros((10, 1))
-        message = 'Use of `minimize` with `x0.ndim != 1` is deprecated.'
-        with pytest.warns(DeprecationWarning, match=message):
-            sol = minimize(f, w0, method='cobyla', constraints=cons,
-                           options={'catol': 1e-6})
-            assert_(sol.maxcv > 1e-6)
-            assert_(not sol.success)
+        w0 = np.zeros((10,))
+        sol = minimize(f, w0, method='cobyla', constraints=cons,
+                       options={'catol': 1e-6})
+        assert_(sol.maxcv > 1e-6)
+        assert_(not sol.success)
 
 
 def test_vector_constraints():
@@ -129,3 +126,36 @@ def test_vector_constraints():
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
+
+class TestBounds:
+    # Test cobyla support for bounds (only when used via `minimize`)
+    # Invalid bounds is tested in
+    # test_optimize.TestOptimizeSimple.test_minimize_invalid_bounds
+
+    def test_basic(self):
+        def f(x):
+            return np.sum(x**2)
+
+        lb = [-1, None, 1, None, -0.5]
+        ub = [-0.5, -0.5, None, None, -0.5]
+        bounds = [(a, b) for a, b in zip(lb, ub)]
+        # these are converted to Bounds internally
+
+        res = minimize(f, x0=[1, 2, 3, 4, 5], method='cobyla', bounds=bounds)
+        ref = [-0.5, -0.5, 1, 0, -0.5]
+        assert res.success
+        assert_allclose(res.x, ref, atol=1e-3)
+
+    def test_unbounded(self):
+        def f(x):
+            return np.sum(x**2)
+
+        bounds = Bounds([-np.inf, -np.inf], [np.inf, np.inf])
+        res = minimize(f, x0=[1, 2], method='cobyla', bounds=bounds)
+        assert res.success
+        assert_allclose(res.x, 0, atol=1e-3)
+
+        bounds = Bounds([1, -np.inf], [np.inf, np.inf])
+        res = minimize(f, x0=[1, 2], method='cobyla', bounds=bounds)
+        assert res.success
+        assert_allclose(res.x, [1, 0], atol=1e-3)

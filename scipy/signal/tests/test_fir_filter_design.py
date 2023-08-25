@@ -226,9 +226,10 @@ class TestFirWinMore:
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
         assert_array_almost_equal(np.abs(response),
                 [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0], decimal=5)
-
-        taps2 = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
-                        pass_zero=False, scale=False, nyq=nyquist)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'nyq'")
+            taps2 = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+                           pass_zero=False, scale=False, nyq=nyquist)
         assert_allclose(taps2, taps)
 
     def test_bad_cutoff(self):
@@ -247,8 +248,10 @@ class TestFirWinMore:
         # 2D array not allowed.
         assert_raises(ValueError, firwin, 99, [[0.1, 0.2],[0.3, 0.4]])
         # cutoff values must be less than nyq.
-        assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
-        assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'nyq'")
+            assert_raises(ValueError, firwin, 99, 50.0, nyq=40)
+            assert_raises(ValueError, firwin, 99, [10, 20, 30], nyq=25)
         assert_raises(ValueError, firwin, 99, 50.0, fs=80)
         assert_raises(ValueError, firwin, 99, [10, 20, 30], fs=50)
 
@@ -271,6 +274,11 @@ class TestFirWinMore:
             with assert_raises(ValueError, match='must have at least two'):
                 firwin(41, [0.5], pass_zero=pass_zero)
 
+    def test_firwin_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
+            firwin(1, 1, nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            firwin(58, 0.1, 0.03)
 
 class TestFirwin2:
 
@@ -406,7 +414,9 @@ class TestFirwin2:
         taps1 = firwin2(80, [0.0, 0.5, 1.0], [1.0, 1.0, 0.0])
         taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], fs=120.0)
         assert_array_almost_equal(taps1, taps2)
-        taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'nyq'")
+            taps2 = firwin2(80, [0.0, 30.0, 60.0], [1.0, 1.0, 0.0], nyq=60.0)
         assert_array_almost_equal(taps1, taps2)
 
     def test_tuple(self):
@@ -419,6 +429,13 @@ class TestFirwin2:
         freq2 = np.array(freq1)
         firwin2(80, freq1, [1.0, 1.0, 0.0, 0.0])
         assert_equal(freq1, freq2)
+
+    def test_firwin2_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
+            firwin2(1, [0, 10], [1, 1], nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test04
+            firwin2(5, [0.0, 0.5, 0.5, 1.0], [1.0, 1.0, 0.0, 0.0], 8193, None)
 
 
 class TestRemez:
@@ -461,7 +478,9 @@ class TestRemez:
              -0.003530911231040, 0.193140296954975, 0.373400753484939,
              0.373400753484939, 0.193140296954975, -0.003530911231040,
              -0.075943803756711, -0.041314581814658, 0.024590270518440]
-        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'remez'")
+            h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
         assert_allclose(h, k)
         h = remez(12, [0, 0.3, 0.5, 1], [1, 0], fs=2.)
         assert_allclose(h, k)
@@ -473,9 +492,17 @@ class TestRemez:
              0.129770906801075, -0.103908158578635, 0.073641298245579,
              -0.043276706138248, 0.016849978528150, 0.002879152556419,
              -0.014644062687875, 0.018704846485491, -0.038976016082299]
-        assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'remez'")
+            assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], fs=2.), h)
 
+    def test_remez_deprecations(self):
+        with pytest.deprecated_call(match="'remez' keyword argument 'Hz'"):
+            remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_hilbert
+            remez(11, [0.1, 0.4], [1], None)
 
 class TestFirls:
 
@@ -494,9 +521,9 @@ class TestFirls:
         # negative desired
         assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1, 1])
         # len(weight) != len(pairs)
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [1, 2])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], weight=[1, 2])
         # negative weight
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [-1])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], weight=[-1])
 
     def test_firls(self):
         N = 11  # number of taps in the filter
@@ -535,7 +562,7 @@ class TestFirls:
 
     def test_compare(self):
         # compare to OCTAVE output
-        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], [1, 2])
+        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], weight=[1, 2])
         # >> taps = firls(8, [0 0.5 0.55 1], [1 1 0 0], [1, 2]);
         known_taps = [-6.26930101730182e-04, -1.03354450635036e-01,
                       -9.81576747564301e-03, 3.17271686090449e-01,
@@ -545,7 +572,7 @@ class TestFirls:
         assert_allclose(taps, known_taps)
 
         # compare to MATLAB output
-        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], [1, 2])
+        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], weight=[1, 2])
         # >> taps = firls(10, [0 0.5 0.5 1], [1 1 0 0], [1, 2]);
         known_taps = [
             0.058545300496815, -0.014233383714318, -0.104688258464392,
@@ -563,11 +590,13 @@ class TestFirls:
             1.156090832768218]
         assert_allclose(taps, known_taps)
 
-        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
-        assert_allclose(taps, known_taps)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'nyq'")
+            taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+            assert_allclose(taps, known_taps)
 
-        with pytest.raises(ValueError, match='between 0 and 1'):
-            firls(7, [0, 1], [0, 1], nyq=0.5)
+            with pytest.raises(ValueError, match='between 0 and 1'):
+                firls(7, [0, 1], [0, 1], nyq=0.5)
 
     def test_rank_deficient(self):
         # solve() runs but warns (only sometimes, so here we don't use match)
@@ -586,6 +615,13 @@ class TestFirls:
         mask = w > 0.99
         assert mask.sum() > 3
         assert_allclose(np.abs(h[mask]), 0., atol=1e-4)
+
+    def test_firls_deprecations(self):
+        with pytest.deprecated_call(match="argument 'nyq' is deprecated"):
+            firls(1, (0, 1), (0, 0), nyq=10)
+        with pytest.deprecated_call(match="use keyword arguments"):
+            # from test_firls
+            firls(11, [0, 0.1, 0.4, 0.5], [1, 1, 0, 0], None)
 
 
 class TestMinimumPhase:

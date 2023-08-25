@@ -205,15 +205,15 @@ double x;
     if (x <= 5.0) {
 	if (x == 0.0) {
 	    sf_error("y1", SF_ERROR_SINGULAR, NULL);
-	    return -NPY_INFINITY;
+	    return -INFINITY;
 	}
 	else if (x <= 0.0) {
 	    sf_error("y1", SF_ERROR_DOMAIN, NULL);
-	    return NPY_NAN;
+	    return NAN;
 	}
 	z = x * x;
 	w = x * (polevl(z, YP, 5) / p1evl(z, YQ, 8));
-	w += NPY_2_PI * (j1(x) * log(x) - 1.0 / x);
+	w += M_2_PI * (j1(x) * log(x) - 1.0 / x);
 	return (w);
     }
 

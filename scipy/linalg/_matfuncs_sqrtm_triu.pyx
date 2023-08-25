@@ -1,5 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
-import numpy as np
 from ._matfuncs_sqrtm import SqrtmError
 
 from numpy cimport complex128_t, float64_t, intp_t

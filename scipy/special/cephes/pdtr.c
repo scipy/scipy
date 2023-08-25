@@ -133,7 +133,7 @@ double pdtrc(double k, double m)
 
     if (k < 0.0 || m < 0.0) {
         sf_error("pdtrc", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     if (m == 0.0) {
         return 0.0;
@@ -149,7 +149,7 @@ double pdtr(double k, double m)
 
     if (k < 0 || m < 0) {
         sf_error("pdtr", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     if (m == 0.0) {
         return 1.0;
@@ -167,7 +167,7 @@ double y;
 
     if ((k < 0) || (y < 0.0) || (y >= 1.0)) {
         sf_error("pdtri", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     v = k + 1;
     v = igamci(v, y);

@@ -33,6 +33,7 @@ def save_npz(file, matrix, compressed=True):
     --------
     Store sparse matrix to disk, and load it again:
 
+    >>> import numpy as np
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
@@ -60,7 +61,7 @@ def save_npz(file, matrix, compressed=True):
     elif matrix.format == 'coo':
         arrays_dict.update(row=matrix.row, col=matrix.col)
     else:
-        raise NotImplementedError('Save is not implemented for sparse matrix of format {}.'.format(matrix.format))
+        raise NotImplementedError(f'Save is not implemented for sparse matrix of format {matrix.format}.')
     arrays_dict.update(
         format=matrix.format.encode('ascii'),
         shape=matrix.shape,
@@ -100,6 +101,7 @@ def load_npz(file):
     --------
     Store sparse matrix to disk, and load it again:
 
+    >>> import numpy as np
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
@@ -124,7 +126,7 @@ def load_npz(file):
         try:
             matrix_format = loaded['format']
         except KeyError as e:
-            raise ValueError('The file {} does not contain a sparse matrix.'.format(file)) from e
+            raise ValueError(f'The file {file} does not contain a sparse matrix.') from e
 
         matrix_format = matrix_format.item()
 
@@ -134,9 +136,9 @@ def load_npz(file):
             matrix_format = matrix_format.decode('ascii')
 
         try:
-            cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
+            cls = getattr(scipy.sparse, f'{matrix_format}_matrix')
         except AttributeError as e:
-            raise ValueError('Unknown matrix format "{}"'.format(matrix_format)) from e
+            raise ValueError(f'Unknown matrix format "{matrix_format}"') from e
 
         if matrix_format in ('csc', 'csr', 'bsr'):
             return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])

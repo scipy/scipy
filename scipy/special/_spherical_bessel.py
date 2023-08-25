@@ -65,7 +65,7 @@ def spherical_jn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_jn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_jn(3, x, True),
     ...             spherical_jn(2, x) - 4/x * spherical_jn(3, x))
@@ -74,7 +74,6 @@ def spherical_jn(n, z, derivative=False):
     The first few :math:`j_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_jn
     >>> x = np.arange(0.0, 10.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-0.5, 1.5)
@@ -153,7 +152,7 @@ def spherical_yn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_yn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_yn(3, x, True),
     ...             spherical_yn(2, x) - 4/x * spherical_yn(3, x))
@@ -162,7 +161,6 @@ def spherical_yn(n, z, derivative=False):
     The first few :math:`y_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_yn
     >>> x = np.arange(0.0, 10.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-2.0, 1.0)
@@ -240,7 +238,7 @@ def spherical_in(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_in
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_in(3, x, True),
     ...             spherical_in(2, x) - 4/x * spherical_in(3, x))
@@ -249,7 +247,6 @@ def spherical_in(n, z, derivative=False):
     The first few :math:`i_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_in
     >>> x = np.arange(0.0, 6.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(-0.5, 5.0)
@@ -327,7 +324,7 @@ def spherical_kn(n, z, derivative=False):
     We can verify the relation for the derivative from the Notes
     for :math:`n=3` in the interval :math:`[1, 2]`:
 
-    >>> from scipy.special import spherical_kn
+    >>> import numpy as np
     >>> x = np.arange(1.0, 2.0, 0.01)
     >>> np.allclose(spherical_kn(3, x, True),
     ...             - 4/x * spherical_kn(3, x) - spherical_kn(2, x))
@@ -336,7 +333,6 @@ def spherical_kn(n, z, derivative=False):
     The first few :math:`k_n` with real argument:
 
     >>> import matplotlib.pyplot as plt
-    >>> from scipy.special import spherical_kn
     >>> x = np.arange(0.0, 4.0, 0.01)
     >>> fig, ax = plt.subplots()
     >>> ax.set_ylim(0.0, 5.0)

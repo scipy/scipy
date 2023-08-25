@@ -1,7 +1,6 @@
-from scipy.optimize._trustregion import (_minimize_trust_region, BaseQuadraticSubproblem)
+from scipy.optimize._trustregion import BaseQuadraticSubproblem
 import numpy as np
 from . cimport ctrlib
-cimport libc.stdio
 cimport numpy as np
 
 from scipy._lib.messagestream cimport MessageStream

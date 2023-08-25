@@ -4,10 +4,12 @@ import os
 
 def configuration(parent_package='', top_path=None):
     from distutils.sysconfig import get_python_inc
-    from scipy._build_utils.system_info import get_info, numpy_info
+    from numpy.distutils.system_info import get_info, numpy_info
     from numpy.distutils.misc_util import Configuration, get_numpy_include_dirs
-    from scipy._build_utils import (get_g77_abi_wrappers, gfortran_legacy_flag_hook,
-                                    blas_ilp64_pre_build_hook, get_f2py_int64_options,
+    from scipy._build_utils import (get_g77_abi_wrappers,
+                                    gfortran_legacy_flag_hook,
+                                    blas_ilp64_pre_build_hook,
+                                    get_f2py_int64_options,
                                     uses_blas64)
 
     config = Configuration('linalg', parent_package, top_path)
@@ -17,7 +19,7 @@ def configuration(parent_package='', top_path=None):
     atlas_version = ([v[3:-3] for k, v in lapack_opt.get('define_macros', [])
                       if k == 'ATLAS_INFO']+[None])[0]
     if atlas_version:
-        print(('ATLAS version: %s' % atlas_version))
+        print('ATLAS version: %s' % atlas_version)
 
     if uses_blas64():
         lapack_ilp64_opt = get_info('lapack_ilp64_opt', 2)
@@ -45,9 +47,6 @@ def configuration(parent_package='', top_path=None):
     # flapack:
     sources = ['flapack.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
-    dep_pfx = join('src', 'lapack_deprecations')
-    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
-    sources += deprecated_lapack_routines
     depends = ['flapack_gen.pyf.src',
                'flapack_gen_banded.pyf.src',
                'flapack_gen_tri.pyf.src',
@@ -146,14 +145,17 @@ def configuration(parent_package='', top_path=None):
                          libraries=['fwrappers'],
                          extra_info=lapack_opt)
 
-    config.add_extension('_decomp_update',
-                         sources=['_decomp_update.c'])
-
     config.add_extension('_cythonized_array_utils',
-                         sources=['_cythonized_array_utils.c'])
+                         sources=['_cythonized_array_utils.c'],
+                         depends=['_cythonized_array_utils.pyx',
+                                  '_cythonized_array_utils.pxd'],
+                         include_dirs=['.']
+                         )
+    config.add_data_files('_cythonized_array_utils.pxd')
 
-    config.add_extension('_matfuncs_expm',
-                         sources=['_matfuncs_expm.c'])
+    config.add_extension('_decomp_update', sources=['_decomp_update.c'])
+    config.add_extension('_decomp_lu_cython', sources=['_decomp_lu_cython.c'])
+    config.add_extension('_matfuncs_expm', sources=['_matfuncs_expm.c'])
 
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')

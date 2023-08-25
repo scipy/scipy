@@ -82,6 +82,7 @@ def multigammaln(a, d):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import multigammaln, gammaln
     >>> a = 23.5
     >>> d = 10

@@ -79,8 +79,6 @@ an alternative to ode with the zvode solver, sometimes performing better.
 #     IntegratorBase.integrator_classes.append(myodeint)
 
 __all__ = ['ode', 'complex_ode']
-__version__ = "$Id$"
-__docformat__ = "restructuredtext en"
 
 import re
 import warnings
@@ -1009,7 +1007,7 @@ class vode(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1177,7 +1175,7 @@ class dopri5(IntegratorBase):
                                           tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1346,7 +1344,7 @@ class lsoda(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
+            unexpected_istate_msg = f'Unexpected istate={istate:d}'
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0

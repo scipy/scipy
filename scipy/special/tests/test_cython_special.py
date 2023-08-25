@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Callable, Optional
+from typing import Callable
 
 import pytest
 from itertools import product
@@ -40,7 +40,7 @@ TEST_POINTS = {
 }
 
 
-PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
+PARAMS: list[tuple[Callable, Callable, tuple[str, ...], str | None]] = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
@@ -240,6 +240,7 @@ PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
     (special.pdtrik, cython_special.pdtrik, ('dd',), None),
     (special.poch, cython_special.poch, ('dd',), None),
+    (special.powm1, cython_special.powm1, ('dd',), None),
     (special.pro_ang1, cython_special._pro_ang1_pywrap, ('dddd',), None),
     (special.pro_ang1_cv, cython_special._pro_ang1_cv_pywrap, ('ddddd',), None),
     (special.pro_cv, cython_special.pro_cv, ('ddd',), None),
@@ -348,4 +349,4 @@ def test_cython_api(param):
                 sup.filter(DeprecationWarning)
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
-            assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
+            assert_allclose(cyval, pyval, err_msg=f"{pt} {typecodes} {signature}")

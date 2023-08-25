@@ -461,7 +461,7 @@ def _fractional_power_pade_constant(i, t):
         j = (i - 1) // 2
         return (-j - t) / (2 * (2*j + 1))
     else:
-        raise Exception('unnexpected value of i, i = {}'.format(i))
+        raise Exception(f'unnexpected value of i, i = {i}')
 
 
 def _fractional_power_pade(R, t, m):

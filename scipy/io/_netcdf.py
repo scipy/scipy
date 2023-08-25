@@ -179,6 +179,7 @@ class netcdf_file:
     To create a NetCDF file:
 
     >>> from scipy.io import netcdf_file
+    >>> import numpy as np
     >>> f = netcdf_file('simple.nc', 'w')
     >>> f.history = 'Created for a test'
     >>> f.createDimension('time', 10)
@@ -214,6 +215,7 @@ class netcdf_file:
     to be copied to main memory:
 
     >>> data = time[:].copy()
+    >>> del time
     >>> f.close()
     >>> data.mean()
     4.5

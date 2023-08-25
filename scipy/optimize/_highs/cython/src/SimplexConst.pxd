@@ -35,21 +35,14 @@ cdef extern from "SimplexConst.h" nogil:
         SIMPLEX_CRASH_STRATEGY_TEST_SING "SimplexCrashStrategy::kSimplexCrashStrategyTestSing"
         SIMPLEX_CRASH_STRATEGY_MAX "SimplexCrashStrategy::kSimplexCrashStrategyMax" = SIMPLEX_CRASH_STRATEGY_TEST_SING
 
-    cdef enum SimplexDualEdgeWeightStrategy:
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategyMin" = -1
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_CHOOSE "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategyChoose" = SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MIN
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategyDantzig"
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategyDevex"
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategySteepestEdge"
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategySteepestEdgeUnitInitial"
-        SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_MAX "SimplexDualEdgeWeightStrategy::kSimplexDualEdgeWeightStrategyMax" = SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL
-
-    cdef enum SimplexPrimalEdgeWeightStrategy:
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN "SimplexPrimalEdgeWeightStrategy::kSimplexPrimalEdgeWeightStrategyMin" = -1
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_CHOOSE "SimplexPrimalEdgeWeightStrategy::kSimplexPrimalEdgeWeightStrategyChoose" = SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MIN
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DANTZIG "SimplexPrimalEdgeWeightStrategy::kSimplexPrimalEdgeWeightStrategyDantzig"
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX "SimplexPrimalEdgeWeightStrategy::kSimplexPrimalEdgeWeightStrategyDevex"
-        SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_MAX "SimplexPrimalEdgeWeightStrategy::kSimplexPrimalEdgeWeightStrategyMax" = SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX
+    cdef enum SimplexEdgeWeightStrategy:
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_MIN "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyMin" = -1
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyChoose" = SIMPLEX_EDGE_WEIGHT_STRATEGY_MIN
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDantzig"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyDevex"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategySteepestEdge"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategySteepestEdgeUnitInitial"
+        SIMPLEX_EDGE_WEIGHT_STRATEGY_MAX "SimplexEdgeWeightStrategy::kSimplexEdgeWeightStrategyMax" = SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE_UNIT_INITIAL
 
     cdef enum SimplexPriceStrategy:
         SIMPLEX_PRICE_STRATEGY_MIN = 0

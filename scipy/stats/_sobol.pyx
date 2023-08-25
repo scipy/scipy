@@ -1,7 +1,5 @@
 # cython: language_level=3
 # cython: cdivision=True
-from __future__ import division, absolute_import
-
 cimport cython
 cimport numpy as cnp
 
@@ -152,7 +150,7 @@ def _initialize_direction_numbers(poly, vinit, dtype):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int bit_length(uint_32_64 n):
+cdef int bit_length(uint_32_64 n) noexcept:
     cdef int bits = 0
     cdef uint_32_64 nloc = n
     while nloc != 0:
@@ -163,7 +161,7 @@ cdef int bit_length(uint_32_64 n):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(uint_32_64 x) nogil:
+cdef int low_0_bit(uint_32_64 x) noexcept nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -197,7 +195,7 @@ cdef int low_0_bit(uint_32_64 x) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int ibits(uint_32_64 x, const int pos, const int length) nogil:
+cdef int ibits(uint_32_64 x, const int pos, const int length) noexcept nogil:
     """Extract a sequence of bits from the bit representation of an integer.
 
     Extract the sequence from position `pos` (inclusive) to ``pos + length``
@@ -238,7 +236,7 @@ cdef int ibits(uint_32_64 x, const int pos, const int length) nogil:
 @cython.wraparound(False)
 cpdef void _initialize_v(
     uint_32_64[:, ::1] v, const int dim, const int bits
-):
+) noexcept:
     """Initialize matrix of size ``dim * bits`` with direction numbers."""
     cdef int d, i, j, k, m
     cdef uint_32_64 p, newv, pow2
@@ -315,7 +313,7 @@ cdef void draw(
     uint_32_64[:, ::1] sv,
     uint_32_64[::1] quasi,
     cnp.float64_t[:, ::1] sample
-) nogil:
+) noexcept nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
     cdef uint_32_64 i, qtmp
@@ -335,7 +333,7 @@ cpdef void _fast_forward(const uint_32_64 n,
                          const uint_32_64 num_gen,
                          const int dim,
                          uint_32_64[:, ::1] sv,
-                         uint_32_64[::1] quasi) nogil:
+                         uint_32_64[::1] quasi) noexcept nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
     cdef uint_32_64 i
@@ -348,7 +346,7 @@ cpdef void _fast_forward(const uint_32_64 n,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef uint_32_64 cdot_pow2(uint_32_64[::1] a) nogil:
+cdef uint_32_64 cdot_pow2(uint_32_64[::1] a) noexcept nogil:
     cdef int i
     cdef int size = a.shape[0]
     cdef uint_32_64 z = 0
@@ -364,7 +362,7 @@ cdef uint_32_64 cdot_pow2(uint_32_64[::1] a) nogil:
 cpdef void _cscramble(const int dim,
                       const int bits,
                       uint_32_64[:, :, ::1] ltm,
-                      uint_32_64[:, ::1] sv) nogil:
+                      uint_32_64[:, ::1] sv) noexcept nogil:
     """Scrambling using (left) linear matrix scramble (LMS)."""
     cdef int d, i, j, k, p
     cdef uint_32_64 l, lsmdp, t1, t2, vdj
@@ -393,7 +391,7 @@ cpdef void _cscramble(const int dim,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
-                              cnp.float_t[::1] p_cumulative) nogil:
+                              cnp.float_t[::1] p_cumulative) noexcept nogil:
     cdef int i
     cdef int len_p = p.shape[0]
     cdef float tot = 0
@@ -408,7 +406,7 @@ cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
 @cython.wraparound(False)
 cpdef void _categorize(cnp.float_t[::1] draws,
                        cnp.float_t[::1] p_cumulative,
-                       cnp.int_t[::1] result) nogil:
+                       cnp.int_t[::1] result) noexcept nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):
@@ -420,7 +418,7 @@ cpdef void _categorize(cnp.float_t[::1] draws,
 @cython.wraparound(False)
 cdef int _find_index(cnp.float_t[::1] p_cumulative,
                      const int size,
-                     const float value) nogil:
+                     const float value) noexcept nogil:
     cdef int l = 0
     cdef int r = size - 1
     cdef int m

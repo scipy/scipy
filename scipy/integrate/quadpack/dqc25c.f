@@ -1,4 +1,4 @@
-      subroutine dqc25c(f,a,b,c,result,abserr,krul,neval)
+      recursive subroutine dqc25c(f,a,b,c,result,abserr,krul,neval)
 c***begin prologue  dqc25c
 c***date written   810101   (yymmdd)
 c***revision date  830518   (yymmdd)

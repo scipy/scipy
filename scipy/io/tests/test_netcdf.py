@@ -284,7 +284,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     with make_simple(stream, mode='w') as f:
-        x = f.createDimension('x',4)  # x is used in createVariable
+        f.createDimension('x',4)  # x is used in createVariable
         v = f.createVariable('v', 'i2', ['x'])
         v[:] = 1
         f.flush()
@@ -385,7 +385,7 @@ def test_open_append():
         f._attributes['Kilroy'] = 'was here'
         f.close()
 
-        # open again in 'a', read the att and and a new one
+        # open again in 'a', read the att and a new one
         f = netcdf_file(filename, 'a')
         assert_equal(f._attributes['Kilroy'], b'was here')
         f._attributes['naughty'] = b'Zoot'

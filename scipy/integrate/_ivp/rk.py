@@ -193,13 +193,11 @@ class RK23(RungeKutta):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
-        must return array_like with shape (n, k), i.e. each column
-        corresponds to a single column in ``y``. The choice between the two
-        options is determined by `vectorized` argument (see below).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -218,17 +216,31 @@ class RK23(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` may be called in a vectorized fashion. False (default)
+        is recommended for this solver.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for this solver.
 
     Attributes
     ----------
@@ -315,11 +327,11 @@ class RK45(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
@@ -394,7 +406,7 @@ class DOP853(RungeKutta):
     """Explicit Runge-Kutta method of order 8.
 
     This is a Python implementation of "DOP853" algorithm originally written
-    in Fortran [1]_, [2]_. Note that this is not a literate translation, but
+    in Fortran [1]_, [2]_. Note that this is not a literal translation, but
     the algorithmic core and coefficients are the same.
 
     Can be applied in the complex domain.
@@ -427,11 +439,11 @@ class DOP853(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are

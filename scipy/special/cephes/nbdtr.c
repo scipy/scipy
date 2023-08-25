@@ -163,7 +163,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     dk = k + 1;
@@ -184,7 +184,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;
@@ -204,7 +204,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;

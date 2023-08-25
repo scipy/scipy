@@ -47,7 +47,7 @@
  *
  * ERROR MESSAGES:
  *     message         condition      value returned
- * psi singularity    x integer <=0      NPY_INFINITY
+ * psi singularity    x integer <=0      INFINITY
  */
 
 /*
@@ -149,27 +149,27 @@ double psi(double x)
     double q, r;
     int i, n;
 
-    if (npy_isnan(x)) {
+    if (isnan(x)) {
 	return x;
     }
-    else if (x == NPY_INFINITY) {
+    else if (x == INFINITY) {
 	return x;
     }
-    else if (x == -NPY_INFINITY) {
-	return NPY_NAN;
+    else if (x == -INFINITY) {
+	return NAN;
     }
     else if (x == 0) {
 	sf_error("psi", SF_ERROR_SINGULAR, NULL);
-	return npy_copysign(NPY_INFINITY, -x);
+	return copysign(INFINITY, -x);
     }
     else if (x < 0.0) {
 	/* argument reduction before evaluating tan(pi * x) */
 	r = modf(x, &q);
 	if (r == 0.0) {
 	    sf_error("psi", SF_ERROR_SINGULAR, NULL);
-	    return NPY_NAN;
+	    return NAN;
 	}
-	y = -NPY_PI / tan(NPY_PI * r);
+	y = -M_PI / tan(M_PI * r);
 	x = 1.0 - x;
     }
 
@@ -179,7 +179,7 @@ double psi(double x)
 	for (i = 1; i < n; i++) {
 	    y += 1.0 / i;
 	}
-	y -= NPY_EULER;
+	y -= SCIPY_EULER;
 	return y;
     }
 

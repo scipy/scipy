@@ -3,7 +3,7 @@
     {% if pagename.startswith("reference") %}
     {{ generate_nav_html("sidebar", maxdepth=1, collapse=True, includehidden=True, titles_only=True) }}
     {% else %}
-    {{ generate_nav_html("sidebar", maxdepth=2, collapse=True, includehidden=True, titles_only=True) }}
+    {{ generate_nav_html("sidebar", maxdepth=2, collapse=True, titles_only=True) }}
     {% endif %}
   </div>
 </nav>

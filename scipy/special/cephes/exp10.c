@@ -37,7 +37,7 @@
  *
  *   message         condition      value returned
  * exp10 underflow    x < -MAXL10        0.0
- * exp10 overflow     x > MAXL10       NPY_INFINITY
+ * exp10 overflow     x > MAXL10       INFINITY
  *
  * IEEE arithmetic: MAXL10 = 308.2547155599167.
  *
@@ -82,7 +82,7 @@ double exp10(double x)
     if (cephes_isnan(x))
 	return (x);
     if (x > MAXL10) {
-	return (NPY_INFINITY);
+	return (INFINITY);
     }
 
     if (x < -MAXL10) {		/* Would like to use MINLOG but can't */

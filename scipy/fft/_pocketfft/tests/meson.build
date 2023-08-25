@@ -6,6 +6,5 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/fft/_pocketfft/tests'
 )

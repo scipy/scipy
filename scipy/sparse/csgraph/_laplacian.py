@@ -3,7 +3,7 @@ Laplacian of a compressed-sparse graph
 """
 
 import numpy as np
-from scipy.sparse import isspmatrix
+from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
 
 
@@ -117,6 +117,7 @@ def laplacian(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.sparse import csgraph
 
     Our first illustration is the symmetric graph
@@ -339,12 +340,12 @@ def laplacian(
 
     if form == "array":
         create_lap = (
-            _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
+            _laplacian_sparse if issparse(csgraph) else _laplacian_dense
         )
     else:
         create_lap = (
             _laplacian_sparse_flo
-            if isspmatrix(csgraph)
+            if issparse(csgraph)
             else _laplacian_dense_flo
         )
 
@@ -523,7 +524,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError('{form!r} must be "array"')
+        raise ValueError(f'{form!r} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype

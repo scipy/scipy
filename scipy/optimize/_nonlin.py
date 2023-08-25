@@ -15,7 +15,8 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
-    'diagbroyden', 'excitingmixing', 'newton_krylov']
+    'diagbroyden', 'excitingmixing', 'newton_krylov',
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -34,7 +35,7 @@ def _as_inexact(x):
     """Return `x` as an array, of either floats or complex floats"""
     x = asarray(x)
     if not np.issubdtype(x.dtype, np.inexact):
-        return asarray(x, dtype=np.float_)
+        return asarray(x, dtype=np.float64)
     return x
 
 
@@ -163,7 +164,8 @@ def nonlin_solve(F, x0, jacobian='krylov', iter=None, verbose=False,
                                      iter=iter, norm=tol_norm)
 
     x0 = _as_inexact(x0)
-    func = lambda z: _as_inexact(F(_array_like(z, x0))).flatten()
+    def func(z):
+        return _as_inexact(F(_array_like(z, x0))).flatten()
     x = x0.flatten()
 
     dx = np.full_like(x, np.inf)
@@ -323,7 +325,7 @@ class TerminationCondition:
                  iter=None, norm=maxnorm):
 
         if f_tol is None:
-            f_tol = np.finfo(np.float_).eps ** (1./3)
+            f_tol = np.finfo(np.float64).eps ** (1./3)
         if f_rtol is None:
             f_rtol = np.inf
         if x_tol is None:
@@ -475,16 +477,16 @@ def asjacobian(J):
 
         return Jacobian(matvec=lambda v: dot(J, v),
                         rmatvec=lambda v: dot(J.conj().T, v),
-                        solve=lambda v: solve(J, v),
-                        rsolve=lambda v: solve(J.conj().T, v),
+                        solve=lambda v, tol=0: solve(J, v),
+                        rsolve=lambda v, tol=0: solve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
-    elif scipy.sparse.isspmatrix(J):
+    elif scipy.sparse.issparse(J):
         if J.shape[0] != J.shape[1]:
             raise ValueError('matrix must be square')
-        return Jacobian(matvec=lambda v: J*v,
-                        rmatvec=lambda v: J.conj().T * v,
-                        solve=lambda v: spsolve(J, v),
-                        rsolve=lambda v: spsolve(J.conj().T, v),
+        return Jacobian(matvec=lambda v: J @ v,
+                        rmatvec=lambda v: J.conj().T @ v,
+                        solve=lambda v, tol=0: spsolve(J, v),
+                        rsolve=lambda v, tol=0: spsolve(J.conj().T, v),
                         dtype=J.dtype, shape=J.shape)
     elif hasattr(J, 'shape') and hasattr(J, 'dtype') and hasattr(J, 'solve'):
         return Jacobian(matvec=getattr(J, 'matvec'),
@@ -505,7 +507,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -514,8 +516,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m*v
+                elif scipy.sparse.issparse(m):
+                    return m @ v
                 else:
                     raise ValueError("Unknown matrix type")
 
@@ -523,7 +525,7 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return solve(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
+                elif scipy.sparse.issparse(m):
                     return spsolve(m.conj().T, v)
                 else:
                     raise ValueError("Unknown matrix type")
@@ -532,8 +534,8 @@ def asjacobian(J):
                 m = J(self.x)
                 if isinstance(m, np.ndarray):
                     return dot(m.conj().T, v)
-                elif scipy.sparse.isspmatrix(m):
-                    return m.conj().T * v
+                elif scipy.sparse.issparse(m):
+                    return m.conj().T @ v
                 else:
                     raise ValueError("Unknown matrix type")
         return Jac()
@@ -814,7 +816,7 @@ class BroydenFirst(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden1'`` in particular.
+           functions. See ``method='broyden1'`` in particular.
 
     Notes
     -----
@@ -891,7 +893,8 @@ class BroydenFirst(GenericBroyden):
         if not np.isfinite(r).all():
             # singular; reset the Jacobian approximation
             self.setup(self.last_x, self.last_f, self.func)
-        return self.Gm.matvec(f)
+            return self.Gm.matvec(f)
+        return r
 
     def matvec(self, f):
         return self.Gm.solve(f)
@@ -927,7 +930,7 @@ class BroydenSecond(BroydenFirst):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='broyden2'`` in particular.
+           functions. See ``method='broyden2'`` in particular.
 
     Notes
     -----
@@ -999,7 +1002,7 @@ class Anderson(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='anderson'`` in particular.
+           functions. See ``method='anderson'`` in particular.
 
     References
     ----------
@@ -1154,7 +1157,7 @@ class DiagBroyden(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='diagbroyden'`` in particular.
+           functions. See ``method='diagbroyden'`` in particular.
 
     Examples
     --------
@@ -1219,7 +1222,7 @@ class LinearMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='linearmixing'`` in particular.
+           functions. See ``method='linearmixing'`` in particular.
 
     """
 
@@ -1260,7 +1263,7 @@ class ExcitingMixing(GenericBroyden):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='excitingmixing'`` in particular.
+           functions. See ``method='excitingmixing'`` in particular.
 
     Parameters
     ----------
@@ -1320,10 +1323,12 @@ class KrylovJacobian(Jacobian):
     %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
-    method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-        Krylov method to use to approximate the Jacobian.
-        Can be a string, or a function implementing the same interface as
-        the iterative solvers in `scipy.sparse.linalg`.
+    method : str or callable, optional
+        Krylov method to use to approximate the Jacobian.  Can be a string,
+        or a function implementing the same interface as the iterative
+        solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+        ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+        ``'tfqmr'``.
 
         The default is `scipy.sparse.linalg.lgmres`.
     inner_maxiter : int, optional
@@ -1335,8 +1340,8 @@ class KrylovJacobian(Jacobian):
         Note that you can use also inverse Jacobians as (adaptive)
         preconditioners. For example,
 
-        >>> from scipy.optimize.nonlin import BroydenFirst, KrylovJacobian
-        >>> from scipy.optimize.nonlin import InverseJacobian
+        >>> from scipy.optimize import BroydenFirst, KrylovJacobian
+        >>> from scipy.optimize import InverseJacobian
         >>> jac = BroydenFirst()
         >>> kjac = KrylovJacobian(inner_M=InverseJacobian(jac))
 
@@ -1356,7 +1361,7 @@ class KrylovJacobian(Jacobian):
     See Also
     --------
     root : Interface to root finding algorithms for multivariate
-           functions. See ``method=='krylov'`` in particular.
+           functions. See ``method='krylov'`` in particular.
     scipy.sparse.linalg.gmres
     scipy.sparse.linalg.lgmres
 
@@ -1383,9 +1388,12 @@ class KrylovJacobian(Jacobian):
 
     References
     ----------
-    .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
+    .. [1] C. T. Kelley, Solving Nonlinear Equations with Newton's Method,
+           SIAM, pp.57-83, 2003.
+           :doi:`10.1137/1.9780898718898.ch3`
+    .. [2] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
            :doi:`10.1016/j.jcp.2003.08.010`
-    .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
+    .. [3] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
            :doi:`10.1137/S0895479803422014`
 
@@ -1410,22 +1418,27 @@ class KrylovJacobian(Jacobian):
                  inner_M=None, outer_k=10, **kw):
         self.preconditioner = inner_M
         self.rdiff = rdiff
+        # Note that this retrieves one of the named functions, or otherwise
+        # uses `method` as is (i.e., for a user-provided callable).
         self.method = dict(
             bicgstab=scipy.sparse.linalg.bicgstab,
             gmres=scipy.sparse.linalg.gmres,
             lgmres=scipy.sparse.linalg.lgmres,
             cgs=scipy.sparse.linalg.cgs,
             minres=scipy.sparse.linalg.minres,
+            tfqmr=scipy.sparse.linalg.tfqmr,
             ).get(method, method)
 
         self.method_kw = dict(maxiter=inner_maxiter, M=self.preconditioner)
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
+            self.method_kw['restart'] = inner_maxiter
             self.method_kw['maxiter'] = 1
             self.method_kw.setdefault('atol', 0)
-        elif self.method is scipy.sparse.linalg.gcrotmk:
+        elif self.method in (scipy.sparse.linalg.gcrotmk,
+                             scipy.sparse.linalg.bicgstab,
+                             scipy.sparse.linalg.cgs):
             self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k
@@ -1513,10 +1526,10 @@ def _nonlin_wrapper(name, jac):
     signature = _getfullargspec(jac.__init__)
     args, varargs, varkw, defaults, kwonlyargs, kwdefaults, _ = signature
     kwargs = list(zip(args[-len(defaults):], defaults))
-    kw_str = ", ".join(["%s=%r" % (k, v) for k, v in kwargs])
+    kw_str = ", ".join([f"{k}={v!r}" for k, v in kwargs])
     if kw_str:
         kw_str = ", " + kw_str
-    kwkw_str = ", ".join(["%s=%s" % (k, k) for k, v in kwargs])
+    kwkw_str = ", ".join([f"{k}={k}" for k, v in kwargs])
     if kwkw_str:
         kwkw_str = kwkw_str + ", "
     if kwonlyargs:

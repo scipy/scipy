@@ -12,12 +12,14 @@
 .pydevproject
 *.rej
 .settings/
+.spyproject/
 .*.sw[nop]
 .sw[nop]
 *.tmp
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 
@@ -78,17 +80,20 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
-# install directory for Meson
+
+# Meson #
+#########
+.mesonpy-native-file.ini
 installdir/
+build-install/*
+.mesonpy/*
 
 # doit
 ######
 .doit.db.dat
 .doit.db.dir
-
-# Paver generated files #
-#########################
-/release
+.doit.db.db
+.doit.db
 
 # Logs and databases #
 ######################
@@ -104,6 +109,11 @@ installdir/
 # mypy cache #
 ##############
 .mypy_cache/*
+
+# linter #
+##########
+.ruff_cache/*
+.pre-commit-workdir/*
 
 # Patches #
 ###########
@@ -126,6 +136,7 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/reference/generated
+**/.ipynb_checkpoints
 
 # Things specific to this project #
 ###################################
@@ -157,6 +168,7 @@ scipy/integrate/_lsoda-f2pywrappers.f
 scipy/integrate/_vode-f2pywrappers.f
 scipy/interpolate/_rbfinterp_pythran.cpp
 scipy/interpolate/_ppoly.c
+scipy/interpolate/_rgi_cython.c
 scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
@@ -268,7 +280,7 @@ scipy/special/_comb.c
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
-scipy/special/_test_round.c
+scipy/special/_test_internal.c
 scipy/special/_ufuncs.c
 scipy/special/_ufuncs.h
 scipy/special/_ufuncs.pyx
@@ -298,12 +310,12 @@ scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx
-scipy/stats/biasedurn.pyx
 scipy/stats/_sobol.c
 scipy/stats/_qmc_cy.cxx
 scipy/stats/_hypotests_pythran.cpp
-scipy/stats/_unuran/unuran_wrapper.pyx
 scipy/stats/_unuran/unuran_wrapper.c
+scipy/stats/_rcont/rcont.c
+scipy/stats/_stats_pythran.cpp
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

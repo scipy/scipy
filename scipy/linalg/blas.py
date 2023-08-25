@@ -281,6 +281,7 @@ def find_best_blas_type(arrays=(), dtype=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg.blas as bla
     >>> rng = np.random.default_rng()
     >>> a = rng.random((10,15))
@@ -357,7 +358,7 @@ def _get_funcs(names, arrays, dtype,
             module_name = module2[1]
         if func is None:
             raise ValueError(
-                '%s function %s could not be found' % (lib_name, func_name))
+                f'{lib_name} function {func_name} could not be found')
         func.module_name, func.typecode = module_name, prefix
         func.dtype = dtype
         if not ilp64:
@@ -452,6 +453,7 @@ def get_blas_funcs(names, arrays=(), dtype=None, ilp64=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.linalg as LA
     >>> rng = np.random.default_rng()
     >>> a = rng.random((3,2))

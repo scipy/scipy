@@ -1,4 +1,6 @@
 import pytest
+import itertools
+
 from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          boltzmann, skellam, zipf, zipfian, binom, nbinom,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
@@ -142,6 +144,15 @@ def test_betabinom_a_and_b_unity():
     assert_almost_equal(p, expected)
 
 
+@pytest.mark.parametrize('dtypes', itertools.product(*[(int, float)]*3))
+def test_betabinom_stats_a_and_b_integers_gh18026(dtypes):
+    # gh-18026 reported that `betabinom` kurtosis calculation fails when some
+    # parameters are integers. Check that this is resolved.
+    n_type, a_type, b_type = dtypes
+    n, a, b = n_type(10), a_type(2), b_type(3)
+    assert_allclose(betabinom.stats(n, a, b, moments='k'), -0.6904761904761907)
+
+
 def test_betabinom_bernoulli():
     # test limiting case that betabinom(1, a, b) = bernoulli(a / (a + b))
     a = 2.3
@@ -223,6 +234,13 @@ def test_issue_6682():
     # options(digits=16)
     # print(pnbinom(250, 50, 32/63, lower.tail=FALSE))
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
+
+
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
 def test_skellam_gh11474():
@@ -369,7 +387,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)
@@ -464,7 +482,7 @@ class TestNCH():
 
         atol, rtol = 1e-6, 1e-6
         i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
-        assert(i.sum() > np.prod(shape) / 2)  # works at least half the time
+        assert i.sum() > np.prod(shape) / 2  # works at least half the time
 
         # for those that fail, discredit the naive implementation
         for N, m1, n, w in zip(N[~i], m1[~i], n[~i], w[~i]):
@@ -544,3 +562,15 @@ def test_nbinom_11465(mu, q, expected):
     # options(digits=16)
     # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
     assert_allclose(nbinom.logcdf(q, n, p), expected)
+
+
+def test_gh_17146():
+    # Check that discrete distributions return PMF of zero at non-integral x.
+    # See gh-17146.
+    x = np.linspace(0, 1, 11)
+    p = 0.8
+    pmf = bernoulli(p).pmf(x)
+    i = (x % 1 == 0)
+    assert_allclose(pmf[-1], p)
+    assert_allclose(pmf[0], 1-p)
+    assert_equal(pmf[~i], 0)

@@ -32,9 +32,8 @@ import cython
 
 from . cimport sf_error
 
-from libc.math cimport sqrt, fabs, pow
+from libc.math cimport sqrt, fabs, pow, NAN
 from libc.stdlib cimport malloc, free
-from numpy.math cimport NAN, PI
 
 cdef extern from "lapack_defs.h":
     ctypedef int CBLAS_INT  # actual type defined in the header
@@ -50,7 +49,7 @@ cdef extern from "lapack_defs.h":
 @cython.cdivision(True)
 cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                       void **bufferp, double signm,
-                                      double signn) nogil:
+                                      double signn) noexcept nogil:
 
     # Ensure that the caller can safely call free(*bufferp) even if an
     # invalid argument is found in the following validation code.
@@ -85,6 +84,9 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
         t, tp, size = 'M', p - (n - r) - (r + 1), n - r
     elif p - 1 < 2*n + 1:
         t, tp, size = 'N', p - (n - r) - (n - r) - (r + 1), r
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NULL
 
     lwork = 60*size
     liwork = 30*size
@@ -180,7 +182,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
 @cython.cdivision(True)
 cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
                                    double s, double *eigv, double signm,
-                                   double signn) nogil:
+                                   double signn) noexcept nogil:
     cdef int size, tp, r, j
     cdef double s2, pp, lambda_romain, psi
     s2 = s*s
@@ -193,17 +195,21 @@ cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
         size, psi = n - r, pow(s, 1 - n + 2*r)*signn*sqrt(fabs(s2 - k2))
     elif p - 1 < 2*n + 1:
         size, psi = r, pow(s,  n - 2*r)*signm*signn*sqrt(fabs((s2 - h2)*(s2 - k2)))
+    else:
+        sf_error.error("ellip_harm", sf_error.ARG, "invalid condition on `p - 1`")
+        return NAN
+
     lambda_romain = 1.0 - <double>s2/<double>h2
     pp = eigv[size - 1]
-
     for j in range(size - 2, -1, -1):
         pp = pp*lambda_romain + eigv[j]
+
     pp = pp*psi
     return pp
 
 
 cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s,
-                                  double signm, double signn) nogil:
+                                  double signm, double signn) noexcept nogil:
     cdef double result
     cdef double *eigv
     cdef void *bufferp

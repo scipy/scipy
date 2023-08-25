@@ -10,7 +10,7 @@ python module __user__routines
            double precision depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
            integer dimension(*) :: iparm
            double precision dimension(*) :: dparm
-        end function saprod
+        end function daprod
     end interface
 end python module __user__routines
 

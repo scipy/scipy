@@ -88,7 +88,7 @@ double aa, bb, xx;
 	    return (1.0);
       domerr:
 	sf_error("incbet", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     flag = 0;

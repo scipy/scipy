@@ -2,7 +2,6 @@
 Static type checking stub file for scipy/spatial/qhull.pyx
 '''
 
-from typing import List, Tuple, Any, Dict
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
@@ -38,10 +37,10 @@ class _Qhull:
         points: ArrayLike,
         interior_point: ArrayLike = ...
     ) -> None: ...
-    def get_paraboloid_shift_scale(self) -> Tuple[float, float]: ...
-    def volume_area(self) -> Tuple[float, float]: ...
+    def get_paraboloid_shift_scale(self) -> tuple[float, float]: ...
+    def volume_area(self) -> tuple[float, float]: ...
     def triangulate(self) -> None: ...
-    def get_simplex_facet_array(self) -> Tuple[
+    def get_simplex_facet_array(self) -> tuple[
         NDArray[np.intc],
         NDArray[np.intc],
         NDArray[np.float64],
@@ -49,15 +48,15 @@ class _Qhull:
         NDArray[np.intc],
     ]: ...
     def get_hull_points(self) -> NDArray[np.float64]: ...
-    def get_hull_facets(self) -> Tuple[
-        List[List[int]],
+    def get_hull_facets(self) -> tuple[
+        list[list[int]],
         NDArray[np.float64],
     ]: ...
-    def get_voronoi_diagram(self) -> Tuple[
+    def get_voronoi_diagram(self) -> tuple[
         NDArray[np.float64],
         NDArray[np.intc],
-        List[List[int]],
-        List[List[int]],
+        list[list[int]],
+        list[list[int]],
         NDArray[np.intp],
     ]: ...
     def get_extremes_2d(self) -> NDArray[np.intc]: ...
@@ -116,7 +115,7 @@ class Delaunay(_QhullUser):
     @property
     def vertex_to_simplex(self) -> NDArray[np.intc]: ...
     @property
-    def vertex_neighbor_vertices(self) -> Tuple[
+    def vertex_neighbor_vertices(self) -> tuple[
         NDArray[np.intc],
         NDArray[np.intc],
     ]: ...
@@ -161,8 +160,8 @@ class ConvexHull(_QhullUser):
 class Voronoi(_QhullUser):
     vertices: NDArray[np.float64]
     ridge_points: NDArray[np.intc]
-    ridge_vertices: List[List[int]]
-    regions: List[List[int]]
+    ridge_vertices: list[list[int]]
+    regions: list[list[int]]
     point_region: NDArray[np.intp]
     furthest_site: bool
 
@@ -182,11 +181,11 @@ class Voronoi(_QhullUser):
     @property
     def points(self) -> NDArray[np.float64]: ...
     @property
-    def ridge_dict(self) -> Dict[Tuple[int, int], List[int]]: ...
+    def ridge_dict(self) -> dict[tuple[int, int], list[int]]: ...
 
 class HalfspaceIntersection(_QhullUser):
     interior_point: NDArray[np.float64]
-    dual_facets: List[List[int]]
+    dual_facets: list[list[int]]
     dual_equations: NDArray[np.float64]
     dual_points: NDArray[np.float64]
     dual_volume: float

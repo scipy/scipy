@@ -22,7 +22,7 @@
  * This code taken from v2.3.18 of the qd package.
 */
 
-#include "mconf.h"
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
@@ -45,6 +45,7 @@ const int _DD_C_NDIGITS = 31;
 
 const double2 DD_C_ZERO = _DD_REAL_INIT(0.0, 0.0);
 const double2 DD_C_ONE = _DD_REAL_INIT(1.0, 0.0);
+const double2 DD_C_NEGONE = _DD_REAL_INIT(-1.0, 0.0);
 
 const double2 DD_C_2PI =
     _DD_REAL_INIT(6.283185307179586232e+00, 2.449293598294706414e-16);
@@ -93,7 +94,7 @@ get_double_expn(double x)
     if (x == 0.0) {
         return INT_MIN;
     }
-    if (DD_ISINF(x) || DD_ISNAN(x)) {
+    if (isinf(x) || isnan(x)) {
         return INT_MAX;
     }
 
@@ -316,7 +317,7 @@ dd_exp(const double2 a)
     }
 
     if (dd_is_zero(a)) {
-        return DD_C_INF;
+        return DD_C_ONE;
     }
 
     if (dd_is_one(a)) {
@@ -418,13 +419,6 @@ dd_log1p(const double2 a)
 }
 
 double2
-dd_expm1(const double2 a)
-{
-   double eam1 = expm1(a.x[0]);
-   return dd_add_d_d(eam1, expm1(a.x[1])*(eam1+1));
-}
-
-double2
 dd_log10(const double2 a)
 {
     return dd_div(dd_log(a), DD_C_LOG10);
@@ -434,6 +428,69 @@ double2
 dd_log_d(double a)
 {
     return dd_log(dd_create(a, 0));
+}
+
+
+static const double2 expm1_numer[] = {
+    {{-0.028127670288085938, 1.46e-37}},
+    {{0.5127815691121048, -4.248816580490825e-17}},
+    {{-0.0632631785207471, 4.733650586348708e-18}},
+    {{0.01470328560687425, -4.57569727474415e-20}},
+    {{-0.0008675686051689528, 2.340010361165805e-20}},
+    {{8.812635961829116e-05, 2.619804163788941e-21}},
+    {{-2.596308786770631e-06, -1.6196413688647164e-22}},
+    {{1.422669108780046e-07, 1.2956999470135368e-23}},
+    {{-1.5995603306536497e-09, 5.185121944095551e-26}},
+    {{4.526182006900779e-11, -1.9856249941108077e-27}}
+};
+
+static const double2 expm1_denom[] = {
+    {{1.0, 0.0}},
+    {{-0.4544126470907431, -2.2553855773661143e-17}},
+    {{0.09682713193619222, -4.961446925746919e-19}},
+    {{-0.012745248725908178, -6.0676821249478945e-19}},
+    {{0.001147361387158326, 1.3575817248483204e-20}},
+    {{-7.370416847725892e-05, 3.720369981570573e-21}},
+    {{3.4087499397791556e-06, -3.3067348191741576e-23}},
+    {{-1.1114024704296196e-07, -3.313361038199987e-24}},
+    {{2.3987051614110847e-09, 1.102474920537503e-25}},
+    {{-2.947734185911159e-11, -9.4795654767864e-28}},
+    {{1.32220659910223e-13, 6.440648413523595e-30}}
+};
+
+//
+// Rational approximation of expm1(x) for -1/2 < x < 1/2
+//
+static double2
+expm1_rational_approx(const double2 x)
+{
+    const double2 Y = dd_create(1.028127670288086, 0.0);
+    const double2 num = dd_polyeval(expm1_numer, 9, x);
+    const double2 den = dd_polyeval(expm1_denom, 10, x);
+    return dd_add(dd_mul(x, Y), dd_mul(x, dd_div(num, den)));
+}
+
+//
+// This is a translation of Boost's `expm1_imp` for quad precision
+// for use with double2.
+//
+
+#define LOG_MAX_VALUE 709.782712893384
+
+double2
+dd_expm1(const double2 x)
+{
+    double2 a = dd_abs(x);
+    if (dd_hi(a) > 0.5) {
+        if (dd_hi(a) > LOG_MAX_VALUE) {
+            if (dd_hi(x) > 0) {
+                return DD_C_INF;
+            }
+            return DD_C_NEGONE;
+        }
+        return dd_sub_dd_d(dd_exp(x), 1.0);
+    }
+    return expm1_rational_approx(x);
 }
 
 
@@ -459,12 +516,12 @@ dd_rand(void)
     return r;
 }
 
-/* polyeval(c, n, x)
+/* dd_polyeval(c, n, x)
    Evaluates the given n-th degree polynomial at x.
    The polynomial is given by the array of (n+1) coefficients. */
 
 double2
-polyeval(const double2 *c, int n, const double2 x)
+dd_polyeval(const double2 *c, int n, const double2 x)
 {
     /* Just use Horner's method of polynomial evaluation. */
     double2 r = c[n];
@@ -478,14 +535,14 @@ polyeval(const double2 *c, int n, const double2 x)
     return r;
 }
 
-/* polyroot(c, n, x0)
+/* dd_polyroot(c, n, x0)
    Given an n-th degree polynomial, finds a root close to
    the given guess x0.  Note that this uses simple Newton
    iteration scheme, and does not work for multiple roots.  */
 
 double2
-polyroot(const double2 *c, int n, const double2 x0, int max_iter,
-         double thresh)
+dd_polyroot(const double2 *c, int n, const double2 x0, int max_iter,
+            double thresh)
 {
     double2 x = x0;
     double2 f;
@@ -511,13 +568,13 @@ polyroot(const double2 *c, int n, const double2 x0, int max_iter,
 
     /* Newton iteration. */
     for (i = 0; i < max_iter; i++) {
-        f = polyeval(c, n, x);
+        f = dd_polyeval(c, n, x);
 
         if (fabs(dd_to_double(f)) < thresh) {
             conv = 1;
             break;
         }
-        x = dd_sub(x, (dd_div(f, polyeval(d, n - 1, x))));
+        x = dd_sub(x, (dd_div(f, dd_polyeval(d, n - 1, x))));
     }
     free(d);
 

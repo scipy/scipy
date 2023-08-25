@@ -29,25 +29,24 @@
  */
 
 #define CDFLIB_CALL2(func, name, a, b, result, return_bound)            \
-    if (npy_isnan(p) || npy_isnan(q) || npy_isnan(a) || npy_isnan(b) || \
-        npy_isnan(bound)) {                                             \
-        return NPY_NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) || isnan(bound)) { \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &status, &bound);                      \
     return get_result(name, status, bound, result, return_bound)
 
 #define CDFLIB_CALL3(func, name, a, b, c, result, return_bound)         \
-    if (npy_isnan(p) || npy_isnan(q) || npy_isnan(a) || npy_isnan(b) || \
-        npy_isnan(c) || npy_isnan(bound)) {                             \
-        return NPY_NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) ||                 \
+        isnan(c) || isnan(bound)) {                                     \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &c, &status, &bound);                  \
     return get_result(name, status, bound, result, return_bound)
 
 #define CDFLIB_CALL4(func, name, a, b, c, d, result, return_bound)      \
-    if (npy_isnan(p) || npy_isnan(q) || npy_isnan(a) || npy_isnan(b) || \
-        npy_isnan(c) || npy_isnan(d) || npy_isnan(bound)) {             \
-        return NPY_NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) ||                 \
+        isnan(c) || isnan(d) || isnan(bound)) {                         \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &c, &d, &status, &bound);              \
     return get_result(name, status, bound, result, return_bound)
@@ -95,7 +94,7 @@ static double get_result(char *name, int status, double bound, double result, in
       sf_error(name, SF_ERROR_OTHER, "Unknown error");
     }
   }
-  return NPY_NAN;
+  return NAN;
 }
 
 
@@ -396,8 +395,8 @@ double cdft1_wrap(double df, double t){
   double q=0, p=0, bound=0;
   int status=10;
 
-  if (npy_isinf(df)) {
-    if (npy_isnan(t)) return NPY_NAN;
+  if (isinf(df)) {
+    if (isnan(t)) return NAN;
     return ndtr(t);
   }
 
@@ -411,8 +410,8 @@ double cdft2_wrap(double df, double p){
   double q=1.0-p, t=0, bound=0;
   int status=10;
 
-  if (npy_isinf(df)) {
-    if (npy_isnan(p)) return NPY_NAN;
+  if (isinf(df)) {
+    if (isnan(p)) return NAN;
     return ndtri(p);
   }
 

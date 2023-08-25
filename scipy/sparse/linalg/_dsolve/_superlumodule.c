@@ -326,29 +326,33 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__superlu(void)
+PyMODINIT_FUNC
+PyInit__superlu(void)
 {
-    PyObject *m, *d;
+    PyObject *module, *mdict;
 
     import_array();
 
     if (PyType_Ready(&SuperLUType) < 0) {
         return NULL;
     }
-
     if (PyType_Ready(&SuperLUGlobalType) < 0) {
     	return NULL;
     }
 
-    m = PyModule_Create(&moduledef);
-    d = PyModule_GetDict(m);
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
+    }
+    mdict = PyModule_GetDict(module);
+    if (mdict == NULL) {
+        return NULL;
+    }
 
     Py_INCREF(&PyArrayFlags_Type);
-    PyDict_SetItemString(d, "SuperLU",
-			 (PyObject *) &SuperLUType);
+    if (PyDict_SetItemString(mdict, "SuperLU", (PyObject *) &SuperLUType)) {
+        return NULL;
+    }
 
-    if (PyErr_Occurred())
-	Py_FatalError("can't initialize module _superlu");
-
-    return m;
+    return module;
 }
