@@ -3,7 +3,7 @@ import copy
 import logging
 import itertools
 import decimal
-from functools import lru_cache
+from functools import cache
 
 import numpy
 
@@ -142,7 +142,7 @@ class Complex:
                 constraints = (constraints,)
 
             for cons in constraints:
-                if cons['type'] == 'ineq':
+                if cons['type'] in ('ineq'):
                     self.g_cons.append(cons['fun'])
                     try:
                         self.g_args.append(cons['args'])
@@ -996,7 +996,7 @@ class Complex:
                 d_v0v1.connect(d_v1v2)
         return
 
-    @lru_cache(maxsize=None)
+    @cache
     def split_edge(self, v1, v2):
         v1 = self.V[v1]
         v2 = self.V[v2]

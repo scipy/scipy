@@ -172,7 +172,7 @@ def sqrtm(A, disp=True, blocksize=64):
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
-        if not np.array_equal(T, np.triu(T)):
+        if not np.allclose(T, np.triu(T)):
             T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')

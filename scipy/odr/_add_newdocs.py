@@ -1,4 +1,4 @@
-from numpy import add_newdoc
+from numpy.lib import add_newdoc
 
 add_newdoc('scipy.odr', 'odr',
     """

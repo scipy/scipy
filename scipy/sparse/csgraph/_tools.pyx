@@ -8,8 +8,7 @@ Tools and utilities for working with compressed sparse graphs
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix,\
-    isspmatrix_csr, isspmatrix_csc, isspmatrix_lil
+from scipy.sparse import csr_matrix, issparse
 
 np.import_array()
 
@@ -315,10 +314,11 @@ def csgraph_to_dense(csgraph, null_value=0):
     """
     # Allow only csr, lil and csc matrices: other formats when converted to csr
     # combine duplicated edges: we don't want this to happen in the background.
-    if isspmatrix_csc(csgraph) or isspmatrix_lil(csgraph):
-        csgraph = csgraph.tocsr()
-    elif not isspmatrix_csr(csgraph):
+    if not issparse(csgraph):
+        raise ValueError("csgraph must be sparse")
+    if csgraph.format not in ("lil", "csc", "csr"):
         raise ValueError("csgraph must be lil, csr, or csc format")
+    csgraph = csgraph.tocsr()
 
     N = csgraph.shape[0]
     if csgraph.shape[1] != N:
@@ -389,7 +389,7 @@ cdef void _populate_graph(np.ndarray[DTYPE_t, ndim=1, mode='c'] data,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indices,
                           np.ndarray[ITYPE_t, ndim=1, mode='c'] indptr,
                           np.ndarray[DTYPE_t, ndim=2, mode='c'] graph,
-                          DTYPE_t null_value):
+                          DTYPE_t null_value) noexcept:
     # data, indices, indptr are the csr attributes of the sparse input.
     # on input, graph should be filled with infinities, and should be
     # of size [N, N], which is also the size of the sparse matrix
@@ -483,13 +483,13 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     # Fix issue #4018:
     # If `pind` and `indices` are empty arrays, `data` is a sparse matrix
     # (it is a numpy.matrix otherwise); handle this case separately.
-    if isspmatrix(data):
+    if issparse(data):
         data = data.todense()
     data = data.getA1()
 
     if not directed:
         data2 = csgraph[indices, pind]
-        if isspmatrix(data2):
+        if issparse(data2):
             data2 = data2.todense()
         data2 = data2.getA1()
         data[data == 0] = np.inf
@@ -592,7 +592,7 @@ cdef void _construct_dist_matrix(np.ndarray[DTYPE_t, ndim=2] graph,
                                  np.ndarray[ITYPE_t, ndim=2] pred,
                                  np.ndarray[DTYPE_t, ndim=2] dist,
                                  int directed,
-                                 DTYPE_t null_value):
+                                 DTYPE_t null_value) noexcept:
     # All matrices should be size N x N
     # note that graph will be modified if directed == False
     # dist should be all zero on entry

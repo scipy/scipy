@@ -13,7 +13,7 @@ DEF ACCEPTABLE_RTOL = 1e-7
 
 
 @cython.cdivision(True)
-cdef inline double hyperu(double a, double b, double x) nogil:
+cdef inline double hyperu(double a, double b, double x) noexcept nogil:
     if isnan(a) or isnan(b) or isnan(x):
         return NAN
 

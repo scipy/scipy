@@ -105,11 +105,12 @@ __all__ = [
 ]
 
 
+import os
 import warnings
 import numpy as np
 import dataclasses
 
-from typing import List, Optional, Set, Callable
+from typing import Optional, Callable
 
 from functools import partial
 from scipy._lib._util import _asarray_validated
@@ -120,6 +121,24 @@ from ..linalg import norm
 from ..special import rel_entr
 
 from . import _distance_pybind
+
+
+def _extra_windows_error_checks(x, out, required_shape, **kwargs):
+    # TODO: remove this function when distutils
+    # build system is removed because pybind11 error
+    # handling should suffice per gh-18108
+    if os.name == "nt" and out is not None:
+        if out.shape != required_shape:
+            raise ValueError("Output array has incorrect shape.")
+        if not out.flags["C_CONTIGUOUS"]:
+            raise ValueError("Output array must be C-contiguous.")
+        if not np.can_cast(x.dtype, out.dtype):
+            raise ValueError("Wrong out dtype.")
+    if os.name == "nt" and "w" in kwargs:
+        w = kwargs["w"]
+        if w is not None:
+            if (w < 0).sum() > 0:
+                raise ValueError("Input weights should be all non-negative")
 
 
 def _copy_array_if_base_present(a):
@@ -240,7 +259,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         if isinstance(X, tuple):
             X = np.vstack(X)
-        CV = np.atleast_2d(np.cov(X.astype(np.double, copy=False).T))
+        CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
     return kwargs
@@ -277,7 +296,7 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     if V is None:
         if isinstance(X, tuple):
             X = np.vstack(X)
-        V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
+        V = np.var(X.astype(np.float64, copy=False), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
         if len(V.shape) != 1:
@@ -299,7 +318,7 @@ def _validate_vector(u, dtype=None):
     raise ValueError("Input vector should be 1-D.")
 
 
-def _validate_weights(w, dtype=np.double):
+def _validate_weights(w, dtype=np.float64):
     w = _validate_vector(w, dtype=dtype)
     if np.any(w < 0):
         raise ValueError("Input weights should be all non-negative")
@@ -315,9 +334,9 @@ def directed_hausdorff(u, v, seed=0):
     Parameters
     ----------
     u : (M,N) array_like
-        Input array.
+        Input array with M points in N dimensions.
     v : (O,N) array_like
-        Input array.
+        Input array with O points in N dimensions.
     seed : int or None
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
@@ -525,9 +544,7 @@ def sqeuclidean(u, v, w=None):
 
     .. math::
 
-       {\\|u-v\\|}_2^2
-
-       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
+       \\sum_i{w_i |u_i - v_i|^2}
 
     Parameters
     ----------
@@ -718,6 +735,8 @@ def hamming(u, v, w=None):
     u_ne_v = u != v
     if w is not None:
         w = _validate_weights(w)
+        if w.shape != u.shape:
+            raise ValueError("'w' should have the same length as 'u' and 'v'.")
     return np.average(u_ne_v, weights=w)
 
 
@@ -790,8 +809,8 @@ def jaccard(u, v, w=None):
         w = _validate_weights(w)
         nonzero = w * nonzero
         unequal_nonzero = w * unequal_nonzero
-    a = np.double(unequal_nonzero.sum())
-    b = np.double(nonzero.sum())
+    a = np.float64(unequal_nonzero.sum())
+    b = np.float64(nonzero.sum())
     return (a / b) if b != 0 else 0
 
 
@@ -867,7 +886,14 @@ def seuclidean(u, v, V):
     """
     Return the standardized Euclidean distance between two 1-D arrays.
 
-    The standardized Euclidean distance between `u` and `v`.
+    The standardized Euclidean distance between two n-vectors `u` and `v` is
+
+    .. math::
+
+       \\sqrt{\\sum\\limits_i \\frac{1}{V_i} \\left(u_i-v_i \\right)^2}
+
+    ``V`` is the variance vector; ``V[I]`` is the variance computed over all the i-th
+    components of the points. If not passed, it is automatically computed.
 
     Parameters
     ----------
@@ -1566,7 +1592,7 @@ def sokalsneath(u, v, w=None):
     return float(2.0 * (ntf + nft)) / denom
 
 
-_convert_to_double = partial(_convert_to_type, out_type=np.double)
+_convert_to_double = partial(_convert_to_type, out_type=np.float64)
 _convert_to_bool = partial(_convert_to_type, out_type=bool)
 
 # adding python-only wrappers to _distance_wrap module
@@ -1594,7 +1620,7 @@ class CDistMetricWrapper:
             return _cdist_callable(
                 XA, XB, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
+        dm = _prepare_out_argument(out, np.float64, (mA, mB))
         # get cdist wrapper
         cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
         cdist_fn(XA, XB, dm, **kwargs)
@@ -1614,7 +1640,7 @@ class CDistWeightedMetricWrapper:
         metric_name = self.metric_name
         XA, XB, typ, kwargs = _validate_cdist_input(
             XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
+        dm = _prepare_out_argument(out, np.float64, (mA, mB))
 
         w = kwargs.pop('w', None)
         if w is not None:
@@ -1645,7 +1671,7 @@ class PDistMetricWrapper:
             return _pdist_callable(
                 X, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (out_size,))
+        dm = _prepare_out_argument(out, np.float64, (out_size,))
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
@@ -1664,7 +1690,7 @@ class PDistWeightedMetricWrapper:
         X, typ, kwargs = _validate_pdist_input(
             X, m, n, _METRICS[metric_name], **kwargs)
         out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.double, (out_size,))
+        dm = _prepare_out_argument(out, np.float64, (out_size,))
 
         w = kwargs.pop('w', None)
         if w is not None:
@@ -1682,7 +1708,7 @@ class MetricInfo:
     # Name of python distance function
     canonical_name: str
     # All aliases, including canonical_name
-    aka: Set[str]
+    aka: set[str]
     # unvectorized distance function
     dist_func: Callable
     # Optimized cdist function
@@ -1695,7 +1721,7 @@ class MetricInfo:
     # list of supported types:
     # X (pdist) and XA (cdist) are used to choose the type. if there is no
     # match the first type is used. Default double
-    types: List[str] = dataclasses.field(default_factory=lambda: ['double'])
+    types: list[str] = dataclasses.field(default_factory=lambda: ['double'])
     # true if out array must be C-contiguous
     requires_contiguous_out: bool = True
 
@@ -1749,8 +1775,8 @@ _METRIC_INFOS = [
         aka={'dice'},
         types=['bool'],
         dist_func=dice,
-        cdist_func=CDistMetricWrapper('dice'),
-        pdist_func=PDistMetricWrapper('dice'),
+        cdist_func=_distance_pybind.cdist_dice,
+        pdist_func=_distance_pybind.pdist_dice,
     ),
     MetricInfo(
         canonical_name='euclidean',
@@ -1765,16 +1791,16 @@ _METRIC_INFOS = [
         types=['double', 'bool'],
         validator=_validate_hamming_kwargs,
         dist_func=hamming,
-        cdist_func=CDistWeightedMetricWrapper('hamming', 'hamming'),
-        pdist_func=PDistWeightedMetricWrapper('hamming', 'hamming'),
+        cdist_func=_distance_pybind.cdist_hamming,
+        pdist_func=_distance_pybind.pdist_hamming,
     ),
     MetricInfo(
         canonical_name='jaccard',
         aka={'jaccard', 'jacc', 'ja', 'j'},
         types=['double', 'bool'],
         dist_func=jaccard,
-        cdist_func=CDistMetricWrapper('jaccard'),
-        pdist_func=PDistMetricWrapper('jaccard'),
+        cdist_func=_distance_pybind.cdist_jaccard,
+        pdist_func=_distance_pybind.pdist_jaccard,
     ),
     MetricInfo(
         canonical_name='jensenshannon',
@@ -1788,8 +1814,8 @@ _METRIC_INFOS = [
         aka={'kulczynski1'},
         types=['bool'],
         dist_func=kulczynski1,
-        cdist_func=CDistMetricWrapper('kulczynski1'),
-        pdist_func=PDistMetricWrapper('kulczynski1'),
+        cdist_func=_distance_pybind.cdist_kulczynski1,
+        pdist_func=_distance_pybind.pdist_kulczynski1,
     ),
     MetricInfo(
         canonical_name='mahalanobis',
@@ -1812,16 +1838,16 @@ _METRIC_INFOS = [
         aka={'rogerstanimoto'},
         types=['bool'],
         dist_func=rogerstanimoto,
-        cdist_func=CDistMetricWrapper('rogerstanimoto'),
-        pdist_func=PDistMetricWrapper('rogerstanimoto'),
+        cdist_func=_distance_pybind.cdist_rogerstanimoto,
+        pdist_func=_distance_pybind.pdist_rogerstanimoto,
     ),
     MetricInfo(
         canonical_name='russellrao',
         aka={'russellrao'},
         types=['bool'],
         dist_func=russellrao,
-        cdist_func=CDistMetricWrapper('russellrao'),
-        pdist_func=PDistMetricWrapper('russellrao'),
+        cdist_func=_distance_pybind.cdist_russellrao,
+        pdist_func=_distance_pybind.pdist_russellrao,
     ),
     MetricInfo(
         canonical_name='seuclidean',
@@ -1836,16 +1862,16 @@ _METRIC_INFOS = [
         aka={'sokalmichener'},
         types=['bool'],
         dist_func=sokalmichener,
-        cdist_func=CDistMetricWrapper('sokalmichener'),
-        pdist_func=PDistMetricWrapper('sokalmichener'),
+        cdist_func=_distance_pybind.cdist_sokalmichener,
+        pdist_func=_distance_pybind.pdist_sokalmichener,
     ),
     MetricInfo(
         canonical_name='sokalsneath',
         aka={'sokalsneath'},
         types=['bool'],
         dist_func=sokalsneath,
-        cdist_func=CDistMetricWrapper('sokalsneath'),
-        pdist_func=PDistMetricWrapper('sokalsneath'),
+        cdist_func=_distance_pybind.cdist_sokalsneath,
+        pdist_func=_distance_pybind.pdist_sokalsneath,
     ),
     MetricInfo(
         canonical_name='sqeuclidean',
@@ -1859,8 +1885,8 @@ _METRIC_INFOS = [
         aka={'yule'},
         types=['bool'],
         dist_func=yule,
-        cdist_func=CDistMetricWrapper('yule'),
-        pdist_func=PDistMetricWrapper('yule'),
+        cdist_func=_distance_pybind.cdist_yule,
+        pdist_func=_distance_pybind.pdist_yule,
     ),
 ]
 
@@ -2190,6 +2216,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         if metric_info is not None:
             pdist_fn = metric_info.pdist_func
+            _extra_windows_error_checks(X, out, (m * (m - 1) / 2,), **kwargs)
             return pdist_fn(X, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)
@@ -2617,7 +2644,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
         raise ValueError("Output array has incorrect shape.")
     if not out.flags.c_contiguous:
         raise ValueError("Output array must be C-contiguous.")
-    if out.dtype != np.double:
+    if out.dtype != np.float64:
         raise ValueError("Output array must be double type.")
     return out
 
@@ -2625,7 +2652,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
 def _pdist_callable(X, *, out, metric, **kwargs):
     n = X.shape[0]
     out_size = (n * (n - 1)) // 2
-    dm = _prepare_out_argument(out, np.double, (out_size,))
+    dm = _prepare_out_argument(out, np.float64, (out_size,))
     k = 0
     for i in range(X.shape[0] - 1):
         for j in range(i + 1, X.shape[0]):
@@ -2637,7 +2664,7 @@ def _pdist_callable(X, *, out, metric, **kwargs):
 def _cdist_callable(XA, XB, *, out, metric, **kwargs):
     mA = XA.shape[0]
     mB = XB.shape[0]
-    dm = _prepare_out_argument(out, np.double, (mA, mB))
+    dm = _prepare_out_argument(out, np.float64, (mA, mB))
     for i in range(mA):
         for j in range(mB):
             dm[i, j] = metric(XA[i], XB[j], **kwargs)
@@ -2975,6 +3002,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         metric_info = _METRIC_ALIAS.get(mstr, None)
         if metric_info is not None:
             cdist_fn = metric_info.cdist_func
+            _extra_windows_error_checks(XA, out, (mA, mB), **kwargs)
             return cdist_fn(XA, XB, out=out, **kwargs)
         elif mstr.startswith("test_"):
             metric_info = _TEST_METRICS.get(mstr, None)

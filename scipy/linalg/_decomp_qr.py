@@ -62,9 +62,10 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     -------
     Q : float or complex ndarray
         Of shape (M, M), or (M, K) for ``mode='economic'``. Not returned
-        if ``mode='r'``.
+        if ``mode='r'``. Replaced by tuple ``(Q, TAU)`` if ``mode='raw'``.
     R : float or complex ndarray
-        Of shape (M, N), or (K, N) for ``mode='economic'``. ``K = min(M, N)``.
+        Of shape (M, N), or (K, N) for ``mode in ['economic', 'raw']``.
+        ``K = min(M, N)``.
     P : int ndarray
         Of shape (N,) for ``pivoting=True``. Not returned if
         ``pivoting=False``.

@@ -13,7 +13,6 @@ ci/* export-ignore
 .mailmap export-ignore
 MANIFEST.in export-ignore
 tools/ci/* export-ignore
-tools/docker_dev/* export-ignore
 
 
 # Dealing with line endings

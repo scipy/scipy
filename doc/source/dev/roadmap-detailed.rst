@@ -61,12 +61,10 @@ Making this easier is a priority.
 
 Moving to the Meson build system
 ````````````````````````````````
-Support for the Meson build system was merged into SciPy main in Dec 2021.
-This significantly improves build performance, and will fix multiple issues
-(e.g., our issues with Windows compilers, cross-compilation support). The aim
-is to make it the default build system for SciPy 1.9.0, and then remove support
-for ``numpy.distutils``/``setuptools`` in SciPy 1.10.0. For more details, see
-`gh-13615 <https://github.com/scipy/scipy/issues/13615>`_.
+Support for the Meson build system was merged into SciPy main in Dec 2021,
+and SciPy 1.9.3 was the first release where all wheels were also built with
+Meson. What is left to do is removing support for
+``numpy.distutils``/``setuptools``, this will happen soon.
 
 
 Use of Cython
@@ -97,14 +95,12 @@ existence of (possibly partial) alternatives, *including those inside SciPy*.
 
 Continuous integration
 ``````````````````````
-Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
+Continuous integration currently covers 32/64-bit Windows, macOS on x86-64/arm,
 32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
 of our dependencies and building release quality wheels. Reliability of CI has
-not been good recently (H2 2021), due to the large amount of configurations to
-support and some CI jobs needing an overhaul. We aim to reduce build times,
-improve caching, move more jobs to GitHub Actions, drop TravisCI and Appveyor
-in the `scipy-wheels repo <https://github.com/MacPython/scipy-wheels>`_,
-move from ``multibuild`` to ``cibuildwheel`` for building wheels for releases,
+not been good recently (H1 2023), due to the large amount of configurations to
+support and some CI jobs needing an overhaul. We aim to reduce build times by
+removing the remaining distutils-based jobs when we drop that build system
 and make the set of configurations in CI jobs more orthogonal.
 
 

@@ -19,7 +19,7 @@ from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
                         _minimize_scalar_brent, _minimize_scalar_bounded,
                         _minimize_scalar_golden, MemoizeJac, OptimizeResult,
-                        _wrap_callback)
+                        _wrap_callback, _recover_from_bracket_error)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
 from ._trustregion_krylov import _minimize_trust_krylov
@@ -762,11 +762,13 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         Scalar function, must return a scalar.
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
-        interval and can either have three items ``(a, b, c)`` so that
-        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
-        ``c`` which are assumed to be a starting interval for a downhill
-        bracket search (see `bracket`); it doesn't always mean that the
-        obtained solution will satisfy ``a <= x <= c``.
+        interval and is required.
+        Either a triple ``(xa, xb, xc)`` satisfying ``xa < xb < xc`` and
+        ``func(xb) < func(xa) and  func(xb) < func(xc)``, or a pair
+        ``(xa, xb)`` to be used as initial points for a downhill bracket search
+        (see `scipy.optimize.bracket`).
+        The minimizer ``res.x`` will not necessarily satisfy
+        ``xa <= res.x <= xb``.
     bounds : sequence, optional
         For method 'bounded', `bounds` is mandatory and must have two finite
         items corresponding to the optimization bounds.
@@ -924,14 +926,16 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if meth == '_custom':
         res = method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        res = _minimize_scalar_brent(fun, bracket, args, **options)
+        res = _recover_from_bracket_error(_minimize_scalar_brent,
+                                          fun, bracket, args, **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
         res = _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
-        res = _minimize_scalar_golden(fun, bracket, args, **options)
+        res = _recover_from_bracket_error(_minimize_scalar_golden,
+                                          fun, bracket, args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

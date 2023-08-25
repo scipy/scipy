@@ -4,10 +4,8 @@ import sys
 import warnings
 from functools import partial
 
-from scipy._lib._bunch import _make_tuple_bunch
 from . import _quadpack
 import numpy as np
-from numpy import Inf
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
@@ -490,7 +488,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
              7: "Abnormal termination of the routine.  The estimates for result\n  and error are less reliable.  It is assumed that the requested accuracy\n  has not been achieved.",
             'unknown': "Unknown error."}
 
-    if weight in ['cos','sin'] and (b == Inf or a == -Inf):
+    if weight in ['cos','sin'] and (b == np.inf or a == -np.inf):
         msgs[1] = "The maximum number of cycles allowed has been achieved., e.e.\n  of subintervals (a+(k-1)c, a+kc) where c = (2*int(abs(omega)+1))\n  *pi/abs(omega), for k = 1, 2, ..., lst.  One can allow more cycles by increasing the value of limlst.  Look at info['ierlst'] with full_output=1."
         msgs[4] = "The extrapolation table constructed for convergence acceleration\n  of the series formed by the integral contributions over the cycles, \n  does not converge to within the requested accuracy.  Look at \n  info['ierlst'] with full_output=1."
         msgs[7] = "Bad integrand behavior occurs within one or more of the cycles.\n  Location and type of the difficulty involved can be determined from \n  the vector info['ierlist'] obtained with full_output=1."
@@ -507,7 +505,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
+            if weight in ['cos', 'sin'] and (b == np.inf or a == -np.inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)
@@ -520,7 +518,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
                 msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
-            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
+            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == np.inf):
                 msg = ("Sine or cosine weighted intergals with infinite domain"
                        " must have 'epsabs'>0.")
 
@@ -541,7 +539,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if maxp1 < 1:
                 msg = "Chebyshev moment limit maxp1 must be >=1."
 
-            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
+            elif weight in ('cos', 'sin') and abs(a+b) == np.inf:  # QAWFE
                 msg = "Cycle limit limlst must be >=3."
 
             elif weight.startswith('alg'):  # QAWSE
@@ -559,15 +557,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
     infbounds = 0
-    if (b != Inf and a != -Inf):
+    if (b != np.inf and a != -np.inf):
         pass   # standard integration
-    elif (b == Inf and a != -Inf):
+    elif (b == np.inf and a != -np.inf):
         infbounds = 1
         bound = a
-    elif (b == Inf and a == -Inf):
+    elif (b == np.inf and a == -np.inf):
         infbounds = 2
         bound = 0     # ignored
-    elif (b != Inf and a == -Inf):
+    elif (b != np.inf and a == -np.inf):
         infbounds = -1
         bound = b
     else:
@@ -598,7 +596,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
 
     if weight in ['cos','sin']:
         integr = strdict[weight]
-        if (b != Inf and a != -Inf):  # finite limits
+        if (b != np.inf and a != -np.inf):  # finite limits
             if wopts is None:         # no precomputed Chebyshev moments
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1,1)
@@ -608,10 +606,10 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
 
-        elif (b == Inf and a != -Inf):
+        elif (b == np.inf and a != -np.inf):
             return _quadpack._qawfe(func, a, wvar, integr, args, full_output,
                                     epsabs,limlst,limit,maxp1)
-        elif (b != Inf and a == -Inf):  # remap function and interval
+        elif (b != np.inf and a == -np.inf):  # remap function and interval
             if weight == 'cos':
                 def thefunc(x,*myargs):
                     y = -x
@@ -630,7 +628,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         else:
             raise ValueError("Cannot integrate with this weight from -Inf to +Inf.")
     else:
-        if a in [-Inf,Inf] or b in [-Inf,Inf]:
+        if a in [-np.inf, np.inf] or b in [-np.inf, np.inf]:
             raise ValueError("Cannot integrate with this weight over an infinite interval.")
 
         if weight.startswith('alg'):
@@ -678,16 +676,10 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Returns
     -------
-    res : QuadResult
-        An object with the following attributes:
-
-        integral : float
-            The result of the integration.
-        abserr : float
-            The maximum of the estimates of the absolute error in the
-            two integration results.
-        neval : int
-            The number of integrand evaluations.
+    y : float
+        The resultant integral.
+    abserr : float
+        An estimate of the error.
 
     See Also
     --------
@@ -820,16 +812,10 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Returns
     -------
-    res : QuadResult
-        An object with the following attributes:
-
-        integral : float
-            The result of the integration.
-        abserr : float
-            The maximum of the estimates of the absolute error in the
-            three integration results.
-        neval : int
-            The number of integrand evaluations.
+    y : float
+        The resultant integral.
+    abserr : float
+        An estimate of the error.
 
     See Also
     --------
@@ -939,12 +925,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
             opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
-QuadratureResult = _make_tuple_bunch("QuadratureResult",
-                                     field_names=["integral", "abserr"],
-                                     extra_field_names=["neval"])
-
-
-def nquad(func, ranges, args=None, opts=None, full_output=None):
+def nquad(func, ranges, args=None, opts=None, full_output=False):
     r"""
     Integration over multiple variables.
 
@@ -1009,23 +990,15 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
         The number of integrand function evaluations ``neval`` can be obtained
         by setting ``full_output=True`` when calling nquad.
 
-        .. deprecated:: 1.11.0
-           Parameter `full_output` is deprecated and will be removed in version
-           1.13.0. When `full_output` is unspecified, ``neval`` is provided
-           as an attribute of the result object.
-
     Returns
     -------
-    res : QuadResult
-        An object with the following attributes:
-
-        integral : float
-            The result of the integration.
-        abserr : float
-            The maximum of the estimates of the absolute error in the various
-            integration results.
-        neval : int
-            The number of integrand evaluations.
+    result : float
+        The result of the integration.
+    abserr : float
+        The maximum of the estimates of the absolute error in the various
+        integration results.
+    out_dict : dict, optional
+        A dict containing additional information on the integration.
 
     See Also
     --------
@@ -1202,19 +1175,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=None):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-    res = _NQuad(func, ranges, opts, True).integrate(*args)
-
-    if full_output is not None:
-        msg = ("Use of parameter `full_output` is deprecated. Please leave "
-               "`full_output` unspecified; `neval` can now be accessed as an "
-               "attribute of the object returned by `scipy.integrate.nquad`.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
-    if full_output:
-        return res
-    else:
-        return QuadratureResult(integral=res[0], abserr=res[1],
-                                neval=res[2]['neval'])
+    return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
 class _RangeFunc:

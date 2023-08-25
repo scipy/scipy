@@ -1,10 +1,11 @@
-"""Functions to construct sparse matrices
+"""Functions to construct sparse matrices and arrays
 """
 
 __docformat__ = "restructuredtext en"
 
 __all__ = ['spdiags', 'eye', 'identity', 'kron', 'kronsum',
-           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag']
+           'hstack', 'vstack', 'bmat', 'rand', 'random', 'diags', 'block_diag',
+           'diags_array']
 
 import numbers
 from functools import partial
@@ -14,11 +15,11 @@ from scipy._lib._util import check_random_state, rng_integers
 from ._sputils import upcast, get_index_dtype, isscalarlike
 
 from ._sparsetools import csr_hstack
-from ._csr import csr_matrix
-from ._csc import csc_matrix
 from ._bsr import bsr_matrix
 from ._coo import coo_matrix
-from ._dia import dia_matrix
+from ._csc import csc_matrix
+from ._csr import csr_matrix
+from ._dia import dia_matrix, dia_array
 
 from ._base import issparse
 
@@ -68,6 +69,125 @@ def spdiags(data, diags, m=None, n=None, format=None):
     elif n is None:
         m, n = m
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
+
+
+def diags_array(diagonals, /, *, offsets=0, shape=None, format=None, dtype=None):
+    """
+    Construct a sparse array from diagonals.
+
+    Parameters
+    ----------
+    diagonals : sequence of array_like
+        Sequence of arrays containing the array diagonals,
+        corresponding to `offsets`.
+    offsets : sequence of int or an int, optional
+        Diagonals to set:
+          - k = 0  the main diagonal (default)
+          - k > 0  the kth upper diagonal
+          - k < 0  the kth lower diagonal
+    shape : tuple of int, optional
+        Shape of the result. If omitted, a square array large enough
+        to contain the diagonals is returned.
+    format : {"dia", "csr", "csc", "lil", ...}, optional
+        Matrix format of the result. By default (format=None) an
+        appropriate sparse array format is returned. This choice is
+        subject to change.
+    dtype : dtype, optional
+        Data type of the array.
+
+    Notes
+    -----
+    The result from `diags_array` is the sparse equivalent of::
+
+        np.diag(diagonals[0], offsets[0])
+        + ...
+        + np.diag(diagonals[k], offsets[k])
+
+    Repeated diagonal offsets are disallowed.
+
+    .. versionadded:: 1.11
+
+    Examples
+    --------
+    >>> from scipy.sparse import diags_array
+    >>> diagonals = [[1, 2, 3, 4], [1, 2, 3], [1, 2]]
+    >>> diags_array(diagonals, offsets=[0, -1, 2]).toarray()
+    array([[1, 0, 1, 0],
+           [1, 2, 0, 2],
+           [0, 2, 3, 0],
+           [0, 0, 3, 4]])
+
+    Broadcasting of scalars is supported (but shape needs to be
+    specified):
+
+    >>> diags_array([1, -2, 1], offsets=[-1, 0, 1], shape=(4, 4)).toarray()
+    array([[-2.,  1.,  0.,  0.],
+           [ 1., -2.,  1.,  0.],
+           [ 0.,  1., -2.,  1.],
+           [ 0.,  0.,  1., -2.]])
+
+
+    If only one diagonal is wanted (as in `numpy.diag`), the following
+    works as well:
+
+    >>> diags_array([1, 2, 3], offsets=1).toarray()
+    array([[ 0.,  1.,  0.,  0.],
+           [ 0.,  0.,  2.,  0.],
+           [ 0.,  0.,  0.,  3.],
+           [ 0.,  0.,  0.,  0.]])
+    """
+    # if offsets is not a sequence, assume that there's only one diagonal
+    if isscalarlike(offsets):
+        # now check that there's actually only one diagonal
+        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
+            diagonals = [np.atleast_1d(diagonals)]
+        else:
+            raise ValueError("Different number of diagonals and offsets.")
+    else:
+        diagonals = list(map(np.atleast_1d, diagonals))
+
+    offsets = np.atleast_1d(offsets)
+
+    # Basic check
+    if len(diagonals) != len(offsets):
+        raise ValueError("Different number of diagonals and offsets.")
+
+    # Determine shape, if omitted
+    if shape is None:
+        m = len(diagonals[0]) + abs(int(offsets[0]))
+        shape = (m, m)
+
+    # Determine data type, if omitted
+    if dtype is None:
+        dtype = np.common_type(*diagonals)
+
+    # Construct data array
+    m, n = shape
+
+    M = max([min(m + offset, n - offset) + max(0, offset)
+             for offset in offsets])
+    M = max(0, M)
+    data_arr = np.zeros((len(offsets), M), dtype=dtype)
+
+    K = min(m, n)
+
+    for j, diagonal in enumerate(diagonals):
+        offset = offsets[j]
+        k = max(0, offset)
+        length = min(m + offset, n - offset, K)
+        if length < 0:
+            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
+        try:
+            data_arr[j, k:k+length] = diagonal[...,:length]
+        except ValueError as e:
+            if len(diagonal) != length and len(diagonal) != 1:
+                raise ValueError(
+                    "Diagonal length (index %d: %d at offset %d) does not "
+                    "agree with array size (%d, %d)." % (
+                    j, len(diagonal), offset, m, n)) from e
+            raise
+
+    return dia_array((data_arr, offsets), shape=(m, n)).asformat(format)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
@@ -142,58 +262,8 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  0.,  3.],
            [ 0.,  0.,  0.,  0.]])
     """
-    # if offsets is not a sequence, assume that there's only one diagonal
-    if isscalarlike(offsets):
-        # now check that there's actually only one diagonal
-        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
-            diagonals = [np.atleast_1d(diagonals)]
-        else:
-            raise ValueError("Different number of diagonals and offsets.")
-    else:
-        diagonals = list(map(np.atleast_1d, diagonals))
-
-    offsets = np.atleast_1d(offsets)
-
-    # Basic check
-    if len(diagonals) != len(offsets):
-        raise ValueError("Different number of diagonals and offsets.")
-
-    # Determine shape, if omitted
-    if shape is None:
-        m = len(diagonals[0]) + abs(int(offsets[0]))
-        shape = (m, m)
-
-    # Determine data type, if omitted
-    if dtype is None:
-        dtype = np.common_type(*diagonals)
-
-    # Construct data array
-    m, n = shape
-
-    M = max([min(m + offset, n - offset) + max(0, offset)
-             for offset in offsets])
-    M = max(0, M)
-    data_arr = np.zeros((len(offsets), M), dtype=dtype)
-
-    K = min(m, n)
-
-    for j, diagonal in enumerate(diagonals):
-        offset = offsets[j]
-        k = max(0, offset)
-        length = min(m + offset, n - offset, K)
-        if length < 0:
-            raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
-        try:
-            data_arr[j, k:k+length] = diagonal[...,:length]
-        except ValueError as e:
-            if len(diagonal) != length and len(diagonal) != 1:
-                raise ValueError(
-                    "Diagonal length (index %d: %d at offset %d) does not "
-                    "agree with matrix size (%d, %d)." % (
-                    j, len(diagonal), offset, m, n)) from e
-            raise
-
-    return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
+    A = diags_array(diagonals, offsets=offsets, shape=shape, dtype=dtype)
+    return dia_matrix(A).asformat(format)
 
 
 def identity(n, dtype='d', format=None):
@@ -278,8 +348,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             data = np.ones(n, dtype=dtype)
             return coo_matrix((data, (row, col)), (n, n))
 
-    diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return spdiags(diags, k, m, n).asformat(format)
+    data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
+    return diags(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
 
 
 def kron(A, B, format=None):
@@ -780,6 +850,15 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
+    .. warning::
+
+        Since numpy 1.17, passing a ``np.random.Generator`` (e.g.
+        ``np.random.default_rng``) for ``random_state`` will lead to much
+        faster execution times.
+
+        A much slower implementation is used by default for backwards
+        compatibility.
+
     Parameters
     ----------
     m, n : int
@@ -794,15 +873,16 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-        This random state will be used
-        for sampling the sparsity structure, but not necessarily for sampling
-        the values of the structurally nonzero entries of the matrix.
+        - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+          singleton is used.
+        - If `seed` is an int, a new ``RandomState`` instance is used,
+          seeded with `seed`.
+        - If `seed` is already a ``Generator`` or ``RandomState`` instance then
+          that instance is used.
+
+        This random state will be used for sampling the sparsity structure, but
+        not necessarily for sampling the values of the structurally nonzero
+        entries of the matrix.
     data_rvs : callable, optional
         Samples a requested number of random values.
         This function should take a single argument specifying the length
@@ -816,16 +896,19 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     -------
     res : sparse matrix
 
-    Notes
-    -----
-    Only float types are supported for now.
-
     Examples
     --------
+
+    Passing a ``np.random.Generator`` instance for better performance:
+
     >>> from scipy.sparse import random
     >>> from scipy import stats
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
+    >>> S = random(3, 4, density=0.25, random_state=rng)
+
+    Proving a sampler for the values:
+
     >>> rvs = stats.poisson(25, loc=10).rvs
     >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
@@ -833,9 +916,9 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
-    >>> from scipy.sparse import random
-    >>> from scipy.stats import rv_continuous
-    >>> class CustomDistribution(rv_continuous):
+    Using a custom distribution:
+
+    >>> class CustomDistribution(stats.rv_continuous):
     ...     def _rvs(self,  size=None, random_state=None):
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
@@ -845,7 +928,6 @@ def random(m, n, density=0.01, format='coo', dtype=None,
     array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
-
     """
     if density < 0 or density > 1:
         raise ValueError("density expected to be 0 <= density <= 1")

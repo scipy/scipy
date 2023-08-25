@@ -16,6 +16,10 @@ cython_linalg = custom_target('cython_linalg',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  depend_files: [
+    'cython_blas_signatures.txt',
+    'cython_lapack_signatures.txt',
+  ],
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
@@ -62,10 +66,10 @@ fblas_module = custom_target('fblas_module',
 # the float/double routines are in BLAS while the complex routines are in
 # LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
-  [fblas_module, g77_abi_wrappers],
+  fblas_module,
   c_args: numpy_nodepr_api,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -82,10 +86,10 @@ flapack_module = custom_target('flapack_module',
 # Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
 # in flapack_other.pyf.src
 py3.extension_module('_flapack',
-  [flapack_module, g77_abi_wrappers],
+  flapack_module,
   c_args: [numpy_nodepr_api, Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -197,8 +201,8 @@ fwrappers = static_library('fwrappers',
     cython_linalg[5],
     cython_linalg[6],
     cython_linalg[7],
-    g77_abi_wrappers
-  ]
+  ],
+  dependencies: g77_abi_wrappers,
 )
 
 cython_blas = py3.extension_module('cython_blas',
@@ -207,7 +211,7 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
@@ -222,12 +226,21 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: cython_c_args,
+  c_args: [cython_c_args, Wno_incompatible_pointer_types],
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
   install: true,
   link_language: 'fortran',
+  subdir: 'scipy/linalg'
+)
+
+py3.extension_module('_decomp_lu_cython',
+  linalg_cython_gen.process('_decomp_lu_cython.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
   subdir: 'scipy/linalg'
 )
 
@@ -282,6 +295,7 @@ python_sources = [
   '_decomp_cossin.py',
   '_decomp_ldl.py',
   '_decomp_lu.py',
+  '_decomp_lu_cython.pyi',
   '_decomp_polar.py',
   '_decomp_qr.py',
   '_decomp_qz.py',

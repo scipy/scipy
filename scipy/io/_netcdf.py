@@ -215,6 +215,7 @@ class netcdf_file:
     to be copied to main memory:
 
     >>> data = time[:].copy()
+    >>> del time
     >>> f.close()
     >>> data.mean()
     4.5

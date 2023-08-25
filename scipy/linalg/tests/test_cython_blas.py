@@ -57,34 +57,34 @@ class TestWfuncPointers:
         cy = np.array([.8 + 2.j, .875 - .625j, -1. + 2.j], np.complex64)
 
         assert_allclose(blas._test_cdotc(cx, cy),
-                        -17.6468753815+21.3718757629j, 5)
+                        -17.6468753815+21.3718757629j)
         assert_allclose(blas._test_cdotu(cx, cy),
-                        -6.11562538147+30.3156242371j, 5)
+                        -6.11562538147+30.3156242371j)
 
         assert_equal(blas._test_icamax(cx), 3)
 
-        assert_allclose(blas._test_scasum(cx), 18.625, 5)
-        assert_allclose(blas._test_scnrm2(cx), 13.1796483994, 5)
+        assert_allclose(blas._test_scasum(cx), 18.625)
+        assert_allclose(blas._test_scnrm2(cx), 13.1796483994)
 
         assert_allclose(blas._test_cdotc(cx[::2], cy[::2]),
-                        -18.1000003815+21.2000007629j, 5)
+                        -18.1000003815+21.2000007629j)
         assert_allclose(blas._test_cdotu(cx[::2], cy[::2]),
-                        -6.10000038147+30.7999992371j, 5)
-        assert_allclose(blas._test_scasum(cx[::2]), 18., 5)
-        assert_allclose(blas._test_scnrm2(cx[::2]), 13.1719398499, 5)
+                        -6.10000038147+30.7999992371j)
+        assert_allclose(blas._test_scasum(cx[::2]), 18.)
+        assert_allclose(blas._test_scnrm2(cx[::2]), 13.1719398499)
     
     def test_double_args(self):
 
         x = np.array([5., -3, -.5], np.float64)
         y = np.array([2, 1, .5], np.float64)
 
-        assert_allclose(blas._test_dasum(x), 8.5, 10)
-        assert_allclose(blas._test_ddot(x, y), 6.75, 10)
-        assert_allclose(blas._test_dnrm2(x), 5.85234975815, 10)
+        assert_allclose(blas._test_dasum(x), 8.5)
+        assert_allclose(blas._test_ddot(x, y), 6.75)
+        assert_allclose(blas._test_dnrm2(x), 5.85234975815)
 
-        assert_allclose(blas._test_dasum(x[::2]), 5.5, 10)
-        assert_allclose(blas._test_ddot(x[::2], y[::2]), 9.75, 10)
-        assert_allclose(blas._test_dnrm2(x[::2]), 5.0249376297, 10)
+        assert_allclose(blas._test_dasum(x[::2]), 5.5)
+        assert_allclose(blas._test_ddot(x[::2], y[::2]), 9.75)
+        assert_allclose(blas._test_dnrm2(x[::2]), 5.0249376297)
 
         assert_equal(blas._test_idamax(x), 1)
 
@@ -95,13 +95,13 @@ class TestWfuncPointers:
 
         assert_equal(blas._test_isamax(x), 1)
 
-        assert_allclose(blas._test_sasum(x), 8.5, 5)
-        assert_allclose(blas._test_sdot(x, y), 6.75, 5)
-        assert_allclose(blas._test_snrm2(x), 5.85234975815, 5)
+        assert_allclose(blas._test_sasum(x), 8.5)
+        assert_allclose(blas._test_sdot(x, y), 6.75)
+        assert_allclose(blas._test_snrm2(x), 5.85234975815)
 
-        assert_allclose(blas._test_sasum(x[::2]), 5.5, 5)
-        assert_allclose(blas._test_sdot(x[::2], y[::2]), 9.75, 5)
-        assert_allclose(blas._test_snrm2(x[::2]), 5.0249376297, 5)
+        assert_allclose(blas._test_sasum(x[::2]), 5.5)
+        assert_allclose(blas._test_sdot(x[::2], y[::2]), 9.75)
+        assert_allclose(blas._test_snrm2(x[::2]), 5.0249376297)
 
     def test_double_complex_args(self):
 
@@ -110,11 +110,9 @@ class TestWfuncPointers:
 
         assert_equal(blas._test_izamax(cx), 3)
 
-        assert_allclose(blas._test_zdotc(cx, cy), -18.109375+22.296875j, 10)
-        assert_allclose(blas._test_zdotu(cx, cy), -6.578125+31.390625j, 10)
+        assert_allclose(blas._test_zdotc(cx, cy), -18.109375+22.296875j)
+        assert_allclose(blas._test_zdotu(cx, cy), -6.578125+31.390625j)
 
-        assert_allclose(blas._test_zdotc(cx[::2], cy[::2]),
-                        -18.5625+22.125j, 10)
-        assert_allclose(blas._test_zdotu(cx[::2], cy[::2]),
-                        -6.5625+31.875j, 10)
+        assert_allclose(blas._test_zdotc(cx[::2], cy[::2]), -18.5625+22.125j)
+        assert_allclose(blas._test_zdotu(cx[::2], cy[::2]), -6.5625+31.875j)
 

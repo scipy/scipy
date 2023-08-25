@@ -54,6 +54,7 @@ Sparse array classes
    dia_array - Sparse array with DIAgonal storage
    dok_array - Dictionary Of Keys based sparse array
    lil_array - Row-based list of lists sparse array
+   sparray - Sparse array base class
 
 Sparse matrix classes
 ---------------------
@@ -72,6 +73,13 @@ Sparse matrix classes
 
 Functions
 ---------
+
+Building sparse arrays:
+
+.. autosummary::
+   :toctree: generated/
+
+   diags_array - Return a sparse array from diagonals
 
 Building sparse matrices:
 
@@ -279,11 +287,8 @@ from ._dia import *
 from ._bsr import *
 from ._construct import *
 from ._extract import *
+from ._matrix import spmatrix
 from ._matrix_io import *
-
-from ._arrays import (
-    csr_array, csc_array, lil_array, dok_array, coo_array, dia_array, bsr_array
-)
 
 # For backward compatibility with v0.19.
 from . import csgraph

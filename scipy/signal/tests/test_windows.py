@@ -6,10 +6,12 @@ from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
                            assert_equal, assert_, assert_array_less,
                            suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 
 from scipy.fft import fft
 from scipy.signal import windows, get_window, resample, hann as dep_hann
+from scipy import signal
 
 
 window_funcs = [
@@ -37,17 +39,29 @@ window_funcs = [
     ('lanczos', ()),
     ]
 
+@pytest.mark.parametrize(["method", "args"], window_funcs)
+def test_deprecated_import(method, args):
+    if method in ('taylor', 'lanczos', 'dpss'):
+        pytest.skip("Deprecation test not applicable")
+    func = getattr(signal, method)
+    msg = f"Importing {method}"
+    with pytest.deprecated_call(match=msg):
+        func(1, *args)
+        
 
 class TestBartHann:
 
     def test_basic(self):
         assert_allclose(windows.barthann(6, sym=True),
                         [0, 0.35857354213752, 0.8794264578624801,
-                         0.8794264578624801, 0.3585735421375199, 0])
+                         0.8794264578624801, 0.3585735421375199, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(7),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.barthann(6, False),
-                        [0, 0.27, 0.73, 1.0, 0.73, 0.27])
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestBartlett:
@@ -400,16 +414,20 @@ class TestHann:
 
     def test_basic(self):
         assert_allclose(windows.hann(6, sym=False),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7, sym=False),
                         [0, 0.1882550990706332, 0.6112604669781572,
                          0.9504844339512095, 0.9504844339512095,
-                         0.6112604669781572, 0.1882550990706332])
+                         0.6112604669781572, 0.1882550990706332],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(6, True),
                         [0, 0.3454915028125263, 0.9045084971874737,
-                         0.9045084971874737, 0.3454915028125263, 0])
+                         0.9045084971874737, 0.3454915028125263, 0],
+                        rtol=1e-15, atol=1e-15)
         assert_allclose(windows.hann(7),
-                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
+                        rtol=1e-15, atol=1e-15)
 
 
 class TestKaiser:
@@ -562,7 +580,7 @@ class TestTukey:
                 assert_raises(ValueError, windows.tukey, *k)
             else:
                 win = windows.tukey(*k)
-                assert_allclose(win, v, rtol=1e-14)
+                assert_allclose(win, v, rtol=1e-15, atol=1e-15)
 
     def test_extremes(self):
         # Test extremes of alpha correspond to boxcar and hann

@@ -107,7 +107,7 @@ cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
 cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
-cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
+cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
     return ((u4 << 24) |
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
@@ -405,7 +405,7 @@ cdef class VarReader5:
                 self.cstream.seek(8 - mod8, 1)
         return 0
 
-    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1):
+    cpdef cnp.ndarray read_numeric(self, int copy=True, size_t nnz=-1) noexcept:
         ''' Read numeric data element into ndarray
 
         Reads element, then casts to ndarray.
@@ -557,7 +557,7 @@ cdef class VarReader5:
             byte_count[0] = u4s[1]
         return 0
 
-    cpdef VarHeader5 read_header(self, int check_stream_limit):
+    cpdef VarHeader5 read_header(self, int check_stream_limit) noexcept:
         ''' Return matrix header for current stream position
 
         Returns matrix headers at top level and sub levels
@@ -608,7 +608,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header):
+    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in
@@ -749,7 +749,7 @@ cdef class VarReader5:
             shape = tuple([x for x in shape if x != 1])
         return shape
 
-    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header):
+    cpdef cnp.ndarray read_real_complex(self, VarHeader5 header) noexcept:
         ''' Read real / complex matrices from stream '''
         cdef:
             cnp.ndarray res, res_j
@@ -803,7 +803,7 @@ cdef class VarReader5:
             (data[:nnz], rowind[:nnz], indptr),
             shape=(M, N))
 
-    cpdef cnp.ndarray read_char(self, VarHeader5 header):
+    cpdef cnp.ndarray read_char(self, VarHeader5 header) noexcept:
         ''' Read char matrices from stream as arrays
 
         Matrices of char are likely to be converted to matrices of
@@ -872,7 +872,7 @@ cdef class VarReader5:
                           buffer=arr,
                           order='F')
 
-    cpdef cnp.ndarray read_cells(self, VarHeader5 header):
+    cpdef cnp.ndarray read_cells(self, VarHeader5 header) noexcept:
         ''' Read cell array from stream '''
         cdef:
             size_t i
@@ -928,7 +928,7 @@ cdef class VarReader5:
         n_names_ptr[0] = n_names
         return field_names
 
-    cpdef cnp.ndarray read_struct(self, VarHeader5 header):
+    cpdef cnp.ndarray read_struct(self, VarHeader5 header) noexcept:
         ''' Read struct or object array from stream
 
         Objects are just structs with an extra field *classname*,

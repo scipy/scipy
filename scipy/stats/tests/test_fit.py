@@ -30,7 +30,6 @@ mle_failing_fits = [
         'ncf',
         'ncx2',
         'truncexpon',
-        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
@@ -53,18 +52,20 @@ mle_use_floc0 = [
     'powerlaw',  # distfn.nnlf(est2, rvs) > distfn.nnlf(est1, rvs) otherwise
     'powerlognorm',
     'wrapcauchy',
+    'rel_breitwigner',
 ]
 
 mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
-                   'halfcauchy', 'invgamma', 'invweibull', 'johnsonsu',
-                   'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
+                   'halfcauchy', 'invgamma', 'invweibull', 'jf_skew_t',
+                   'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'skewcauchy', 't', 'trapezoid', 'triang', 'truncpareto',
-                   'truncweibull_min', 'tukeylambda', 'studentized_range']
+                   'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
+                   'truncpareto', 'truncweibull_min', 'tukeylambda',
+                   'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -73,6 +74,7 @@ mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
 skip_fit = [
@@ -135,6 +137,7 @@ def test_cont_fit(distname, arg, method):
                 msg = ('Different results fitting uncensored data wrapped as'
                        f' CensoredData: {distfn.name}: est={est} est1={est1}')
                 assert_allclose(est1, est, rtol=1e-10, err_msg=msg)
+            if method == 'MLE' and distname not in fail_interval_censored:
                 # Convert the first `nic` values in rvs to interval-censored
                 # values. The interval is small, so est2 should be close to
                 # est.
@@ -217,25 +220,33 @@ def test_nnlf_and_related_methods(dist, params):
 def cases_test_fit_mle():
     # These fail default test or hang
     skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
-    slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
-                      'exponpow', 'rdist', 'norminvgauss', 'betaprime',
-                      'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
-                      'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
-                      'uniform', 'f', 'invweibull', 'genpareto',
-                      'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
-                      'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
-                      'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
-                      'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'randint', 'genextreme'}
-    xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
-                       'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
-                       'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
-                       'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
-                       'truncnorm', 'powerlognorm', 'beta',
-                       'loguniform', 'reciprocal', 'trapezoid', 'nct',
-                       'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
-                       'burr', 'triang'}
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
+                      'arcsine'}
+
+    # Please keep this list in alphabetical order...
+    slow_basic_fit = {'alpha',
+                      'betaprime', 'binom', 'bradford', 'burr12',
+                      'chi', 'crystalball', 'dweibull', 'exponpow',
+                      'f', 'fatiguelife', 'fisk', 'foldcauchy',
+                      'genexpon', 'genextreme', 'gennorm', 'genpareto',
+                      'gompertz', 'halfgennorm', 'invgauss', 'invweibull',
+                      'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
+                      'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
+                      'nakagami', 'nbinom', 'norminvgauss',
+                      'pareto', 'pearson3', 'powerlaw', 'powernorm',
+                      'randint', 'rdist', 'recipinvgauss', 'rice',
+                      't', 'uniform', 'weibull_max', 'wrapcauchy'}
+
+    # Please keep this list in alphabetical order...
+    xslow_basic_fit = {'beta', 'betabinom', 'burr', 'exponweib',
+                       'gausshyper', 'gengamma', 'genhalflogistic',
+                       'genhyperbolic', 'geninvgauss',
+                       'hypergeom', 'kappa4', 'loguniform',
+                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
+                       'nct', 'ncx2', 'nhypergeom',
+                       'powerlognorm', 'reciprocal', 'rel_breitwigner',
+                       'skellam', 'trapezoid', 'triang', 'truncnorm',
+                       'tukeylambda', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -258,29 +269,40 @@ def cases_test_fit_mse():
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
-                      'argus',  # close, but doesn't meet tolerance
+                      'tukeylambda',  # close, but doesn't meet tolerance
                       'vonmises'}  # can have negative CDF; doesn't play nice
-    slow_basic_fit = {'wald', 'genextreme', 'anglit', 'semicircular',
-                      'kstwobign', 'arcsine', 'genlogistic', 'truncexpon',
-                      'fisk', 'uniform', 'exponnorm', 'maxwell', 'lomax',
-                      'laplace_asymmetric', 'lognorm', 'foldcauchy',
-                      'genpareto', 'powernorm', 'loglaplace', 'foldnorm',
-                      'recipinvgauss', 'exponpow', 'bradford', 'weibull_max',
-                      'gompertz', 'dweibull', 'truncpareto', 'weibull_min',
-                      'johnsonsu', 'loggamma', 'kappa3', 'fatiguelife',
-                      'pareto', 'invweibull', 'alpha', 'erlang', 'dgamma',
-                      'chi2', 'crystalball', 'nakagami', 'truncweibull_min',
-                      't', 'vonmises_line', 'triang', 'wrapcauchy', 'gamma',
-                      'mielke', 'chi', 'johnsonsb', 'exponweib',
-                      'genhalflogistic', 'randint', 'nhypergeom', 'hypergeom',
-                      'betabinom'}
-    xslow_basic_fit = {'burr', 'halfgennorm', 'invgamma',
-                       'invgauss', 'powerlaw', 'burr12', 'trapezoid', 'kappa4',
-                       'f', 'powerlognorm', 'ncx2', 'rdist', 'reciprocal',
-                       'loguniform', 'betaprime', 'rice', 'gennorm',
-                       'gengamma', 'truncnorm', 'ncf', 'nct', 'pearson3',
-                       'beta', 'genexpon', 'tukeylambda', 'zipfian',
-                       'nchypergeom_wallenius', 'nchypergeom_fisher'}
+
+    # Please keep this list in alphabetical order...
+    slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
+                      'chi', 'chi2', 'crystalball', 'dgamma', 'dweibull',
+                      'erlang', 'exponnorm', 'exponpow', 'exponweib',
+                      'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
+                      'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
+                      'genlogistic', 'genpareto', 'gompertz',
+                      'hypergeom', 'invweibull', 'jf_skew_t', 'johnsonsb',
+                      'johnsonsu', 'kappa3', 'kstwobign',
+                      'laplace_asymmetric', 'loggamma', 'loglaplace',
+                      'lognorm', 'lomax',
+                      'maxwell', 'mielke', 'nakagami', 'nhypergeom',
+                      'pareto', 'powernorm', 'randint', 'recipinvgauss',
+                      'semicircular',
+                      't', 'triang', 'truncexpon', 'truncpareto',
+                      'truncweibull_min',
+                      'uniform', 'vonmises_line',
+                      'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
+
+    # Please keep this list in alphabetical order...
+    xslow_basic_fit = {'beta', 'betaprime', 'burr', 'burr12',
+                       'f', 'gengamma', 'gennorm',
+                       'halfgennorm', 'invgamma', 'invgauss',
+                       'kappa4', 'loguniform',
+                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
+                       'nct', 'ncx2',
+                       'pearson3', 'powerlaw', 'powerlognorm',
+                       'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
+                       'trapezoid', 'truncnorm',
+                       'zipfian'}
+
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
     for dist in dict(distdiscrete + distcont):
@@ -501,6 +523,19 @@ class TestFit:
     def test_basic_fit_mse(self, dist_name):
         self.basic_fit_test(dist_name, "mse")
 
+    def test_arcsine(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.arcsine
+        shapes = (1., 2.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+        assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
+
     def test_argus(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
@@ -594,7 +629,7 @@ class TestFit:
         # fit only scale
         loc, scale = 0, 2.5
         data = dist.rvs(scale=scale, size=N, random_state=rng)
-        scale_bounds = (0, 5)
+        scale_bounds = (0.01, 5)
         bounds = {'scale': scale_bounds}
         res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
@@ -652,7 +687,8 @@ class TestFit:
     def test_guess(self):
         # Test that guess helps DE find the desired solution
         N = 2000
-        rng = np.random.default_rng(self.seed)
+        # With some seeds, `fit` doesn't need a guess
+        rng = np.random.default_rng(1963904448561)
         dist = stats.nhypergeom
         params = (20, 7, 12, 0)
         bounds = [(2, 200), (0.7, 70), (1.2, 120), (0, 10)]
@@ -815,6 +851,74 @@ class TestGoodnessOfFit:
         ref = stats.anderson(x, dist='gumbel_r')
         assert_allclose(res.statistic, ref.critical_values[0])
         assert_allclose(res.pvalue, ref.significance_level[0]/100, atol=5e-3)
+
+    def test_against_filliben_norm(self):
+        # Test against `stats.fit` ref. [7] Section 8 "Example"
+        rng = np.random.default_rng(8024266430745011915)
+        y = [6, 1, -4, 8, -2, 5, 0]
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, y, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        # Slight discrepancy presumably due to roundoff in Filliben's
+        # calculation. Using exact order statistic medians instead of
+        # Filliben's approximation doesn't account for it.
+        assert_allclose(res.statistic, 0.98538, atol=1e-4)
+        assert 0.75 < res.pvalue < 0.9
+
+        # Using R's ppcc library:
+        # library(ppcc)
+        # options(digits=16)
+        # x < - c(6, 1, -4, 8, -2, 5, 0)
+        # set.seed(100)
+        # ppccTest(x, "qnorm", ppos="Filliben")
+        # Discrepancy with
+        assert_allclose(res.statistic, 0.98540957187084, rtol=2e-5)
+        assert_allclose(res.pvalue, 0.8875, rtol=2e-3)
+
+    def test_filliben_property(self):
+        # Filliben's statistic should be independent of data location and scale
+        rng = np.random.default_rng(8535677809395478813)
+        x = rng.normal(loc=10, scale=0.5, size=100)
+        res = stats.goodness_of_fit(stats.norm, x,
+                                    statistic="filliben", random_state=rng)
+        known_params = {'loc': 0, 'scale': 1}
+        ref = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
+
+    @pytest.mark.parametrize('case', [(25, [.928, .937, .950, .958, .966]),
+                                      (50, [.959, .965, .972, .977, .981]),
+                                      (95, [.977, .979, .983, .986, .989])])
+    def test_against_filliben_norm_table(self, case):
+        # Test against `stats.fit` ref. [7] Table 1
+        rng = np.random.default_rng(504569995557928957)
+        n, ref = case
+        x = rng.random(n)
+        known_params = {'loc': 0, 'scale': 1}
+        res = stats.goodness_of_fit(stats.norm, x, known_params=known_params,
+                                    statistic="filliben", random_state=rng)
+        percentiles = np.array([0.005, 0.01, 0.025, 0.05, 0.1])
+        res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
+        assert_allclose(res, ref, atol=2e-3)
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize('case', [(5, 0.95772790260469, 0.4755),
+                                      (6, 0.95398832257958, 0.3848),
+                                      (7, 0.9432692889277, 0.2328)])
+    def test_against_ppcc(self, case):
+        # Test against R ppcc, e.g.
+        # library(ppcc)
+        # options(digits=16)
+        # x < - c(0.52325412, 1.06907699, -0.36084066, 0.15305959, 0.99093194)
+        # set.seed(100)
+        # ppccTest(x, "qrayleigh", ppos="Filliben")
+        n, ref_statistic, ref_pvalue = case
+        rng = np.random.default_rng(7777775561439803116)
+        x = rng.normal(size=n)
+        res = stats.goodness_of_fit(stats.rayleigh, x, statistic="filliben",
+                                    random_state=rng)
+        assert_allclose(res.statistic, ref_statistic, rtol=1e-4)
+        assert_allclose(res.pvalue, ref_pvalue, atol=1.5e-2)
 
     def test_params_effects(self):
         # Ensure that `guessed_params`, `fit_params`, and `known_params` have

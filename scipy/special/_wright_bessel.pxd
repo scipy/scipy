@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # -*-cython-*-
 #
 # Implementation of Wright's generalized Bessel function Phi, see
@@ -39,7 +41,7 @@ DEF exp_inf = 709.78271289338403
 
 
 @cython.cdivision(True)
-cdef inline double _exp_rgamma(double x, double y) nogil:
+cdef inline double _exp_rgamma(double x, double y) noexcept nogil:
     """Compute exp(x) / gamma(y) = exp(x) * rgamma(y).
 
     This helper function avoids overflow by using the lanczos approximation
@@ -53,7 +55,7 @@ cdef inline double _exp_rgamma(double x, double y) nogil:
 
 @cython.cdivision(True)
 cdef inline double _wb_series(double a, double b, double x,
-    unsigned int nstart, unsigned int nstop) nogil:
+    unsigned int nstart, unsigned int nstop) noexcept nogil:
     """1. Taylor series expansion in x=0, for x <= 1
 
     Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
@@ -82,7 +84,7 @@ cdef inline double _wb_series(double a, double b, double x,
 
 @cython.cdivision(True)
 cdef inline double _wb_large_a(double a, double b, double x,
-    unsigned int n) nogil:
+    unsigned int n) noexcept nogil:
     """2. Taylor series expansion in x=0, for large a.
 
     Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k+b)
@@ -109,7 +111,7 @@ cdef inline double _wb_large_a(double a, double b, double x,
 
 
 @cython.cdivision(True)
-cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
+cdef inline double _wb_small_a(double a, double b, double x, int order) noexcept nogil:
     """3. Taylor series in a=0 up to order 5, for tiny a and not too large x
 
     Phi(a, b, x) = exp(x)/Gamma(b)
@@ -219,7 +221,7 @@ cdef inline double _wb_small_a(double a, double b, double x, int order) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
+cdef inline double _wb_asymptotic(double a, double b, double x) noexcept nogil:
     """4. Asymptotic expansion for large x up to order 8
 
     Phi(a, b, x) ~ Z^(1/2-b) * exp((1+a)/a * Z) * sum_k (-1)^k * C_k / Z^k
@@ -579,7 +581,7 @@ cdef inline double _wb_asymptotic(double a, double b, double x) nogil:
 
 @cython.cdivision(True)
 cdef inline double _Kmod(double eps, double a, double b, double x,
-                         double r) nogil:
+                         double r) noexcept nogil:
     """Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
 
     K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
@@ -592,7 +594,7 @@ cdef inline double _Kmod(double eps, double a, double b, double x,
 
 @cython.cdivision(True)
 cdef inline double _P(double eps, double a, double b, double x,
-                      double phi) nogil:
+                      double phi) noexcept nogil:
     """Compute integrand P for Gauss-Legendre quadrature.
 
     P(eps, a, b, x, phi) =
@@ -607,7 +609,7 @@ cdef inline double _P(double eps, double a, double b, double x,
 
 
 @cython.cdivision(True)
-cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
+cdef inline double wright_bessel_integral(double a, double b, double x) noexcept nogil:
     """5. Integral representation
 
     K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
@@ -770,7 +772,7 @@ cdef inline double wright_bessel_integral(double a, double b, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
+cdef inline double wright_bessel_scalar(double a, double b, double x) noexcept nogil:
     """Compute Wright's generalized Bessel function for scalar arguments.
 
     According to [1], it is an entire function defined as

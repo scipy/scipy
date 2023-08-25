@@ -134,7 +134,7 @@ class LinearConstraint:
     ----------
     A : {array_like, sparse matrix}, shape (m, n)
         Matrix defining the constraint.
-    lb, ub : array_like, optional
+    lb, ub : dense array_like, optional
         Lower and upper limits on the constraint. Each array must have the
         shape (m,) or be a scalar, in the latter case a bound will be the same
         for all components of the constraint. Use ``np.inf`` with an
@@ -144,7 +144,7 @@ class LinearConstraint:
         interval, one-sided or equality, by setting different components of
         `lb` and `ub` as  necessary. Defaults to ``lb = -np.inf``
         and ``ub = np.inf`` (no limits).
-    keep_feasible : array_like of bool, optional
+    keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
@@ -176,8 +176,13 @@ class LinearConstraint:
                 self.A = np.atleast_2d(A).astype(np.float64)
         else:
             self.A = A
+        if issparse(lb) or issparse(ub):
+            raise ValueError("Constraint limits must be dense arrays.")
         self.lb = np.atleast_1d(lb).astype(np.float64)
         self.ub = np.atleast_1d(ub).astype(np.float64)
+
+        if issparse(keep_feasible):
+            raise ValueError("`keep_feasible` must be a dense array.")
         self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
         self._input_validation()
 
@@ -224,7 +229,7 @@ class Bounds:
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : dense array_like, optional
         Lower and upper bounds on independent variables. `lb`, `ub`, and
         `keep_feasible` must be the same shape or broadcastable.
         Set components of `lb` and `ub` equal
@@ -233,7 +238,7 @@ class Bounds:
         different types: interval, one-sided or equality, by setting different
         components of `lb` and `ub` as necessary. Defaults to ``lb = -np.inf``
         and ``ub = np.inf`` (no bounds).
-    keep_feasible : array_like of bool, optional
+    keep_feasible : dense array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
@@ -247,8 +252,13 @@ class Bounds:
             raise ValueError(message)
 
     def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
+        if issparse(lb) or issparse(ub):
+            raise ValueError("Lower and upper bounds must be dense arrays.")
         self.lb = np.atleast_1d(lb)
         self.ub = np.atleast_1d(ub)
+
+        if issparse(keep_feasible):
+            raise ValueError("`keep_feasible` must be a dense array.")
         self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
         self._input_validation()
 

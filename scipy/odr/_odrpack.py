@@ -553,6 +553,10 @@ class Output:
         Standard deviations of the estimated parameters, of shape (p,).
     cov_beta : ndarray
         Covariance matrix of the estimated parameters, of shape (p,p).
+        Note that this `cov_beta` is not scaled by the residual variance 
+        `res_var`, whereas `sd_beta` is. This means 
+        ``np.sqrt(np.diag(output.cov_beta * output.res_var))`` is the same 
+        result as `output.sd_beta`.
     delta : ndarray, optional
         Array of estimated errors in input variables, of same shape as `x`.
     eps : ndarray, optional
@@ -895,10 +899,16 @@ class ODR:
         elif len(self.data.we.shape) == 3:
             ld2we, ldwe = self.data.we.shape[1:]
         else:
-            # Okay, this isn't precisely right, but for this calculation,
-            # it's fine
+            we = self.data.we
             ldwe = 1
-            ld2we = self.data.we.shape[1]
+            ld2we = 1
+            if we.ndim == 1 and q == 1:
+                ldwe = n
+            elif we.ndim == 2:
+                if we.shape == (q, q):
+                    ld2we = q
+                elif we.shape == (q, n):
+                    ldwe = n
 
         if self.job % 10 < 2:
             # ODR not OLS

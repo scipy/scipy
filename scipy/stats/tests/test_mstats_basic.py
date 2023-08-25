@@ -550,6 +550,26 @@ class TestTrimming:
         assert_almost_equal(mstats.trimmed_mean(data,(0.1,0.1)), 343, 0)
         assert_almost_equal(mstats.trimmed_mean(data,(0.2,0.2)), 283, 0)
 
+    def test_trimmedvar(self):
+        # Basic test. Additional tests of all arguments, edge cases,
+        # input validation, and proper treatment of masked arrays are needed.
+        rng = np.random.default_rng(3262323289434724460)
+        data_orig = rng.random(size=20)
+        data = np.sort(data_orig)
+        data = ma.array(data, mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+        assert_allclose(mstats.trimmed_var(data_orig, 0.1), data.var())
+
+    def test_trimmedstd(self):
+        # Basic test. Additional tests of all arguments, edge cases,
+        # input validation, and proper treatment of masked arrays are needed.
+        rng = np.random.default_rng(7121029245207162780)
+        data_orig = rng.random(size=20)
+        data = np.sort(data_orig)
+        data = ma.array(data, mask=[1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                    0, 0, 0, 0, 0, 0, 0, 0, 1, 1])
+        assert_allclose(mstats.trimmed_std(data_orig, 0.1), data.std())
+
     def test_trimmed_stde(self):
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
                          296,299,306,376,428,515,666,1310,2611])
@@ -1017,6 +1037,27 @@ def test_siegelslopes_namedtuple_consistency():
     # note both returned values are distinct here
     assert_equal(slope, result.slope)
     assert_equal(intercept, result.intercept)
+
+
+def test_sen_seasonal_slopes():
+    rng = np.random.default_rng(5765986256978575148)
+    x = rng.random(size=(100, 4))
+    intra_slope, inter_slope = mstats.sen_seasonal_slopes(x)
+
+    # reference implementation from the `sen_seasonal_slopes` documentation
+    def dijk(yi):
+        n = len(yi)
+        x = np.arange(n)
+        dy = yi - yi[:, np.newaxis]
+        dx = x - x[:, np.newaxis]
+        mask = np.triu(np.ones((n, n), dtype=bool), k=1)
+        return dy[mask]/dx[mask]
+
+    for i in range(4):
+        assert_allclose(np.median(dijk(x[:, i])), intra_slope[i])
+
+    all_slopes = np.concatenate([dijk(x[:, i]) for i in range(x.shape[1])])
+    assert_allclose(np.median(all_slopes), inter_slope)
 
 
 def test_plotting_positions():

@@ -406,7 +406,7 @@ class DOP853(RungeKutta):
     """Explicit Runge-Kutta method of order 8.
 
     This is a Python implementation of "DOP853" algorithm originally written
-    in Fortran [1]_, [2]_. Note that this is not a literate translation, but
+    in Fortran [1]_, [2]_. Note that this is not a literal translation, but
     the algorithmic core and coefficients are the same.
 
     Can be applied in the complex domain.

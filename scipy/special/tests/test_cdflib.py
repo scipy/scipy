@@ -350,6 +350,12 @@ class TestCDFlib:
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
 
+    # The values of lmdba are chosen so that 1/lmbda is exact.
+    @pytest.mark.parametrize('lmbda', [0.5, 1.0, 8.0])
+    def test_tklmbda_lmbda1(self, lmbda):
+        bound = 1/lmbda
+        assert_equal(sp.tklmbda([-bound, bound], lmbda), [0.0, 1.0])
+
 
 def test_nonfinite():
     funcs = [

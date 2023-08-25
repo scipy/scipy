@@ -19,6 +19,7 @@
 *.vim
 tags
 .venv/
+venv/
 .theia/
 .vscode/
 
@@ -135,6 +136,7 @@ Thumbs.db
 #################################
 doc/frontpage/build
 doc/source/reference/generated
+**/.ipynb_checkpoints
 
 # Things specific to this project #
 ###################################

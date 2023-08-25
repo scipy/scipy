@@ -81,7 +81,7 @@ DEF LOG_PI_2 = 0.5723649429247001  # log(M_PI) / 2
 @cython.cdivision(True)
 cdef inline double complex hyp2f1_complex(
         double a, double b, double c, double complex z
-) nogil:
+) noexcept nogil:
     cdef:
         double modulus_z
         double max_degree
@@ -231,7 +231,7 @@ cdef inline double complex hyp2f1_series(
         uint64_t max_degree,
         bint early_stop,
         double rtol,
-) nogil:
+) noexcept nogil:
     """Return Truncated Maclaurin series for hyp2f1.
 
     Series is convergent for |z| < 1 but is only practical for numerical
@@ -286,7 +286,7 @@ cdef inline double complex hyp2f1_lopez_temme_series(
         double complex z,
         int max_degree,
         double rtol,
-) nogil:
+) noexcept nogil:
     """Lopez-Temme Series for Gaussian hypergeometric function [4].
 
     Converges for all z with real(z) < 1, including in the regions surrounding
@@ -321,7 +321,7 @@ cdef inline double complex hyp2f1_lopez_temme_series(
 
 
 @cython.cdivision(True)
-cdef inline double four_gammas(double u, double v, double w, double x) nogil:
+cdef inline double four_gammas(double u, double v, double w, double x) noexcept nogil:
     cdef double result
     # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
     if fabs(v) > fabs(u):
@@ -350,7 +350,7 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
 @cython.cdivision(True)
 cdef inline double four_gammas_lanczos(
         double u, double v, double w, double x
-) nogil:
+) noexcept nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
     Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))

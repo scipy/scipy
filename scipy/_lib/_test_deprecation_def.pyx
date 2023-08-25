@@ -1,7 +1,7 @@
-cdef public int foo():
+cdef public int foo() noexcept:
     return 1
 
-cdef public int foo_deprecated():
+cdef public int foo_deprecated() noexcept:
     return 1
 
 from scipy._lib.deprecation import deprecate_cython_api

@@ -300,7 +300,10 @@ class TestInterp1D:
         # regression test for gh-5898, where 1D linear interpolation has been
         # delegated to numpy.interp for all float dtypes, and the latter was
         # not handling e.g. np.float128.
-        for dtyp in np.sctypes["float"]:
+        for dtyp in [np.float16,
+                     np.float32,
+                     np.float64,
+                     np.longdouble]:
             x = np.arange(8, dtype=dtyp)
             y = x
             yp = interp1d(x, y, kind='linear')(x)
@@ -802,7 +805,7 @@ class TestInterp1D:
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
-    def _check_complex(self, dtype=np.complex_, kind='linear'):
+    def _check_complex(self, dtype=np.complex128, kind='linear'):
         x = np.array([1, 2.5, 3, 3.1, 4, 6.4, 7.9, 8.0, 9.5, 10])
         y = x * x ** (1 + 2j)
         y = y.astype(dtype)
@@ -1204,6 +1207,7 @@ class TestPPoly:
 
         for writeable in (True, False):
             x.flags.writeable = writeable
+            c.flags.writeable = writeable
             f = PPoly(c, x)
             vals = f(xnew)
             assert_(np.isfinite(vals).all())
