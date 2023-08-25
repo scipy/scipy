@@ -293,7 +293,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
-    from the interval [0, NP) and are different from the current index i.
+    from the interval [0, NP) with `NP` being the total population size and
+    the original candidate having index `i`.
 
     To improve your chances of finding a global minimum use higher `popsize`
     values, with higher `mutation` and (dithering), but lower `recombination`
