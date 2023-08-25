@@ -827,8 +827,8 @@ class Mikota_pair:
 
     Attributes
     ----------
-    eigenvalues : ndarray, float
-        Eigenvalues of the Mikota pair ordered ascending.
+    eigenvalues : 1D ndarray, ``np.uint64``
+        All eigenvalues of the Mikota pair ordered ascending.
 
     Methods
     -------
@@ -859,12 +859,12 @@ class Mikota_pair:
     >>> mik_k = mik.k
     >>> mik_m = mik.m
     >>> mik_k.toarray()
-    array([[11., -5.,  0.,  0.,  0.,  0.],
-           [-5.,  9., -4.,  0.,  0.,  0.],
-           [ 0., -4.,  7., -3.,  0.,  0.],
-           [ 0.,  0., -3.,  5., -2.,  0.],
-           [ 0.,  0.,  0., -2.,  3., -1.],
-           [ 0.,  0.,  0.,  0., -1.,  1.]])
+    array([[11, -5,  0,  0,  0,  0],
+           [-5,  9, -4,  0,  0,  0],
+           [ 0, -4,  7, -3,  0,  0],
+           [ 0,  0, -3,  5, -2,  0],
+           [ 0,  0,  0, -2,  3, -1],
+           [ 0,  0,  0,  0, -1,  1]])
     >>> mik_k.tobanded()
     array([[ 0, -5, -4, -3, -2, -1],
            [11,  9,  7,  5,  3,  1]])
@@ -886,7 +886,7 @@ class Mikota_pair:
     >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())
     True
     >>> mik.eigenvalues
-    array([ 1.,  4.,  9., 16., 25., 36.])  
+    array([ 1,  4,  9, 16, 25, 36])  
 
     """
     def __init__(self, n, dtype=np.float64):
@@ -894,7 +894,7 @@ class Mikota_pair:
         self.dtype = dtype
         self.shape = (n, n)
 
-        aranp1 = np.arange(1, n + 1)
-        self.eigenvalues = aranp1 * aranp1.astype(float)
+        aranp1 = np.arange(1, n + 1, dtype=np.uint64)
+        self.eigenvalues = aranp1 * aranp1
         self.m = MikotaM(self.shape, self.dtype)
         self.k = MikotaK(self.shape, self.dtype)
