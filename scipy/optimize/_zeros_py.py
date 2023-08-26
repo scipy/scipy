@@ -1375,6 +1375,7 @@ def toms748(f, a, b, args=(), k=1,
      function_calls: 11
          iterations: 5
                root: 1.0
+             method: toms748
     """
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
