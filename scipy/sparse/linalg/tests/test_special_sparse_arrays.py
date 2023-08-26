@@ -203,7 +203,6 @@ class TestSakurai:
             )
         np.array_equal(e, sak.eigenvalues)
 
-    """
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
@@ -213,7 +212,6 @@ class TestSakurai:
         assert_array_equal(sak.toarray(), Sakurai(n).toarray().astype(dtype))
         assert_array_equal(sak.tosparse().toarray(),
                            Sakurai(n).tosparse().toarray().astype(dtype))
-    """
 
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
@@ -276,7 +274,6 @@ class TestMikota_pair:
         e = np.array([ 1,  4,  9, 16, 25, 36])
         np.array_equal(e, mik.eigenvalues)
 
-    """
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
@@ -298,7 +295,6 @@ class TestMikota_pair:
                            mik_default_dtype.toarray().astype(dtype))
         assert_array_equal(mik_k.tosparse().toarray(),
                            mik_default_dtype.tosparse().toarray().astype(dtype))
-    """
 
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
