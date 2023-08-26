@@ -285,6 +285,7 @@ def _check_positive_definite(Hk):
         if not is_pos_def(Hk):
             raise ValueError("'hess_inv0' matrix must be positive definite.")
         
+        
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
