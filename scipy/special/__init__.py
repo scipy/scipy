@@ -429,6 +429,7 @@ Gamma and related functions
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
+   multivariate_beta -- Multivariate beta function.
 
 
 Error function and Fresnel integrals
@@ -781,7 +782,7 @@ from ._logsumexp import logsumexp, softmax, log_softmax
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln
+from ._spfun_stats import multigammaln, multivariate_beta
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -805,6 +806,7 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'softmax',
     'log_softmax',
     'multigammaln',
+    'multivariate_beta',
     'ellip_harm',
     'ellip_harm_2',
     'ellip_normal',

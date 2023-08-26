@@ -1,9 +1,9 @@
 import numpy as np
-from numpy.testing import (assert_array_equal,
-        assert_array_almost_equal_nulp, assert_almost_equal)
+from numpy.testing import (assert_array_equal, assert_equal,
+        assert_array_almost_equal_nulp, assert_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 
-from scipy.special import gammaln, multigammaln
+from scipy.special import gammaln, multigammaln, beta, multivariate_beta
 
 
 class TestMultiGammaLn:
@@ -59,3 +59,20 @@ def test_multigammaln_array_arg():
     for a, d in cases:
         _check_multigammaln_array_result(a, d)
 
+class TestMultivariateBeta:
+    def test_1d(self):
+        # test that multivariate beta and one dimensional beta functions yield
+        # same result in 1D
+        a = 1
+        b = 2
+        assert_allclose(beta(a, b), multivariate_beta([a, b]), rtol=1e-16)
+
+    def test_broadcasting(self):
+        rng = np.random.default_rng()
+        alpha = rng.random((5, 4, 3))
+        output_array = multivariate_beta(alpha)
+        assert output_array.shape == (5, 4)
+        for i in range(5):
+            for j in range(4):
+                current_result = multivariate_beta(alpha[i, j, :])
+                assert_equal(output_array[i, j], current_result)

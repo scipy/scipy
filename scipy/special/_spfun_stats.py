@@ -36,7 +36,7 @@ import numpy as np
 from scipy.special import gammaln as loggam
 
 
-__all__ = ['multigammaln']
+__all__ = ['multigammaln', 'multivariate_beta']
 
 
 def multigammaln(a, d):
@@ -107,10 +107,46 @@ def multigammaln(a, d):
     return res
 
 
-def multivariate_betaln(x):
-    x = np.asarray(x)
-    return np.sum(gammaln(x)) - gammaln(np.sum(x))
+def multivariate_beta(alpha):
+    r"""Returns the multivariate beta function.
 
+    Parameters
+    ----------
+    alpha : ndarray.
+        The last axis determines the dimensionality of the beta function.
 
-def multivariate_beta(x):
-    return np.exp(multivariate_betaln(x))
+    Returns
+    -------
+    res : ndarray
+        The values of the multivariate beta at the given points `alpha`.
+
+    Notes
+    -----
+    The multivariate beta function $B$ is defined as a function of the vector
+    :math:`mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
+
+    .. math::
+
+        B(mathbf{\alpha}) = \frac{\Gamma(\alpha_1)\Gamma(\alpha_2)...
+            \Gamma(\alpha_n)}{\Gamma(\alpha_1+\alpha_2+...+\alpha_n)}
+
+    Examples
+    --------
+    Compute the multivariate beta function at one point.
+
+    >>> import numpy as np
+    >>> from scipy.special import multivariate_beta
+    >>> multivariate_beta([1, 2, 3])
+    0.01666666666666667
+
+    Compute the multivariate beta function at 3 points in two dimensions by
+    providing a dimensional NumPy array with shape (3, 2) for `alpha`.
+
+    >>> alpha = np.array([[1, 1], [1, 3], [2, 4]])
+    >>> multivariate_beta(alpha)
+    array([1.        , 0.33333333, 0.05      ])
+    """
+
+    alpha = np.asarray(alpha)
+    return np.exp(np.sum(loggam(alpha), axis=-1)
+                  - loggam(np.sum(alpha, axis=-1)))
