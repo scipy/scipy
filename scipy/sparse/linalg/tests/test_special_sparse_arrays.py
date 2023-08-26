@@ -292,9 +292,9 @@ class TestMikota_pair:
         assert mikd_m.shape == (n, n)
         assert mikd_m.dtype == np.float64
         assert_array_equal(mik_k.toarray(),
-                           mik_default_dtype.toarray().astype(dtype))
+                           mikd_k.toarray().astype(dtype))
         assert_array_equal(mik_k.tosparse().toarray(),
-                           mik_default_dtype.tosparse().toarray().astype(dtype))
+                           mikd_k.tosparse().toarray().astype(dtype))
 
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
@@ -305,13 +305,15 @@ class TestMikota_pair:
         x0 = np.arange(n)
         x1 = x0.reshape((-1, 1))
         x2 = np.arange(2 * n).reshape((n, 2))
+        mik_k_dot_dtype = mik_k.dot(x1.astype(dtype)).dtype
+        assert mik_k_dot_dtype == np.result_type(np.float64, dtype)
+        assert mik_k.dot(x1.astype(dtype)).dtype == dtype
         lo_set = [mik_k, mik_m]
         input_set = [x0, x1, x2]
         for lo in lo_set:
             for x in input_set:
                 y = lo.dot(x.astype(dtype))
                 assert x.shape == y.shape
-                assert y.dtype == dtype
                 if x.ndim == 2:
                     yy = lo.toarray() @ x.astype(dtype)
                     np.array_equal(y, yy)
