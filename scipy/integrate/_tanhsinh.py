@@ -238,8 +238,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         c[np.isnan(c)] = 0  # infinite left and right limits
         tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
-    a = a.astype(dtype).ravel()  # yes, copy, because it may be modified
-    b = b.astype(dtype).ravel()
+    a = np.broadcast_to(a, shape).astype(dtype).ravel()
+    b = np.broadcast_to(b, shape).astype(dtype).ravel()
 
     # Transform improper integrals
     a, b, a0, negative, abinf, ainf, binf = _transform_integrals(a, b)
