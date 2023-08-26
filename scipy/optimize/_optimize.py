@@ -283,7 +283,7 @@ def _check_positive_definite(Hk):
             return False
     if Hk is not None:
         if not is_pos_def(Hk):
-            raise ValueError("'hess_inv0' matrix must be positive definite.")
+            raise ValueError("'hess_inv0' matrix isn't positive definite.")
         
         
 def _check_unknown_options(unknown_options):
@@ -1276,7 +1276,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     ----------
     f : callable ``f(x,*args)``
         Objective function to be minimized.
-    x0 : ndarray
+    x0 : ndarray, shape (n,)
         Initial guess.
     fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
@@ -1309,7 +1309,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
-    hess_inv0 : None or ndarray, optional
+    hess_inv0 : None or ndarray, optional, shape (n, n)
         Initial inverse hessian estimate. If None (default) then the identity
         matrix is used.
 
@@ -1446,7 +1446,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: .9
         Parameter for curvature condition rule.
-    hess_inv0 : None or ndarray, optional
+    hess_inv0 : None or ndarray, optional, shape (n, n)
         Initial inverse hessian estimate. If None (default) then the identity
         matrix is used.
 
