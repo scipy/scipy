@@ -76,13 +76,13 @@ def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rt
         Initial value of the independent variable.
     y0 : ndarray, shape (n,)
         Initial value of the dependent variable.
-    f0 : ndarray, shape (n,)
-        Initial value of the derivative, i.e., ``fun(t0, y0)``.
     t_bound : float
         End-point of integration interval; used to ensure that t0+step<=tbound 
         and that fun is only evaluated in the interval [t0,tbound]
     max_step : float
         Maximum allowable step size.
+    f0 : ndarray, shape (n,)
+        Initial value of the derivative, i.e., ``fun(t0, y0)``.
     direction : float
         Integration direction.
     order : float
