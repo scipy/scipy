@@ -91,47 +91,47 @@ class Bench(Benchmark):
     def time_sakurai(self, n, solver):
         warnings.filterwarnings("ignore")
         m = 3
-        # ee = self.eigenvalues[:m]
-        # tol = 100 * n * n * n* np.finfo(float).eps
+        ee = self.eigenvalues[:m]
+        tol = 100 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             el, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
-            # accuracy = max(abs(ee - el) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - el) / ee)
+            assert accuracy < tol
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
                                    v0=rng.normal(size=(n, 1)))
-            # accuracy = max(abs(ee - ea) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - ea) / ee)
+            assert accuracy < tol
         else:
             ed, _ = eigh(self.Aa, subset_by_index=(0, m - 1))
-            # accuracy = max(abs(ee - ed) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - ed) / ee)
+            assert accuracy < tol
 
     def time_sakuraii(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
         warnings.filterwarnings("ignore")
         m = 3
-        # ee = self.eigenvalues[:m]
-        # tol = 10 * n * n * n* np.finfo(float).eps
+        ee = self.eigenvalues[:m]
+        tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
             el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
-            # accuracy = max(abs(ee - 1. / el) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - 1. / el) / ee)
+            assert accuracy < tol
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
                                    v0=rng.normal(size=(n, 1)))
-            # accuracy = max(abs(ee - np.sort(1./ea)) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - np.sort(1./ea)) / ee)
+            assert accuracy < tol
         else:
             ed, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
-            # accuracy = max(abs(ee - ed) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - ed) / ee)
+            assert accuracy < tol
