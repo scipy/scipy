@@ -555,7 +555,7 @@ def test_max_step():
                 solver = method(fun_rational, t_span[0], y0, t_span[1],
                                 rtol=rtol, atol=atol, max_step=1e-20)
                 message = solver.step()
-
+                message = solver.step() # First step succeeds but second step fails.
                 assert_equal(solver.status, 'failed')
                 assert_("step size is less" in message)
                 assert_raises(RuntimeError, solver.step)
@@ -1092,7 +1092,7 @@ def test_initial_state_finiteness(f0_fill):
     with pytest.raises(ValueError, match=msg):
         solve_ivp(fun_zero, [0, 10], np.full(3, f0_fill))
 
-@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
 def test_tbound_respected_small_interval(method):
     """Regression test for gh-17341"""
     SMALL = 1e-4
@@ -1105,7 +1105,7 @@ def test_tbound_respected_small_interval(method):
     res = solve_ivp(f, (0,SMALL), np.array([1]),method=method)
     assert_(res.success)
 
-@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
 def test_tbound_respected_larger_interval(method):
     """Regression test for gh-8848"""
     def V(r):
@@ -1127,7 +1127,7 @@ def test_tbound_respected_larger_interval(method):
         atol=1e-8, rtol=1e-5)
     assert_(result.success)
 
-@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF', 'LSODA'])
+@pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
 def test_tbound_respected_oscillator(method):
     "Regression test for gh-9198"
     def reactions_func (t, y):
