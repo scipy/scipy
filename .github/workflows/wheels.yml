@@ -133,11 +133,11 @@ jobs:
           # required so that cp312 can grab a nightly wheel
           # can remove when cp312 is release and we don't need to search
           # other wheel locations.
-          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=1
+          CIBW_ENVIRONMENT: PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple PIP_PRE=0
 
           CIBW_ENVIRONMENT_WINDOWS: >
             PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
-            PIP_PRE=1
+            PIP_PRE=0
             PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 
           # setting SDKROOT necessary when using the gfortran compiler
@@ -152,7 +152,7 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=10.9
             MACOS_DEPLOYMENT_TARGET=10.9
             _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
-            PIP_PRE=1
+            PIP_PRE=0
             PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
