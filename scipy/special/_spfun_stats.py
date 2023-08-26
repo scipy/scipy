@@ -105,3 +105,12 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+def multivariate_betaln(x):
+    x = np.asarray(x)
+    return np.sum(gammaln(x)) - gammaln(np.sum(x))
+
+
+def multivariate_beta(x):
+    return np.exp(multivariate_betaln(x))
