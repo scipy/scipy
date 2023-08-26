@@ -63,7 +63,7 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, t_bound, f0, direction, order, rtol, atol):
+def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
     The algorithm is described in [1]_.
@@ -78,6 +78,11 @@ def select_initial_step(fun, t0, y0, t_bound, f0, direction, order, rtol, atol):
         Initial value of the dependent variable.
     f0 : ndarray, shape (n,)
         Initial value of the derivative, i.e., ``fun(t0, y0)``.
+    t_bound : float
+        End-point of integration interval; used to ensure that t0+step<=tbound 
+        and that fun is only evaluated in the interval [t0,tbound]
+    max_step : float
+        Maximum allowable step size.
     direction : float
         Integration direction.
     order : float
@@ -87,9 +92,7 @@ def select_initial_step(fun, t0, y0, t_bound, f0, direction, order, rtol, atol):
         Desired relative tolerance.
     atol : float
         Desired absolute tolerance.
-    t_bound : float, optional
-        End-point of integration interval; used to ensure that t0+step<=tbound 
-        and that fun is only evaluated in the interval [t0,tbound]
+
 
     Returns
     -------
@@ -126,6 +129,7 @@ def select_initial_step(fun, t0, y0, t_bound, f0, direction, order, rtol, atol):
 
     h = min(100 * h0, h1)
     h = min(h, (t_bound-t0)/direction)
+    h = min(h, max_step)
     return h
 
 
