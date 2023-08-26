@@ -305,8 +305,8 @@ class TestMikota_pair:
         x0 = np.arange(n)
         x1 = x0.reshape((-1, 1))
         x2 = np.arange(2 * n).reshape((n, 2))
-        mik_k_dot_dtype = mik_k.dot(x1.astype(dtype)).dtype
-        assert mik_k_dot_dtype == np.result_type(np.float64, dtype)
+        mik_m_dot_dtype = mik_m.dot(x1.astype(dtype)).dtype
+        assert mik_m_dot_dtype == np.promote_types(np.float64, dtype)
         assert mik_k.dot(x1.astype(dtype)).dtype == dtype
         lo_set = [mik_k, mik_m]
         input_set = [x0, x1, x2]
