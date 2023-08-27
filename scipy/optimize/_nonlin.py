@@ -1485,6 +1485,13 @@ class KrylovJacobian(Jacobian):
             r = (self.func(self.x0 + sc*v) - self.f0) / sc
         else:
             r = self.Fgradp(self.x0,v)
+            
+            if not(isinstance(r, np.ndarray)):
+                raise ValueError('Fgradp did not return a numpy array')
+            
+            if not((self.x0.shape == r.shape)):
+                raise ValueError(f'Fgradp returned array with wrong shape. Returned shape: {r.shape}. Expected shape: {self.x0.shape}')
+            
         if not np.all(np.isfinite(r)) and np.all(np.isfinite(v)):
             raise ValueError('Function returned non-finite results')
         return r
@@ -1520,6 +1527,9 @@ class KrylovJacobian(Jacobian):
             if self.rdiff is None:
                 self.rdiff = np.finfo(x.dtype).eps ** (1./2)
             self._update_diff_step()
+        else:
+            if not callable(self.Fgradp):
+                raise ValueError('Fgradp must be callable')
 
         # Setup also the preconditioner, if possible
         if self.preconditioner is not None:
