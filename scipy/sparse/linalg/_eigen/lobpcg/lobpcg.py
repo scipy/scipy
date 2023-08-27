@@ -370,6 +370,52 @@ def lobpcg(
     >>> eigenvalues
     array([100.])
 
+
+    The next two examples demonstrate alternative ways to provide the matrix `A`
+    to lobpcg without constructing the full matrix:
+
+    ### Example using `aslinearoperator`:
+
+    This converts the sparse matrix `A` to a LinearOperator. The matrix `A`
+    does not need to be explicitly constructed.
+    
+    >>> from scipy.sparse.linalg import lobpcg, aslinearoperator
+    >>> import numpy as np
+    >>> from scipy.sparse import diags
+    >>> n = 100 
+    >>> vals = np.arange(1, n+1, dtype=np.float64)
+    >>> A = diags(vals)  
+    >>> A_aslo = aslinearoperator(A) 
+    >>> X = np.random.default_rng().normal(size=(n, 3))
+    >>> eigenvalues, _ = lobpcg(A_aslo, X, largest=False, maxiter=80)
+    >>> print(eigenvalues)  
+    [1. 2. 3.]
+
+    ### Example using `LinearOperator` with a callable:
+
+    Here we define custom `matvec` and `matmat` functions for the matrix-vector and
+    matrix-matrix products. The `LinearOperator` abstracts away the matrix 
+    representation. 
+
+    >>> from scipy.sparse.linalg import lobpcg, LinearOperator
+    >>> import numpy as np
+    >>> n = 100
+    >>> vals = np.arange(1, n+1, dtype=np.float64)
+    # Define matvec for matrix-vector multiplication
+    >>> def matvec(X):
+    >>>     return vals[:, np.newaxis] * X
+    # Define matmat for matrix-matrix multiplication (important for LOBPCG performance)
+    >>> def matmat(X):
+    >>>     return vals[:, np.newaxis] * X
+    # Create a LinearOperator with matvec and matmat
+    >>> A = LinearOperator((n, n), matvec=matmat, dtype='float64')
+    >>> X = np.random.default_rng().normal(size=(n, 3))
+    >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=80)
+    >>> print(eigenvalues)  
+    [1. 2. 3.]
+
+    These approaches can be more efficient for large sparse matrices.
+
     The next example illustrates computing 3 smallest eigenvalues of
     the same matrix given by the function handle ``A_f`` with
     constraints and preconditioning.
