@@ -122,12 +122,12 @@ def multivariate_beta(alpha):
 
     Notes
     -----
-    The multivariate beta function $B$ is defined as a function of the vector
-    :math:`mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
+    The multivariate beta function is defined as a function of the vector
+    :math:`\mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
 
     .. math::
 
-        B(mathbf{\alpha}) = \frac{\Gamma(\alpha_1)\Gamma(\alpha_2)...
+        B(\mathbf{\alpha}) = \frac{\Gamma(\alpha_1)\Gamma(\alpha_2)...
             \Gamma(\alpha_n)}{\Gamma(\alpha_1+\alpha_2+...+\alpha_n)}
 
     Examples
