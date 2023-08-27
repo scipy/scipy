@@ -26,7 +26,7 @@ class Bench(Benchmark):
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
         self.time_sakuraii.__func__.params = list(self.params)
-        self.time_sakuraii.__func__.params[0] = [500, 1000, 2000]
+        self.time_sakuraii.__func__.params[0] = [500, 1000]
         self.time_sakuraii.__func__.setup = self.setup_sakuraii
 
 
