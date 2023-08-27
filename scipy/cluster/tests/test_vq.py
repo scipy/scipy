@@ -324,12 +324,7 @@ class TestKMean:
         datas = [xp.reshape(data, (200, 2)), xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
-            # check that np.random.Generator can be used (numpy >= 1.17)
-            if hasattr(np.random, 'default_rng'):
-                rng = np.random.default_rng(1234)
-            else:
-                rng = np.random.RandomState(1234)
-
+            rng = np.random.default_rng(1234)
             init = _krandinit(data, k, rng, xp)
             orig_cov = xp.cov(data.T)
             init_cov = xp.cov(init.T)

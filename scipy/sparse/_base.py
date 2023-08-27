@@ -283,7 +283,7 @@ class _spbase:
                                   self.__class__.__name__)
 
     @property
-    def nnz(self):
+    def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
         See also
@@ -293,8 +293,64 @@ class _spbase:
         return self._getnnz()
 
     @property
-    def format(self):
+    def size(self) -> int:
+        """Number of stored values.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero values.
+        """
+        return self._getnnz()
+
+    @property
+    def format(self) -> str:
+        """Format string for matrix."""
         return self._format
+
+    @property
+    def A(self) -> np.ndarray:
+        """DEPRECATED: Return a dense array.
+
+        .. deprecated:: 1.11.0
+
+            `.A` is deprecated and will be removed in v1.13.0.
+            Use `.toarray()` instead.
+        """
+        if isinstance(self, sparray):
+            warn(VisibleDeprecationWarning(
+                "`.A` is deprecated and will be removed in v1.13.0. "
+                "Use `.toarray()` instead."
+            ))
+        return self.toarray()
+
+    @property
+    def T(self):
+        """Transpose."""
+        return self.transpose()
+
+    @property
+    def H(self):
+        """DEPRECATED: Returns the (complex) conjugate transpose.
+
+        .. deprecated:: 1.11.0
+
+            `.H` is deprecated and will be removed in v1.13.0.
+            Please use `.T.conjugate()` instead.
+        """
+        if isinstance(self, sparray):
+            warn(VisibleDeprecationWarning(
+                "`.H` is deprecated and will be removed in v1.13.0. "
+                "Please use `.T.conjugate()` instead."
+            ))
+        return self.T.conjugate()
+
+    @property
+    def real(self):
+        return self._real()
+
+    @property
+    def imag(self):
+        return self._imag()
 
     def __repr__(self):
         _, format_name = _formats[self.format]
@@ -711,40 +767,6 @@ class _spbase:
 
     def __pow__(self, *args, **kwargs):
         return self.power(*args, **kwargs)
-
-    @property
-    def A(self) -> np.ndarray:
-        if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.A` is deprecated and will be removed in v1.13.0. "
-                "Use `.toarray()` instead."
-            ))
-        return self.toarray()
-
-    @property
-    def T(self):
-        return self.transpose()
-
-    @property
-    def H(self):
-        if isinstance(self, sparray):
-            warn(VisibleDeprecationWarning(
-                "`.H` is deprecated and will be removed in v1.13.0. "
-                "Please use `.T.conjugate()` instead."
-            ))
-        return self.T.conjugate()
-
-    @property
-    def real(self):
-        return self._real()
-
-    @property
-    def imag(self):
-        return self._imag()
-
-    @property
-    def size(self):
-        return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
         """

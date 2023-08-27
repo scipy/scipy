@@ -6349,6 +6349,8 @@ class lognorm_gen(rv_continuous):
     The logarithm of a log-normally distributed random variable is
     normally distributed:
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> from scipy import stats
     >>> fig, ax = plt.subplots(1, 1)
     >>> mu, sigma = 2, 0.5
@@ -8711,6 +8713,7 @@ class reciprocal_gen(rv_continuous):
     ``1``. This is best when the x-axis is log-scaled:
 
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.hist(np.log10(r))
     >>> ax.set_ylabel("Frequency")

@@ -5432,7 +5432,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         if axisout == 0:
             a = np.column_stack((a, b))
         else:
-            a = np.row_stack((a, b))
+            a = np.vstack((a, b))
 
     n_vars = a.shape[1 - axisout]
     n_obs = a.shape[axisout]

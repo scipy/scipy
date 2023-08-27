@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.14.1
+    - python -m pip install cibuildwheel==2.15.0
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -30,8 +30,8 @@ cirrus_wheels_linux_aarch64_task:
   env:
     CIBW_PRERELEASE_PYTHONS: True
     CIBW_ENVIRONMENT: >
-      PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
       PIP_PRE=1
+    #      PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
 
   build_script: |
     apt install -y python3-venv python-is-python3
@@ -59,8 +59,8 @@ cirrus_wheels_macos_arm64_task:
     CIBW_ENVIRONMENT: >
       MACOSX_DEPLOYMENT_TARGET=12.0
       _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"             
-      PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
       PIP_PRE=1
+      # PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
     PKG_CONFIG_PATH: /opt/arm64-builds/lib/pkgconfig
     # assumes that the cmake config is in /usr/local/lib/cmake
     CMAKE_PREFIX_PATH: /opt/arm64-builds/
