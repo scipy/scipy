@@ -2785,8 +2785,9 @@ cdef class Rotation:
 
         For both special cases (single vectors or an infinite weight), the
         sensitivity matrix does not have physical meaning and an error will be
-        raised if it is requested. For these cases also, the portion of `rssd`
-        due to the single or infinite weight vectors will be forced to 0.
+        raised if it is requested. For an infinite weight, the primary vectors
+        act as a constraint with perfect alignment, so their contribution to
+        `rssd` will be forced to 0.
 
         Parameters
         ----------
@@ -3037,9 +3038,10 @@ cdef class Rotation:
                 #     = atan2(|C|*|A|*sin(phi), |C|*|A|*cos(phi))
                 # The below equations perform the same operation, but with the
                 # 3D rotation restricted to the 2D plane normal to a_pri, where
-                # the secondary vectors are projected into that plane. The
-                # weighted sum of the components gives the average of all the
-                # angles.
+                # the secondary vectors are projected into that plane. We then
+                # find the composite angle from the weighted sum of the
+                # axial components in that plane, minimizing the 2D alignment
+                # problem.
                 # Note that einsum('ij,ij->i', X, Y) is the row-wise dot
                 # product of X and Y.
                 sin_term = np.einsum('ij,ij->i', np.cross(c_sec, a_sec), a_pri)
@@ -3057,7 +3059,10 @@ cdef class Rotation:
             # be zero for the infinite weight vectors since they will align
             # exactly.
             weights_inf_zero = weights.copy()
-            weights_inf_zero[weight_is_inf] = 0
+            if N > 1 or np.isposinf(weights[0]):
+                # Skip non-infinite weight single vectors pairs, we used the
+                # infinite weight code path but don't want to zero that weight
+                weights_inf_zero[weight_is_inf] = 0
             a_est = R_opt.apply(b)
             rssd = np.sqrt(np.sum(weights_inf_zero @ (a - a_est)**2))
 
