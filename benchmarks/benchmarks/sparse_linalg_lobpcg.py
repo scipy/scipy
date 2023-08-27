@@ -62,18 +62,19 @@ class Bench(Benchmark):
     def time_mikota(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
-        warnings.filterwarnings("ignore")
         m = 10
-        # ee = self.eigenvalues[:m]
-        # tol = m * n * n * n* np.finfo(float).eps
+        ee = self.eigenvalues[:m]
+        tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.Ab.astype(np.float32))
-            el, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
-                                maxiter=40, largest=False)
-            # accuracy = max(abs(ee - el) / ee)
-            # assert accuracy < tol
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                el, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
+                               maxiter=40, largest=False)
+            accuracy = max(abs(ee - el) / ee)
+            assert accuracy < tol
         elif solver == 'eigsh':
             B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
             A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
@@ -81,22 +82,23 @@ class Bench(Benchmark):
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
                                   v0=rng.normal(size=(n, 1)))
-            # accuracy = max(abs(ee - np.sort(1./ea)) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - np.sort(1./ea)) / ee)
+            assert accuracy < tol
         else:
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
-            # accuracy = max(abs(ee - ed) / ee)
-            # assert accuracy < tol
+            accuracy = max(abs(ee - ed) / ee)
+            assert accuracy < tol
 
     def time_sakurai(self, n, solver):
-        warnings.filterwarnings("ignore")
         m = 3
         ee = self.eigenvalues[:m]
         tol = 100 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
-            el, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                el, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
             accuracy = max(abs(ee - el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
@@ -113,7 +115,6 @@ class Bench(Benchmark):
     def time_sakuraii(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
-        warnings.filterwarnings("ignore")
         m = 3
         ee = self.eigenvalues[:m]
         tol = 10 * n * n * n* np.finfo(float).eps
@@ -121,7 +122,9 @@ class Bench(Benchmark):
         X =rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
-            el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
             accuracy = max(abs(ee - 1. / el) / ee)
             assert accuracy < tol
         elif solver == 'eigsh':
