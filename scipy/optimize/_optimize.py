@@ -1276,8 +1276,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     ----------
     f : callable ``f(x,*args)``
         Objective function to be minimized.
-    x0 : ndarray, shape (n,)
-        Initial guess.
+    x0 : ndarray
+        Initial guess, shape (n,)
     fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
     args : tuple, optional
@@ -1309,8 +1309,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
-    hess_inv0 : None or ndarray, optional, shape (n, n)
-        Initial inverse hessian estimate. If None (default) then the identity
+    hess_inv0 : None or ndarray, optional``
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
         matrix is used.
 
     Returns
@@ -1446,8 +1446,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: .9
         Parameter for curvature condition rule.
-    hess_inv0 : None or ndarray, optional, shape (n, n)
-        Initial inverse hessian estimate. If None (default) then the identity
+    hess_inv0 : None or ndarray, optional
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
         matrix is used.
 
     """
