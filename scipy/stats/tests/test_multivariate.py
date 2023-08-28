@@ -819,13 +819,13 @@ class TestMultivariateNormal:
         assert_allclose(cov_est, cov_ref, rtol=1e-15)
 
     def test_fit_both_parameters_fixed(self):
-        data = np.ones((2, 1))
+        data = np.full((2, 1), 3)
         mean_fixed = 1.
         cov_fixed = np.atleast_2d(1.)
         mean, cov = multivariate_normal.fit(data, fix_mean=mean_fixed,
                                             fix_cov=cov_fixed)
-        assert_allclose(mean, mean_fixed)
-        assert_allclose(cov, cov_fixed)
+        assert_equal(mean, mean_fixed)
+        assert_equal(cov, cov_fixed)
 
     @pytest.mark.parametrize('fix_mean', [np.zeros((2, 2)),
                                           np.zeros((3, ))])
@@ -862,7 +862,7 @@ class TestMultivariateNormal:
         logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
                                                cov=cov_free).sum()
         mean_fix, cov_fix = multivariate_normal.fit(samples, fix_mean=loc)
-        assert_allclose(mean_fix, loc, rtol=0, atol=0)
+        assert_equal(mean_fix, loc)
         logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
                                               cov=cov_fix).sum()
         # test that fixed parameters result in lower likelihood than free
@@ -891,8 +891,8 @@ class TestMultivariateNormal:
         logp_free = multivariate_normal.logpdf(samples, mean=mean_free,
                                                cov=cov_free).sum()
         mean_fix, cov_fix = multivariate_normal.fit(samples, fix_cov=cov)
-        assert_allclose(mean_fix, np.mean(samples, axis=0), rtol=0, atol=0)
-        assert_allclose(cov_fix, cov, rtol=0, atol=0)
+        assert_equal(mean_fix, np.mean(samples, axis=0))
+        assert_equal(cov_fix, cov)
         logp_fix = multivariate_normal.logpdf(samples, mean=mean_fix,
                                               cov=cov_fix).sum()
         # test that fixed parameters result in lower likelihood than free
