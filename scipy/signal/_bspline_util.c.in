@@ -51,6 +51,11 @@ RTYPES = RTYPE + RTYPE
 
 }}
 
+{{for SUB, TYP in zip(RNAME, RTYPE)}}
+static {{TYP}} {{SUB}}_hc(int, {{TYP}}, double, double);
+static {{TYP}} {{SUB}}_hs(int, {{TYP}}, double, double);
+{{endfor}}
+
 
 /* Implement the following difference equation */
 /* y[n] = a1 * x[n] + a2 * y[n-1]  */
@@ -275,6 +280,96 @@ int {{SUB}}_SYM_IIR1_initial({{TYP}} z1, {{TYP}} *x, {{TYP}} *yp0,
 {{endif}}
 {{endfor}}
 
+{{for SUB, TYP in zip(RNAME, RTYPE)}}
+int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
+        {{TYP}} *x, {{TYP}} *yp, int N, {{TYP}} precision) {
+    /* Fix starting values assuming mirror-symmetric boundary conditions. */
+    {{TYP}} cs = 1 - 2 * r * cos(omega) + r * r;
+    {{TYP}} yp0 = {{SUB}}_hc(0, cs, r, omega) * x[0];
+    int k = 0;
+    precision *= precision;
+    {{TYP}} *xptr = x;
+    int stridex = 1;
+    int stridey = 1;
+
+    do {
+        yp[0] = yp0;
+        diff = {{SUB}}_hc(k+1, cs, r, omega);
+        yp0 += diff * (*xptr);
+        err = diff * diff;
+        xptr += stridex;
+        k++;
+    } while((err > precision) && (k < N));
+
+    if (k >= N) {return -3;}     /* sum did not converge */
+    yp[0] = yp0;
+
+    yp1 = {{SUB}}_hc(0, cs, r, omega) * (*(x+stridex));
+    yp1 += {{SUB}}_hc(1, cs, r, omega) * x[0];
+    k = 0;
+    xptr = x;
+    do {
+        yp[1] = yp1;
+        diff = {{SUB}}_hc(k+2, cs, r, omega);
+        yp1 += diff * (*xptr);
+        err = diff * diff;
+        xptr += stridex;
+        k++;
+    } while((err > precision) && (k < N));
+
+    if (k >= N) {return -3;}     /* sum did not converge */
+    yp[1] = yp1;
+
+    return 0;
+}
+{{endfor}}
+
+{{for SUB, TYP in zip(RNAME, RTYPE)}}
+int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
+        {{TYP}} *x, {{TYP}} *yp, int N, {{TYP}} precision) {
+    double rsq = r * r;
+    {{TYP}} cs = 1 - 2 * r * cos(omega) + rsq;
+
+    /* Fix starting values assuming mirror-symmetric boundary conditions. */
+    {{TYP}} yp0 = 0.0;
+    int k = 0;
+    int stridex = 1;
+    int stridey = 1;
+
+    // yptr = y + (N-1)*stridey;
+    {{TYP}} *yptr = yp + stridey;
+    {{TYP}} *xptr = x + (N - 1) * stridex;
+    do {
+	    *yptr = yp0;
+	    diff = ({{SUB}}_hs(k, cs, rsq, omega) + {{SUB}}_hs(k+1, cs, rsq, omega));
+	    yp0 += diff * (*xptr);
+	    err = diff * diff;
+	    xptr -= stridex;
+	    k++;
+    } while((err > precision) && (k < N));
+
+    if (k >= N) {return -3;}     /* sum did not converge */
+    *yptr = yp0;
+
+    yp1 = 0.0;
+    k = 0;
+    yptr -= stridey;        /* Initialize in next-to-last slot in output array */
+    xptr = x + (N - 1) * stridex;
+    do {
+        *yptr = yp1;
+        diff = ({{SUB}}_hs(k-1, cs, rsq, omega) + {{SUB}}_hs(k+2, cs, rsq, omega));
+        yp1 += diff * (*xptr);
+        err = diff * diff;
+        xptr -= stridex;
+        k++;
+    } while((err > precision) && (k < N));
+
+    if (k >= N) {return -3;}     /* sum did not converge */
+    *yptr = yp1;
+
+    return 0;
+}
+{{endfor}}
 
 /* h must be odd length */
 /* strides in units of sizeof(DATA TYPE) bytes */
@@ -395,12 +490,6 @@ int {{SUB}}_separable_2Dconvolve_mirror({{TYP}} *in, {{TYP}} *out,
 {{if SUB in CNAME}}
 #endif
 {{endif}}
-{{endfor}}
-
-
-{{for SUB, TYP in zip(RNAME, RTYPE)}}
-static {{TYP}} {{SUB}}_hc(int, {{TYP}}, double, double);
-static {{TYP}} {{SUB}}_hs(int, {{TYP}}, double, double);
 {{endfor}}
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
