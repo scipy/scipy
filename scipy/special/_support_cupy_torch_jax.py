@@ -47,7 +47,18 @@ def support_cupy_torch_jax(f_name, n_array_args):
 array_special_func_map = {
     'log_ndtr': 1,
     'ndtr': 1,
-    'ndtri': 1
+    'ndtri': 1,
+    'erf': 1,
+    'erfc': 1,
+    'i0': 1,
+    'i0e': 1,
+    'i1': 1,
+    'i1e': 1,
+    'gammaln': 1,
+    'gammainc': 2,
+    'gammaincc': 2,
+    'logit': 1,
+    'expit': 1,
 }
 
 for f_name, n_array_args in array_special_func_map.items():

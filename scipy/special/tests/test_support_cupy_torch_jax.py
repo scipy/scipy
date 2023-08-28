@@ -25,15 +25,18 @@ def test_dispatch_to_unrecognize_library():
 def test_cupy_torch_jax_support(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
     f = getattr(special, f_name)
-    dtypes = ['float32', 'float64']  # good enough for me
-    mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
 
+    mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
     shapes, final_shape = data.draw(mbs)
-    dtype = data.draw(strategies.sampled_from(dtypes))
+
+    dtype = data.draw(strategies.sampled_from(['float32', 'float64']))
     dtype = getattr(np, dtype)
-    rtol = np.finfo(dtype).eps * 10
-    args_np = [np.asarray(data.draw(npst.arrays(dtype, shape)))
+
+    elements = dict(min_value=dtype(-1e5), max_value=dtype(1e5),
+                    allow_subnormal=False)
+    args_np = [np.asarray(data.draw(npst.arrays(dtype, shape, elements=elements)))
                for shape in shapes]
+
     # `torch.asarray(np.asarray(1.))` produces
     # TypeError: can't convert np.ndarray of type numpy.object_.
     # So we extract the scalar from 0d arrays.
@@ -41,10 +44,11 @@ def test_cupy_torch_jax_support(xp, data, f_name_n_args):
 
     ref = np.asarray(f(*args_np))
     res = f(*args_xp)
-    # When `xp` is NumPy, `res` NumPy scalar, not an array.
+    # When `xp` is NumPy, `res` is a NumPy scalar, not an array.
     if res.shape != ():
         # TODO: use `_assert_matching_namespace` when gh-19005 merges
         assert type(res) == type(xp.asarray([]))
     assert res.shape == ref.shape
     # TODO: use `set_assert_allclose` when gh-19005 merges
-    assert_allclose(np.asarray(res), ref, rtol=rtol)
+    eps = np.finfo(dtype).eps
+    assert_allclose(np.asarray(res), ref, rtol=eps**0.5, atol=eps*10)
