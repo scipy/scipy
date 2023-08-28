@@ -427,16 +427,17 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-
-static char doc_IIRsymorder2[] = "out = symiirorder2(input, r, omega, precision=-1.0)\n"
+static char doc_IIRsymorder2_ic_fwd[] = "out = symiirorder2_ic_fwd(input, r, omega, precision=-1.0)\n"
 "\n"
-"    Implement a smoothing IIR filter with mirror-symmetric boundary conditions\n"
-"    using a cascade of second-order sections.  The second section uses a\n"
-"    reversed sequence.  This implements the following transfer function::\n"
+"    Compute the (forward) mirror-symmetric boundary conditions for a smoothing\n"
+"    IIR filter that is composed of cascaded second-order sections.\n"
 "\n"
-"                                  cs^2\n"
-"         H(z) = ---------------------------------------\n"
-"                (1 - a2/z - a3/z^2) (1 - a2 z - a3 z^2 )\n"
+"    The starting condition returned by this function is computed based on\n"
+"    the following transfer function::\n"
+"\n"
+"                         cs\n"
+"         H(z) = -------------------\n"
+"                (1 - a2/z - a3/z^2)\n"
 "\n"
 "    where::\n"
 "\n"
@@ -456,17 +457,20 @@ static char doc_IIRsymorder2[] = "out = symiirorder2(input, r, omega, precision=
 "\n"
 "    Returns\n"
 "    -------\n"
-"    output : ndarray\n"
-"        The filtered signal.";
+"    zi : ndarray\n"
+"        The mirror-symmetric initial condition for the forward IIR filter.";
 
-static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
+static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *sig=NULL;
   PyArrayObject *a_sig=NULL, *out=NULL;
+  npy_intp* in_size;
   double r, omega;
   double precision = -1.0;
   int thetype, N, ret;
   npy_intp outstrides, instrides;
+  npy_intp N;
+  PyArray_Descr* dtype;
 
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
     return NULL;
@@ -477,34 +481,148 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   if (a_sig == NULL) goto fail;
 
-  out = (PyArrayObject *)PyArray_SimpleNew(1, PyArray_DIMS(a_sig), thetype);
+  dtype = PyArray_DescrFromType(thetype);
+  int sz = 2;
+  out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
   if (out == NULL) goto fail;
-  N = PyArray_DIMS(a_sig)[0];
 
-  convert_strides(PyArray_STRIDES(a_sig), &instrides, PyArray_ITEMSIZE(a_sig), 1);
-  outstrides = 1;
+  in_size = PyArray_DIMS(a_sig);
+  N = in_size[0];
 
   switch (thetype) {
   case NPY_FLOAT:
-    if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-    ret = S_IIR_forback2 (r, omega, (float *)PyArray_DATA(a_sig),
-			  (float *)PyArray_DATA(out), N,
-			  instrides, outstrides, precision);
+    {
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
+      ret = S_SYM_IIR2_initial_fwd(r, omega, (float *)PyArray_DATA(a_sig),
+                                  (float *)PyArray_DATA(out), N,
+                                  (float )precision);
+    }
     break;
   case NPY_DOUBLE:
-    if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-    ret = D_IIR_forback2 (r, omega, (double *)PyArray_DATA(a_sig),
-			  (double *)PyArray_DATA(out), N,
-			  instrides, outstrides, precision);
+    {
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
+      ret = S_SYM_IIR2_initial_fwd(r, omega, (double *)PyArray_DATA(a_sig),
+                                  (double *)PyArray_DATA(out), N,
+                                  precision);
+    }
     break;
   default:
     PYERR("Incorrect type.");
   }
 
-  if (ret < 0) PYERR("Problem occurred inside routine.");
+  if (ret == 0) {
+    Py_DECREF(a_sig);
+    return PyArray_Return(out);
+  }
 
-  Py_DECREF(a_sig);
-  return PyArray_Return(out);
+  if (ret == -1) PYERR("Could not allocate enough memory.");
+  if (ret == -2) PYERR("|z1| must be less than 1.0");
+  if (ret == -3) PYERR("Sum to find symmetric boundary conditions did not converge.");
+
+  PYERR("Unknown error.");
+
+
+ fail:
+  Py_XDECREF(a_sig);
+  Py_XDECREF(out);
+  return NULL;
+
+}
+
+static char doc_IIRsymorder2_ic_bwd[] = "out = symiirorder2_ic_bwd(input, r, omega, precision=-1.0)\n"
+"\n"
+"    Compute the (backward) mirror-symmetric boundary conditions for a smoothing\n"
+"    IIR filter that is composed of cascaded second-order sections.\n"
+"\n"
+"    The starting condition returned by this function is computed based on\n"
+"    the following transfer function::\n"
+"\n"
+"                         cs\n"
+"         H(z) = -------------------\n"
+"                (1 - a2 z - a3 z^2)\n"
+"\n"
+"    where::\n"
+"\n"
+"          a2 = (2 r cos omega)\n"
+"          a3 = - r^2\n"
+"          cs = 1 - 2 r cos omega + r^2\n"
+"\n"
+"    Parameters\n"
+"    ----------\n"
+"    input : ndarray\n"
+"        The input signal.\n"
+"    r, omega : float\n"
+"        Parameters in the transfer function.\n"
+"    precision : float\n"
+"        Specifies the precision for calculating initial conditions\n"
+"        of the recursive filter based on mirror-symmetric input.\n"
+"\n"
+"    Returns\n"
+"    -------\n"
+"    zi : ndarray\n"
+"        The mirror-symmetric initial condition for the forward IIR filter.";
+
+static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args)
+{
+  PyObject *sig=NULL;
+  PyArrayObject *a_sig=NULL, *out=NULL;
+  npy_intp* in_size;
+  double r, omega;
+  double precision = -1.0;
+  int thetype, N, ret;
+  npy_intp outstrides, instrides;
+  npy_intp N;
+  PyArray_Descr* dtype;
+
+  if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
+    return NULL;
+
+  thetype = PyArray_ObjectType(sig, NPY_FLOAT);
+  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
+  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
+
+  if (a_sig == NULL) goto fail;
+
+  dtype = PyArray_DescrFromType(thetype);
+  int sz = 2;
+  out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
+  if (out == NULL) goto fail;
+
+  in_size = PyArray_DIMS(a_sig);
+  N = in_size[0];
+
+  switch (thetype) {
+  case NPY_FLOAT:
+    {
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
+      ret = S_SYM_IIR2_initial_bwd(r, omega, (float *)PyArray_DATA(a_sig),
+                                  (float *)PyArray_DATA(out), N,
+                                  (float )precision);
+    }
+    break;
+  case NPY_DOUBLE:
+    {
+      if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
+      ret = S_SYM_IIR2_initial_bwd(r, omega, (double *)PyArray_DATA(a_sig),
+                                   (double *)PyArray_DATA(out), N,
+                                   precision);
+    }
+    break;
+  default:
+    PYERR("Incorrect type.");
+  }
+
+  if (ret == 0) {
+    Py_DECREF(a_sig);
+    return PyArray_Return(out);
+  }
+
+  if (ret == -1) PYERR("Could not allocate enough memory.");
+  if (ret == -2) PYERR("|z1| must be less than 1.0");
+  if (ret == -3) PYERR("Sum to find symmetric boundary conditions did not converge.");
+
+  PYERR("Unknown error.");
+
 
  fail:
   Py_XDECREF(a_sig);
@@ -520,6 +638,7 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
     {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2},
     {"symiirorder1_ic", IIRsymorder1_ic, METH_VARARGS, doc_IIRsymorder1_ic},
+    {"symiirorder2_ic_fwd", IIRsymorder2_ic_fwd, METH_VARARGS, doc_IIRsymorder2_ic_fwd},
     {NULL, NULL, 0, NULL}		/* sentinel */
 };
 
