@@ -839,7 +839,7 @@ class TestMultivariateNormal:
                                          np.zeros((3, 2)),
                                          np.zeros((4, 4))])
     def test_fit_fix_cov_input_validation_dimension(self, fix_cov):
-        msg = ("`fix_cov` must be a two-dimensional square matrix "
+        msg = ("`fix_cov` must be a two-dimensional square array "
                 "of same side length as the dimensionality of the "
                 "vectors `x`.")
         with pytest.raises(ValueError, match=msg):
@@ -848,7 +848,7 @@ class TestMultivariateNormal:
     def test_fit_fix_cov_not_positive_semidefinite(self):
         error_msg = "`fix_cov` must be symmetric positive semidefinite."
         with pytest.raises(ValueError, match=error_msg):
-            fix_cov = np.array([[1., 1.], [-1., 1.]])
+            fix_cov = np.array([[1., 0.], [0., -1.]])
             multivariate_normal.fit(np.eye(2), fix_cov=fix_cov)
     
     def test_fit_fix_mean(self):
