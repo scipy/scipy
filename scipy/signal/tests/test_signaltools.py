@@ -31,6 +31,7 @@ from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
+from scipy._lib._util import ComplexWarning
 
 
 class _TestConvolve:
@@ -181,16 +182,12 @@ class TestConvolve(_TestConvolve):
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
-        types = sum([t for _, t in np.sctypes.items()], [])
-        types = {np.dtype(t).name for t in types}
-
-        # These types include 'bool' and all precisions (int8, float32, etc)
-        # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'complex192', 'float128', 'float96',
-                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
-            if dtype in types:
-                types.remove(dtype)
-
+        # this types data structure was manually encoded instead of
+        # using custom filters on the soon-to-be-removed np.sctypes
+        types = {'uint16', 'uint64', 'int64', 'int32',
+                 'complex128', 'float64', 'float16',
+                 'complex64', 'float32', 'int16',
+                 'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
@@ -301,7 +298,7 @@ class _TestConvolve2d:
     def test_fillvalue_errors(self):
         msg = "could not cast `fillvalue` directly to the output "
         with np.testing.suppress_warnings() as sup:
-            sup.filter(np.ComplexWarning, "Casting complex values")
+            sup.filter(ComplexWarning, "Casting complex values")
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
@@ -1041,7 +1038,7 @@ class TestAllFreqConvolves:
                            match="all axes must be unique"):
             convapproach([1], [2], axes=[0, 0])
 
-    @pytest.mark.parametrize('dtype', [np.longfloat, np.longcomplex])
+    @pytest.mark.parametrize('dtype', [np.longdouble, np.clongdouble])
     def test_longdtype_input(self, dtype):
         x = np.random.random((27, 27)).astype(dtype)
         y = np.random.random((4, 4)).astype(dtype)
@@ -1105,7 +1102,7 @@ class TestMedFilt:
             assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
 
-    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+    @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
                                        np.clongdouble, np.float16,])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
@@ -1940,7 +1937,7 @@ class TestCorrelateReal:
         # FFT implementations convert longdouble arguments down to
         # double so don't expect better precision, see gh-9520
         if res_dt == np.longdouble:
-            return self.equal_tolerance(np.double)
+            return self.equal_tolerance(np.float64)
         else:
             return self.equal_tolerance(res_dt)
 
@@ -2467,7 +2464,7 @@ def test_choose_conv_method():
 
             method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
             assert_(method_try in {'fft', 'direct'})
-            assert_(type(times) is dict)
+            assert_(isinstance(times, dict))
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
         n = 10

@@ -9,9 +9,15 @@ from pytest import raises as assert_raises
 
 from scipy import signal
 from scipy.fft import fftfreq
-from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
-                          spectrogram, stft, istft, check_COLA, check_NOLA)
+from scipy.integrate import trapezoid
+from scipy.signal import (periodogram, welch, lombscargle, coherence,
+                          spectrogram, check_COLA, check_NOLA)
 from scipy.signal._spectral_py import _spectral_helper
+
+# Compare ShortTimeFFT.stft() / ShortTimeFFT.istft() with stft() / istft():
+from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
+from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
+from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
 
 
 class TestPeriodogram:
@@ -520,7 +526,7 @@ class TestWelch:
             # Check peak height at signal frequency for 'spectrum'
             assert_allclose(p_spec[ii], A**2/2.0)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
+            assert_allclose(np.sqrt(trapezoid(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
 
     def test_axis_rolling(self):

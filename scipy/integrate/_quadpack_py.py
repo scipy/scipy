@@ -6,7 +6,6 @@ from functools import partial
 
 from . import _quadpack
 import numpy as np
-from numpy import Inf
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
@@ -489,7 +488,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
              7: "Abnormal termination of the routine.  The estimates for result\n  and error are less reliable.  It is assumed that the requested accuracy\n  has not been achieved.",
             'unknown': "Unknown error."}
 
-    if weight in ['cos','sin'] and (b == Inf or a == -Inf):
+    if weight in ['cos','sin'] and (b == np.inf or a == -np.inf):
         msgs[1] = "The maximum number of cycles allowed has been achieved., e.e.\n  of subintervals (a+(k-1)c, a+kc) where c = (2*int(abs(omega)+1))\n  *pi/abs(omega), for k = 1, 2, ..., lst.  One can allow more cycles by increasing the value of limlst.  Look at info['ierlst'] with full_output=1."
         msgs[4] = "The extrapolation table constructed for convergence acceleration\n  of the series formed by the integral contributions over the cycles, \n  does not converge to within the requested accuracy.  Look at \n  info['ierlst'] with full_output=1."
         msgs[7] = "Bad integrand behavior occurs within one or more of the cycles.\n  Location and type of the difficulty involved can be determined from \n  the vector info['ierlist'] obtained with full_output=1."
@@ -506,7 +505,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     if ier in [1,2,3,4,5,7]:
         if full_output:
-            if weight in ['cos', 'sin'] and (b == Inf or a == -Inf):
+            if weight in ['cos', 'sin'] and (b == np.inf or a == -np.inf):
                 return retval[:-1] + (msg, explain)
             else:
                 return retval[:-1] + (msg,)
@@ -519,7 +518,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if epsrel < max(50 * sys.float_info.epsilon, 5e-29):
                 msg = ("If 'epsabs'<=0, 'epsrel' must be greater than both"
                        " 5e-29 and 50*(machine epsilon).")
-            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == Inf):
+            elif weight in ['sin', 'cos'] and (abs(a) + abs(b) == np.inf):
                 msg = ("Sine or cosine weighted intergals with infinite domain"
                        " must have 'epsabs'>0.")
 
@@ -540,7 +539,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
             if maxp1 < 1:
                 msg = "Chebyshev moment limit maxp1 must be >=1."
 
-            elif weight in ('cos', 'sin') and abs(a+b) == Inf:  # QAWFE
+            elif weight in ('cos', 'sin') and abs(a+b) == np.inf:  # QAWFE
                 msg = "Cycle limit limlst must be >=3."
 
             elif weight.startswith('alg'):  # QAWSE
@@ -558,15 +557,15 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
 def _quad(func,a,b,args,full_output,epsabs,epsrel,limit,points):
     infbounds = 0
-    if (b != Inf and a != -Inf):
+    if (b != np.inf and a != -np.inf):
         pass   # standard integration
-    elif (b == Inf and a != -Inf):
+    elif (b == np.inf and a != -np.inf):
         infbounds = 1
         bound = a
-    elif (b == Inf and a == -Inf):
+    elif (b == np.inf and a == -np.inf):
         infbounds = 2
         bound = 0     # ignored
-    elif (b != Inf and a == -Inf):
+    elif (b != np.inf and a == -np.inf):
         infbounds = -1
         bound = b
     else:
@@ -597,7 +596,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
 
     if weight in ['cos','sin']:
         integr = strdict[weight]
-        if (b != Inf and a != -Inf):  # finite limits
+        if (b != np.inf and a != -np.inf):  # finite limits
             if wopts is None:         # no precomputed Chebyshev moments
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1,1)
@@ -607,10 +606,10 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                 return _quadpack._qawoe(func, a, b, wvar, integr, args, full_output,
                                         epsabs, epsrel, limit, maxp1, 2, momcom, chebcom)
 
-        elif (b == Inf and a != -Inf):
+        elif (b == np.inf and a != -np.inf):
             return _quadpack._qawfe(func, a, wvar, integr, args, full_output,
                                     epsabs,limlst,limit,maxp1)
-        elif (b != Inf and a == -Inf):  # remap function and interval
+        elif (b != np.inf and a == -np.inf):  # remap function and interval
             if weight == 'cos':
                 def thefunc(x,*myargs):
                     y = -x
@@ -629,7 +628,7 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
         else:
             raise ValueError("Cannot integrate with this weight from -Inf to +Inf.")
     else:
-        if a in [-Inf,Inf] or b in [-Inf,Inf]:
+        if a in [-np.inf, np.inf] or b in [-np.inf, np.inf]:
             raise ValueError("Cannot integrate with this weight over an infinite interval.")
 
         if weight.startswith('alg'):

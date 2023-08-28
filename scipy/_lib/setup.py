@@ -35,6 +35,13 @@ def configuration(parent_package='',top_path=None):
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
 
+    # Deal with array_api_compat git submodule
+    config.add_data_files('array_api_compat/array_api_compat/*.py')
+    config.add_data_files('array_api_compat/array_api_compat/common/*.py')
+    config.add_data_files('array_api_compat/array_api_compat/cupy/*.py')
+    config.add_data_files('array_api_compat/array_api_compat/numpy/*.py')
+    config.add_data_files('array_api_compat/array_api_compat/torch/*.py')
+
     include_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'))
     depends = [os.path.join(include_dir, 'ccallback.h')]
 

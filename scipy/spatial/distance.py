@@ -259,7 +259,7 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
                              "are required." % (m, n, n + 1))
         if isinstance(X, tuple):
             X = np.vstack(X)
-        CV = np.atleast_2d(np.cov(X.astype(np.double, copy=False).T))
+        CV = np.atleast_2d(np.cov(X.astype(np.float64, copy=False).T))
         VI = np.linalg.inv(CV).T.copy()
     kwargs["VI"] = _convert_to_double(VI)
     return kwargs
@@ -296,7 +296,7 @@ def _validate_seuclidean_kwargs(X, m, n, **kwargs):
     if V is None:
         if isinstance(X, tuple):
             X = np.vstack(X)
-        V = np.var(X.astype(np.double, copy=False), axis=0, ddof=1)
+        V = np.var(X.astype(np.float64, copy=False), axis=0, ddof=1)
     else:
         V = np.asarray(V, order='c')
         if len(V.shape) != 1:
@@ -318,7 +318,7 @@ def _validate_vector(u, dtype=None):
     raise ValueError("Input vector should be 1-D.")
 
 
-def _validate_weights(w, dtype=np.double):
+def _validate_weights(w, dtype=np.float64):
     w = _validate_vector(w, dtype=dtype)
     if np.any(w < 0):
         raise ValueError("Input weights should be all non-negative")
@@ -334,9 +334,9 @@ def directed_hausdorff(u, v, seed=0):
     Parameters
     ----------
     u : (M,N) array_like
-        Input array.
+        Input array with M points in N dimensions.
     v : (O,N) array_like
-        Input array.
+        Input array with O points in N dimensions.
     seed : int or None
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
@@ -809,8 +809,8 @@ def jaccard(u, v, w=None):
         w = _validate_weights(w)
         nonzero = w * nonzero
         unequal_nonzero = w * unequal_nonzero
-    a = np.double(unequal_nonzero.sum())
-    b = np.double(nonzero.sum())
+    a = np.float64(unequal_nonzero.sum())
+    b = np.float64(nonzero.sum())
     return (a / b) if b != 0 else 0
 
 
@@ -1592,7 +1592,7 @@ def sokalsneath(u, v, w=None):
     return float(2.0 * (ntf + nft)) / denom
 
 
-_convert_to_double = partial(_convert_to_type, out_type=np.double)
+_convert_to_double = partial(_convert_to_type, out_type=np.float64)
 _convert_to_bool = partial(_convert_to_type, out_type=bool)
 
 # adding python-only wrappers to _distance_wrap module
@@ -1620,7 +1620,7 @@ class CDistMetricWrapper:
             return _cdist_callable(
                 XA, XB, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
+        dm = _prepare_out_argument(out, np.float64, (mA, mB))
         # get cdist wrapper
         cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
         cdist_fn(XA, XB, dm, **kwargs)
@@ -1640,7 +1640,7 @@ class CDistWeightedMetricWrapper:
         metric_name = self.metric_name
         XA, XB, typ, kwargs = _validate_cdist_input(
             XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.double, (mA, mB))
+        dm = _prepare_out_argument(out, np.float64, (mA, mB))
 
         w = kwargs.pop('w', None)
         if w is not None:
@@ -1671,7 +1671,7 @@ class PDistMetricWrapper:
             return _pdist_callable(
                 X, metric=metric, out=out, w=w, **kwargs)
 
-        dm = _prepare_out_argument(out, np.double, (out_size,))
+        dm = _prepare_out_argument(out, np.float64, (out_size,))
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
@@ -1690,7 +1690,7 @@ class PDistWeightedMetricWrapper:
         X, typ, kwargs = _validate_pdist_input(
             X, m, n, _METRICS[metric_name], **kwargs)
         out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.double, (out_size,))
+        dm = _prepare_out_argument(out, np.float64, (out_size,))
 
         w = kwargs.pop('w', None)
         if w is not None:
@@ -2644,7 +2644,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
         raise ValueError("Output array has incorrect shape.")
     if not out.flags.c_contiguous:
         raise ValueError("Output array must be C-contiguous.")
-    if out.dtype != np.double:
+    if out.dtype != np.float64:
         raise ValueError("Output array must be double type.")
     return out
 
@@ -2652,7 +2652,7 @@ def _prepare_out_argument(out, dtype, expected_shape):
 def _pdist_callable(X, *, out, metric, **kwargs):
     n = X.shape[0]
     out_size = (n * (n - 1)) // 2
-    dm = _prepare_out_argument(out, np.double, (out_size,))
+    dm = _prepare_out_argument(out, np.float64, (out_size,))
     k = 0
     for i in range(X.shape[0] - 1):
         for j in range(i + 1, X.shape[0]):
@@ -2664,7 +2664,7 @@ def _pdist_callable(X, *, out, metric, **kwargs):
 def _cdist_callable(XA, XB, *, out, metric, **kwargs):
     mA = XA.shape[0]
     mB = XB.shape[0]
-    dm = _prepare_out_argument(out, np.double, (mA, mB))
+    dm = _prepare_out_argument(out, np.float64, (mA, mB))
     for i in range(mA):
         for j in range(mB):
             dm[i, j] = metric(XA[i], XB[j], **kwargs)

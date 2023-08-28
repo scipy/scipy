@@ -2501,6 +2501,7 @@ def _lloyd_centroidal_voronoi_tessellation(
     --------
     >>> import numpy as np
     >>> from scipy.spatial import distance
+    >>> from scipy.stats._qmc import _lloyd_centroidal_voronoi_tessellation
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
 

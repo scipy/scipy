@@ -103,7 +103,7 @@ from ._streams import ZlibInputStream
 
 def _has_struct(elem):
     """Determine if elem is an array and if first array item is a struct."""
-    return (isinstance(elem, np.ndarray) and (elem.size > 0) and
+    return (isinstance(elem, np.ndarray) and (elem.size > 0) and (elem.ndim > 0) and
             isinstance(elem[0], mat_struct))
 
 
@@ -403,6 +403,9 @@ def varmats_from_mat(file_obj):
     Examples
     --------
     >>> import scipy.io
+    >>> import numpy as np
+    >>> from io import BytesIO
+    >>> from scipy.io.matlab._mio5 import varmats_from_mat
 
     BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
     Python < 3.

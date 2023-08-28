@@ -4,6 +4,7 @@
 #
 import warnings
 import sys
+from functools import partial
 
 import numpy as np
 from numpy.random import RandomState
@@ -420,6 +421,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
+    @pytest.mark.slow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -444,13 +446,19 @@ class TestAndersonKSamp:
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
 
-        Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
-                                          t9, t10, t11, t12, t13, t14),
-                                         midrank=False)
+        samples = (t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14)
+        Tk, tm, p = stats.anderson_ksamp(samples, midrank=False)
         assert_almost_equal(Tk, 3.288, 3)
         assert_array_almost_equal([0.5990, 1.3269, 1.8052, 2.2486, 2.8009],
                                   tm[0:5], 4)
         assert_allclose(p, 0.0041, atol=0.00025)
+
+        rng = np.random.default_rng(6989860141921615054)
+        method = stats.PermutationMethod(n_resamples=9999, random_state=rng)
+        res = stats.anderson_ksamp(samples, midrank=False, method=method)
+        assert_array_equal(res.statistic, Tk)
+        assert_array_equal(res.critical_values, tm)
+        assert_allclose(res.pvalue, p, atol=6e-4)
 
     def test_example2b(self):
         # Example data taken from an earlier technical report of
@@ -2230,6 +2238,79 @@ class TestYeojohnson:
         assert_allclose(xt_yeo, xt_box, rtol=1e-6)
         assert_allclose(lam_yeo, lam_box, rtol=1e-6)
 
+    @pytest.mark.parametrize('x', [
+        np.array([1.0, float("nan"), 2.0]),
+        np.array([1.0, float("inf"), 2.0]),
+        np.array([1.0, -float("inf"), 2.0]),
+        np.array([-1.0, float("nan"), float("inf"), -float("inf"), 1.0])
+    ])
+    def test_nonfinite_input(self, x):
+        with pytest.raises(ValueError, match='Yeo-Johnson input must be finite'):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+
+    @pytest.mark.parametrize('x', [
+        # Attempt to trigger overflow in power expressions.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        # Attempt to trigger overflow with a large optimal lambda.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        # Attempt to trigger overflow with large data.
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+    ])
+    def test_overflow(self, x):
+        # non-regression test for gh-18389
+
+        def optimizer(fun, lam_yeo):
+            out = optimize.fminbound(fun, -lam_yeo, lam_yeo, xtol=1.48e-08)
+            result = optimize.OptimizeResult()
+            result.x = out
+            return result
+
+        with np.errstate(all="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(x)
+            xt_box, lam_box = stats.boxcox(
+                x + 1, optimizer=partial(optimizer, lam_yeo=lam_yeo))
+            assert np.isfinite(np.var(xt_yeo))
+            assert np.isfinite(np.var(xt_box))
+            assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+            assert_allclose(xt_yeo, xt_box, rtol=1e-4)
+
+    @pytest.mark.parametrize('x', [
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0])
+    ])
+    @pytest.mark.parametrize('scale', [1, 1e-12, 1e-32, 1e-150, 1e32, 1e200])
+    @pytest.mark.parametrize('sign', [1, -1])
+    def test_overflow_underflow_signed_data(self, x, scale, sign):
+        # non-regression test for gh-18389
+        with np.errstate(all="raise"):
+            xt_yeo, lam_yeo = stats.yeojohnson(sign * x * scale)
+            assert np.all(np.sign(sign * x) == np.sign(xt_yeo))
+            assert np.isfinite(lam_yeo)
+            assert np.isfinite(np.var(xt_yeo))
+
+    @pytest.mark.parametrize('x', [
+        np.array([0, 1, 2, 3]),
+        np.array([0, -1, 2, -3]),
+        np.array([0, 0, 0])
+    ])
+    @pytest.mark.parametrize('sign', [1, -1])
+    @pytest.mark.parametrize('brack', [None, (-2, 2)])
+    def test_integer_signed_data(self, x, sign, brack):
+        with np.errstate(all="raise"):
+            x_int = sign * x
+            x_float = x_int.astype(np.float64)
+            lam_yeo_int = stats.yeojohnson_normmax(x_int, brack=brack)
+            xt_yeo_int = stats.yeojohnson(x_int, lmbda=lam_yeo_int)
+            lam_yeo_float = stats.yeojohnson_normmax(x_float, brack=brack)
+            xt_yeo_float = stats.yeojohnson(x_float, lmbda=lam_yeo_float)
+            assert np.all(np.sign(x_int) == np.sign(xt_yeo_int))
+            assert np.isfinite(lam_yeo_int)
+            assert np.isfinite(np.var(xt_yeo_int))
+            assert lam_yeo_int == lam_yeo_float
+            assert np.all(xt_yeo_int == xt_yeo_float)
+
 
 class TestYeojohnsonNormmax:
     def setup_method(self):
@@ -2769,28 +2850,3 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
         assert_array_equal(stats.false_discovery_control(0.25), 0.25)
         assert_array_equal(stats.false_discovery_control([]), [])
-
-
-def test_morestats_deprecation():
-    # gh-18279 noted that deprecation warnings for imports from private modules
-    # were misleading. Check that this is resolved.
-    import scipy.stats.morestats as module
-
-    # Attributes that were formerly in `morestats` can still be imported from
-    # `morestats`, albeit with a deprecation warning. The specific message
-    # depends on whether the attribute is public in `scipy.stats` or not.
-    for attr_name in module.__all__:
-        attr = getattr(stats, attr_name, None)
-        if attr is None:
-            message = f"`scipy.stats.morestats.{attr_name}` is deprecated..."
-        else:
-            message = f"Please import `{attr_name}` from the `scipy.stats`..."
-        with pytest.warns(DeprecationWarning, match=message):
-            getattr(module, attr_name)
-
-    # Attributes that were not in `morestats` get an error notifying the user
-    # that the attribute is not in `morestats` and that `morestats` is
-    # deprecated.
-    message = "`scipy.stats.morestats` is deprecated..."
-    with pytest.raises(AttributeError, match=message):
-        getattr(module, "ekki")

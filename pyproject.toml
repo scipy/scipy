@@ -10,36 +10,29 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.12.1",
+    "meson-python>=0.13.1",
     "Cython>=0.29.35",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
     "pythran>=0.12.0",
-    # `wheel` is needed for non-isolated builds, given that `meson-python`
-    # doesn't list it as a runtime requirement (at least in 0.5.0)
-    "wheel",
 
-    # NumPy dependencies - to update these, sync from
-    # https://github.com/scipy/oldest-supported-numpy/, and then
-    # update minimum version to match our install_requires min version
-    # ----------------------------------------------------------------
-
-    # now matches minimum supported version, keep here as separate requirement
-    # to be able to sync more easily with oldest-supported-numpy
+    # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
+    # and then runtime depend on the range 1.22.X to <2.3. No need to switch to
+    # 1.25.2 in the meantime (1.25.x is the first version which exports older C
+    # API versions by default).
 
     # default numpy requirements
     "numpy==1.22.4; python_version<='3.10' and platform_python_implementation != 'PyPy'",
     "numpy==1.23.2; python_version=='3.11' and platform_python_implementation != 'PyPy'",
-
-    # For Python versions which aren't yet officially supported,
-    # we specify an unpinned NumPy which allows source distributions
-    # to be used and allows wheels to be used as soon as they
-    # become available.
-    "numpy; python_version>='3.12'",
+    # For Python versions which aren't yet officially supported, we specify an
+    # unpinned NumPy which allows source distributions to be used and allows
+    # wheels to be used as soon as they become available.
+    "numpy>=1.26.0b1; python_version>='3.12'",
     "numpy; python_version>='3.9' and platform_python_implementation=='PyPy'",
 ]
 
 [project]
 name = "SciPy"
+version = "1.12.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
@@ -68,6 +61,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -76,7 +70,6 @@ classifiers = [
     "Operating System :: Unix",
     "Operating System :: MacOS",
 ]
-dynamic = ['version']
 
 [project.optional-dependencies]
 test = [
@@ -90,6 +83,7 @@ test = [
     "threadpoolctl",
     "scikit-umfpack",
     "pooch",
+    "hypothesis",
 ]
 doc = [
     "sphinx!=4.1.0",
@@ -130,7 +124,7 @@ skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
-test-requires = ["pytest", "pytest-cov", "pytest-xdist", "asv", "mpmath", "threadpoolctl", "pooch"]
+test-requires = ["pytest", "pytest-cov", "pytest-xdist", "asv", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]

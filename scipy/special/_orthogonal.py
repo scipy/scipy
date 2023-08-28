@@ -590,6 +590,11 @@ def genlaguerre(n, alpha, monic=False):
     L : orthopoly1d
         Generalized Laguerre polynomial.
 
+    See Also
+    --------
+    laguerre : Laguerre polynomial.
+    hyp1f1 : confluent hypergeometric function
+
     Notes
     -----
     For fixed :math:`\alpha`, the polynomials :math:`L_n^{(\alpha)}`
@@ -598,11 +603,6 @@ def genlaguerre(n, alpha, monic=False):
 
     The Laguerre polynomials are the special case where :math:`\alpha
     = 0`.
-
-    See Also
-    --------
-    laguerre : Laguerre polynomial.
-    hyp1f1 : confluent hypergeometric function
 
     References
     ----------
@@ -731,14 +731,14 @@ def laguerre(n, monic=False):
     L : orthopoly1d
         Laguerre Polynomial.
 
+    See Also
+    --------
+    genlaguerre : Generalized (associated) Laguerre polynomial.
+
     Notes
     -----
     The polynomials :math:`L_n` are orthogonal over :math:`[0,
     \infty)` with weight function :math:`e^{-x}`.
-
-    See Also
-    --------
-    genlaguerre : Generalized (associated) Laguerre polynomial.
 
     References
     ----------
@@ -831,6 +831,13 @@ def roots_hermite(n, mu=False):
     mu : float
         Sum of the weights
 
+    See Also
+    --------
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
+    numpy.polynomial.hermite.hermgauss
+    roots_hermitenorm
+
     Notes
     -----
     For small n up to 150 a modified version of the Golub-Welsch
@@ -842,13 +849,6 @@ def roots_hermite(n, mu=False):
     which computes nodes and weights in a numerically stable manner.
     The algorithm has linear runtime making computation for very
     large n (several thousand or more) feasible.
-
-    See Also
-    --------
-    scipy.integrate.quadrature
-    scipy.integrate.fixed_quad
-    numpy.polynomial.hermite.hermgauss
-    roots_hermitenorm
 
     References
     ----------
@@ -1352,6 +1352,12 @@ def roots_hermitenorm(n, mu=False):
     mu : float
         Sum of the weights
 
+    See Also
+    --------
+    scipy.integrate.quadrature
+    scipy.integrate.fixed_quad
+    numpy.polynomial.hermite_e.hermegauss
+
     Notes
     -----
     For small n up to 150 a modified version of the Golub-Welsch
@@ -1363,12 +1369,6 @@ def roots_hermitenorm(n, mu=False):
     which computes nodes and weights in a numerical stable manner.
     The algorithm has linear runtime making computation for very
     large n (several thousand or more) feasible.
-
-    See Also
-    --------
-    scipy.integrate.quadrature
-    scipy.integrate.fixed_quad
-    numpy.polynomial.hermite_e.hermegauss
 
     References
     ----------
@@ -1689,14 +1689,14 @@ def chebyt(n, monic=False):
     T : orthopoly1d
         Chebyshev polynomial of the first kind.
 
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind.
+
     Notes
     -----
     The polynomials :math:`T_n` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x^2)^{-1/2}`.
-
-    See Also
-    --------
-    chebyu : Chebyshev polynomial of the second kind.
 
     References
     ----------
@@ -1851,14 +1851,14 @@ def chebyu(n, monic=False):
     U : orthopoly1d
         Chebyshev polynomial of the second kind.
 
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
     Notes
     -----
     The polynomials :math:`U_n` are orthogonal over :math:`[-1, 1]`
     with weight function :math:`(1 - x^2)^{1/2}`.
-
-    See Also
-    --------
-    chebyt : Chebyshev polynomial of the first kind.
 
     References
     ----------
@@ -1994,14 +1994,14 @@ def chebyc(n, monic=False):
     C : orthopoly1d
         Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
     Notes
     -----
     The polynomials :math:`C_n(x)` are orthogonal over :math:`[-2, 2]`
     with weight function :math:`1/\sqrt{1 - (x/2)^2}`.
-
-    See Also
-    --------
-    chebyt : Chebyshev polynomial of the first kind.
 
     References
     ----------
@@ -2100,14 +2100,14 @@ def chebys(n, monic=False):
     S : orthopoly1d
         Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind
+
     Notes
     -----
     The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
     with weight function :math:`\sqrt{1 - (x/2)}^2`.
-
-    See Also
-    --------
-    chebyu : Chebyshev polynomial of the second kind
 
     References
     ----------

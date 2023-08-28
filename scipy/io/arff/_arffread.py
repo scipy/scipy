@@ -100,7 +100,7 @@ class NominalAttribute(Attribute):
         super().__init__(name)
         self.values = values
         self.range = values
-        self.dtype = (np.string_, max(len(i) for i in values))
+        self.dtype = (np.bytes_, max(len(i) for i in values))
 
     @staticmethod
     def _get_nom_val(atrv):
@@ -121,7 +121,8 @@ class NominalAttribute(Attribute):
 
         Examples
         --------
-        >>> get_nom_val("{floup, bouga, fl, ratata}")
+        >>> from scipy.io.arff._arffread import NominalAttribute
+        >>> NominalAttribute._get_nom_val("{floup, bouga, fl, ratata}")
         ('floup', 'bouga', 'fl', 'ratata')
         """
         m = r_nominal.match(atrv)
@@ -172,7 +173,7 @@ class NumericAttribute(Attribute):
     def __init__(self, name):
         super().__init__(name)
         self.type_name = 'numeric'
-        self.dtype = np.float_
+        self.dtype = np.float64
 
     @classmethod
     def parse_attribute(cls, name, attr_string):
@@ -209,6 +210,7 @@ class NumericAttribute(Attribute):
 
         Examples
         --------
+        >>> from scipy.io.arff._arffread import NumericAttribute
         >>> atr = NumericAttribute('atr')
         >>> atr.parse_data('1')
         1.0
@@ -529,6 +531,7 @@ def tokenize_attribute(iterable, attribute):
     If attribute is a string defined in python as r"floupi real", will
     return floupi as name, and real as value.
 
+    >>> from scipy.io.arff._arffread import tokenize_attribute
     >>> iterable = iter([0] * 10) # dummy iterator
     >>> tokenize_attribute(iterable, r"@attribute floupi real")
     ('floupi', 'real', 0)

@@ -5,6 +5,8 @@ Meson and ``distutils`` ways of doing things
 
 *Old workflows (numpy.distutils based):*
 
+The `runtests.py` file was removed in commit `0f73f92255253ec5dff2de5ca45d8d3bdda03f92` [^1^_].
+
 1. ``python runtests.py``
 2. ``python setup.py build_ext -i`` + ``export
    PYTHONPATH=/home/username/path/to/scipy/reporoot`` (and then edit pure
@@ -27,3 +29,4 @@ Meson and ``distutils`` ways of doing things
    `pypa/build <https://pypa-build.readthedocs.io/en/latest/>`_.
 5. ``pip install .``
 
+[^1^_]: [Commit 0f73f92255253ec5dff2de5ca45d8d3bdda03f92 on GitHub](https://github.com/scipy/scipy/commit/0f73f92255253ec5dff2de5ca45d8d3bdda03f92).

@@ -15,7 +15,7 @@ __all__ = ['compare_medians_ms',
 
 
 import numpy as np
-from numpy import float_, int_, ndarray
+from numpy import float64, int_, ndarray
 
 import numpy.ma as ma
 from numpy.ma import MaskedArray
@@ -62,7 +62,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         # Don't use length here, in case we have a numpy scalar
         n = xsorted.size
 
-        hd = np.empty((2,len(prob)), float_)
+        hd = np.empty((2,len(prob)), float64)
         if n < 2:
             hd.flat = np.nan
             if var:
@@ -86,7 +86,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
             return hd
         return hd[0]
     # Initialization & checks
-    data = ma.array(data, copy=False, dtype=float_)
+    data = ma.array(data, copy=False, dtype=float64)
     p = np.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
     if (axis is None) or (data.ndim == 1):
@@ -155,7 +155,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         xsorted = np.sort(data.compressed())
         n = len(xsorted)
 
-        hdsd = np.empty(len(prob), float_)
+        hdsd = np.empty(len(prob), float64)
         if n < 2:
             hdsd.flat = np.nan
 
@@ -175,7 +175,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         return hdsd
 
     # Initialization & checks
-    data = ma.array(data, copy=False, dtype=float_)
+    data = ma.array(data, copy=False, dtype=float64)
     p = np.array(prob, copy=False, ndmin=1)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -262,8 +262,8 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         prob = (np.array(p) * n + 0.5).astype(int_)
         betacdf = beta.cdf
 
-        mj = np.empty(len(prob), float_)
-        x = np.arange(1,n+1, dtype=float_) / n
+        mj = np.empty(len(prob), float64)
+        x = np.arange(1,n+1, dtype=float64) / n
         y = x - 1./n
         for (i,m) in enumerate(prob):
             W = betacdf(x,m-1,n-m) - betacdf(y,m-1,n-m)

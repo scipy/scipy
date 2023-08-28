@@ -97,6 +97,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
@@ -306,6 +307,7 @@ drawn from a specified distribution or a distribution with specified properties
 
    ttest_1samp
    binomtest
+   quantile_test
    skewtest
    kurtosistest
    normaltest
@@ -380,6 +382,7 @@ Some tests are specifically for comparing two samples.
    poisson_means_test
    ttest_ind
    mannwhitneyu
+   bws_test
    ranksums
    brunnermunzel
    mood
@@ -619,6 +622,7 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._bws_test import bws_test
 from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
