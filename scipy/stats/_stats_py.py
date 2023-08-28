@@ -9639,8 +9639,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     >>> combine_pvalues(pvalues)
     SignificanceResult(statistic=20.828626352604235, pvalue=0.007616871850449092)
 
-   When the individual p-values carry different weights, consider Stouffer's
-   method.
+    When the individual p-values carry different weights, consider Stouffer's
+    method.
 
     >>> weights = [1, 2, 3, 4]
     >>> res = combine_pvalues(pvalues, method='stouffer', weights=weights)
