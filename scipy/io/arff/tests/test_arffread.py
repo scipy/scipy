@@ -276,7 +276,7 @@ class TestRelationalAttribute:
 
     def test_data(self):
         dtype_instance = [('attr_date', 'datetime64[D]'),
-                          ('attr_number', np.float_)]
+                          ('attr_number', np.float64)]
 
         expected = [
             np.array([('1999-01-31', 1), ('1935-11-27', 10)],
@@ -316,7 +316,7 @@ class TestRelationalAttributeLong:
         assert_equal(relational.attributes[0].type_name, 'numeric')
 
     def test_data(self):
-        dtype_instance = [('attr_number', np.float_)]
+        dtype_instance = [('attr_number', np.float64)]
 
         expected = np.array([(n,) for n in range(30000)],
                             dtype=dtype_instance)
@@ -346,7 +346,7 @@ class TestQuotedNominal:
 
     def test_data(self):
 
-        age_dtype_instance = np.float_
+        age_dtype_instance = np.float64
         smoker_dtype_instance = '<S3'
 
         age_expected = np.array([
@@ -392,7 +392,7 @@ class TestQuotedNominalSpaces:
 
     def test_data(self):
 
-        age_dtype_instance = np.float_
+        age_dtype_instance = np.float64
         smoker_dtype_instance = '<S5'
 
         age_expected = np.array([

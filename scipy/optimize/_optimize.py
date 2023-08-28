@@ -31,6 +31,7 @@ import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt)
 import numpy as np
+from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
@@ -40,9 +41,6 @@ from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import asfarray  # noqa
 
 
 # standard status messages of optimizers
@@ -270,7 +268,21 @@ class OptimizeResult(dict):
 class OptimizeWarning(UserWarning):
     pass
 
-
+def _check_positive_definite(Hk):
+    def is_pos_def(A):
+        if issymmetric(A):
+            try:
+                cholesky(A)
+                return True
+            except LinAlgError:
+                return False
+        else:
+            return False
+    if Hk is not None:
+        if not is_pos_def(Hk):
+            raise ValueError("'hess_inv0' matrix isn't positive definite.")
+        
+        
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -823,7 +835,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     x0 = np.atleast_1d(x0).flatten()
-    x0 = np.asfarray(x0, x0.dtype)
+    dtype = x0.dtype if np.issubdtype(x0.dtype, np.inexact) else np.float64
+    x0 = np.asarray(x0, dtype=dtype)
 
     if adaptive:
         dim = float(len(x0))
@@ -866,7 +879,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             sim[k + 1] = y
     else:
         sim = np.atleast_2d(initial_simplex).copy()
-        sim = np.asfarray(sim, sim.dtype)
+        dtype = sim.dtype if np.issubdtype(sim.dtype, np.inexact) else np.float64
+        sim = np.asarray(sim, dtype=dtype)
         if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
             raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
         if len(x0) != sim.shape[1]:
@@ -1250,7 +1264,8 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9, 
+              hess_inv0=None):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1259,7 +1274,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     f : callable ``f(x,*args)``
         Objective function to be minimized.
     x0 : ndarray
-        Initial guess.
+        Initial guess, shape (n,)
     fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
     args : tuple, optional
@@ -1287,6 +1302,13 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Relative tolerance for `x`. Terminate successfully if step
         size is less than ``xk * xrtol`` where ``xk`` is the current
         parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.9
+        Parameter for curvature condition rule.
+    hess_inv0 : None or ndarray, optional``
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
+        matrix is used.
 
     Returns
     -------
@@ -1315,6 +1337,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     Optimize the function, `f`, whose gradient is given by `fprime`
     using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
     and Shanno (BFGS).
+    
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     See Also
     --------
@@ -1360,7 +1384,11 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'eps': epsilon,
             'disp': disp,
             'maxiter': maxiter,
-            'return_all': retall}
+            'return_all': retall,
+            'xrtol': xrtol,
+            'c1': c1,
+            'c2': c2,
+            'hess_inv0': hess_inv0}
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
@@ -1381,7 +1409,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=0.9, 
+                   hess_inv0=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1412,8 +1441,20 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     xrtol : float, default: 0
         Relative tolerance for `x`. Terminate successfully if step size is
         less than ``xk * xrtol`` where ``xk`` is the current parameter vector.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.9
+        Parameter for curvature condition rule.
+    hess_inv0 : None or ndarray, optional
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
+        matrix is used.
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
     _check_unknown_options(unknown_options)
+    _check_positive_definite(hess_inv0)
     retall = return_all
 
     x0 = asarray(x0).flatten()
@@ -1434,7 +1475,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     k = 0
     N = len(x0)
     I = np.eye(N, dtype=int)
-    Hk = I
+    Hk = I if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -1449,7 +1490,8 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
-                                          old_fval, old_old_fval, amin=1e-100, amax=1e100)
+                                          old_fval, old_old_fval, amin=1e-100,
+                                          amax=1e100, c1=c1, c2=c2)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
@@ -1542,7 +1584,7 @@ def _print_success_message_or_warn(warnflag, message, warntype=None):
 
 def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
-            callback=None):
+            callback=None, c1=1e-4, c2=0.4):
     """
     Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -1587,6 +1629,10 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     callback : callable, optional
         An optional user-supplied function, called after each iteration.
         Called as ``callback(xk)``, where ``xk`` is the current value of `x0`.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.4
+        Parameter for curvature condition rule.
 
     Returns
     -------
@@ -1639,6 +1685,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     4. `fprime` is not too large, e.g., has a norm less than 1000,
     5. The initial guess, `x0`, is reasonably close to `f` 's global
        minimizing point, `xopt`.
+
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     References
     ----------
@@ -1702,7 +1750,8 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'return_all': retall}
 
     callback = _wrap_callback(callback)
-    res = _minimize_cg(f, x0, args, fprime, callback=callback, **opts)
+    res = _minimize_cg(f, x0, args, fprime, callback=callback, c1=c1, c2=c2,
+                       **opts)
 
     if full_output:
         retlist = res['x'], res['fun'], res['nfev'], res['njev'], res['status']
@@ -1719,7 +1768,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
                  gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                  disp=False, return_all=False, finite_diff_rel_step=None,
-                 **unknown_options):
+                 c1=1e-4, c2=0.4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     conjugate gradient algorithm.
@@ -1748,6 +1797,14 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         possibly adjusted to fit into the bounds. For ``jac='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.4
+        Parameter for curvature condition rule.
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
     _check_unknown_options(unknown_options)
 
@@ -1814,7 +1871,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100,
+                                          old_old_fval, c1=c1, c2=c2, amin=1e-100, amax=1e100,
                                           extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
@@ -1864,7 +1921,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
 
 def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
              epsilon=_epsilon, maxiter=None, full_output=0, disp=1, retall=0,
-             callback=None):
+             callback=None, c1=1e-4, c2=0.9):
     """
     Unconstrained minimization of a function using the Newton-CG method.
 
@@ -1902,6 +1959,10 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         If True, print convergence message.
     retall : bool, optional
         If True, return a list of results at each iteration.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.9
+        Parameter for curvature condition rule
 
     Returns
     -------
@@ -1948,6 +2009,8 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
         or box constrained minimization. (Box constraints give
         lower and upper bounds for each variable separately.)
 
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
+
     References
     ----------
     Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
@@ -1961,7 +2024,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
     callback = _wrap_callback(callback)
     res = _minimize_newtoncg(f, x0, args, fprime, fhess, fhess_p,
-                             callback=callback, **opts)
+                             callback=callback, c1=c1, c2=c2, **opts)
 
     if full_output:
         retlist = (res['x'], res['fun'], res['nfev'], res['njev'],
@@ -1978,7 +2041,7 @@ def fmin_ncg(f, x0, fprime, fhess_p=None, fhess=None, args=(), avextol=1e-5,
 
 def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                        callback=None, xtol=1e-5, eps=_epsilon, maxiter=None,
-                       disp=False, return_all=False,
+                       disp=False, return_all=False, c1=1e-4, c2=0.9,
                        **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2000,6 +2063,14 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     return_all : bool, optional
         Set to True to return a list of the best solution at each of the
         iterations.
+    c1 : float, default: 1e-4
+        Parameter for Armijo condition rule.
+    c2 : float, default: 0.9
+        Parameter for curvature condition rule.
+
+    Notes
+    -----
+    Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
     _check_unknown_options(unknown_options)
     if jac is None:
@@ -2133,7 +2204,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         try:
             alphak, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, fprime, xk, pk, gfk,
-                                          old_fval, old_old_fval)
+                                          old_fval, old_old_fval, c1=c1, c2=c2)
         except _LineSearchError:
             # Line search failed to find a better solution.
             msg = "Warning: " + _status_message['pr_loss']

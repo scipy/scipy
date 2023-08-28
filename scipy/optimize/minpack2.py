@@ -17,5 +17,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="minpack2",
-                                   private_module="_minpack2", all=__all__,
+                                   private_modules=["_minpack2"], all=__all__,
                                    attribute=name)

@@ -576,7 +576,7 @@ class BaseQRdelete(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0 = self.generate('tall')
         for dtype in dts:
@@ -1121,7 +1121,7 @@ class BaseQRinsert(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0, u0 = self.generate('sqr', which='row')
         for dtype in dts:
@@ -1555,7 +1555,7 @@ class BaseQRupdate(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0, u0, v0 = self.generate('tall')
         for dtype in dts:

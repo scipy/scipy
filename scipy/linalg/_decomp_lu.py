@@ -11,6 +11,10 @@ from ._misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
 from ._decomp_lu_cython import lu_dispatcher
 
+# deprecated imports to be removed in SciPy 1.13.0
+from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
+
+
 lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
                     for x in np.typecodes['All']}
 
@@ -44,9 +48,10 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     lu : (M, N) ndarray
         Matrix containing U in its upper triangle, and L in its lower triangle.
         The unit diagonal elements of L are not stored.
-    piv : (N,) ndarray
+    piv : (K,) ndarray
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
+        Of shape ``(K,)``, with ``K = min(M, N)``.
 
     See Also
     --------

@@ -63,18 +63,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
             - 'best1bin'
             - 'best1exp'
+            - 'rand1bin'
             - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
+            - 'rand2bin'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'randtobest1exp'
             - 'currenttobest1bin'
+            - 'currenttobest1exp'
+            - 'best2exp'
             - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
 
-        The default is 'best1bin'.
+        The default is 'best1bin'. Strategies that may be
+        implemented are outlined in 'Notes'
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
@@ -280,11 +281,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     more than others. The 'best1bin' strategy is a good starting point for
     many systems. In this strategy two members of the population are randomly
     chosen. Their difference is used to mutate the best member (the 'best' in
-    'best1bin'), :math:`b_0`, so far:
+    'best1bin'), :math:`x_0`, so far:
 
     .. math::
 
-        b' = b_0 + mutation * (population[rand0] - population[rand1])
+        b' = x_0 + mutation * (x_{r_0} - x_{r_1})
 
     A trial vector is then constructed. Starting with a randomly chosen ith
     parameter the trial is sequentially filled (in modulo) with parameters
@@ -297,10 +298,36 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     its fitness is assessed. If the trial is better than the original candidate
     then it takes its place. If it is also better than the best overall
     candidate it also replaces that.
+
+    The other strategies available are outlined in Qiang and
+    Mitchell (2014) [3]_.
+
+    .. math::
+            rand1* : b' = x_{r_0} + mutation*(x_{r_1} - x_{r_2})
+
+            rand2* : b' = x_{r_0} + mutation*(x_{r_1} + x_{r_2}
+                                                - x_{r_3} - x_{r_4})
+
+            best1* : b' = x_0 + mutation*(x_{r_0} - x_{r_1})
+
+            best2* : b' = x_0 + mutation*(x_{r_0} + x_{r_1}
+                                            - x_{r_2} - x_{r_3})
+
+            currenttobest1* : b' = x_i + mutation*(x_0 - x_i
+                                                     + x_{r_0} - x_{r_1})
+
+            randtobest1* : b' = x_{r_0} + mutation*(x_0 - x_{r_0}
+                                                      + x_{r_1} - x_{r_2})
+
+    where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
+    from the interval [0, NP) with `NP` being the total population size and
+    the original candidate having index `i`.
+
     To improve your chances of finding a global minimum use higher `popsize`
     values, with higher `mutation` and (dithering), but lower `recombination`
     values. This has the effect of widening the search radius, but slowing
     convergence.
+
     By default the best solution vector is updated continuously within a single
     iteration (``updating='immediate'``). This is a modification [4]_ of the
     original differential evolution algorithm which can lead to faster
@@ -331,7 +358,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
            Efficient Heuristic for Global Optimization over Continuous Spaces,
            Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [3] https://www.sciencedirect.com/science/article/pii/S111001682100613X#s0030
+    .. [3] Qiang, J., Mitchell, C., A Unified Differential Evolution Algorithm
+            for Global Optimization, 2014, https://www.osti.gov/servlets/purl/1163659
     .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
            Characterization of structures from X-ray scattering data using
            genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
@@ -342,6 +370,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            2002.
     .. [6] https://mpi4py.readthedocs.io/en/stable/
     .. [7] https://schwimmbad.readthedocs.io/en/latest/
+ 
 
     Examples
     --------
@@ -972,7 +1001,7 @@ class DifferentialEvolutionSolver:
             The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
-        popn = np.asfarray(init)
+        popn = np.asarray(init, dtype=np.float64)
 
         if (np.size(popn, 0) < 5 or
                 popn.shape[1] != self.parameter_count or

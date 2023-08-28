@@ -24,7 +24,7 @@ target-version = "py39"
 "scipy/stats/qmc.py" = ["F403"]
 "scipy/optimize/_linprog.py" = ["F401"]
 "scipy/optimize/_linprog_ip.py" = ["F401"]
-"setup.py" = ["ALL"]
+"_setup.py" = ["ALL"]
 
 [mccabe]
 # Unlike Flake8, default to a complexity level of 10.

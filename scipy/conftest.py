@@ -2,12 +2,14 @@
 import json
 import os
 import warnings
+import tempfile
 from functools import wraps
 
 import numpy as np
 import numpy.array_api
 import numpy.testing as npt
 import pytest
+import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
@@ -199,3 +201,30 @@ def skip_if_array_api_backend(backend):
                 return func(*args, **kwargs)
         return wrapped
     return wrapper
+
+
+# Following the approach of NumPy's conftest.py...
+# Use a known and persistent tmpdir for hypothesis' caches, which
+# can be automatically cleared by the OS or user.
+hypothesis.configuration.set_hypothesis_home_dir(
+    os.path.join(tempfile.gettempdir(), ".hypothesis")
+)
+
+# We register two custom profiles for SciPy - for details see
+# https://hypothesis.readthedocs.io/en/latest/settings.html
+# The first is designed for our own CI runs; the latter also
+# forces determinism and is designed for use via scipy.test()
+hypothesis.settings.register_profile(
+    name="nondeterministic", deadline=None, print_blob=True,
+)
+hypothesis.settings.register_profile(
+    name="deterministic",
+    deadline=None, print_blob=True, database=None, derandomize=True,
+    suppress_health_check=list(hypothesis.HealthCheck),
+)
+
+# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+# In the future, it would be good to work the choice into dev.py.
+SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                          "deterministic")
+hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
