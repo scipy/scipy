@@ -31,6 +31,7 @@ import inspect
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
                    asarray, sqrt)
 import numpy as np
+from scipy.linalg import cholesky, issymmetric, LinAlgError
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
@@ -40,9 +41,6 @@ from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import asfarray  # noqa
 
 
 # standard status messages of optimizers
@@ -270,7 +268,21 @@ class OptimizeResult(dict):
 class OptimizeWarning(UserWarning):
     pass
 
-
+def _check_positive_definite(Hk):
+    def is_pos_def(A):
+        if issymmetric(A):
+            try:
+                cholesky(A)
+                return True
+            except LinAlgError:
+                return False
+        else:
+            return False
+    if Hk is not None:
+        if not is_pos_def(Hk):
+            raise ValueError("'hess_inv0' matrix isn't positive definite.")
+        
+        
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -1252,7 +1264,8 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9):
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9, 
+              hess_inv0=None):
     """
     Minimize a function using the BFGS algorithm.
 
@@ -1261,7 +1274,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     f : callable ``f(x,*args)``
         Objective function to be minimized.
     x0 : ndarray
-        Initial guess.
+        Initial guess, shape (n,)
     fprime : callable ``f'(x,*args)``, optional
         Gradient of f.
     args : tuple, optional
@@ -1293,6 +1306,9 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
+    hess_inv0 : None or ndarray, optional``
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
+        matrix is used.
 
     Returns
     -------
@@ -1371,7 +1387,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
             'return_all': retall,
             'xrtol': xrtol,
             'c1': c1,
-            'c2': c2            }
+            'c2': c2,
+            'hess_inv0': hess_inv0}
 
     callback = _wrap_callback(callback)
     res = _minimize_bfgs(f, x0, args, fprime, callback=callback, **opts)
@@ -1392,7 +1409,8 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, c1=1e-4, c2=0.9, **unknown_options):
+                   xrtol=0, c1=1e-4, c2=0.9, 
+                   hess_inv0=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     BFGS algorithm.
@@ -1427,12 +1445,16 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Parameter for Armijo condition rule.
     c2 : float, default: 0.9
         Parameter for curvature condition rule.
+    hess_inv0 : None or ndarray, optional
+        Initial inverse hessian estimate, shape (n, n). If None (default) then the identity
+        matrix is used.
 
     Notes
     -----
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
     """
     _check_unknown_options(unknown_options)
+    _check_positive_definite(hess_inv0)
     retall = return_all
 
     x0 = asarray(x0).flatten()
@@ -1453,7 +1475,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     k = 0
     N = len(x0)
     I = np.eye(N, dtype=int)
-    Hk = I
+    Hk = I if hess_inv0 is None else hess_inv0
 
     # Sets the initial step guess to dx ~ 1
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
