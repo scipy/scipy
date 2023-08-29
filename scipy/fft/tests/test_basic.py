@@ -203,19 +203,17 @@ class TestFFT1D:
         x_herm = xp.asarray(x_herm)
         _assert_allclose = set_assert_allclose(xp)
         expect = fft.fft(x)
-        xp_test = array_namespace(x)
         _assert_allclose(expect,
-                         xp_test.asarray(fft.hfft(x_herm),
-                                         dtype=xp.complex128))
+                         xp.asarray(fft.hfft(x_herm), dtype=xp.complex128))
         _assert_allclose(expect,
-                         xp_test.asarray(fft.hfft(x_herm, norm="backward"),
-                                         dtype=xp.complex128))
+                         xp.asarray(fft.hfft(x_herm, norm="backward"),
+                                    dtype=xp.complex128))
         _assert_allclose(expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),
-                         xp_test.asarray(fft.hfft(x_herm, norm="ortho"),
-                                         dtype=xp.complex128))
+                         xp.asarray(fft.hfft(x_herm, norm="ortho"),
+                                    dtype=xp.complex128))
         _assert_allclose(expect / 30,
-                         xp_test.asarray(fft.hfft(x_herm, norm="forward"),
-                                         dtype=xp.complex128))
+                         xp.asarray(fft.hfft(x_herm, norm="forward"),
+                                    dtype=xp.complex128))
 
     @array_api_compatible
     def test_ihfft(self, xp):
@@ -348,7 +346,6 @@ class TestFFT1D:
                                          axes=a)
             assert_allclose(op_tr, tr_op)
 
-    @skip_if_array_api_gpu
     @array_api_compatible
     def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
@@ -362,12 +359,13 @@ class TestFFT1D:
                       #       (necessary for comparison to x_norm above)
                       (fft.ihfft, fft.hfft),
                       ]
+        _assert_allclose = set_assert_allclose(xp)
         for forw, back in func_pairs:
             for n in [size(x), 2*size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
                     tmp = back(tmp, n=n, norm=norm)
-                    assert_allclose(x_norm, xp_test.linalg.vector_norm(tmp))
+                    _assert_allclose(x_norm, xp_test.linalg.vector_norm(tmp))
 
     @skip_if_array_api
     def test_float16(self):
