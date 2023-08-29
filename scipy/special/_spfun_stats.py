@@ -33,7 +33,7 @@
 analysis."""
 
 import numpy as np
-from scipy.special import gammaln as loggam
+from scipy.special._ufuncs import gammaln as loggam
 
 
 __all__ = ['multigammaln']

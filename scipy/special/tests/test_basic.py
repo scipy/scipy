@@ -36,7 +36,8 @@ from numpy.testing import (assert_equal, assert_almost_equal,
         suppress_warnings)
 
 from scipy import special
-import scipy.special._ufuncs as cephes
+import scipy.special._multimethods_ufuncs as cephes
+from scipy.special import _ufuncs
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
@@ -556,14 +557,14 @@ class TestCephes:
         assert_equal(cephes.kolmogorov(0), 1.0)
 
     def test_kolmogp(self):
-        assert_equal(cephes._kolmogp(0), -0.0)
+        assert_equal(_ufuncs._kolmogp(0), -0.0)
 
     def test_kolmogc(self):
-        assert_equal(cephes._kolmogc(0), 0.0)
+        assert_equal(_ufuncs._kolmogc(0), 0.0)
 
     def test_kolmogci(self):
-        assert_equal(cephes._kolmogci(0), 0.0)
-        assert_(np.isnan(cephes._kolmogci(np.nan)))
+        assert_equal(_ufuncs._kolmogci(0), 0.0)
+        assert_(np.isnan(_ufuncs._kolmogci(np.nan)))
 
     def test_kv(self):
         cephes.kv(1,1)
@@ -895,18 +896,18 @@ class TestCephes:
         assert_(np.isnan(cephes.smirnov(1,np.nan)))
 
     def test_smirnovp(self):
-        assert_equal(cephes._smirnovp(1, .1), -1)
-        assert_equal(cephes._smirnovp(2, 0.75), -2*(0.25)**(2-1))
-        assert_equal(cephes._smirnovp(3, 0.75), -3*(0.25)**(3-1))
-        assert_(np.isnan(cephes._smirnovp(1, np.nan)))
+        assert_equal(_ufuncs._smirnovp(1, .1), -1)
+        assert_equal(_ufuncs._smirnovp(2, 0.75), -2*(0.25)**(2-1))
+        assert_equal(_ufuncs._smirnovp(3, 0.75), -3*(0.25)**(3-1))
+        assert_(np.isnan(_ufuncs._smirnovp(1, np.nan)))
 
     def test_smirnovc(self):
-        assert_equal(cephes._smirnovc(1,.1),0.1)
-        assert_(np.isnan(cephes._smirnovc(1,np.nan)))
+        assert_equal(_ufuncs._smirnovc(1,.1),0.1)
+        assert_(np.isnan(_ufuncs._smirnovc(1,np.nan)))
         x10 = np.linspace(0, 1, 11, endpoint=True)
-        assert_almost_equal(cephes._smirnovc(3, x10), 1-cephes.smirnov(3, x10))
+        assert_almost_equal(_ufuncs._smirnovc(3, x10), 1-cephes.smirnov(3, x10))
         x4 = np.linspace(0, 1, 5, endpoint=True)
-        assert_almost_equal(cephes._smirnovc(4, x4), 1-cephes.smirnov(4, x4))
+        assert_almost_equal(_ufuncs._smirnovc(4, x4), 1-cephes.smirnov(4, x4))
 
     def test_smirnovi(self):
         assert_almost_equal(cephes.smirnov(1,cephes.smirnovi(1,0.4)),0.4)
@@ -914,9 +915,9 @@ class TestCephes:
         assert_(np.isnan(cephes.smirnovi(1,np.nan)))
 
     def test_smirnovci(self):
-        assert_almost_equal(cephes._smirnovc(1,cephes._smirnovci(1,0.4)),0.4)
-        assert_almost_equal(cephes._smirnovc(1,cephes._smirnovci(1,0.6)),0.6)
-        assert_(np.isnan(cephes._smirnovci(1,np.nan)))
+        assert_almost_equal(_ufuncs._smirnovc(1,_ufuncs._smirnovci(1,0.4)),0.4)
+        assert_almost_equal(_ufuncs._smirnovc(1,_ufuncs._smirnovci(1,0.6)),0.6)
+        assert_(np.isnan(_ufuncs._smirnovci(1,np.nan)))
 
     def test_spence(self):
         assert_equal(cephes.spence(1),0.0)

@@ -769,36 +769,22 @@ Convenience functions
 """
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
-
 from . import _ufuncs
-from ._ufuncs import *
-
-from . import _basic
-from ._basic import *
-
-from ._logsumexp import logsumexp, softmax, log_softmax
-
+from ._ufuncs import errstate, seterr, geterr
 from . import _orthogonal
-from ._orthogonal import *
+from . import _multimethods
+from . import _multimethods_ufuncs
+from ._multimethods import *
+from ._multimethods_ufuncs import *
+from ._backend import *
 
-from ._spfun_stats import multigammaln
-from ._ellip_harm import (
-    ellip_harm,
-    ellip_harm_2,
-    ellip_normal
-)
-from ._lambertw import lambertw
-from ._spherical_bessel import (
-    spherical_jn,
-    spherical_yn,
-    spherical_in,
-    spherical_kn
-)
+
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
+__all__ =  _multimethods.__all__ + _multimethods_ufuncs.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
@@ -813,6 +799,9 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'errstate',
+    'seterr',
+    'geterr'
 ]
 
 from scipy._lib._testutils import PytestTester
