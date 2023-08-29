@@ -456,7 +456,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     if symmetrized:
         m += m.T.conj()
 
-    w = m.sum(axis=axis).getA1() - m.diagonal()
+    w = np.asarray(m.sum(axis=axis)).ravel() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
