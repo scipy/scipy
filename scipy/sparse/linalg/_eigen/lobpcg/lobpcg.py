@@ -378,12 +378,15 @@ def lobpcg(
 
     This converts the sparse matrix `A` to a LinearOperator. The matrix `A` needs 
     to be constructed to use the aslinearoperator.
-    
-    >>> from scipy.sparse.linalg import lobpcg, aslinearoperator
+
     >>> import numpy as np
-    >>> from scipy.sparse import diags
-    >>> n = 100 
+    >>> from scipy.sparse.linalg import lobpcg, aslinearoperator, LinearOperator
+    >>> n = 100
     >>> vals = np.arange(1, n+1, dtype=np.float64)
+
+    Example using `aslinearoperator`:
+
+    >>> from scipy.sparse import diags
     >>> A = diags(vals)  
     >>> A_aslo = aslinearoperator(A) 
     >>> X = np.random.default_rng().normal(size=(n, 3))
@@ -392,19 +395,10 @@ def lobpcg(
     [1. 2. 3.]
 
     Example using `LinearOperator` with a callable:
-
-    Here we define custom `matvec` and `matmat` functions for the matrix-vector and
-    matrix-matrix products. The `LinearOperator` abstracts away the matrix 
-    representation. 
-
-    >>> from scipy.sparse.linalg import lobpcg, LinearOperator
-    >>> import numpy as np
-    >>> n = 100
-    >>> vals = np.arange(1, n+1, dtype=np.float64)
+    
     Define matmat for matrix-matrix multiplication (important for LOBPCG performance)
     >>> def matmat(X):
     ...     return vals[:, np.newaxis] * X
-    Create a LinearOperator with matvec and matmat
     >>> A = LinearOperator((n, n), matvec=matmat, matmat=matmat, dtype='float64')
     >>> X = np.random.default_rng().normal(size=(n, 3))
     >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=80)
