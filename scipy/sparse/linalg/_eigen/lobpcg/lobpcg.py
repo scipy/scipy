@@ -374,10 +374,10 @@ def lobpcg(
     The next two examples demonstrate alternative ways to provide the matrix `A`
     to lobpcg without constructing the full matrix:
 
-    ### Example using `aslinearoperator`:
+    Example using `aslinearoperator`:
 
-    This converts the sparse matrix `A` to a LinearOperator. The matrix `A`
-    does not need to be explicitly constructed.
+    This converts the sparse matrix `A` to a LinearOperator. The matrix `A` needs 
+    to be constructed to use the aslinearoperator.
     
     >>> from scipy.sparse.linalg import lobpcg, aslinearoperator
     >>> import numpy as np
@@ -391,7 +391,7 @@ def lobpcg(
     >>> print(eigenvalues)  
     [1. 2. 3.]
 
-    ### Example using `LinearOperator` with a callable:
+    Example using `LinearOperator` with a callable:
 
     Here we define custom `matvec` and `matmat` functions for the matrix-vector and
     matrix-matrix products. The `LinearOperator` abstracts away the matrix 
@@ -401,14 +401,11 @@ def lobpcg(
     >>> import numpy as np
     >>> n = 100
     >>> vals = np.arange(1, n+1, dtype=np.float64)
-    # Define matvec for matrix-vector multiplication
-    >>> def matvec(X):
-    >>>     return vals[:, np.newaxis] * X
-    # Define matmat for matrix-matrix multiplication (important for LOBPCG performance)
+    Define matmat for matrix-matrix multiplication (important for LOBPCG performance)
     >>> def matmat(X):
-    >>>     return vals[:, np.newaxis] * X
-    # Create a LinearOperator with matvec and matmat
-    >>> A = LinearOperator((n, n), matvec=matmat, dtype='float64')
+    ...     return vals[:, np.newaxis] * X
+    Create a LinearOperator with matvec and matmat
+    >>> A = LinearOperator((n, n), matvec=matmat, matmat=matmat, dtype='float64')
     >>> X = np.random.default_rng().normal(size=(n, 3))
     >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=80)
     >>> print(eigenvalues)  
