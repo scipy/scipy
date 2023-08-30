@@ -376,7 +376,7 @@ def lobpcg(
 
     Example using `aslinearoperator`:
 
-    This converts the sparse matrix `A` to a LinearOperator. The matrix `A` needs 
+    This converts the sparse matrix `A` to a `LinearOperator`. The matrix `A` needs 
     to be constructed to use the aslinearoperator.
 
     >>> import numpy as np
