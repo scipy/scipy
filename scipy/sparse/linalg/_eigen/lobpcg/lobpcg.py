@@ -372,7 +372,7 @@ def lobpcg(
 
 
     The next two examples demonstrate alternative ways to provide the matrix `A`
-    to lobpcg without constructing the full matrix:
+    to `lobpcg` without constructing the full matrix:
 
     Example using `aslinearoperator`:
 
