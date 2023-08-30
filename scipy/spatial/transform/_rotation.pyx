@@ -2971,7 +2971,7 @@ cdef class Rotation:
                 raise ValueError("Expected `weights` to be 1 dimensional, "
                                  "got shape {}.".format(weights.shape))
             if N > 1 and (weights.shape[0] != N):
-                raise ValueError("Expected `weights` to have number of"
+                raise ValueError("Expected `weights` to have number of "
                                  "values equal to number of input vectors, "
                                  "got {} values and {} vectors.".format(
                                      weights.shape[0], N))
