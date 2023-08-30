@@ -379,12 +379,8 @@ def lobpcg(
     This converts the sparse matrix `A` to a `LinearOperator`. The matrix `A` needs 
     to be constructed to use the `aslinearoperator`.
 
-    >>> n = 100
-    >>> vals = np.arange(1, n+1, dtype=np.float64)
-
     Example using `aslinearoperator`:
 
-    >>> A = spdiags(vals, 0, n, n) 
     >>> A_aslo = aslinearoperator(A) 
     >>> X = np.random.default_rng().normal(size=(n, 3))
     >>> eigenvalues, _ = lobpcg(A_aslo, X, largest=False, maxiter=80)
