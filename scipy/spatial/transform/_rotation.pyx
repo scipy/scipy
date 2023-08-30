@@ -2968,13 +2968,13 @@ cdef class Rotation:
         else:
             weights = np.array(weights, dtype=float)
             if weights.ndim != 1:
-                raise ValueError("Expected `weights` to be 1 dimensional, "
-                                 "got shape {}.".format(weights.shape))
+                raise ValueError("Expected `weights` to be 1 dimensional, got "
+                                 "shape {}.".format(weights.shape))
             if N > 1 and (weights.shape[0] != N):
-                raise ValueError("Expected `weights` to have number of "
-                                 "values equal to number of input vectors, "
-                                 "got {} values and {} vectors.".format(
-                                     weights.shape[0], N))
+                raise ValueError("Expected `weights` to have number of values "
+                                 "equal to number of input vectors, got "
+                                 "{} values and {} vectors.".format(
+                                    weights.shape[0], N))
             if (weights < 0).any():
                 raise ValueError("`weights` may not contain negative values")
 
