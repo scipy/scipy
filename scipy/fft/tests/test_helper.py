@@ -15,7 +15,6 @@ from scipy.conftest import (
     skip_if_array_api_gpu
 )
 from scipy._lib._array_api import(
-    array_namespace,
     size,
     _assert_matching_namespace,
     set_assert_allclose
@@ -142,10 +141,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        xp_test = array_namespace(shape_res, axes_res)
-
-        assert size(xp_test.asarray(shape_res)) == 0
-        assert size(xp_test.asarray(axes_res)) == 0
+        assert size(shape_res) == 0
+        assert size(axes_res) == 0
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -156,10 +153,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        xp_test = array_namespace(shape_res, axes_res)
-
-        assert size(xp_test.asarray(shape_res)) == 0
-        assert size(xp_test.asarray(axes_res)) == 0
+        assert size(shape_res) == 0
+        assert size(axes_res) == 0
 
     @skip_if_array_api_gpu
     @array_api_compatible
