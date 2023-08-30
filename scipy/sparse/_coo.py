@@ -302,7 +302,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 raise ValueError('negative column index found')
 
     def transpose(self, axes=None, copy=False):
-        if axes is not None:
+        if axes is not None and axes != (1, 0):
             raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")
