@@ -2777,10 +2777,11 @@ cdef class Rotation:
         shortest distance rotation between the primary infinite weight vectors
         is calculated as above. Then, the rotation about the aligned primary
         vectors is calculated such that the secondary vectors are optimally
-        aligned per the above loss function. The result is then the
-        composition of these two rotations. The result via this process is the
-        same as the Kabsch algorithm as the corresponding weight approaches
-        infinity in the limit.
+        aligned per the above loss function. The result is the composition
+        of these two rotations. The result via this process is the same as the
+        Kabsch algorithm as the corresponding weight approaches infinity in
+        the limit. For a single secondary vector this is known as the
+        align-constrain algorithm [2]_.
 
         For both special cases (single vectors or an infinite weight), the
         sensitivity matrix does not have physical meaning and an error will be
@@ -2834,26 +2835,30 @@ cdef class Rotation:
         this rotation vector assuming that the vectors in `a` was measured with
         errors significantly less than their lengths. To get the true
         covariance matrix, the returned sensitivity matrix must be multiplied
-        by harmonic mean [2]_ of variance in each observation. Note that
+        by harmonic mean [3]_ of variance in each observation. Note that
         `weights` are supposed to be inversely proportional to the observation
         variances to get consistent results. For example, if all vectors are
         measured with the same accuracy of 0.01 (`weights` must be all equal),
         then you should multiple the sensitivity matrix by 0.01**2 to get the
         covariance.
 
-        Refer to [3]_ for more rigorous discussion of the covariance
-        estimation. See [4]_ for more discussion of the pointing problem and
+        Refer to [4]_ for more rigorous discussion of the covariance
+        estimation. See [5]_ for more discussion of the pointing problem and
         minimal proper pointing.
 
         References
         ----------
         .. [1] https://en.wikipedia.org/wiki/Kabsch_algorithm
-        .. [2] https://en.wikipedia.org/wiki/Harmonic_mean
-        .. [3] F. Landis Markley,
+        .. [2] Magner, Robert,
+                "Extending target tracking capabilities through trajectory and
+                momentum setpoint optimization." Small Satellite Conference,
+                2018.
+        .. [3] https://en.wikipedia.org/wiki/Harmonic_mean
+        .. [4] F. Landis Markley,
                 "Attitude determination using vector observations: a fast
                 optimal matrix algorithm", Journal of Astronautical Sciences,
                 Vol. 41, No.2, 1993, pp. 261-280.
-        .. [4] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
+        .. [5] Bar-Itzhack, Itzhack Y., Daniel Hershkowitz, and Leiba Rodman,
                 "Pointing in Real Euclidean Space", Journal of Guidance,
                 Control, and Dynamics, Vol. 20, No. 5, 1997, pp. 916-922.
 
@@ -2963,13 +2968,13 @@ cdef class Rotation:
         else:
             weights = np.array(weights, dtype=float)
             if weights.ndim != 1:
-                raise ValueError("Expected `weights` to be 1 dimensional, got "
-                                "shape {}.".format(weights.shape))
+                raise ValueError("Expected `weights` to be 1 dimensional, "
+                                 "got shape {}.".format(weights.shape))
             if N > 1 and (weights.shape[0] != N):
-                raise ValueError("Expected `weights` to have number of values "
-                                "equal to number of input vectors, got "
-                                "{} values and {} vectors.".format(
-                                    weights.shape[0], N))
+                raise ValueError("Expected `weights` to have number of"
+                                 "values equal to number of input vectors, "
+                                 "got {} values and {} vectors.".format(
+                                     weights.shape[0], N))
             if (weights < 0).any():
                 raise ValueError("`weights` may not contain negative values")
 
