@@ -547,7 +547,7 @@ def _krandinit(data, k, rng, xp):
     k = np.asarray(k)
 
     if data.ndim == 1:
-        _cov = cov(data, xp=xp)
+        _cov = cov(data)
         x = rng.standard_normal(size=k)
         x = xp.asarray(x)
         x *= xp.sqrt(_cov)
@@ -559,7 +559,7 @@ def _krandinit(data, k, rng, xp):
         sVh = s[:, None] * vh / xp.sqrt(data.shape[0] - xp.asarray(1.))
         x = x @ sVh
     else:
-        _cov = atleast_nd(cov(data.T, xp=xp), ndim=2, xp=xp)
+        _cov = atleast_nd(cov(data.T), ndim=2)
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)

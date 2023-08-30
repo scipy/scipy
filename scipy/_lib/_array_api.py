@@ -130,8 +130,10 @@ def as_xparray(
     return array
 
 
-def atleast_nd(x, *, ndim, xp):
+def atleast_nd(x, *, ndim, xp=None):
     """Recursively expand the dimension to have at least `ndim`."""
+    if xp is None:
+        xp = array_namespace(x)
     x = xp.asarray(x)
     if x.ndim < ndim:
         x = xp.expand_dims(x, axis=0)

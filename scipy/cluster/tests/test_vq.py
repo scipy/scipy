@@ -20,7 +20,6 @@ from scipy.sparse._sputils import matrix
 
 from scipy._lib._array_api import (
     SCIPY_ARRAY_API,
-    array_namespace,
     copy,
     cov
 )
@@ -322,15 +321,14 @@ class TestKMean:
                         reason='Fails with MemoryError in Wine.')
     def test_krandinit(self, xp):
         data = xp.asarray(TESTDATA_2D)
-        xp_test = array_namespace(data)
         datas = [xp.reshape(data, (200, 2)),
                  xp.reshape(data, (20, 20))[:10, :]]
         k = int(1e6)
         for data in datas:
             rng = np.random.default_rng(1234)
-            init = _krandinit(data, k, rng, xp_test)
-            orig_cov = cov(data.T, xp=xp_test)
-            init_cov = cov(init.T, xp=xp_test)
+            init = _krandinit(data, k, rng, xp)
+            orig_cov = cov(data.T)
+            init_cov = cov(init.T)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
 
     @array_api_compatible
