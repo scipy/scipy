@@ -195,6 +195,6 @@ def cov(x, *, xp=None):
     if xp.isdtype(X_T.dtype, 'complex floating'):
         X_T = xp.conj(X_T)
     c = X @ X_T
-    c *= 1 / fact
+    c /= fact
     axes = tuple(axis for axis, length in enumerate(c.shape) if length == 1)
     return xp.squeeze(c, axis=axes)
