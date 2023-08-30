@@ -379,8 +379,6 @@ def lobpcg(
     This converts the sparse matrix `A` to a `LinearOperator`. The matrix `A` needs 
     to be constructed to use the `aslinearoperator`.
 
-    >>> import numpy as np
-    >>> from scipy.sparse.linalg import lobpcg, aslinearoperator, LinearOperator
     >>> n = 100
     >>> vals = np.arange(1, n+1, dtype=np.float64)
 
