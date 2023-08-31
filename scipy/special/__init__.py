@@ -422,7 +422,9 @@ Gamma and related functions
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
+   betaincc     -- Complemented incomplete beta integral.
    betaincinv   -- Inverse function to beta integral.
+   betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
@@ -768,6 +770,8 @@ Convenience functions
 
 """
 
+import warnings
+
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
@@ -798,6 +802,7 @@ from ._spherical_bessel import (
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
+
 __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
@@ -818,3 +823,24 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
+             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
+
+
+def btdtr(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtr(*args, **kwargs)
+
+
+btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
+
+
+def btdtri(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtri(*args, **kwargs)
+
+
+btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]

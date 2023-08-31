@@ -218,13 +218,27 @@
         }
     },
     "betainc": {
-        "cephes.h": {
-            "incbet": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_float": "fff->f",
+            "ibeta_double": "ddd->d"
+        }
+    },
+    "betaincc": {
+        "boost_special_functions.h++": {
+            "ibetac_float": "fff->f",
+            "ibetac_double": "ddd->d"
         }
     },
     "betaincinv": {
-        "cephes.h": {
-            "incbi": "ddd->d"
+        "boost_special_functions.h++": {
+            "ibeta_inv_float": "fff->f",
+            "ibeta_inv_double": "ddd->d"
+        }
+    },
+    "betainccinv": {
+        "boost_special_functions.h++": {
+            "ibetac_inv_float": "fff->f",
+            "ibetac_inv_double": "ddd->d"
         }
     },
     "betaln": {
