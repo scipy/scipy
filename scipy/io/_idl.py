@@ -241,7 +241,7 @@ def _read_structure(f, array_desc, struct_desc):
                 raise Exception("Variable type %i not implemented" %
                                                             col['typecode'])
 
-    structure = np.recarray((nrows, ), dtype=dtype)
+    structure = np.rec.recarray((nrows, ), dtype=dtype)
 
     for i in range(nrows):
         for col in columns:
@@ -584,7 +584,7 @@ def _replace_heap(variable, heap):
 
         return True, variable
 
-    elif isinstance(variable, np.recarray):
+    elif isinstance(variable, np.rec.recarray):
 
         # Loop over records
         for ir, record in enumerate(variable):
