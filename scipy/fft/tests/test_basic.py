@@ -367,33 +367,42 @@ class TestFFT1D:
                     tmp = back(tmp, n=n, norm=norm)
                     _assert_allclose(x_norm, xp_test.linalg.vector_norm(tmp))
 
-    @skip_if_array_api
-    def test_float16(self):
-        x = random(30).astype(np.float16)
-        assert_array_almost_equal(fft.ifft(fft.fft(x)), x)
-        assert_array_almost_equal(fft.irfft(fft.rfft(x)), x)
-        assert_array_almost_equal(fft.hfft(fft.ihfft(x), len(x)), x)
+    @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
+    def test_dtypes_nonstandard(self, dtype):
+        x = random(30).astype(dtype)
+        out_dtypes = {np.float16: np.complex64, np.longdouble: np.clongdouble}
+        x_complex = x.astype(out_dtypes[dtype])
+
+        res_fft = fft.ifft(fft.fft(x))
+        res_rfft = fft.irfft(fft.rfft(x))
+        res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
+        # Check both numerical results and exact dtype matches
+        assert_array_almost_equal(res_fft, x_complex)
+        assert_array_almost_equal(res_rfft, x)
+        assert_array_almost_equal(res_hfft, x)
+        assert res_fft.dtype == x_complex.dtype
+        assert res_rfft.dtype == np.result_type(np.float32, x.dtype)
+        assert res_hfft.dtype == np.result_type(np.float32, x.dtype)
 
     @array_api_compatible
-    def test_float32(self, xp):
-        x = xp.asarray(random(30), dtype=xp.float32)
+    @pytest.mark.parametrize("dtype", ["float32", "float64"])
+    def test_dtypes(self, dtype, xp):
+        x = xp.asarray(random(30), dtype=getattr(xp, dtype))
+        out_dtypes = {"float32": xp.complex64, "float64": xp.complex128}
+        x_complex = xp.asarray(x, dtype=out_dtypes[dtype])
         _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(fft.ifft(fft.fft(x)),
-                         xp.asarray(x, dtype=xp.complex64),
-                         rtol=1e-4, atol=0)
-        _assert_allclose(fft.irfft(fft.rfft(x)), x,
-                         rtol=1e-4, atol=0)
-        _assert_allclose(fft.hfft(fft.ihfft(x), x.shape[0]), x,
-                         rtol=1e-4, atol=0)
 
-    @array_api_compatible
-    def test_float64(self, xp):
-        x = xp.asarray(random(30), dtype=xp.float64)
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(fft.ifft(fft.fft(x)),
-                         xp.asarray(x, dtype=xp.complex128))
-        _assert_allclose(fft.irfft(fft.rfft(x)), x)
-        _assert_allclose(fft.hfft(fft.ihfft(x), x.shape[0]), x)
+        res_fft = fft.ifft(fft.fft(x))
+        res_rfft = fft.irfft(fft.rfft(x))
+        res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
+        # Check both numerical results and exact dtype matches
+        rtol = {"float32": 1e-4, "float64": 1e-8}[dtype]
+        _assert_allclose(res_fft, x_complex, rtol=rtol, atol=0)
+        _assert_allclose(res_rfft, x, rtol=rtol, atol=0)
+        _assert_allclose(res_hfft, x, rtol=rtol, atol=0)
+        assert res_fft.dtype == x_complex.dtype
+        assert res_rfft.dtype == x.dtype
+        assert res_hfft.dtype == x.dtype
 
 
 @skip_if_array_api
