@@ -201,6 +201,12 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     """
     Construct a sparse matrix from diagonals.
 
+    .. warning::
+
+        This function returns a sparse matrix -- not a sparse array.
+        You are encouraged to use ``diags_array`` to take advantage
+        of the sparse array functionality.
+
     Parameters
     ----------
     diagonals : sequence of array_like
@@ -225,12 +231,6 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
     --------
     spdiags : construct matrix from diagonals
     diags_array : construct sparse array instead of sparse matrix
-
-    .. warning::
-
-        This function returns a sparse matrix -- not a sparse array.
-        You are encouraged to use ``diags_array`` to take advantage
-        of the sparse array functionality.
 
     Notes
     -----
@@ -303,15 +303,15 @@ def identity(n, dtype='d', format=None):
 
     Examples
     --------
-    >>> from scipy.sparse import identity
-    >>> identity(3).toarray()
+    >>> import scipy as sp
+    >>> sp.sparse.identity(3).toarray()
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> identity(3, dtype='int8', format='dia')
+    >>> sp.sparse.identity(3, dtype='int8', format='dia')
     <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
-    >>> eye_array(3, dtype='int8', format='dia')
+    >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
     <3x3 sparse array of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
@@ -350,7 +350,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sparse.eye(3, dtype=np.int8)
+    >>> sp.sparse.eye(3, dtype=np.int8)
     <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
@@ -408,12 +408,12 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy import sparse
-    >>> sparse.eye(3).toarray()
+    >>> import scipy as sp
+    >>> sp.sparse.eye(3).toarray()
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sparse.eye(3, dtype=np.int8)
+    >>> sp.sparse.eye(3, dtype=np.int8)
     <3x3 sparse matrix of type '<class 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
@@ -464,16 +464,16 @@ def kron(A, B, format=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy import sparse
-    >>> A = sparse.csr_array(np.array([[0, 2], [5, 0]]))
-    >>> B = sparse.csr_array(np.array([[1, 2], [3, 4]]))
-    >>> sparse.kron(A, B).toarray()
+    >>> import scipy as sp
+    >>> A = sp.sparse.csr_array(np.array([[0, 2], [5, 0]]))
+    >>> B = sp.sparse.csr_array(np.array([[1, 2], [3, 4]]))
+    >>> sp.sparse.kron(A, B).toarray()
     array([[ 0,  0,  2,  4],
            [ 0,  0,  6,  8],
            [ 5, 10,  0,  0],
            [15, 20,  0,  0]])
 
-    >>> sparse.kron(A, [[1, 2], [3, 4]]).toarray()
+    >>> sp.sparse.kron(A, [[1, 2], [3, 4]]).toarray()
     array([[ 0,  0,  2,  4],
            [ 0,  0,  6,  8],
            [ 5, 10,  0,  0],
@@ -1096,10 +1096,9 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
         sparse matrix format.
     dtype : dtype, optional
         type of the returned matrix values.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
+    random_state : {None, int, `Generator`, `RandomState`}, optional
         The random number generator used for this function. We recommend using
-        this for every call with a numpy Generator as it is much faster.
+        this for every call with a `numpy.random.Generator` as it is much faster.
 
         - If `seed` is None (or `np.random`), the `numpy.random.RandomState`
           singleton is used.
@@ -1131,16 +1130,15 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
 
     Passing a ``np.random.Generator`` instance for better performance:
 
-    >>> from scipy.sparse import random
-    >>> from scipy import stats
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
+    >>> import numpy as np
+    >>> import scipy as sp
+    >>> rng = np.random.default_rng()
     >>> S = random(3, 4, density=0.25, random_state=rng)
 
     Proving a sampler for the values:
 
-    >>> rvs = stats.poisson(25, loc=10).rvs
-    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
+    >>> rvs = sp.stats.poisson(25, loc=10).rvs
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1153,7 +1151,7 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
     >>> Y = X()  # get a frozen version of the distribution
-    >>> S = random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
     >>> S.A
     array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
