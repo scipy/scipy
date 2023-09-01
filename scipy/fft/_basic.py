@@ -7,23 +7,30 @@ def arg_err_msg(param):
     return f'Providing {param!r} is only supported for numpy arrays.'
 
 
-def _execute_1D(func_str, uarray_func, x, n, axis, norm,
-                overwrite_x, workers, plan):
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return uarray_func(x, n=n, axis=axis, norm=norm,
-                           overwrite_x=overwrite_x, workers=workers, plan=plan)
+def _validate_fft_args(overwrite_x, workers, plan, norm):
     if overwrite_x:
         raise ValueError(arg_err_msg("overwrite_x"))
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
         raise ValueError(arg_err_msg("plan"))
+    if norm is None:
+        norm = 'backward'
+    return norm
+
+
+def _execute_1D(func_str, uarray_func, x, n, axis, norm,
+                overwrite_x, workers, plan):
+    xp = array_namespace(x)
+    if is_numpy(xp):
+        return uarray_func(x, n=n, axis=axis, norm=norm,
+                           overwrite_x=overwrite_x, workers=workers, plan=plan)
+
+    norm = _validate_fft_args(overwrite_x, workers, plan, norm)
     if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
         xp_func = getattr(xp.fft, func_str)
         return xp_func(x, n=n, axis=axis, norm=norm)
+
     x = np.asarray(x)
     y = uarray_func(x, n=n, axis=axis, norm=norm)
     return xp.asarray(y)
@@ -35,17 +42,12 @@ def _execute_nD(func_str, uarray_func, x, s, axes, norm,
     if is_numpy(xp):
         return uarray_func(x, s=s, axes=axes, norm=norm,
                            overwrite_x=overwrite_x, workers=workers, plan=plan)
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
+
+    norm = _validate_fft_args(overwrite_x, workers, plan, norm)
     if hasattr(xp, 'fft'):
-        if norm is None:
-            norm = 'backward'
         xp_func = getattr(xp.fft, func_str)
         return xp_func(x, s=s, axes=axes, norm=norm)
+
     x = np.asarray(x)
     y = uarray_func(x, s=s, axes=axes, norm=norm)
     return xp.asarray(y)
