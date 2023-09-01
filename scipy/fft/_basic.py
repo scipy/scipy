@@ -44,7 +44,7 @@ def _execute_nD(func_str, uarray_func, x, s, axes, norm,
     if hasattr(xp, 'fft'):
         if norm is None:
             norm = 'backward'
-            xp_func = getattr(xp.fft, func_str)
+        xp_func = getattr(xp.fft, func_str)
         return xp_func(x, s=s, axes=axes, norm=norm)
     x = np.asarray(x)
     y = uarray_func(x, s=s, axes=axes, norm=norm)
