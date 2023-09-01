@@ -34,10 +34,6 @@ from . cimport sf_error
 
 # rgamma_zero: smallest value x for which rgamma(x) == 0 as x gets large
 DEF rgamma_zero = 178.47241115886637
-# exp_inf: smallest value x for which exp(x) == inf
-DEF exp_inf = 709.78271289338403
-# exp_zero: largest value x for which exp(x) == 0
-# DEF exp_zero = -745.13321910194117
 
 
 @cython.cdivision(True)
@@ -808,6 +804,8 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) noexcept n
     cdef:
         double xk_k, res
         int order
+        # exp_inf: smallest value x for which exp(x) == inf
+        double exp_inf = 709.78271289338403
 
     if isnan(a) or isnan(b) or isnan(x):
         return NAN
