@@ -366,7 +366,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
             indptr = np.arange(n+1, dtype=idx_dtype)
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
+            cls = {'csr': csr_array, 'csc': csc_array}[format]
             return cls((data, indices, indptr), (n, n))
 
         elif format == 'coo':
@@ -374,7 +374,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
             row = np.arange(n, dtype=idx_dtype)
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            return coo_matrix((data, (row, col)), (n, n))
+            return coo_array((data, (row, col)), (n, n))
 
     data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return diags_array(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
