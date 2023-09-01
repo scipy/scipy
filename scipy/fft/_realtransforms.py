@@ -5,6 +5,26 @@ import numpy as np
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
+def _execute_1D(uarray_func, x, type, n, axis, norm,
+                overwrite_x, workers, orthogonalize):
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = uarray_func(x, type=type, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers,
+                    orthogonalize=orthogonalize)
+    return xp.asarray(y)
+
+
+def _execute_nD(uarray_func, x, type, s, axes, norm, 
+                overwrite_x, workers, orthogonalize):
+    xp = array_namespace(x)
+    x = np.asarray(x)
+    y = uarray_func(x, type=type, s=s, axes=axes, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers,
+                    orthogonalize=orthogonalize)
+    return xp.asarray(y)
+
+
 def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, *, orthogonalize=None):
     """Return multidimensional Discrete Cosine Transform
@@ -66,13 +86,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     True
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.dctn(x, type=type, s=s, axes=axes, norm=norm,
-                                    overwrite_x=overwrite_x,
-                                    workers=workers,
-                                    orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_nD(_realtransforms_uarray.dctn, x, type, s, axes, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
@@ -136,13 +151,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     True
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.idctn(x, type=type, s=s, axes=axes, norm=norm,
-                                     overwrite_x=overwrite_x,
-                                     workers=workers,
-                                     orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_nD(_realtransforms_uarray.idctn, x, type, s, axes, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
@@ -206,13 +216,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     True
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.dstn(x, type=type, s=s, axes=axes, norm=norm,
-                                    overwrite_x=overwrite_x,
-                                    workers=workers,
-                                    orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_nD(_realtransforms_uarray.dstn, x, type, s, axes, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
@@ -276,13 +281,8 @@ def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
     True
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.idstn(x, type=type, s=s, axes=axes, norm=norm,
-                                     overwrite_x=overwrite_x,
-                                     workers=workers,
-                                     orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_nD(_realtransforms_uarray.idstn, x, type, s, axes, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
@@ -431,13 +431,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     array([ 30.,  -8.,   6.,  -2.])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.dct(x, type=type, n=n, axis=axis, norm=norm,
-                                   overwrite_x=overwrite_x,
-                                   workers=workers,
-                                   orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_1D(_realtransforms_uarray.dct, x, type, n, axis, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
@@ -516,13 +511,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     array([  4.,   3.,   5.,  10.])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.idct(x, type=type, n=n, axis=axis, norm=norm,
-                                    overwrite_x=overwrite_x,
-                                    workers=workers,
-                                    orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_1D(_realtransforms_uarray.idct, x, type, n, axis, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
@@ -655,13 +645,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
            https://en.wikipedia.org/wiki/Discrete_sine_transform
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.dst(x, type=type, n=n, axis=axis, norm=norm,
-                                   overwrite_x=overwrite_x,
-                                   workers=workers,
-                                   orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_1D(_realtransforms_uarray.dst, x, type, n, axis, norm, 
+                       overwrite_x, workers, orthogonalize)
 
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
@@ -723,10 +708,5 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
     other's inverses.
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _realtransforms_uarray.idst(x, type=type, n=n, axis=axis, norm=norm,
-                                    overwrite_x=overwrite_x,
-                                    workers=workers,
-                                    orthogonalize=orthogonalize)
-    return xp.asarray(y)
+    return _execute_1D(_realtransforms_uarray.idst, x, type, n, axis, norm, 
+                       overwrite_x, workers, orthogonalize)
