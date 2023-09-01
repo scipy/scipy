@@ -86,9 +86,9 @@ Building sparse matrices:
 .. autosummary::
    :toctree: generated/
 
+   eye_array - Sparse MxN array whose k-th diagonal is all ones
    eye - Sparse MxN matrix whose k-th diagonal is all ones
    identity - Identity matrix in sparse format
-   identity_array - Identity array in sparse format
    kron - kronecker product of two sparse matrices
    kronsum - kronecker sum of sparse matrices
    diags - Return a sparse matrix from diagonals
