@@ -17,7 +17,7 @@ __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
 _ECONVERGED = 0
 _ESIGNERR = -1  # used in _chandrupatla
 _EERRORINCREASE = -1  # used in _differentiate
-_ELIMIT = -1  # used in _bracket_root
+_ELIMITS = -1  # used in _bracket_root
 _ECONVERR = -2
 _EVALUEERR = -3
 _ECALLBACK = -4
@@ -1622,7 +1622,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
         stop[i] = True
 
         i = (work.x == work.limit) & ~stop
-        work.status[i] = _ELIMIT
+        work.status[i] = _ELIMITS
         stop[i] = True
 
         i = ~(np.isfinite(work.x) & np.isfinite(work.f)) & ~stop
@@ -2641,8 +2641,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def post_termination_check(work):
         return
 
-    def customize_result(res):
-        return
+    def customize_result(res, shape):
+        return shape
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
