@@ -779,7 +779,7 @@ class levy_stable_gen(rv_continuous):
     equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
     ``y = (x - loc) / scale``, except in the ``S1`` parameterization if
     ``alpha == 1``.  In that case ``%(name)s.pdf(x, %(shapes)s, loc, scale)``
-     is identically equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+    is identically equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
     ``y = (x - loc - 2 * beta * scale * np.log(scale) / np.pi) / scale``.
     Note that shifting the location of a distribution
     does not make it a "noncentral" distribution.
