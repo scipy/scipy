@@ -15,12 +15,14 @@ __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
-_ESIGNERR = -1
+_ESIGNERR = -1  # used in _chandrupatla
+_EERRORINCREASE = -1  # used in _differentiate
+_ELIMIT = -1  # used in _bracket_root
 _ECONVERR = -2
 _EVALUEERR = -3
 _ECALLBACK = -4
-_EERRORINCREASE = -1
 _EINPROGRESS = 1
+_ESTOPONESIDE = 2  # used in _bracket_root
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
@@ -1457,7 +1459,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
         not provided, ``b = a + 1``. Must be broadcastable with one another.
     min, max : float, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
-        be braodcastable with `a` and `b`.
+        be broadcastable with `a` and `b`.
     factor : float, default: golden ratio
         The factor used to grow the bracket. See notes for details.
     args : tuple, optional
@@ -1469,9 +1471,32 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     Returns
     -------
-    l, r : float
-        The left and right endpoints of the bracket such that
-        ``func(l) < 0 < func(r)``.
+    res : OptimizeResult
+        An instance of `scipy.optimize.OptimizeResult` with the following
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+        arrays of the same shape.
+
+        xl, xr : float
+            The lower and upper ends of the bracket.
+        fl, fr : float
+            The function value at the lower and upper ends of the bracket.
+        nfev : int
+            The number of times the function was called to find the root.
+        nit : int
+            The number of iterations of Chandrupatla's algorithm performed.
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm produced a valid bracket.
+            ``-1`` : The bracket expanded to the allowable limits without finding a bracket.
+            ``-2`` : The maximum number of iterations was reached.
+            ``-3`` : A non-finite value was encountered.
+            ``-4`` : Iteration was terminated by `callback`.
+            ``1`` : The algorithm is proceeding normally (in `callback` only).
+            ``2`` : A bracket was found in the opposite search direction (in `callback` only).
+
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
 
     Notes
     -----
@@ -1498,8 +1523,6 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     """
     # Todo:
-    # - update error codes
-    # - update documentation
     # - find bracket with sign change in specified direction
     # - Add tolerance
     # - allow factor < 1?
@@ -1510,7 +1533,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     xs = (a, b)
     temp = _scalar_optimization_initialize(func, xs, args)
-    xs, fs, args, shape, dtype = temp  # line split for PEP8
+    xs, fs, args, shape, dtype = temp
     x = np.concatenate(xs)
     f = np.concatenate(fs)
     n = len(x) // 2
@@ -1595,11 +1618,11 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
         i = np.zeros_like(stop)
         i[j] = True  # boolean indices of elements that can also stop
         i = i & ~stop
-        work.status[i] = _ESIGNERR
+        work.status[i] = _ESTOPONESIDE
         stop[i] = True
 
         i = (work.x == work.limit) & ~stop
-        work.status[i] = _ECONVERR
+        work.status[i] = _ELIMIT
         stop[i] = True
 
         i = ~(np.isfinite(work.x) & np.isfinite(work.f)) & ~stop
@@ -1650,7 +1673,9 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
         res['nit'] = np.maximum(res['nit'][:n], res['nit'][n:])
         res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
-        res['status'] = np.maximum(sa, sb)
+        # If the status on one side is zero, the status is zero. In any case,
+        # report the status from one side only.
+        res['status'] = np.choose(sa == 0, (sb, sa))
         res['success'] = (res['status'] == 0)
         del res['x']
         del res['f']
