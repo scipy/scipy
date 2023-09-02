@@ -1101,3 +1101,14 @@ class TestTanhSinh:
 
         res = _tanhsinh(f, 0, 1, args=99)
         assert_allclose(res.integral, 1/100)
+
+        # Test NaNs
+        a = [np.nan, 0, 0, 0]
+        b = [1, np.nan, 1, 1]
+        c = [1, 1, np.nan, 1]
+        res = _tanhsinh(f, a, b, args=(c,))
+        assert_allclose(res.integral, [np.nan, np.nan, np.nan, 0.5])
+        assert_allclose(res.error[:3], np.nan)
+        assert_equal(res.status, [-3, -3, -3, 0])
+        assert_equal(res.success, [False, False, False, True])
+        assert_equal(res.nfev[:3], 1)

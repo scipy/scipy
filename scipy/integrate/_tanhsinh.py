@@ -235,7 +235,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
-        c[np.isnan(c)] = 0  # infinite left and right limits
+        c[np.isinf(a)] = b[np.isinf(a)]  # takes care of infinite a
+        c[np.isinf(b)] = a[np.isinf(b)]  # takes care of infinite b
+        c[np.isnan(c)] = 0  # takes care of infinite a and b
         tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
     xs, fs, args, shape, dtype = tmp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
@@ -251,6 +253,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     maxiter = maxlevel - minlevel + 1
 
     Sn = np.full(shape, zero, dtype=dtype).ravel()  # latest integral estimate
+    Sn[np.isnan(a) | np.isnan(b) | np.isnan(fs[0])] = np.nan
     Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
     status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
@@ -327,17 +330,19 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             work.aerr[i] = zero
             work.status[i] = _ECONVERGED
             stop[i] = True
-            return stop
-
-        # Terminate if convergence criterion is met
-        work.rerr, work.aerr = _estimate_error(work)
-        i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
-             else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
-        work.status[i] = _ECONVERGED
-        stop[i] = True
+        else:
+            # Terminate if convergence criterion is met
+            work.rerr, work.aerr = _estimate_error(work)
+            i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
+                 else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
+            work.status[i] = _ECONVERGED
+            stop[i] = True
 
         # Terminate if integral estimate becomes invalid
-        i = ~np.isfinite(work.Sn) & ~stop
+        if log:
+            i = (np.isposinf(np.real(work.Sn)) | np.isnan(work.Sn)) & ~stop
+        else:
+            i = ~np.isfinite(work.Sn) & ~stop
         work.status[i] = _EVALUEERR
         stop[i] = True
 
