@@ -137,7 +137,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Notes
     -----
     Implements the algorithm as described in [1]_ with minor adaptations for
-    fixed-precision arithmetic, including some described by [2]_ and [3]_. The
+    finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
 
     Due floating-point error in the abscissae, the function may be evaluated
