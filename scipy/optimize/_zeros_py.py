@@ -1688,8 +1688,8 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
     res_dict['status'] = np.full(n_elements, _EINPROGRESS)
-    res_dict['nit'] = np.zeros(n_elements, dtype=int)
-    res_dict['nfev'] = np.zeros(n_elements, dtype=int)
+    res_dict['nit'] = res_dict['nit'].astype(int)
+    res_dict['nfev'] = res_dict['nfev'].astype(int)
     res = OptimizeResult(res_dict)
     work.args = args
 
@@ -1767,7 +1767,7 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
+def _scalar_optimization_initialize(func, xs, args):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -1831,9 +1831,9 @@ def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
 
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
-    # that type from the outset.
+    # that time from the outset.
     xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
-    if not complex_ok and not np.issubdtype(xfat, np.floating):
+    if not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
     xs = [x.astype(xfat, copy=True)[()] for x in xs]
     fs = [f.astype(xfat, copy=True)[()] for f in fs]
