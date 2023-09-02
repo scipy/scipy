@@ -39,11 +39,7 @@ except ImportError:
     CONFIG = None
 
 from scipy.conftest import array_api_compatible, skip_if_array_api
-from scipy._lib._array_api import (
-    size,
-    array_namespace,
-    xp_assert_close
-)
+from scipy._lib._array_api import size, array_namespace, xp_assert_close
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -2884,3 +2880,61 @@ class TestCDF2RDF:
         ])
         w, v = np.linalg.eig(X)
         assert_raises(ValueError, cdf2rdf, w, v)
+
+
+class TestNonStandardParams:
+
+    @array_api_compatible
+    def test_eigh(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[1, 2], [2, 7]], dtype=xp.float32)
+            # eigh(x) should not raise an exception
+            eigh(x)
+            assert_raises(ValueError, eigh, x,
+                          b=xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                                        [1, 5, 6, 2], [5, 1, 2, 2]]))
+            assert_raises(ValueError, eigh, x, lower=False)
+            assert_raises(ValueError, eigh, x, eigvals_only=True)
+            assert_raises(ValueError, eigh, x, turbo=True)
+            assert_raises(ValueError, eigh, x, eigvals=(0, 1))
+            assert_raises(ValueError, eigh, x, type=2)
+            assert_raises(ValueError, eigh, x, subset_by_index=[0, 1])
+            assert_raises(ValueError, eigh, x, subset_by_value=True)
+            assert_raises(ValueError, eigh, x, driver='evd')
+
+    @array_api_compatible
+    def test_eigvalsh(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                            [1, 5, 6, 2], [5, 1, 2, 2]], dtype=xp.float32)
+            # eigvalsh(x) should not raise an exception
+            eigvalsh(x)
+            assert_raises(ValueError, eigvalsh, x,
+                          b=xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
+                                        [1, 5, 6, 2], [5, 1, 2, 2]]))
+            assert_raises(ValueError, eigvalsh, x, lower=False)
+            assert_raises(ValueError, eigvalsh, x, turbo=True)
+            assert_raises(ValueError, eigvalsh, x, eigvals=(0, 1))
+            assert_raises(ValueError, eigvalsh, x, type=2)
+            assert_raises(ValueError, eigvalsh, x, subset_by_index=[0, 1])
+            assert_raises(ValueError, eigvalsh, x, subset_by_value=True)
+            assert_raises(ValueError, eigvalsh, x, driver='evd')
+
+    @array_api_compatible
+    def test_qr(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([(3, 3)], dtype=xp.float32)
+            # qr(x) should not raise an exception
+            qr(x)
+            assert_raises(ValueError, qr, x, lwork=5)
+            assert_raises(ValueError, qr, x, mode='r')
+            assert_raises(ValueError, qr, x, pivoting=True)
+
+    @array_api_compatible
+    def test_svd(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([(3, 3)], dtype=xp.float32)
+            # svd(x) should not raise an exception
+            svd(x)
+            assert_raises(ValueError, svd, x, compute_uv=False)
+            assert_raises(ValueError, svd, x, lapack_driver='gesvd')

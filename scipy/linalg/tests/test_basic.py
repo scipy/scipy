@@ -22,9 +22,7 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy._lib.deprecation import _NoValue
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (
-    xp_assert_close, size as _size
-)
+from scipy._lib._array_api import xp_assert_close, size as _size
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -1869,3 +1867,28 @@ class TestMatrix_Balance:
             ip[p] = np.arange(A.shape[0])
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
+
+
+class TestNonStandardParams:
+
+    @array_api_compatible
+    def test_solve(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[1, 20], [-30, 4]], dtype=xp.float64)
+            y = xp.asarray([[1, 0], [0, 1]], dtype=xp.float64)
+            # solve(x, y) should not raise an exception
+            solve(x, y)
+            assert_raises(ValueError, solve, x, y, lower=True)
+            assert_raises(ValueError, solve, x, y, assume_a='sym')
+            assert_raises(ValueError, solve, x, y, transposed=True)
+
+    @array_api_compatible
+    def test_pinv(self, xp):
+        if xp.__name__ != 'numpy':
+            x = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=xp.float64)
+            # pinv(x) should not raise an exception
+            pinv(x)
+            assert_raises(ValueError, pinv, x, atol=1)
+            assert_raises(ValueError, pinv, x, return_rank=True)
+            assert_raises(ValueError, pinv, x, cond=1)
+            assert_raises(ValueError, pinv, x, rcond=1)
