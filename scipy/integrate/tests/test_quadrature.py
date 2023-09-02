@@ -9,7 +9,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad)
-from scipy.integrate._tanhsinh import _tanhsinh
+from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache
 from scipy import stats, special as sc
 from scipy.optimize._zeros_py import (_ECONVERGED, _ESIGNERR, _ECONVERR,  # noqa
                                       _EVALUEERR, _ECALLBACK, _EINPROGRESS)  # noqa
@@ -1101,3 +1101,35 @@ class TestTanhSinh:
 
         res = _tanhsinh(f, 0, 1, args=99)
         assert_allclose(res.integral, 1/100)
+
+        # Test NaNs
+        a = [np.nan, 0, 0, 0]
+        b = [1, np.nan, 1, 1]
+        c = [1, 1, np.nan, 1]
+        res = _tanhsinh(f, a, b, args=(c,))
+        assert_allclose(res.integral, [np.nan, np.nan, np.nan, 0.5])
+        assert_allclose(res.error[:3], np.nan)
+        assert_equal(res.status, [-3, -3, -3, 0])
+        assert_equal(res.success, [False, False, False, True])
+        assert_equal(res.nfev[:3], 1)
+
+        # Test complex integral followed by real integral
+        # Previously, h0 was of the result dtype. If the `dtype` were complex,
+        # this could lead to complex cached abscissae/weights. If these get
+        # cast to real dtype for a subsequent real integral, we would get a
+        # ComplexWarning. Check that this is avoided.
+        _pair_cache.xjc = np.empty(0)
+        _pair_cache.wj = np.empty(0)
+        _pair_cache.indices = [0]
+        _pair_cache.h0 = None
+        res = _tanhsinh(lambda x: x*1j, 0, 1)
+        assert_allclose(res.integral, 0.5*1j)
+        res = _tanhsinh(lambda x: x, 0, 1)
+        assert_allclose(res.integral, 0.5)
+
+        # Test zero-size
+        shape = (0, 3)
+        res = _tanhsinh(lambda x: x, 0, np.zeros(shape))
+        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
+        for attr in attrs:
+            assert_equal(res[attr].shape, shape)
