@@ -1126,3 +1126,10 @@ class TestTanhSinh:
         assert_allclose(res.integral, 0.5*1j)
         res = _tanhsinh(lambda x: x, 0, 1)
         assert_allclose(res.integral, 0.5)
+
+        # Test zero-size
+        shape = (0, 3)
+        res = _tanhsinh(lambda x: x, 0, np.zeros(shape))
+        attrs = ['integral', 'error', 'success', 'status', 'nfev', 'maxlevel']
+        for attr in attrs:
+            assert_equal(res[attr].shape, shape)
