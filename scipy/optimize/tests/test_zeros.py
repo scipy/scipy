@@ -1754,23 +1754,26 @@ class TestBracketRoot:
         assert_allclose(res.fl, self.f(res.xl, *args))
         assert_allclose(res.fr, self.f(res.xr, *args))
 
-    # def test_flags(self):
-    #     # Test cases that should produce different status flags; show that all
-    #     # can be produced simultaneously.
-    #     def f(xs, js):
-    #         funcs = [lambda x: x - 2.5,
-    #                  lambda x: x - 10,
-    #                  lambda x: (x - 0.1)**3,
-    #                  lambda x: np.nan]
-    #
-    #         return [funcs[j](x) for x, j in zip(xs, js)]
-    #
-    #     args = (np.arange(4, dtype=np.int64),)
-    #     res = zeros._chandrupatla(f, [0]*4, [np.pi]*4, args=args, maxiter=2)
-    #
-    #     ref_flags = np.array([zeros._ECONVERGED, zeros._ESIGNERR,
-    #                           zeros._ECONVERR, zeros._EVALUEERR])
-    #     assert_equal(res.status, ref_flags)
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously.
+        def f(xs, js):
+            funcs = [lambda x: x - 1.5,
+                     lambda x: x - 1000,
+                     lambda x: x - 1000,
+                     lambda x: np.nan]
+
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        res = zeros._bracket_root(f, a=[-1, -1, -1, -1], b=[1, 1, 1, 1],
+                                  min=[-np.inf, -1, -np.inf, -np.inf],
+                                  max=[np.inf, 1, np.inf, np.inf],
+                                  args=args, maxiter=3)
+
+        ref_flags = np.array([zeros._ECONVERGED, zeros._ELIMITS,
+                              zeros._ECONVERR, zeros._EVALUEERR])
+        assert_equal(res.status, ref_flags)
 
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
     @pytest.mark.parametrize('min', [-5, None])
