@@ -257,7 +257,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
     status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
-    h0 = _get_base_step(dtype=dtype)  # base step
+    h0 = np.real(_get_base_step(dtype=dtype))  # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
     # most extreme abscissae and corresponding `fj`s, `wj`s in Euler-Maclaurin
