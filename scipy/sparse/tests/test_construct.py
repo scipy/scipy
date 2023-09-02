@@ -297,6 +297,10 @@ class TestConstructUtils:
             assert_equal(I.format, fmt)
             assert_equal(I.toarray(), [[1,0,0],[0,1,0],[0,0,1]])
 
+    def test_eye_array_vs_matrix(self):
+        assert isinstance(construct.eye_array(3), sparray)
+        assert not isinstance(construct.eye(3), sparray)
+
     def test_kron(self):
         cases = []
 
@@ -717,6 +721,7 @@ class TestConstructUtils:
         # check random_array
         sparse_array = construct.random_array(10, 10, density=0.1265)
         assert_equal(sparse_array.count_nonzero(),13)
+        assert isinstance(sparse_array, sparray)
 
 
 def test_diags_array():
