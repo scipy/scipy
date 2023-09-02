@@ -780,7 +780,8 @@ class levy_stable_gen(rv_continuous):
     ``y = (x - loc) / scale``, except in the ``S1`` parameterization if
     ``alpha == 1``.  In that case ``%(name)s.pdf(x, %(shapes)s, loc, scale)``
     is identically equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
-    ``y = (x - loc - 2 * beta * scale * np.log(scale) / np.pi) / scale``.
+    ``y = (x - loc - 2 * beta * scale * np.log(scale) / np.pi) / scale``.\
+    See [NO2]_ Definition 1.8 for more information.
     Note that shifting the location of a distribution
     does not make it a "noncentral" distribution.
 
@@ -793,6 +794,8 @@ class levy_stable_gen(rv_continuous):
         to compute densities of stable distribution.
     .. [NO] Nolan, J., 1997. Numerical Calculation of Stable Densities and
         distributions Functions.
+    .. [NO2] Nolan, J., 2018. Stable Distributions: Models for Heavy Tailed
+        Data.
     .. [HO] Hopcraft, K. I., Jakeman, E., Tanner, R. M. J., 1999. Lévy random
         walks with fluctuating step number and multiscale behavior.
 
