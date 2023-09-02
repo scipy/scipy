@@ -4318,28 +4318,14 @@ class TestBeta:
             stats.beta.ppf(q, a, b)
 
     @pytest.mark.parametrize('method', [stats.beta.ppf, stats.beta.isf])
-    @pytest.mark.parametrize('a, b', [(1e-310, 12.5), (12.5, 1e-310)])
+    @pytest.mark.parametrize('a, b', [(1e-323, 5), (5, 1e-323),
+                                      (1e-310, 12.5), (12.5, 1e-310)])
     def test_beta_ppf_with_subnormal_a_b(self, method, a, b):
-        # Regression test for gh-17444: beta.ppf(p, a, b) and beta.isf(p, a, b)
-        # would result in a segmentation fault if either a or b was subnormal.
+        # Regression test for gh-17444 and gh-18906: beta.ppf(p, a, b) and
+        # beta.isf(p, a, b) would result in a segmentation fault if either a
+        # or b was subnormal.
         p = 0.9
-        # Depending on the version of Boost that we have vendored and
-        # our setting of the Boost double promotion policy, the call
-        # `stats.beta.ppf(p, a, b)` might raise an OverflowError or
-        # return a value.  We'll accept either behavior (and not care about
-        # the value), because our goal here is to verify that the call does
-        # not trigger a segmentation fault.
-        try:
-            method(p, a, b)
-        except OverflowError:
-            # The OverflowError exception occurs with Boost 1.80 or earlier
-            # when Boost's double promotion policy is false; see
-            #   https://github.com/boostorg/math/issues/882
-            # and
-            #   https://github.com/boostorg/math/pull/883
-            # Once we have vendored the fixed version of Boost, we can drop
-            # this try-except wrapper and just call the function.
-            pass
+        method(p, a, b)
 
     # entropy accuracy was confirmed using the following mpmath function
     # from mpmath import mp
