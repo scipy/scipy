@@ -370,6 +370,11 @@ class RegularGridInterpolatorSubclass(Benchmark):
 
 
 class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
+    """Subclass of the CT2DInterpolator with optional `values`.
+
+    This is mainly a demo of the functionality. See
+    https://github.com/scipy/scipy/pull/18376 for discussion
+    """
     def __init__(self, points, xi, tol=1e-6, maxiter=400, **kwargs):
         interpolate.CloughTocher2DInterpolator.__init__(self, points, None, tol=tol, maxiter=maxiter)
         self.xi = None
@@ -388,53 +393,33 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
         self._set_values(values)
         return super().__call__(self.xi)
 
+
 class CloughTocherInterpolatorSubclass(Benchmark):
     """
-    Benchmark CloughTocherInterpolatorValues with method="linear".
-    """
-    param_names = ['max_coord_size', 'n_samples', 'flipped', 'tol', 'max_iter']
-    params = [
-        [10, 40, 200],
-        [10, 100, 1000, 10000],
-        [1, -1],
-        [1e-3, 1e-6, 1e-8],
-        [1, 10, 100, 400]
-    ]
+    Benchmark CloughTocherInterpolatorValues.
 
-    def setup(self, max_coord_size, n_samples, flipped, tol, max_iter):
+    Derived from the docstring example,
+    https://docs.scipy.org/doc/scipy-1.11.2/reference/generated/scipy.interpolate.CloughTocher2DInterpolator.html
+    """
+    param_names = ['n_samples']
+    params = [10, 50, 100]
+
+    def setup(self, n_samples):
         rng = np.random.default_rng(314159)
 
-        # coordinates halve in size over the dimensions
-        coord_sizes = [max_coord_size // 2**i for i in range(2)]
-        self.points = [np.sort(rng.random(size=s))[::flipped]
-                       for s in coord_sizes]
-        self.values = [rng.random(size=coord_sizes) for i in range(10)]
+        x = rng.random(n_samples) - 0.5
+        y = rng.random(n_samples) - 0.5
 
-        # choose in-bounds sample points xi
-        bounds = [(p.min(), p.max()) for p in self.points]
-        xi = [rng.uniform(low, high, size=n_samples)
-              for low, high in bounds]
-        self.xi = np.array(xi).T
 
-        self.tol = tol
-        self.max_iter = max_iter
+        self.z = np.hypot(x, y)
+        X = np.linspace(min(x), max(x))
+        Y = np.linspace(min(y), max(y))
+        self.X, self.Y = np.meshgrid(X, Y)
 
         self.interp = CloughTocherInterpolatorValues(
-            self.points,
-            self.xi,
-            self.tol,
-            self.max_iter
+            list(zip(x, y)), (self.X, self.Y)
         )
 
-    def time_clough_tocher_setup_interpolator(self, max_coord_size,
-                                    n_samples, flipped, tol, max_iter):
-        self.interp = CloughTocherInterpolatorValues(
-            self.points,
-            self.xi,
-            self.tol,
-            self.max_iter
-        )
+    def time_clough_tocher(self, n_samples):
+            self.interp(self.z)
 
-    def time_clough_tocher(self, max_coord_size, n_samples, flipped, tol, max_iter):
-        for vals in self.values:
-            self.interp(vals)

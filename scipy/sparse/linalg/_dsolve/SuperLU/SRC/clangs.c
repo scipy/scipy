@@ -73,7 +73,7 @@ float clangs(char *norm, SuperMatrix *A)
 
     /* Local variables */
     NCformat *Astore;
-    complex   *Aval;
+    singlecomplex   *Aval;
     int      i, j, irow;
     float   value, sum;
     float   *rwork;

@@ -113,7 +113,7 @@ def gscale(int test, int other):
     return astart, a1, 0
 
 
-cdef inline void _start1(float[::1] a, int n) nogil noexcept:
+cdef inline void _start1(float[::1] a, int n) noexcept nogil:
     """
     Helper function for gscale function, see gscale docstring.
     """
@@ -124,7 +124,7 @@ cdef inline void _start1(float[::1] a, int n) nogil noexcept:
         a[lout-1] = 1
 
 
-cdef inline void _start2(float[::1] a, int n) nogil noexcept:
+cdef inline void _start2(float[::1] a, int n) noexcept nogil:
     """
     Helper function for gscale function, see gscale docstring.
     """
@@ -151,7 +151,7 @@ cdef inline void _start2(float[::1] a, int n) nogil noexcept:
 
 
 cdef inline int _frqadd(float[::1] a, float[::1] b, int lenb,
-                        int offset) nogil noexcept:
+                        int offset) noexcept nogil:
     """
     Helper function for gscale function, see gscale docstring.
     """
@@ -166,7 +166,7 @@ cdef inline int _frqadd(float[::1] a, float[::1] b, int lenb,
 
 
 cdef int _imply(float[::1] a, int curlen, int reslen, float[::1] b,
-                int offset) nogil noexcept:
+                int offset) noexcept nogil:
     """
     Helper function for gscale function, see gscale docstring.
     """
@@ -414,7 +414,7 @@ def swilk(double[::1] x, double[::1] a, bint init=False, int n1=-1):
     return w, pw, ifault
 
 
-cdef double _alnorm(double x, bint upper) nogil noexcept:
+cdef double _alnorm(double x, bint upper) noexcept nogil:
     """
     Helper function for swilk.
 
@@ -521,7 +521,7 @@ cdef double _ppnd(double p) noexcept:
     return (-temp if q < 0 else temp)  #, 0
 
 
-cdef double _poly(double[::1]c, int nord, double x) nogil noexcept:
+cdef double _poly(double[::1]c, int nord, double x) noexcept nogil:
     """
     Helper function for swilk function that evaluates polynomials.
     For some reason, the coefficients are given as

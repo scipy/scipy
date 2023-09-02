@@ -26,6 +26,9 @@ np.import_array()
 
 include 'parameters.pxi'
 
+# EPS is the precision of DTYPE (float64, from parameters.pxi)
+DEF DTYPE_EPS = 1E-15
+
 
 class NegativeCycleError(Exception):
     def __init__(self, message=''):
@@ -86,7 +89,7 @@ def shortest_path(csgraph, method='auto',
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -236,7 +239,7 @@ def floyd_warshall(csgraph, directed=True,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -426,7 +429,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -937,7 +940,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -1171,7 +1174,7 @@ def johnson(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,

@@ -9,6 +9,7 @@ see the `commit logs <https://github.com/scipy/scipy/commits/>`_.
    :maxdepth: 1
 
    release/1.12.0-notes
+   release/1.11.2-notes
    release/1.11.1-notes
    release/1.11.0-notes
    release/1.10.1-notes

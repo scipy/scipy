@@ -38,9 +38,9 @@ at the top-level directory.
 /* 
  * Function prototypes 
  */
-void cusolve(int, int, complex*, complex*);
-void clsolve(int, int, complex*, complex*);
-void cmatvec(int, int, int, complex*, complex*, complex*);
+void cusolve(int, int, singlecomplex*, singlecomplex*);
+void clsolve(int, int, singlecomplex*, singlecomplex*);
+void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
 
 
 
@@ -60,8 +60,8 @@ int
 ccolumn_bmod (
 	     const int  jcol,	  /* in */
 	     const int  nseg,	  /* in */
-	     complex     *dense,	  /* in */
-	     complex     *tempv,	  /* working array */
+	     singlecomplex     *dense,	  /* in */
+	     singlecomplex     *tempv,	  /* working array */
 	     int        *segrep,  /* in */
 	     int        *repfnz,  /* in */
 	     int        fpanelc,  /* in -- first column in the current panel */
@@ -76,7 +76,7 @@ ccolumn_bmod (
          ftcs3 = _cptofcd("U", strlen("U"));
 #endif
     int         incx = 1, incy = 1;
-    complex      alpha, beta;
+    singlecomplex      alpha, beta;
     
     /* krep = representative of current k-th supernode
      * fsupc = first supernodal column
@@ -86,7 +86,7 @@ ccolumn_bmod (
      * kfnz = first nonz in the k-th supernodal segment
      * no_zeros = no of leading zeros in a supernodal U-segment
      */
-    complex       ukj, ukj1, ukj2;
+    singlecomplex       ukj, ukj1, ukj2;
     int          luptr, luptr1, luptr2;
     int          fsupc, nsupc, nsupr, segsze;
     int          nrow;	  /* No of rows in the matrix of matrix-vector */
@@ -99,14 +99,14 @@ ccolumn_bmod (
 			     panel and the first column of the current snode. */
     int          *xsup, *supno;
     int          *lsub, *xlsub;
-    complex       *lusup;
+    singlecomplex       *lusup;
     int          *xlusup;
     int          nzlumax;
-    complex       *tempv1;
-    complex      zero = {0.0, 0.0};
-    complex      one = {1.0, 0.0};
-    complex      none = {-1.0, 0.0};
-    complex	 comp_temp, comp_temp1;
+    singlecomplex       *tempv1;
+    singlecomplex      zero = {0.0, 0.0};
+    singlecomplex      one = {1.0, 0.0};
+    singlecomplex      none = {-1.0, 0.0};
+    singlecomplex	 comp_temp, comp_temp1;
     int          mem_error;
     flops_t      *ops = stat->ops;
 
@@ -114,7 +114,7 @@ ccolumn_bmod (
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = (complex *) Glu->lusup;
+    lusup   = (singlecomplex *) Glu->lusup;
     xlusup  = Glu->xlusup;
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
@@ -295,7 +295,7 @@ ccolumn_bmod (
     while ( new_next > nzlumax ) {
 	if (mem_error = cLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
 	    return (mem_error);
-	lusup = (complex *) Glu->lusup;
+	lusup = (singlecomplex *) Glu->lusup;
 	lsub = Glu->lsub;
     }
 

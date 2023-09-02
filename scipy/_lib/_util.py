@@ -11,16 +11,25 @@ from typing import (
     Optional,
     Union,
     TYPE_CHECKING,
+    Type,
     TypeVar,
 )
 
 import numpy as np
 
-if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import AxisError
-else:
-    from numpy import AxisError
 
+AxisError: Type[Exception]
+ComplexWarning: Type[Warning]
+VisibleDeprecationWarning: Type[Warning]
+
+if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
+    from numpy.exceptions import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+else:
+    from numpy import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
 
 
 IntNumber = Union[int, np.integer]
@@ -250,7 +259,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float_)
+            a = toarray(a, dtype=np.float64)
     return a
 
 

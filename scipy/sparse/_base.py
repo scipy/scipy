@@ -2,6 +2,7 @@
 from warnings import warn
 
 import numpy as np
+from scipy._lib._util import VisibleDeprecationWarning
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
@@ -102,8 +103,6 @@ class _spbase:
     def _lil_container(self):
         from ._lil import lil_array
         return lil_array
-
-    _is_array = True
 
     def __init__(self, maxprint=MAXPRINT):
         self._shape = None
@@ -220,14 +219,14 @@ class _spbase:
 
     @classmethod
     def _ascontainer(cls, X, **kwargs):
-        if cls._is_array:
+        if issubclass(cls, sparray):
             return np.asarray(X, **kwargs)
         else:
             return asmatrix(X, **kwargs)
 
     @classmethod
     def _container(cls, X, **kwargs):
-        if cls._is_array:
+        if issubclass(cls, sparray):
             return np.array(X, **kwargs)
         else:
             return matrix(X, **kwargs)
@@ -284,7 +283,7 @@ class _spbase:
                                   self.__class__.__name__)
 
     @property
-    def nnz(self):
+    def nnz(self) -> int:
         """Number of stored values, including explicit zeros.
 
         See also
@@ -294,12 +293,68 @@ class _spbase:
         return self._getnnz()
 
     @property
-    def format(self):
+    def size(self) -> int:
+        """Number of stored values.
+
+        See also
+        --------
+        count_nonzero : Number of non-zero values.
+        """
+        return self._getnnz()
+
+    @property
+    def format(self) -> str:
+        """Format string for matrix."""
         return self._format
+
+    @property
+    def A(self) -> np.ndarray:
+        """DEPRECATED: Return a dense array.
+
+        .. deprecated:: 1.11.0
+
+            `.A` is deprecated and will be removed in v1.13.0.
+            Use `.toarray()` instead.
+        """
+        if isinstance(self, sparray):
+            warn(VisibleDeprecationWarning(
+                "`.A` is deprecated and will be removed in v1.13.0. "
+                "Use `.toarray()` instead."
+            ))
+        return self.toarray()
+
+    @property
+    def T(self):
+        """Transpose."""
+        return self.transpose()
+
+    @property
+    def H(self):
+        """DEPRECATED: Returns the (complex) conjugate transpose.
+
+        .. deprecated:: 1.11.0
+
+            `.H` is deprecated and will be removed in v1.13.0.
+            Please use `.T.conjugate()` instead.
+        """
+        if isinstance(self, sparray):
+            warn(VisibleDeprecationWarning(
+                "`.H` is deprecated and will be removed in v1.13.0. "
+                "Please use `.T.conjugate()` instead."
+            ))
+        return self.T.conjugate()
+
+    @property
+    def real(self):
+        return self._real()
+
+    @property
+    def imag(self):
+        return self._imag()
 
     def __repr__(self):
         _, format_name = _formats[self.format]
-        sparse_cls = 'array' if self._is_array else 'matrix'
+        sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         return f"<%dx%d sparse {sparse_cls} of type '%s'\n" \
                "\twith %d stored elements in %s format>" % \
                (self.shape + (self.dtype.type, self.nnz, format_name))
@@ -641,8 +696,8 @@ class _spbase:
                 else:
                     return np.divide(other, self.todense())
 
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self.astype(np.float_)._mul_scalar(1./other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self.astype(np.float64)._mul_scalar(1./other)
             else:
                 r = self._mul_scalar(1./other)
 
@@ -670,8 +725,8 @@ class _spbase:
                 return other._divide(self, true_divide, rdivide=False)
 
             self_csr = self.tocsr()
-            if true_divide and np.can_cast(self.dtype, np.float_):
-                return self_csr.astype(np.float_)._divide_sparse(other)
+            if true_divide and np.can_cast(self.dtype, np.float64):
+                return self_csr.astype(np.float64)._divide_sparse(other)
             else:
                 return self_csr._divide_sparse(other)
         else:
@@ -712,40 +767,6 @@ class _spbase:
 
     def __pow__(self, *args, **kwargs):
         return self.power(*args, **kwargs)
-
-    @property
-    def A(self) -> np.ndarray:
-        if self._is_array:
-            warn(np.VisibleDeprecationWarning(
-                "`.A` is deprecated and will be removed in v1.13.0. "
-                "Use `.toarray()` instead."
-            ))
-        return self.toarray()
-
-    @property
-    def T(self):
-        return self.transpose()
-
-    @property
-    def H(self):
-        if self._is_array:
-            warn(np.VisibleDeprecationWarning(
-                "`.H` is deprecated and will be removed in v1.13.0. "
-                "Please use `.T.conjugate()` instead."
-            ))
-        return self.T.conjugate()
-
-    @property
-    def real(self):
-        return self._real()
-
-    @property
-    def imag(self):
-        return self._imag()
-
-    @property
-    def size(self):
-        return self._getnnz()
 
     def transpose(self, axes=None, copy=False):
         """
@@ -1286,7 +1307,7 @@ class _spbase:
         from ._sputils import get_index_dtype
 
         # Don't check contents for array API
-        return get_index_dtype(arrays, maxval, (check_contents and not self._is_array))
+        return get_index_dtype(arrays, maxval, (check_contents and not isinstance(self, sparray)))
 
 
     ## All methods below are deprecated and should be removed in

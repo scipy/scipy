@@ -245,7 +245,7 @@ class TestFFT1D:
                     assert_array_almost_equal(x_norm,
                                               np.linalg.norm(tmp))
 
-    @pytest.mark.parametrize("dtype", [np.half, np.single, np.double,
+    @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
                                        np.longdouble])
     def test_dtypes(self, dtype):
         # make sure that all input precisions are accepted
@@ -257,8 +257,8 @@ class TestFFT1D:
 
 @pytest.mark.parametrize(
         "dtype",
-        [np.float32, np.float64, np.longfloat,
-         np.complex64, np.complex128, np.longcomplex])
+        [np.float32, np.float64, np.longdouble,
+         np.complex64, np.complex128, np.clongdouble])
 @pytest.mark.parametrize("order", ["F", 'non-contiguous'])
 @pytest.mark.parametrize(
         "fft",

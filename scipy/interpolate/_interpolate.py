@@ -17,6 +17,10 @@ from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
+# even though this is a stdlib module, it got accidentally exposed in __all__
+# in the past. It is now deprecated and scheduled to be removed in SciPy 1.13.0
+import itertools  # noqa
+
 
 def lagrange(x, w):
     r"""
@@ -527,7 +531,7 @@ class interp1d(_Interpolator1D):
 
         # Force-cast y to a floating-point type, if it's not yet one
         if not issubclass(y.dtype.type, np.inexact):
-            y = y.astype(np.float_)
+            y = y.astype(np.float64)
 
         # Backward compatibility
         self.axis = axis % y.ndim
@@ -586,7 +590,7 @@ class interp1d(_Interpolator1D):
                     fill_value = (np.take(self.y, 0, axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                np_types = (np.float_, np.int_)
+                np_types = (np.float64, np.int_)
                 cond = self.x.dtype in np_types and self.y.dtype in np_types
                 cond = cond and self.y.ndim == 1
                 cond = cond and not _do_extrapolate(fill_value)
@@ -853,9 +857,9 @@ class _PPolyBase:
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex_
+            return np.complex128
         else:
-            return np.float_
+            return np.float64
 
     @classmethod
     def construct_fast(cls, c, x, extrapolate=None, axis=0):
@@ -999,7 +1003,7 @@ class _PPolyBase:
             extrapolate = self.extrapolate
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
-        x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+        x = np.ascontiguousarray(x.ravel(), dtype=np.float64)
 
         # With periodic extrapolation we map x to the segment
         # [self.x[0], self.x[-1]].
@@ -1972,9 +1976,9 @@ class BPoly(_PPolyBase):
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or
                np.issubdtype(dtb, np.complexfloating)):
-            dt = np.complex_
+            dt = np.complex128
         else:
-            dt = np.float_
+            dt = np.float64
 
         na, nb = len(ya), len(yb)
         n = na + nb
@@ -2144,9 +2148,9 @@ class NdPPoly:
     def _get_dtype(self, dtype):
         if np.issubdtype(dtype, np.complexfloating) \
                or np.issubdtype(self.c.dtype, np.complexfloating):
-            return np.complex_
+            return np.complex128
         else:
-            return np.float_
+            return np.float64
 
     def _ensure_c_contiguous(self):
         if not self.c.flags.c_contiguous:
@@ -2192,7 +2196,7 @@ class NdPPoly:
 
         x = _ndim_coords_from_arrays(x)
         x_shape = x.shape
-        x = np.ascontiguousarray(x.reshape(-1, x.shape[-1]), dtype=np.float_)
+        x = np.ascontiguousarray(x.reshape(-1, x.shape[-1]), dtype=np.float64)
 
         if nu is None:
             nu = np.zeros((ndim,), dtype=np.intc)

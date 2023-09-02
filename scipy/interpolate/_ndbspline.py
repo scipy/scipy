@@ -11,9 +11,9 @@ __all__ = ["NdBSpline"]
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
-        return np.complex_
+        return np.complex128
     else:
-        return np.float_
+        return np.float64
 
 
 class NdBSpline:
