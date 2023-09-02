@@ -346,12 +346,12 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     --------
     >>> import numpy as np
     >>> import scipy as sp
-    >>> sp.sparse.eye(3).toarray()
+    >>> sp.sparse.eye_array(3).toarray()
     array([[ 1.,  0.,  0.],
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
-    >>> sp.sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<class 'numpy.int8'>'
+    >>> sp.sparse.eye_array(3, dtype=np.int8)
+    <3x3 sparse array of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -1133,7 +1133,7 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     >>> import numpy as np
     >>> import scipy as sp
     >>> rng = np.random.default_rng()
-    >>> S = random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
 
     Proving a sampler for the values:
 
