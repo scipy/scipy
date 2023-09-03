@@ -80,17 +80,17 @@ class TestIsotonicRegression:
 
     def test_against_R_monotone(self):
         y = [0, 6, 8, 3, 5, 2, 1, 7, 9, 4]
-        x, w, r = isotonic_regression(y)
+        res = isotonic_regression(y)
         # R code
         # library(monotone)
         # options(digits=8)
         # monotone(c(0, 6, 8, 3, 5, 2, 1, 7, 9, 4))
-        res = [
+        x_R = [
             0, 4.1666667, 4.1666667, 4.1666667, 4.1666667, 4.1666667,
             4.1666667, 6.6666667, 6.6666667, 6.6666667,
         ]
-        assert_almost_equal(x, res)
-        assert_equal(r, [0, 1, 7, 10])
+        assert_almost_equal(res.x, x_R)
+        assert_equal(res.blocks, [0, 1, 7, 10])
 
         n = 100
         y = np.linspace(0, 1, num=n, endpoint=False)
@@ -100,7 +100,7 @@ class TestIsotonicRegression:
         # library(monotone)
         # y <- 5 * ((1:n)-1)/n + sin(10 * ((1:n)-1)/n)
         # monotone(y)
-        x = [
+        x_R = [
             0.0000000, 0.1498334, 0.2986693, 0.4455202, 0.5894183, 0.7294255,
             0.8646425, 0.9942177, 1.1173561, 1.2333269, 1.3414710, 1.4412074,
             1.5320391, 1.5708110, 1.5708110, 1.5708110, 1.5708110, 1.5708110,
@@ -119,17 +119,17 @@ class TestIsotonicRegression:
             4.8656413, 4.8656413, 4.8656413, 4.8656413, 4.8656413, 4.8656413,
             4.8656413, 4.8656413, 4.8656413, 4.8656413,
         ]
-        assert_almost_equal(res.x, x)
+        assert_almost_equal(res.x, x_R)
 
         # Test increasing
-        assert np.all(np.diff(x) >= 0)
+        assert np.all(np.diff(res.x) >= 0)
 
         # Test balance property: sum(y) == sum(x)
-        assert_almost_equal(np.sum(x), np.sum(y))
+        assert_almost_equal(np.sum(res.x), np.sum(y))
 
         # Reverse order
         res_inv = isotonic_regression(-y, increasing=False)
-        assert_almost_equal(-res_inv.x, x)
+        assert_almost_equal(-res_inv.x, res.x)
         assert_equal(res_inv.blocks, res.blocks)
 
     def test_readonly(self):
