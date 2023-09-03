@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ._optimize import OptimizeResult
 from ._pava_pybind import pava
 
 if TYPE_CHECKING:
@@ -17,7 +18,7 @@ def isotonic_regression(
     *,
     weights: npt.ArrayLike | None = None,
     increasing: bool = True,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.intp]]:
+) -> OptimizeResult:
     r"""Nonparametric isotonic regression.
 
     A (not strictly) monotonically increasing array `x` with the same length
@@ -37,15 +38,18 @@ def isotonic_regression(
 
     Returns
     -------
-    x : (N,) ndarray
-        Isotonic regression solution, i.e. an increasing (or decreasing) array
-        of the same length than y, with elements in the range from min(y) to
-        max(y).
-    wx : (B,) ndarray
-        Sum of case weights for all blocks / pools B.
-    r : (B+1,) ndarray
-        Array of indices with the start position of each block / pool B.
-        For the j-th block, all values of ``x[r[j]:r[j+1]]`` are the same.
+    res : OptimizeResult
+        The optimization result represented as a ``OptimizeResult`` object.
+        Important attributes are:
+        
+        - ``x``: The isotonic regression solution, i.e. an increasing (or
+        decreasing) array of the same length than y, with elements in the
+        range from min(y) to max(y).
+        - ``weights`` : Array with the sum of case weights for each block
+        / pool B.
+        - ``blocks``: Array of length B+1 with the indices of the start
+        positions of each block / pool B. The j-th block is given by
+        ``x[blocks[j]:blocks[j+1]]`` for which all values are the same.
 
     Notes
     -----
@@ -147,4 +151,8 @@ def isotonic_regression(
         x = x[::-1]
         wx = wx[::-1]
         r = r[-1] - r[::-1]
-    return x, wx, r
+    return OptimizeResult(
+        x=x,
+        weights=wx,
+        blocks=r,
+    )
