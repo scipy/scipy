@@ -221,40 +221,14 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
-    @pytest.mark.parametrize('kappa_tol', [(1e-1, 5e-2), (1e2, 1e-2),
-                                           (1e5, 1e-2)])
-    def test_vonmises_fit_all(self, kappa_tol, loc):
-        rng = np.random.default_rng(6762668991392531563)
-        kappa, tol = kappa_tol
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000,
-                                                        random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
-        assert scale_fit == 1
-        loc_vec = np.array([np.cos(loc), np.sin(loc)])
-        loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
-        angle = np.arccos(loc_vec.dot(loc_fit_vec))
-        assert_allclose(angle, 0, atol=tol, rtol=0)
-        assert_allclose(kappa, kappa_fit, rtol=tol)
-
-    def test_vonmises_fit_shape(self):
-        rng = np.random.default_rng(6762668991392531563)
-        loc = 0.25*np.pi
-        kappa = 10
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
-        assert loc_fit == loc
-        assert scale_fit == 1
-        assert_allclose(kappa, kappa_fit, rtol=1e-2)
-
     @pytest.mark.xslow
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
-    def test_vonmises_fit_bad_floc(self, loc):
+    def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
                 3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
                 -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
         data = np.asarray(data)
+        loc = -0.5 * np.pi
         kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
         assert kappa_fit == np.finfo(float).tiny
         _assert_less_or_close_loglike(stats.vonmises, data,
@@ -3694,6 +3668,51 @@ class TestSkewCauchy:
         assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
+class TestJFSkewT:
+    def test_compare_t(self):
+        # Verify that jf_skew_t with a=b recovers the t distribution with 2a
+        # degrees of freedom
+        a = b = 5
+        df = a * 2
+        x = [-1.0, 0.0, 1.0, 2.0]
+        q = [0.0, 0.1, 0.25, 0.75, 0.90, 1.0]
+
+        jf = stats.jf_skew_t(a, b)
+        t = stats.t(df)
+
+        assert_allclose(jf.pdf(x), t.pdf(x))
+        assert_allclose(jf.cdf(x), t.cdf(x))
+        assert_allclose(jf.ppf(q), t.ppf(q))
+        assert_allclose(jf.stats('mvsk'), t.stats('mvsk'))
+
+    @pytest.fixture
+    def gamlss_pdf_data(self):
+        """Sample data points computed using the `ST5` distribution from the
+        GAMLSS package in R. The pdf has been calculated for (a,b)=(2,3),
+        (a,b)=(8,4), and (a,b)=(12,13) for x in `np.linspace(-10, 10, 41)`.
+
+        N.B. the `ST5` distribution in R uses an alternative parameterization
+        in terms of nu and tau, where:
+            - nu = (a - b) / (a * b * (a + b)) ** 0.5
+            - tau = 2 / (a + b)
+        """
+        data = np.load(
+            Path(__file__).parent / "data/jf_skew_t_gamlss_pdf_data.npy"
+        )
+        return np.core.records.fromarrays(data, names="x,pdf,a,b")
+
+    @pytest.mark.parametrize("a,b", [(2, 3), (8, 4), (12, 13)])
+    def test_compare_with_gamlss_r(self, gamlss_pdf_data, a, b):
+        """Compare the pdf with a table of reference values. The table of
+        reference values was produced using R, where the Jones and Faddy skew
+        t distribution is available in the GAMLSS package as `ST5`.
+        """
+        data = gamlss_pdf_data[
+            (gamlss_pdf_data["a"] == a) & (gamlss_pdf_data["b"] == b)
+        ]
+        x, pdf = data["x"], data["pdf"]
+        assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter
@@ -4085,7 +4104,7 @@ class TestTruncexpon:
         b = [20, 100]
         x = [19.999999, 99.999999]
         ref = [2.0611546593828472e-15, 3.7200778266671455e-50]
-        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
+        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1.5e-10)
         assert_allclose(stats.truncexpon.isf(ref, b), x, rtol=1e-12)
 
 

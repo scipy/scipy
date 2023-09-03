@@ -1,0 +1,2091 @@
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
+index ae507c9a1..06854783e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccolumn_bmod.c
+@@ -38,9 +38,9 @@ at the top-level directory.
+ /* 
+  * Function prototypes 
+  */
+-void cusolve(int, int, complex*, complex*);
+-void clsolve(int, int, complex*, complex*);
+-void cmatvec(int, int, int, complex*, complex*, complex*);
++void cusolve(int, int, singlecomplex*, singlecomplex*);
++void clsolve(int, int, singlecomplex*, singlecomplex*);
++void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
+ 
+ 
+ 
+@@ -60,8 +60,8 @@ int
+ ccolumn_bmod (
+ 	     const int  jcol,	  /* in */
+ 	     const int  nseg,	  /* in */
+-	     complex     *dense,	  /* in */
+-	     complex     *tempv,	  /* working array */
++	     singlecomplex     *dense,	  /* in */
++	     singlecomplex     *tempv,	  /* working array */
+ 	     int        *segrep,  /* in */
+ 	     int        *repfnz,  /* in */
+ 	     int        fpanelc,  /* in -- first column in the current panel */
+@@ -76,7 +76,7 @@ ccolumn_bmod (
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+     int         incx = 1, incy = 1;
+-    complex      alpha, beta;
++    singlecomplex      alpha, beta;
+     
+     /* krep = representative of current k-th supernode
+      * fsupc = first supernodal column
+@@ -86,7 +86,7 @@ ccolumn_bmod (
+      * kfnz = first nonz in the k-th supernodal segment
+      * no_zeros = no of leading zeros in a supernodal U-segment
+      */
+-    complex       ukj, ukj1, ukj2;
++    singlecomplex       ukj, ukj1, ukj2;
+     int          luptr, luptr1, luptr2;
+     int          fsupc, nsupc, nsupr, segsze;
+     int          nrow;	  /* No of rows in the matrix of matrix-vector */
+@@ -99,14 +99,14 @@ ccolumn_bmod (
+ 			     panel and the first column of the current snode. */
+     int          *xsup, *supno;
+     int          *lsub, *xlsub;
+-    complex       *lusup;
++    singlecomplex       *lusup;
+     int          *xlusup;
+     int          nzlumax;
+-    complex       *tempv1;
+-    complex      zero = {0.0, 0.0};
+-    complex      one = {1.0, 0.0};
+-    complex      none = {-1.0, 0.0};
+-    complex	 comp_temp, comp_temp1;
++    singlecomplex       *tempv1;
++    singlecomplex      zero = {0.0, 0.0};
++    singlecomplex      one = {1.0, 0.0};
++    singlecomplex      none = {-1.0, 0.0};
++    singlecomplex	 comp_temp, comp_temp1;
+     int          mem_error;
+     flops_t      *ops = stat->ops;
+ 
+@@ -114,7 +114,7 @@ ccolumn_bmod (
+     supno   = Glu->supno;
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    lusup   = (complex *) Glu->lusup;
++    lusup   = (singlecomplex *) Glu->lusup;
+     xlusup  = Glu->xlusup;
+     nzlumax = Glu->nzlumax;
+     jcolp1 = jcol + 1;
+@@ -295,7 +295,7 @@ ccolumn_bmod (
+     while ( new_next > nzlumax ) {
+ 	if (mem_error = cLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
+ 	    return (mem_error);
+-	lusup = (complex *) Glu->lusup;
++	lusup = (singlecomplex *) Glu->lusup;
+ 	lsub = Glu->lsub;
+     }
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccopy_to_ucol.c
+index c910e5cd7..6532bc832 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ccopy_to_ucol.c
+@@ -39,7 +39,7 @@ ccopy_to_ucol(
+ 	      int        *segrep,  /* in */
+ 	      int        *repfnz,  /* in */
+ 	      int        *perm_r,  /* in */
+-	      complex     *dense,   /* modified - reset to zero on return */
++	      singlecomplex     *dense,   /* modified - reset to zero on return */
+ 	      GlobalLU_t *Glu      /* modified */
+ 	      )
+ {
+@@ -53,16 +53,16 @@ ccopy_to_ucol(
+     int new_next, mem_error;
+     int       *xsup, *supno;
+     int       *lsub, *xlsub;
+-    complex    *ucol;
++    singlecomplex    *ucol;
+     int       *usub, *xusub;
+     int       nzumax;
+-    complex zero = {0.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    ucol    = (complex *) Glu->ucol;
++    ucol    = (singlecomplex *) Glu->ucol;
+     usub    = Glu->usub;
+     xusub   = Glu->xusub;
+     nzumax  = Glu->nzumax;
+@@ -86,7 +86,7 @@ ccopy_to_ucol(
+ 		while ( new_next > nzumax ) {
+ 		    if (mem_error = cLUMemXpand(jcol, nextu, UCOL, &nzumax, Glu))
+ 			return (mem_error);
+-		    ucol = (complex *) Glu->ucol;
++		    ucol = (singlecomplex *) Glu->ucol;
+ 		    if (mem_error = cLUMemXpand(jcol, nextu, USUB, &nzumax, Glu))
+ 			return (mem_error);
+ 		    usub = Glu->usub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cdiagonal.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cdiagonal.c
+index 928dcc412..2163787c4 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cdiagonal.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cdiagonal.c
+@@ -25,13 +25,13 @@ int cfill_diag(int n, NCformat *Astore)
+ /* fill explicit zeros on the diagonal entries, so that the matrix is not
+    structurally singular. */
+ {
+-    complex *nzval = (complex *)Astore->nzval;
++    singlecomplex *nzval = (singlecomplex *)Astore->nzval;
+     int *rowind = Astore->rowind;
+     int *colptr = Astore->colptr;
+     int nnz = colptr[n];
+     int fill = 0;
+-    complex *nzval_new;
+-    complex zero = {0.0, 0.0};
++    singlecomplex *nzval_new;
++    singlecomplex zero = {0.0, 0.0};
+     int *rowind_new;
+     int i, j, diag;
+ 
+@@ -75,12 +75,12 @@ int cfill_diag(int n, NCformat *Astore)
+ int cdominate(int n, NCformat *Astore)
+ /* make the matrix diagonally dominant */
+ {
+-    complex *nzval = (complex *)Astore->nzval;
++    singlecomplex *nzval = (singlecomplex *)Astore->nzval;
+     int *rowind = Astore->rowind;
+     int *colptr = Astore->colptr;
+     int nnz = colptr[n];
+     int fill = 0;
+-    complex *nzval_new;
++    singlecomplex *nzval_new;
+     int *rowind_new;
+     int i, j, diag;
+     double s;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgscon.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgscon.c
+index 3d8137417..d3f75f33e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgscon.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgscon.c
+@@ -89,11 +89,11 @@ cgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+     /* Local variables */
+     int    kase, kase1, onenrm, i;
+     float ainvnm;
+-    complex *work;
++    singlecomplex *work;
+     int    isave[3];
+-    extern int crscl_(int *, complex *, complex *, int *);
++    extern int crscl_(int *, singlecomplex *, singlecomplex *, int *);
+ 
+-    extern int clacon2_(int *, complex *, complex *, float *, int *, int []);
++    extern int clacon2_(int *, singlecomplex *, singlecomplex *, float *, int *, int []);
+ 
+     
+     /* Test the input parameters. */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsequ.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsequ.c
+index c87db4427..d10bda190 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsequ.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsequ.c
+@@ -98,7 +98,7 @@ cgsequ(SuperMatrix *A, float *r, float *c, float *rowcnd,
+ 
+     /* Local variables */
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     int i, j, irow;
+     float rcmin, rcmax;
+     float bignum, smlnum;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsisx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsisx.c
+index 383135993..0c31c9b19 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsisx.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsisx.c
+@@ -410,7 +410,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+ {
+ 
+     DNformat  *Bstore, *Xstore;
+-    complex    *Bmat, *Xmat;
++    singlecomplex    *Bmat, *Xmat;
+     int       ldb, ldx, nrhs, n;
+     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
+     SuperMatrix AC; /* Matrix postmultiplied by Pc */
+@@ -549,7 +549,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+ 	int nnz = Astore->nnz;
+ 	int *colptr = Astore->colptr;
+ 	int *rowind = Astore->rowind;
+-	complex *nzval = (complex *)Astore->nzval;
++	singlecomplex *nzval = (singlecomplex *)Astore->nzval;
+ 
+ 	if ( mc64 ) {
+ 	    t0 = SuperLU_timer_();
+@@ -678,7 +678,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+     }
+ 
+     if ( nrhs > 0 ) { /* Solve the system */
+-        complex *rhs_work;
++        singlecomplex *rhs_work;
+ 
+ 	/* Scale and permute the right-hand side if equilibration
+            and permutation from MC64 were performed. */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
+index a1df60a92..30b826d8b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsitrf.c
+@@ -201,21 +201,21 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+ 				iswap is the inverse of swap. After the
+ 				factorization, it is equal to perm_r. */
+     int       *iwork;
+-    complex   *cwork;
++    singlecomplex   *cwork;
+     int       *segrep, *repfnz, *parent, *xplore;
+     int       *panel_lsub; /* dense[]/panel_lsub[] pair forms a w-wide SPA */
+     int       *marker, *marker_relax;
+-    complex    *dense, *tempv;
++    singlecomplex    *dense, *tempv;
+     float *stempv;
+     int       *relax_end, *relax_fsupc;
+-    complex    *a;
++    singlecomplex    *a;
+     int       *asub;
+     int       *xa_begin, *xa_end;
+     int       *xsup, *supno;
+     int       *xlsub, *xlusup, *xusub;
+     int       nzlumax;
+     float    *amax; 
+-    complex    drop_sum;
++    singlecomplex    drop_sum;
+     float alpha, omega;  /* used in MILU, mimicing DRIC */
+     float    *swork2;	   /* used by the second dropping rule */
+ 
+@@ -247,7 +247,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+     int       nnzAj;	/* number of nonzeros in A(:,1:j) */
+     int       nnzLj, nnzUj;
+     double    tol_L = drop_tol, tol_U = drop_tol;
+-    complex zero = {0.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
+     float one = 1.0;
+ 
+     /* Executable */	   
+@@ -492,7 +492,7 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+ 		    xlsub[jj + 1]++;
+ 		    assert(xlusup[jj]==xlusup[jj+1]);
+ 		    xlusup[jj + 1]++;
+-		    ((complex *) Glu->lusup)[xlusup[jj]] = zero;
++		    ((singlecomplex *) Glu->lusup)[xlusup[jj]] = zero;
+ 
+ 		    /* Choose a row index (pivrow) for fill-in */
+ 		    for (i = jj; i < n; i++)
+@@ -628,21 +628,21 @@ cgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
+ 	   may have changed, */
+ 	((SCformat *)L->Store)->nnz = nnzL;
+ 	((SCformat *)L->Store)->nsuper = Glu->supno[n];
+-	((SCformat *)L->Store)->nzval = (complex *) Glu->lusup;
++	((SCformat *)L->Store)->nzval = (singlecomplex *) Glu->lusup;
+ 	((SCformat *)L->Store)->nzval_colptr = Glu->xlusup;
+ 	((SCformat *)L->Store)->rowind = Glu->lsub;
+ 	((SCformat *)L->Store)->rowind_colptr = Glu->xlsub;
+ 	((NCformat *)U->Store)->nnz = nnzU;
+-	((NCformat *)U->Store)->nzval = (complex *) Glu->ucol;
++	((NCformat *)U->Store)->nzval = (singlecomplex *) Glu->ucol;
+ 	((NCformat *)U->Store)->rowind = Glu->usub;
+ 	((NCformat *)U->Store)->colptr = Glu->xusub;
+     } else {
+ 	cCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL,
+-              (complex *) Glu->lusup, Glu->xlusup,
++              (singlecomplex *) Glu->lusup, Glu->xlusup,
+               Glu->lsub, Glu->xlsub, Glu->supno, Glu->xsup,
+ 	      SLU_SC, SLU_C, SLU_TRLU);
+ 	cCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU,
+-	      (complex *) Glu->ucol, Glu->usub, Glu->xusub,
++	      (singlecomplex *) Glu->ucol, Glu->usub, Glu->xusub,
+ 	      SLU_NC, SLU_C, SLU_TRU);
+     }
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+index a7dd2f8fd..6db670f94 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgsrfs.c
+@@ -149,15 +149,15 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     
+     /* Table of constant values */
+     int    ione = 1;
+-    complex ndone = {-1., 0.};
+-    complex done = {1., 0.};
++    singlecomplex ndone = {-1., 0.};
++    singlecomplex done = {1., 0.};
+     
+     /* Local variables */
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     SuperMatrix Bjcol;
+     DNformat *Bstore, *Xstore, *Bjcol_store;
+-    complex   *Bmat, *Xmat, *Bptr, *Xptr;
++    singlecomplex   *Bmat, *Xmat, *Bptr, *Xptr;
+     int      kase;
+     float   safe1, safe2;
+     int      i, j, k, irow, nz, count, notran, rowequ, colequ;
+@@ -165,18 +165,18 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     float   s, xk, lstres, eps, safmin;
+     char     transc[1];
+     trans_t  transt;
+-    complex   *work;
++    singlecomplex   *work;
+     float   *rwork;
+     int      *iwork;
+     int      isave[3];
+ 
+-    extern int clacon2_(int *, complex *, complex *, float *, int *, int []);
++    extern int clacon2_(int *, singlecomplex *, singlecomplex *, float *, int *, int []);
+ #ifdef _CRAY
+-    extern int CCOPY(int *, complex *, int *, complex *, int *);
+-    extern int CSAXPY(int *, complex *, complex *, int *, complex *, int *);
++    extern int CCOPY(int *, singlecomplex *, int *, singlecomplex *, int *);
++    extern int CSAXPY(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
+ #else
+-    extern int ccopy_(int *, complex *, int *, complex *, int *);
+-    extern int caxpy_(int *, complex *, complex *, int *, complex *, int *);
++    extern int ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
++    extern int caxpy_(int *, singlecomplex *, singlecomplex *, int *, singlecomplex *, int *);
+ #endif
+ 
+     Astore = A->Store;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgssvx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgssvx.c
+index bb75e14a5..152b26ff5 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgssvx.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgssvx.c
+@@ -364,7 +364,7 @@ cgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+ 
+ 
+     DNformat  *Bstore, *Xstore;
+-    complex    *Bmat, *Xmat;
++    singlecomplex    *Bmat, *Xmat;
+     int       ldb, ldx, nrhs;
+     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
+     SuperMatrix AC; /* Matrix postmultiplied by Pc */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrf.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrf.c
+index 2cd14a9a0..912fa698b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrf.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrf.c
+@@ -209,14 +209,14 @@ cgstrf (superlu_options_t *options, SuperMatrix *A,
+                                   options->Fact == SamePattern_SameRowPerm */
+     int       *iperm_c; /* inverse of perm_c */
+     int       *iwork;
+-    complex    *cwork;
++    singlecomplex    *cwork;
+     int	      *segrep, *repfnz, *parent, *xplore;
+     int	      *panel_lsub; /* dense[]/panel_lsub[] pair forms a w-wide SPA */
+     int	      *xprune;
+     int	      *marker;
+-    complex    *dense, *tempv;
++    singlecomplex    *dense, *tempv;
+     int       *relax_end;
+-    complex    *a;
++    singlecomplex    *a;
+     int       *asub;
+     int       *xa_begin, *xa_end;
+     int       *xsup, *supno;
+@@ -431,21 +431,21 @@ cgstrf (superlu_options_t *options, SuperMatrix *A,
+            may have changed, */
+         ((SCformat *)L->Store)->nnz = nnzL;
+ 	((SCformat *)L->Store)->nsuper = Glu->supno[n];
+-	((SCformat *)L->Store)->nzval = (complex *) Glu->lusup;
++	((SCformat *)L->Store)->nzval = (singlecomplex *) Glu->lusup;
+ 	((SCformat *)L->Store)->nzval_colptr = Glu->xlusup;
+ 	((SCformat *)L->Store)->rowind = Glu->lsub;
+ 	((SCformat *)L->Store)->rowind_colptr = Glu->xlsub;
+ 	((NCformat *)U->Store)->nnz = nnzU;
+-	((NCformat *)U->Store)->nzval = (complex *) Glu->ucol;
++	((NCformat *)U->Store)->nzval = (singlecomplex *) Glu->ucol;
+ 	((NCformat *)U->Store)->rowind = Glu->usub;
+ 	((NCformat *)U->Store)->colptr = Glu->xusub;
+     } else {
+         cCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL, 
+-	      (complex *) Glu->lusup, Glu->xlusup, 
++	      (singlecomplex *) Glu->lusup, Glu->xlusup, 
+               Glu->lsub, Glu->xlsub, Glu->supno, Glu->xsup,
+               SLU_SC, SLU_C, SLU_TRLU);
+     	cCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, 
+-	      (complex *) Glu->ucol, Glu->usub, Glu->xusub,
++	      (singlecomplex *) Glu->ucol, Glu->usub, Glu->xusub,
+               SLU_NC, SLU_C, SLU_TRU);
+     }
+     
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
+index fd8614e40..314a54a13 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cgstrs.c
+@@ -37,9 +37,9 @@ at the top-level directory.
+ /* 
+  * Function prototypes 
+  */
+-void cusolve(int, int, complex*, complex*);
+-void clsolve(int, int, complex*, complex*);
+-void cmatvec(int, int, int, complex*, complex*, complex*);
++void cusolve(int, int, singlecomplex*, singlecomplex*);
++void clsolve(int, int, singlecomplex*, singlecomplex*);
++void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
+ 
+ /*! \brief
+  *
+@@ -107,20 +107,20 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+ #endif
+     int      incx = 1, incy = 1;
+ #ifdef USE_VENDOR_BLAS
+-    complex   alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+-    complex   *work_col;
++    singlecomplex   alpha = {1.0, 0.0}, beta = {1.0, 0.0};
++    singlecomplex   *work_col;
+ #endif
+-    complex   temp_comp;
++    singlecomplex   temp_comp;
+     DNformat *Bstore;
+-    complex   *Bmat;
++    singlecomplex   *Bmat;
+     SCformat *Lstore;
+     NCformat *Ustore;
+-    complex   *Lval, *Uval;
++    singlecomplex   *Lval, *Uval;
+     int      fsupc, nrow, nsupr, nsupc, luptr, istart, irow;
+     int      i, j, k, iptr, jcol, n, ldb, nrhs;
+-    complex   *work, *rhs_work, *soln;
++    singlecomplex   *work, *rhs_work, *soln;
+     flops_t  solve_ops;
+-    void cprint_soln(int n, int nrhs, complex *soln);
++    void cprint_soln(int n, int nrhs, singlecomplex *soln);
+ 
+     /* Test input parameters ... */
+     *info = 0;
+@@ -351,7 +351,7 @@ cgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
+  * Diagnostic print of the solution vector 
+  */
+ void
+-cprint_soln(int n, int nrhs, complex *soln)
++cprint_soln(int n, int nrhs, singlecomplex *soln)
+ {
+     int i;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
+index 39deb834c..1fdf5abf9 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clacon2.c
+@@ -87,12 +87,12 @@ at the top-level directory.
+  */
+ 
+ int
+-clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
++clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int isave[3])
+ {
+     /* Table of constant values */
+     int c__1 = 1;
+-    complex      zero = {0.0, 0.0};
+-    complex      one = {1.0, 0.0};
++    singlecomplex      zero = {0.0, 0.0};
++    singlecomplex      one = {1.0, 0.0};
+ 
+     /* System generated locals */
+     float d__1;
+@@ -104,12 +104,12 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
+     float temp;
+     float safmin;
+     extern float smach(char *);
+-    extern int icmax1_slu(int *, complex *, int *);
+-    extern double scsum1_slu(int *, complex *, int *);
++    extern int icmax1_slu(int *, singlecomplex *, int *);
++    extern double scsum1_slu(int *, singlecomplex *, int *);
+ #ifdef _CRAY
+-    extern int CCOPY(int *, complex *, int *, complex [], int *);
++    extern int CCOPY(int *, singlecomplex *, int *, singlecomplex [], int *);
+ #else
+-    extern int ccopy_(int *, complex *, int *, complex [], int *);
++    extern int ccopy_(int *, singlecomplex *, int *, singlecomplex [], int *);
+ #endif
+ 
+     safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clangs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clangs.c
+index 0dba8148f..c203fe6f7 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clangs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/clangs.c
+@@ -73,7 +73,7 @@ float clangs(char *norm, SuperMatrix *A)
+ 
+     /* Local variables */
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     int      i, j, irow;
+     float   value, sum;
+     float   *rwork;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/claqgs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/claqgs.c
+index 71361a3c8..b3a2c5306 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/claqgs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/claqgs.c
+@@ -98,7 +98,7 @@ claqgs(SuperMatrix *A, float *r, float *c,
+     
+     /* Local variables */
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     int i, j, irow;
+     float large, small, cj;
+     float temp;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cldperm.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cldperm.c
+index 2cf88032c..90d3349a0 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cldperm.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cldperm.c
+@@ -73,7 +73,7 @@ extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
+  * colptr (input) int*, of size n+1
+  *        The pointers to the beginning of each column in ADJNCY.
+  *
+- * nzval  (input) complex*, of size nnz
++ * nzval  (input) singlecomplex*, of size nnz
+  *        The nonzero values of the matrix. nzval[k] is the value of
+  *        the entry corresponding to adjncy[k].
+  *        It is not used if job = 1.
+@@ -93,7 +93,7 @@ extern int_t mc64ad_(int_t*, int_t*, int_t*, int_t [], int_t [], double [],
+ 
+ int
+ cldperm(int_t job, int_t n, int_t nnz, int_t colptr[], int_t adjncy[],
+-	complex nzval[], int_t *perm, float u[], float v[])
++	singlecomplex nzval[], int_t *perm, float u[], float v[])
+ { 
+     int_t i, liw, ldw, num;
+     int_t *iw, icntl[10], info[10];
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmemory.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmemory.c
+index 675346b5e..613eabe36 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmemory.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmemory.c
+@@ -23,7 +23,7 @@ at the top-level directory.
+ 
+ /* Internal prototypes */
+ void  *cexpand (int *, MemType,int, int, GlobalLU_t *);
+-int   cLUWorkInit (int, int, int, int **, complex **, GlobalLU_t *);
++int   cLUWorkInit (int, int, int, int **, singlecomplex **, GlobalLU_t *);
+ void  copy_mem_complex (int, void *, void *);
+ void  cStackCompress (GlobalLU_t *);
+ void  cSetupSpace (void *, int, GlobalLU_t *);
+@@ -40,7 +40,7 @@ extern void    user_bcopy      (char *, char *, int);
+ #define NotDoubleAlign(addr) ( (intptr_t)addr & 7 )
+ #define DoubleAlign(addr)    ( ((intptr_t)addr + 7) & ~7L )
+ #define TempSpace(m, w)      ( (2*w + 4 + NO_MARKER) * m * sizeof(int) + \
+-			      (w + 1) * m * sizeof(complex) )
++			      (w + 1) * m * sizeof(singlecomplex) )
+ #define Reduce(alpha)        ((alpha + 1) / 2)  /* i.e. (alpha-1)/2 + 1 */
+ 
+ 
+@@ -118,7 +118,7 @@ int cQuerySpace(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage)
+     Ustore = U->Store;
+     n = L->ncol;
+     iword = sizeof(int);
+-    dword = sizeof(complex);
++    dword = sizeof(singlecomplex);
+ 
+     /* For LU factors */
+     mem_usage->for_lu = (float)( (4.0*n + 3.0) * iword +
+@@ -189,21 +189,21 @@ int ilu_cQuerySpace(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage)
+ int
+ cLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
+ 	  int panel_size, float fill_ratio, SuperMatrix *L, SuperMatrix *U,
+-          GlobalLU_t *Glu, int **iwork, complex **dwork)
++          GlobalLU_t *Glu, int **iwork, singlecomplex **dwork)
+ {
+     int      info, iword, dword;
+     SCformat *Lstore;
+     NCformat *Ustore;
+     int      *xsup, *supno;
+     int      *lsub, *xlsub;
+-    complex   *lusup;
++    singlecomplex   *lusup;
+     int      *xlusup;
+-    complex   *ucol;
++    singlecomplex   *ucol;
+     int      *usub, *xusub;
+     int      nzlmax, nzumax, nzlumax;
+ 
+     iword     = sizeof(int);
+-    dword     = sizeof(complex);
++    dword     = sizeof(singlecomplex);
+     Glu->n    = n;
+     Glu->num_expansions = 0;
+ 
+@@ -244,8 +244,8 @@ cLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
+ 	    xusub  = (int *)cuser_malloc((n+1) * iword, HEAD, Glu);
+ 	}
+ 
+-	lusup = (complex *) cexpand( &nzlumax, LUSUP, 0, 0, Glu );
+-	ucol  = (complex *) cexpand( &nzumax, UCOL, 0, 0, Glu );
++	lusup = (singlecomplex *) cexpand( &nzlumax, LUSUP, 0, 0, Glu );
++	ucol  = (singlecomplex *) cexpand( &nzumax, UCOL, 0, 0, Glu );
+ 	lsub  = (int *)    cexpand( &nzlmax, LSUB, 0, 0, Glu );
+ 	usub  = (int *)    cexpand( &nzumax, USUB, 0, 1, Glu );
+ 
+@@ -271,8 +271,8 @@ cLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
+ 		   nzlmax, nzumax);
+ 	    fflush(stdout);
+ #endif
+-	    lusup = (complex *) cexpand( &nzlumax, LUSUP, 0, 0, Glu );
+-	    ucol  = (complex *) cexpand( &nzumax, UCOL, 0, 0, Glu );
++	    lusup = (singlecomplex *) cexpand( &nzlumax, LUSUP, 0, 0, Glu );
++	    ucol  = (singlecomplex *) cexpand( &nzumax, UCOL, 0, 0, Glu );
+ 	    lsub  = (int *)    cexpand( &nzlmax, LSUB, 0, 0, Glu );
+ 	    usub  = (int *)    cexpand( &nzumax, USUB, 0, 1, Glu );
+ 	}
+@@ -337,16 +337,16 @@ cLUMemInit(fact_t fact, void *work, int lwork, int m, int n, int annz,
+    returns the number of bytes allocated so far when failure occurred. */
+ int
+ cLUWorkInit(int m, int n, int panel_size, int **iworkptr,
+-            complex **dworkptr, GlobalLU_t *Glu)
++            singlecomplex **dworkptr, GlobalLU_t *Glu)
+ {
+     int    isize, dsize, extra;
+-    complex *old_ptr;
++    singlecomplex *old_ptr;
+     int    maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) ),
+            rowblk   = sp_ienv(4);
+ 
+     isize = ( (2 * panel_size + 3 + NO_MARKER ) * m + n ) * sizeof(int);
+     dsize = (m * panel_size +
+-	     NUM_TEMPV(m,panel_size,maxsuper,rowblk)) * sizeof(complex);
++	     NUM_TEMPV(m,panel_size,maxsuper,rowblk)) * sizeof(singlecomplex);
+ 
+     if ( Glu->MemModel == SYSTEM )
+ 	*iworkptr = (int *) intCalloc(isize/sizeof(int));
+@@ -358,13 +358,13 @@ cLUWorkInit(int m, int n, int panel_size, int **iworkptr,
+     }
+ 
+     if ( Glu->MemModel == SYSTEM )
+-	*dworkptr = (complex *) SUPERLU_MALLOC(dsize);
++	*dworkptr = (singlecomplex *) SUPERLU_MALLOC(dsize);
+     else {
+-	*dworkptr = (complex *) cuser_malloc(dsize, TAIL, Glu);
++	*dworkptr = (singlecomplex *) cuser_malloc(dsize, TAIL, Glu);
+ 	if ( NotDoubleAlign(*dworkptr) ) {
+ 	    old_ptr = *dworkptr;
+-	    *dworkptr = (complex*) DoubleAlign(*dworkptr);
+-	    *dworkptr = (complex*) ((double*)*dworkptr - 1);
++	    *dworkptr = (singlecomplex*) DoubleAlign(*dworkptr);
++	    *dworkptr = (singlecomplex*) ((double*)*dworkptr - 1);
+ 	    extra = (char*)old_ptr - (char*)*dworkptr;
+ #ifdef DEBUG
+ 	    printf("cLUWorkInit: not aligned, extra %d\n", extra);
+@@ -385,10 +385,10 @@ cLUWorkInit(int m, int n, int panel_size, int **iworkptr,
+ /*! \brief Set up pointers for real working arrays.
+  */
+ void
+-cSetRWork(int m, int panel_size, complex *dworkptr,
+-	 complex **dense, complex **tempv)
++cSetRWork(int m, int panel_size, singlecomplex *dworkptr,
++	 singlecomplex **dense, singlecomplex **tempv)
+ {
+-    complex zero = {0.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
+ 
+     int maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) ),
+         rowblk   = sp_ienv(4);
+@@ -400,7 +400,7 @@ cSetRWork(int m, int panel_size, complex *dworkptr,
+ 
+ /*! \brief Free the working storage used by factor routines.
+  */
+-void cLUWorkFree(int *iwork, complex *dwork, GlobalLU_t *Glu)
++void cLUWorkFree(int *iwork, singlecomplex *dwork, GlobalLU_t *Glu)
+ {
+     if ( Glu->MemModel == SYSTEM ) {
+ 	SUPERLU_FREE (iwork);
+@@ -479,8 +479,8 @@ void
+ copy_mem_complex(int howmany, void *old, void *new)
+ {
+     register int i;
+-    complex *dold = old;
+-    complex *dnew = new;
++    singlecomplex *dold = old;
++    singlecomplex *dnew = new;
+     for (i = 0; i < howmany; i++) dnew[i] = dold[i];
+ }
+ 
+@@ -512,7 +512,7 @@ void
+     }
+ 
+     if ( type == LSUB || type == USUB ) lword = sizeof(int);
+-    else lword = sizeof(complex);
++    else lword = sizeof(singlecomplex);
+ 
+     if ( Glu->MemModel == SYSTEM ) {
+ 	new_mem = (void *) SUPERLU_MALLOC((size_t)new_len * lword);
+@@ -613,12 +613,12 @@ cStackCompress(GlobalLU_t *Glu)
+     register int iword, dword, ndim;
+     char    *last, *fragment;
+     int      *ifrom, *ito;
+-    complex   *dfrom, *dto;
++    singlecomplex   *dfrom, *dto;
+     int      *xlsub, *lsub, *xusub, *usub, *xlusup;
+-    complex   *ucol, *lusup;
++    singlecomplex   *ucol, *lusup;
+ 
+     iword = sizeof(int);
+-    dword = sizeof(complex);
++    dword = sizeof(singlecomplex);
+     ndim = Glu->n;
+ 
+     xlsub  = Glu->xlsub;
+@@ -630,7 +630,7 @@ cStackCompress(GlobalLU_t *Glu)
+     lusup  = Glu->lusup;
+ 
+     dfrom = ucol;
+-    dto = (complex *)((char*)lusup + xlusup[ndim] * dword);
++    dto = (singlecomplex *)((char*)lusup + xlusup[ndim] * dword);
+     copy_mem_complex(xusub[ndim], dfrom, dto);
+     ucol = dto;
+ 
+@@ -664,30 +664,30 @@ cStackCompress(GlobalLU_t *Glu)
+ /*! \brief Allocate storage for original matrix A
+  */
+ void
+-callocateA(int n, int nnz, complex **a, int **asub, int **xa)
++callocateA(int n, int nnz, singlecomplex **a, int **asub, int **xa)
+ {
+-    *a    = (complex *) complexMalloc(nnz);
++    *a    = (singlecomplex *) complexMalloc(nnz);
+     *asub = (int *) intMalloc(nnz);
+     *xa   = (int *) intMalloc(n+1);
+ }
+ 
+ 
+-complex *complexMalloc(int n)
++singlecomplex *complexMalloc(int n)
+ {
+-    complex *buf;
+-    buf = (complex *) SUPERLU_MALLOC((size_t)n * sizeof(complex));
++    singlecomplex *buf;
++    buf = (singlecomplex *) SUPERLU_MALLOC((size_t)n * sizeof(singlecomplex));
+     if ( !buf ) {
+ 	ABORT("SUPERLU_MALLOC failed for buf in complexMalloc()\n");
+     }
+     return (buf);
+ }
+ 
+-complex *complexCalloc(int n)
++singlecomplex *complexCalloc(int n)
+ {
+-    complex *buf;
++    singlecomplex *buf;
+     register int i;
+-    complex zero = {0.0, 0.0};
+-    buf = (complex *) SUPERLU_MALLOC((size_t)n * sizeof(complex));
++    singlecomplex zero = {0.0, 0.0};
++    buf = (singlecomplex *) SUPERLU_MALLOC((size_t)n * sizeof(singlecomplex));
+     if ( !buf ) {
+ 	ABORT("SUPERLU_MALLOC failed for buf in complexCalloc()\n");
+     }
+@@ -702,7 +702,7 @@ int cmemory_usage(const int nzlmax, const int nzumax,
+     register int iword, dword;
+ 
+     iword   = sizeof(int);
+-    dword   = sizeof(complex);
++    dword   = sizeof(singlecomplex);
+ 
+     return (10 * n * iword +
+ 	    nzlmax * iword + nzumax * (iword + dword) + nzlumax * dword);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmyblas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmyblas2.c
+index 094138b5f..d4e09f97e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmyblas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cmyblas2.c
+@@ -35,12 +35,12 @@ at the top-level directory.
+  * triangular matrix is stored in a 2D array M(1:nrow,1:ncol). 
+  * The solution will be returned in the rhs vector.
+  */
+-void clsolve ( int ldm, int ncol, complex *M, complex *rhs )
++void clsolve ( int ldm, int ncol, singlecomplex *M, singlecomplex *rhs )
+ {
+     int k;
+-    complex x0, x1, x2, x3, temp;
+-    complex *M0;
+-    complex *Mki0, *Mki1, *Mki2, *Mki3;
++    singlecomplex x0, x1, x2, x3, temp;
++    singlecomplex *M0;
++    singlecomplex *Mki0, *Mki1, *Mki2, *Mki3;
+     register int firstcol = 0;
+ 
+     M0 = &M[0];
+@@ -116,10 +116,10 @@ void
+ cusolve ( ldm, ncol, M, rhs )
+ int ldm;	/* in */
+ int ncol;	/* in */
+-complex *M;	/* in */
+-complex *rhs;	/* modified */
++singlecomplex *M;	/* in */
++singlecomplex *rhs;	/* modified */
+ {
+-    complex xj, temp;
++    singlecomplex xj, temp;
+     int jcol, j, irow;
+ 
+     jcol = ncol - 1;
+@@ -148,13 +148,13 @@ void cmatvec ( ldm, nrow, ncol, M, vec, Mxvec )
+ int ldm;	/* in -- leading dimension of M */
+ int nrow;	/* in */ 
+ int ncol;	/* in */
+-complex *M;	/* in */
+-complex *vec;	/* in */
+-complex *Mxvec;	/* in/out */
++singlecomplex *M;	/* in */
++singlecomplex *vec;	/* in */
++singlecomplex *Mxvec;	/* in/out */
+ {
+-    complex vi0, vi1, vi2, vi3;
+-    complex *M0, temp;
+-    complex *Mki0, *Mki1, *Mki2, *Mki3;
++    singlecomplex vi0, vi1, vi2, vi3;
++    singlecomplex *M0, temp;
++    singlecomplex *Mki0, *Mki1, *Mki2, *Mki3;
+     register int firstcol = 0;
+     int k;
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
+index fc6af454d..0161ab445 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_bmod.c
+@@ -41,8 +41,8 @@ at the top-level directory.
+ /* 
+  * Function prototypes 
+  */
+-void clsolve(int, int, complex *, complex *);
+-void cmatvec(int, int, int, complex *, complex *, complex *);
++void clsolve(int, int, singlecomplex *, singlecomplex *);
++void cmatvec(int, int, int, singlecomplex *, singlecomplex *, singlecomplex *);
+ extern void ccheck_tempv();
+ 
+ /*! \brief
+@@ -70,8 +70,8 @@ cpanel_bmod (
+ 	    const int  w,          /* in */
+ 	    const int  jcol,       /* in */
+ 	    const int  nseg,       /* in */
+-	    complex     *dense,     /* out, of size n by w */
+-	    complex     *tempv,     /* working array */
++	    singlecomplex     *dense,     /* out, of size n by w */
++	    singlecomplex     *tempv,     /* working array */
+ 	    int        *segrep,    /* in */
+ 	    int        *repfnz,    /* in, of size n by w */
+ 	    GlobalLU_t *Glu,       /* modified */
+@@ -87,13 +87,13 @@ cpanel_bmod (
+          ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+     int          incx = 1, incy = 1;
+-    complex       alpha, beta;
++    singlecomplex       alpha, beta;
+ #endif
+ 
+     register int k, ksub;
+     int          fsupc, nsupc, nsupr, nrow;
+     int          krep, krep_ind;
+-    complex       ukj, ukj1, ukj2;
++    singlecomplex       ukj, ukj1, ukj2;
+     int          luptr, luptr1, luptr2;
+     int          segsze;
+     int          block_nrow;  /* no of rows in a block row */
+@@ -103,15 +103,15 @@ cpanel_bmod (
+     register int jj;	      /* Index through each column in the panel */
+     int          *xsup, *supno;
+     int          *lsub, *xlsub;
+-    complex       *lusup;
++    singlecomplex       *lusup;
+     int          *xlusup;
+     int          *repfnz_col; /* repfnz[] for a column in the panel */
+-    complex       *dense_col;  /* dense[] for a column in the panel */
+-    complex       *tempv1;             /* Used in 1-D update */
+-    complex       *TriTmp, *MatvecTmp; /* used in 2-D update */
+-    complex      zero = {0.0, 0.0};
+-    complex      one = {1.0, 0.0};
+-    complex      comp_temp, comp_temp1;
++    singlecomplex       *dense_col;  /* dense[] for a column in the panel */
++    singlecomplex       *tempv1;             /* Used in 1-D update */
++    singlecomplex       *TriTmp, *MatvecTmp; /* used in 2-D update */
++    singlecomplex      zero = {0.0, 0.0};
++    singlecomplex      one = {1.0, 0.0};
++    singlecomplex      comp_temp, comp_temp1;
+     register int ldaTmp;
+     register int r_ind, r_hi;
+     int  maxsuper, rowblk, colblk;
+@@ -121,7 +121,7 @@ cpanel_bmod (
+     supno   = Glu->supno;
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    lusup   = (complex *) Glu->lusup;
++    lusup   = (singlecomplex *) Glu->lusup;
+     xlusup  = Glu->xlusup;
+     
+     maxsuper = SUPERLU_MAX( sp_ienv(3), sp_ienv(7) );
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_dfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_dfs.c
+index 988dad7ba..e4f1ab472 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_dfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpanel_dfs.c
+@@ -73,7 +73,7 @@ cpanel_dfs (
+ 	   SuperMatrix *A,       /* in - original matrix */
+ 	   int        *perm_r,     /* in */
+ 	   int        *nseg,	   /* out */
+-	   complex     *dense,      /* out */
++	   singlecomplex     *dense,      /* out */
+ 	   int        *panel_lsub, /* out */
+ 	   int        *segrep,     /* out */
+ 	   int        *repfnz,     /* out */
+@@ -86,7 +86,7 @@ cpanel_dfs (
+ {
+ 
+     NCPformat *Astore;
+-    complex    *a;
++    singlecomplex    *a;
+     int       *asub;
+     int       *xa_begin, *xa_end;
+     int	      krep, chperm, chmark, chrep, oldrep, kchild, myfnz;
+@@ -96,7 +96,7 @@ cpanel_dfs (
+     int       *marker1;	   /* marker1[jj] >= jcol if vertex jj was visited 
+ 			      by a previous column within this panel.   */
+     int       *repfnz_col; /* start of each column in the panel */
+-    complex    *dense_col;  /* start of each column in the panel */
++    singlecomplex    *dense_col;  /* start of each column in the panel */
+     int       nextl_col;   /* next available position in panel_lsub[*,jj] */
+     int       *xsup, *supno;
+     int       *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c
+index 452c788bc..453f40b10 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotL.c
+@@ -76,27 +76,27 @@ cpivotL(
+        )
+ {
+ 
+-    complex one = {1.0, 0.0};
++    singlecomplex one = {1.0, 0.0};
+     int          fsupc;	    /* first column in the supernode */
+     int          nsupc;	    /* no of columns in the supernode */
+     int          nsupr;     /* no of rows in the supernode */
+     int          lptr;	    /* points to the starting subscript of the supernode */
+     int          pivptr, old_pivptr, diag, diagind;
+     float       pivmax, rtemp, thresh;
+-    complex       temp;
+-    complex       *lu_sup_ptr; 
+-    complex       *lu_col_ptr;
++    singlecomplex       temp;
++    singlecomplex       *lu_sup_ptr; 
++    singlecomplex       *lu_col_ptr;
+     int          *lsub_ptr;
+     int          isub, icol, k, itemp;
+     int          *lsub, *xlsub;
+-    complex       *lusup;
++    singlecomplex       *lusup;
+     int          *xlusup;
+     flops_t      *ops = stat->ops;
+ 
+     /* Initialize pointers */
+     lsub       = Glu->lsub;
+     xlsub      = Glu->xlsub;
+-    lusup      = (complex *) Glu->lusup;
++    lusup      = (singlecomplex *) Glu->lusup;
+     xlusup     = Glu->xlusup;
+     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
+     nsupc      = jcol - fsupc;	        /* excluding jcol; nsupc >= 0 */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotgrowth.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotgrowth.c
+index 8f3a1294f..ab7ef28f4 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotgrowth.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpivotgrowth.c
+@@ -63,14 +63,14 @@ cPivotGrowth(int ncols, SuperMatrix *A, int *perm_c,
+     NCformat *Astore;
+     SCformat *Lstore;
+     NCformat *Ustore;
+-    complex  *Aval, *Lval, *Uval;
++    singlecomplex  *Aval, *Lval, *Uval;
+     int      fsupc, nsupr, luptr, nz_in_U;
+     int      i, j, k, oldcol;
+     int      *inv_perm_c;
+     float   rpg, maxaj, maxuj;
+     float   smlnum;
+-    complex   *luval;
+-    complex   temp_comp;
++    singlecomplex   *luval;
++    singlecomplex   temp_comp;
+    
+     /* Get machine constants. */
+     smlnum = smach("S");
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpruneL.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpruneL.c
+index 08169203c..fa31a69d9 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpruneL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cpruneL.c
+@@ -57,20 +57,20 @@ cpruneL(
+        )
+ {
+ 
+-    complex     utemp;
++    singlecomplex     utemp;
+     int        jsupno, irep, irep1, kmin, kmax, krow, movnum;
+     int        i, ktemp, minloc, maxloc;
+     int        do_prune; /* logical variable */
+     int        *xsup, *supno;
+     int        *lsub, *xlsub;
+-    complex     *lusup;
++    singlecomplex     *lusup;
+     int        *xlusup;
+ 
+     xsup       = Glu->xsup;
+     supno      = Glu->supno;
+     lsub       = Glu->lsub;
+     xlsub      = Glu->xlsub;
+-    lusup      = (complex *) Glu->lusup;
++    lusup      = (singlecomplex *) Glu->lusup;
+     xlusup     = Glu->xlusup;
+     
+     /*
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadhb.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadhb.c
+index 9a9fd4b71..9cad15583 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadhb.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadhb.c
+@@ -162,7 +162,7 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
+ 
+ 
+ /*! \brief Read complex numbers as pairs of (real, imaginary) */
+-int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
++int cReadValues(FILE *fp, int n, singlecomplex *destination, int perline, int persize)
+ {
+     register int i, j, k, s, pair;
+     register float realpart;
+@@ -205,12 +205,12 @@ int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
+  * </pre>
+  */
+ static void
+-FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
++FormFullA(int n, int *nonz, singlecomplex **nzval, int **rowind, int **colptr)
+ {
+     register int i, j, k, col, new_nnz;
+     int *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
+     int *marker;
+-    complex *t_val, *al_val, *a_val;
++    singlecomplex *t_val, *al_val, *a_val;
+ 
+     al_rowind = *rowind;
+     al_colptr = *colptr;
+@@ -222,7 +222,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 	ABORT("SUPERLU_MALLOC t_colptr[]");
+     if ( !(t_rowind = (int *) SUPERLU_MALLOC( *nonz * sizeof(int)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
+-    if ( !(t_val = (complex*) SUPERLU_MALLOC( *nonz * sizeof(complex)) ) )
++    if ( !(t_val = (singlecomplex*) SUPERLU_MALLOC( *nonz * sizeof(singlecomplex)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for t_val[]");
+ 
+     /* Get counts of each column of T, and set up column pointers */
+@@ -251,7 +251,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 	ABORT("SUPERLU_MALLOC a_colptr[]");
+     if ( !(a_rowind = (int *) SUPERLU_MALLOC( new_nnz * sizeof(int)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
+-    if ( !(a_val = (complex*) SUPERLU_MALLOC( new_nnz * sizeof(complex)) ) )
++    if ( !(a_val = (singlecomplex*) SUPERLU_MALLOC( new_nnz * sizeof(singlecomplex)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for a_val[]");
+ 
+     a_colptr[0] = 0;
+@@ -300,7 +300,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 
+ void
+ creadhb(FILE *fp, int *nrow, int *ncol, int *nonz,
+-	complex **nzval, int **rowind, int **colptr)
++	singlecomplex **nzval, int **rowind, int **colptr)
+ {
+ 
+     register int i, numer_lines = 0, rhscrd = 0;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadrb.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadrb.c
+index bfb292c25..6b17740d0 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadrb.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadrb.c
+@@ -156,7 +156,7 @@ static int ReadVector(FILE *fp, int n, int *where, int perline, int persize)
+ }
+ 
+ /*! \brief Read complex numbers as pairs of (real, imaginary) */
+-static int cReadValues(FILE *fp, int n, complex *destination, int perline, int persize)
++static int cReadValues(FILE *fp, int n, singlecomplex *destination, int perline, int persize)
+ {
+     register int i, j, k, s, pair;
+     register float realpart;
+@@ -200,12 +200,12 @@ static int cReadValues(FILE *fp, int n, complex *destination, int perline, int p
+  * </pre>
+  */
+ static void
+-FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
++FormFullA(int n, int *nonz, singlecomplex **nzval, int **rowind, int **colptr)
+ {
+     register int i, j, k, col, new_nnz;
+     int *t_rowind, *t_colptr, *al_rowind, *al_colptr, *a_rowind, *a_colptr;
+     int *marker;
+-    complex *t_val, *al_val, *a_val;
++    singlecomplex *t_val, *al_val, *a_val;
+ 
+     al_rowind = *rowind;
+     al_colptr = *colptr;
+@@ -217,7 +217,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 	ABORT("SUPERLU_MALLOC t_colptr[]");
+     if ( !(t_rowind = (int *) SUPERLU_MALLOC( *nonz * sizeof(int)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for t_rowind[]");
+-    if ( !(t_val = (complex*) SUPERLU_MALLOC( *nonz * sizeof(complex)) ) )
++    if ( !(t_val = (singlecomplex*) SUPERLU_MALLOC( *nonz * sizeof(singlecomplex)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for t_val[]");
+ 
+     /* Get counts of each column of T, and set up column pointers */
+@@ -246,7 +246,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 	ABORT("SUPERLU_MALLOC a_colptr[]");
+     if ( !(a_rowind = (int *) SUPERLU_MALLOC( new_nnz * sizeof(int)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for a_rowind[]");
+-    if ( !(a_val = (complex*) SUPERLU_MALLOC( new_nnz * sizeof(complex)) ) )
++    if ( !(a_val = (singlecomplex*) SUPERLU_MALLOC( new_nnz * sizeof(singlecomplex)) ) )
+ 	ABORT("SUPERLU_MALLOC fails for a_val[]");
+ 
+     a_colptr[0] = 0;
+@@ -296,7 +296,7 @@ FormFullA(int n, int *nonz, complex **nzval, int **rowind, int **colptr)
+ 
+ void
+ creadrb(int *nrow, int *ncol, int *nonz,
+-        complex **nzval, int **rowind, int **colptr)
++        singlecomplex **nzval, int **rowind, int **colptr)
+ {
+ 
+     register int i, numer_lines = 0;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadtriple.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadtriple.c
+index 47b315737..0f94bc629 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadtriple.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/creadtriple.c
+@@ -24,7 +24,7 @@ at the top-level directory.
+ 
+ void
+ creadtriple(int *m, int *n, int *nonz,
+-	    complex **nzval, int **rowind, int **colptr)
++	    singlecomplex **nzval, int **rowind, int **colptr)
+ {
+ /*
+  * Output parameters
+@@ -35,7 +35,7 @@ creadtriple(int *m, int *n, int *nonz,
+  *
+  */
+     int    j, k, jsize, nnz, nz;
+-    complex *a, *val;
++    singlecomplex *a, *val;
+     int    *asub, *xa, *row, *col;
+     int    zero_base = 0, s_count = 0;
+ 
+@@ -54,7 +54,7 @@ creadtriple(int *m, int *n, int *nonz,
+     asub = *rowind;
+     xa   = *colptr;
+ 
+-    val = (complex *) SUPERLU_MALLOC(*nonz * sizeof(complex));
++    val = (singlecomplex *) SUPERLU_MALLOC(*nonz * sizeof(singlecomplex));
+     row = (int *) SUPERLU_MALLOC(*nonz * sizeof(int));
+     col = (int *) SUPERLU_MALLOC(*nonz * sizeof(int));
+ 
+@@ -133,7 +133,7 @@ creadtriple(int *m, int *n, int *nonz,
+ }
+ 
+ 
+-void creadrhs(int m, complex *b)
++void creadrhs(int m, singlecomplex *b)
+ {
+     FILE *fp, *fopen();
+     int i, f_count = 0;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
+index c49d73ce3..d68c0e48b 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csnode_bmod.c
+@@ -42,8 +42,8 @@ csnode_bmod (
+ 	    const int  jcol,	  /* in */
+ 	    const int  jsupno,    /* in */
+ 	    const int  fsupc,     /* in */
+-	    complex     *dense,    /* in */
+-	    complex     *tempv,    /* working array */
++	    singlecomplex     *dense,    /* in */
++	    singlecomplex     *tempv,    /* working array */
+ 	    GlobalLU_t *Glu,      /* modified */
+ 	    SuperLUStat_t *stat   /* output */
+ 	    )
+@@ -55,21 +55,21 @@ csnode_bmod (
+ 	 ftcs3 = _cptofcd("U", strlen("U"));
+ #endif
+     int            incx = 1, incy = 1;
+-    complex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
++    singlecomplex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
+ #endif
+ 
+-    complex   comp_zero = {0.0, 0.0};
++    singlecomplex   comp_zero = {0.0, 0.0};
+     int            luptr, nsupc, nsupr, nrow;
+     int            isub, irow, i, iptr; 
+     register int   ufirst, nextlu;
+     int            *lsub, *xlsub;
+-    complex         *lusup;
++    singlecomplex         *lusup;
+     int            *xlusup;
+     flops_t *ops = stat->ops;
+ 
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    lusup   = (complex *) Glu->lusup;
++    lusup   = (singlecomplex *) Glu->lusup;
+     xlusup  = Glu->xlusup;
+ 
+     nextlu = xlusup[jcol];
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
+index 93311dfb6..de9289afb 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas2.c
+@@ -31,9 +31,9 @@ at the top-level directory.
+ /* 
+  * Function prototypes 
+  */
+-void cusolve(int, int, complex*, complex*);
+-void clsolve(int, int, complex*, complex*);
+-void cmatvec(int, int, int, complex*, complex*, complex*);
++void cusolve(int, int, singlecomplex*, singlecomplex*);
++void clsolve(int, int, singlecomplex*, singlecomplex*);
++void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
+ 
+ /*! \brief Solves one of the systems of equations A*x = b,   or   A'*x = b
+  * 
+@@ -80,7 +80,7 @@ void cmatvec(int, int, int, complex*, complex*, complex*);
+  *	        The factor U from the factorization Pr*A*Pc=L*U.
+  *	        U has types: Stype = NC, Dtype = SLU_C, Mtype = TRU.
+  *    
+- *   x       - (input/output) complex*
++ *   x       - (input/output) singlecomplex*
+  *             Before entry, the incremented array X must contain the n   
+  *             element right-hand side vector b. On exit, X is overwritten 
+  *             with the solution vector x.
+@@ -91,7 +91,7 @@ void cmatvec(int, int, int, complex*, complex*, complex*);
+  */
+ int
+ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L, 
+-         SuperMatrix *U, complex *x, SuperLUStat_t *stat, int *info)
++         SuperMatrix *U, singlecomplex *x, SuperLUStat_t *stat, int *info)
+ {
+ #ifdef _CRAY
+     _fcd ftcs1 = _cptofcd("L", strlen("L")),
+@@ -100,15 +100,15 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+ #endif
+     SCformat *Lstore;
+     NCformat *Ustore;
+-    complex   *Lval, *Uval;
++    singlecomplex   *Lval, *Uval;
+     int incx = 1, incy = 1;
+-    complex temp;
+-    complex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
+-    complex comp_zero = {0.0, 0.0};
++    singlecomplex temp;
++    singlecomplex alpha = {1.0, 0.0}, beta = {1.0, 0.0};
++    singlecomplex comp_zero = {0.0, 0.0};
+     int nrow;
+     int fsupc, nsupr, nsupc, luptr, istart, irow;
+     int i, k, iptr, jcol;
+-    complex *work;
++    singlecomplex *work;
+     flops_t solve_ops;
+ 
+     /* Test the input parameters */
+@@ -428,14 +428,14 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+  *               TRANS = 'T' or 't'   y := alpha*A'*x + beta*y.   
+  *               TRANS = 'C' or 'c'   y := alpha*A^H*x + beta*y.   
+  *
+- *   ALPHA  - (input) complex
++ *   ALPHA  - (input) singlecomplex
+  *            On entry, ALPHA specifies the scalar alpha.   
+  *
+  *   A      - (input) SuperMatrix*
+  *            Before entry, the leading m by n part of the array A must   
+  *            contain the matrix of coefficients.   
+  *
+- *   X      - (input) complex*, array of DIMENSION at least   
++ *   X      - (input) singlecomplex*, array of DIMENSION at least   
+  *            ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n'   
+  *           and at least   
+  *            ( 1 + ( m - 1 )*abs( INCX ) ) otherwise.   
+@@ -446,11 +446,11 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+  *            On entry, INCX specifies the increment for the elements of   
+  *            X. INCX must not be zero.   
+  *
+- *   BETA   - (input) complex
++ *   BETA   - (input) singlecomplex
+  *            On entry, BETA specifies the scalar beta. When BETA is   
+  *            supplied as zero then Y need not be set on input.   
+  *
+- *   Y      - (output) complex*,  array of DIMENSION at least   
++ *   Y      - (output) singlecomplex*,  array of DIMENSION at least   
+  *            ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n'   
+  *            and at least   
+  *            ( 1 + ( n - 1 )*abs( INCY ) ) otherwise.   
+@@ -466,20 +466,20 @@ sp_ctrsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
+  * </pre>
+ */
+ int
+-sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x, 
+-	 int incx, complex beta, complex *y, int incy)
++sp_cgemv(char *trans, singlecomplex alpha, SuperMatrix *A, singlecomplex *x, 
++	 int incx, singlecomplex beta, singlecomplex *y, int incy)
+ {
+ 
+     /* Local variables */
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     int info;
+-    complex temp, temp1;
++    singlecomplex temp, temp1;
+     int lenx, leny, i, j, irow;
+     int iy, jx, jy, kx, ky;
+     int notran;
+-    complex comp_zero = {0.0, 0.0};
+-    complex comp_one = {1.0, 0.0};
++    singlecomplex comp_zero = {0.0, 0.0};
++    singlecomplex comp_one = {1.0, 0.0};
+ 
+     notran = ( strncmp(trans, "N", 1)==0 || strncmp(trans, "n", 1)==0 );
+     Astore = A->Store;
+@@ -582,7 +582,7 @@ sp_cgemv(char *trans, complex alpha, SuperMatrix *A, complex *x,
+ 	}
+     } else { /* trans == 'C' or 'c' */
+ 	/* Form  y := alpha * conj(A) * x + y. */
+-	complex temp2;
++	singlecomplex temp2;
+ 	jy = ky;
+ 	if (incx == 1) {
+ 	    for (j = 0; j < A->ncol; ++j) {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas3.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas3.c
+index 1f3023d04..e8c965e05 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas3.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/csp_blas3.c
+@@ -80,7 +80,7 @@ at the top-level directory.
+  *	     be at least  zero.   
+  *           Unchanged on exit.
+  *      
+- *   ALPHA  - (input) complex
++ *   ALPHA  - (input) singlecomplex
+  *            On entry, ALPHA specifies the scalar alpha.   
+  * 
+  *   A      - (input) SuperMatrix*
+@@ -102,7 +102,7 @@ at the top-level directory.
+  *            in the calling (sub) program. LDB must be at least max( 1, n ).  
+  *            Unchanged on exit.   
+  * 
+- *   BETA   - (input) complex
++ *   BETA   - (input) singlecomplex
+  *            On entry, BETA specifies the scalar beta. When BETA is   
+  *            supplied as zero then C need not be set on input.   
+  *  
+@@ -124,8 +124,8 @@ at the top-level directory.
+ 
+ int
+ sp_cgemm(char *transa, char *transb, int m, int n, int k, 
+-         complex alpha, SuperMatrix *A, complex *b, int ldb, 
+-         complex beta, complex *c, int ldc)
++         singlecomplex alpha, SuperMatrix *A, singlecomplex *b, int ldb, 
++         singlecomplex beta, singlecomplex *c, int ldc)
+ {
+     int    incx = 1, incy = 1;
+     int    j;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cutil.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cutil.c
+index 08fe6fd7b..d419f6507 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cutil.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/cutil.c
+@@ -37,7 +37,7 @@ at the top-level directory.
+ 
+ void
+ cCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz, 
+-		       complex *nzval, int *rowind, int *colptr,
++		       singlecomplex *nzval, int *rowind, int *colptr,
+ 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
+ {
+     NCformat *Astore;
+@@ -58,7 +58,7 @@ cCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz,
+ 
+ void
+ cCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz, 
+-		       complex *nzval, int *colind, int *rowptr,
++		       singlecomplex *nzval, int *colind, int *rowptr,
+ 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
+ {
+     NRformat *Astore;
+@@ -93,14 +93,14 @@ cCopy_CompCol_Matrix(SuperMatrix *A, SuperMatrix *B)
+     Bstore   = (NCformat *) B->Store;
+     Bstore->nnz = nnz = Astore->nnz;
+     for (i = 0; i < nnz; ++i)
+-	((complex *)Bstore->nzval)[i] = ((complex *)Astore->nzval)[i];
++	((singlecomplex *)Bstore->nzval)[i] = ((singlecomplex *)Astore->nzval)[i];
+     for (i = 0; i < nnz; ++i) Bstore->rowind[i] = Astore->rowind[i];
+     for (i = 0; i <= ncol; ++i) Bstore->colptr[i] = Astore->colptr[i];
+ }
+ 
+ 
+ void
+-cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, complex *x, int ldx,
++cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, singlecomplex *x, int ldx,
+ 		    Stype_t stype, Dtype_t dtype, Mtype_t mtype)
+ {
+     DNformat    *Xstore;
+@@ -114,12 +114,12 @@ cCreate_Dense_Matrix(SuperMatrix *X, int m, int n, complex *x, int ldx,
+     if ( !(X->Store) ) ABORT("SUPERLU_MALLOC fails for X->Store");
+     Xstore = (DNformat *) X->Store;
+     Xstore->lda = ldx;
+-    Xstore->nzval = (complex *) x;
++    Xstore->nzval = (singlecomplex *) x;
+ }
+ 
+ void
+-cCopy_Dense_Matrix(int M, int N, complex *X, int ldx,
+-			complex *Y, int ldy)
++cCopy_Dense_Matrix(int M, int N, singlecomplex *X, int ldx,
++			singlecomplex *Y, int ldy)
+ {
+ /*! \brief Copies a two-dimensional matrix X to another matrix Y.
+  */
+@@ -132,7 +132,7 @@ cCopy_Dense_Matrix(int M, int N, complex *X, int ldx,
+ 
+ void
+ cCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz, 
+-			complex *nzval, int *nzval_colptr, int *rowind,
++			singlecomplex *nzval, int *nzval_colptr, int *rowind,
+ 			int *rowind_colptr, int *col_to_sup, int *sup_to_col,
+ 			Stype_t stype, Dtype_t dtype, Mtype_t mtype)
+ {
+@@ -162,14 +162,14 @@ cCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz,
+  */
+ void
+ cCompRow_to_CompCol(int m, int n, int nnz, 
+-		    complex *a, int *colind, int *rowptr,
+-		    complex **at, int **rowind, int **colptr)
++		    singlecomplex *a, int *colind, int *rowptr,
++		    singlecomplex **at, int **rowind, int **colptr)
+ {
+     register int i, j, col, relpos;
+     int *marker;
+ 
+     /* Allocate storage for another copy of the matrix. */
+-    *at = (complex *) complexMalloc(nnz);
++    *at = (singlecomplex *) complexMalloc(nnz);
+     *rowind = (int *) intMalloc(nnz);
+     *colptr = (int *) intMalloc(n+1);
+     marker = (int *) intCalloc(n);
+@@ -299,18 +299,18 @@ cprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
+     int     i, k, fsupc;
+     int     *xsup, *supno;
+     int     *xlsub, *lsub;
+-    complex  *lusup;
++    singlecomplex  *lusup;
+     int     *xlusup;
+-    complex  *ucol;
++    singlecomplex  *ucol;
+     int     *usub, *xusub;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    lusup   = (complex *) Glu->lusup;
++    lusup   = (singlecomplex *) Glu->lusup;
+     xlusup  = Glu->xlusup;
+-    ucol    = (complex *) Glu->ucol;
++    ucol    = (singlecomplex *) Glu->ucol;
+     usub    = Glu->usub;
+     xusub   = Glu->xusub;
+     
+@@ -335,7 +335,7 @@ cprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
+ 
+ /*! \brief Check whether tempv[] == 0. This should be true before and after calling any numeric routines, i.e., "panel_bmod" and "column_bmod". 
+  */
+-void ccheck_tempv(int n, complex *tempv)
++void ccheck_tempv(int n, singlecomplex *tempv)
+ {
+     int i;
+ 	
+@@ -350,7 +350,7 @@ void ccheck_tempv(int n, complex *tempv)
+ 
+ 
+ void
+-cGenXtrue(int n, int nrhs, complex *x, int ldx)
++cGenXtrue(int n, int nrhs, singlecomplex *x, int ldx)
+ {
+     int  i, j;
+     for (j = 0; j < nrhs; ++j)
+@@ -363,20 +363,20 @@ cGenXtrue(int n, int nrhs, complex *x, int ldx)
+ /*! \brief Let rhs[i] = sum of i-th row of A, so the solution vector is all 1's
+  */
+ void
+-cFillRHS(trans_t trans, int nrhs, complex *x, int ldx,
++cFillRHS(trans_t trans, int nrhs, singlecomplex *x, int ldx,
+          SuperMatrix *A, SuperMatrix *B)
+ {
+     NCformat *Astore;
+-    complex   *Aval;
++    singlecomplex   *Aval;
+     DNformat *Bstore;
+-    complex   *rhs;
+-    complex one = {1.0, 0.0};
+-    complex zero = {0.0, 0.0};
++    singlecomplex   *rhs;
++    singlecomplex one = {1.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
+     int      ldc;
+     char transc[1];
+ 
+     Astore = A->Store;
+-    Aval   = (complex *) Astore->nzval;
++    Aval   = (singlecomplex *) Astore->nzval;
+     Bstore = B->Store;
+     rhs    = Bstore->nzval;
+     ldc    = Bstore->lda;
+@@ -392,7 +392,7 @@ cFillRHS(trans_t trans, int nrhs, complex *x, int ldx,
+ /*! \brief Fills a complex precision array with a given value.
+  */
+ void 
+-cfill(complex *a, int alen, complex dval)
++cfill(singlecomplex *a, int alen, singlecomplex dval)
+ {
+     register int i;
+     for (i = 0; i < alen; i++) a[i] = dval;
+@@ -402,12 +402,12 @@ cfill(complex *a, int alen, complex dval)
+ 
+ /*! \brief Check the inf-norm of the error vector 
+  */
+-void cinf_norm_error(int nrhs, SuperMatrix *X, complex *xtrue)
++void cinf_norm_error(int nrhs, SuperMatrix *X, singlecomplex *xtrue)
+ {
+     DNformat *Xstore;
+     float err, xnorm;
+-    complex *Xmat, *soln_work;
+-    complex temp;
++    singlecomplex *Xmat, *soln_work;
++    singlecomplex temp;
+     int i, j;
+ 
+     Xstore = X->Store;
+@@ -475,7 +475,7 @@ cPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
+ 
+ 
+ int
+-print_complex_vec(char *what, int n, complex *vec)
++print_complex_vec(char *what, int n, singlecomplex *vec)
+ {
+     int i;
+     printf("%s: n %d\n", what, n);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/icmax1.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/icmax1.c
+index 130a635a2..830077e70 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/icmax1.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/icmax1.c
+@@ -51,7 +51,7 @@ at the top-level directory.
+    ===================================================================== 
+   </pre>
+ */
+-int icmax1_slu(int *n, complex *cx, int *incx)
++int icmax1_slu(int *n, singlecomplex *cx, int *incx)
+ {
+ /*
+        NEXT LINE IS THE ONLY MODIFICATION.   
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+index 027b9260f..2f89b393e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+@@ -26,10 +26,10 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
++extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
+ 
+ #if 0
+-static complex *A;  /* used in _compare_ only */
++static singlecomplex *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+ {
+     register int *x = (int *)a, *y = (int *)b;
+@@ -47,12 +47,12 @@ ilu_ccopy_to_ucol(
+ 	      int	 *segrep,  /* in */
+ 	      int	 *repfnz,  /* in */
+ 	      int	 *perm_r,  /* in */
+-	      complex	 *dense,   /* modified - reset to zero on return */
++	      singlecomplex	 *dense,   /* modified - reset to zero on return */
+ 	      int  	 drop_rule,/* in */
+ 	      milu_t	 milu,	   /* in */
+ 	      double	 drop_tol, /* in */
+ 	      int	 quota,    /* maximum nonzero entries allowed */
+-	      complex	 *sum,	   /* out - the sum of dropped entries */
++	      singlecomplex	 *sum,	   /* out - the sum of dropped entries */
+ 	      int	 *nnzUj,   /* in - out */
+ 	      GlobalLU_t *Glu,	   /* modified */
+ 	      float	 *work	   /* working space with minimum size n,
+@@ -69,20 +69,20 @@ ilu_ccopy_to_ucol(
+     int       new_next, mem_error;
+     int       *xsup, *supno;
+     int       *lsub, *xlsub;
+-    complex    *ucol;
++    singlecomplex    *ucol;
+     int       *usub, *xusub;
+     int       nzumax;
+     int       m; /* number of entries in the nonzero U-segments */
+     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
+     register double tmp = 0.0;
+-    complex zero = {0.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
+     int i_1 = 1;
+ 
+     xsup    = Glu->xsup;
+     supno   = Glu->supno;
+     lsub    = Glu->lsub;
+     xlsub   = Glu->xlsub;
+-    ucol    = (complex *) Glu->ucol;
++    ucol    = (singlecomplex *) Glu->ucol;
+     usub    = Glu->usub;
+     xusub   = Glu->xusub;
+     nzumax  = Glu->nzumax;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 09b8a937d..8909f72f0 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -23,14 +23,14 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
+-extern void cswap_(int *, complex [], int *, complex [], int *);
+-extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
+-extern float scasum_(int *, complex *, int *);
+-extern float scnrm2_(int *, complex *, int *);
++extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
++extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern float scasum_(int *, singlecomplex *, int *);
++extern float scnrm2_(int *, singlecomplex *, int *);
+ extern void scopy_(int *, float [], int *, float [], int *);
+ extern double dnrm2_(int *, double [], int *);
+-extern int icamax_(int *, complex [], int *);
++extern int icamax_(int *, singlecomplex [], int *);
+ 
+ static float *A;  /* used in _compare_ only */
+ static int _compare_(const void *a, const void *b)
+@@ -75,7 +75,7 @@ int ilu_cdrop_row(
+     int m, n; /* m x n is the size of the supernode */
+     int r = 0; /* number of dropped rows */
+     register float *temp;
+-    register complex *lusup = (complex *) Glu->lusup;
++    register singlecomplex *lusup = (singlecomplex *) Glu->lusup;
+     register int *lsub = Glu->lsub;
+     register int *xlsub = Glu->xlsub;
+     register int *xlusup = Glu->xlusup;
+@@ -83,9 +83,9 @@ int ilu_cdrop_row(
+     int    drop_rule = options->ILU_DropRule;
+     milu_t milu = options->ILU_MILU;
+     norm_t nrm = options->ILU_Norm;
+-    complex zero = {0.0, 0.0};
+-    complex one = {1.0, 0.0};
+-    complex none = {-1.0, 0.0};
++    singlecomplex zero = {0.0, 0.0};
++    singlecomplex one = {1.0, 0.0};
++    singlecomplex none = {-1.0, 0.0};
+     int i_1 = 1;
+     int inc_diag; /* inc_diag = m + 1 */
+     int nzp = 0;  /* number of zero pivots */
+@@ -270,7 +270,7 @@ int ilu_cdrop_row(
+     if (milu != SILU)
+     {
+ 	register int j;
+-	complex t;
++	singlecomplex t;
+ 	float omega;
+ 	for (j = 0; j < n; j++)
+ 	{
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpanel_dfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpanel_dfs.c
+index 394088f2e..50f1ca726 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpanel_dfs.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpanel_dfs.c
+@@ -60,7 +60,7 @@ ilu_cpanel_dfs(
+    SuperMatrix *A,	   /* in - original matrix */
+    int	      *perm_r,	   /* in */
+    int	      *nseg,	   /* out */
+-   complex     *dense,	   /* out */
++   singlecomplex     *dense,	   /* out */
+    float     *amax,	   /* out - max. abs. value of each column in panel */
+    int	      *panel_lsub, /* out */
+    int	      *segrep,	   /* out */
+@@ -73,7 +73,7 @@ ilu_cpanel_dfs(
+ {
+ 
+     NCPformat *Astore;
+-    complex    *a;
++    singlecomplex    *a;
+     int       *asub;
+     int       *xa_begin, *xa_end;
+     int       krep, chperm, chmark, chrep, oldrep, kchild, myfnz;
+@@ -83,7 +83,7 @@ ilu_cpanel_dfs(
+     int       *marker1;    /* marker1[jj] >= jcol if vertex jj was visited
+ 			      by a previous column within this panel. */
+     int       *repfnz_col; /* start of each column in the panel */
+-    complex    *dense_col;  /* start of each column in the panel */
++    singlecomplex    *dense_col;  /* start of each column in the panel */
+     int       nextl_col;   /* next available position in panel_lsub[*,jj] */
+     int       *xsup, *supno;
+     int       *lsub, *xlsub;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
+index 3ef000094..7e5848284 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cpivotL.c
+@@ -68,7 +68,7 @@ ilu_cpivotL(
+ 	double	   fill_tol, /* in - fill tolerance of current column
+ 			      * used for a singular column */
+ 	milu_t	   milu,     /* in */
+-	complex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
++	singlecomplex	   drop_sum, /* in - computed in ilu_ccopy_to_ucol()
+                                 (MILU only) */
+ 	GlobalLU_t *Glu,     /* modified - global LU data structures */
+ 	SuperLUStat_t *stat  /* output */
+@@ -84,23 +84,23 @@ ilu_cpivotL(
+     int		 old_pivptr, diag, ptr0;
+     register float  pivmax, rtemp;
+     float	 thresh;
+-    complex	 temp;
+-    complex	 *lu_sup_ptr;
+-    complex	 *lu_col_ptr;
++    singlecomplex	 temp;
++    singlecomplex	 *lu_sup_ptr;
++    singlecomplex	 *lu_col_ptr;
+     int		 *lsub_ptr;
+     register int	 isub, icol, k, itemp;
+     int		 *lsub, *xlsub;
+-    complex	 *lusup;
++    singlecomplex	 *lusup;
+     int		 *xlusup;
+     flops_t	 *ops = stat->ops;
+     int		 info;
+-    complex one = {1.0, 0.0};
++    singlecomplex one = {1.0, 0.0};
+ 
+     /* Initialize pointers */
+     n	       = Glu->n;
+     lsub       = Glu->lsub;
+     xlsub      = Glu->xlsub;
+-    lusup      = (complex *) Glu->lusup;
++    lusup      = (singlecomplex *) Glu->lusup;
+     xlusup     = Glu->xlusup;
+     fsupc      = (Glu->xsup)[(Glu->supno)[jcol]];
+     nsupc      = jcol - fsupc;		/* excluding jcol; nsupc >= 0 */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scomplex.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scomplex.c
+index 0d8337242..91425bdba 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scomplex.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scomplex.c
+@@ -29,7 +29,7 @@ at the top-level directory.
+ 
+ 
+ /*! \brief Complex Division c = a/b */
+-void c_div(complex *c, complex *a, complex *b)
++void c_div(singlecomplex *c, singlecomplex *a, singlecomplex *b)
+ {
+     float ratio, den;
+     float abr, abi, cr, ci;
+@@ -59,7 +59,7 @@ void c_div(complex *c, complex *a, complex *b)
+ 
+ 
+ /*! \brief Returns sqrt(z.r^2 + z.i^2) */
+-double c_abs(complex *z)
++double c_abs(singlecomplex *z)
+ {
+     float temp;
+     float real = z->r;
+@@ -81,7 +81,7 @@ double c_abs(complex *z)
+ 
+ 
+ /*! \brief Approximates the abs. Returns abs(z.r) + abs(z.i) */
+-double c_abs1(complex *z)
++double c_abs1(singlecomplex *z)
+ {
+     float real = z->r;
+     float imag = z->i;
+@@ -93,7 +93,7 @@ double c_abs1(complex *z)
+ }
+ 
+ /*! \brief Return the exponentiation */
+-void c_exp(complex *r, complex *z)
++void c_exp(singlecomplex *r, singlecomplex *z)
+ {
+     float expx;
+ 
+@@ -103,24 +103,24 @@ void c_exp(complex *r, complex *z)
+ }
+ 
+ /*! \brief Return the complex conjugate */
+-void r_cnjg(complex *r, complex *z)
++void r_cnjg(singlecomplex *r, singlecomplex *z)
+ {
+     r->r = z->r;
+     r->i = -z->i;
+ }
+ 
+ /*! \brief Return the imaginary part */
+-double r_imag(complex *z)
++double r_imag(singlecomplex *z)
+ {
+     return (z->i);
+ }
+ 
+ 
+ /*! \brief SIGN functions for complex number. Returns z/abs(z) */
+-complex c_sgn(complex *z)
++singlecomplex c_sgn(singlecomplex *z)
+ {
+     register float t = c_abs(z);
+-    register complex retval;
++    register singlecomplex retval;
+ 
+     if (t == 0.0) {
+ 	retval.r = 1.0, retval.i = 0.0;
+@@ -132,9 +132,9 @@ complex c_sgn(complex *z)
+ }
+ 
+ /*! \brief Square-root of a complex number. */
+-complex c_sqrt(complex *z)
++singlecomplex c_sqrt(singlecomplex *z)
+ {
+-    complex retval;
++    singlecomplex retval;
+     register float cr, ci, real, imag;
+ 
+     real = z->r;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scsum1.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scsum1.c
+index fedafcc09..8dce3f8e1 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scsum1.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scsum1.c
+@@ -50,13 +50,13 @@ at the top-level directory.
+     ===================================================================== 
+ </pre>
+ */
+-double scsum1_slu(int *n, complex *cx, int *incx)
++double scsum1_slu(int *n, singlecomplex *cx, int *incx)
+ {
+     /* System generated locals */
+     int i__1, i__2;
+     float ret_val;
+     /* Builtin functions */
+-    double c_abs(complex *);
++    double c_abs(singlecomplex *);
+     /* Local variables */
+     int i, nincx;
+     float stemp;
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+index 346f9af0a..9cf40ada2 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
+@@ -131,56 +131,56 @@ cgsisx(superlu_options_t *, SuperMatrix *, int *, int *, int *,
+ 
+ /*! \brief Supernodal LU factor related */
+ extern void
+-cCreate_CompCol_Matrix(SuperMatrix *, int, int, int, complex *,
++cCreate_CompCol_Matrix(SuperMatrix *, int, int, int, singlecomplex *,
+ 		       int *, int *, Stype_t, Dtype_t, Mtype_t);
+ extern void
+-cCreate_CompRow_Matrix(SuperMatrix *, int, int, int, complex *,
++cCreate_CompRow_Matrix(SuperMatrix *, int, int, int, singlecomplex *,
+ 		       int *, int *, Stype_t, Dtype_t, Mtype_t);
+ extern void
+ cCopy_CompCol_Matrix(SuperMatrix *, SuperMatrix *);
+ extern void
+-cCreate_Dense_Matrix(SuperMatrix *, int, int, complex *, int,
++cCreate_Dense_Matrix(SuperMatrix *, int, int, singlecomplex *, int,
+ 		     Stype_t, Dtype_t, Mtype_t);
+ extern void
+-cCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, complex *, 
++cCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, singlecomplex *, 
+ 		         int *, int *, int *, int *, int *,
+ 			 Stype_t, Dtype_t, Mtype_t);
+ extern void
+-cCopy_Dense_Matrix(int, int, complex *, int, complex *, int);
++cCopy_Dense_Matrix(int, int, singlecomplex *, int, singlecomplex *, int);
+ 
+ extern void    countnz (const int, int *, int *, int *, GlobalLU_t *);
+ extern void    ilu_countnz (const int, int *, int *, GlobalLU_t *);
+ extern void    fixupL (const int, const int *, GlobalLU_t *);
+ 
+-extern void    callocateA (int, int, complex **, int **, int **);
++extern void    callocateA (int, int, singlecomplex **, int **, int **);
+ extern void    cgstrf (superlu_options_t*, SuperMatrix*,
+                        int, int, int*, void *, int, int *, int *, 
+                        SuperMatrix *, SuperMatrix *, GlobalLU_t *,
+ 		       SuperLUStat_t*, int *);
+ extern int     csnode_dfs (const int, const int, const int *, const int *,
+ 			     const int *, int *, int *, GlobalLU_t *);
+-extern int     csnode_bmod (const int, const int, const int, complex *,
+-                              complex *, GlobalLU_t *, SuperLUStat_t*);
++extern int     csnode_bmod (const int, const int, const int, singlecomplex *,
++                              singlecomplex *, GlobalLU_t *, SuperLUStat_t*);
+ extern void    cpanel_dfs (const int, const int, const int, SuperMatrix *,
+-			   int *, int *, complex *, int *, int *, int *,
++			   int *, int *, singlecomplex *, int *, int *, int *,
+ 			   int *, int *, int *, int *, GlobalLU_t *);
+ extern void    cpanel_bmod (const int, const int, const int, const int,
+-                           complex *, complex *, int *, int *,
++                           singlecomplex *, singlecomplex *, int *, int *,
+ 			   GlobalLU_t *, SuperLUStat_t*);
+ extern int     ccolumn_dfs (const int, const int, int *, int *, int *, int *,
+ 			   int *, int *, int *, int *, int *, GlobalLU_t *);
+-extern int     ccolumn_bmod (const int, const int, complex *,
+-			   complex *, int *, int *, int,
++extern int     ccolumn_bmod (const int, const int, singlecomplex *,
++			   singlecomplex *, int *, int *, int,
+                            GlobalLU_t *, SuperLUStat_t*);
+ extern int     ccopy_to_ucol (int, int, int *, int *, int *,
+-                              complex *, GlobalLU_t *);         
++                              singlecomplex *, GlobalLU_t *);         
+ extern int     cpivotL (const int, const double, int *, int *, 
+                          int *, int *, int *, GlobalLU_t *, SuperLUStat_t*);
+ extern void    cpruneL (const int, const int *, const int, const int,
+ 			  const int *, const int *, int *, GlobalLU_t *);
+-extern void    creadmt (int *, int *, int *, complex **, int **, int **);
+-extern void    cGenXtrue (int, int, complex *, int);
+-extern void    cFillRHS (trans_t, int, complex *, int, SuperMatrix *,
++extern void    creadmt (int *, int *, int *, singlecomplex **, int **, int **);
++extern void    cGenXtrue (int, int, singlecomplex *, int);
++extern void    cFillRHS (trans_t, int, singlecomplex *, int, SuperMatrix *,
+ 			  SuperMatrix *);
+ extern void    cgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
+                         SuperMatrix *, SuperLUStat_t*, int *);
+@@ -188,22 +188,22 @@ extern void    cgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
+ extern void    cgsitrf (superlu_options_t*, SuperMatrix*, int, int, int*,
+ 		        void *, int, int *, int *, SuperMatrix *, SuperMatrix *,
+                         GlobalLU_t *, SuperLUStat_t*, int *);
+-extern int     cldperm(int, int, int, int [], int [], complex [],
++extern int     cldperm(int, int, int, int [], int [], singlecomplex [],
+                         int [],	float [], float []);
+ extern int     ilu_csnode_dfs (const int, const int, const int *, const int *,
+ 			       const int *, int *, GlobalLU_t *);
+ extern void    ilu_cpanel_dfs (const int, const int, const int, SuperMatrix *,
+-			       int *, int *, complex *, float *, int *, int *,
++			       int *, int *, singlecomplex *, float *, int *, int *,
+ 			       int *, int *, int *, int *, GlobalLU_t *);
+ extern int     ilu_ccolumn_dfs (const int, const int, int *, int *, int *,
+ 				int *, int *, int *, int *, int *,
+ 				GlobalLU_t *);
+ extern int     ilu_ccopy_to_ucol (int, int, int *, int *, int *,
+-                                  complex *, int, milu_t, double, int,
+-                                  complex *, int *, GlobalLU_t *, float *);
++                                  singlecomplex *, int, milu_t, double, int,
++                                  singlecomplex *, int *, GlobalLU_t *, float *);
+ extern int     ilu_cpivotL (const int, const double, int *, int *, int, int *,
+ 			    int *, int *, int *, double, milu_t,
+-                            complex, GlobalLU_t *, SuperLUStat_t*);
++                            singlecomplex, GlobalLU_t *, SuperLUStat_t*);
+ extern int     ilu_cdrop_row (superlu_options_t *, int, int, double,
+                               int, int *, double *, GlobalLU_t *, 
+                               float *, float *, int);
+@@ -225,25 +225,25 @@ extern void    cgsrfs (trans_t, SuperMatrix *, SuperMatrix *,
+                        float *, float *, SuperLUStat_t*, int *);
+ 
+ extern int     sp_ctrsv (char *, char *, char *, SuperMatrix *,
+-			SuperMatrix *, complex *, SuperLUStat_t*, int *);
+-extern int     sp_cgemv (char *, complex, SuperMatrix *, complex *,
+-			int, complex, complex *, int);
++			SuperMatrix *, singlecomplex *, SuperLUStat_t*, int *);
++extern int     sp_cgemv (char *, singlecomplex, SuperMatrix *, singlecomplex *,
++			int, singlecomplex, singlecomplex *, int);
+ 
+-extern int     sp_cgemm (char *, char *, int, int, int, complex,
+-			SuperMatrix *, complex *, int, complex, 
+-			complex *, int);
++extern int     sp_cgemm (char *, char *, int, int, int, singlecomplex,
++			SuperMatrix *, singlecomplex *, int, singlecomplex, 
++			singlecomplex *, int);
+ extern         float smach(char *);   /* from C99 standard, in float.h */
+ 
+ /*! \brief Memory-related */
+ extern int     cLUMemInit (fact_t, void *, int, int, int, int, int,
+                             float, SuperMatrix *, SuperMatrix *,
+-                            GlobalLU_t *, int **, complex **);
+-extern void    cSetRWork (int, int, complex *, complex **, complex **);
+-extern void    cLUWorkFree (int *, complex *, GlobalLU_t *);
++                            GlobalLU_t *, int **, singlecomplex **);
++extern void    cSetRWork (int, int, singlecomplex *, singlecomplex **, singlecomplex **);
++extern void    cLUWorkFree (int *, singlecomplex *, GlobalLU_t *);
+ extern int     cLUMemXpand (int, int, MemType, int *, GlobalLU_t *);
+ 
+-extern complex  *complexMalloc(int);
+-extern complex  *complexCalloc(int);
++extern singlecomplex  *complexMalloc(int);
++extern singlecomplex  *complexCalloc(int);
+ extern float  *floatMalloc(int);
+ extern float  *floatCalloc(int);
+ extern int     cmemory_usage(const int, const int, const int, const int);
+@@ -251,14 +251,14 @@ extern int     cQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
+ extern int     ilu_cQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
+ 
+ /*! \brief Auxiliary routines */
+-extern void    creadhb(FILE *, int *, int *, int *, complex **, int **, int **);
+-extern void    creadrb(int *, int *, int *, complex **, int **, int **);
+-extern void    creadtriple(int *, int *, int *, complex **, int **, int **);
+-extern void    creadMM(FILE *, int *, int *, int *, complex **, int **, int **);
+-extern void    cCompRow_to_CompCol(int, int, int, complex*, int*, int*,
+-		                   complex **, int **, int **);
+-extern void    cfill (complex *, int, complex);
+-extern void    cinf_norm_error (int, SuperMatrix *, complex *);
++extern void    creadhb(FILE *, int *, int *, int *, singlecomplex **, int **, int **);
++extern void    creadrb(int *, int *, int *, singlecomplex **, int **, int **);
++extern void    creadtriple(int *, int *, int *, singlecomplex **, int **, int **);
++extern void    creadMM(FILE *, int *, int *, int *, singlecomplex **, int **, int **);
++extern void    cCompRow_to_CompCol(int, int, int, singlecomplex*, int*, int*,
++		                   singlecomplex **, int **, int **);
++extern void    cfill (singlecomplex *, int, singlecomplex);
++extern void    cinf_norm_error (int, SuperMatrix *, singlecomplex *);
+ extern float  sqselect(int, float *, int);
+ 
+ 
+@@ -268,19 +268,19 @@ extern void    cPrint_SuperNode_Matrix(char *, SuperMatrix *);
+ extern void    cPrint_Dense_Matrix(char *, SuperMatrix *);
+ extern void    cprint_lu_col(char *, int, int, int *, GlobalLU_t *);
+ extern int     print_double_vec(char *, int, double *);
+-extern void    ccheck_tempv(int, complex *);
++extern void    ccheck_tempv(int, singlecomplex *);
+ 
+ /*! \brief BLAS */
+ 
+ extern int cgemm_(const char*, const char*, const int*, const int*, const int*,
+-                  const complex*, const complex*, const int*, const complex*,
+-		  const int*, const complex*, complex*, const int*);
+-extern int ctrsv_(char*, char*, char*, int*, complex*, int*,
+-                  complex*, int*);
++                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
++		  const int*, const singlecomplex*, singlecomplex*, const int*);
++extern int ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
++                  singlecomplex*, int*);
+ extern int ctrsm_(char*, char*, char*, char*, int*, int*,
+-                  complex*, complex*, int*, complex*, int*);
+-extern int cgemv_(char *, int *, int *, complex *, complex *a, int *,
+-                  complex *, int *, complex *, complex *, int *);
++                  singlecomplex*, singlecomplex*, int*, singlecomplex*, int*);
++extern int cgemv_(char *, int *, int *, singlecomplex *, singlecomplex *a, int *,
++                  singlecomplex *, int *, singlecomplex *, singlecomplex *, int *);
+ 
+ #ifdef __cplusplus
+   }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+index 5c9aa7058..83be8c971 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+@@ -28,7 +28,7 @@ at the top-level directory.
+ #ifndef SCOMPLEX_INCLUDE
+ #define SCOMPLEX_INCLUDE
+ 
+-typedef struct { float r, i; } complex;
++typedef struct { float r, i; } singlecomplex;
+ 
+ 
+ /* Macro definitions */
+@@ -68,14 +68,14 @@ extern "C" {
+ #endif
+ 
+ /* Prototypes for functions in scomplex.c */
+-void c_div(complex *, complex *, complex *);
+-double c_abs(complex *);     /* exact */
+-double c_abs1(complex *);    /* approximate */
+-void c_exp(complex *, complex *);
+-void r_cnjg(complex *, complex *);
+-double r_imag(complex *);
+-complex c_sgn(complex *);
+-complex c_sqrt(complex *);
++void c_div(singlecomplex *, singlecomplex *, singlecomplex *);
++double c_abs(singlecomplex *);     /* exact */
++double c_abs1(singlecomplex *);    /* approximate */
++void c_exp(singlecomplex *, singlecomplex *);
++void r_cnjg(singlecomplex *, singlecomplex *);
++double r_imag(singlecomplex *);
++singlecomplex c_sgn(singlecomplex *);
++singlecomplex c_sqrt(singlecomplex *);
+ 
+ 
+ 

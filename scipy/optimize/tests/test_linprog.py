@@ -12,6 +12,7 @@ from scipy.optimize import linprog, OptimizeWarning
 from scipy.optimize._numdiff import approx_derivative
 from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
+from scipy._lib._util import VisibleDeprecationWarning
 import scipy.sparse
 import pytest
 
@@ -487,7 +488,7 @@ class LinprogCommonTests:
         # Test ill-formatted bounds
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4)])
         with np.testing.suppress_warnings() as sup:
-            sup.filter(np.VisibleDeprecationWarning, "Creating an ndarray from ragged")
+            sup.filter(VisibleDeprecationWarning, "Creating an ndarray from ragged")
             assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, 2), (3, 4), (3, 4, 5)])
         assert_raises(ValueError, f, [1, 2, 3], bounds=[(1, -2), (1, 2)])
 

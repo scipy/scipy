@@ -170,12 +170,13 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(out) :: ier
      end subroutine sproot
 
-     subroutine spalde(t,n,c,k1,x,d,ier)
+     subroutine spalde(t,n,c,nc,k1,x,d,ier)
        ! d,ier = spalde(t,c,k1,x)
        threadsafe
        real*8 dimension(n) :: t
        integer intent(hide),depend(t) :: n=len(t)
-       real*8 dimension(n),depend(n),check(len(c)==n) :: c
+       real*8 dimension(nc), intent(in), depend(n,k1,t),check(len(c)>=n-k1) :: c
+       integer intent(hide), depend(c) :: nc=len(c)
        integer intent(in) :: k1
        real*8 intent(in) :: x
        real*8 dimension(k1),intent(out),depend(k1) :: d

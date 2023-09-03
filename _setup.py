@@ -16,6 +16,19 @@ give SciPy a try!
 
 """
 
+
+# IMPORTANT:
+#
+#     THIS FILE IS INTENTIONALLY RENAMED FROM setup.py TO _setup.py
+#     IT IS ONLY KEPT IN THE REPO BECAUSE conda-forge STILL NEEDS IT
+#     FOR BUILDING SCIPY ON WINDOWS. IT SHOULD NOT BE USED BY ANYONE
+#     ELSE. USE `pip install .` OR ANOTHER INSTALL COMMAND USING A
+#     BUILD FRONTEND LIKE pip OR pypa/build TO INSTALL SCIPY FROM SOURCE.
+#
+#     SEE http://scipy.github.io/devdocs/building/index.html FOR BUILD
+#     INSTRUCTIONS.
+
+
 DOCLINES = (__doc__ or '').split("\n")
 
 import os

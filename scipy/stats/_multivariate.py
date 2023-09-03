@@ -4804,6 +4804,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         Examples
         --------
         >>> import numpy as np
+        >>> from scipy.stats import multivariate_t
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
@@ -5091,8 +5092,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
-        num = np.zeros_like(m, dtype=np.float_)
-        den = np.zeros_like(n, dtype=np.float_)
+        num = np.zeros_like(m, dtype=np.float64)
+        den = np.zeros_like(n, dtype=np.float64)
         m, x = m[~mxcond], x[~mxcond]
         M, n = M[~ncond], n[~ncond]
         num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))
