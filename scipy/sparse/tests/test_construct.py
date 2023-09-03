@@ -33,7 +33,7 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=No
     random_state = check_random_state(random_state)
     data_rng = random_state.standard_normal
     return construct.random_array(m, n, density=density, format=format, dtype=dtype,
-                                  random_state=random_state, data_random_state=data_rng)
+                                  random_state=random_state, data_rng=data_rng)
 
 
 class TestConstructUtils:

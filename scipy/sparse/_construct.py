@@ -1070,7 +1070,7 @@ def block_diag(mats, format=None, dtype=None):
 
 
 def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
-                 random_state=None, data_random_state=None):
+                 random_state=None, data_rng=None):
     """Return a sparse array of random numbers in [0, 1)
 
     Returns a sparse array with the given shape and density
@@ -1110,9 +1110,9 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
         This random state will be used for sampling `indices` (the sparsity
         structure), and possibly for the data values themselves, but if you
         prefer another random state for data (e.g. normal distribution)
-        use ``data_random_state`` and see the examples below.
+        use ``data_rng`` and see the examples below.
 
-    data_random_state : callable, optional
+    data_rng : callable, optional
         Samples a requested number of random values.
         This function should take a single argument specifying the length
         of the ndarray that it will return. The structurally nonzero entries
@@ -1133,12 +1133,12 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     >>> import numpy as np
     >>> import scipy as sp
     >>> rng = np.random.default_rng()
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng)
+    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng)
 
     Proving a sampler for the values:
 
     >>> rvs = sp.stats.poisson(25, loc=10).rvs
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=rvs)
+    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_rng=rvs)
     >>> S.A
     array([[ 36.,   0.,  33.,   0.],   # random
            [  0.,   0.,   0.,   0.],
@@ -1150,19 +1150,19 @@ def random_array(m, n=None, *, density=0.01, format='coo', dtype=None,
     ...     def _rvs(self,  size=None, random_state=None):
     ...         return random_state.standard_normal(size)
     >>> X = CustomDistribution(seed=rng)
-    >>> Y = X()  # get a frozen version of the distribution
-    >>> S = sp.sparse.random(3, 4, density=0.25, random_state=rng, data_rvs=Y.rvs)
+    >>> Y = X().rvs  # use a frozen version of the distribution
+    >>> S = sp.sparse.random_array(3, 4, density=0.25, random_state=rng, data_rng=Y)
     >>> S.A
     array([[ 0.        ,  0.        ,  0.        ,  0.        ],   # random
            [ 0.13569738,  1.9467163 , -0.81205367,  0.        ],
            [ 0.        ,  0.        ,  0.        ,  0.        ]])
     """
-    vals, i, j = _random(m, n, density, format, dtype, random_state, data_random_state)
+    vals, i, j = _random(m, n, density, format, dtype, random_state, data_rng)
     return coo_array((vals, (i, j)), shape=(m, n)).asformat(format)
 
 
 def _random(m, n, density=0.01, format=None, dtype=None,
-           random_state=None, data_rvs=None, coo_array=coo_array):
+           random_state=None, data_rng=None, coo_array=coo_array):
     if n is None:
         n = m
     m, n = int(m), int(n)
@@ -1189,26 +1189,26 @@ def _random(m, n, density=0.01, format=None, dtype=None,
 
     random_state = check_random_state(random_state)
 
-    if data_rvs is None:
+    if data_rng is None:
         if np.issubdtype(dtype, np.integer):
-            def data_rvs(n):
+            def data_rng(n):
                 return rng_integers(random_state,
                                     np.iinfo(dtype).min,
                                     np.iinfo(dtype).max,
                                     n,
                                     dtype=dtype)
         elif np.issubdtype(dtype, np.complexfloating):
-            def data_rvs(n):
+            def data_rng(n):
                 return (random_state.uniform(size=n) +
                         random_state.uniform(size=n) * 1j)
         else:
-            data_rvs = partial(random_state.uniform, 0., 1.)
+            data_rng = partial(random_state.uniform, 0., 1.)
 
     ind = random_state.choice(mn, size=k, replace=False)
 
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
-    vals = data_rvs(k).astype(dtype, copy=False)
+    vals = data_rng(k).astype(dtype, copy=False)
     return vals, i, j
 
 
