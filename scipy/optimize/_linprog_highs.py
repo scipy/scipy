@@ -17,7 +17,7 @@ from enum import Enum
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
-from . import _highs_wrapper
+# from . import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
 from highspy import HighsModelStatus as hms
