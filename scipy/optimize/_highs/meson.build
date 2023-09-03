@@ -261,23 +261,6 @@ _highs_constants = py3.extension_module('_highs_constants',
   subdir: 'scipy/optimize/_highs'
 )
 
-py3.install_sources([
-    'cython/src/HConst.pxd',
-    'cython/src/Highs.pxd',
-    'cython/src/HighsIO.pxd',
-    'cython/src/HighsInfo.pxd',
-    'cython/src/HighsLp.pxd',
-    'cython/src/HighsLpUtils.pxd',
-    'cython/src/HighsModelUtils.pxd',
-    'cython/src/HighsOptions.pxd',
-    'cython/src/HighsRuntimeOptions.pxd',
-    'cython/src/HighsStatus.pxd',
-    'cython/src/SimplexConst.pxd',
-    'cython/src/highs_c_api.pxd'
-  ],
-  subdir: 'scipy/optimize/_highs/src/cython'
-)
-
 py3.install_sources(
   ['__init__.py'],
   subdir: 'scipy/optimize/_highs'
