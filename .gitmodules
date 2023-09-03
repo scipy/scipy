@@ -11,7 +11,7 @@
 	shallow = true
 [submodule "HiGHS"]
 	path = scipy/_lib/highs
-	url = https://github.com/scipy/highs
+	url = https://github.com/HaoZeke/highs
 	shallow = true
 [submodule "scipy/_lib/boost_math"]
 	path = scipy/_lib/boost_math
