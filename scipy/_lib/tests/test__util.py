@@ -12,6 +12,7 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa
 from scipy.conftest import array_api_compatible
 
+from scipy._lib._array_api import assert_equal as xp_assert_equal
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -353,7 +354,6 @@ def test__rng_html_rewrite():
 
 
 class TestLazywhere:
-    # Mixing floats and integers does not work in np.array_api, so don't try
     n_arrays = strategies.integers(min_value=1, max_value=3)
     rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
     dtype = strategies.sampled_from((np.float32, np.float64))
@@ -368,8 +368,8 @@ class TestLazywhere:
                                                  min_side=0)
         input_shapes, result_shape = data.draw(mbs)
         cond_shape, *shapes = input_shapes
-        fillvalue = data.draw(npst.arrays(dtype=dtype, shape=tuple()))
-        arrays = [data.draw(npst.arrays(dtype=dtype, shape=shape))
+        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple())))
+        arrays = [xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=shape)))
                   for shape in shapes]
 
         def f(*args):
@@ -379,17 +379,28 @@ class TestLazywhere:
             return sum(arg for arg in args) / 2
 
         rng = np.random.default_rng(rng_seed)
-        cond = rng.random(size=cond_shape) > p
+        cond = xp.asarray(rng.random(size=cond_shape) > p)
 
-        xp_arrays = [xp.asarray(arr) for arr in arrays]
-        res1 = _lazywhere(xp.asarray(cond), xp_arrays, f, xp.asarray(fillvalue))
-        res2 = _lazywhere(xp.asarray(cond), xp_arrays, f, f2=f2)
-        type(res1) == type(res2) == type(xp.asarray([]))
+        res1 = _lazywhere(cond, arrays, f, fillvalue)
+        res2 = _lazywhere(cond, arrays, f, f2=f2)
 
         # Ensure arrays are at least 1d to follow sane type promotion rules.
-        cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
-        ref1 = np.where(cond, f(*arrays), fillvalue).reshape(result_shape)
-        ref2 = np.where(cond, f(*arrays), f2(*arrays)).reshape(result_shape)
+        if xp == np:
+            cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
 
-        assert_equal(np.asarray(res1), ref1)
-        assert_equal(np.asarray(res2), ref2)
+        ref1 = xp.where(cond, f(*arrays), fillvalue)
+        ref2 = xp.where(cond, f(*arrays), f2(*arrays))
+
+        if xp == np:
+            ref1 = ref1.reshape(result_shape)
+            ref2 = ref2.reshape(result_shape)
+
+        isinstance(res1, type(xp.asarray([])))
+        xp_assert_equal(res1, ref1)
+        assert_equal(res1.shape, ref1.shape)
+        assert_equal(res1.dtype, ref1.dtype)
+
+        isinstance(res2, type(xp.asarray([])))
+        xp_assert_equal(res2, ref2)
+        assert_equal(res2.shape, ref2.shape)
+        assert_equal(res2.dtype, ref2.dtype)
