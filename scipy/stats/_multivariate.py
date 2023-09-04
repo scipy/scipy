@@ -308,8 +308,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    entropy()
+    entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    fit(x, fix_mean=None, fix_cov=None)
+        Fit a multivariate normal distribution to data.
 
     Parameters
     ----------
@@ -4410,9 +4412,9 @@ class multivariate_t_gen(multi_rv_generic):
 
     References
     ----------
-    [1]     Arellano-Valle et al. "Shannon Entropy and Mutual Information for
-            Multivariate Skew-Elliptical Distributions". Scandinavian Journal
-            of Statistics. Vol. 40, issue 1.
+    .. [1] Arellano-Valle et al. "Shannon Entropy and Mutual Information for
+           Multivariate Skew-Elliptical Distributions". Scandinavian Journal
+           of Statistics. Vol. 40, issue 1.
 
     Examples
     --------
