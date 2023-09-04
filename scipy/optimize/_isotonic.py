@@ -108,8 +108,8 @@ def isotonic_regression(
     array([1.25      , 1.25      , 4.        , 5.56666667, 5.56666667,
            5.56666667, 7.8       , 8.25      , 8.25      , 9.25      ,
            9.25      ])
-    >>> yhat, _, _ = isotonic_regression(y)
-    >>> yhat
+    >>> result = isotonic_regression(y)
+    >>> result.x
     array([1.25      , 1.25      , 4.        , 5.56666667, 5.56666667,
            5.56666667, 7.8       , 8.25      , 8.25      , 9.25      ,
            9.25      ])
