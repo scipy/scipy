@@ -12,7 +12,8 @@ import numpy as np
 import sys
 from scipy.conftest import (
     array_api_compatible,
-    skip_if_array_api_gpu
+    skip_if_array_api_gpu,
+    skip_if_array_api_backend
 )
 from scipy._lib._array_api import(
     size,
@@ -338,11 +339,10 @@ class Test_init_nd_shape_and_axes:
 
 class TestFFTShift:
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_definition(self, xp):
-        if xp.__name__ == 'torch':
-            pytest.xfail("`axes` keyword has not yet been implemented\
-                          in `array_api_compat.torch.fft.fftshift`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
         y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
         _assert_allclose = set_assert_allclose(xp)
@@ -353,21 +353,19 @@ class TestFFTShift:
         _assert_allclose(fft.fftshift(x), y)
         _assert_allclose(fft.ifftshift(y), x)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_inverse(self, xp):
-        if xp.__name__ == 'torch':
-            pytest.xfail("`axes` keyword has not yet been implemented\
-                          in `array_api_compat.torch.fft.fftshift`")
         for n in [1, 4, 9, 100, 211]:
             x = xp.asarray(np.random.random((n,)))
             _assert_allclose = set_assert_allclose(xp)
             _assert_allclose(fft.ifftshift(fft.fftshift(x)), x)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_axes_keyword(self, xp):
-        if xp.__name__ == 'torch':
-            pytest.xfail("`axes` keyword has not yet been implemented\
-                          in `array_api_compat.torch.fft.fftshift`")
         freqs = xp.asarray([[0, 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1, -3, -2], [2, 0, 1], [-4, 3, 4]])
         _assert_allclose = set_assert_allclose(xp)
@@ -380,12 +378,11 @@ class TestFFTShift:
 
         _assert_allclose(fft.fftshift(freqs), shifted)
         _assert_allclose(fft.ifftshift(shifted), freqs)
-
+    
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_uneven_dims(self, xp):
-        if xp.__name__ == 'torch':
-            pytest.xfail("`axes` keyword has not yet been implemented\
-                          in `array_api_compat.torch.fft.fftshift`")
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([
             [0, 1],
@@ -434,14 +431,12 @@ class TestFFTShift:
 
 class TestFFTFreq:
 
+    # fft not yet implemented by numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # cupy.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        if xp.__name__ == 'numpy.array_api':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `numpy.array_api.fft.fftfreq`")
-        elif xp.__name__ == 'cupy':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float32)
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(9 * fft.fftfreq(9, xp=xp), x)
@@ -453,14 +448,12 @@ class TestFFTFreq:
 
 class TestRFFTFreq:
 
+    # fft not yet implemented by numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # cupy.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        if xp.__name__ == 'numpy.array_api':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `numpy.array_api.fft.fftfreq`")
-        elif xp.__name__ == 'cupy':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float32)
         _assert_allclose = set_assert_allclose(xp)
         _assert_allclose(9 * fft.rfftfreq(9, xp=xp), x)
@@ -472,33 +465,28 @@ class TestRFFTFreq:
 
 class TestNamespaces:
 
+    # fft not yet implemented by numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # cupy.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_fftfreq(self, xp):
-        if xp.__name__ == 'numpy.array_api':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `numpy.array_api.fft.fftfreq`")
-        elif xp.__name__ == 'cupy':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
         _assert_matching_namespace(fft.fftfreq(9, xp=xp), x)
 
+    # fft not yet implemented by numpy.array_api
+    @skip_if_array_api_backend('numpy.array_api')
+    # cupy.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_rfftfreq(self, xp):
-        if xp.__name__ == 'numpy.array_api':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `numpy.array_api.fft.fftfreq`")
-        elif xp.__name__ == 'cupy':
-            pytest.xfail("`device` keyword has not yet been implemented\
-                          in `array_api_compat.cupy.fft.fftfreq`")
         x = xp.asarray([0, 1, 2, 3, 4])
         _assert_matching_namespace(fft.rfftfreq(9, xp=xp), x)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_fftshift_ifftshift(self, xp):
-        if xp.__name__ == 'torch':
-            pytest.xfail("`axes` keyword has not yet been implemented\
-                          in `array_api_compat.torch.fft.fftshift`")
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
         y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
         _assert_matching_namespace(fft.fftshift(x), y)

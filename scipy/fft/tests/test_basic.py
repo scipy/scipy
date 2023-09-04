@@ -271,14 +271,12 @@ class TestFFT1D:
         )
         assert_allclose(expect * (30 * 20 * 10), fft.ihfftn(x, norm="forward"))
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
-        if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work
-            # with @pytest.mark.parametrize
-            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2),
                 (1, 2, 0), (2, 0, 1), (2, 1, 0)]
@@ -302,14 +300,12 @@ class TestFFT1D:
             tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
             assert_allclose(op_tr, tr_op)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
-        if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work
-            # with @pytest.mark.parametrize
-            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((16, 8, 4)))
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
         _assert_allclose = set_assert_allclose(xp)
@@ -556,13 +552,11 @@ class TestNamespaces:
         x = xp.asarray(random(30) + 1j*random(30))
         _assert_matching_namespace(func(x), x)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.fftn, fft.ifftn])
     def test_fftn_ifftn(self, func, xp):
-        if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work
-            # with @pytest.mark.parametrize
-            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
@@ -576,13 +570,11 @@ class TestNamespaces:
         x = xp.asarray(random(30))
         _assert_matching_namespace(fft.irfft(x), x)
 
+    # torch.fft not yet implemented by array-api-compat
+    @skip_if_array_api_backend('torch')
     @array_api_compatible
     @pytest.mark.parametrize("func", [fft.rfftn, fft.irfftn])
     def test_rfftn_irfftn(self, func, xp):
-        if xp.__name__ == 'torch':
-            # @skip_if_array_api_backend doesn't seem to work
-            # with @pytest.mark.parametrize
-            pytest.xfail("torch.fft not yet implemented by array-api-compat")
         x = xp.asarray(random((30, 20, 10)))
         _assert_matching_namespace(func(x), x)
 
@@ -596,15 +588,13 @@ class TestNamespaces:
         _assert_matching_namespace(fft.ihfft(y), y)
 
 
+# torch.fft not yet implemented by array-api-compat
+@skip_if_array_api_backend('torch')
 @array_api_compatible
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
                                   fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
 def test_non_standard_params(func, xp):
-    if xp.__name__ == 'torch':
-        # @skip_if_array_api_backend doesn't seem to work
-        # with @pytest.mark.parametrize
-        pytest.xfail("torch.fft not yet implemented by array-api-compat")
     if xp.__name__ != 'numpy':
         x = xp.asarray([1, 2, 3])
         # func(x) should not raise an exception
