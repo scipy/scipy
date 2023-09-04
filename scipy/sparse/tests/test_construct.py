@@ -351,9 +351,6 @@ class TestConstructUtils:
 
     def test_kron_large(self):
         n = 2**16
-        # pre-sparse-array setup
-        # a = construct.eye(1, n, n-1)
-        # b = construct.eye(n, 1, 1-n)
         a = construct.diags_array([1], shape=(1, n), offsets=n-1)
         b = construct.diags_array([1], shape=(n, 1), offsets=1-n)
 

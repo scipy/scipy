@@ -338,7 +338,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
     k : int, optional
         Diagonal to place ones on. Default: 0 (main diagonal).
     dtype : dtype, optional
-        Data type of the matrix
+        Data type of the array
     format : str, optional (default: "dia")
         Sparse format of the result, e.g., format="csr", etc.
 
@@ -355,6 +355,22 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
+    # TODO: delete next 15 lines [combine with _eye()] once spmatrix removed
+    return _eye(m, n, k, dtype, format)
+
+
+def _eye(m, n, k, dtype, format, as_sparray=True):
+    if as_sparray:
+        csr_sparse = csr_array
+        csc_sparse = csc_array
+        coo_sparse = coo_array
+        diags_sparse = diags_array
+    else:
+        csr_sparse = csr_matrix
+        csc_sparse = csc_matrix
+        coo_sparse = coo_matrix
+        diags_sparse = diags
+
     if n is None:
         n = m
     m, n = int(m), int(n)
@@ -366,7 +382,7 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
             indptr = np.arange(n+1, dtype=idx_dtype)
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            cls = {'csr': csr_array, 'csc': csc_array}[format]
+            cls = {'csr': csr_sparse, 'csc': csc_sparse}[format]
             return cls((data, indices, indptr), (n, n))
 
         elif format == 'coo':
@@ -374,10 +390,10 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
             row = np.arange(n, dtype=idx_dtype)
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            return coo_array((data, (row, col)), (n, n))
+            return coo_sparse((data, (row, col)), (n, n))
 
     data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return diags_array(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
+    return diags_sparse(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
 
 
 def eye(m, n=None, k=0, dtype=float, format=None):
@@ -418,28 +434,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
-    if n is None:
-        n = m
-    m,n = int(m),int(n)
-
-    if m == n and k == 0:
-        # fast branch for special formats
-        if format in ['csr', 'csc']:
-            idx_dtype = get_index_dtype(maxval=n)
-            indptr = np.arange(n+1, dtype=idx_dtype)
-            indices = np.arange(n, dtype=idx_dtype)
-            data = np.ones(n, dtype=dtype)
-            cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
-            return cls((data,indices,indptr),(n,n))
-        elif format == 'coo':
-            idx_dtype = get_index_dtype(maxval=n)
-            row = np.arange(n, dtype=idx_dtype)
-            col = np.arange(n, dtype=idx_dtype)
-            data = np.ones(n, dtype=dtype)
-            return coo_matrix((data, (row, col)), (n, n))
-
-    data = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return diags(data, offsets=[k], shape=(m, n), dtype=dtype).asformat(format)
+    return _eye(m, n, k, dtype, format, False)
 
 
 def kron(A, B, format=None):
@@ -480,7 +475,7 @@ def kron(A, B, format=None):
            [15, 20,  0,  0]])
 
     """
-    # delete next 10 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete next 10 lines and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         bsr_sparse = bsr_array
@@ -563,7 +558,7 @@ def kronsum(A, B, format=None):
     kronecker sum in a sparse matrix format
 
     """
-    # delete next 8 lines and replace _sparse with _array when spmatrix removed
+    # TODO: delete next 8 lines and replace _sparse with _array when spmatrix removed
     if isinstance(A, sparray) or isinstance(B, sparray):
         # convert to local variables
         coo_sparse = coo_array
