@@ -165,6 +165,18 @@ def copy(x, *, xp=None):
     return as_xparray(x, copy=True, xp=xp)
 
 
+def is_numpy(xp):
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.numpy'
+
+
+def is_cupy(xp):
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.cupy'
+
+
+def is_torch(xp):
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
+
+
 def assert_equal(actual, desired, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
