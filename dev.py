@@ -876,7 +876,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same'] + bench_args
+                       '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
@@ -910,7 +910,7 @@ class Bench(Task):
                 commit_a = out.strip()
                 cmd_compare = [
                     'asv', 'continuous', '--show-stderr', '--factor', '1.05',
-                    commit_a, commit_b
+                    '--quick', commit_a, commit_b
                 ] + bench_args
                 cls.run_asv(dirs, cmd_compare)
                 sys.exit(1)

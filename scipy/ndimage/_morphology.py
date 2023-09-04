@@ -1213,7 +1213,7 @@ def grey_erosion(input, size=None, footprint=None, structure=None,
            [ True,  True,  True],
            [False,  True, False]], dtype=bool)
     >>> # Diagonally-connected elements are not considered neighbors
-    >>> ndimage.grey_erosion(a, size=(3,3), footprint=footprint)
+    >>> ndimage.grey_erosion(a, footprint=footprint)
     array([[0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0],
            [0, 0, 1, 1, 1, 0, 0],

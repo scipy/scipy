@@ -19,7 +19,6 @@ __all__ = [  # noqa: F822
     'approx_fprime',
     'argmin',
     'asarray',
-    'asfarray',
     'atleast_1d',
     'bracket',
     'brent',

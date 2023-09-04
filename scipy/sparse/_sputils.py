@@ -27,7 +27,7 @@ def upcast(*args):
 
     Examples
     --------
-
+    >>> from scipy.sparse._sputils import upcast
     >>> upcast('int32')
     <type 'numpy.int32'>
     >>> upcast('bool')
