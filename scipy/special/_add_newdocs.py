@@ -1300,7 +1300,8 @@ add_newdoc("beta",
 
     """)
 
-add_newdoc("betainc",
+add_newdoc(
+    "betainc",
     r"""
     betainc(a, b, x, out=None)
 
@@ -1314,6 +1315,9 @@ add_newdoc("betainc",
         t^{a-1}(1-t)^{b-1}dt,
 
     for :math:`0 \leq x \leq 1`.
+
+    This function is the cumulative distribution function for the beta
+    distribution; its range is [0, 1].
 
     Parameters
     ----------
@@ -1334,6 +1338,8 @@ add_newdoc("betainc",
     --------
     beta : beta function
     betaincinv : inverse of the regularized incomplete beta function
+    betaincc : complement of the regularized incomplete beta function
+    scipy.stats.beta : beta distribution
 
     Notes
     -----
@@ -1386,7 +1392,77 @@ add_newdoc("betainc",
 
     """)
 
-add_newdoc("betaincinv",
+
+add_newdoc(
+    "betaincc",
+    r"""
+    betaincc(a, b, x, out=None)
+
+    Complement of the regularized incomplete beta function.
+
+    Computes the complement of the regularized incomplete beta function,
+    defined as [1]_:
+
+    .. math::
+
+        \bar{I}_x(a, b) = 1 - I_x(a, b)
+                        = 1 - \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)} \int_0^x
+                                  t^{a-1}(1-t)^{b-1}dt,
+
+    for :math:`0 \leq x \leq 1`.
+
+    Parameters
+    ----------
+    a, b : array_like
+           Positive, real-valued parameters
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the regularized incomplete beta function
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    betaincinv : inverse of the regularized incomplete beta function
+    betainccinv :
+        inverse of the complement of the regularized incomplete beta function
+    beta : beta function
+    scipy.stats.beta : beta distribution
+
+    Notes
+    -----
+    .. versionadded:: 1.11.0
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+
+    Examples
+    --------
+    >>> from scipy.special import betaincc, betainc
+
+    The naive calculation ``1 - betainc(a, b, x)`` loses precision when
+    the values of ``betainc(a, b, x)`` are close to 1:
+
+    >>> 1 - betainc(0.5, 8, [0.9, 0.99, 0.999])
+    array([2.0574632e-09, 0.0000000e+00, 0.0000000e+00])
+
+    By using ``betaincc``, we get the correct values:
+
+    >>> betaincc(0.5, 8, [0.9, 0.99, 0.999])
+    array([2.05746321e-09, 1.97259354e-17, 1.96467954e-25])
+
+    """)
+
+add_newdoc(
+    "betaincinv",
     r"""
     betaincinv(a, b, y, out=None)
 
@@ -1399,9 +1475,8 @@ add_newdoc("betaincinv",
         y = I_x(a, b) = \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
         \int_0^x t^{a-1}(1-t)^{b-1}dt,
 
-    where :math:`I_x` is the normalized incomplete beta
-    function `betainc` and
-    :math:`\Gamma` is the `gamma` function [1]_.
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
 
     Parameters
     ----------
@@ -1443,6 +1518,71 @@ add_newdoc("betaincinv",
     >>> x = sc.betaincinv(a, b, 0.5)
     >>> sc.betainc(a, b, x)
     0.5
+
+    """)
+
+
+add_newdoc(
+    "betainccinv",
+    r"""
+    betainccinv(a, b, y, out=None)
+
+    Inverse of the complemented regularized incomplete beta function.
+
+    Computes :math:`x` such that:
+
+    .. math::
+
+        y = 1 - I_x(a, b) = 1 - \frac{\Gamma(a+b)}{\Gamma(a)\Gamma(b)}
+        \int_0^x t^{a-1}(1-t)^{b-1}dt,
+
+    where :math:`I_x` is the normalized incomplete beta function `betainc`
+    and :math:`\Gamma` is the `gamma` function [1]_.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Positive, real-valued parameters
+    y : array_like
+        Real-valued input
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the inverse of the regularized incomplete beta function
+
+    See Also
+    --------
+    betainc : regularized incomplete beta function
+    betaincc : complement of the regularized incomplete beta function
+
+    Notes
+    -----
+    .. versionadded:: 1.11.0
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/8.17
+
+    Examples
+    --------
+    >>> from scipy.special import betainccinv, betaincc
+
+    This function is the inverse of `betaincc` for fixed
+    values of :math:`a` and :math:`b`.
+
+    >>> a, b = 1.2, 3.1
+    >>> y = betaincc(a, b, 0.2)
+    >>> betainccinv(a, b, y)
+    0.2
+
+    >>> a, b = 7, 2.5
+    >>> x = betainccinv(a, b, 0.875)
+    >>> betaincc(a, b, x)
+    0.875
 
     """)
 
@@ -1675,6 +1815,10 @@ add_newdoc("btdtr",
 
     where :math:`\Gamma` is the gamma function.
 
+    .. deprecated:: 1.12.0
+        This function is deprecated and will be removed from SciPy 1.14.0.
+        Use `scipy.special.betainc` instead.
+
     Parameters
     ----------
     a : array_like
@@ -1721,6 +1865,10 @@ add_newdoc("btdtri",
 
     .. math::
         p = \int_0^x \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} t^{a-1} (1-t)^{b-1}\,dt
+
+    .. deprecated:: 1.12.0
+        This function is deprecated and will be removed from SciPy 1.14.0.
+        Use `scipy.special.betaincinv` instead.
 
     Parameters
     ----------

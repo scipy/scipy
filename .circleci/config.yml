@@ -77,8 +77,7 @@ jobs:
             pip install cython
             pip install numpy==1.23.5
             pip install -r doc_requirements.txt
-            # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool pooch
+            pip install mpmath gmpy2 "asv>=0.6.0" pythran ninja meson click rich-click doit pydevtool pooch
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -151,7 +150,7 @@ jobs:
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             export OPENBLAS_NUM_THREADS=1
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time asv --config asv.conf.json run -m CircleCI --quick --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:

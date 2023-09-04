@@ -50,15 +50,17 @@ class _csr_base(_cs_matrix):
     ndim : int
         Number of dimensions (this is always 2)
     nnz
-        Number of stored values, including explicit zeros
+    size
     data
-        CSR format data array of the matrix
+        Data array of the matrix
     indices
-        CSR format index array of the matrix
+        CSR format index array
     indptr
-        CSR format index pointer array of the matrix
+        CSR format index pointer array
     has_sorted_indices
-        Whether indices are sorted
+    has_canonical_format
+    T
+
 
     Notes
     -----
@@ -138,7 +140,7 @@ class _csr_base(_cs_matrix):
     _format = 'csr'
 
     def transpose(self, axes=None, copy=False):
-        if axes is not None:
+        if axes is not None and axes != (1, 0):
             raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")

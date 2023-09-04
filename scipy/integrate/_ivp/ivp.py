@@ -520,6 +520,49 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> plt.title('Lotka-Volterra System')
     >>> plt.show()
 
+    A couple examples of using solve_ivp to solve the differential
+    equation ``y' = Ay`` with complex matrix ``A``.
+
+    >>> A = np.array([[-0.25 + 0.14j, 0, 0.33 + 0.44j],
+    ...               [0.25 + 0.58j, -0.2 + 0.14j, 0],
+    ...               [0, 0.2 + 0.4j, -0.1 + 0.97j]])
+
+    Solving an IVP with ``A`` from above and ``y`` as 3x1 vector:
+
+    >>> def deriv_vec(t, y):
+    ...     return A @ y
+    >>> result = solve_ivp(deriv_vec, [0, 25],
+    ...                    np.array([10 + 0j, 20 + 0j, 30 + 0j]),
+    ...                    t_eval=np.linspace(0, 25, 101))
+    >>> print(result.y[:, 0])
+    [10.+0.j 20.+0.j 30.+0.j]
+    >>> print(result.y[:, -1])
+    [18.46291039+45.25653651j 10.01569306+36.23293216j
+     -4.98662741+80.07360388j]
+
+    Solving an IVP with ``A`` from above with ``y`` as 3x3 matrix :
+
+    >>> def deriv_mat(t, y):
+    ...     return (A @ y.reshape(3, 3)).flatten()
+    >>> y0 = np.array([[2 + 0j, 3 + 0j, 4 + 0j],
+    ...                [5 + 0j, 6 + 0j, 7 + 0j],
+    ...                [9 + 0j, 34 + 0j, 78 + 0j]])
+
+    >>> result = solve_ivp(deriv_mat, [0, 25], y0.flatten(),
+    ...                    t_eval=np.linspace(0, 25, 101))
+    >>> print(result.y[:, 0].reshape(3, 3))
+    [[ 2.+0.j  3.+0.j  4.+0.j]
+     [ 5.+0.j  6.+0.j  7.+0.j]
+     [ 9.+0.j 34.+0.j 78.+0.j]]
+    >>> print(result.y[:, -1].reshape(3, 3))
+    [[  5.67451179 +12.07938445j  17.2888073  +31.03278837j
+        37.83405768 +63.25138759j]
+     [  3.39949503 +11.82123994j  21.32530996 +44.88668871j
+        53.17531184+103.80400411j]
+     [ -2.26105874 +22.19277664j -15.1255713  +70.19616341j
+       -38.34616845+153.29039931j]]
+
+
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):

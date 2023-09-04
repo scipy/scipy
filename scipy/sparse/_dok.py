@@ -42,6 +42,9 @@ class _dok_base(_spbase, IndexMixin):
         Number of dimensions (this is always 2)
     nnz
         Number of nonzero elements
+    size
+    T
+
 
     Notes
     -----
@@ -364,7 +367,7 @@ class _dok_base(_spbase, IndexMixin):
         return dict.__reduce__(self)
 
     def transpose(self, axes=None, copy=False):
-        if axes is not None:
+        if axes is not None and axes != (1, 0):
             raise ValueError("Sparse matrices do not support "
                              "an 'axes' parameter because swapping "
                              "dimensions is the only logical permutation.")

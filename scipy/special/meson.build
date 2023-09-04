@@ -318,12 +318,12 @@ cython_special_pxd = custom_target('_dummy_cython_special.pxd',
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
 
 py3.extension_module('_ufuncs',
   [

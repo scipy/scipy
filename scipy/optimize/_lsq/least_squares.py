@@ -12,7 +12,7 @@ from scipy.optimize._minimize import Bounds
 
 from .trf import trf
 from .dogbox import dogbox
-from .common import EPS, in_bounds
+from .common import EPS, in_bounds, make_strictly_feasible
 
 
 TERMINATION_MESSAGES = {
@@ -820,6 +820,9 @@ def least_squares(
     x_scale = check_x_scale(x_scale, x0)
 
     ftol, xtol, gtol = check_tolerance(ftol, xtol, gtol, method)
+
+    if method == 'trf':
+        x0 = make_strictly_feasible(x0, lb, ub, rstep=0)
 
     def fun_wrapped(x):
         return np.atleast_1d(fun(x, *args, **kwargs))
