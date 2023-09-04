@@ -210,11 +210,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def __repr__(self):
-        _, format = _formats[self.format]
+        _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        return (f"<%dx%d sparse {sparse_cls} of type '{self.dtype.type}'\n"
-                f"\twith {self.nnz} stored elements (blocksize = %dx%d)"
-                f" in {format} format>") % (self.shape + self.blocksize)
+        shape_str = 'x'.join(str(x) for x in self.shape)
+        blksz = 'x'.join(str(x) for x in self.blocksize)
+        return (
+            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
+            f"\twith {self.nnz} stored elements (blocksize = {blksz}) in {fmt} format>"
+        )
 
     def diagonal(self, k=0):
         rows, cols = self.shape

@@ -87,11 +87,14 @@ class _dia_base(_data_matrix):
             raise ValueError('offset array contains duplicate values')
 
     def __repr__(self):
-        _, format = _formats[self.format]
+        _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        return (f"<%dx%d sparse {sparse_cls} of type '{self.dtype.type}'\n"
-                f"\twith {self.nnz} stored elements ({self.data.shape[0]} diagonals)"
-                f" in {format} format>") % self.shape
+        shape_str = 'x'.join(str(x) for x in self.shape)
+        ndiag = self.data.shape[0]
+        return (
+            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
+            f"\twith {self.nnz} stored elements ({ndiag} diagonals) in {fmt} format>"
+        )
 
     def _data_mask(self):
         """Returns a mask of the same shape as self.data, where
