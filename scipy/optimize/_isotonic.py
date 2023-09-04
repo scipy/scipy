@@ -41,15 +41,15 @@ def isotonic_regression(
     res : OptimizeResult
         The optimization result represented as a ``OptimizeResult`` object.
         Important attributes are:
-        
+
         - ``x``: The isotonic regression solution, i.e. an increasing (or
-        decreasing) array of the same length than y, with elements in the
-        range from min(y) to max(y).
+          decreasing) array of the same length than y, with elements in the
+          range from min(y) to max(y).
         - ``weights`` : Array with the sum of case weights for each block
-        / pool B.
+          (or pool) B.
         - ``blocks``: Array of length B+1 with the indices of the start
-        positions of each block / pool B. The j-th block is given by
-        ``x[blocks[j]:blocks[j+1]]`` for which all values are the same.
+          positions of each block (or pool) B. The j-th block is given by
+          ``x[blocks[j]:blocks[j+1]]`` for which all values are the same.
 
     Notes
     -----
