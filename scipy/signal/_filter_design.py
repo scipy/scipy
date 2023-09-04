@@ -1083,6 +1083,18 @@ def tf2zpk(b, a):
     transfer function coefficients must first be converted to the "positive
     powers" form before finding the poles and zeros.
 
+    Examples
+    --------
+    Find the zeroes, poles and gain of 
+    a filter with the transfer function
+        
+        H(s) = 3s^2 / (s^2 + 5s + 13)
+        
+    >>> from scipy.signal._filter_design import tf2zpk
+    >>> tf2zpk([3, 0, 0], [1, 5, 13])
+    (   array([ 0.               ,  0.              ]), 
+        array([ -2.5+2.59807621j ,  -2.5-2.59807621j]), 
+        3.0)
     """
     b, a = normalize(b, a)
     b = (b + 0.0) / a[0]
