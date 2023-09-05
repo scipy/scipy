@@ -1087,8 +1087,9 @@ def tf2zpk(b, a):
     --------
     Find the zeroes, poles and gain of 
     a filter with the transfer function
-        
-        H(s) = 3s^2 / (s^2 + 5s + 13)
+    .. math::
+    
+        H(s) = \frac{3s^2}{s^2 + 5s + 13}
         
     >>> from scipy.signal._filter_design import tf2zpk
     >>> tf2zpk([3, 0, 0], [1, 5, 13])
