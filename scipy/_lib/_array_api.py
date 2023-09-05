@@ -166,7 +166,56 @@ def copy(x, *, xp=None):
 
 
 def is_numpy(xp):
-    return xp.__name__ == "scipy._lib.array_api_compat.array_api_compat.numpy"
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.numpy'
+
+
+def is_cupy(xp):
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.cupy'
+
+
+def is_torch(xp):
+    return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
+
+
+def assert_equal(actual, desired, err_msg='', xp=None):
+    if xp is None:
+        xp = array_namespace(actual)
+    if is_cupy(xp):
+        return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
+    elif is_torch(xp):
+        # PyTorch recommends using `rtol=0, atol=0` like this
+        # to test for exact equality
+        return xp.testing.assert_close(actual, desired, rtol=0, atol=0,
+                                       msg=err_msg)
+    return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
+
+
+def assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
+    if xp is None:
+        xp = array_namespace(actual)
+    if is_cupy(xp):
+        return xp.testing.assert_allclose(actual, desired, rtol=rtol,
+                                          atol=atol, err_msg=err_msg)
+    elif is_torch(xp):
+        return xp.testing.assert_close(actual, desired, rtol=rtol,
+                                       atol=atol, msg=err_msg)
+    return np.testing.assert_allclose(actual, desired, rtol=rtol,
+                                      atol=atol, err_msg=err_msg)
+
+
+def assert_less(actual, desired, err_msg='', verbose=True, xp=None):
+    if xp is None:
+        xp = array_namespace(actual)
+    if is_cupy(xp):
+        return xp.testing.assert_array_less(actual, desired,
+                                            err_msg=err_msg, verbose=verbose)
+    elif is_torch(xp):
+        if actual.device.type != 'cpu':
+            actual = actual.cpu()
+        if desired.device.type != 'cpu':
+            desired = desired.cpu()
+    return np.testing.assert_array_less(actual, desired,
+                                        err_msg=err_msg, verbose=verbose)
 
 
 def _assert_matching_namespace(actual, expected):
