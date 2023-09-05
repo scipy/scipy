@@ -5,7 +5,7 @@ Modified for Array API, 2023
 
 """
 from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
-from numpy.testing import assert_equal, assert_array_equal
+from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
@@ -18,7 +18,8 @@ from scipy.conftest import (
 from scipy._lib._array_api import(
     size,
     _assert_matching_namespace,
-    set_assert_allclose
+    assert_close,
+    assert_equal as xp_assert_equal
 )
 from scipy import fft
 
@@ -169,8 +170,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -184,8 +185,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -200,8 +201,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -216,8 +217,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -231,8 +232,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -246,8 +247,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -261,8 +262,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -276,8 +277,8 @@ class Test_init_nd_shape_and_axes:
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_array_equal(shape_res, shape_expected)
-        assert_array_equal(axes_res, axes_expected)
+        xp_assert_equal(shape_res, shape_expected)
+        xp_assert_equal(axes_res, axes_expected)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -285,8 +286,8 @@ class Test_init_nd_shape_and_axes:
         x = xp.zeros((2, 3, 4, 5))
         shape, axes = _init_nd_shape_and_axes(x, shape=(5, 5, 5), axes=None)
 
-        assert_array_equal(shape, [5, 5, 5])
-        assert_array_equal(axes, [1, 2, 3])
+        xp_assert_equal(shape, xp.asarray([5, 5, 5]))
+        xp_assert_equal(axes, xp.asarray([1, 2, 3]))
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -345,13 +346,12 @@ class TestFFTShift:
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
         y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(fft.fftshift(x), y)
-        _assert_allclose(fft.ifftshift(y), x)
+        assert_close(fft.fftshift(x), y)
+        assert_close(fft.ifftshift(y), x)
         x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1])
         y = xp.asarray([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4])
-        _assert_allclose(fft.fftshift(x), y)
-        _assert_allclose(fft.ifftshift(y), x)
+        assert_close(fft.fftshift(x), y)
+        assert_close(fft.ifftshift(y), x)
 
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -359,8 +359,7 @@ class TestFFTShift:
     def test_inverse(self, xp):
         for n in [1, 4, 9, 100, 211]:
             x = xp.asarray(np.random.random((n,)))
-            _assert_allclose = set_assert_allclose(xp)
-            _assert_allclose(fft.ifftshift(fft.fftshift(x)), x)
+            assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -368,16 +367,15 @@ class TestFFTShift:
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0, 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1, -3, -2], [2, 0, 1], [-4, 3, 4]])
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(fft.fftshift(freqs, axes=(0, 1)), shifted)
-        _assert_allclose(fft.fftshift(freqs, axes=0),
-                         fft.fftshift(freqs, axes=(0,)))
-        _assert_allclose(fft.ifftshift(shifted, axes=(0, 1)), freqs)
-        _assert_allclose(fft.ifftshift(shifted, axes=0),
-                         fft.ifftshift(shifted, axes=(0,)))
+        assert_close(fft.fftshift(freqs, axes=(0, 1)), shifted)
+        assert_close(fft.fftshift(freqs, axes=0),
+                     fft.fftshift(freqs, axes=(0,)))
+        assert_close(fft.ifftshift(shifted, axes=(0, 1)), freqs)
+        assert_close(fft.ifftshift(shifted, axes=0),
+                     fft.ifftshift(shifted, axes=(0,)))
 
-        _assert_allclose(fft.fftshift(freqs), shifted)
-        _assert_allclose(fft.ifftshift(shifted), freqs)
+        assert_close(fft.fftshift(freqs), shifted)
+        assert_close(fft.ifftshift(shifted), freqs)
     
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -396,11 +394,10 @@ class TestFFTShift:
             [0, 1],
             [2, 3]
         ])
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(fft.fftshift(freqs, axes=0), shift_dim0)
-        _assert_allclose(fft.ifftshift(shift_dim0, axes=0), freqs)
-        _assert_allclose(fft.fftshift(freqs, axes=(0,)), shift_dim0)
-        _assert_allclose(fft.ifftshift(shift_dim0, axes=[0]), freqs)
+        assert_close(fft.fftshift(freqs, axes=0), shift_dim0)
+        assert_close(fft.ifftshift(shift_dim0, axes=0), freqs)
+        assert_close(fft.fftshift(freqs, axes=(0,)), shift_dim0)
+        assert_close(fft.ifftshift(shift_dim0, axes=[0]), freqs)
 
         # shift in dimension 1
         shift_dim1 = xp.asarray([
@@ -408,8 +405,8 @@ class TestFFTShift:
             [3, 2],
             [5, 4]
         ])
-        _assert_allclose(fft.fftshift(freqs, axes=1), shift_dim1)
-        _assert_allclose(fft.ifftshift(shift_dim1, axes=1), freqs)
+        assert_close(fft.fftshift(freqs, axes=1), shift_dim1)
+        assert_close(fft.ifftshift(shift_dim1, axes=1), freqs)
 
         # shift in both dimensions
         shift_dim_both = xp.asarray([
@@ -417,16 +414,16 @@ class TestFFTShift:
             [1, 0],
             [3, 2]
         ])
-        _assert_allclose(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
-        _assert_allclose(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
-        _assert_allclose(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
-        _assert_allclose(fft.ifftshift(shift_dim_both, axes=[0, 1]), freqs)
+        assert_close(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
+        assert_close(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
+        assert_close(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
+        assert_close(fft.ifftshift(shift_dim_both, axes=[0, 1]), freqs)
 
         # axes=None (default) shift in all dimensions
-        _assert_allclose(fft.fftshift(freqs, axes=None), shift_dim_both)
-        _assert_allclose(fft.ifftshift(shift_dim_both, axes=None), freqs)
-        _assert_allclose(fft.fftshift(freqs), shift_dim_both)
-        _assert_allclose(fft.ifftshift(shift_dim_both), freqs)
+        assert_close(fft.fftshift(freqs, axes=None), shift_dim_both)
+        assert_close(fft.ifftshift(shift_dim_both, axes=None), freqs)
+        assert_close(fft.fftshift(freqs), shift_dim_both)
+        assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
 class TestFFTFreq:
@@ -438,12 +435,11 @@ class TestFFTFreq:
     @array_api_compatible
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float32)
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(9 * fft.fftfreq(9, xp=xp), x)
-        _assert_allclose(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), x)
+        assert_close(9 * fft.fftfreq(9, xp=xp), x)
+        assert_close(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), x)
         x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float32)
-        _assert_allclose(10 * fft.fftfreq(10, xp=xp), x)
-        _assert_allclose(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), x)
+        assert_close(10 * fft.fftfreq(10, xp=xp), x)
+        assert_close(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), x)
 
 
 class TestRFFTFreq:
@@ -455,12 +451,11 @@ class TestRFFTFreq:
     @array_api_compatible
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float32)
-        _assert_allclose = set_assert_allclose(xp)
-        _assert_allclose(9 * fft.rfftfreq(9, xp=xp), x)
-        _assert_allclose(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), x)
+        assert_close(9 * fft.rfftfreq(9, xp=xp), x)
+        assert_close(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), x)
         x = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float32)
-        _assert_allclose(10 * fft.rfftfreq(10, xp=xp), x)
-        _assert_allclose(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), x)
+        assert_close(10 * fft.rfftfreq(10, xp=xp), x)
+        assert_close(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), x)
 
 
 class TestNamespaces:

@@ -10,7 +10,7 @@ from scipy.conftest import (
     skip_if_array_api,
     skip_if_array_api_gpu,
 )
-from scipy._lib._array_api import copy
+from scipy._lib._array_api import copy, assert_close
 
 import math
 SQRT_2 = math.sqrt(2)
@@ -35,14 +35,14 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize,
 
     y = forward(x, type, axis=axis, norm=norm, orthogonalize=orthogonalize)
     z = backward(y, type, axis=axis, norm=norm, orthogonalize=orthogonalize)
-    assert_allclose(z, x)
+    assert_close(z, x)
 
     pad = [(0, 0)] * 2
     pad[axis] = (0, 4)
 
     y2 = xp.asarray(np.pad(np.asarray(y), pad, mode='edge'))
     z2 = backward(y2, type, n, axis, norm, orthogonalize=orthogonalize)
-    assert_allclose(z2, x)
+    assert_close(z2, x)
 
 
 @skip_if_array_api
@@ -99,7 +99,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm, orthogonalize,
 
     y = forward(x, type, axes=axes, norm=norm, orthogonalize=orthogonalize)
     z = backward(y, type, axes=axes, norm=norm, orthogonalize=orthogonalize)
-    assert_allclose(z, x)
+    assert_close(z, x)
 
     if axes is None:
         pad = [(0, 4)] * x.ndim
@@ -115,7 +115,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm, orthogonalize,
     # we convert to np and back since pad is not an array API function
     y2 = xp.asarray(np.pad(np.asarray(y), pad, mode='edge'))
     z2 = backward(y2, type, shape, axes, norm, orthogonalize=orthogonalize)
-    assert_allclose(z2, x)
+    assert_close(z2, x)
 
 
 @skip_if_array_api
@@ -163,7 +163,7 @@ def test_fftpack_equivalience(func, type, norm, xp):
     x = xp.asarray(x)
     fft_res = getattr(fft, func)(x, type, norm=norm)
 
-    assert_allclose(fft_res, fftpack_res)
+    assert_close(fft_res, fftpack_res)
 
 
 @skip_if_array_api_gpu
@@ -181,7 +181,7 @@ def test_orthogonalize_default(func, type, xp):
     ]:
         a = func(x, type=type, norm=norm, orthogonalize=ortho)
         b = func(x, type=type, norm=norm)
-        assert_allclose(a, b)
+        assert_close(a, b)
 
 
 @skip_if_array_api_gpu
@@ -194,7 +194,7 @@ def test_orthogonalize_noop(func, type, norm, xp):
     x = xp.asarray(np.random.rand(100))
     y1 = func(x, type=type, norm=norm, orthogonalize=True)
     y2 = func(x, type=type, norm=norm, orthogonalize=False)
-    assert_allclose(y1, y2)
+    assert_close(y1, y2)
 
 
 @skip_if_array_api_gpu
@@ -212,7 +212,7 @@ def test_orthogonalize_dct1(norm, xp):
 
     y2[0] /= SQRT_2
     y2[-1] /= SQRT_2
-    assert_allclose(y1, y2)
+    assert_close(y1, y2)
 
 
 @skip_if_array_api_gpu
@@ -225,7 +225,7 @@ def test_orthogonalize_dcst2(func, norm, xp):
     y2 = func(x, type=2, norm=norm, orthogonalize=False)
 
     y2[0 if func == dct else -1] /= SQRT_2
-    assert_allclose(y1, y2)
+    assert_close(y1, y2)
 
 
 @skip_if_array_api_gpu
@@ -239,4 +239,4 @@ def test_orthogonalize_dcst3(func, norm, xp):
 
     y1 = func(x, type=3, norm=norm, orthogonalize=True)
     y2 = func(x2, type=3, norm=norm, orthogonalize=False)
-    assert_allclose(y1, y2)
+    assert_close(y1, y2)
