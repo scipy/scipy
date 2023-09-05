@@ -205,7 +205,7 @@ def xp_assert_equal(actual, desired, err_msg='', xp=None):
         # PyTorch recommends using `rtol=0, atol=0` like this
         # to test for exact equality
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0,
-                                       msg=err_msg)
+                                       msg=err_msg, equal_nan=True)
     assert actual.dtype == desired.dtype
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
@@ -219,7 +219,7 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
                                           atol=atol, err_msg=err_msg)
     elif is_torch(xp):
         return xp.testing.assert_close(actual, desired, rtol=rtol,
-                                       atol=atol, msg=err_msg)
+                                       atol=atol, msg=err_msg, equal_nan=True)
     assert actual.dtype == desired.dtype
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
