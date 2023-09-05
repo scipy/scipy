@@ -1087,6 +1087,7 @@ def tf2zpk(b, a):
     --------
     Find the zeroes, poles and gain of 
     a filter with the transfer function
+
     .. math::
     
         H(s) = \frac{3s^2}{s^2 + 5s + 13}
