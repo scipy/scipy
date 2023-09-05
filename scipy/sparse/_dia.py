@@ -325,7 +325,7 @@ class _dia_base(_data_matrix):
     todia.__doc__ = _spbase.todia.__doc__
 
     def transpose(self, axes=None, copy=False):
-        if axes is not None:
+        if axes is not None and axes != (1, 0):
             raise ValueError("Sparse matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")

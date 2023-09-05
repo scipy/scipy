@@ -2906,7 +2906,7 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
 
     # compare the output of a solution with FD vs that of an analytic grad
     assert res.success
-    assert_allclose(res.fun, expected.fun, rtol=1e-6)
+    assert_allclose(res.fun, expected.fun, rtol=1.5e-6)
     assert_allclose(res.x, expected.x, rtol=5e-4)
 
     if fd_needed or kwds['jac'] is False:

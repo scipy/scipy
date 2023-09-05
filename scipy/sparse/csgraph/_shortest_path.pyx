@@ -26,6 +26,9 @@ np.import_array()
 
 include 'parameters.pxi'
 
+# EPS is the precision of DTYPE (float64, from parameters.pxi)
+DEF DTYPE_EPS = 1E-15
+
 
 class NegativeCycleError(Exception):
     def __init__(self, message=''):
