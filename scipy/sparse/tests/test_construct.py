@@ -539,7 +539,7 @@ class TestConstructUtils:
         n = 33000
         A = csr_array(np.ones((n, n), dtype=bool))
         B = A.copy()
-        C = construct._compressed_sparse_stack((A,B), 0, False)
+        C = construct._compressed_sparse_stack((A, B), axis=0, return_spmatrix=False)
 
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
