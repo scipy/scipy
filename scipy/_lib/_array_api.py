@@ -195,7 +195,7 @@ def is_torch(xp):
     return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
 
 
-def assert_equal(actual, desired, err_msg='', xp=None):
+def xp_assert_equal(actual, desired, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
@@ -208,7 +208,7 @@ def assert_equal(actual, desired, err_msg='', xp=None):
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
+def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
@@ -221,7 +221,7 @@ def assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
                                       atol=atol, err_msg=err_msg)
 
 
-def assert_less(actual, desired, err_msg='', verbose=True, xp=None):
+def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
