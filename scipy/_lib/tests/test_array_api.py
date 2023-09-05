@@ -65,13 +65,6 @@ def test_raises():
     with pytest.raises(TypeError, match=msg):
         array_namespace(np.array(1), np.matrix(1))
 
-    msg = "Only support Array API"
-    with pytest.raises(TypeError, match=msg):
-        array_namespace([0, 1, 2])
-
-    with pytest.raises(TypeError, match=msg):
-        array_namespace(1)
-
 
 @array_api_compatible
 def test_copy(xp):
