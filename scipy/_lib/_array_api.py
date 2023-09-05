@@ -199,12 +199,14 @@ def xp_assert_equal(actual, desired, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
+        assert actual.dtype == desired.dtype
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
         # PyTorch recommends using `rtol=0, atol=0` like this
         # to test for exact equality
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0,
                                        msg=err_msg)
+    assert actual.dtype == desired.dtype
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -212,11 +214,13 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
+        assert actual.dtype == desired.dtype
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)
     elif is_torch(xp):
         return xp.testing.assert_close(actual, desired, rtol=rtol,
                                        atol=atol, msg=err_msg)
+    assert actual.dtype == desired.dtype
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -225,6 +229,7 @@ def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
+        assert actual.dtype == desired.dtype
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
     elif is_torch(xp):
@@ -232,6 +237,7 @@ def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+    assert actual.dtype == desired.dtype
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
