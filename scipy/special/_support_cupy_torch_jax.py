@@ -2,7 +2,7 @@ import sys
 import numpy as np
 from scipy._lib._array_api import array_namespace
 from . import _ufuncs
-from ._ufuncs import *
+from ._ufuncs import *  # noqa
 
 __all__ = _ufuncs.__all__
 
