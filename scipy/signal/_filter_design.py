@@ -1091,7 +1091,7 @@ def tf2zpk(b, a):
     
         H(s) = \frac{3s^2}{s^2 + 5s + 13}
         
-    >>> from scipy.signal._filter_design import tf2zpk
+    >>> from scipy.signal import tf2zpk
     >>> tf2zpk([3, 0, 0], [1, 5, 13])
     (   array([ 0.               ,  0.              ]), 
         array([ -2.5+2.59807621j ,  -2.5-2.59807621j]), 
