@@ -261,7 +261,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         of the default function in order to mutate and/or recombine solution
         vectors. It should return a new candidate vector.
         
-        .. versionadded:: 1.11.3
+        .. versionadded:: 1.12.0
 
     Returns
     -------
