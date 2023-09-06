@@ -374,10 +374,6 @@ def lobpcg(
     The next two examples demonstrate alternative ways to provide the matrix `A`
     to `lobpcg` without constructing the full matrix:
 
-    Example using `aslinearoperator`:
-
-    This converts the sparse matrix `A` to a `LinearOperator`. The matrix `A` needs 
-    to be constructed to use the `aslinearoperator`.
 
     Example using `aslinearoperator`:
 
