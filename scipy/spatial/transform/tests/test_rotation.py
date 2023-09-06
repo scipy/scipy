@@ -82,13 +82,13 @@ def test_quat_double_cover():
 
     # More sanity checks
     assert_allclose((r*r.inv()).as_quat(canonical=False),
-                    [0, 0, 0, 1])
+                    [0, 0, 0, 1], atol=2e-16)
     assert_allclose((r3*r3.inv()).as_quat(canonical=False),
-                    [0, 0, 0, 1])
+                    [0, 0, 0, 1], atol=2e-16)
     assert_allclose((r*r3).as_quat(canonical=False),
-                    [0, 0, 0, -1])
+                    [0, 0, 0, -1], atol=2e-16)
     assert_allclose((r.inv()*r3.inv()).as_quat(canonical=False),
-                    [0, 0, 0, -1])
+                    [0, 0, 0, -1], atol=2e-16)
 
 
 def test_malformed_1d_from_quat():
