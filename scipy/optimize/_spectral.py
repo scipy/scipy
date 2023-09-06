@@ -157,7 +157,7 @@ def _root_df_sane(func, x0, args=(), ftol=1e-8, fatol=1e-300, maxfev=1000,
 
     result = OptimizeResult(x=x, success=converged,
                             message=message,
-                            fun=F, nfev=nfev[0], nit=k)
+                            fun=F, nfev=nfev[0], nit=k, method="df-sane")
 
     return result
 
