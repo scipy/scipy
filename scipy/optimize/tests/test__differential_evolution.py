@@ -1574,3 +1574,24 @@ class TestDifferentialEvolutionSolver:
         # after the '=', so if necessary, the text could be reduced to, say,
         # "MAXCV = 0.".
         assert "MAXCV = 0.414" in result.message
+
+    def test_strategy_func(self):
+        bounds = [(-8.0,8.0)] * 2
+
+        def func(x):
+            return abs(x[0]) * abs(x[1])
+
+        def custom_strategy_fn(candidate, population, rng):
+            t = population[candidate]
+            return [2.0, -1.0]	# Ignore the candidate; just be recognizable.
+
+        result = differential_evolution(
+            func,
+            bounds=bounds,
+            popsize=5,
+            maxiter=2,
+            polish=False,
+            strategy_func=custom_strategy_fn
+        )
+        assert result.success is True
+        assert_equal(result.x, [2.0, -1.0])

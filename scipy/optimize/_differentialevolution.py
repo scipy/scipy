@@ -25,7 +25,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
-                           integrality=None, vectorized=False):
+                           integrality=None, vectorized=False,
+                           strategy_func=None):
     """Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
@@ -254,6 +255,21 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``'vectorized'``, and when to use ``'workers'``.
 
         .. versionadded:: 1.9.0
+        
+    strategy_func : callable, optional
+        A user provided differential evolution strategy that constructs a trial
+        vector. Must be in the form
+        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy_func`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
+        
+        .. versionadded:: 1.12.0
 
     Returns
     -------
@@ -450,7 +466,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      constraints=constraints,
                                      x0=x0,
                                      integrality=integrality,
-                                     vectorized=vectorized) as solver:
+                                     vectorized=vectorized,
+                                     strategy_func=strategy_func) as solver:
         ret = solver.solve()
 
     return ret
@@ -660,6 +677,18 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
+    strategy_func : callable, optional
+        A user provided differential evolution strategy that constructs a trial
+        vector. Must be in the form
+        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy_func`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -686,12 +715,16 @@ class DifferentialEvolutionSolver:
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
-                 vectorized=False):
+                 vectorized=False, strategy_func=None):
 
-        if strategy in self._binomial:
+        # Note: mutation_func is ignored if strategy_func is provided
+        self.strategy_func = None
+        if strategy in self._binomial:	
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
             self.mutation_func = getattr(self, self._exponential[strategy])
+        elif callable(strategy_func):
+            self.strategy_func = strategy_func
         else:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
@@ -1597,10 +1630,22 @@ class DifferentialEvolutionSolver:
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
-        trial = np.copy(self.population[candidate])
-
         rng = self.random_number_generator
 
+        if callable(self.strategy_func):
+            _population = self._scale_parameters(self.population)
+            trial = np.array(
+                self.strategy_func(candidate, _population, rng=rng), dtype=float
+            )
+            if trial.shape != (self.parameter_count,):
+                raise RuntimeError(
+                    "strategy_func must have signature"
+                    " f(candidate: int, population: np.ndarray, rng=None)"
+                    " returning an array of shape (N,)"
+                )
+            return self._unscale_parameters(trial)
+
+        trial = np.copy(self.population[candidate])
         fill_point = rng.choice(self.parameter_count)
 
         if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
