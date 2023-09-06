@@ -66,6 +66,13 @@ def test_raises():
         array_namespace(np.array(1), np.matrix(1))
 
 
+def test_array_likes():
+    # should be no exceptions
+    array_namespace([0, 1, 2])
+    array_namespace(1, 2, 3)
+    array_namespace(1)
+
+
 @array_api_compatible
 def test_copy(xp):
     for _xp in [xp, None]:
