@@ -25,7 +25,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
-                           integrality=None, vectorized=False):
+                           integrality=None, vectorized=False,
+                           strategy_func=None):
     """Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
@@ -254,6 +255,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``'vectorized'``, and when to use ``'workers'``.
 
         .. versionadded:: 1.9.0
+        
+    strategy_func : fn(candidate, population, rng=None)
+        If a custom strategy function is provided, it will be called instead
+        of the default function in order to mutate and/or recombine solution
+        vectors. It should return a new candidate vector.
+        
+        .. versionadded:: TBA
 
     Returns
     -------
@@ -450,7 +458,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      constraints=constraints,
                                      x0=x0,
                                      integrality=integrality,
-                                     vectorized=vectorized) as solver:
+                                     vectorized=vectorized,
+                                     strategy_func=strategy_func) as solver:
         ret = solver.solve()
 
     return ret
@@ -660,6 +669,10 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
+    strategy_func : fn(candidate, population, rng=None)
+        If a custom strategy function is provided, it will be called instead
+        of the default function in order to mutate and/or recombine solution
+        vectors. It should return a new candidate vector.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -686,9 +699,12 @@ class DifferentialEvolutionSolver:
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
-                 vectorized=False):
+                 vectorized=False, strategy_func=None):
 
-        if strategy in self._binomial:
+        self.strategy_func = strategy_func
+
+        # Note: mutation_func is ignored if strategy_func is provided
+        if strategy in self._binomial:	
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
             self.mutation_func = getattr(self, self._exponential[strategy])
@@ -1597,40 +1613,49 @@ class DifferentialEvolutionSolver:
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
+        
         trial = np.copy(self.population[candidate])
-
         rng = self.random_number_generator
-
-        fill_point = rng.choice(self.parameter_count)
-
-        if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
-            bprime = self.mutation_func(candidate,
-                                        self._select_samples(candidate, 5))
+    
+        if self.strategy_func:
+            # limits[0] is an array of lower bounds; limits[1] is an array of upper bounds.
+            range_arr = self.limits[1] - self.limits[0]
+            scaled_trial = trial * range_arr + self.limits[0]
+            scaled_population = self.population * range_arr + self.limits[0]
+            scaled_trial = np.array(self.strategy_func(scaled_trial, scaled_population, rng))
+            trial = (scaled_trial - self.limits[0]) / range_arr
+            return trial
         else:
-            bprime = self.mutation_func(self._select_samples(candidate, 5))
-
-        if self.strategy in self._binomial:
-            crossovers = rng.uniform(size=self.parameter_count)
-            crossovers = crossovers < self.cross_over_probability
-            # the last one is always from the bprime vector for binomial
-            # If you fill in modulo with a loop you have to set the last one to
-            # true. If you don't use a loop then you can have any random entry
-            # be True.
-            crossovers[fill_point] = True
-            trial = np.where(crossovers, bprime, trial)
-            return trial
-
-        elif self.strategy in self._exponential:
-            i = 0
-            crossovers = rng.uniform(size=self.parameter_count)
-            crossovers = crossovers < self.cross_over_probability
-            crossovers[0] = True
-            while (i < self.parameter_count and crossovers[i]):
-                trial[fill_point] = bprime[fill_point]
-                fill_point = (fill_point + 1) % self.parameter_count
-                i += 1
-
-            return trial
+            fill_point = rng.choice(self.parameter_count)
+    
+            if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
+                bprime = self.mutation_func(candidate,
+                                            self._select_samples(candidate, 5))
+            else:
+                bprime = self.mutation_func(self._select_samples(candidate, 5))
+    
+            if self.strategy in self._binomial:
+                crossovers = rng.uniform(size=self.parameter_count)
+                crossovers = crossovers < self.cross_over_probability
+                # the last one is always from the bprime vector for binomial
+                # If you fill in modulo with a loop you have to set the last one to
+                # true. If you don't use a loop then you can have any random entry
+                # be True.
+                crossovers[fill_point] = True
+                trial = np.where(crossovers, bprime, trial)
+                return trial
+    
+            elif self.strategy in self._exponential:
+                i = 0
+                crossovers = rng.uniform(size=self.parameter_count)
+                crossovers = crossovers < self.cross_over_probability
+                crossovers[0] = True
+                while (i < self.parameter_count and crossovers[i]):
+                    trial[fill_point] = bprime[fill_point]
+                    fill_point = (fill_point + 1) % self.parameter_count
+                    i += 1
+    
+                return trial
 
     def _best1(self, samples):
         """best1bin, best1exp"""
