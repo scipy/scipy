@@ -51,8 +51,8 @@ def compliance_scipy(arrays):
                 raise TypeError("Array is not Array API compatible or "
                                 "coercible by numpy")
             if array.dtype is np.dtype('O'):
-                    raise TypeError("An argument was coerced to an object array, "
-                                    "but object arrays are not supported.")
+                raise TypeError("An argument was coerced to an object array, "
+                                "but object arrays are not supported.")
             arrays[i] = array
         elif array.dtype is np.dtype('O'):
             raise TypeError('object arrays are not supported')

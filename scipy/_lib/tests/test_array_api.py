@@ -65,6 +65,11 @@ def test_raises():
     with pytest.raises(TypeError, match=msg):
         array_namespace(np.array(1), np.matrix(1))
 
+    msg = ("An argument was coerced to an object array, "
+           "but object arrays are not supported.")
+    with pytest.raises(TypeError, match=msg):
+        array_namespace([object()])
+
 
 def test_array_likes():
     # should be no exceptions
