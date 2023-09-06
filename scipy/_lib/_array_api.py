@@ -29,16 +29,15 @@ _GLOBAL_CONFIG = {
 }
 
 
-def compliance_scipy(*arrays):
+def compliance_scipy(arrays):
     """Raise exceptions on known-bad subclasses.
 
     The following subclasses are not supported and raise and error:
     - `np.ma.MaskedArray`
     - `numpy.matrix`
-    - Any array-like which is not Array API compatible
+    - Any array-like which is not Array API compatible or coercible by numpy
+    - object arrays
     """
-    _arrays = ()
-    converted = False
     for array in arrays:
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("'numpy.ma.MaskedArray' are not supported")
@@ -46,14 +45,16 @@ def compliance_scipy(*arrays):
             raise TypeError("'numpy.matrix' are not supported")
         elif not array_api_compat.is_array_api_obj(array):
             try:
-                _arrays += (np.asanyarray(array),)
-                converted = True
+                array = np.asanyarray(array)
+                if array.dtype is np.dtype('O'):
+                    raise TypeError("An argument was coerced to an object array, "
+                                    "but object arrays are not supported.")
             except TypeError:
-                raise TypeError("Array is not Array API compatible or"
-                                " coercible by numpy")
+                raise TypeError("Array is not Array API compatible or "
+                                "coercible by numpy")
         elif array.dtype is np.dtype('O'):
             raise TypeError('object arrays are not supported')
-    return _arrays if converted else arrays
+    return arrays
 
 
 def _check_finite(array, xp):
@@ -98,7 +99,7 @@ def array_namespace(*arrays):
 
     arrays = [array for array in arrays if array is not None]
 
-    arrays = compliance_scipy(*arrays)
+    arrays = compliance_scipy(arrays)
 
     return array_api_compat.array_namespace(*arrays)
 
