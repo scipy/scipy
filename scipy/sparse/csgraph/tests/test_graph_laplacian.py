@@ -170,7 +170,9 @@ DTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
-                                      sparse.coo_matrix])
+                                      sparse.coo_matrix,
+                                      sparse.csr_array,
+                                      sparse.coo_array])
 @pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
@@ -244,7 +246,11 @@ def test_sparse_formats(fmt, normed, copy):
 
 
 @pytest.mark.parametrize(
-    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+    "arr_type", [np.asarray,
+                 sparse.csr_matrix,
+                 sparse.coo_matrix,
+                 sparse.csr_array,
+                 sparse.coo_array]
 )
 @pytest.mark.parametrize("form", ["array", "function", "lo"])
 def test_laplacian_symmetrized(arr_type, form):
@@ -301,7 +307,11 @@ def test_laplacian_symmetrized(arr_type, form):
 
 
 @pytest.mark.parametrize(
-    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+    "arr_type", [np.asarray,
+                 sparse.csr_matrix,
+                 sparse.coo_matrix,
+                 sparse.csr_array,
+                 sparse.coo_array]
 )
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("normed", [True, False])
