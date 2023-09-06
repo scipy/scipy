@@ -390,6 +390,7 @@ def lobpcg(
     Example using `LinearOperator` with a callable:
     
     Define matmat for matrix-matrix multiplication (important for LOBPCG performance)
+    
     >>> def matmat(X):
     ...     return vals[:, np.newaxis] * X
     >>> A = LinearOperator((n, n), matvec=matmat, matmat=matmat, dtype='float64')
