@@ -38,7 +38,8 @@ def compliance_scipy(arrays):
     - Any array-like which is not Array API compatible or coercible by numpy
     - object arrays
     """
-    for array in arrays:
+    for i in range(len(arrays)):
+        array = arrays[i]
         if isinstance(array, np.ma.MaskedArray):
             raise TypeError("'numpy.ma.MaskedArray' are not supported")
         elif isinstance(array, np.matrix):
@@ -46,12 +47,13 @@ def compliance_scipy(arrays):
         elif not array_api_compat.is_array_api_obj(array):
             try:
                 array = np.asanyarray(array)
-                if array.dtype is np.dtype('O'):
-                    raise TypeError("An argument was coerced to an object array, "
-                                    "but object arrays are not supported.")
             except TypeError:
                 raise TypeError("Array is not Array API compatible or "
                                 "coercible by numpy")
+            if array.dtype is np.dtype('O'):
+                    raise TypeError("An argument was coerced to an object array, "
+                                    "but object arrays are not supported.")
+            arrays[i] = array
         elif array.dtype is np.dtype('O'):
             raise TypeError('object arrays are not supported')
     return arrays
