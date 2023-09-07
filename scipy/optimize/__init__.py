@@ -100,6 +100,8 @@ quasi-Newton methods implementing this interface are:
    BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
    SR1 - Symmetric-rank-1 Hessian update strategy.
 
+.. _global_optimization:
+
 Global optimization
 -------------------
 

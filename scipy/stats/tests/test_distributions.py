@@ -3699,7 +3699,7 @@ class TestJFSkewT:
         data = np.load(
             Path(__file__).parent / "data/jf_skew_t_gamlss_pdf_data.npy"
         )
-        return np.core.records.fromarrays(data, names="x,pdf,a,b")
+        return np.rec.fromarrays(data, names="x,pdf,a,b")
 
     @pytest.mark.parametrize("a,b", [(2, 3), (8, 4), (12, 13)])
     def test_compare_with_gamlss_r(self, gamlss_pdf_data, a, b):
