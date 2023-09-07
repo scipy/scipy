@@ -317,7 +317,9 @@ def test_api_importable():
 
 
 @pytest.mark.parametrize(("module_name", "correct_module"),
-                         [('scipy.integrate.dop', None),
+                         [('scipy.constants.codata', None),
+                          ('scipy.constants.constants', None),
+                          ('scipy.integrate.dop', None),
                           ('scipy.integrate.lsoda', None),
                           ('scipy.integrate.odepack', None),
                           ('scipy.integrate.quadpack', None),

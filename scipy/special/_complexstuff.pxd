@@ -23,8 +23,6 @@ cdef extern from "_complexstuff.h":
     np.npy_cdouble npy_csqrt(np.npy_cdouble z) nogil
     np.npy_cdouble npy_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
 
-DEF tol = 2.220446092504131e-16
-
 ctypedef double complex double_complex
 
 ctypedef fused number_t:
@@ -149,6 +147,7 @@ cdef inline double complex zlog1(double complex z) noexcept nogil:
         int n
         double complex coeff = -1
         double complex res = 0
+        double tol = 2.220446092504131e-16
 
     if zabs(z - 1) > 0.1:
         return zlog(z)

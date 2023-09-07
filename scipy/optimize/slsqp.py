@@ -11,7 +11,6 @@ __all__ = [  # noqa: F822
     'approx_derivative',
     'approx_jacobian',
     'array',
-    'asfarray',
     'atleast_1d',
     'concatenate',
     'exp',

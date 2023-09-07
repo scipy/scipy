@@ -48,10 +48,12 @@ class RootResults(OptimizeResult):
         True if the routine converged.
     flag : str
         Description of the cause of termination.
+    method : str
+        Root finding method used.
 
     """
 
-    def __init__(self, root, iterations, function_calls, flag):
+    def __init__(self, root, iterations, function_calls, flag, method):
         self.root = root
         self.iterations = iterations
         self.function_calls = function_calls
@@ -60,28 +62,29 @@ class RootResults(OptimizeResult):
             self.flag = flag_map[flag]
         else:
             self.flag = flag
+        self.method = method
 
 
-def results_c(full_output, r):
+def results_c(full_output, r, method):
     if full_output:
         x, funcalls, iterations, flag = r
         results = RootResults(root=x,
                               iterations=iterations,
                               function_calls=funcalls,
-                              flag=flag)
+                              flag=flag, method=method)
         return x, results
     else:
         return r
 
 
-def _results_select(full_output, r):
+def _results_select(full_output, r, method):
     """Select from a tuple of (root, funccalls, iterations, flag)"""
     x, funcalls, iterations, flag = r
     if full_output:
         results = RootResults(root=x,
                               iterations=iterations,
                               function_calls=funcalls,
-                              flag=flag)
+                              flag=flag, method=method)
         return x, results
     return x
 
@@ -297,6 +300,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     funcalls = 0
     if fprime is not None:
         # Newton-Raphson method
+        method = "newton"
         for itr in range(maxiter):
             # first evaluate fval
             fval = func(p0, *args)
@@ -304,7 +308,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             # If fval is 0, a root has been found, then terminate
             if fval == 0:
                 return _results_select(
-                    full_output, (p0, funcalls, itr, _ECONVERGED))
+                    full_output, (p0, funcalls, itr, _ECONVERGED), method)
             fder = fprime(p0, *args)
             funcalls += 1
             if fder == 0:
@@ -316,11 +320,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     raise RuntimeError(msg)
                 warnings.warn(msg, RuntimeWarning)
                 return _results_select(
-                    full_output, (p0, funcalls, itr + 1, _ECONVERR))
+                    full_output, (p0, funcalls, itr + 1, _ECONVERR), method)
             newton_step = fval / fder
             if fprime2:
                 fder2 = fprime2(p0, *args)
                 funcalls += 1
+                method = "halley"
                 # Halley's method:
                 #   newton_step /= (1.0 - 0.5 * newton_step * fder2 / fder)
                 # Only do it if denominator stays close enough to 1
@@ -333,10 +338,11 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
             p = p0 - newton_step
             if np.isclose(p, p0, rtol=rtol, atol=tol):
                 return _results_select(
-                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED), method)
             p0 = p
     else:
         # Secant method
+        method = "secant"
         if x1 is not None:
             if x1 == x0:
                 raise ValueError("x1 and x0 must be different")
@@ -363,7 +369,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     warnings.warn(msg, RuntimeWarning)
                 p = (p1 + p0) / 2.0
                 return _results_select(
-                    full_output, (p, funcalls, itr + 1, _ECONVERR))
+                    full_output, (p, funcalls, itr + 1, _ECONVERR), method)
             else:
                 if abs(q1) > abs(q0):
                     p = (-q0 / q1 * p1 + p0) / (1 - q0 / q1)
@@ -371,7 +377,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     p = (-q1 / q0 * p0 + p1) / (1 - q1 / q0)
             if np.isclose(p, p1, rtol=rtol, atol=tol):
                 return _results_select(
-                    full_output, (p, funcalls, itr + 1, _ECONVERGED))
+                    full_output, (p, funcalls, itr + 1, _ECONVERGED), method)
             p0, q0 = p1, q1
             p1 = p
             q1 = func(p1, *args)
@@ -382,7 +388,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                % (itr + 1, p))
         raise RuntimeError(msg)
 
-    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR))
+    return _results_select(full_output, (p, funcalls, itr + 1, _ECONVERR), method)
 
 
 def _array_newton(func, x0, fprime, args, tol, maxiter, fprime2, full_output):
@@ -570,7 +576,7 @@ def bisect(f, a, b, args=(),
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
     r = _zeros._bisect(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r)
+    return results_c(full_output, r, "bisect")
 
 
 def ridder(f, a, b, args=(),
@@ -668,7 +674,7 @@ def ridder(f, a, b, args=(),
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
     r = _zeros._ridder(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r)
+    return results_c(full_output, r, "ridder")
 
 
 def brentq(f, a, b, args=(),
@@ -799,7 +805,7 @@ def brentq(f, a, b, args=(),
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
     r = _zeros._brentq(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r)
+    return results_c(full_output, r, "brentq")
 
 
 def brenth(f, a, b, args=(),
@@ -910,7 +916,7 @@ def brenth(f, a, b, args=(),
         raise ValueError(f"rtol too small ({rtol:g} < {_rtol:g})")
     f = _wrap_nan_raise(f)
     r = _zeros._brenth(f, a, b, xtol, rtol, maxiter, args, full_output, disp)
-    return results_c(full_output, r)
+    return results_c(full_output, r, "brenth")
 
 
 ################################
@@ -1369,6 +1375,7 @@ def toms748(f, a, b, args=(), k=1,
      function_calls: 11
          iterations: 5
                root: 1.0
+             method: toms748
     """
     if xtol <= 0:
         raise ValueError("xtol too small (%g <= 0)" % xtol)
@@ -1393,7 +1400,8 @@ def toms748(f, a, b, args=(), k=1,
     result = solver.solve(f, a, b, args=args, k=k, xtol=xtol, rtol=rtol,
                           maxiter=maxiter, disp=disp)
     x, function_calls, iterations, flag = result
-    return _results_select(full_output, (x, function_calls, iterations, flag))
+    return _results_select(full_output, (x, function_calls, iterations, flag),
+                           "toms748")
 
 
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
@@ -1688,8 +1696,8 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
     res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = np.zeros(n_elements, dtype=bool)
     res_dict['status'] = np.full(n_elements, _EINPROGRESS)
-    res_dict['nit'] = res_dict['nit'].astype(int)
-    res_dict['nfev'] = res_dict['nfev'].astype(int)
+    res_dict['nit'] = np.zeros(n_elements, dtype=int)
+    res_dict['nfev'] = np.zeros(n_elements, dtype=int)
     res = OptimizeResult(res_dict)
     work.args = args
 
@@ -1767,7 +1775,7 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
     return func, args, xatol, xrtol, fatol, frtol, maxiter, callback
 
 
-def _scalar_optimization_initialize(func, xs, args):
+def _scalar_optimization_initialize(func, xs, args, complex_ok=False):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -1831,9 +1839,9 @@ def _scalar_optimization_initialize(func, xs, args):
 
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
-    # that time from the outset.
+    # that type from the outset.
     xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
-    if not np.issubdtype(xfat, np.floating):
+    if not complex_ok and not np.issubdtype(xfat, np.floating):
         raise ValueError("Abscissae and function output must be real numbers.")
     xs = [x.astype(xfat, copy=True)[()] for x in xs]
     fs = [f.astype(xfat, copy=True)[()] for f in fs]

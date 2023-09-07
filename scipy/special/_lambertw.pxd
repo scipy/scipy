@@ -27,7 +27,6 @@ from ._evalpoly cimport cevalpoly
 from ._complexstuff cimport *
 
 DEF EXPN1 = 0.36787944117144232159553  # exp(-1)
-DEF OMEGA = 0.56714329040978387299997  # W(1, 0)
 
 
 @cython.cdivision(True)
@@ -36,6 +35,7 @@ cdef inline double complex lambertw_scalar(double complex z, long k, double tol)
     cdef double absz, p
     cdef double complex w
     cdef double complex ew, wew, wewz, wn
+    cdef double OMEGA = 0.56714329040978387299997  # W(1, 0)
 
     if zisnan(z):
         return z
