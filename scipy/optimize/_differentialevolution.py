@@ -1628,48 +1628,38 @@ class DifferentialEvolutionSolver:
                     " returning an array of shape (N,)"
                 )
             return self._unscale_parameters(trial)
+
         trial = np.copy(self.population[candidate])
-        rng = self.random_number_generator
+        fill_point = rng.choice(self.parameter_count)
     
-        if self.strategy_func:
-            # limits[0] is an array of lower bounds; limits[1] is an array of upper bounds.
-            range_arr = self.limits[1] - self.limits[0]
-            scaled_trial = trial * range_arr + self.limits[0]
-            scaled_population = self.population * range_arr + self.limits[0]
-            scaled_trial = np.array(self.strategy_func(scaled_trial, scaled_population, rng))
-            trial = (scaled_trial - self.limits[0]) / range_arr
-            return trial
+        if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
+            bprime = self.mutation_func(candidate,
+                                        self._select_samples(candidate, 5))
         else:
-            fill_point = rng.choice(self.parameter_count)
+            bprime = self.mutation_func(self._select_samples(candidate, 5))
     
-            if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
-                bprime = self.mutation_func(candidate,
-                                            self._select_samples(candidate, 5))
-            else:
-                bprime = self.mutation_func(self._select_samples(candidate, 5))
-    
-            if self.strategy in self._binomial:
-                crossovers = rng.uniform(size=self.parameter_count)
-                crossovers = crossovers < self.cross_over_probability
-                # the last one is always from the bprime vector for binomial
-                # If you fill in modulo with a loop you have to set the last one to
-                # true. If you don't use a loop then you can have any random entry
-                # be True.
-                crossovers[fill_point] = True
-                trial = np.where(crossovers, bprime, trial)
-                return trial
-    
-            elif self.strategy in self._exponential:
-                i = 0
-                crossovers = rng.uniform(size=self.parameter_count)
-                crossovers = crossovers < self.cross_over_probability
-                crossovers[0] = True
-                while (i < self.parameter_count and crossovers[i]):
-                    trial[fill_point] = bprime[fill_point]
-                    fill_point = (fill_point + 1) % self.parameter_count
-                    i += 1
-    
-                return trial
+        if self.strategy in self._binomial:
+            crossovers = rng.uniform(size=self.parameter_count)
+            crossovers = crossovers < self.cross_over_probability
+            # the last one is always from the bprime vector for binomial
+            # If you fill in modulo with a loop you have to set the last one to
+            # true. If you don't use a loop then you can have any random entry
+            # be True.
+            crossovers[fill_point] = True
+            trial = np.where(crossovers, bprime, trial)
+            return trial
+
+        elif self.strategy in self._exponential:
+            i = 0
+            crossovers = rng.uniform(size=self.parameter_count)
+            crossovers = crossovers < self.cross_over_probability
+            crossovers[0] = True
+            while (i < self.parameter_count and crossovers[i]):
+                trial[fill_point] = bprime[fill_point]
+                fill_point = (fill_point + 1) % self.parameter_count
+                i += 1
+
+            return trial
 
     def _best1(self, samples):
         """best1bin, best1exp"""
