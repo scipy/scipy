@@ -615,11 +615,11 @@ def _nan_allsame(a, axis, keepdims=False):
     --------
     >>> import numpy as np
     >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
+    ...               [ 1., nan,  2.,  4.],
+    ...               [nan, nan,  9., -1.],
+    ...               [nan,  5.,  4.,  3.],
+    ...               [ 2.,  2.,  2.,  2.],
+    ...               [nan, nan, nan, nan]])
     >>> _nan_allsame(a, axis=1, keepdims=True)
     array([[ True],
            [False],
