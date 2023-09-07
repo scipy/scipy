@@ -702,12 +702,13 @@ class DifferentialEvolutionSolver:
                  vectorized=False, strategy_func=None):
 
         # Note: mutation_func is ignored if strategy_func is provided
+        self.strategy_func = None
         if strategy in self._binomial:	
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
             self.mutation_func = getattr(self, self._exponential[strategy])
         elif callable(strategy_func):
-            self.mutation_func = strategy_func
+            self.strategy_func = strategy_func
         else:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
