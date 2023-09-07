@@ -57,6 +57,7 @@ def support_cupy_torch_jax(f_name, n_array_args):
         f"result. In this case, only the {first_args_note} supported. \n"
         "Other arguments will be passed to the underlying function, but the \n"
         "behavior is not tested."]
+    doc = str(doc).split("\n", 1)[1].strip()
     wrapped.__doc__ = str(doc)
 
     return wrapped
