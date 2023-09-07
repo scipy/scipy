@@ -31,13 +31,6 @@ def get_array_special_func(f_name, xp, n_array_args):
 
     return f
 
-note = (
-r"""Hello
-
-More
-
-"""
-)
 # functools.wraps doesn't work because:
 # 'numpy.ufunc' object has no attribute '__module__'
 def support_cupy_torch_jax(f_name, n_array_args):
@@ -47,15 +40,15 @@ def support_cupy_torch_jax(f_name, n_array_args):
         return f(*args, **kwargs)
 
     # Add standard note about CuPy/Torch/JAX support to documentation
-    doc = getattr(_ufuncs, f_name).__doc__
-    doc = FunctionDoc(func=None, doc=doc)
+    func = getattr(_ufuncs, f_name)
+    doc = FunctionDoc(func=func)
     notes = doc["Notes"]
     first_args_note = ("first positional argument is" if n_array_args ==1
                        else f"first {n_array_args} positional arguments are")
     notes += [""] if len(notes) else []
     notes += [
         "This function has preliminary support for CuPy, PyTorch, and JAX \n"
-        "arrays. When environment variable `SCIPY_ARRAY_API=1`, this \n"
+        "arrays. When environment variable ``SCIPY_ARRAY_API=1``, this \n"
         "function automatically passes the argument array(s) to the \n"
         "appropriate function of their native library and returns the \n"
         f"result. In this case, only the {first_args_note} supported. \n"
