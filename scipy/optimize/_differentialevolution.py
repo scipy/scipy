@@ -256,7 +256,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         .. versionadded:: 1.9.0
         
-    strategy_func : fn(candidate, population, rng=None)
+    strategy_func : callable, optional
         If a custom strategy function is provided, it will be called instead
         of the default function in order to mutate and/or recombine solution
         vectors. It should return a new candidate vector.
