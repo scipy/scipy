@@ -50,8 +50,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=0.29.35')
-  error('SciPy requires Cython >= 0.29.35')
+if not cy.version().version_compare('>=3.0.2')
+  error('SciPy requires Cython >= 3.0.2')
 endif
 
 _global_c_args = cc.get_supported_arguments(

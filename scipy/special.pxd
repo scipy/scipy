@@ -1,1 +1,1 @@
-from scipy.special cimport cython_special
+from .special cimport cython_special
