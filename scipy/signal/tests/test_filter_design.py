@@ -893,6 +893,14 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    # https://github.com/scipy/scipy/issues/17289
+    # https://github.com/scipy/scipy/issues/15273
+    def test_17289(self):
+        d = [0,1]
+        w, Drfft = freqz(d, worN=32, include_nyquist=True)
+        _, Dpoly = freqz(d, worN=w)
+        assert_array_almost_equal(Drfft, Dpoly)
+
 
 class TestSOSFreqz:
 
