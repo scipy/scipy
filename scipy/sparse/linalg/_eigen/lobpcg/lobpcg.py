@@ -384,13 +384,13 @@ def lobpcg(
 
     >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
-    >>> print(eigenvalues)  
+    >>> eigenvalues
     array([100.])
 
     The least efficient callable option is `aslinearoperator`:
 
     >>> eigenvalues, _ = lobpcg(aslinearoperator(A), X, maxiter=80)
-    >>> print(eigenvalues)  
+    >>> eigenvalues
     array([100.])
 
     We now switch to computing the three smallest eigenvalues specifying
