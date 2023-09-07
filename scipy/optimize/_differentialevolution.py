@@ -707,6 +707,8 @@ class DifferentialEvolutionSolver:
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
             self.mutation_func = getattr(self, self._exponential[strategy])
+        elif callable(strategy_func):
+            self.mutation_func = strategy_func
         else:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
