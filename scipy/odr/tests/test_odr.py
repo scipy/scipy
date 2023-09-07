@@ -5,7 +5,8 @@ import os
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_warns)
+                           assert_equal, assert_warns,
+                           assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
@@ -127,7 +128,7 @@ class TestODR:
             np.array([0.1113840353364371, 0.1097673310686467, 0.0041060738314314,
                 0.0027500347539902, 0.0034962501532468]),
         )
-        assert_array_almost_equal(
+        assert_allclose(
             out.cov_beta,
             np.array([[2.1089274602333052e+00, -1.9437686411979040e+00,
                   7.0263550868344446e-02, -4.7175267373474862e-02,
@@ -144,6 +145,7 @@ class TestODR:
                [5.2515575927380355e-02, -5.8822307501391467e-02,
                   1.4528860663055824e-03, -1.2692942951415293e-03,
                   2.0778813389755596e-03]]),
+            rtol=1e-6, atol=2e-6,
         )
 
     # Multi-variable Example

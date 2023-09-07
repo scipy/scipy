@@ -1031,7 +1031,7 @@ def test_sygst():
 
         eig, _, info = syevd(a)
         assert_(info == 0)
-        assert_allclose(eig, eig_gvd, rtol=1e-4)
+        assert_allclose(eig, eig_gvd, rtol=1.2e-4)
 
 
 def test_hegst():

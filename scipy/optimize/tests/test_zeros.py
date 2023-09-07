@@ -93,7 +93,7 @@ class TestScalarRootFinders:
             r, rr = method(*method_args, args=func_args, **method_kwargs)
             return root, rr, tc
         except Exception:
-            return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR), tc
+            return root, zeros.RootResults(nan, -1, -1, zeros._EVALUEERR, method), tc
 
     def run_tests(self, tests, method, name, known_fail=None, **kwargs):
         r"""Run test-cases using the specified method and the supplied signature.
@@ -148,6 +148,9 @@ class TestScalarRootFinders:
                for aroot, c, fullout, tc in notclose]
         notclose = [[fv] + elt for fv, elt in zip(fvs, notclose) if fv != 0]
         assert_equal([notclose, len(notclose)], [[], 0])
+        method_from_result = [result[1].method for result in results]
+        expected_method = [name for _ in results]
+        assert_equal(method_from_result, expected_method)
 
     def run_collection(self, collection, method, name, smoothness=None,
                        known_fail=None, **kwargs):
@@ -171,6 +174,7 @@ class TestBracketMethods(TestScalarRootFinders):
                         xtol=self.xtol, rtol=self.rtol)
         assert r.converged
         assert_allclose(r.root, 1.0, atol=self.xtol, rtol=self.rtol)
+        assert r.method == method.__name__
 
     @pytest.mark.parametrize('method', bracket_methods)
     @pytest.mark.parametrize('function', tstutils_functions)
@@ -874,12 +878,13 @@ def test_brent_underflow_in_root_bracketing():
 
 
 class TestRootResults:
-    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0)
+    r = zeros.RootResults(root=1.0, iterations=44, function_calls=46, flag=0,
+                          method="newton")
 
     def test_repr(self):
         expected_repr = ("      converged: True\n           flag: converged"
                          "\n function_calls: 46\n     iterations: 44\n"
-                         "           root: 1.0")
+                         "           root: 1.0\n         method: newton")
         assert_equal(repr(self.r), expected_repr)
 
     def test_type(self):
