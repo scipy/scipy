@@ -1614,7 +1614,20 @@ class DifferentialEvolutionSolver:
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
-        
+        rng = self.random_number_generator
+
+        if callable(self.strategy_func):
+            _population = self._scale_parameters(self.population)
+            trial = np.array(
+                self.strategy_func(candidate, _population, rng=rng), dtype=float
+            )
+            if trial.shape != (self.parameter_count,):
+                raise RuntimeError(
+                    "strategy_func must have signature"
+                    " f(candidate: int, population: np.ndarray, rng=None)"
+                    " returning an array of shape (N,)"
+                )
+            return self._unscale_parameters(trial)
         trial = np.copy(self.population[candidate])
         rng = self.random_number_generator
     
