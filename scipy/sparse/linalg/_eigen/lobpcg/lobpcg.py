@@ -382,7 +382,7 @@ def lobpcg(
     necessary but still supported as the input to `lobpcg`.
     Specifying ``matmat=A_matmat`` explicitely improves performance. 
 
-    >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat)
+    >>> A_lo = LinearOperator((n, n), matvec=A_matmat, matmat=A_matmat, dtype=np.int16)
     >>> eigenvalues, _ = lobpcg(A_lo, X, maxiter=80)
     >>> print(eigenvalues)  
     array([100.])
