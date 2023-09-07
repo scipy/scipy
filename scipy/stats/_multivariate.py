@@ -2397,8 +2397,8 @@ class wishart_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -3017,8 +3017,8 @@ class invwishart_gen(wishart_gen):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
