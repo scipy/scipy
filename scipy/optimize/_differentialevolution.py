@@ -701,7 +701,6 @@ class DifferentialEvolutionSolver:
                  workers=1, constraints=(), x0=None, *, integrality=None,
                  vectorized=False, strategy_func=None):
 
-
         # Note: mutation_func is ignored if strategy_func is provided
         if strategy in self._binomial:	
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -1631,13 +1630,13 @@ class DifferentialEvolutionSolver:
 
         trial = np.copy(self.population[candidate])
         fill_point = rng.choice(self.parameter_count)
-    
+
         if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
             bprime = self.mutation_func(candidate,
                                         self._select_samples(candidate, 5))
         else:
             bprime = self.mutation_func(self._select_samples(candidate, 5))
-    
+
         if self.strategy in self._binomial:
             crossovers = rng.uniform(size=self.parameter_count)
             crossovers = crossovers < self.cross_over_probability
