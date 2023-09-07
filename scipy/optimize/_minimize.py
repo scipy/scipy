@@ -837,7 +837,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     valid `bracket` triple is provided. If a three-point bracket cannot be
     found, consider `scipy.optimize.minimize`. Also, all methods are intended
     only for local minimization. When the function of interest has more than
-    one local minimum, consider :ref:`_global_optimization`.
+    one local minimum, consider :ref:`global_optimization`.
 
     **Custom minimizers**
 
