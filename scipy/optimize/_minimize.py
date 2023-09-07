@@ -834,7 +834,7 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     local minimum in the interval x1 < xopt < x2.
 
     Note that the Brent and Golden methods do not guarantee success unless a
-    valid `bracket` triple is provided. If a three-point bracket cannot be
+    valid ``bracket`` triple is provided. If a three-point bracket cannot be
     found, consider `scipy.optimize.minimize`. Also, all methods are intended
     only for local minimization. When the function of interest has more than
     one local minimum, consider :ref:`global_optimization`.
