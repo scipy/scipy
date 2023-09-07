@@ -1,9 +1,9 @@
 import sys
 import numpy as np
-from scipy._lib._array_api import array_namespace
 from scipy._lib._docscrape import FunctionDoc
+from scipy._lib._array_api import array_namespace, is_cupy, is_torch, is_numpy
 from . import _ufuncs
-from ._ufuncs import *
+from ._ufuncs import *  # noqa
 
 __all__ = _ufuncs.__all__
 
@@ -11,13 +11,11 @@ array_api_compat_prefix = "scipy._lib.array_api_compat.array_api_compat"
 
 
 def get_array_special_func(f_name, xp, n_array_args):
-    # TODO: replace these `__name__` checks with `is_numpy`, etc. after
-    #       gh-19005 merges.
-    if xp.__name__ == f"{array_api_compat_prefix}.numpy":
+    if is_numpy(xp):
         f = getattr(_ufuncs, f_name, None)
-    elif xp.__name__ == f"{array_api_compat_prefix}.torch":
+    elif is_torch(xp):
         f = getattr(xp.special, f_name, None)
-    elif xp.__name__ == f"{array_api_compat_prefix}.cupy":
+    elif is_cupy(xp):
         import cupyx
         f = getattr(cupyx.scipy.special, f_name, None)
     elif xp.__name__ == f"{array_api_compat_prefix}.jax":

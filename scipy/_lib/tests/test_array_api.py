@@ -65,12 +65,17 @@ def test_raises():
     with pytest.raises(TypeError, match=msg):
         array_namespace(np.array(1), np.matrix(1))
 
-    msg = "Only support Array API"
+    msg = ("An argument was coerced to an object array, "
+           "but object arrays are not supported.")
     with pytest.raises(TypeError, match=msg):
-        array_namespace([0, 1, 2])
+        array_namespace([object()])
 
-    with pytest.raises(TypeError, match=msg):
-        array_namespace(1)
+
+def test_array_likes():
+    # should be no exceptions
+    array_namespace([0, 1, 2])
+    array_namespace(1, 2, 3)
+    array_namespace(1)
 
 
 @array_api_compatible
