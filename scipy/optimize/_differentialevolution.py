@@ -701,7 +701,6 @@ class DifferentialEvolutionSolver:
                  workers=1, constraints=(), x0=None, *, integrality=None,
                  vectorized=False, strategy_func=None):
 
-        self.strategy_func = strategy_func
 
         # Note: mutation_func is ignored if strategy_func is provided
         if strategy in self._binomial:	
