@@ -312,7 +312,7 @@ class MatFile5Reader(MatFileReader):
             if name in mdict:
                 warnings.warn('Duplicate variable name "%s" in stream'
                               ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
+                              'Consider _mio5.varmats_from_mat to split '
                               'file into single variable files' % name,
                               MatReadWarning, stacklevel=2)
             if name == '':
