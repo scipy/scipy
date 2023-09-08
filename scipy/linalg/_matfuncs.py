@@ -881,3 +881,377 @@ def khatri_rao(a, b):
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
     return c.reshape((-1,) + c.shape[2:])
+
+
+def matrix_similarity_transform(A, P):
+    """
+    Perform a matrix similarity transformation on matrix A using matrix P.
+
+    Parameters
+    ----------
+    A : array_like
+        The input matrix to be transformed.
+    P : array_like
+        The transformation matrix.
+
+    Returns
+    -------
+    B : ndarray
+        The transformed matrix.
+
+    Raises
+    ------
+    ValueError
+        If the dimensions of A and P are not compatible for the transformation.
+
+    """
+    A = np.asarray(A)
+    P = np.asarray(P)
+
+    if A.shape[0] != A.shape[1] or P.shape[0] != P.shape[1]:
+        raise ValueError('Both matrices must be square.')
+
+    if A.shape != P.shape:
+        raise ValueError('The dimensions of A and P must be the same.')
+
+    P_inv = np.linalg.inv(P)
+    B = P_inv.dot(A).dot(P)
+
+    return B
+
+
+def rotate_matrix(matrix, angle_degrees):
+    """
+    Rotate a 2D matrix by a specified angle in degrees.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input 2D matrix to be rotated.
+    angle_degrees : float
+        The rotation angle in degrees.
+
+    Returns
+    -------
+    rotated_matrix : ndarray
+        The rotated matrix.
+
+    """
+    # Convert angle from degrees to radians
+    angle_radians = np.radians(angle_degrees)
+    
+    # Create a 2x2 rotation matrix
+    rotation_matrix = np.array([[np.cos(angle_radians), -np.sin(angle_radians)],
+                                 [np.sin(angle_radians), np.cos(angle_radians)]])
+    
+    # Perform the matrix multiplication to rotate the input matrix
+    rotated_matrix = np.dot(rotation_matrix, matrix)
+    
+    return rotated_matrix
+
+
+def scale_matrix(matrix, scaling_factor):
+    """
+    Scale a matrix by a specified scaling factor.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix to be scaled.
+    scaling_factor : float
+        The scaling factor by which to multiply the matrix.
+
+    Returns
+    -------
+    scaled_matrix : ndarray
+        The scaled matrix.
+
+    """
+    # Convert the input matrix to a NumPy array
+    matrix = np.asarray(matrix)
+    
+    # Perform the matrix scaling
+    scaled_matrix = matrix * scaling_factor
+    
+    return scaled_matrix
+
+
+def matdiff_matrix(matrix, scalar_var, epsilon=1e-6):
+    """
+    Approximate the derivative of a matrix with respect to a scalar variable using finite differences.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix to be differentiated.
+    scalar_var : float
+        The scalar variable with respect to which differentiation is performed.
+    epsilon : float, optional
+        A small value to use for finite differences (default is 1e-6).
+
+    Returns
+    -------
+    derivative_matrix : ndarray
+        The approximate derivative matrix.
+
+    """
+    matrix = np.asarray(matrix, dtype=float)
+    original_matrix = matrix.copy()
+    
+    # Create a function that calculates the matrix value given a scalar value
+    def matrix_function(scalar):
+        matrix[:] = original_matrix  # Reset the matrix to the original value
+        matrix *= scalar  # Scale the matrix by the scalar
+        return matrix.copy()  # Return a copy to avoid modifying the original
+    
+    # Calculate the finite difference approximation of the derivative
+    derivative_matrix = (matrix_function(scalar_var + epsilon) - matrix_function(scalar_var - epsilon)) / (2 * epsilon)
+    
+    return derivative_matrix
+
+
+def proj_matrix(matrix_to_project, target_matrix):
+    """
+    Project a matrix onto another matrix or subspace.
+
+    Parameters
+    ----------
+    matrix_to_project : array_like
+        The matrix to be projected.
+    target_matrix : array_like
+        The target matrix onto which the projection is performed.
+
+    Returns
+    -------
+    projected_matrix : ndarray
+        The projected matrix onto the target matrix or subspace.
+
+    """
+    # Ensure the input matrices are NumPy arrays
+    matrix_to_project = np.asarray(matrix_to_project, dtype=float)
+    target_matrix = np.asarray(target_matrix, dtype=float)
+    
+    # Calculate the projection matrix
+    projection_matrix = np.dot(target_matrix, np.linalg.lstsq(target_matrix, matrix_to_project, rcond=None)[0])
+    
+    return projection_matrix
+
+
+def concatenate_matrices(matrices, axis=0):
+    """
+    Concatenate a list of matrices along the specified axis.
+
+    Parameters
+    ----------
+    matrices : list of array_like
+        A list of matrices to be concatenated.
+    axis : int, optional
+        The axis along which concatenation is performed (default is 0).
+
+    Returns
+    -------
+    concatenated_matrix : ndarray
+        The concatenated matrix.
+
+    """
+    # Ensure the input matrices are NumPy arrays
+    matrices = [np.asarray(matrix) for matrix in matrices]
+    
+    # Perform matrix concatenation along the specified axis
+    concatenated_matrix = np.concatenate(matrices, axis=axis)
+    
+    return concatenated_matrix
+
+
+def kron_matrix(matrix1, matrix2):
+    """
+    Compute the Kronecker product of two matrices.
+
+    Parameters
+    ----------
+    matrix1 : array_like
+        The first input matrix.
+    matrix2 : array_like
+        The second input matrix.
+
+    Returns
+    -------
+    kronecker_product : ndarray
+        The Kronecker product of the two matrices.
+
+    """
+    # Ensure the input matrices are NumPy arrays
+    matrix1 = np.asarray(matrix1)
+    matrix2 = np.asarray(matrix2)
+    
+    # Compute the Kronecker product
+    kronecker_product = np.kron(matrix1, matrix2)
+    
+    return kronecker_product
+
+def matrix_rank(matrix):
+    """
+    Compute the rank of a matrix.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix.
+
+    Returns
+    -------
+    rank : int
+        The rank of the matrix.
+
+    """
+    # Ensure the input matrix is a NumPy array
+    matrix = np.asarray(matrix, dtype=float)
+    
+    # Compute the rank using NumPy's linalg.matrix_rank function
+    rank = np.linalg.matrix_rank(matrix)
+    
+    return rank
+
+
+def solve_matrix_equation(matrix_a, matrix_b):
+    """
+    Solve a system of linear equations represented as matrices (Ax = B).
+
+    Parameters
+    ----------
+    matrix_a : array_like
+        Coefficient matrix (A) of the linear equations.
+    matrix_b : array_like
+        Right-hand side matrix (B) of the linear equations.
+
+    Returns
+    -------
+    solution_matrix : ndarray
+        The solution matrix (x) of the linear equations.
+
+    """
+    # Ensure the input matrices are NumPy arrays
+    matrix_a = np.asarray(matrix_a, dtype=float)
+    matrix_b = np.asarray(matrix_b, dtype=float)
+    
+    # Solve the linear equations using NumPy's linalg.solve function
+    solution_matrix = np.linalg.solve(matrix_a, matrix_b)
+    
+    return solution_matrix
+
+
+def matrix_norm(matrix, norm_type='fro'):
+    """
+    Compute the specified matrix norm.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix for which you want to compute the norm.
+    norm_type : str, optional
+        The type of matrix norm to compute (default is 'fro' for Frobenius norm).
+        Supported norm types: 'fro' (Frobenius norm), '1' (1-norm), '2' (2-norm), 'inf' (infinity norm).
+
+    Returns
+    -------
+    norm_value : float
+        The computed matrix norm.
+
+    """
+    # Ensure the input matrix is a NumPy array
+    matrix = np.asarray(matrix, dtype=float)
+    
+    # Compute the specified matrix norm
+    if norm_type == 'fro':
+        norm_value = np.linalg.norm(matrix, ord='fro')
+    elif norm_type == '1':
+        norm_value = np.linalg.norm(matrix, ord=1)
+    elif norm_type == '2':
+        norm_value = np.linalg.norm(matrix, ord=2)
+    elif norm_type == 'inf':
+        norm_value = np.linalg.norm(matrix, ord=np.inf)
+    else:
+        raise ValueError("Unsupported norm type. Choose from 'fro', '1', '2', or 'inf'.")
+    
+    return norm_value
+
+
+
+def transpose_matrix(matrix):
+    """
+    Transpose a matrix.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix to be transposed.
+
+    Returns
+    -------
+    transposed_matrix : ndarray
+        The transposed matrix.
+
+    """
+    # Ensure the input matrix is a NumPy array
+    matrix = np.asarray(matrix, dtype=float)
+    
+    # Transpose the matrix using NumPy's transpose or T attribute
+    transposed_matrix = np.transpose(matrix)
+    # Alternatively, you can use: transposed_matrix = matrix.T
+    
+    return transposed_matrix
+
+
+def svd_matrix(matrix):
+    """
+    Perform Singular Value Decomposition (SVD) of a matrix.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix for which you want to compute the SVD.
+
+    Returns
+    -------
+    U : ndarray
+        The left singular vectors.
+    S : ndarray
+        The singular values.
+    Vt : ndarray
+        The right singular vectors (transposed).
+
+    """
+    # Ensure the input matrix is a NumPy array
+    matrix = np.asarray(matrix, dtype=float)
+    
+    # Perform SVD using NumPy's svd function
+    U, S, Vt = np.linalg.svd(matrix, full_matrices=True)
+    
+    return U, S, Vt
+
+
+def eig_matrix(matrix):
+    """
+    Compute the eigenvalues and eigenvectors of a matrix.
+
+    Parameters
+    ----------
+    matrix : array_like
+        The input matrix for which you want to compute eigenvalues and eigenvectors.
+
+    Returns
+    -------
+    eigenvalues : ndarray
+        The eigenvalues of the matrix.
+    eigenvectors : ndarray
+        The corresponding eigenvectors of the matrix.
+
+    """
+    # Ensure the input matrix is a NumPy array
+    matrix = np.asarray(matrix, dtype=float)
+    
+    # Compute eigenvalues and eigenvectors using NumPy's eig function
+    eigenvalues, eigenvectors = np.linalg.eig(matrix)
+    
+    return eigenvalues, eigenvectors
+  
