@@ -774,8 +774,13 @@ import warnings
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
-from . import _support_cupy_torch_jax
-from ._support_cupy_torch_jax import *
+from . import _ufuncs
+from ._ufuncs import *
+
+# Replace some function definitions from _ufuncs to add Array API support
+from ._support_cupy_torch_jax import (
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln, gammainc,
+    gammaincc, logit, expit)
 
 from . import _basic
 from ._basic import *
@@ -802,7 +807,10 @@ from ._spherical_bessel import (
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
-__all__ = _support_cupy_torch_jax.__all__ + _basic.__all__ + _orthogonal.__all__
+# We replace some function definitions from _ufuncs with those from
+# _support_cupy_torch_jax above, but those are all listed in _ufuncs.__all__,
+# so there is no need to consider _support_cupy_torch_jax.__all__ here.
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
 __all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
