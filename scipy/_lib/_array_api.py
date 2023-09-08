@@ -232,13 +232,10 @@ def _assert_matching_namespace(actual, desired):
 
 
 def _check_scalar(actual, desired):
-    if actual.shape == ():
-        if isinstance(actual, np.ndarray):
-            assert_(isinstance(desired, np.ndarray),
-                    "Desired a numpy scalar, but 0-D array given.")
-        else:
-            assert_(not isinstance(desired, np.ndarray),
-                    "Desired a 0-D array, but numpy scalar given.")
+    if np.isscalar(desired):
+        assert np.isscalar(actual), "Desired a scalar, but 0-D array given."
+    else:
+        assert not np.isscalar(actual), "Desired a 0-D array, but scalar given."
 
 
 def xp_assert_equal(actual, desired, err_msg='', xp=None):
