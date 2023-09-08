@@ -3,7 +3,7 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, assert_equal
+    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, xp_assert_equal
 )
 
 
@@ -25,8 +25,8 @@ class TestArrayAPI:
     def test_asarray(self, xp):
         x, y = as_xparray([0, 1, 2], xp=xp), as_xparray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
-        assert_equal(x, ref)
-        assert_equal(y, ref)
+        xp_assert_equal(x, ref)
+        xp_assert_equal(y, ref)
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
     def test_raises(self):
