@@ -10,10 +10,10 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.13.1",
+    "meson-python>=0.14.0",
     "Cython>=0.29.35",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
-    "pythran>=0.12.0",
+    "pythran>=0.14.0",
 
     # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
     # and then runtime depend on the range 1.22.X to <2.3. No need to switch to
