@@ -899,7 +899,7 @@ class TestFreqz:
         d = [0,1]
         w, Drfft = freqz(d, worN=32, include_nyquist=True)
         _, Dpoly = freqz(d, worN=w)
-        assert_array_almost_equal(Drfft, Dpoly)
+        assert_allclose(Drfft, Dpoly)
 
 
 class TestSOSFreqz:
