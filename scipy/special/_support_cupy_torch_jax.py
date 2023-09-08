@@ -48,24 +48,6 @@ def support_cupy_torch_jax(f_name, n_array_args):
         f = get_array_special_func(f_name, xp, n_array_args)
         return f(*args, **kwargs)
 
-    # Add standard note about CuPy/Torch/JAX support to documentation
-    doc = FunctionDoc(func=wrapped)
-    first_args_note = ("first positional argument is" if n_array_args ==1
-                       else f"first {n_array_args} positional arguments are")
-    doc["Notes"] += [""] if len(doc["Notes"]) else []
-    doc["Notes"] += [
-        "This function has preliminary support for CuPy, PyTorch, and JAX \n"
-        "arrays. When environment variable ``SCIPY_ARRAY_API=1``, this \n"
-        "function automatically passes the argument array(s) to the \n"
-        "appropriate function of their native library and returns the \n"
-        f"result. In this case, only the {first_args_note} supported. \n"
-        "Other arguments will be passed to the underlying function, but the \n"
-        "behavior is not tested."]
-    # There are consistently four lines at the top of these docstrings before
-    # the top-line description starts.
-    doc = str(doc).split("\n", 4)[4].strip()
-    wrapped.__doc__ = str(doc)
-
     return wrapped
 
 
@@ -86,13 +68,28 @@ array_special_func_map = {
     'expit': 1,
 }
 
-if _SCIPY_ARRAY_API:
-    for f_name, n_array_args in array_special_func_map.items():
-        sys.modules[__name__].__dict__[f_name] = (
-            support_cupy_torch_jax(f_name, n_array_args)
-        )
-else:
-    for f_name in array_special_func_map:
-        sys.modules[__name__].__dict__[f_name] = getattr(_ufuncs, f_name)
+for f_name, n_array_args in array_special_func_map.items():
+    f = (support_cupy_torch_jax(f_name, n_array_args) if _SCIPY_ARRAY_API
+         else getattr(_ufuncs, f_name))
+
+    # Add standard note about CuPy/Torch/JAX support to documentation
+    doc = FunctionDoc(f)
+    first_args_note = ("first positional argument is" if n_array_args ==1
+                       else f"first {n_array_args} positional arguments are")
+    doc["Notes"] += [""] if len(doc["Notes"]) else []
+    doc["Notes"] += [
+        "This function has preliminary support for CuPy, PyTorch, and JAX \n"
+        "arrays. When environment variable ``SCIPY_ARRAY_API=1``, this \n"
+        "function automatically passes the argument array(s) to the \n"
+        "appropriate function of their native library and returns the \n"
+        f"result. In this case, only the {first_args_note} supported. \n"
+        "Other arguments will be passed to the underlying function, but the \n"
+        "behavior is not tested."]
+    # There are consistently four lines at the top of these docstrings before
+    # the top-line description starts.
+    doc = str(doc).split("\n", 4)[4].strip()
+    f.__doc__ = str(doc)
+
+    sys.modules[__name__].__dict__[f_name] = f
 
 __all__ = list(array_special_func_map)
