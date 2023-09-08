@@ -131,7 +131,7 @@ class LinearOperator:
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 _CustomLinearOperator with dtype=int>
+    <2x2 _CustomLinearOperator with dtype=int64>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
     >>> A * np.ones(2)
