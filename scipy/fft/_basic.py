@@ -19,37 +19,20 @@ def _validate_fft_args(overwrite_x, workers, plan, norm):
     return norm
 
 
-def _execute_1D(func_str, uarray_func, x, n, axis, norm,
-                overwrite_x, workers, plan):
+def _execute(func_str, uarray_func, x, s, axes, norm, 
+             overwrite_x, workers, plan):
     xp = array_namespace(x)
     if is_numpy(xp):
-        return uarray_func(x, n=n, axis=axis, norm=norm,
-                           overwrite_x=overwrite_x, workers=workers, plan=plan)
+        return uarray_func(x, s, axes, norm=norm, overwrite_x=overwrite_x,
+                           workers=workers, plan=plan)
 
     norm = _validate_fft_args(overwrite_x, workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
-        return xp_func(x, n=n, axis=axis, norm=norm)
+        return xp_func(x, s, axes, norm=norm)
 
     x = np.asarray(x)
-    y = uarray_func(x, n=n, axis=axis, norm=norm)
-    return xp.asarray(y)
-
-
-def _execute_nD(func_str, uarray_func, x, s, axes, norm, 
-                overwrite_x, workers, plan):
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return uarray_func(x, s=s, axes=axes, norm=norm,
-                           overwrite_x=overwrite_x, workers=workers, plan=plan)
-
-    norm = _validate_fft_args(overwrite_x, workers, plan, norm)
-    if hasattr(xp, 'fft'):
-        xp_func = getattr(xp.fft, func_str)
-        return xp_func(x, s=s, axes=axes, norm=norm)
-
-    x = np.asarray(x)
-    y = uarray_func(x, s=s, axes=axes, norm=norm)
+    y = uarray_func(x, s, axes, norm=norm)
     return xp.asarray(y)
 
 
@@ -193,8 +176,8 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute_1D('fft', _basic_uarray.fft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('fft', _basic_uarray.fft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
@@ -299,8 +282,8 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute_1D('ifft', _basic_uarray.ifft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('ifft', _basic_uarray.ifft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
@@ -393,8 +376,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     exploited to compute only the non-negative frequency terms.
 
     """
-    return _execute_1D('rfft', _basic_uarray.rfft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('rfft', _basic_uarray.rfft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
@@ -494,8 +477,8 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     specified, and the output array is purely real.
 
     """
-    return _execute_1D('irfft', _basic_uarray.irfft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('irfft', _basic_uarray.irfft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
@@ -577,8 +560,8 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> hfft(signal, 10)  # Input entire signal and truncate
     array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
     """
-    return _execute_1D('hfft', _basic_uarray.hfft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('hfft', _basic_uarray.hfft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
@@ -644,8 +627,8 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> ihfft(spectrum)
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
     """
-    return _execute_1D('ihfft', _basic_uarray.ihfft, x, n, axis, norm,
-                       overwrite_x, workers, plan)
+    return _execute('ihfft', _basic_uarray.ihfft, x, n, axis, norm,
+                    overwrite_x, workers, plan)
 
 
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
@@ -749,8 +732,8 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute_nD('fftn', _basic_uarray.fftn, x, s, axes, norm,
-                       overwrite_x, workers, plan)
+    return _execute('fftn', _basic_uarray.fftn, x, s, axes, norm,
+                    overwrite_x, workers, plan)
 
 
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
@@ -853,8 +836,8 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute_nD('ifftn', _basic_uarray.ifftn, x, s, axes, norm,
-                       overwrite_x, workers, plan)
+    return _execute('ifftn', _basic_uarray.ifftn, x, s, axes, norm,
+                    overwrite_x, workers, plan)
 
 
 def fft2(x, s=None, axes=(-2, -1), norm=None,
@@ -1156,8 +1139,8 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [0.+0.j,  0.+0.j]]])
 
     """
-    return _execute_nD('rfftn', _basic_uarray.rfftn, x, s, axes, norm, 
-                       overwrite_x, workers, plan)
+    return _execute('rfftn', _basic_uarray.rfftn, x, s, axes, norm, 
+                    overwrite_x, workers, plan)
 
 
 def rfft2(x, s=None, axes=(-2, -1), norm=None,
@@ -1316,8 +1299,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [1.,  1.]]])
 
     """
-    return _execute_nD('irfftn', _basic_uarray.irfftn, x, s, axes, norm,
-                       overwrite_x, workers, plan)
+    return _execute('irfftn', _basic_uarray.irfftn, x, s, axes, norm,
+                    overwrite_x, workers, plan)
 
 
 def irfft2(x, s=None, axes=(-2, -1), norm=None,
