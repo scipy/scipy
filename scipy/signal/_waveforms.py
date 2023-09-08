@@ -670,3 +670,62 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     out[idx] = 1
     return out
+
+
+def sine_wave(t, frequency=1.0, amplitude=1.0, phase=0.0):
+    """
+    Generate a sine wave with variable frequency, amplitude, and phase.
+
+    Parameters
+    ----------
+    t : array_like
+        The input time array.
+    frequency : float or array_like, optional
+        Frequency of the sine wave in Hz. Default is 1.0 Hz.
+        If an array, the frequency can change over time.
+    amplitude : float or array_like, optional
+        Amplitude of the sine wave. Default is 1.0.
+        If an array, the amplitude can change over time.
+    phase : float or array_like, optional
+        Phase offset of the sine wave in radians. Default is 0.0.
+        If an array, the phase can change over time.
+
+    Returns
+    -------
+    sine_waveform : ndarray
+        Output array containing the generated sine waveform.
+
+    Examples
+    --------
+    Generate a 2 Hz sine wave with amplitude 2:
+
+    >>> import numpy as np
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(0, 1, 1000, endpoint=False)
+    >>> frequency = 2.0  # Hz
+    >>> amplitude = 2.0
+    >>> sine_waveform = sine_wave(t, frequency, amplitude)
+    >>> plt.plot(t, sine_waveform)
+    >>> plt.xlabel('Time (s)')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Sine Wave')
+    >>> plt.grid(True)
+    >>> plt.show()
+
+    """
+    # Ensure input time array is a numpy array
+    t = np.asarray(t)
+    
+    # Create arrays for frequency, amplitude, and phase if not provided as arrays
+    if isinstance(frequency, (float, int)):
+        frequency = frequency * np.ones_like(t)
+    if isinstance(amplitude, (float, int)):
+        amplitude = amplitude * np.ones_like(t)
+    if isinstance(phase, (float, int)):
+        phase = phase * np.ones_like(t)
+    
+    # Generate the sine wave
+    sine_waveform = amplitude * np.sin(2 * np.pi * frequency * t + phase)
+    
+    return sine_waveform
