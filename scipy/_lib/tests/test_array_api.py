@@ -1,31 +1,15 @@
 import numpy as np
-from numpy.testing import assert_equal
 import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, as_xparray, copy
+    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, assert_equal
 )
-
-
-def to_numpy(array, xp):
-    """Convert `array` into a NumPy ndarray on the CPU. From sklearn."""
-    xp_name = xp.__name__
-
-    if xp_name in {"array_api_compat.torch", "torch"}:
-        return array.cpu().numpy()
-    elif xp_name == "cupy.array_api":
-        return array._array.get()
-    elif xp_name in {"array_api_compat.cupy", "cupy"}:  # pragma: nocover
-        return array.get()
-
-    return np.asarray(array)
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
-
 
     def test_array_namespace(self):
         x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
@@ -37,21 +21,12 @@ class TestArrayAPI:
         assert 'array_api_compat.numpy' in xp.__name__
         _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
-
     @array_api_compatible
     def test_asarray(self, xp):
         x, y = as_xparray([0, 1, 2], xp=xp), as_xparray(np.arange(3), xp=xp)
-        ref = np.array([0, 1, 2])
+        ref = xp.asarray([0, 1, 2])
         assert_equal(x, ref)
         assert_equal(y, ref)
-
-
-    @array_api_compatible
-    def test_to_numpy(self, xp):
-        x = xp.asarray([0, 1, 2])
-        x = to_numpy(x, xp=xp)
-        assert isinstance(x, np.ndarray)
-
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
     def test_raises(self):
@@ -68,13 +43,11 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             array_namespace([object()])
 
-
     def test_array_likes(self):
         # should be no exceptions
         array_namespace([0, 1, 2])
         array_namespace(1, 2, 3)
         array_namespace(1)
-
 
     @array_api_compatible
     def test_copy(self, xp):
