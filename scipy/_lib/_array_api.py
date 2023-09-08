@@ -197,14 +197,11 @@ def is_torch(xp):
 
 
 def _strict_check(actual, desired, check_xp=True, check_dtype=True, check_shape=True):
-    try:
-        actual.dtype
-        desired.dtype
-    except AttributeError:
-        raise ValueError("Inputs should be arrays with a dtype attribute, "
-                         "python scalars and arrays are not accepted.")
     if check_xp:
         _assert_matching_namespace(actual, desired)
+    xp = array_namespace(actual)
+    actual = xp.asarray(actual)
+    desired = xp.asarray(desired)
     if check_dtype:
         assert_(actual.dtype == desired.dtype,
                 f"Desired dtype: {desired.dtype}, actual dtype: {actual.dtype}")
@@ -227,14 +224,17 @@ def _assert_matching_namespace(actual, desired):
 
 
 def _check_scalar(actual, desired):
-    if np.isscalar(desired):
-        assert np.isscalar(actual), "Desired a scalar, but 0-D array given."
-    else:
-        assert not np.isscalar(actual), "Desired a 0-D array, but scalar given."
+    for arr in actual:
+        if np.isscalar(desired):
+            assert np.isscalar(arr), "Desired a scalar, but ndarray given."
+        else:
+            assert not np.isscalar(arr), "Desired an ndarray, but scalar given."
 
 
-def xp_assert_equal(actual, desired, err_msg='', xp=None):
-    _strict_check(actual, desired)
+def xp_assert_equal(actual, desired, check_xp=True, check_dtype=True, 
+                    check_shape=True, err_msg='', xp=None):
+    _strict_check(actual, desired, check_xp=check_xp,
+                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
@@ -247,8 +247,10 @@ def xp_assert_equal(actual, desired, err_msg='', xp=None):
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
-    _strict_check(actual, desired)
+def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_xp=True,
+                    check_dtype=True, check_shape=True, err_msg='', xp=None):
+    _strict_check(actual, desired, check_xp=check_xp,
+                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
@@ -261,8 +263,10 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
                                       atol=atol, err_msg=err_msg)
 
 
-def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
-    _strict_check(actual, desired)
+def xp_assert_less(actual, desired, check_xp=True, check_dtype=True,
+                   check_shape=True, err_msg='', verbose=True, xp=None):
+    _strict_check(actual, desired, check_xp=check_xp,
+                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
