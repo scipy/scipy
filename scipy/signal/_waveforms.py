@@ -670,3 +670,46 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     out[idx] = 1
     return out
+
+
+def triangular_wave(t, frequency=1.0, amplitude=1.0):
+    """
+    Generate a triangular wave.
+
+    Parameters
+    ----------
+    t : array_like
+        The input time array.
+    frequency : float, optional
+        Frequency of the triangular wave in Hz. Default is 1.0 Hz.
+    amplitude : float, optional
+        Amplitude of the triangular wave. Default is 1.0.
+
+    Returns
+    -------
+    y : ndarray
+        Output array containing the triangular wave.
+
+    Examples
+    --------
+    Generate a 2 Hz triangular wave with amplitude 2:
+
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> t = np.linspace(0, 1, 1000, endpoint=False)
+    >>> triangular_waveform = triangular_wave(t, frequency=2, amplitude=2)
+    >>> plt.plot(t, triangular_waveform)
+    >>> plt.xlabel('Time (s)')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.title('Triangular Wave')
+    >>> plt.grid(True)
+    >>> plt.show()
+
+    """
+    t = np.asarray(t)
+    period = 1.0 / frequency
+    
+    t_normalized = (t % period) / period  # Normalize time to one period
+    y = amplitude * (1 - 2 * np.abs(t_normalized - 0.5))
+    
+    return y
