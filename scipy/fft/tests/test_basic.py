@@ -11,7 +11,6 @@ from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy.conftest import (
     array_api_compatible,
-    skip_if_array_api,
     skip_if_array_api_gpu,
     skip_if_array_api_backend
 )
@@ -350,7 +349,6 @@ class TestFFT1D:
                     tmp = back(tmp, n=n, norm=norm)
                     assert_close(x_norm, xp_test.linalg.vector_norm(tmp))
 
-    @skip_if_array_api
     @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
     def test_dtypes_nonstandard(self, dtype):
         x = random(30).astype(dtype)
@@ -388,7 +386,6 @@ class TestFFT1D:
         assert res_hfft.dtype == x.dtype
 
 
-@skip_if_array_api
 @pytest.mark.parametrize(
         "dtype",
         [np.float32, np.float64, np.longdouble,
@@ -489,7 +486,6 @@ class TestFFTThreadSafe:
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
-@skip_if_array_api
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)

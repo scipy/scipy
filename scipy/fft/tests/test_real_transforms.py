@@ -7,8 +7,7 @@ import scipy.fft as fft
 from scipy import fftpack
 from scipy.conftest import (
     array_api_compatible,
-    skip_if_array_api,
-    skip_if_array_api_gpu,
+    skip_if_array_api_gpu
 )
 from scipy._lib._array_api import copy, assert_close
 
@@ -45,7 +44,6 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize,
     assert_close(z2, x)
 
 
-@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
@@ -118,7 +116,6 @@ def test_identity_nd(forward, backward, type, shape, axes, norm, orthogonalize,
     assert_close(z2, x)
 
 
-@skip_if_array_api
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
