@@ -12,6 +12,7 @@ import os
 import warnings
 
 import numpy as np
+from numpy.testing import assert_
 import scipy._lib.array_api_compat.array_api_compat as array_api_compat
 from scipy._lib.array_api_compat.array_api_compat import size
 import scipy._lib.array_api_compat.array_api_compat.numpy as array_api_compat_numpy
@@ -193,6 +194,33 @@ def is_cupy(xp):
 
 def is_torch(xp):
     return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
+
+
+def _assert_matching_namespace(actual, desired):
+    desired_space = array_namespace(desired)
+    if isinstance(actual, tuple):
+        for arr in actual:
+            arr_space = array_namespace(arr)
+            assert arr_space == desired_space
+            if is_numpy(arr_space):
+                _check_scalar(actual, desired)
+    else:
+        actual_space = array_namespace(actual)
+        assert_(actual_space == desired_space,
+                "Namespaces do not match: "
+                f"{actual_space.__name__} and {desired_space.__name__}")
+        if is_numpy(actual_space):
+            _check_scalar(actual, desired)
+
+
+def _check_scalar(actual, desired):
+    if actual.shape == ():
+        if isinstance(actual, np.ndarray):
+            assert_(isinstance(desired, np.ndarray),
+                    "Desired a numpy scalar, but 0-D array given.")
+        else:
+            assert_(not isinstance(desired, np.ndarray),
+                    "Desired a 0-D array, but numpy scalar given.")
 
 
 def xp_assert_equal(actual, desired, err_msg='', xp=None):
