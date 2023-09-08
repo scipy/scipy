@@ -215,19 +215,14 @@ def _strict_check(actual, desired, check_xp=True, check_dtype=True, check_shape=
 
 
 def _assert_matching_namespace(actual, desired):
+    actual = actual if isinstance(actual, tuple) else (actual,)
     desired_space = array_namespace(desired)
-    if isinstance(actual, tuple):
-        for arr in actual:
-            arr_space = array_namespace(arr)
-            assert arr_space == desired_space
-            if is_numpy(arr_space):
-                _check_scalar(actual, desired)
-    else:
-        actual_space = array_namespace(actual)
-        assert_(actual_space == desired_space,
+    for arr in actual:
+        arr_space = array_namespace(arr)
+        assert_(arr_space == desired_space,
                 "Namespaces do not match: "
-                f"{actual_space.__name__} and {desired_space.__name__}")
-        if is_numpy(actual_space):
+                f"{arr_space.__name__} and {desired_space.__name__}")
+        if is_numpy(arr_space):
             _check_scalar(actual, desired)
 
 
