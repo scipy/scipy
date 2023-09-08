@@ -131,7 +131,7 @@ class LinearOperator:
     ...
     >>> A = LinearOperator((2,2), matvec=mv)
     >>> A
-    <2x2 _CustomLinearOperator with dtype=float64>
+    <2x2 _CustomLinearOperator with dtype=int>
     >>> A.matvec(np.ones(2))
     array([ 2.,  3.])
     >>> A * np.ones(2)
@@ -178,7 +178,7 @@ class LinearOperator:
         """Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros(self.shape[-1])
+            v = np.zeros(self.shape[-1], dtype=np.int8)
             self.dtype = np.asarray(self.matvec(v)).dtype
 
     def _matmat(self, X):
