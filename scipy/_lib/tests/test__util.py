@@ -12,7 +12,7 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa
 from scipy.conftest import array_api_compatible
 
-from scipy._lib._array_api import assert_equal as xp_assert_equal
+from scipy._lib._array_api import xp_assert_equal
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
