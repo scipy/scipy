@@ -196,6 +196,24 @@ def is_torch(xp):
     return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
 
 
+def _strict_check(actual, desired, check_xp=True, check_dtype=True, check_shape=True):
+    try:
+        actual.dtype
+        desired.dtype
+    except AttributeError:
+        raise ValueError("Inputs should be arrays with a dtype attribute, "
+                         "python scalars and arrays are not accepted.")
+    if check_xp:
+        _assert_matching_namespace(actual, desired)
+    if check_dtype:
+        assert_(actual.dtype == desired.dtype,
+                f"Desired dtype: {desired.dtype}, actual dtype: {actual.dtype}")
+    if check_shape:
+        msg = (f"Array shapes are not equal: actual shape = {actual.shape}, "
+               f"desired shape = {desired.shape}")
+        assert_(actual.shape == desired.shape, msg)
+
+
 def _assert_matching_namespace(actual, desired):
     desired_space = array_namespace(desired)
     if isinstance(actual, tuple):
@@ -224,40 +242,38 @@ def _check_scalar(actual, desired):
 
 
 def xp_assert_equal(actual, desired, err_msg='', xp=None):
+    _strict_check(actual, desired)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
-        assert actual.dtype == desired.dtype
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
         # PyTorch recommends using `rtol=0, atol=0` like this
         # to test for exact equality
-        return xp.testing.assert_close(actual, desired, rtol=0, atol=0,
-                                       msg=err_msg, equal_nan=True)
-    assert actual.dtype == desired.dtype
+        return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
+                                       check_dtype=False, msg=err_msg)
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
 def xp_assert_close(actual, desired, rtol=1e-07, atol=0, err_msg='', xp=None):
+    _strict_check(actual, desired)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
-        assert actual.dtype == desired.dtype
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)
     elif is_torch(xp):
-        return xp.testing.assert_close(actual, desired, rtol=rtol,
-                                       atol=atol, msg=err_msg, equal_nan=True)
-    assert actual.dtype == desired.dtype
+        return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
+                                       equal_nan=True, check_dtype=False, msg=err_msg)
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
 
 def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
+    _strict_check(actual, desired)
     if xp is None:
         xp = array_namespace(actual)
     if is_cupy(xp):
-        assert actual.dtype == desired.dtype
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
     elif is_torch(xp):
@@ -265,7 +281,6 @@ def xp_assert_less(actual, desired, err_msg='', verbose=True, xp=None):
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
-    assert actual.dtype == desired.dtype
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
