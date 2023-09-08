@@ -1063,32 +1063,6 @@ def concatenate_matrices(matrices, axis=0):
     return concatenated_matrix
 
 
-def kron_matrix(matrix1, matrix2):
-    """
-    Compute the Kronecker product of two matrices.
-
-    Parameters
-    ----------
-    matrix1 : array_like
-        The first input matrix.
-    matrix2 : array_like
-        The second input matrix.
-
-    Returns
-    -------
-    kronecker_product : ndarray
-        The Kronecker product of the two matrices.
-
-    """
-    # Ensure the input matrices are NumPy arrays
-    matrix1 = np.asarray(matrix1)
-    matrix2 = np.asarray(matrix2)
-    
-    # Compute the Kronecker product
-    kronecker_product = np.kron(matrix1, matrix2)
-    
-    return kronecker_product
-
 def matrix_rank(matrix):
     """
     Compute the rank of a matrix.
@@ -1111,70 +1085,6 @@ def matrix_rank(matrix):
     rank = np.linalg.matrix_rank(matrix)
     
     return rank
-
-
-def solve_matrix_equation(matrix_a, matrix_b):
-    """
-    Solve a system of linear equations represented as matrices (Ax = B).
-
-    Parameters
-    ----------
-    matrix_a : array_like
-        Coefficient matrix (A) of the linear equations.
-    matrix_b : array_like
-        Right-hand side matrix (B) of the linear equations.
-
-    Returns
-    -------
-    solution_matrix : ndarray
-        The solution matrix (x) of the linear equations.
-
-    """
-    # Ensure the input matrices are NumPy arrays
-    matrix_a = np.asarray(matrix_a, dtype=float)
-    matrix_b = np.asarray(matrix_b, dtype=float)
-    
-    # Solve the linear equations using NumPy's linalg.solve function
-    solution_matrix = np.linalg.solve(matrix_a, matrix_b)
-    
-    return solution_matrix
-
-
-def matrix_norm(matrix, norm_type='fro'):
-    """
-    Compute the specified matrix norm.
-
-    Parameters
-    ----------
-    matrix : array_like
-        The input matrix for which you want to compute the norm.
-    norm_type : str, optional
-        The type of matrix norm to compute (default is 'fro' for Frobenius norm).
-        Supported norm types: 'fro' (Frobenius norm), '1' (1-norm), '2' (2-norm), 'inf' (infinity norm).
-
-    Returns
-    -------
-    norm_value : float
-        The computed matrix norm.
-
-    """
-    # Ensure the input matrix is a NumPy array
-    matrix = np.asarray(matrix, dtype=float)
-    
-    # Compute the specified matrix norm
-    if norm_type == 'fro':
-        norm_value = np.linalg.norm(matrix, ord='fro')
-    elif norm_type == '1':
-        norm_value = np.linalg.norm(matrix, ord=1)
-    elif norm_type == '2':
-        norm_value = np.linalg.norm(matrix, ord=2)
-    elif norm_type == 'inf':
-        norm_value = np.linalg.norm(matrix, ord=np.inf)
-    else:
-        raise ValueError("Unsupported norm type. Choose from 'fro', '1', '2', or 'inf'.")
-    
-    return norm_value
-
 
 
 def transpose_matrix(matrix):
@@ -1202,56 +1112,26 @@ def transpose_matrix(matrix):
     return transposed_matrix
 
 
-def svd_matrix(matrix):
+def trace_matrix(matrix):
     """
-    Perform Singular Value Decomposition (SVD) of a matrix.
+    Compute the trace of a matrix, which is the sum of its diagonal elements.
 
     Parameters
     ----------
     matrix : array_like
-        The input matrix for which you want to compute the SVD.
+        The input matrix for which you want to compute the trace.
 
     Returns
     -------
-    U : ndarray
-        The left singular vectors.
-    S : ndarray
-        The singular values.
-    Vt : ndarray
-        The right singular vectors (transposed).
+    trace_value : float
+        The computed trace of the matrix.
 
     """
     # Ensure the input matrix is a NumPy array
     matrix = np.asarray(matrix, dtype=float)
     
-    # Perform SVD using NumPy's svd function
-    U, S, Vt = np.linalg.svd(matrix, full_matrices=True)
+    # Compute the trace by summing the diagonal elements
+    trace_value = np.trace(matrix)
     
-    return U, S, Vt
+    return trace_value
 
-
-def eig_matrix(matrix):
-    """
-    Compute the eigenvalues and eigenvectors of a matrix.
-
-    Parameters
-    ----------
-    matrix : array_like
-        The input matrix for which you want to compute eigenvalues and eigenvectors.
-
-    Returns
-    -------
-    eigenvalues : ndarray
-        The eigenvalues of the matrix.
-    eigenvectors : ndarray
-        The corresponding eigenvectors of the matrix.
-
-    """
-    # Ensure the input matrix is a NumPy array
-    matrix = np.asarray(matrix, dtype=float)
-    
-    # Compute eigenvalues and eigenvectors using NumPy's eig function
-    eigenvalues, eigenvectors = np.linalg.eig(matrix)
-    
-    return eigenvalues, eigenvectors
-  
