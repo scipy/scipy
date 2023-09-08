@@ -34,10 +34,10 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
     # input validation/standardization for `A`
     A = aslinearoperator(A)  # this takes care of some input validation
-    if not (np.issubdtype(A.dtype, np.complexfloating)
-            or np.issubdtype(A.dtype, np.floating)):
-        message = "`A` must be of floating or complex floating data type."
-        raise ValueError(message)
+    # if not (np.issubdtype(A.dtype, np.complexfloating)
+    #         or np.issubdtype(A.dtype, np.floating)):
+    #     message = "`A` must be of floating or complex floating data type."
+    #     raise ValueError(message)
     if np.prod(A.shape) == 0:
         message = "`A` must not be empty."
         raise ValueError(message)
