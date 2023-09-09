@@ -42,9 +42,9 @@ class Bench(Benchmark):
         self.Ab = mik_k.tobanded()
         self.eigenvalues = mik.eigenvalues
 
-        # if solver == 'eigh' and n >= 512:
-        #     # skip: slow, and not useful to benchmark
-        #     raise NotImplementedError()
+        if solver == 'eigh' and n > 512:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
 
     def setup_sakurai(self, n, solver):
         self.shape = (n, n)
