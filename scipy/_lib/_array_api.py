@@ -196,19 +196,28 @@ def is_torch(xp):
     return xp.__name__ == 'scipy._lib.array_api_compat.array_api_compat.torch'
 
 
-def _strict_check(actual, desired, check_xp=True, check_dtype=True, check_shape=True):
-    if check_xp:
+def _strict_check(actual, desired, xp,
+                  check_namespace=True, check_dtype=True, check_shape=True):
+    if check_namespace:
         _assert_matching_namespace(actual, desired)
-    xp = array_namespace(actual)
-    actual = xp.asarray(actual)
+
     desired = xp.asarray(desired)
+
     if check_dtype:
         assert_(actual.dtype == desired.dtype,
-                f"Desired dtype: {desired.dtype}, actual dtype: {actual.dtype}")
+                "dtypes do not match.\n"
+                f"Actual: {actual.dtype}\n"
+                f"Desired: {desired.dtype}")
+
     if check_shape:
-        msg = (f"Array shapes are not equal: actual shape = {actual.shape}, "
-               f"desired shape = {desired.shape}")
-        assert_(actual.shape == desired.shape, msg)
+        assert_(actual.shape == desired.shape,
+                "Shapes do not match.\n"
+                f"Actual: {actual.shape}\n"
+                f"Desired: {desired.shape}")
+        _check_scalar(actual, desired, xp)
+
+    desired = xp.broadcast_to(desired, actual.shape)
+    return desired
 
 
 def _assert_matching_namespace(actual, desired):
@@ -217,26 +226,43 @@ def _assert_matching_namespace(actual, desired):
     for arr in actual:
         arr_space = array_namespace(arr)
         assert_(arr_space == desired_space,
-                "Namespaces do not match: "
-                f"{arr_space.__name__} and {desired_space.__name__}")
-        if is_numpy(arr_space):
-            _check_scalar(actual, desired)
+                "Namespaces do not match.\n"
+                f"Actual: {arr_space.__name__}\n"
+                f"Desired: {desired_space.__name__}")
 
 
-def _check_scalar(actual, desired):
-    for arr in actual:
-        if np.isscalar(desired):
-            assert np.isscalar(arr), "Desired a scalar, but ndarray given."
-        else:
-            assert not np.isscalar(arr), "Desired an ndarray, but scalar given."
+def _check_scalar(actual, desired, xp):
+    # Shape check alone is sufficient unless desired.shape == (). Also,
+    # only NumPy distinguishes between scalars and arrays.
+    if desired.shape != () or not is_numpy(xp):
+        return
+    # We want to follow the conventions of the `xp` library. Libraries like
+    # NumPy, for which `np.asarray(0)[()]` returns a scalar, tend to return
+    # a scalar even when a 0D array might be more appropriate:
+    # import numpy as np
+    # np.mean([1, 2, 3])  # scalar, not 0d array
+    # np.asarray(0)*2  # scalar, not 0d array
+    # np.sin(np.asarray(0))  # scalar, not 0d array
+    # Libraries like CuPy, for which `cp.asarray(0)[()]` returns a 0D array,
+    # tend to return a 0D array in scenarios like those above.
+    # Therefore, regardless of whether the developer provides a scalar or 0D
+    # array for `desired`, we would typically want the type of `actual` to be
+    # the type of `desired[()]`. If the developer wants to override this
+    # behavior, they can set `check_shape=False`.
+    desired = desired[()]
+    assert_((xp.isscalar(actual) and xp.isscalar(desired)
+             or (not xp.isscalar(actual) and not xp.isscalar(desired))),
+            "Types do not match:\n"
+            f"Actual: {type(actual)}\n"
+            f"Desired: {type(desired)}")
 
 
-def xp_assert_equal(actual, desired, check_xp=True, check_dtype=True, 
+def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
                     check_shape=True, err_msg='', xp=None):
-    _strict_check(actual, desired, check_xp=check_xp,
-                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
@@ -247,12 +273,12 @@ def xp_assert_equal(actual, desired, check_xp=True, check_dtype=True,
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_xp=True,
+def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, err_msg='', xp=None):
-    _strict_check(actual, desired, check_xp=check_xp,
-                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)
@@ -263,12 +289,12 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_xp=True,
                                       atol=atol, err_msg=err_msg)
 
 
-def xp_assert_less(actual, desired, check_xp=True, check_dtype=True,
+def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                    check_shape=True, err_msg='', verbose=True, xp=None):
-    _strict_check(actual, desired, check_xp=check_xp,
-                  check_dtype=check_dtype, check_shape=check_shape)
     if xp is None:
         xp = array_namespace(actual)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)
@@ -292,12 +318,6 @@ def cov(x, *, xp=None):
     X = xp.asarray(X, dtype=dtype)
 
     avg = xp.mean(X, axis=1)
-    w_sum = xp.asarray(size(X) / size(avg), dtype=avg.dtype)
-    if w_sum.shape != avg.shape:
-        w_sum = copy(xp.broadcast_to(w_sum, avg.shape), xp=xp)
-
-    w_sum = w_sum[0]
-
     fact = X.shape[1] - 1
 
     if fact <= 0:
