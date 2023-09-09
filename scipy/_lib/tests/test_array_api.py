@@ -101,7 +101,7 @@ class TestArrayAPI:
     @array_api_compatible
     def test_check_scalar(self, xp):
         if not is_numpy(xp):
-            pytest.skip("Scalars only exist in NumPy in CuPy")
+            pytest.skip("Scalars only exist in NumPy")
 
         if is_numpy(xp):
             with pytest.raises(AssertionError, match="Types do not match."):
