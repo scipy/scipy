@@ -339,6 +339,15 @@ def test_api_importable():
                           ('scipy.optimize.slsqp', None),
                           ('scipy.optimize.tnc', None),
                           ('scipy.optimize.zeros', None),
+                        ('scipy.sparse.lil', None),
+                        ('scipy.sparse.linalg.dsolve', "linalg._dsolve"),
+                        ('scipy.sparse.linalg.eigen', None),
+                        ('scipy.sparse.linalg.interface', None),
+                        ('scipy.sparse.linalg.isolve', None),
+                        ('scipy.sparse.linalg.matfuncs', None),
+                        ('scipy.sparse.sparsetools', None),
+                        ('scipy.sparse.spfuncs', None),
+                        ('scipy.sparse.sputils', None),
                           ('scipy.stats.biasedurn', None),
                           ('scipy.stats.kde', None),
                           ('scipy.stats.morestats', None),
@@ -346,6 +355,7 @@ def test_api_importable():
                           ('scipy.stats.mstats_extras', 'mstats'),
                           ('scipy.stats.mvn', None),
                           ('scipy.stats.stats', None)])
+
 def test_private_but_present_deprecation(module_name, correct_module):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
