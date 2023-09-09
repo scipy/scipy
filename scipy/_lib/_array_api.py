@@ -232,8 +232,8 @@ def _assert_matching_namespace(actual, desired):
 
 def _check_scalar(actual, desired, xp):
     # Shape check alone is sufficient unless desired.shape == (). Also,
-    # only NumPy and CuPy distinguish between scalars and arrays, AFAICT.
-    if desired.shape != () or not (is_numpy(xp) or is_cupy(xp)):
+    # only NumPy distinguishes between scalars and arrays.
+    if desired.shape != () or not is_numpy(xp):
         return
     # We want to follow the conventions of the `xp` library. Libraries like
     # NumPy, for which `np.asarray(0)[()]` returns a scalar, tend to return
