@@ -319,7 +319,10 @@ class _ArpackParams:
             raise ValueError("maxiter must be positive, maxiter=%d" % maxiter)
 
         if tp not in 'fdFD':
-            raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
+            if np.can_cast(tp, 'f'):
+                tp = 'f'
+            elif tp not in 'dFD':
+                raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
         if v0 is not None:
             # ARPACK overwrites its initial resid,  make a copy
