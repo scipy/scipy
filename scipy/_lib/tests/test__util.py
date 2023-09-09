@@ -394,6 +394,8 @@ class TestLazywhere:
         if xp == np:
             ref1 = ref1.reshape(result_shape)
             ref2 = ref2.reshape(result_shape)
+            res1 = xp.asarray(res1)[()]
+            res2 = xp.asarray(res2)[()]
 
         isinstance(res1, type(xp.asarray([])))
         xp_assert_equal(res1, ref1)
