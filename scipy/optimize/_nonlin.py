@@ -1484,7 +1484,7 @@ class KrylovJacobian(Jacobian):
             sc = self.omega / nv
             r = (self.func(self.x0 + sc*v) - self.f0) / sc
         else:
-            r = self.Fgradp(self.x0,v)
+            r = self.Fgradp(self.x0, v)
             
             if not(isinstance(r, np.ndarray)):
                 raise ValueError('Fgradp did not return a numpy array')
