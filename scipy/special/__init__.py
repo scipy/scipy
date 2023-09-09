@@ -779,8 +779,8 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_cupy_torch_jax import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln, gammainc,
-    gammaincc, logit, expit)
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa
+    gammaln, gammainc, gammaincc, logit, expit)  # noqa
 
 from . import _basic
 from ._basic import *
