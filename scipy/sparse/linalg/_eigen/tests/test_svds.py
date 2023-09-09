@@ -141,7 +141,7 @@ class SVDSCommonTests:
     _A_ndim_msg = "array must have ndim <= 2"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
-        (np.array([['a', 'b'], ['c', 'd']], dtype='object')), ValueError, _A_dtype_msg),
+        (np.array([['a', 'b'], ['c', 'd']], dtype='object'), ValueError, _A_dtype_msg),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
 
