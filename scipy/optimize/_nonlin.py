@@ -1323,7 +1323,7 @@ class KrylovJacobian(Jacobian):
     %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
-    Fgradp : callable
+    Fgradp : callable, optional
         Jacobian multiplication with an arbitrary vector v.
         `Fgradp` must compute the Jacobian times an arbitrary vector:
 

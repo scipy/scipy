@@ -69,6 +69,11 @@ def F3(x):
     return A @ x - b
 
 
+def F_GRAD3(x, v):
+    A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
+    return A @ v
+
+
 F3.xin = [1, 2, 3]
 F3.KNOWN_BAD = {}
 F3.JAC_KSP_BAD = {}
@@ -123,6 +128,15 @@ F6.JAC_KSP_BAD = {}
 F6.ROOT_JAC_KSP_BAD = {}
 
 
+F_GRAD = {F: None,
+          F2: None,
+          F2_lucky: None,
+          F3: F_GRAD3,
+          F4_powell: None,
+          F5: None,
+          F6: None}
+
+
 # ----------------------------------------------------------------------------
 # Tests
 # ----------------------------------------------------------------------------
@@ -144,9 +158,10 @@ class TestNonlin:
                 if method in f.JAC_KSP_BAD:
                     continue
 
-                x = func(f, f.xin, method=method, line_search=None,
-                         f_tol=f_tol, maxiter=200, verbose=0)
-                assert_(np.absolute(f(x)).max() < f_tol)
+                for f_grad in [None, F_GRAD[f]]:
+                    x = func(f, f.xin, method=method, line_search=None,
+                             f_tol=f_tol, maxiter=200, Fgradp=f_grad, verbose=0)
+                    assert_(np.absolute(f(x)).max() < f_tol)
 
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
         assert_(np.absolute(f(x)).max() < f_tol)
