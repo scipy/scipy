@@ -141,18 +141,38 @@ class SVDSCommonTests:
     _A_ndim_msg = "array must have ndim <= 2"
     _A_validation_inputs = [
         (np.asarray([[]]), ValueError, _A_empty_msg),
-        (np.asarray([[1, 2], [3, 4]]), ValueError, _A_dtype_msg),
+        (np.asarray([[1, 2], [3, np.NaN]]), ValueError, _A_dtype_msg),
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
 
     @pytest.mark.parametrize("args", _A_validation_inputs)
     def test_svds_input_validation_A(self, args):
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
         A, error_type, message = args
         with pytest.raises(error_type, match=message):
             svds(A, k=1, solver=self.solver)
 
-    def test_svds_diff0_docstring_example(self, k):
-        diff0 = lambda a: np.diff(a, axis=0)
+    @pytest.mark.parametrize("which", ["LM", "SM"])
+    def test_svds_int_A(self, which):
+        A = np.asarray([[1, 2], [3, 4]])
+        if self.solver == 'propack':
+            if not has_propack:
+                pytest.skip("PROPACK not available")
+        A, error_type, message = args
+        if self.solver == 'lobpcg':
+            with pytest.warns(UserWarning, match="The problem size"):
+                res = svds(A, k=1, which=which, solver=self.solver,
+                           random_state=0)
+        else:
+            res = svds(A, k=1, which=which, solver=self.solver,
+                       random_state=0)
+        _check_svds(A, 1, *res, which=which, atol=8e-10)
+
+    def test_svds_diff0_docstring_example(self):
+        def diff0(a):
+            return np.diff(a, axis=0)
         def diff0t(a):
             if a.ndim == 1:
                 a = a[:,np.newaxis]  # Turn 1D into 2D array
