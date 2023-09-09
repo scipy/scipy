@@ -201,7 +201,6 @@ def _strict_check(actual, desired, xp,
     if check_namespace:
         _assert_matching_namespace(actual, desired)
 
-    actual = xp.asarray(actual)
     desired = xp.asarray(desired)
 
     if check_dtype:
@@ -216,6 +215,8 @@ def _strict_check(actual, desired, xp,
                 f"Actual: {actual.shape}\n"
                 f"Desired: {desired.shape}")
         _check_scalar(actual, desired, xp)
+
+    return desired
 
 
 def _assert_matching_namespace(actual, desired):
@@ -259,8 +260,8 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
                     check_shape=True, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
-    _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                  check_dtype=check_dtype, check_shape=check_shape)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_array_equal(actual, desired, err_msg=err_msg)
     elif is_torch(xp):
@@ -275,8 +276,8 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, err_msg='', xp=None):
     if xp is None:
         xp = array_namespace(actual)
-    _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                  check_dtype=check_dtype, check_shape=check_shape)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)
@@ -291,8 +292,8 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                    check_shape=True, err_msg='', verbose=True, xp=None):
     if xp is None:
         xp = array_namespace(actual)
-    _strict_check(actual, desired, xp, check_namespace=check_namespace,
-                  check_dtype=check_dtype, check_shape=check_shape)
+    desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
+                            check_dtype=check_dtype, check_shape=check_shape)
     if is_cupy(xp):
         return xp.testing.assert_array_less(actual, desired,
                                             err_msg=err_msg, verbose=verbose)

@@ -85,7 +85,7 @@ class TestArrayAPI:
                 xp_assert_equal(x, y, **options)
 
         options = dict(check_namespace=False, check_dtype=True, check_shape=False)
-        if x.dtype == y.dtype:
+        if y.dtype.name in str(x.dtype):
             xp_assert_equal(x, y, **options)
         else:
             with pytest.raises(AssertionError, match="dtypes do not match."):
