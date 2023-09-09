@@ -321,7 +321,9 @@ class _ArpackParams:
         if tp not in 'fdFD':
             if np.can_cast(tp, 'f'):
                 tp = 'f'
-            elif tp not in 'dFD':
+            elif tp is np.int64:
+                tp = 'd'
+            else:
                 raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
 
         if v0 is not None:
