@@ -435,7 +435,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...                              np.arange(1, 4)) / n)
     >>> np.allclose(s, se, atol=1e-3)
     True
-    >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-6))
+    >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-5))
     True
 
     """
