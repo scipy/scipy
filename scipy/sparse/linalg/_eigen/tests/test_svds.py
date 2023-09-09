@@ -145,11 +145,36 @@ class SVDSCommonTests:
         ("hi", TypeError, _A_type_msg),
         (np.asarray([[[1., 2.], [3., 4.]]]), ValueError, _A_ndim_msg)]
 
-    #@pytest.mark.parametrize("args", _A_validation_inputs)
-    #def test_svds_input_validation_A(self, args):
-    #    A, error_type, message = args
-    #    with pytest.raises(error_type, match=message):
-    #        svds(A, k=1, solver=self.solver)
+    @pytest.mark.parametrize("args", _A_validation_inputs)
+    def test_svds_input_validation_A(self, args):
+        A, error_type, message = args
+        with pytest.raises(error_type, match=message):
+            svds(A, k=1, solver=self.solver)
+
+    def test_svds_diff0_docstring_example(self, k):
+        diff0 = lambda a: np.diff(a, axis=0)
+        def diff0t(a):
+            if a.ndim == 1:
+                a = a[:,np.newaxis]  # Turn 1D into 2D array
+            d = np.zeros((a.shape[0] + 1, a.shape[1]), dtype=a.dtype)
+            d[0, :] = - a[0, :]
+            d[1:-1, :] = a[0:-1, :] - a[1:, :]
+            d[-1, :] = a[-1, :]
+            return d
+        def diff0_func_aslo_def(n):
+            return LinearOperator(matvec=diff0,
+                                  matmat=diff0,
+                                  rmatvec=diff0t,
+                                  rmatmat=diff0t,
+                                  shape=(n - 1, n))
+        n = 100
+        diff0_func_aslo = diff0_func_aslo_def(n)
+        u, s, _ = svds(diff0_func_aslo, k=3, which='SM')
+        se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
+        ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
+                                     np.arange(1, 4)) / n)
+        assert_allclose(s, se, atol=1e-3)
+        assert_allclose(np.abs(u), np.abs(ue), atol=1e-6)
 
     @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
     def test_svds_input_validation_k_1(self, k):
