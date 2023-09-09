@@ -216,6 +216,7 @@ def _strict_check(actual, desired, xp,
                 f"Desired: {desired.shape}")
         _check_scalar(actual, desired, xp)
 
+    desired = xp.broadcast_to(desired, actual.shape)
     return desired
 
 
