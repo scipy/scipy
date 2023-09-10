@@ -175,18 +175,19 @@ class LinearOperator:
         self.shape = shape
 
     def _init_dtype(self):
-        """Called from subclasses at the end of the __init__ routine.
+        """Determine the dtype from `matvec` by execting it on `int8`.
+
+        In `np.promote_types` hierarchy, the type `int8` is the smallest,
+        so we call `matvec` on `int8` and use the promoted dtype of the output
+        to set the default `dtype` of the `LinearOperator`.
+        We assume that `matmat`, `rmatvec`, and `rmatmat` would result in
+        the same dtype of the output given an `int8` input as `matvec`.
+
+        Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
             v = np.zeros(self.shape[-1], dtype=np.int8)
             self.dtype = np.asarray(self.matvec(v)).dtype
-            # the code below fails
-            #v = np.zeros((self.shape[-1], 1), dtype=np.int8)
-            #self.dtype = np.asarray(self.matmat(v)).dtype
-            #if self.rmatvec is not None:
-            #    v = np.zeros((self.shape[0],), dtype=np.int8)
-            #    rdtype = np.asarray(self.rmatvec(v)).dtype
-            #    self.dtype = np.promote_types(self.dtype, rdtype)
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
