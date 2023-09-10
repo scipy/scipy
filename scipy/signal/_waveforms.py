@@ -706,10 +706,12 @@ def triangular_wave(t, frequency=1.0, amplitude=1.0):
     >>> plt.show()
 
     """
+    
     t = np.asarray(t)
+    
     period = 1.0 / frequency
     
     t_normalized = (t % period) / period  # Normalize time to one period
-    y = amplitude * (1 - 2 * np.abs(t_normalized - 0.5))
+    y = 2 * amplitude * (1 - 2 * np.abs(t_normalized - 0.5))- amplitude  # Triangular waveform with specified amplitude range
     
     return y
