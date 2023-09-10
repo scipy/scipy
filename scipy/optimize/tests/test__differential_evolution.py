@@ -1575,9 +1575,9 @@ class TestDifferentialEvolutionSolver:
         # "MAXCV = 0.".
         assert "MAXCV = 0.414" in result.message
 
-    def test_strategy_func(self):
-        # examines strategy_func by mimicking one of the in-built strategies
-        # and comparing to the actual in-built strategy.
+    def test_strategy_fn(self):
+        # examines ability to customize strategy by mimicking one of the
+        # in-built strategies and comparing to the actual in-built strategy.
         parameter_count = 4
         popsize = 10
         bounds = [(0, 10.)] * parameter_count
@@ -1610,22 +1610,18 @@ class TestDifferentialEvolutionSolver:
             trial = np.where(crossovers, bprime, trial)
             return trial
 
-        # it's important to supply a different 'strategy' keyword to the next
-        # differential_evolution call. If the strategy_func doesn't work this
-        # ensures that the outputs are different and the test will fail.
         solver = DifferentialEvolutionSolver(
             rosen,
             bounds,
             popsize=popsize,
             recombination=recombination,
             mutation=mutation,
-            strategy_func=custom_strategy_fn,
             maxiter=2,
-            strategy='rand1bin',
+            strategy=custom_strategy_fn,
             seed=10,
             polish=False
         )
-        assert solver.strategy_func is custom_strategy_fn
+        assert solver.strategy is custom_strategy_fn
         res = solver.solve()
 
         res2 = differential_evolution(
@@ -1649,5 +1645,5 @@ class TestDifferentialEvolutionSolver:
             differential_evolution(
                 rosen,
                 bounds,
-                strategy_func=custom_strategy_fn
+                strategy=custom_strategy_fn
             )

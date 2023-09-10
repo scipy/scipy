@@ -25,8 +25,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
-                           integrality=None, vectorized=False,
-                           strategy_func=None):
+                           integrality=None, vectorized=False):
     """Finds the global minimum of a multivariate function.
 
     The differential evolution method [1]_ is stochastic in nature. It does
@@ -59,7 +58,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
-    strategy : str, optional
+    strategy : {str, callable}, optional
         The differential evolution strategy to use. Should be one of:
 
             - 'best1bin'
@@ -76,7 +75,24 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best2bin'
 
         The default is 'best1bin'. Strategies that may be
-        implemented are outlined in 'Notes'
+        implemented are outlined in 'Notes'.
+
+        Alternatively the differential evolution strategy can be customized
+        by providing a callable that constructs a trial vector. The callable
+        must have the form
+        ``strategy(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
+
+        .. versionchanged:: 1.12.0
+            Customization of evolution strategy via a callable.
+
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
@@ -255,21 +271,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``'vectorized'``, and when to use ``'workers'``.
 
         .. versionadded:: 1.9.0
-        
-    strategy_func : callable, optional
-        A user provided differential evolution strategy that constructs a trial
-        vector. Must be in the form
-        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
-        where ``candidate`` is an integer specifying which entry of the
-        population is being evolved, ``population`` is an array of shape
-        ``(total_popsize, N)`` containing all the population members, and
-        ``rng`` is the random number generator being used within the solver.
-        ``candidate``  will be in the range ``[0, total_popsize)``.
-        ``strategy_func`` must return a trial vector with shape `(N,)`. The
-        fitness of this trial vector is compared against the fitness of
-        ``population[candidate]``.
-        
-        .. versionadded:: 1.12.0
 
     Returns
     -------
@@ -338,7 +339,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
     the original candidate having index `i`. The user can fully customize the
-    generation of the trial candidates by supplying a ``strategy_func``.
+    generation of the trial candidates by supplying a callable to ``strategy``.
 
     To improve your chances of finding a global minimum use higher `popsize`
     values, with higher `mutation` and (dithering), but lower `recombination`
@@ -467,8 +468,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      constraints=constraints,
                                      x0=x0,
                                      integrality=integrality,
-                                     vectorized=vectorized,
-                                     strategy_func=strategy_func) as solver:
+                                     vectorized=vectorized) as solver:
         ret = solver.solve()
 
     return ret
@@ -500,24 +500,37 @@ class DifferentialEvolutionSolver:
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
-    strategy : str, optional
+    strategy : {str, callable}, optional
         The differential evolution strategy to use. Should be one of:
 
             - 'best1bin'
             - 'best1exp'
+            - 'rand1bin'
             - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
+            - 'rand2bin'
             - 'rand2exp'
             - 'randtobest1bin'
+            - 'randtobest1exp'
             - 'currenttobest1bin'
+            - 'currenttobest1exp'
+            - 'best2exp'
             - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
 
-        The default is 'best1bin'
+        The default is 'best1bin'. Strategies that may be
+        implemented are outlined in 'Notes'.
 
+        Alternatively the differential evolution strategy can be customized
+        by providing a callable that constructs a trial vector. The callable
+        must have the form
+        ``strategy(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
     maxiter : int, optional
         The maximum number of generations over which the entire population is
         evolved. The maximum number of function evaluations (with no polishing)
@@ -678,18 +691,6 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
-    strategy_func : callable, optional
-        A user provided differential evolution strategy that constructs a trial
-        vector. Must be in the form
-        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
-        where ``candidate`` is an integer specifying which entry of the
-        population is being evolved, ``population`` is an array of shape
-        ``(total_popsize, N)`` containing all the population members, and
-        ``rng`` is the random number generator being used within the solver.
-        ``candidate``  will be in the range ``[0, total_popsize)``.
-        ``strategy_func`` must return a trial vector with shape `(N,)`. The
-        fitness of this trial vector is compared against the fitness of
-        ``population[candidate]``.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -716,12 +717,11 @@ class DifferentialEvolutionSolver:
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
                  workers=1, constraints=(), x0=None, *, integrality=None,
-                 vectorized=False, strategy_func=None):
+                 vectorized=False):
 
-        # Note: mutation_func is ignored if strategy_func is provided
-        self.strategy_func = None
-        if callable(strategy_func):
-            self.strategy_func = strategy_func
+        if callable(strategy):
+            # a callable strategy is going to be stored in self.strategy anyway
+            pass
         elif strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
@@ -1633,14 +1633,14 @@ class DifferentialEvolutionSolver:
         """Create a trial vector based on a mutation strategy."""
         rng = self.random_number_generator
 
-        if callable(self.strategy_func):
+        if callable(self.strategy):
             _population = self._scale_parameters(self.population)
             trial = np.array(
-                self.strategy_func(candidate, _population, rng=rng), dtype=float
+                self.strategy(candidate, _population, rng=rng), dtype=float
             )
             if trial.shape != (self.parameter_count,):
                 raise RuntimeError(
-                    "strategy_func must have signature"
+                    "strategy must have signature"
                     " f(candidate: int, population: np.ndarray, rng=None)"
                     " returning an array of shape (N,)"
                 )
