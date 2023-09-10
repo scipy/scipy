@@ -124,7 +124,7 @@ skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
-test-requires = ["pytest", "pytest-cov", "pytest-xdist", "asv", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
+test-requires = ["pytest", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
