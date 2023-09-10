@@ -175,7 +175,7 @@ class LinearOperator:
         self.shape = shape
 
     def _init_dtype(self):
-        """Determine the dtype from `matvec` by execting it on `int8`.
+        """Determine the dtype by execting `matvec` on an `int8` test vector.
 
         In `np.promote_types` hierarchy, the type `int8` is the smallest,
         so we call `matvec` on `int8` and use the promoted dtype of the output
