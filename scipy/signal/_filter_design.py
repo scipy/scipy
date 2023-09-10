@@ -1128,7 +1128,7 @@ def zpk2tf(z, p, k):
     a : ndarray
         Denominator polynomial coefficients.
 
-Examples
+    Examples
     --------
     Find the polynomial representation of a transfer function H(s)
     using its 'zpk' (Zero-Pole-Gain) representation.
