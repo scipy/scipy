@@ -83,9 +83,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``strategy(candidate: int, population: np.ndarray, rng=None)``,
         where ``candidate`` is an integer specifying which entry of the
         population is being evolved, ``population`` is an array of shape
-        ``(total_popsize, N)`` containing all the population members, and
-        ``rng`` is the random number generator being used within the solver.
-        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``(S, N)`` containing all the population members (where S is the
+         total population size), and ``rng`` is the random number generator
+        being used within the solver.
+        ``candidate`` will be in the range ``[0, S)``.
         ``strategy`` must return a trial vector with shape `(N,)`. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
@@ -525,9 +526,10 @@ class DifferentialEvolutionSolver:
         ``strategy(candidate: int, population: np.ndarray, rng=None)``,
         where ``candidate`` is an integer specifying which entry of the
         population is being evolved, ``population`` is an array of shape
-        ``(total_popsize, N)`` containing all the population members, and
-        ``rng`` is the random number generator being used within the solver.
-        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``(S, N)`` containing all the population members (where S is the
+         total population size), and ``rng`` is the random number generator
+        being used within the solver.
+        ``candidate`` will be in the range ``[0, S)``.
         ``strategy`` must return a trial vector with shape `(N,)`. The
         fitness of this trial vector is compared against the fitness of
         ``population[candidate]``.
