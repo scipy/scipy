@@ -178,8 +178,11 @@ class LinearOperator:
         """Called from subclasses at the end of the __init__ routine.
         """
         if self.dtype is None:
-            v = np.zeros((self.shape[-1], 1), dtype=np.int8)
-            self.dtype = np.asarray(self.matmat(v)).dtype
+            v = np.zeros(self.shape[-1], dtype=np.int8)
+            self.dtype = np.asarray(self.matvec(v)).dtype
+            # the code below fails
+            #v = np.zeros((self.shape[-1], 1), dtype=np.int8)
+            #self.dtype = np.asarray(self.matmat(v)).dtype
             #if self.rmatvec is not None:
             #    v = np.zeros((self.shape[0],), dtype=np.int8)
             #    rdtype = np.asarray(self.rmatvec(v)).dtype
