@@ -319,9 +319,8 @@ class _ArpackParams:
             raise ValueError("maxiter must be positive, maxiter=%d" % maxiter)
 
         if tp not in 'fdFD':
-            if np.can_cast(tp, 'f'):
-                tp = 'f'
-            elif np.can_cast(tp, 'd'):
+            # Use `float64` libraties from integer dtypes.
+            if np.can_cast(tp, 'd'):
                 tp = 'd'
             else:
                 raise ValueError("matrix type must be 'f', 'd', 'F', or 'D'")
