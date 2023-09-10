@@ -72,14 +72,20 @@ static double incbcf(double a, double b, double x);
 static double incbd(double a, double b, double x);
 static double pseries(double a, double b, double x);
 
-double incbet(aa, bb, xx)
-double aa, bb, xx;
+double incbet(double aa, double bb, double xx)
 {
     double a, b, t, x, xc, w, y;
     int flag;
 
-    if (aa <= 0.0 || bb <= 0.0)
+    if (aa < 0.0 || bb < 0.0)
 	goto domerr;
+
+    if (aa == 0.0 && bb == 0.0)
+	    return (NPY_NAN);
+
+    if ((aa == 0.0 && bb > 0.0 && npy_isfinite(bb)) ||
+		    (aa > 0.0 && bb == 0.0 && npy_isfinite(aa)))
+	return (1.0);
 
     if ((xx <= 0.0) || (xx >= 1.0)) {
 	if (xx == 0.0)
