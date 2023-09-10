@@ -180,10 +180,10 @@ class LinearOperator:
         if self.dtype is None:
             v = np.zeros((self.shape[-1],), dtype=np.int8)
             self.dtype = np.asarray(self.matvec(v)).dtype
-            if self.rmatvec is not None:
-                v = np.zeros((self.shape[0],), dtype=np.int8)
-                rdtype = np.asarray(self.rmatvec(v)).dtype
-                self.dtype = np.promote_types(self.dtype, rdtype)
+            #if self.rmatvec is not None:
+            #    v = np.zeros((self.shape[0],), dtype=np.int8)
+            #    rdtype = np.asarray(self.rmatvec(v)).dtype
+            #    self.dtype = np.promote_types(self.dtype, rdtype)
 
     def _matmat(self, X):
         """Default matrix-matrix multiplication handler.
