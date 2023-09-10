@@ -193,7 +193,7 @@ class SVDSCommonTests:
         ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
                                      np.arange(1, 4)) / n)
         assert_allclose(s, se, atol=1e-3)
-        assert_allclose(np.abs(u), np.abs(ue), atol=1e-5)
+        assert_allclose(np.abs(u), np.abs(ue), atol=1e-6)
 
     @pytest.mark.parametrize("k", [-1, 0, 3, 4, 5, 1.5, "1"])
     def test_svds_input_validation_k_1(self, k):
