@@ -337,7 +337,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     where the integers :math:`r_0, r_1, r_2, r_3, r_4` are chosen randomly
     from the interval [0, NP) with `NP` being the total population size and
-    the original candidate having index `i`.
+    the original candidate having index `i`. The user can fully customize the
+    generation of the trial candidates by supplying a ``strategy_func``.
 
     To improve your chances of finding a global minimum use higher `popsize`
     values, with higher `mutation` and (dithering), but lower `recombination`
@@ -719,12 +720,12 @@ class DifferentialEvolutionSolver:
 
         # Note: mutation_func is ignored if strategy_func is provided
         self.strategy_func = None
-        if strategy in self._binomial:	
+        if callable(strategy_func):
+            self.strategy_func = strategy_func
+        elif strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
         elif strategy in self._exponential:
             self.mutation_func = getattr(self, self._exponential[strategy])
-        elif callable(strategy_func):
-            self.strategy_func = strategy_func
         else:
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy

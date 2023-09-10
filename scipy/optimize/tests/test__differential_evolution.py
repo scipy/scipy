@@ -1576,22 +1576,78 @@ class TestDifferentialEvolutionSolver:
         assert "MAXCV = 0.414" in result.message
 
     def test_strategy_func(self):
-        bounds = [(-8.0,8.0)] * 2
+        # examines strategy_func by mimicking one of the in-built strategies
+        # and comparing to the actual in-built strategy.
+        parameter_count = 4
+        popsize = 10
+        bounds = [(0, 10.)] * parameter_count
+        total_popsize = parameter_count * popsize
+        mutation = 0.8
+        recombination = 0.7
 
-        def func(x):
-            return abs(x[0]) * abs(x[1])
+        def custom_strategy_fn(candidate, population, rng=None):
+            trial = np.copy(population[candidate])
+            fill_point = rng.choice(4)
 
-        def custom_strategy_fn(candidate, population, rng):
-            t = population[candidate]
-            return [2.0, -1.0]	# Ignore the candidate; just be recognizable.
+            pool = np.arange(total_popsize)
+            rng.shuffle(pool)
 
-        result = differential_evolution(
-            func,
-            bounds=bounds,
-            popsize=5,
+            idxs = []
+            while len(idxs) < 5 and len(pool) > 0:
+                idx = pool[0]
+                pool = pool[1:]
+                if idx != candidate:
+                    idxs.append(idx)
+
+            r0, r1 = idxs[:2]
+
+            bprime = (population[0] + mutation *
+                    (population[r0] - population[r1]))
+
+            crossovers = rng.uniform(size=4)
+            crossovers = crossovers < recombination
+            crossovers[fill_point] = True
+            trial = np.where(crossovers, bprime, trial)
+            return trial
+
+        # it's important to supply a different 'strategy' keyword to the next
+        # differential_evolution call. If the strategy_func doesn't work this
+        # ensures that the outputs are different and the test will fail.
+        solver = DifferentialEvolutionSolver(
+            rosen,
+            bounds,
+            popsize=popsize,
+            recombination=recombination,
+            mutation=mutation,
+            strategy_func=custom_strategy_fn,
             maxiter=2,
-            polish=False,
-            strategy_func=custom_strategy_fn
+            strategy='rand1bin',
+            seed=10,
+            polish=False
         )
-        assert result.success is True
-        assert_equal(result.x, [2.0, -1.0])
+        assert solver.strategy_func is custom_strategy_fn
+        res = solver.solve()
+
+        res2 = differential_evolution(
+            rosen,
+            bounds,
+            mutation=mutation,
+            popsize=popsize,
+            recombination=recombination,
+            maxiter=2,
+            strategy='best1bin',
+            polish=False,
+            seed=10
+        )
+        assert_allclose(res.population, res2.population)
+        assert_allclose(res.x, res2.x)
+
+        def custom_strategy_fn(candidate, population, rng=None):
+            return np.array([1.0, 2.0])
+
+        with pytest.raises(RuntimeError, match="strategy*"):
+            differential_evolution(
+                rosen,
+                bounds,
+                strategy_func=custom_strategy_fn
+            )
