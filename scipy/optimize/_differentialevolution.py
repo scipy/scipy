@@ -257,9 +257,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         .. versionadded:: 1.9.0
         
     strategy_func : callable, optional
-        If a custom strategy function is provided, it will be called instead
-        of the default function in order to mutate and/or recombine solution
-        vectors. It should return a new candidate vector.
+        A user provided differential evolution strategy that constructs a trial
+        vector. Must be in the form
+        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy_func`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
         
         .. versionadded:: 1.12.0
 
@@ -669,10 +677,18 @@ class DifferentialEvolutionSolver:
         ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
-    strategy_func : fn(candidate, population, rng=None)
-        If a custom strategy function is provided, it will be called instead
-        of the default function in order to mutate and/or recombine solution
-        vectors. It should return a new candidate vector.
+    strategy_func : callable, optional
+        A user provided differential evolution strategy that constructs a trial
+        vector. Must be in the form
+        ``strategy_func(candidate: int, population: np.ndarray, rng=None)``,
+        where ``candidate`` is an integer specifying which entry of the
+        population is being evolved, ``population`` is an array of shape
+        ``(total_popsize, N)`` containing all the population members, and
+        ``rng`` is the random number generator being used within the solver.
+        ``candidate``  will be in the range ``[0, total_popsize)``.
+        ``strategy_func`` must return a trial vector with shape `(N,)`. The
+        fitness of this trial vector is compared against the fitness of
+        ``population[candidate]``.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
