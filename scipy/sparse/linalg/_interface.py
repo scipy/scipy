@@ -179,7 +179,7 @@ class LinearOperator:
         """
         if self.dtype is None:
             v = np.zeros((self.shape[-1], 1), dtype=np.int8)
-            self.dtype = np.asarray(self.matmatc(v)).dtype
+            self.dtype = np.asarray(self.matmat(v)).dtype
             #if self.rmatvec is not None:
             #    v = np.zeros((self.shape[0],), dtype=np.int8)
             #    rdtype = np.asarray(self.rmatvec(v)).dtype
