@@ -248,7 +248,7 @@ class _spbase:
 
     def __iter__(self):
         for r in range(self.shape[0]):
-            yield self[r, :]
+            yield self[[r], :]
 
     def _getmaxprint(self):
         """Maximum number of elements to display when printed."""
