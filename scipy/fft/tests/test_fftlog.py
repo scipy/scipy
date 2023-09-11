@@ -2,8 +2,7 @@ import warnings
 import numpy as np
 import pytest
 
-from scipy.fft._fftlog import fht, ifht
-from scipy.fft._fftlog_backend import fhtoffset
+from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 from scipy.conftest import (
     array_api_compatible,

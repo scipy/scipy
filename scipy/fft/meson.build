@@ -5,7 +5,6 @@ python_sources = [
   '_basic_uarray.py',
   '_debug_backends.py',
   '_fftlog.py',
-  '_fftlog_backend.py',
   '_fftlog_uarray.py',
   '_helper.py',
   '_realtransforms.py',
