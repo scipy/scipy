@@ -8,8 +8,8 @@ from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
 from ._ufuncs import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln, gammainc,
-    gammaincc, logit, expit,)  # noqa
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa
+    gammaln, gammainc, gammaincc, logit, expit)  # noqa
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat.array_api_compat"
