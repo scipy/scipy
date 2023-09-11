@@ -82,7 +82,8 @@ def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
 def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
-    """Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
+    """
+    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -146,7 +147,8 @@ def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
 def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
-    """Return multidimensional Discrete Sine Transform along the specified axes.
+    """
+    Return multidimensional Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -210,7 +212,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
 
 def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
           workers=None, orthogonalize=None):
-    """Return multidimensional Inverse Discrete Sine Transform along the specified axes.
+    """
+    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -424,7 +427,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
 def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
-    """Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
+    """
+    Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
     Parameters
     ----------
@@ -638,7 +642,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
 def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
          workers=None, orthogonalize=None):
-    """Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
+    """
+    Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
 
     Parameters
     ----------
