@@ -251,7 +251,8 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
     xp = array_namespace(A)
 
     if not from_uarray and is_numpy(xp):
-        return _fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias, from_uarray=True)
+        return _fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias,
+                                   from_uarray=True)
 
     # size of transform
     n = A.shape[-1]
