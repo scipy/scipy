@@ -8,7 +8,7 @@ from warnings import warn
 
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import issparse, _formats, _spbase, sparray
@@ -21,109 +21,6 @@ from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
 
 
 class _bsr_base(_cs_matrix, _minmax_mixin):
-    """Block Sparse Row format sparse array.
-
-    This can be instantiated in several ways:
-        bsr_array(D, [blocksize=(R,C)])
-            where D is a dense matrix or 2-D ndarray.
-
-        bsr_array(S, [blocksize=(R,C)])
-            with another sparse array S (equivalent to S.tobsr())
-
-        bsr_array((M, N), [blocksize=(R,C), dtype])
-            to construct an empty sparse array with shape (M, N)
-            dtype is optional, defaulting to dtype='d'.
-
-        bsr_array((data, ij), [blocksize=(R,C), shape=(M, N)])
-            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
-
-        bsr_array((data, indices, indptr), [shape=(M, N)])
-            is the standard BSR representation where the block column
-            indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
-            and their corresponding block values are stored in
-            ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
-            supplied, the array dimensions are inferred from the index arrays.
-
-    Attributes
-    ----------
-    dtype : dtype
-        Data type of the array
-    shape : 2-tuple
-        Shape of the array
-    ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-    size
-    data
-        Data array
-    indices
-        BSR format index array
-    indptr
-        BSR format index pointer array
-    blocksize
-    has_sorted_indices : bool
-        Whether indices are sorted
-    has_canonical_format : bool
-    T
-
-
-    Notes
-    -----
-    Sparse arrays can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    **Summary of BSR format**
-
-    The Block Compressed Row (BSR) format is very similar to the Compressed
-    Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
-    sub matrices like the last example below.  Block matrices often arise in
-    vector-valued finite element discretizations. In such cases, BSR is
-    considerably more efficient than CSR and CSC for many sparse arithmetic
-    operations.
-
-    **Blocksize**
-
-    The blocksize (R,C) must evenly divide the shape of the sparse array (M,N).
-    That is, R and C must satisfy the relationship ``M % R = 0`` and
-    ``N % C = 0``.
-
-    If no blocksize is specified, a simple heuristic is applied to determine
-    an appropriate blocksize.
-
-    **Canonical Format**
-
-    In canonical format, there are no duplicate blocks and indices are sorted
-    per row.
-
-    Examples
-    --------
-    >>> from scipy.sparse import bsr_array
-    >>> import numpy as np
-    >>> bsr_array((3, 4), dtype=np.int8).toarray()
-    array([[0, 0, 0, 0],
-           [0, 0, 0, 0],
-           [0, 0, 0, 0]], dtype=int8)
-
-    >>> row = np.array([0, 0, 1, 2, 2, 2])
-    >>> col = np.array([0, 2, 2, 0, 1, 2])
-    >>> data = np.array([1, 2, 3 ,4, 5, 6])
-    >>> bsr_array((data, (row, col)), shape=(3, 3)).toarray()
-    array([[1, 0, 2],
-           [0, 0, 3],
-           [4, 5, 6]])
-
-    >>> indptr = np.array([0, 2, 3, 6])
-    >>> indices = np.array([0, 2, 2, 0, 1, 2])
-    >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
-    >>> bsr_array((data,indices,indptr), shape=(6, 6)).toarray()
-    array([[1, 1, 0, 0, 2, 2],
-           [1, 1, 0, 0, 2, 2],
-           [0, 0, 0, 0, 3, 3],
-           [0, 0, 0, 0, 3, 3],
-           [4, 4, 5, 5, 6, 6],
-           [4, 4, 5, 5, 6, 6]])
-
-    """
     _format = 'bsr'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
@@ -235,7 +132,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.check_format(full_check=False)
 
     def check_format(self, full_check=True):
-        """Check whether the matrix respects the BSR format.
+        """Check whether the array/matrix respects the BSR format.
 
         Parameters
         ----------
@@ -432,13 +329,13 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     ######################
 
     def tobsr(self, blocksize=None, copy=False):
-        """Convert this matrix into Block Sparse Row Format.
+        """Convert this array/matrix into Block Sparse Row Format.
 
         With copy=False, the data/indices may be shared between this
-        matrix and the resultant bsr_array.
+        array/matrix and the resultant bsr_array/bsr_matrix.
 
         If blocksize=(R, C) is provided, it will be used for determining
-        block size of the bsr_array.
+        block size of the bsr_array/bsr_matrix.
         """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
@@ -476,10 +373,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tocoo(self, copy=True):
-        """Convert this matrix to COOrdinate format.
+        """Convert this array/matrix to COOrdinate format.
 
         When copy=False the data array will be shared between
-        this matrix and the resultant coo_matrix.
+        this array/matrix and the resultant coo_array/coo_matrix.
         """
 
         M,N = self.shape
@@ -569,7 +466,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.prune()
 
     def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
+        """Eliminate duplicate array/matrix entries by adding them together
 
         The is an *in place* operation
         """
@@ -602,7 +499,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_canonical_format = True
 
     def sort_indices(self):
-        """Sort the indices of this matrix *in place*
+        """Sort the indices of this array/matrix *in place*
         """
         if self.has_sorted_indices:
             return
@@ -615,7 +512,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         self.has_sorted_indices = True
 
     def prune(self):
-        """ Remove empty space after all non-zero elements.
+        """Remove empty space after all non-zero elements.
         """
 
         R,C = self.blocksize
@@ -732,11 +629,215 @@ def isspmatrix_bsr(x):
 
 # This namespace class separates array from matrix with isinstance
 class bsr_array(_bsr_base, sparray):
-    pass
+    """
+    Block Sparse Row format sparse array.
 
-bsr_array.__doc__ = _bsr_base.__doc__
+    This can be instantiated in several ways:
+        bsr_array(D, [blocksize=(R,C)])
+            where D is a 2-D ndarray.
+
+        bsr_array(S, [blocksize=(R,C)])
+            with another sparse array or matrix S (equivalent to S.tobsr())
+
+        bsr_array((M, N), [blocksize=(R,C), dtype])
+            to construct an empty sparse array with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
+
+        bsr_array((data, ij), [blocksize=(R,C), shape=(M, N)])
+            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
+
+        bsr_array((data, indices, indptr), [shape=(M, N)])
+            is the standard BSR representation where the block column
+            indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
+            and their corresponding block values are stored in
+            ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
+            supplied, the array dimensions are inferred from the index arrays.
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the array
+    shape : 2-tuple
+        Shape of the array
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        BSR format data array of the array
+    indices
+        BSR format index array of the array
+    indptr
+        BSR format index pointer array of the array
+    blocksize
+        Block size
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+    T
+
+    Notes
+    -----
+    Sparse arrays can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    **Summary of BSR format**
+
+    The Block Sparse Row (BSR) format is very similar to the Compressed
+    Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
+    sub matrices like the last example below. Such sparse block matrices often
+    arise in vector-valued finite element discretizations. In such cases, BSR is
+    considerably more efficient than CSR and CSC for many sparse arithmetic
+    operations.
+
+    **Blocksize**
+
+    The blocksize (R,C) must evenly divide the shape of the sparse array (M,N).
+    That is, R and C must satisfy the relationship ``M % R = 0`` and
+    ``N % C = 0``.
+
+    If no blocksize is specified, a simple heuristic is applied to determine
+    an appropriate blocksize.
+
+    **Canonical Format**
+
+    In canonical format, there are no duplicate blocks and indices are sorted
+    per row.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import bsr_array
+    >>> bsr_array((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
+
+    >>> row = np.array([0, 0, 1, 2, 2, 2])
+    >>> col = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3 ,4, 5, 6])
+    >>> bsr_array((data, (row, col)), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
+
+    >>> indptr = np.array([0, 2, 3, 6])
+    >>> indices = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
+    >>> bsr_array((data,indices,indptr), shape=(6, 6)).toarray()
+    array([[1, 1, 0, 0, 2, 2],
+           [1, 1, 0, 0, 2, 2],
+           [0, 0, 0, 0, 3, 3],
+           [0, 0, 0, 0, 3, 3],
+           [4, 4, 5, 5, 6, 6],
+           [4, 4, 5, 5, 6, 6]])
+
+    """
+
 
 class bsr_matrix(spmatrix, _bsr_base):
-    pass
+    """
+    Block Sparse Row format sparse matrix.
 
-bsr_matrix.__doc__ = _array_doc_to_matrix(_bsr_base.__doc__)
+    This can be instantiated in several ways:
+        bsr_matrix(D, [blocksize=(R,C)])
+            where D is a 2-D ndarray.
+
+        bsr_matrix(S, [blocksize=(R,C)])
+            with another sparse array or matrix S (equivalent to S.tobsr())
+
+        bsr_matrix((M, N), [blocksize=(R,C), dtype])
+            to construct an empty sparse matrix with shape (M, N)
+            dtype is optional, defaulting to dtype='d'.
+
+        bsr_matrix((data, ij), [blocksize=(R,C), shape=(M, N)])
+            where ``data`` and ``ij`` satisfy ``a[ij[0, k], ij[1, k]] = data[k]``
+
+        bsr_matrix((data, indices, indptr), [shape=(M, N)])
+            is the standard BSR representation where the block column
+            indices for row i are stored in ``indices[indptr[i]:indptr[i+1]]``
+            and their corresponding block values are stored in
+            ``data[ indptr[i]: indptr[i+1] ]``. If the shape parameter is not
+            supplied, the matrix dimensions are inferred from the index arrays.
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+    size
+    data
+        BSR format data array of the matrix
+    indices
+        BSR format index array of the matrix
+    indptr
+        BSR format index pointer array of the matrix
+    blocksize
+        Block size
+    has_sorted_indices : bool
+        Whether indices are sorted
+    has_canonical_format : bool
+    T
+
+    Notes
+    -----
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    **Summary of BSR format**
+
+    The Block Sparse Row (BSR) format is very similar to the Compressed
+    Sparse Row (CSR) format. BSR is appropriate for sparse matrices with dense
+    sub matrices like the last example below. Such sparse block matrices often
+    arise in vector-valued finite element discretizations. In such cases, BSR is
+    considerably more efficient than CSR and CSC for many sparse arithmetic
+    operations.
+
+    **Blocksize**
+
+    The blocksize (R,C) must evenly divide the shape of the sparse matrix (M,N).
+    That is, R and C must satisfy the relationship ``M % R = 0`` and
+    ``N % C = 0``.
+
+    If no blocksize is specified, a simple heuristic is applied to determine
+    an appropriate blocksize.
+
+    **Canonical Format**
+
+    In canonical format, there are no duplicate blocks and indices are sorted
+    per row.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import bsr_matrix
+    >>> bsr_matrix((3, 4), dtype=np.int8).toarray()
+    array([[0, 0, 0, 0],
+           [0, 0, 0, 0],
+           [0, 0, 0, 0]], dtype=int8)
+
+    >>> row = np.array([0, 0, 1, 2, 2, 2])
+    >>> col = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3 ,4, 5, 6])
+    >>> bsr_matrix((data, (row, col)), shape=(3, 3)).toarray()
+    array([[1, 0, 2],
+           [0, 0, 3],
+           [4, 5, 6]])
+
+    >>> indptr = np.array([0, 2, 3, 6])
+    >>> indices = np.array([0, 2, 2, 0, 1, 2])
+    >>> data = np.array([1, 2, 3, 4, 5, 6]).repeat(4).reshape(6, 2, 2)
+    >>> bsr_matrix((data,indices,indptr), shape=(6, 6)).toarray()
+    array([[1, 1, 0, 0, 2, 2],
+           [1, 1, 0, 0, 2, 2],
+           [0, 0, 0, 0, 3, 3],
+           [0, 0, 0, 0, 3, 3],
+           [4, 4, 5, 5, 6, 6],
+           [4, 4, 5, 5, 6, 6]])
+
+    """
+
