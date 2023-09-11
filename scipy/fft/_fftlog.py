@@ -201,7 +201,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
         # A(k) = A_q(k) (k/k_c)^{-q} (k_c r_c)^{-q}
         A *= xp.exp(-bias*((j - j_c)*dln + offset))
 
-    return copy(A)
+    return A
 
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
@@ -251,8 +251,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
     xp = array_namespace(A)
 
     if not from_uarray and is_numpy(xp):
-        return copy(_fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias,
-                                        from_uarray=True))
+        return _fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias, from_uarray=True)
 
     # size of transform
     n = A.shape[-1]
