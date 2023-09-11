@@ -74,17 +74,15 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'best2exp'
             - 'best2bin'
 
-        The default is 'best1bin'. Strategies that may be
-        implemented are outlined in 'Notes'.
-
-        Alternatively the differential evolution strategy can be customized
-        by providing a callable that constructs a trial vector. The callable
-        must have the form
-        ``strategy(candidate: int, population: np.ndarray, rng=None)``,
+        The default is 'best1bin'. Strategies that may be implemented are
+        outlined in 'Notes'.
+        Alternatively the differential evolution strategy can be customized by
+        providing a callable that constructs a trial vector. The callable must
+        have the form ``strategy(candidate: int, population: np.ndarray, rng=None)``,
         where ``candidate`` is an integer specifying which entry of the
         population is being evolved, ``population`` is an array of shape
         ``(S, N)`` containing all the population members (where S is the
-         total population size), and ``rng`` is the random number generator
+        total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
         ``strategy`` must return a trial vector with shape `(N,)`. The
@@ -527,7 +525,7 @@ class DifferentialEvolutionSolver:
         where ``candidate`` is an integer specifying which entry of the
         population is being evolved, ``population`` is an array of shape
         ``(S, N)`` containing all the population members (where S is the
-         total population size), and ``rng`` is the random number generator
+        total population size), and ``rng`` is the random number generator
         being used within the solver.
         ``candidate`` will be in the range ``[0, S)``.
         ``strategy`` must return a trial vector with shape `(N,)`. The
