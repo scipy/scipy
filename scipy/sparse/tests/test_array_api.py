@@ -555,5 +555,9 @@ def test_isspmatrix_format(fmt, fn):
 )
 def test_iter(sparse_format, expected_row_format):
     sparse_array = getattr(scipy.sparse, sparse_format + "_array")(A)
+    sparse_matrix = getattr(scipy.sparse, sparse_format + "_matrix")(A)
     for row in sparse_array:
+        assert row.format == expected_row_format
+
+    for row in sparse_matrix:
         assert row.format == expected_row_format
