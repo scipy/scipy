@@ -18,8 +18,8 @@ from scipy.conftest import (
 from scipy._lib._array_api import(
     size,
     _assert_matching_namespace,
-    assert_close as xp_assert_close,
-    assert_equal as xp_assert_equal
+    xp_assert_close,
+    xp_assert_equal
 )
 from scipy import fft
 

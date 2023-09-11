@@ -335,14 +335,3 @@ def cov(x, *, xp=None):
     c /= fact
     axes = tuple(axis for axis, length in enumerate(c.shape) if length == 1)
     return xp.squeeze(c, axis=axes)
-
-
-def _assert_matching_namespace(actual, expected):
-    expected_space = array_api_compat.array_namespace(expected)
-    if isinstance(actual, tuple):
-        for arr in actual:
-            arr_space = array_api_compat.array_namespace(arr)
-            assert arr_space == expected_space
-    else:
-        actual_space = array_api_compat.array_namespace(actual)
-        assert actual_space == expected_space

@@ -9,7 +9,7 @@ from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api_gpu
 )
-from scipy._lib._array_api import copy, assert_close as xp_assert_close
+from scipy._lib._array_api import copy, xp_assert_close
 
 import math
 SQRT_2 = math.sqrt(2)

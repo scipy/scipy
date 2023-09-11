@@ -16,8 +16,8 @@ from scipy._lib._array_api import (
     _assert_matching_namespace,
     array_namespace,
     size,
-    assert_close as xp_assert_close,
-    assert_equal as xp_assert_equal
+    xp_assert_close,
+    xp_assert_equal
 )
 
 
