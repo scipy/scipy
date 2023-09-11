@@ -177,8 +177,8 @@ def fht(a, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
     xp = array_namespace(a)
 
     if not from_uarray and is_numpy(xp):
-        return copy(_fftlog_uarray.fht(a, dln, mu, offset=offset, bias=bias,
-                                       from_uarray=True))
+        return _fftlog_uarray.fht(a, dln, mu, offset=offset, bias=bias,
+                                  from_uarray=True)
 
     # size of transform
     n = a.shape[-1]
@@ -275,7 +275,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0, *, from_uarray=False):
         # a(r) = a_q(r) (r/r_c)^{q}
         a /= xp.exp(-bias*(j - j_c)*dln)
 
-    return copy(a)
+    return a
 
 
 def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
