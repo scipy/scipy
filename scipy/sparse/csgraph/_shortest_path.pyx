@@ -128,6 +128,9 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
@@ -267,6 +270,11 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Notes
+    -----
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -489,6 +497,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -972,6 +983,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
@@ -1205,6 +1219,9 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
