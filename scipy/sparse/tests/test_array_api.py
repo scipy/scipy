@@ -547,3 +547,13 @@ def test_isspmatrix_format(fmt, fn):
     # ndarray and array_likes are not sparse
     assert not fn(a.todense())
     assert not fn(m.todense())
+
+
+@pytest.mark.parametrize(
+    "sparse_format, expected_row_format",
+    [("csr", "csr"), ("csc", "csr"), ("dok", "dok"), ("lil", "lil")]
+)
+def test_iter(sparse_format, expected_row_format):
+    sparse_array = getattr(scipy.sparse, sparse_format + "_array")(A)
+    for row in sparse_array:
+        assert row.format == expected_row_format
