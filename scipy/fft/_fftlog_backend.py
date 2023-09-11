@@ -3,6 +3,8 @@ from warnings import warn
 from ._basic import rfft, irfft
 from ..special import loggamma, poch
 
+from scipy._lib._array_api import array_namespace, copy
+
 __all__ = [
     'fht', 'ifht',
     'fhtoffset',
@@ -15,52 +17,56 @@ LN_2 = np.log(2)
 
 def fht(a, dln, mu, offset=0.0, bias=0.0):
 
+    xp = array_namespace(a)
+
     # size of transform
-    n = np.shape(a)[-1]
+    n = a.shape[-1]
 
     # bias input array
     if bias != 0:
         # a_q(r) = a(r) (r/r_c)^{-q}
         j_c = (n-1)/2
-        j = np.arange(n)
-        a = a * np.exp(-bias*(j - j_c)*dln)
+        j = xp.arange(n, dtype=xp.float64)
+        a = a * xp.exp(-bias*(j - j_c)*dln)
 
     # compute FHT coefficients
-    u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
+    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias))
 
     # transform
-    A = _fhtq(a, u)
+    A = _fhtq(a, u, xp=xp)
 
     # bias output array
     if bias != 0:
         # A(k) = A_q(k) (k/k_c)^{-q} (k_c r_c)^{-q}
-        A *= np.exp(-bias*((j - j_c)*dln + offset))
+        A *= xp.exp(-bias*((j - j_c)*dln + offset))
 
     return A
 
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
+    xp = array_namespace(A)
+
     # size of transform
-    n = np.shape(A)[-1]
+    n = A.shape[-1]
 
     # bias input array
     if bias != 0:
         # A_q(k) = A(k) (k/k_c)^{q} (k_c r_c)^{q}
         j_c = (n-1)/2
-        j = np.arange(n)
-        A = A * np.exp(bias*((j - j_c)*dln + offset))
+        j = xp.arange(n, dtype=xp.float64)
+        A = A * xp.exp(bias*((j - j_c)*dln + offset))
 
     # compute FHT coefficients
-    u = fhtcoeff(n, dln, mu, offset=offset, bias=bias)
+    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias))
 
     # transform
-    a = _fhtq(A, u, inverse=True)
+    a = _fhtq(A, u, inverse=True, xp=xp)
 
     # bias output array
     if bias != 0:
         # a(r) = a_q(r) (r/r_c)^{q}
-        a /= np.exp(-bias*(j - j_c)*dln)
+        a /= xp.exp(-bias*(j - j_c)*dln)
 
     return a
 
@@ -148,7 +154,7 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     .. [1] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
     """
-
+    
     lnkr, q = initial, bias
 
     xp = (mu+1+q)/2
@@ -156,30 +162,32 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     y = np.pi/(2*dln)
     zp = loggamma(xp + 1j*y)
     zm = loggamma(xm + 1j*y)
-    arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/np.pi
+    arg = (np.log(2) - lnkr)/dln + (zp.imag + zm.imag)/np.pi
     return lnkr + (arg - np.round(arg))*dln
 
 
-def _fhtq(a, u, inverse=False):
+def _fhtq(a, u, inverse=False, *, xp=None):
     """Compute the biased fast Hankel transform.
 
     This is the basic FFTLog routine.
     """
+    if xp is None:
+        xp = np
 
     # size of transform
-    n = np.shape(a)[-1]
+    n = a.shape[-1]
 
     # check for singular transform or singular inverse transform
-    if np.isinf(u[0]) and not inverse:
+    if xp.isinf(u[0]) and not inverse:
         warn('singular transform; consider changing the bias')
         # fix coefficient to obtain (potentially correct) transform anyway
-        u = u.copy()
+        u = copy(u)
         u[0] = 0
     elif u[0] == 0 and inverse:
         warn('singular inverse transform; consider changing the bias')
         # fix coefficient to obtain (potentially correct) inverse anyway
-        u = u.copy()
-        u[0] = np.inf
+        u = copy(u)
+        u[0] = xp.inf
 
     # biased fast Hankel transform via real FFT
     A = rfft(a, axis=-1)
@@ -188,7 +196,7 @@ def _fhtq(a, u, inverse=False):
         A *= u
     else:
         # backward transform
-        A /= u.conj()
+        A /= xp.conj(u)
     A = irfft(A, n, axis=-1)
     A = A[..., ::-1]
 

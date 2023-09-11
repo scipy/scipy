@@ -3,16 +3,17 @@ import numpy as np
 import pytest
 
 from scipy.fft._fftlog import fht, ifht
-from scipy.fft._fftlog_np import fhtoffset
+from scipy.fft._fftlog_backend import fhtoffset
 from scipy.special import poch
 from scipy.conftest import (
     array_api_compatible,
-    skip_if_array_api_gpu
+    skip_if_array_api_backend
 )
 from scipy._lib._array_api import assert_close
 
 
-@skip_if_array_api_gpu
+# https://github.com/pytorch/pytorch/issues/59786
+@skip_if_array_api_backend('torch')
 @array_api_compatible
 def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
@@ -90,7 +91,8 @@ def test_fht_agrees_with_fftlog(xp):
     assert_close(ours, theirs)
 
 
-@skip_if_array_api_gpu
+# https://github.com/pytorch/pytorch/issues/59786
+@skip_if_array_api_backend('torch')
 @array_api_compatible
 @pytest.mark.parametrize('optimal', [True, False])
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
@@ -112,7 +114,8 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     assert_close(a, a_)
 
 
-@skip_if_array_api_gpu
+# https://github.com/pytorch/pytorch/issues/59786
+@skip_if_array_api_backend('torch')
 @array_api_compatible
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
@@ -147,7 +150,8 @@ def test_fht_special_cases(xp):
         assert record, 'ifht did not warn about a singular transform'
 
 
-@skip_if_array_api_gpu
+# https://github.com/pytorch/pytorch/issues/59786
+@skip_if_array_api_backend('torch')
 @array_api_compatible
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_exact(n, xp):

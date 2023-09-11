@@ -5,9 +5,8 @@ The implementation closely follows the Fortran code of Hamilton (2000).
 added: 14/11/2020 Nicolas Tessore <n.tessore@ucl.ac.uk>
 """
 
-import numpy as np
-from scipy._lib._array_api import array_namespace
-from . import _fftlog_multimethods
+from scipy._lib._array_api import array_namespace, copy
+from . import _fftlog_uarray
 
 __all__ = ['fht', 'ifht']
 
@@ -167,9 +166,8 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
 
     '''
     xp = array_namespace(a)
-    a = np.asarray(a)
-    b = _fftlog_multimethods.fht(a, dln, mu, offset=offset, bias=bias)
-    return xp.asarray(b.copy())
+    b = _fftlog_uarray.fht(a, dln, mu, offset=offset, bias=bias)
+    return xp.asarray(copy(b))
 
 
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
@@ -217,6 +215,5 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     See `fht` for further details.
     """
     xp = array_namespace(A)
-    A = np.asarray(A)
-    B = _fftlog_multimethods.ifht(A, dln, mu, offset=offset, bias=bias)
-    return xp.asarray(B.copy())
+    B = _fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias)
+    return xp.asarray(copy(B))
