@@ -173,8 +173,8 @@ def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
         If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
         If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
         ``s[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+        If any element of `shape` is -1, the size of the corresponding dimension
+        of `x` is used.
     axes : int or array_like of ints or None, optional
         Axes over which the DST is computed. If not given, the last ``len(s)``
         axes are used, or all axes if `s` is also not specified.
@@ -600,15 +600,15 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(2n+1)}{2N}\right)
 
-    If ``orthogonalize=True``, ``y[-1]`` is divided :math:`\sqrt{2}` which,
-    when combined with ``norm="ortho"``, makes the corresponding matrix of
+    If ``orthogonalize=True``, ``y[-1]`` is divided :math:`\sqrt{2}` which, when
+    combined with ``norm="ortho"``, makes the corresponding matrix of
     coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
     There are several definitions of the DST-III, we use the following (for
-    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1`
-    and even around :math:`n=N-1`
+    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1` and
+    even around :math:`n=N-1`
 
     .. math::
 
@@ -620,14 +620,14 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     of coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse
-    of the orthonormalized DST-II.
+    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse of the
+    orthonormalized DST-II.
 
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
-    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5`
-    and even around :math:`n=N-0.5`
+    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5` and
+    even around :math:`n=N-0.5`
 
     .. math::
 
@@ -636,8 +636,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
     ``orthogonalize`` has no effect here, as the DST-IV matrix is already
     orthogonal up to a scale factor of ``2N``.
 
-    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`.
-    The orthonormalized DST-IV is exactly its own inverse.
+    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`. The
+    orthonormalized DST-IV is exactly its own inverse.
 
     References
     ----------

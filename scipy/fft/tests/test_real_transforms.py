@@ -51,8 +51,8 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize,
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("overwrite_x", [True, False])
-def test_identity_1d_overwrite(forward, backward, type, dtype, axis,
-                               norm, overwrite_x):
+def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
+                               overwrite_x):
     # Test the identity f^-1(f(x)) == x
     x = np.random.rand(7, 8).astype(dtype)
     x_orig = x.copy()
@@ -86,8 +86,8 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis,
                          ])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("orthogonalize", [False, True])
-def test_identity_nd(forward, backward, type, shape, axes, norm, orthogonalize,
-                     xp):
+def test_identity_nd(forward, backward, type, shape, axes, norm,
+                     orthogonalize, xp):
     # Test the identity f^-1(f(x)) == x
 
     x = xp.asarray(np.random.random(shape))

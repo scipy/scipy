@@ -4,9 +4,7 @@ import multiprocessing
 import numpy as np
 import pytest
 from numpy.random import random
-from numpy.testing import (
-    assert_array_almost_equal, assert_allclose
-)
+from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
 import scipy.fft as fft
 from scipy.conftest import (
@@ -392,9 +390,9 @@ class TestFFT1D:
          np.complex64, np.complex128, np.clongdouble])
 @pytest.mark.parametrize("order", ["F", 'non-contiguous'])
 @pytest.mark.parametrize(
-    "fft",
-    [fft.fft, fft.fft2, fft.fftn,
-     fft.ifft, fft.ifft2, fft.ifftn])
+        "fft",
+        [fft.fft, fft.fft2, fft.fftn,
+         fft.ifft, fft.ifft2, fft.ifftn])
 def test_fft_with_order(dtype, order, fft):
     # Check that FFT/IFFT produces identical results for C, Fortran and
     # non contiguous arrays

@@ -106,8 +106,8 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     terms. The symmetry is highest when `n` is a power of 2, and the transform
     is therefore most efficient for these sizes. For poorly factorizable sizes,
     `scipy.fft` uses Bluestein's algorithm [2]_ and so is never worse than
-    O(`n` log `n`). Further performance improvements may be seen by
-    zero-padding the input using `next_fast_len`.
+    O(`n` log `n`). Further performance improvements may be seen by zero-padding
+    the input using `next_fast_len`.
 
     If ``x`` is a 1d array, then the `fft` is equivalent to ::
 
@@ -346,8 +346,8 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     Notes
     -----
     When the DFT is computed for purely real input, the output is
-    Hermitian-symmetric, i.e., the negative frequency terms are just the
-    complex conjugates of the corresponding positive-frequency terms, and the
+    Hermitian-symmetric, i.e., the negative frequency terms are just the complex
+    conjugates of the corresponding positive-frequency terms, and the
     negative-frequency terms are therefore redundant. This function does not
     compute the negative frequency terms, and the length of the transformed
     axis of the output is therefore ``n//2 + 1``.
@@ -1224,8 +1224,8 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Along any axis, if the shape indicated by `s` is smaller than that of
         the input, the input is cropped. If it is larger, the input is padded
         with zeros. If `s` is not given, the shape of the input along the axes
-        specified by axes is used. Except for the last axis which is taken to
-        be ``2*(m-1)``, where ``m`` is the length of the input along that axis.
+        specified by axes is used. Except for the last axis which is taken to be
+        ``2*(m-1)``, where ``m`` is the length of the input along that axis.
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
@@ -1382,8 +1382,8 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
         Along any axis, if the shape indicated by `s` is smaller than that of
         the input, the input is cropped. If it is larger, the input is padded
         with zeros. If `s` is not given, the shape of the input along the axes
-        specified by axes is used. Except for the last axis which is taken to
-        be ``2*(m-1)`` where ``m`` is the length of the input along that axis.
+        specified by axes is used. Except for the last axis which is taken to be
+        ``2*(m-1)`` where ``m`` is the length of the input along that axis.
     axes : sequence of ints, optional
         Axes over which to compute the inverse FFT. If not given, the last
         `len(s)` axes are used, or all axes if `s` is also not specified.
