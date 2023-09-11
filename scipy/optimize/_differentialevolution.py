@@ -449,6 +449,37 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([0., 0.]), 4.440892098500626e-16)
 
+    The following custom strategy function mimics 'best1bin':
+
+    >>> def custom_strategy_fn(candidate, population, rng=None):
+    ...     parameter_count = population.shape(-1)
+    ...     mutation, recombination = 0.7, 0.9
+    ...     trial = np.copy(population[candidate])
+    ...     fill_point = rng.choice(parameter_count)
+    ...
+    ...     pool = np.arange(len(population))
+    ...     rng.shuffle(pool)
+    ...
+    ...     # two unique random numbers that aren't the same, and
+    ...     # aren't equal to candidate.
+    ...     idxs = []
+    ...     while len(idxs) < 2 and len(pool) > 0:
+    ...         idx = pool[0]
+    ...         pool = pool[1:]
+    ...         if idx != candidate:
+    ...             idxs.append(idx)
+    ...
+    ...     r0, r1 = idxs[:2]
+    ...
+    ...     bprime = (population[0] + mutation *
+    ...               (population[r0] - population[r1]))
+    ...
+    ...     crossovers = rng.uniform(size=parameter_count)
+    ...     crossovers = crossovers < recombination
+    ...     crossovers[fill_point] = True
+    ...     trial = np.where(crossovers, bprime, trial)
+    ...     return trial
+
     """
 
     # using a context manager means that any created Pool objects are

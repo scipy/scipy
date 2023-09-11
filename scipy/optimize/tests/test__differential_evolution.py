@@ -1587,13 +1587,13 @@ class TestDifferentialEvolutionSolver:
 
         def custom_strategy_fn(candidate, population, rng=None):
             trial = np.copy(population[candidate])
-            fill_point = rng.choice(4)
+            fill_point = rng.choice(parameter_count)
 
             pool = np.arange(total_popsize)
             rng.shuffle(pool)
 
             idxs = []
-            while len(idxs) < 5 and len(pool) > 0:
+            while len(idxs) < 2 and len(pool) > 0:
                 idx = pool[0]
                 pool = pool[1:]
                 if idx != candidate:
@@ -1604,7 +1604,7 @@ class TestDifferentialEvolutionSolver:
             bprime = (population[0] + mutation *
                     (population[r0] - population[r1]))
 
-            crossovers = rng.uniform(size=4)
+            crossovers = rng.uniform(size=parameter_count)
             crossovers = crossovers < recombination
             crossovers[fill_point] = True
             trial = np.where(crossovers, bprime, trial)
