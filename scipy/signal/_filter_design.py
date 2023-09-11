@@ -1128,7 +1128,7 @@ def zpk2tf(z, p, k):
     a : ndarray
         Denominator polynomial coefficients.
 
-Examples
+    Examples
     --------
     Find the polynomial representation of a transfer function H(s)
     using its 'zpk' (Zero-Pole-Gain) representation.
@@ -1146,12 +1146,6 @@ Examples
     >>> zpk2tf(z, p, k)
     (   array([  5.,    -40.,   60.]), 
         array([  1.,    -9. ,   8. ]))
-    
-    .. math::
-            
-        H(z) = \frac
-        { (5s^2 - 40s + 60) }
-        { ( s^2 -  9s +  8) }
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
@@ -1244,11 +1238,6 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     >>> tf2sos([1, -3.5, -2], [1, 3, -15, -19, 30], analog=True)
     (   array([[ 0. ,   0. ,   1. ,   1. ,   2. ,  -15. ],
                [ 1. ,  -3.5,  -2. ,   1. ,   1. ,  -2.  ]])
-
-    .. math::
-    
-        H(s) = \frac{ 1 }{ s^2 + 2s - 15 } * 
-               \frac{ s^2 - 3.5s - 2 }{ s^2 + s^2 -2 }
     """
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
@@ -1279,23 +1268,13 @@ def sos2tf(sos):
     --------
     Find the polynomial representation of the transfer function H(s) 
     using its 'sos' (second-order sections).
-
-    .. math::
-    
-        H(s) = \frac{ 0.5s + 1 }{ s^2 + 2s - 15 } * \frac{ s^2 - 7s - 2 }{ s^3 + s^2 -2 }
-      
+   
     >>> from scipy.signal import sos2tf
     >>> from scipy import signal
     >>> sos = signal.ellip(1, 0.001, 50, 0.1, output='sos')
     >>> sos2tf(sos)
     (   array([ 0.9125,  0.9125,  0. ])
         array([ 1.    ,  0.8251,  0. ])
-
-    .. math::
-    
-        H(s) = \frac
-        { 0.9125s^2 + 0.9125s }
-        { s^2 + 0.8251s }   
     """
     sos = np.asarray(sos)
     result_type = sos.dtype
@@ -2827,12 +2806,6 @@ def lp2lp_zpk(z, p, k, wo=1.0):
     (   array([ 2.8,    0.8.  ]), 
         array([ 2. ,    5.2   ]), 
         0.8)
-
-    .. math::
-            
-        H(z) = 0.8 \frac
-        { (s - 2.8)(s - 0.8) }
-        { (s - 2)(s - 5.2) }
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2910,12 +2883,6 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     (   array([ -0.0923 - 0.1384j , -0.3370 + 0.5393j ])
         array([ -0.6              , -0.15             ])
         8.5)
-
-    .. math::
-            
-        H(z) = 8.5 \frac
-        { (s + 0.0923 + 0.1384j)(s + 0.337 - 0.5393j) }
-        { (s + 0.6)(s + 0.15) }
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -3001,12 +2968,6 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     (   array([ 74.995  + 30.001j ,  74.995 - 30.001j , 0.0044 - 0.001j ,  0.0044   + 0.001j ])
         array([ 104.996           , -0.001            , 0.0036          , -239.998           ])
         0.8)
-
-    .. math::
-            
-        H(z) = 0.8 \frac
-        { (s - 75  - 30j)(s - 75  + 30j)(s - 0.0044  + 0.001j)(s - 0.0044  - 0.001j) }
-        { (s - 105)(s + 0.001)(s - 0.0036)(s + 234) }
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -3102,12 +3063,6 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     (   array([ 0.+0.5j ,    0.+0.5j ,    0.-0.5j,     0.-0.5j ])
         array([ 14.2681 ,   -0.0250  ,    0.01752,    -9.9749  ])
         -12.8571 )
-
-    .. math::
-            
-        H(z) = -12.85 \frac
-        { (s - 0.5j)(s - 0.5j)(s + 0.5j)(s + 0.5j) }
-        { (s - 14.26)(s + 0.025)(s - 0.017)(s + 9.97) }
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
