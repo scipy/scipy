@@ -18,7 +18,7 @@ from scipy.conftest import (
 from scipy._lib._array_api import(
     size,
     _assert_matching_namespace,
-    assert_close,
+    assert_close as xp_assert_close,
     assert_equal as xp_assert_equal
 )
 from scipy import fft
@@ -345,12 +345,12 @@ class TestFFTShift:
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
         y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
-        assert_close(fft.fftshift(x), y)
-        assert_close(fft.ifftshift(y), x)
+        xp_assert_close(fft.fftshift(x), y)
+        xp_assert_close(fft.ifftshift(y), x)
         x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1])
         y = xp.asarray([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4])
-        assert_close(fft.fftshift(x), y)
-        assert_close(fft.ifftshift(y), x)
+        xp_assert_close(fft.fftshift(x), y)
+        xp_assert_close(fft.ifftshift(y), x)
 
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -358,7 +358,7 @@ class TestFFTShift:
     def test_inverse(self, xp):
         for n in [1, 4, 9, 100, 211]:
             x = xp.asarray(np.random.random((n,)))
-            assert_close(fft.ifftshift(fft.fftshift(x)), x)
+            xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -366,15 +366,13 @@ class TestFFTShift:
     def test_axes_keyword(self, xp):
         freqs = xp.asarray([[0, 1, 2], [3, 4, -4], [-3, -2, -1]])
         shifted = xp.asarray([[-1, -3, -2], [2, 0, 1], [-4, 3, 4]])
-        assert_close(fft.fftshift(freqs, axes=(0, 1)), shifted)
-        assert_close(fft.fftshift(freqs, axes=0),
-                     fft.fftshift(freqs, axes=(0,)))
-        assert_close(fft.ifftshift(shifted, axes=(0, 1)), freqs)
-        assert_close(fft.ifftshift(shifted, axes=0),
-                     fft.ifftshift(shifted, axes=(0,)))
-
-        assert_close(fft.fftshift(freqs), shifted)
-        assert_close(fft.ifftshift(shifted), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shifted)
+        xp_assert_close(fft.fftshift(freqs, axes=0), fft.fftshift(freqs, axes=(0,)))
+        xp_assert_close(fft.ifftshift(shifted, axes=(0, 1)), freqs)
+        xp_assert_close(fft.ifftshift(shifted, axes=0),
+                        fft.ifftshift(shifted, axes=(0,)))
+        xp_assert_close(fft.fftshift(freqs), shifted)
+        xp_assert_close(fft.ifftshift(shifted), freqs)
     
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
@@ -393,10 +391,10 @@ class TestFFTShift:
             [0, 1],
             [2, 3]
         ])
-        assert_close(fft.fftshift(freqs, axes=0), shift_dim0)
-        assert_close(fft.ifftshift(shift_dim0, axes=0), freqs)
-        assert_close(fft.fftshift(freqs, axes=(0,)), shift_dim0)
-        assert_close(fft.ifftshift(shift_dim0, axes=[0]), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=0), shift_dim0)
+        xp_assert_close(fft.ifftshift(shift_dim0, axes=0), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=(0,)), shift_dim0)
+        xp_assert_close(fft.ifftshift(shift_dim0, axes=[0]), freqs)
 
         # shift in dimension 1
         shift_dim1 = xp.asarray([
@@ -404,8 +402,8 @@ class TestFFTShift:
             [3, 2],
             [5, 4]
         ])
-        assert_close(fft.fftshift(freqs, axes=1), shift_dim1)
-        assert_close(fft.ifftshift(shift_dim1, axes=1), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=1), shift_dim1)
+        xp_assert_close(fft.ifftshift(shift_dim1, axes=1), freqs)
 
         # shift in both dimensions
         shift_dim_both = xp.asarray([
@@ -413,16 +411,16 @@ class TestFFTShift:
             [1, 0],
             [3, 2]
         ])
-        assert_close(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
-        assert_close(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
-        assert_close(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
-        assert_close(fft.ifftshift(shift_dim_both, axes=[0, 1]), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
+        xp_assert_close(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
+        xp_assert_close(fft.ifftshift(shift_dim_both, axes=[0, 1]), freqs)
 
         # axes=None (default) shift in all dimensions
-        assert_close(fft.fftshift(freqs, axes=None), shift_dim_both)
-        assert_close(fft.ifftshift(shift_dim_both, axes=None), freqs)
-        assert_close(fft.fftshift(freqs), shift_dim_both)
-        assert_close(fft.ifftshift(shift_dim_both), freqs)
+        xp_assert_close(fft.fftshift(freqs, axes=None), shift_dim_both)
+        xp_assert_close(fft.ifftshift(shift_dim_both, axes=None), freqs)
+        xp_assert_close(fft.fftshift(freqs), shift_dim_both)
+        xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
 class TestFFTFreq:
@@ -434,11 +432,11 @@ class TestFFTFreq:
     @array_api_compatible
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float32)
-        assert_close(9 * fft.fftfreq(9, xp=xp), x)
-        assert_close(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), x)
+        xp_assert_close(9 * fft.fftfreq(9, xp=xp), x)
+        xp_assert_close(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), x)
         x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float32)
-        assert_close(10 * fft.fftfreq(10, xp=xp), x)
-        assert_close(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), x)
+        xp_assert_close(10 * fft.fftfreq(10, xp=xp), x)
+        xp_assert_close(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), x)
 
 
 class TestRFFTFreq:
@@ -450,11 +448,11 @@ class TestRFFTFreq:
     @array_api_compatible
     def test_definition(self, xp):
         x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float32)
-        assert_close(9 * fft.rfftfreq(9, xp=xp), x)
-        assert_close(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), x)
+        xp_assert_close(9 * fft.rfftfreq(9, xp=xp), x)
+        xp_assert_close(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), x)
         x = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float32)
-        assert_close(10 * fft.rfftfreq(10, xp=xp), x)
-        assert_close(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), x)
+        xp_assert_close(10 * fft.rfftfreq(10, xp=xp), x)
+        xp_assert_close(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), x)
 
 
 class TestNamespaces:

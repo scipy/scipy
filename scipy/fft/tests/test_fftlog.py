@@ -8,7 +8,7 @@ from scipy.conftest import (
     array_api_compatible,
     skip_if_array_api_backend
 )
-from scipy._lib._array_api import assert_close
+from scipy._lib._array_api import assert_close as xp_assert_close
 
 
 # https://github.com/pytorch/pytorch/issues/59786
@@ -43,7 +43,7 @@ def test_fht_agrees_with_fftlog(xp):
               -0.2697710625194777E-03, +0.3568398050238820E-03,
               -0.5554454827797206E-03, +0.8286331026468585E-03]
     theirs = xp.asarray(theirs, dtype=xp.float64)
-    assert_close(ours, theirs)
+    xp_assert_close(ours, theirs)
 
     # test 2: change to optimal offset
     offset = fhtoffset(dln, mu, bias=bias)
@@ -57,7 +57,7 @@ def test_fht_agrees_with_fftlog(xp):
               +0.1314963536765343E-03, -0.5422057743066297E-04,
               +0.3208681804170443E-04, -0.2696849476008234E-04]
     theirs = xp.asarray(theirs, dtype=xp.float64)
-    assert_close(ours, theirs)
+    xp_assert_close(ours, theirs)
 
     # test 3: positive bias
     bias = 0.8
@@ -72,7 +72,7 @@ def test_fht_agrees_with_fftlog(xp):
               +0.3305775476926270E-04, -0.7786993194882709E-05,
               +0.1962258449520547E-05, -0.8977895734909250E-06]
     theirs = xp.asarray(theirs, dtype=xp.float64)
-    assert_close(ours, theirs)
+    xp_assert_close(ours, theirs)
 
     # test 4: negative bias
     bias = -0.8
@@ -87,7 +87,7 @@ def test_fht_agrees_with_fftlog(xp):
               +0.1692387813500801E+00, +0.3097490354365797E+00,
               +2.7593607182401860E+00, 10.5251075070045800E+00]
     theirs = xp.asarray(theirs, dtype=xp.float64)
-    assert_close(ours, theirs)
+    xp_assert_close(ours, theirs)
 
 
 # https://github.com/pytorch/pytorch/issues/59786
@@ -110,7 +110,7 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
 
-    assert_close(a, a_)
+    xp_assert_close(a, a_)
 
 
 # https://github.com/pytorch/pytorch/issues/59786
@@ -178,4 +178,4 @@ def test_fht_exact(n, xp):
     # analytical result
     At = xp.asarray((2/k)**gamma * poch((mu+1-gamma)/2, gamma))
 
-    assert_close(A, At)
+    xp_assert_close(A, At)
