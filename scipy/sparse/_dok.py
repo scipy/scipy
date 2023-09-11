@@ -7,7 +7,7 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 import itertools
 import numpy as np
 
-from ._matrix import spmatrix, _array_doc_to_matrix
+from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin
 from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -15,57 +15,6 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 
 
 class _dok_base(_spbase, IndexMixin):
-    """
-    Dictionary Of Keys based sparse matrix.
-
-    This is an efficient structure for constructing sparse
-    matrices incrementally.
-
-    This can be instantiated in several ways:
-        dok_array(D)
-            with a dense matrix, D
-
-        dok_array(S)
-            with a sparse matrix, S
-
-        dok_array((M,N), [dtype])
-            create the matrix with initial shape (M,N)
-            dtype is optional, defaulting to dtype='d'
-
-    Attributes
-    ----------
-    dtype : dtype
-        Data type of the matrix
-    shape : 2-tuple
-        Shape of the matrix
-    ndim : int
-        Number of dimensions (this is always 2)
-    nnz
-        Number of nonzero elements
-    size
-    T
-
-
-    Notes
-    -----
-
-    Sparse matrices can be used in arithmetic operations: they support
-    addition, subtraction, multiplication, division, and matrix power.
-
-    Allows for efficient O(1) access of individual elements.
-    Duplicates are not allowed.
-    Can be efficiently converted to a coo_matrix once constructed.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.sparse import dok_array
-    >>> S = dok_array((5, 5), dtype=np.float32)
-    >>> for i in range(5):
-    ...     for j in range(5):
-    ...         S[i, j] = i + j    # Update element
-
-    """
     _format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
@@ -368,7 +317,7 @@ class _dok_base(_spbase, IndexMixin):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
-            raise ValueError("Sparse matrices do not support "
+            raise ValueError("Sparse arrays/matrices do not support "
                              "an 'axes' parameter because swapping "
                              "dimensions is the only logical permutation.")
 
@@ -465,20 +414,115 @@ def isspmatrix_dok(x):
 
 # This namespace class separates array from matrix with isinstance
 class dok_array(_dok_base, sparray):
-    pass
+    """
+    Dictionary Of Keys based sparse array.
 
-dok_array.__doc__ = _dok_base.__doc__
+    This is an efficient structure for constructing sparse
+    arrays incrementally.
+
+    This can be instantiated in several ways:
+        dok_array(D)
+            where D is a 2-D ndarray
+
+        dok_array(S)
+            with another sparse array or matrix S (equivalent to S.todok())
+
+        dok_array((M,N), [dtype])
+            create the array with initial shape (M,N)
+            dtype is optional, defaulting to dtype='d'
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the array
+    shape : 2-tuple
+        Shape of the array
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    size
+    T
+
+    Notes
+    -----
+
+    Sparse arrays can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    - Allows for efficient O(1) access of individual elements.
+    - Duplicates are not allowed.
+    - Can be efficiently converted to a coo_array once constructed.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import dok_array
+    >>> S = dok_array((5, 5), dtype=np.float32)
+    >>> for i in range(5):
+    ...     for j in range(5):
+    ...         S[i, j] = i + j    # Update element
+
+    """
+
 
 class dok_matrix(spmatrix, _dok_base, dict):
+    """
+    Dictionary Of Keys based sparse matrix.
+
+    This is an efficient structure for constructing sparse
+    matrices incrementally.
+
+    This can be instantiated in several ways:
+        dok_matrix(D)
+            where D is a 2-D ndarray
+
+        dok_matrix(S)
+            with another sparse array or matrix S (equivalent to S.todok())
+
+        dok_matrix((M,N), [dtype])
+            create the matrix with initial shape (M,N)
+            dtype is optional, defaulting to dtype='d'
+
+    Attributes
+    ----------
+    dtype : dtype
+        Data type of the matrix
+    shape : 2-tuple
+        Shape of the matrix
+    ndim : int
+        Number of dimensions (this is always 2)
+    nnz
+        Number of nonzero elements
+    size
+    T
+
+    Notes
+    -----
+
+    Sparse matrices can be used in arithmetic operations: they support
+    addition, subtraction, multiplication, division, and matrix power.
+
+    - Allows for efficient O(1) access of individual elements.
+    - Duplicates are not allowed.
+    - Can be efficiently converted to a coo_matrix once constructed.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.sparse import dok_matrix
+    >>> S = dok_matrix((5, 5), dtype=np.float32)
+    >>> for i in range(5):
+    ...     for j in range(5):
+    ...         S[i, j] = i + j    # Update element
+
+    """
     def set_shape(self, shape):
         new_matrix = self.reshape(shape, copy=False).asformat(self.format)
         self.__dict__ = new_matrix.__dict__
 
     def get_shape(self):
-        """Get shape of a sparse array."""
+        """Get shape of a sparse matrix."""
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
-
-
-dok_matrix.__doc__ = _array_doc_to_matrix(_dok_base.__doc__)

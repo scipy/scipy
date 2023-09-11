@@ -130,16 +130,22 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
           CIBW_PRERELEASE_PYTHONS: True
 
-          # required so that cp312 can grab a nightly wheel
-          # can remove when cp312 is released and we don't need to search
-          # other wheel locations.
-          # PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-          CIBW_ENVIRONMENT: PIP_PRE=1
+          # TODO remove the CIBW_BEFORE_BUILD_* lines once there are
+          #  numpy2.0 wheels available on PyPI. Also remove/comment out the
+          # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL from CIBW_ENVIRONMENT
+          # (also for _MACOS and _WINDOWS below)
+          CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+          CIBW_BEFORE_BUILD_WINDOWS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+          CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+          # Allow pip to find install nightly wheels if necessary
+          # Setting PIP_NO_BUILD_ISOLATION=false makes pip use build-isolation.
+          CIBW_ENVIRONMENT: "PIP_NO_BUILD_ISOLATION=false PIP_PRE=1 PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
 
           CIBW_ENVIRONMENT_WINDOWS: >
             PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
             PIP_PRE=1
-            # PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+            PIP_NO_BUILD_ISOLATION=false
 
           # setting SDKROOT necessary when using the gfortran compiler
           # installed in cibw_before_build_macos.sh
@@ -154,7 +160,8 @@ jobs:
             MACOS_DEPLOYMENT_TARGET=10.9
             _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
             PIP_PRE=1
-            # PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+            PIP_NO_BUILD_ISOLATION=false
 
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&
