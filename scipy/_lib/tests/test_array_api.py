@@ -3,8 +3,9 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, assert_equal
+    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, xp_assert_equal, is_numpy
 )
+import scipy._lib.array_api_compat.array_api_compat.numpy as np_compat
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
@@ -25,8 +26,8 @@ class TestArrayAPI:
     def test_asarray(self, xp):
         x, y = as_xparray([0, 1, 2], xp=xp), as_xparray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
-        assert_equal(x, ref)
-        assert_equal(y, ref)
+        xp_assert_equal(x, ref)
+        xp_assert_equal(y, ref)
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
     def test_raises(self):
@@ -64,3 +65,44 @@ class TestArrayAPI:
             assert x[1] != y[1]
             assert x[2] != y[2]
             assert id(x) != id(y)
+
+    @array_api_compatible
+    @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
+    @pytest.mark.parametrize('shape', [(), (3,)])
+    def test_strict_checks(self, xp, dtype, shape):
+        # Check that `_strict_check` behaves as expected
+        dtype = getattr(xp, dtype)
+        x = xp.broadcast_to(xp.asarray(1, dtype=dtype), shape)
+        x = x if shape else x[()]
+        y = np_compat.asarray(1)[()]
+
+        options = dict(check_namespace=True, check_dtype=False, check_shape=False)
+        if xp == np:
+            xp_assert_equal(x, y, **options)
+        else:
+            with pytest.raises(AssertionError, match="Namespaces do not match."):
+                xp_assert_equal(x, y, **options)
+
+        options = dict(check_namespace=False, check_dtype=True, check_shape=False)
+        if y.dtype.name in str(x.dtype):
+            xp_assert_equal(x, y, **options)
+        else:
+            with pytest.raises(AssertionError, match="dtypes do not match."):
+                xp_assert_equal(x, y, **options)
+
+        options = dict(check_namespace=False, check_dtype=False, check_shape=True)
+        if x.shape == y.shape:
+            xp_assert_equal(x, y, **options)
+        else:
+            with pytest.raises(AssertionError, match="Shapes do not match."):
+                xp_assert_equal(x, y, **options)
+
+    @array_api_compatible
+    def test_check_scalar(self, xp):
+        if not is_numpy(xp):
+            pytest.skip("Scalars only exist in NumPy")
+
+        if is_numpy(xp):
+            with pytest.raises(AssertionError, match="Types do not match."):
+                xp_assert_equal(xp.asarray(0.), xp.float64(0))
+            xp_assert_equal(xp.float64(0), xp.asarray(0.))
