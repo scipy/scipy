@@ -1,6 +1,6 @@
 # Author: Travis Oliphant
 
-__all__ = ['odeint']
+__all__ = ['odeint', 'ODEintWarning']
 
 import numpy as np
 from . import _odepack
@@ -9,6 +9,7 @@ import warnings
 
 
 class ODEintWarning(Warning):
+    """Warning raised during the execution of `odeint`."""
     pass
 
 
