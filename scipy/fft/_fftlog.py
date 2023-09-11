@@ -361,7 +361,7 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     .. [1] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
     """
-    
+
     lnkr, q = initial, bias
 
     xp = (mu+1+q)/2
@@ -369,7 +369,7 @@ def fhtoffset(dln, mu, initial=0.0, bias=0.0):
     y = np.pi/(2*dln)
     zp = loggamma(xp + 1j*y)
     zm = loggamma(xm + 1j*y)
-    arg = (np.log(2) - lnkr)/dln + (zp.imag + zm.imag)/np.pi
+    arg = (LN_2 - lnkr)/dln + (zp.imag + zm.imag)/np.pi
     return lnkr + (arg - np.round(arg))*dln
 
 

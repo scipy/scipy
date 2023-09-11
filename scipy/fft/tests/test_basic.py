@@ -191,17 +191,13 @@ class TestFFT1D:
         x = xp.asarray(x)
         x_herm = xp.asarray(x_herm)
         expect = fft.fft(x)
-        assert_close(expect,
-                         xp.asarray(fft.hfft(x_herm), dtype=xp.complex128))
-        assert_close(expect,
-                         xp.asarray(fft.hfft(x_herm, norm="backward"),
-                                    dtype=xp.complex128))
+        assert_close(expect, xp.asarray(fft.hfft(x_herm), dtype=xp.complex128))
+        assert_close(expect, xp.asarray(fft.hfft(x_herm, norm="backward"),
+                                        dtype=xp.complex128))
         assert_close(expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),
-                         xp.asarray(fft.hfft(x_herm, norm="ortho"),
-                                    dtype=xp.complex128))
+                     xp.asarray(fft.hfft(x_herm, norm="ortho"), dtype=xp.complex128))
         assert_close(expect / 30,
-                         xp.asarray(fft.hfft(x_herm, norm="forward"),
-                                    dtype=xp.complex128))
+                     xp.asarray(fft.hfft(x_herm, norm="forward"), dtype=xp.complex128))
 
     @array_api_compatible
     def test_ihfft(self, xp):
@@ -315,10 +311,8 @@ class TestFFT1D:
             shape = tuple([2*x.shape[ax] if ax in a[:2] else x.shape[ax]
                            for ax in range(x.ndim)])
             # transform only the first two axes
-            op_tr = op(xp_test.permute_dims(x, axes=a),
-                       s=shape[:2], axes=(0, 1))
-            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]),
-                                         axes=a)
+            op_tr = op(xp_test.permute_dims(x, axes=a), s=shape[:2], axes=(0, 1))
+            tr_op = xp_test.permute_dims(op(x, s=shape[:2], axes=a[:2]), axes=a)
             assert_close(op_tr, tr_op)
 
     @array_api_compatible
