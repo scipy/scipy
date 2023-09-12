@@ -431,12 +431,17 @@ class TestFFTFreq:
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float32)
-        xp_assert_close(9 * fft.fftfreq(9, xp=xp), x)
-        xp_assert_close(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), x)
-        x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float32)
-        xp_assert_close(10 * fft.fftfreq(10, xp=xp), x)
-        xp_assert_close(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), x)
+        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
+        y = xp.asarray(9 * fft.fftfreq(9, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+        y = xp.asarray(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+
+        x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float64)
+        y = xp.asarray(10 * fft.fftfreq(10, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+        y = xp.asarray(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
 
 
 class TestRFFTFreq:
@@ -447,12 +452,17 @@ class TestRFFTFreq:
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float32)
-        xp_assert_close(9 * fft.rfftfreq(9, xp=xp), x)
-        xp_assert_close(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), x)
-        x = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float32)
-        xp_assert_close(10 * fft.rfftfreq(10, xp=xp), x)
-        xp_assert_close(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), x)
+        x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64)
+        y = xp.asarray(9 * fft.rfftfreq(9, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+        y = xp.asarray(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+
+        x = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
+        y = xp.asarray(10 * fft.rfftfreq(10, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
+        y = xp.asarray(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), dtype=xp.float64)
+        xp_assert_close(y, x)
 
 
 class TestNamespaces:
