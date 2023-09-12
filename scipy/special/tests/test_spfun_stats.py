@@ -1,6 +1,6 @@
 import numpy as np
-from numpy.testing import (assert_array_equal, assert_equal,
-        assert_array_almost_equal_nulp, assert_almost_equal, assert_allclose)
+from numpy.testing import (assert_array_equal, assert_array_almost_equal_nulp,
+                           assert_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 import pytest
 from scipy.special import gammaln, multigammaln, betaln, multivariate_betaln
