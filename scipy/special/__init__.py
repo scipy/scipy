@@ -786,7 +786,7 @@ from ._logsumexp import logsumexp, softmax, log_softmax
 from . import _orthogonal
 from ._orthogonal import *
 
-from ._spfun_stats import multigammaln, multivariate_beta
+from ._spfun_stats import multigammaln, multivariate_betaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
@@ -811,7 +811,7 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'softmax',
     'log_softmax',
     'multigammaln',
-    'multivariate_beta',
+    'multivariate_betaln',
     'ellip_harm',
     'ellip_harm_2',
     'ellip_normal',

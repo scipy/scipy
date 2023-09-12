@@ -2,8 +2,8 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_equal,
         assert_array_almost_equal_nulp, assert_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
-
-from scipy.special import gammaln, multigammaln, beta, multivariate_beta
+import pytest
+from scipy.special import gammaln, multigammaln, betaln, multivariate_betaln
 
 
 class TestMultiGammaLn:
@@ -59,20 +59,31 @@ def test_multigammaln_array_arg():
     for a, d in cases:
         _check_multigammaln_array_result(a, d)
 
-class TestMultivariateBeta:
+class TestMultivariateBetaln:
     def test_1d(self):
         # test that multivariate beta and one dimensional beta functions yield
         # same result in 1D
         a = 1
         b = 2
-        assert_allclose(beta(a, b), multivariate_beta([a, b]), rtol=1e-16)
+        assert_allclose(betaln(a, b), multivariate_betaln([a, b]), rtol=1e-16)
 
-    def test_broadcasting(self):
-        rng = np.random.default_rng()
-        alpha = rng.random((5, 4, 3))
-        output_array = multivariate_beta(alpha)
-        assert output_array.shape == (5, 4)
-        for i in range(5):
-            for j in range(4):
-                current_result = multivariate_beta(alpha[i, j, :])
-                assert_equal(output_array[i, j], current_result)
+    # reference values were computed via mpmath
+    # from mpmath import mp
+    # mp.dps = 500
+    # def multibetaln(x):
+    #     x = [mp.mpf(coeff) for coeff in x]
+    #     first_term = mp.fsum([mp.loggamma(coeff) for coeff in x])
+    #     second_term = mp.loggamma(mp.fsum(x))
+    #     return float(first_term - second_term)
+
+    @pytest.mark.parametrize('alpha, ref',
+                             [(np.logspace(-100, 100, 1000),
+                               -4.828190914524598e+100),
+                              (np.logspace(-300, -100, 100),
+                               45821.45294191622),
+                              (np.logspace(150, 300, 200),
+                               -6.864052935635053e+299)])
+    def test_accuracy(self, alpha, ref):
+        assert_allclose(multivariate_betaln(alpha), ref, rtol=1e-13)
+
+

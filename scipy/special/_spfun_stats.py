@@ -36,7 +36,7 @@ import numpy as np
 from scipy.special import gammaln as loggam
 
 
-__all__ = ['multigammaln', 'multivariate_beta']
+__all__ = ['multigammaln', 'multivariate_betaln']
 
 
 def multigammaln(a, d):
@@ -107,46 +107,37 @@ def multigammaln(a, d):
     return res
 
 
-def multivariate_beta(alpha):
-    r"""Returns the multivariate beta function.
+def multivariate_betaln(alpha):
+    r"""Returns the log of the multivariate beta function.
 
     Parameters
     ----------
     alpha : ndarray.
-        The last axis determines the dimensionality of the beta function.
 
     Returns
     -------
-    res : ndarray
-        The values of the multivariate beta at the given points `alpha`.
+    res : float
+        The log of the multivariate beta at the given point `alpha`.
 
     Notes
     -----
-    The multivariate beta function is defined as a function of the vector
-    :math:`\mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
+    The log of the multivariate beta function is defined as a function of
+    the vector :math:`\mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
 
     .. math::
 
-        B(\mathbf{\alpha}) = \frac{\Gamma(\alpha_1)\Gamma(\alpha_2)...
-            \Gamma(\alpha_n)}{\Gamma(\alpha_1+\alpha_2+...+\alpha_n)}
+        \ln B(\mathbf{\alpha}) = \ln\left(\frac{\Gamma(\alpha_1)
+        \Gamma(\alpha_2)...\Gamma(\alpha_n)}{\Gamma(\alpha_1+\alpha_2+
+        ...+\alpha_n)}\right)
 
     Examples
     --------
-    Compute the multivariate beta function at one point.
+    Compute the log of the multivariate beta function at one point.
 
-    >>> import numpy as np
     >>> from scipy.special import multivariate_beta
-    >>> multivariate_beta([1, 2, 3])
-    0.01666666666666667
-
-    Compute the multivariate beta function at 3 points in two dimensions by
-    providing a dimensional NumPy array with shape (3, 2) for `alpha`.
-
-    >>> alpha = np.array([[1, 1], [1, 3], [2, 4]])
-    >>> multivariate_beta(alpha)
-    array([1.        , 0.33333333, 0.05      ])
+    >>> multivariate_betaln([1, 2, 3])
+    -4.0943445622221
     """
 
     alpha = np.asarray(alpha)
-    return np.exp(np.sum(loggam(alpha), axis=-1)
-                  - loggam(np.sum(alpha, axis=-1)))
+    return np.sum(loggam(alpha)) - loggam(np.sum(alpha))
