@@ -10,7 +10,6 @@ __all__ = [  # noqa: F822
     'bicgstab', 
     'cg', 
     'cgs', 
-    ###########
     'gcrotmk', 
     'gmres',
     'lgmres', 
@@ -18,7 +17,6 @@ __all__ = [  # noqa: F822
     'lsqr',
     'minres',
     'qmr',
-    # 'issparsematrix',
     'tfqmr', 
     'utils', 
     'iterative', 
