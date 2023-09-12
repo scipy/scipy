@@ -134,7 +134,7 @@ def multivariate_betaln(alpha):
     --------
     Compute the log of the multivariate beta function at one point.
 
-    >>> from scipy.special import multivariate_beta
+    >>> from scipy.special import multivariate_betaln
     >>> multivariate_betaln([1, 2, 3])
     -4.0943445622221
     """

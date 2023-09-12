@@ -431,7 +431,7 @@ Gamma and related functions
    multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
    digamma      -- psi(x[, out]).
    poch         -- Rising factorial (z)_m.
-   multivariate_beta -- Multivariate beta function.
+   multivariate_betaln -- Log of the multivariate beta function.
 
 
 Error function and Fresnel integrals
