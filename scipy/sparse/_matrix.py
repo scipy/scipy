@@ -69,7 +69,7 @@ class spmatrix:
                      doc="Shape of the matrix")
 
     def asfptype(self):
-        """Upcast array to a floating point format (if necessary)"""
+        """Upcast matrix to a floating point format (if necessary)"""
         return self._asfptype()
 
     def getmaxprint(self):
@@ -92,7 +92,7 @@ class spmatrix:
         return self._getnnz(axis=axis)
 
     def getH(self):
-        """Return the Hermitian transpose of this array.
+        """Return the Hermitian transpose of this matrix.
 
         See Also
         --------
@@ -101,23 +101,13 @@ class spmatrix:
         return self.conjugate().transpose()
 
     def getcol(self, j):
-        """Returns a copy of column j of the array, as an (m x 1) sparse
-        array (column vector).
+        """Returns a copy of column j of the matrix, as an (m x 1) sparse
+        matrix (column vector).
         """
         return self._getcol(j)
 
     def getrow(self, i):
-        """Returns a copy of row i of the array, as a (1 x n) sparse
-        array (row vector).
+        """Returns a copy of row i of the matrix, as a (1 x n) sparse
+        matrix (row vector).
         """
         return self._getrow(i)
-
-
-def _array_doc_to_matrix(docstr):
-    # For opimized builds with stripped docstrings
-    if docstr is None:
-        return None
-    return (
-        docstr.replace('sparse arrays', 'sparse matrices')
-              .replace('sparse array', 'sparse matrix')
-    )

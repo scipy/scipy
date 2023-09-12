@@ -22,7 +22,7 @@ compliance before pushing your code:
    checks.
 
 -  It is recommended to leave existing style issues alone
-   unless they exist in files you are already modifying.
+   unless they exist in lines of code you are already modifying.
    This practice ensures that the codebase is gradually cleaned up
    without dedicating precious review time to style-only cleanups.
 
