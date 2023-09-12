@@ -4832,7 +4832,7 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, `p` is a real number and `b > 0`([1]_).
+    where `x > 0`, `p` is a real number and `b > 0`\([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
