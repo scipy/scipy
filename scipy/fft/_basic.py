@@ -1,41 +1,26 @@
-from scipy._lib._array_api import array_namespace, is_numpy
-from . import _basic_uarray
+from scipy._lib.uarray import generate_multimethod, Dispatchable
 import numpy as np
 
 
-def arg_err_msg(param):
-    return f'Providing {param!r} is only supported for numpy arrays.'
+def _x_replacer(args, kwargs, dispatchables):
+    """
+    uarray argument replacer to replace the transform input array (``x``)
+    """
+    if len(args) > 0:
+        return (dispatchables[0],) + args[1:], kwargs
+    kw = kwargs.copy()
+    kw['x'] = dispatchables[0]
+    return args, kw
 
 
-def _validate_fft_args(overwrite_x, workers, plan, norm):
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
-    if workers is not None:
-        raise ValueError(arg_err_msg("workers"))
-    if plan is not None:
-        raise ValueError(arg_err_msg("plan"))
-    if norm is None:
-        norm = 'backward'
-    return norm
+def _dispatch(func):
+    """
+    Function annotation that creates a uarray multimethod from the function
+    """
+    return generate_multimethod(func, _x_replacer, domain="numpy.scipy.fft")
 
 
-def _execute(func_str, uarray_func, x, s, axes, norm, 
-             overwrite_x, workers, plan):
-    xp = array_namespace(x)
-    if is_numpy(xp):
-        return uarray_func(x, s, axes, norm=norm, overwrite_x=overwrite_x,
-                           workers=workers, plan=plan)
-
-    norm = _validate_fft_args(overwrite_x, workers, plan, norm)
-    if hasattr(xp, 'fft'):
-        xp_func = getattr(xp.fft, func_str)
-        return xp_func(x, s, axes, norm=norm)
-
-    x = np.asarray(x)
-    y = uarray_func(x, s, axes, norm=norm)
-    return xp.asarray(y)
-
-
+@_dispatch
 def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
         plan=None):
     """
@@ -176,10 +161,10 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute('fft', _basic_uarray.fft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
@@ -282,10 +267,10 @@ def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute('ifft', _basic_uarray.ifft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
@@ -376,10 +361,10 @@ def rfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     exploited to compute only the non-negative frequency terms.
 
     """
-    return _execute('rfft', _basic_uarray.rfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
@@ -477,10 +462,10 @@ def irfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     specified, and the output array is purely real.
 
     """
-    return _execute('irfft', _basic_uarray.irfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
@@ -560,10 +545,10 @@ def hfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> hfft(signal, 10)  # Input entire signal and truncate
     array([  0.,   5.,   0.,  15.,  -0.,   0.,   0., -15.,  -0.,   5.])
     """
-    return _execute('hfft', _basic_uarray.hfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
@@ -627,10 +612,10 @@ def ihfft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
     >>> ihfft(spectrum)
     array([ 1.-0.j,  2.-0.j,  3.-0.j,  4.-0.j]) # may vary
     """
-    return _execute('ihfft', _basic_uarray.ihfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
     """
@@ -732,10 +717,10 @@ def fftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute('fftn', _basic_uarray.fftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
@@ -836,12 +821,12 @@ def ifftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
     >>> plt.show()
 
     """
-    return _execute('ifftn', _basic_uarray.ifftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
-def fft2(x, s=None, axes=(-2, -1), norm=None,
-         overwrite_x=False, workers=None, *, plan=None):
+@_dispatch
+def fft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+         plan=None):
     """
     Compute the 2-D discrete Fourier Transform
 
@@ -935,16 +920,12 @@ def fft2(x, s=None, axes=(-2, -1), norm=None,
               0.  +0.j        ,   0.  +0.j        ]])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.fft2(x, s=s, axes=axes, norm=norm,
-                           overwrite_x=overwrite_x,
-                           workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
 
-def ifft2(x, s=None, axes=(-2, -1), norm=None,
-          overwrite_x=False, workers=None, *, plan=None):
+@_dispatch
+def ifft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D inverse discrete Fourier Transform.
 
@@ -1035,14 +1016,10 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None,
            [0.+0.j,  1.+0.j,  0.+0.j,  0.+0.j]])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.ifft2(x, s=s, axes=axes, norm=norm,
-                            overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
@@ -1139,12 +1116,12 @@ def rfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [0.+0.j,  0.+0.j]]])
 
     """
-    return _execute('rfftn', _basic_uarray.rfftn, x, s, axes, norm, 
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
-def rfft2(x, s=None, axes=(-2, -1), norm=None,
-          overwrite_x=False, workers=None, *, plan=None):
+@_dispatch
+def rfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D FFT of a real array.
 
@@ -1189,13 +1166,10 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None,
     For more details see `rfftn`.
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.rfft2(x, s=s, axes=axes, norm=norm,
-                            overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
+
+@_dispatch
 def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
@@ -1299,12 +1273,12 @@ def irfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [1.,  1.]]])
 
     """
-    return _execute('irfftn', _basic_uarray.irfftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return (Dispatchable(x, np.ndarray),)
 
 
-def irfft2(x, s=None, axes=(-2, -1), norm=None,
-           overwrite_x=False, workers=None, *, plan=None):
+@_dispatch
+def irfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Computes the inverse of `rfft2`
 
@@ -1349,14 +1323,10 @@ def irfft2(x, s=None, axes=(-2, -1), norm=None,
     For more details see `irfftn`.
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.irfft2(x, s=s, axes=axes, norm=norm,
-                             overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
           plan=None):
     """
@@ -1466,15 +1436,12 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [ 0.,  0.]]])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.hfftn(x, s=s, axes=axes, norm=norm,
-                            overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
-def hfft2(x, s=None, axes=(-2, -1), norm=None,
-          overwrite_x=False, workers=None, *, plan=None):
+
+@_dispatch
+def hfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+          plan=None):
     """
     Compute the 2-D FFT of a Hermitian complex array.
 
@@ -1517,14 +1484,10 @@ def hfft2(x, s=None, axes=(-2, -1), norm=None,
     For more details see `hfftn`.
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.hfft2(x, s=s, axes=axes, norm=norm,
-                            overwrite_x=overwrite_x,
-                            workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
 
+@_dispatch
 def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
            plan=None):
     """
@@ -1615,16 +1578,12 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
             [0.+0.j,  0.+0.j]]])
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.ihfftn(x, s=s, axes=axes, norm=norm,
-                             overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)
 
 
-def ihfft2(x, s=None, axes=(-2, -1), norm=None,
-           overwrite_x=False, workers=None, *, plan=None):
+@_dispatch
+def ihfft2(x, s=None, axes=(-2, -1), norm=None, overwrite_x=False, workers=None, *,
+           plan=None):
     """
     Compute the 2-D inverse FFT of a real spectrum.
 
@@ -1667,9 +1626,4 @@ def ihfft2(x, s=None, axes=(-2, -1), norm=None,
     For more details see `ihfftn`.
 
     """
-    xp = array_namespace(x)
-    x = np.asarray(x)
-    y = _basic_uarray.ihfft2(x, s=s, axes=axes, norm=norm,
-                             overwrite_x=overwrite_x,
-                             workers=workers, plan=plan)
-    return xp.asarray(y)
+    return (Dispatchable(x, np.ndarray),)

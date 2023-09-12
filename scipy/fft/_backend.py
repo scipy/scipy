@@ -1,6 +1,7 @@
 import scipy._lib.uarray as ua
+from . import _basic_backend
+from . import _realtransforms_backend
 from . import _fftlog_backend
-from . import _pocketfft
 
 
 class _ScipyBackend:
@@ -17,7 +18,9 @@ class _ScipyBackend:
     @staticmethod
     def __ua_function__(method, args, kwargs):
 
-        fn = getattr(_pocketfft, method.__name__, None)
+        fn = getattr(_basic_backend, method.__name__, None)
+        if fn is None:
+            fn = getattr(_realtransforms_backend, method.__name__, None)
         if fn is None:
             fn = getattr(_fftlog_backend, method.__name__, None)
         if fn is None:

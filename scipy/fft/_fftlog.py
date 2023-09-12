@@ -5,12 +5,15 @@ The implementation closely follows the Fortran code of Hamilton (2000).
 added: 14/11/2020 Nicolas Tessore <n.tessore@ucl.ac.uk>
 """
 
-from . import _fftlog_uarray
+from ._basic import _dispatch
+from scipy._lib.uarray import Dispatchable
 from ._fftlog_backend import fhtoffset
+import numpy as np
 
 __all__ = ['fht', 'ifht', 'fhtoffset']
 
 
+@_dispatch
 def fht(a, dln, mu, offset=0.0, bias=0.0):
     r'''Compute the fast Hankel transform.
 
@@ -165,9 +168,10 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     >>> plt.show()
 
     '''
-    return _fftlog_uarray.fht(a, dln, mu, offset=offset, bias=bias)
+    return (Dispatchable(a, np.ndarray),)
 
 
+@_dispatch
 def ifht(A, dln, mu, offset=0.0, bias=0.0):
     r"""Compute the inverse fast Hankel transform.
 
@@ -212,4 +216,4 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
 
     See `fht` for further details.
     """
-    return _fftlog_uarray.ifht(A, dln, mu, offset=offset, bias=bias)
+    return (Dispatchable(A, np.ndarray),)

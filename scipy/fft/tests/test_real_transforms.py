@@ -27,8 +27,7 @@ SQRT_2 = math.sqrt(2)
 @pytest.mark.parametrize("axis", [0, 1])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
 @pytest.mark.parametrize("orthogonalize", [False, True])
-def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize,
-                     xp):
+def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
     # Test the identity f^-1(f(x)) == x
     x = xp.asarray(np.random.rand(n, n))
 
@@ -110,7 +109,7 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
         for a in axes:
             pad[a] = (0, 4)
 
-    # we convert to np and back since pad is not an array API function
+    # TODO write an array-agnostic pad
     y2 = xp.asarray(np.pad(np.asarray(y), pad, mode='edge'))
     z2 = backward(y2, type, shape, axes, norm, orthogonalize=orthogonalize)
     xp_assert_close(z2, x)
