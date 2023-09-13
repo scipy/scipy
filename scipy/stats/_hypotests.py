@@ -1528,7 +1528,8 @@ def _pval_cvm_2samp_exact(s, m, n):
                 np.delete(tmp, i0, 1),
                 np.delete(g, i1, 1)
             ], 1)
-            tmp[0] += (a * v - b * u) ** 2
+            res = (a * v - b * u) ** 2
+            tmp[0] += res.astype(dtype)
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]
