@@ -8,7 +8,7 @@ from . import _interface
 
 __all__ = [  # noqa: F822
     'LinearOperator', 'aslinearoperator',
-    'isspmatrix', 'isshape', 'isintlike', 'asmatrix',
+    'isshape', 'isintlike', 'asmatrix',
     'is_pydata_spmatrix', 'MatrixLinearOperator', 'IdentityOperator'
 ]
 

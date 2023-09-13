@@ -12,10 +12,6 @@ __all__ = [  # noqa: F822
     'HalfspaceIntersection',
     'QhullError',
     'Voronoi',
-    'os',
-    'sys',
-    'tempfile',
-    'threading',
     'tsearch',
 ]
 
