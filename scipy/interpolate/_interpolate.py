@@ -1803,7 +1803,7 @@ class BPoly(_PPolyBase):
         xi : array_like
             sorted 1-D array of x-coordinates
         yi : array_like or list of array_likes
-            ``yi[i][j]`` is the ``j``th derivative known at ``xi[i]``
+            ``yi[i][j]`` is the ``j``\\ th derivative known at ``xi[i]``
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
@@ -1932,8 +1932,8 @@ class BPoly(_PPolyBase):
         xb : float
             Right-hand end point of the interval
         ya : array_like
-            Derivatives at `xa`. `ya[0]` is the value of the function, and
-            `ya[i]` for ``i > 0`` is the value of the ``i``th derivative.
+            Derivatives at `xa`. ``ya[0]`` is the value of the function, and
+            ``ya[i]`` for ``i > 0`` is the value of the ``i``\ th derivative.
         yb : array_like
             Derivatives at `xb`.
 
