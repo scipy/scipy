@@ -355,7 +355,6 @@ def test_api_importable():
                           ('scipy.stats.mstats_extras', 'mstats'),
                           ('scipy.stats.mvn', None),
                           ('scipy.stats.stats', None)])
-
 def test_private_but_present_deprecation(module_name, correct_module):
     # gh-18279, gh-17572, gh-17771 noted that deprecation warnings
     # for imports from private modules
