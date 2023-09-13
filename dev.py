@@ -188,7 +188,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check"],
+            "commands": ["doc", "refguide-check", "doctest"],
         },
         {
             "name": "release",
@@ -1092,6 +1092,69 @@ class RefguideCheck(Task):
             'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
             'task_dep': ['build'],
             'io': {'capture': False},
+        }
+
+
+@cli.cls_cmd('doctest')
+class Doctest(Task):
+    """
+    :wrench: Run doctests
+
+    \b
+    ```python
+    Examples:
+
+    $ python dev.py doctest -s {submodule}
+    $ python dev.py doctest -t {path/to/file}
+    ```
+    """
+    ctx = CONTEXT
+
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
+        help="Submodule whose tests to run (cluster, constants, ...)"
+    )
+    filename = Option(
+            ['--filename', '-t'], default=None, metavar='FILENAME',
+            help="Specify a .py file to check"
+        ) 
+    fail_fast = Option(
+        ['--fail-fast', '-x'], default=False, is_flag=True,
+        help="fail on first error"
+    )
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True,
+        help="verbosity"
+    )
+
+    TASK_META = {
+        'task_dep': ['build'],
+    }
+
+    @classmethod
+    def task_meta(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        dirs = Dirs(args)
+
+        cmd = ['pytest', '--doctest-modules']
+
+        if args.submodule:
+            cmd += ['-s', args.submodule]
+        if args.filename:
+            cmd += ['-t', args.filename]
+        if args.fail_fast:
+            cmd += ['-x']
+        if args.verbose:
+            cmd += ['-vv']
+
+        cmd_str = ' '.join(cmd)
+
+        return {
+            'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
+            'task_dep': ['build'],
+            'io': {'capture': False}
         }
 
 
