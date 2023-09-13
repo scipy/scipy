@@ -8,10 +8,8 @@ from . import _data
 
 __all__ = [  # noqa: F822
     'isscalarlike',
-    'matrix',
     'name',
     'npfunc',
-    'spmatrix',
     'validateaxis',
 ]
 

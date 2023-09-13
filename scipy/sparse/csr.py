@@ -12,7 +12,6 @@ __all__ = [  # noqa: F822
     'csr_tobsr',
     'csr_tocsc',
     'get_csr_submatrix',
-    'get_index_dtype',
     'isspmatrix_csr',
     'spmatrix',
     'upcast',
