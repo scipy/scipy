@@ -129,6 +129,11 @@ jobs:
         export SCIPY_USE_PROPACK=1
         python dev.py --no-build test -j2 -- --durations 10 --timeout=60
 
+    - name: Run doctests
+      run: |
+        pip install git+https://github.com/ev-br/scpdt.git@1038618b83c9afa1fb79ca2f7839872708b7cae2
+        python dev.py doctest
+
   #################################################################################
   test_venv_install:
     name: Pip install into venv
