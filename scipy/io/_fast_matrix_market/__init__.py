@@ -341,7 +341,7 @@ def mmread(source):
     >>> import threadpoolctl
     >>>
     >>> with threadpoolctl.threadpool_limits(limits=2):
-    >>>     m = mmread(StringIO(text))
+    ...     m = mmread(StringIO(text))
 
     """
     cursor, stream_to_close = _get_read_cursor(source)
@@ -479,7 +479,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     >>>
     >>> target = BytesIO()
     >>> with threadpoolctl.threadpool_limits(limits=2):
-    >>>     mmwrite(target, a)
+    ...     mmwrite(target, a)
 
     """
     from . import _fmm_core
