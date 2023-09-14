@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal
+from numpy.testing import assert_allclose, assert_equal
 import pytest
 
 from scipy.optimize._pava_pybind import pava
@@ -28,11 +28,11 @@ class TestIsotonicRegression:
         w = np.ones_like(y)
         r = np.full(shape=y.shape[0] + 1, fill_value=-1, dtype=np.intp)
         pava(y, w, r)
-        assert_almost_equal(y, [4, 4, 4, 4, 4, 4, 8])
+        assert_allclose(y, [4, 4, 4, 4, 4, 4, 8])
         # Only first 2 elements of w are changed.
-        assert_almost_equal(w, [6, 1, 1, 1, 1, 1, 1])
+        assert_allclose(w, [6, 1, 1, 1, 1, 1, 1])
         # Only first 3 elements of r are changed.
-        assert_almost_equal(r, [0, 6, 7, -1, -1, -1, -1, -1])
+        assert_allclose(r, [0, 6, 7, -1, -1, -1, -1, -1])
 
     @pytest.mark.parametrize("y_dtype", [np.float64, np.float32, np.int64, np.int32])
     @pytest.mark.parametrize("w_dtype", [np.float64, np.float32, np.int64, np.int32])
@@ -46,9 +46,9 @@ class TestIsotonicRegression:
         res = isotonic_regression(y, weights=w)
         assert res.x.dtype == np.float64
         assert res.weights.dtype == np.float64
-        assert_almost_equal(res.x, [4, 4, 4, 4, 4, 4, 8])
-        assert_almost_equal(res.weights, [6, 1])
-        assert_almost_equal(res.blocks, [0, 6, 7])
+        assert_allclose(res.x, [4, 4, 4, 4, 4, 4, 8])
+        assert_allclose(res.weights, [6, 1])
+        assert_allclose(res.blocks, [0, 6, 7])
         # Assert that y was not overwritten
         assert_equal(y, np.array([8, 4, 8, 2, 2, 0, 8], dtype=np.float64))
 
@@ -57,26 +57,26 @@ class TestIsotonicRegression:
         n = 10
         y = np.linspace(0, 1, n) if increasing else np.linspace(1, 0, n)
         res = isotonic_regression(y, increasing=increasing)
-        assert_almost_equal(res.x, y)
-        assert_almost_equal(res.blocks, np.arange(n + 1))
+        assert_allclose(res.x, y)
+        assert_allclose(res.blocks, np.arange(n + 1))
 
     def test_weights(self):
         w = np.array([1, 2, 5, 0.5, 0.5, 0.5, 1, 3])
         y = np.array([3, 2, 1, 10, 9, 8, 20, 10])
         res = isotonic_regression(y, weights=w)
-        assert_almost_equal(res.x, [12/8, 12/8, 12/8, 9, 9, 9, 50/4, 50/4])
-        assert_almost_equal(res.weights, [8, 1.5, 4])
-        assert_almost_equal(res.blocks, [0, 3, 6, 8])
+        assert_allclose(res.x, [12/8, 12/8, 12/8, 9, 9, 9, 50/4, 50/4])
+        assert_allclose(res.weights, [8, 1.5, 4])
+        assert_allclose(res.blocks, [0, 3, 6, 8])
 
         # weights are like repeated observations, we repeat the 3rd element 5
         # times.
         w2 = np.array([1, 2, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 1, 3])
         y2 = np.array([3, 2, 1, 1, 1, 1, 1, 10, 9, 8, 20, 10])
         res2 = isotonic_regression(y2, weights=w2)
-        assert_almost_equal(np.diff(res2.x[0:7]), 0)
-        assert_almost_equal(res2.x[4:], res.x)
-        assert_almost_equal(res2.weights, res.weights)
-        assert_almost_equal(res2.blocks[1:] - 4, res.blocks[1:])
+        assert_allclose(np.diff(res2.x[0:7]), 0)
+        assert_allclose(res2.x[4:], res.x)
+        assert_allclose(res2.weights, res.weights)
+        assert_allclose(res2.blocks[1:] - 4, res.blocks[1:])
 
     def test_against_R_monotone(self):
         y = [0, 6, 8, 3, 5, 2, 1, 7, 9, 4]
@@ -89,7 +89,7 @@ class TestIsotonicRegression:
             0, 4.1666667, 4.1666667, 4.1666667, 4.1666667, 4.1666667,
             4.1666667, 6.6666667, 6.6666667, 6.6666667,
         ]
-        assert_almost_equal(res.x, x_R)
+        assert_allclose(res.x, x_R)
         assert_equal(res.blocks, [0, 1, 7, 10])
 
         n = 100
@@ -119,17 +119,17 @@ class TestIsotonicRegression:
             4.8656413, 4.8656413, 4.8656413, 4.8656413, 4.8656413, 4.8656413,
             4.8656413, 4.8656413, 4.8656413, 4.8656413,
         ]
-        assert_almost_equal(res.x, x_R)
+        assert_allclose(res.x, x_R)
 
         # Test increasing
         assert np.all(np.diff(res.x) >= 0)
 
         # Test balance property: sum(y) == sum(x)
-        assert_almost_equal(np.sum(res.x), np.sum(y))
+        assert_allclose(np.sum(res.x), np.sum(y))
 
         # Reverse order
         res_inv = isotonic_regression(-y, increasing=False)
-        assert_almost_equal(-res_inv.x, res.x)
+        assert_allclose(-res_inv.x, res.x)
         assert_equal(res_inv.blocks, res.blocks)
 
     def test_readonly(self):
