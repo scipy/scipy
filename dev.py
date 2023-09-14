@@ -663,7 +663,6 @@ class Test(Task):
         help="more verbosity")
     # removed doctests as currently not supported by _lib/_testutils.py
     # doctests = Option(['--doctests'], default=False)
-    doctests = Option(['--doctests'], default=False, is_flag=True)
     coverage = Option(
         ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
@@ -748,7 +747,6 @@ class Test(Task):
                 verbose=verbose,
                 extra_argv=extra_argv,
                 # doctests=False,
-                doctests=args.doctests,
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)

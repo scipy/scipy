@@ -131,6 +131,8 @@ jobs:
 
     - name: Run doctests
       run: |
+        export PY_IGNORE_IMPORTMISMATCH=1
+        pip install matplotlib
         pip install git+https://github.com/ev-br/scpdt.git@1038618b83c9afa1fb79ca2f7839872708b7cae2
         python dev.py doctest
 
