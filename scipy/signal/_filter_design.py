@@ -1109,7 +1109,7 @@ def tf2zpk(b, a):
 
 
 def zpk2tf(z, p, k):
-    """
+    r"""
     Return polynomial transfer function representation from zeros and poles
 
     Parameters
@@ -1144,8 +1144,7 @@ def zpk2tf(z, p, k):
     >>> p   = [1,   8]
     >>> k   = 5
     >>> zpk2tf(z, p, k)
-    (   array([  5.,    -40.,   60.]), 
-        array([  1.,    -9. ,   8. ]))
+    (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
@@ -1186,7 +1185,7 @@ def zpk2tf(z, p, k):
 
 
 def tf2sos(b, a, pairing=None, *, analog=False):
-    """
+    r"""
     Return second-order sections from transfer function representation
 
     Parameters
@@ -1236,14 +1235,14 @@ def tf2sos(b, a, pairing=None, *, analog=False):
         
     >>> from scipy.signal import tf2sos
     >>> tf2sos([1, -3.5, -2], [1, 3, -15, -19, 30], analog=True)
-    (   array([[ 0. ,   0. ,   1. ,   1. ,   2. ,  -15. ],
-               [ 1. ,  -3.5,  -2. ,   1. ,   1. ,  -2.  ]])
+    array([[  0. ,   0. ,   1. ,   1. ,   2. , -15. ],
+           [  1. ,  -3.5,  -2. ,   1. ,   1. ,  -2. ]])
     """
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
 def sos2tf(sos):
-    """
+    r"""
     Return a single transfer function from a series of second-order sections
 
     Parameters
@@ -1273,8 +1272,8 @@ def sos2tf(sos):
     >>> from scipy import signal
     >>> sos = signal.ellip(1, 0.001, 50, 0.1, output='sos')
     >>> sos2tf(sos)
-    (   array([ 0.9125,  0.9125,  0. ])
-        array([ 1.    ,  0.8251,  0. ])
+    (   array([0.91256522, 0.91256522, 0.        ]),
+        array([1.        , 0.82513043, 0.        ]))
     """
     sos = np.asarray(sos)
     result_type = sos.dtype
@@ -2803,9 +2802,7 @@ def lp2lp_zpk(z, p, k, wo=1.0):
     >>> k   = 0.8
     >>> wo  = 0.4
     >>> lp2lp_zpk(z, p, k, wo)
-    (   array([ 2.8,    0.8.  ]), 
-        array([ 2. ,    5.2   ]), 
-        0.8)
+    (   array([2.8, 0.8]), array([2. , 5.2]), 0.8)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2880,8 +2877,8 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     >>> k   = 10
     >>> wo  = 0.6
     >>> lp2hp_zpk(z, p, k, wo)
-    (   array([ -0.0923 - 0.1384j , -0.3370 + 0.5393j ])
-        array([ -0.6              , -0.15             ])
+    (   array([-0.09230769-0.13846154j, -0.33707865+0.53932584j]),
+        array([-0.6 , -0.15]),
         8.5)
     """
     z = atleast_1d(z)
@@ -2965,9 +2962,10 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     >>> wo  = 0.62
     >>> bw  = 15
     >>> lp2bp_zpk(z, p, k, wo, bw)
-    (   array([ 74.995  + 30.001j ,  74.995 - 30.001j , 0.0044 - 0.001j ,  0.0044   + 0.001j ])
-        array([ 104.996           , -0.001            , 0.0036          , -239.998           ])
-        0.8)
+    (   array([9.99974999e+01+0.00000000e+00j, 9.99978448e+01-4.00008621e+01j,
+               2.50006250e-03+0.00000000e+00j, 2.15519323e-03+8.62114454e-04j]), 
+        array([3.99937490e+01+0.j, -4.16666956e-04+0.j,  6.25097687e-03+0.j,
+               -5.99999583e+02+0.j]), 1.0)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -3060,9 +3058,9 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
     >>> wo  = 0.5
     >>> bw  = 10
     >>> lp2bs_zpk(z, p, k, wo, bw)
-    (   array([ 0.+0.5j ,    0.+0.5j ,    0.-0.5j,     0.-0.5j ])
-        array([ 14.2681 ,   -0.0250  ,    0.01752,    -9.9749  ])
-        -12.8571 )
+    (   array([0.+0.5j, 0.+0.5j, 0.-0.5j, 0.-0.5j]), 
+        array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]), 
+        -12.857142857142858)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
