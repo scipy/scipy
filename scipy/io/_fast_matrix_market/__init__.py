@@ -18,8 +18,9 @@ __all__ = ['mminfo', 'mmread', 'mmwrite']
 
 PARALLELISM = 0
 """
-Default value for the parallelism argument to mmread() and mmwrite().
+Number of threads that `mmread()` and `mmwrite()` use.
 0 means number of CPUs in the system.
+Use `threadpoolctl` to set this value.
 """
 
 ALWAYS_FIND_SYMMETRY = False
@@ -40,6 +41,36 @@ _field_to_dtype = {
 def _fmm_version():
     from . import _fmm_core
     return _fmm_core.__version__
+
+
+# Register with threadpoolctl, if available
+try:
+    import threadpoolctl
+
+    class _FMMThreadPoolCtlController(threadpoolctl.LibController):
+        user_api = "scipy"
+        internal_api = "scipy_mmio"
+
+        filename_prefixes = ("_fmm_core",)
+
+        def get_num_threads(self):
+            global PARALLELISM
+            return PARALLELISM
+
+        def set_num_threads(self, num_threads):
+            global PARALLELISM
+            PARALLELISM = num_threads
+
+        def get_version(self):
+            return _fmm_version
+
+        def set_additional_attributes(self):
+            pass
+
+    threadpoolctl.register(_FMMThreadPoolCtlController)
+except (ImportError, AttributeError):
+    # threadpoolctl not installed or version too old
+    pass
 
 
 class _TextToBytesWrapper(io.BufferedReader):
@@ -254,7 +285,7 @@ def _validate_symmetry(symmetry):
     return symmetry
 
 
-def mmread(source, parallelism=None):
+def mmread(source):
     """
     Reads the contents of a Matrix Market file-like 'source' into a matrix.
 
@@ -263,10 +294,6 @@ def mmread(source, parallelism=None):
     source : str or file-like
         Matrix Market filename (extensions .mtx, .mtz.gz)
         or open file-like object.
-    parallelism : int, optional
-        Number of threads to use. Default is the number of CPUs in the system.
-
-        .. versionadded:: 1.12.0
 
     Returns
     -------
@@ -307,8 +334,17 @@ def mmread(source, parallelism=None):
            [0., 0., 0., 2., 3.],
            [4., 5., 6., 7., 0.],
            [0., 0., 0., 0., 0.]])
+
+    This method is threaded. The default number of threads is equal to the number of CPUs in the system.
+    Use `threadpoolctl <https://github.com/joblib/threadpoolctl>`_ to override:
+
+    >>> import threadpoolctl
+    >>>
+    >>> with threadpoolctl.threadpool_limits(limits=2):
+    >>>     m = mmread(StringIO(text))
+
     """
-    cursor, stream_to_close = _get_read_cursor(source, parallelism)
+    cursor, stream_to_close = _get_read_cursor(source)
 
     if cursor.header.format == "array":
         mat = _read_body_array(cursor)
@@ -323,7 +359,7 @@ def mmread(source, parallelism=None):
         return coo_matrix(triplet, shape=shape)
 
 
-def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO", parallelism=None):
+def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"):
     r"""
     Writes the sparse or dense array `a` to Matrix Market file-like `target`.
 
@@ -344,10 +380,6 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         If symmetry is None the symmetry type of 'a' is determined by its
         values. If symmetry is 'AUTO' the symmetry type of 'a' is either
         determined or set to 'general', at mmwrite's discretion.
-    parallelism : int, optional
-        Number of threads to use. Default is the number of CPUs in the system.
-
-        .. versionadded:: 1.12.0
 
     Returns
     -------
@@ -440,6 +472,15 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
     0.0e+00 5.0e+00
     2.5e+00 0.0e+00
 
+    This method is threaded. The default number of threads is equal to the number of CPUs in the system.
+    Use `threadpoolctl <https://github.com/joblib/threadpoolctl>`_ to override:
+
+    >>> import threadpoolctl
+    >>>
+    >>> target = BytesIO()
+    >>> with threadpoolctl.threadpool_limits(limits=2):
+    >>>     mmwrite(target, a)
+
     """
     from . import _fmm_core
 
@@ -456,7 +497,7 @@ def mmwrite(target, a, comment=None, field=None, precision=None, symmetry="AUTO"
         symmetry = scipy.io._mmio.MMFile()._get_symmetry(a)
 
     symmetry = _validate_symmetry(symmetry)
-    cursor = _get_write_cursor(target, comment=comment, parallelism=parallelism, precision=precision, symmetry=symmetry)
+    cursor = _get_write_cursor(target, comment=comment, precision=precision, symmetry=symmetry)
 
     if isinstance(a, np.ndarray):
         # Write dense numpy arrays

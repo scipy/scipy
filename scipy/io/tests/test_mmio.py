@@ -782,3 +782,20 @@ def test_gh18123(tmp_path):
     with open(test_file, "w") as f:
         f.writelines(lines)
     mmread(test_file)
+
+
+def test_threadpoolctl():
+    try:
+        import threadpoolctl
+        if not hasattr(threadpoolctl, "register"):
+            pytest.skip("threadpoolctl too old")
+            return
+    except ImportError:
+        pytest.skip("no threadpoolctl")
+        return
+
+    with threadpoolctl.threadpool_limits(limits=4):
+        assert_equal(fmm.PARALLELISM, 4)
+
+    with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
+        assert_equal(fmm.PARALLELISM, 2)
