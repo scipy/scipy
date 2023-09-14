@@ -318,7 +318,7 @@ def _read_record(f):
     record = {'rectype': _read_long(f)}
 
     nextrec = _read_uint32(f)
-    nextrec += _read_uint32(f) * 2**32
+    nextrec += _read_uint32(f).astype(np.int64) * 2**32
 
     _skip_bytes(f, 4)
 
@@ -789,7 +789,7 @@ def readsav(file_name, idict=None, python_dict=False,
 
             # Read position of next record and return as int
             nextrec = _read_uint32(f)
-            nextrec += _read_uint32(f) * 2**32
+            nextrec += _read_uint32(f).astype(np.int64) * 2**32
 
             # Read the unknown 4 bytes
             unknown = f.read(4)
