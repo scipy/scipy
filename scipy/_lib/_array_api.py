@@ -133,7 +133,11 @@ def as_xparray(
         # container that is consistent with the input's namespace.
         array = xp.asarray(array)
     else:
-        array = xp.asarray(array, dtype=dtype, copy=copy)
+        try:
+            array = xp.asarray(array, dtype=dtype, copy=copy)
+        except TypeError:
+            coerced_xp = array_namespace(xp.asarray(3))
+            array = coerced_xp.asarray(array, dtype=dtype, copy=copy)
 
     if check_finite:
         _check_finite(array, xp)
