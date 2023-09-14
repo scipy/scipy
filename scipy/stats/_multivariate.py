@@ -308,8 +308,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None)
         Draw random samples from a multivariate normal distribution.
-    entropy()
+    entropy(mean=None, cov=1)
         Compute the differential entropy of the multivariate normal.
+    fit(x, fix_mean=None, fix_cov=None)
+        Fit a multivariate normal distribution to data.
 
     Parameters
     ----------
@@ -786,6 +788,71 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         dim, mean, cov_object = self._process_parameters(mean, cov)
         return 0.5 * (cov_object.rank * (_LOG_2PI + 1) + cov_object.log_pdet)
+
+    def fit(self, x, fix_mean=None, fix_cov=None):
+        """Fit a multivariate normal distribution to data.
+
+        Parameters
+        ----------
+        x : ndarray (m, n)
+            Data the distribution is fitted to. Must have two axes.
+            The first axis of length `m` represents the number of vectors
+            the distribution is fitted to. The second axis of length `n`
+            determines the dimensionality of the fitted distribution.
+        fix_mean : ndarray(n, )
+            Fixed mean vector. Must have length `n`.
+        fix_cov: ndarray (n, n)
+            Fixed covariance matrix. Must have shape `(n, n)`.
+
+        Returns
+        -------
+        mean : ndarray (n, )
+            Maximum likelihood estimate of the mean vector
+        cov : ndarray (n, n)
+            Maximum likelihood estimate of the covariance matrix
+
+        """
+        # input validation for data to be fitted
+        x = np.asarray(x)
+        if x.ndim != 2:
+            raise ValueError("`x` must be two-dimensional.")
+
+        n_vectors, dim = x.shape
+
+        # parameter estimation
+        # reference: https://home.ttic.edu/~shubhendu/Slides/Estimation.pdf
+        if fix_mean is not None:
+            # input validation for `fix_mean`
+            fix_mean = np.atleast_1d(fix_mean)
+            if fix_mean.shape != (dim, ):
+                msg = ("`fix_mean` must be a one-dimensional array the same "
+                       "length as the dimensionality of the vectors `x`.")
+                raise ValueError(msg)
+            mean = fix_mean
+        else:
+            mean = x.mean(axis=0)
+
+        if fix_cov is not None:
+            # input validation for `fix_cov`
+            fix_cov = np.atleast_2d(fix_cov)
+            # validate shape
+            if fix_cov.shape != (dim, dim):
+                msg = ("`fix_cov` must be a two-dimensional square array "
+                       "of same side length as the dimensionality of the "
+                       "vectors `x`.")
+                raise ValueError(msg)
+            # validate positive semidefiniteness
+            # a trimmed down copy from _PSD
+            s, u = scipy.linalg.eigh(fix_cov, lower=True, check_finite=True)
+            eps = _eigvalsh_to_eps(s)
+            if np.min(s) < -eps:
+                msg = "`fix_cov` must be symmetric positive semidefinite."
+                raise ValueError(msg)
+            cov = fix_cov
+        else:
+            centered_data = x - mean
+            cov = centered_data.T @ centered_data / n_vectors
+        return mean, cov
 
 
 multivariate_normal = multivariate_normal_gen()
@@ -2330,8 +2397,8 @@ class wishart_gen(multi_rv_generic):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -2950,8 +3017,8 @@ class invwishart_gen(wishart_gen):
         Returns
         -------
         rvs : ndarray
-            Random variates of shape (`size`) + (`dim`, `dim), where `dim` is
-            the dimension of the scale matrix.
+            Random variates of shape (`size`) + (``dim``, ``dim``), where
+            ``dim`` is the dimension of the scale matrix.
 
         Notes
         -----
@@ -4345,9 +4412,9 @@ class multivariate_t_gen(multi_rv_generic):
 
     References
     ----------
-    [1]     Arellano-Valle et al. "Shannon Entropy and Mutual Information for
-            Multivariate Skew-Elliptical Distributions". Scandinavian Journal
-            of Statistics. Vol. 40, issue 1.
+    .. [1] Arellano-Valle et al. "Shannon Entropy and Mutual Information for
+           Multivariate Skew-Elliptical Distributions". Scandinavian Journal
+           of Statistics. Vol. 40, issue 1.
 
     Examples
     --------
@@ -4771,6 +4838,7 @@ class multivariate_t_frozen(multi_rv_frozen):
         Examples
         --------
         >>> import numpy as np
+        >>> from scipy.stats import multivariate_t
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
@@ -5058,8 +5126,8 @@ class multivariate_hypergeom_gen(multi_rv_generic):
     def _logpmf(self, x, M, m, n, mxcond, ncond):
         # This equation of the pmf comes from the relation,
         # n combine r = beta(n+1, 1) / beta(r+1, n-r+1)
-        num = np.zeros_like(m, dtype=np.float_)
-        den = np.zeros_like(n, dtype=np.float_)
+        num = np.zeros_like(m, dtype=np.float64)
+        den = np.zeros_like(n, dtype=np.float64)
         m, x = m[~mxcond], x[~mxcond]
         M, n = M[~ncond], n[~ncond]
         num[~mxcond] = (betaln(m+1, 1) - betaln(x+1, m-x+1))

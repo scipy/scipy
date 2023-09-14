@@ -10,9 +10,10 @@ from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import check_random_state
 
 from scipy.sparse import (csr_matrix, coo_matrix,
+                          csr_array, coo_array,
+                          sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
-from scipy.sparse._sputils import matrix
 
 sparse_formats = ['csr','csc','coo','bsr','dia','lil','dok']
 
@@ -306,7 +307,7 @@ class TestConstructUtils:
             for b in cases:
                 expected = np.kron(a, b)
                 for fmt in sparse_formats:
-                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt) 
+                    result = construct.kron(csr_matrix(a), csr_matrix(b), format=fmt)
                     assert_equal(result.format, fmt)
                     assert_array_equal(result.toarray(), expected)
 
@@ -338,10 +339,10 @@ class TestConstructUtils:
                         np.kron(b, np.eye(len(a)))
                 assert_array_equal(result,expected)
 
-    def test_vstack(self):
-
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5,6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_vstack(self, coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5,6]])
 
         expected = array([[1, 2],
                           [3, 4],
@@ -364,10 +365,18 @@ class TestConstructUtils:
         assert_equal(result.indices.dtype, np.int32)
         assert_equal(result.indptr.dtype, np.int32)
 
-    def test_hstack(self):
+    def test_vstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5,6]]
+        assert isinstance(construct.vstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.vstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.vstack([coo_matrix(A), coo_array(B)]), sparray)
+        assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
 
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
+    @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
+    def test_hstack(self,coo_cls):
+        A = coo_cls([[1,2],[3,4]])
+        B = coo_cls([[5],[6]])
 
         expected = array([[1, 2, 5],
                           [3, 4, 6]])
@@ -385,84 +394,141 @@ class TestConstructUtils:
                                       dtype=np.float32).dtype,
                      np.float32)
 
-    def test_bmat(self):
+    def test_hstack_matrix_or_array(self):
+        A = [[1,2],[3,4]]
+        B = [[5],[6]]
+        assert isinstance(construct.hstack([coo_array(A), coo_array(B)]), sparray)
+        assert isinstance(construct.hstack([coo_array(A), coo_matrix(B)]), sparray)
+        assert isinstance(construct.hstack([coo_matrix(A), coo_array(B)]), sparray)
+        assert isinstance(construct.hstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
 
-        A = coo_matrix([[1, 2], [3, 4]])
-        B = coo_matrix([[5],[6]])
-        C = coo_matrix([[7]])
-        D = coo_matrix((0, 0))
+    @pytest.mark.parametrize("block", (construct.bmat, construct.block))
+    def test_block_creation(self, block):
+
+        A = coo_array([[1, 2], [3, 4]])
+        B = coo_array([[5],[6]])
+        C = coo_array([[7]])
+        D = coo_array((0, 0))
 
         expected = array([[1, 2, 5],
                           [3, 4, 6],
                           [0, 0, 7]])
-        assert_equal(construct.bmat([[A, B], [None, C]]).toarray(), expected)
-        E = csr_matrix((1, 2), dtype=np.int32)
-        assert_equal(construct.bmat([[A.tocsr(), B.tocsr()],
+        assert_equal(block([[A, B], [None, C]]).toarray(), expected)
+        E = csr_array((1, 2), dtype=np.int32)
+        assert_equal(block([[A.tocsr(), B.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsc(), B.tocsc()],
+        assert_equal(block([[A.tocsc(), B.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
         expected = array([[1, 2, 0],
                           [3, 4, 0],
                           [0, 0, 7]])
-        assert_equal(construct.bmat([[A, None], [None, C]]).toarray(),
+        assert_equal(block([[A, None], [None, C]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsr(), E.T.tocsr()],
+        assert_equal(block([[A.tocsr(), E.T.tocsr()],
                                      [E, C.tocsr()]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[A.tocsc(), E.T.tocsc()],
+        assert_equal(block([[A.tocsc(), E.T.tocsc()],
                                      [E.tocsc(), C.tocsc()]]).toarray(),
                      expected)
 
-        Z = csr_matrix((1, 1), dtype=np.int32)
+        Z = csr_array((1, 1), dtype=np.int32)
         expected = array([[0, 5],
                           [0, 6],
                           [7, 0]])
-        assert_equal(construct.bmat([[None, B], [C, None]]).toarray(),
+        assert_equal(block([[None, B], [C, None]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[E.T.tocsr(), B.tocsr()],
+        assert_equal(block([[E.T.tocsr(), B.tocsr()],
                                      [C.tocsr(), Z]]).toarray(),
                      expected)
-        assert_equal(construct.bmat([[E.T.tocsc(), B.tocsc()],
+        assert_equal(block([[E.T.tocsc(), B.tocsc()],
                                      [C.tocsc(), Z.tocsc()]]).toarray(),
                      expected)
 
-        expected = matrix(np.empty((0, 0)))
-        assert_equal(construct.bmat([[None, None]]).toarray(), expected)
-        assert_equal(construct.bmat([[None, D], [D, None]]).toarray(),
+        expected = np.empty((0, 0))
+        assert_equal(block([[None, None]]).toarray(), expected)
+        assert_equal(block([[None, D], [D, None]]).toarray(),
                      expected)
 
         # test bug reported in gh-5976
         expected = array([[7]])
-        assert_equal(construct.bmat([[None, D], [C, None]]).toarray(),
+        assert_equal(block([[None, D], [C, None]]).toarray(),
                      expected)
 
         # test failure cases
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A], [B]])
+            block([[A], [B]])
         excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsr()], [B.tocsr()]])
+            block([[A.tocsr()], [B.tocsr()]])
         excinfo.match(r'incompatible dimensions for axis 1')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsc()], [B.tocsc()]])
+            block([[A.tocsc()], [B.tocsc()]])
         excinfo.match(r'Mismatching dimensions along axis 1: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A, C]])
+            block([[A, C]])
         excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsr(), C.tocsr()]])
+            block([[A.tocsr(), C.tocsr()]])
         excinfo.match(r'Mismatching dimensions along axis 0: ({1, 2}|{2, 1})')
 
         with assert_raises(ValueError) as excinfo:
-            construct.bmat([[A.tocsc(), C.tocsc()]])
+            block([[A.tocsc(), C.tocsc()]])
         excinfo.match(r'incompatible dimensions for axis 0')
+
+    def test_block_return_type(self):
+        block = construct.block
+
+        # csr format ensures we hit _compressed_sparse_stack
+        # shape of F,G ensure we hit _stack_along_minor_axis
+        # list version ensure we hit the path with neither helper function
+        Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
+        Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
+        assert isinstance(block([[None, Fl], [Gl, None]], format="csr"), sparray)
+        assert isinstance(block([[None, Fm], [Gm, None]], format="csr"), sparray)
+        assert isinstance(block([[Fm, Gm]], format="csr"), sparray)
+
+    def test_bmat_return_type(self):
+        """This can be removed after sparse matrix is removed"""
+        bmat = construct.bmat
+        # check return type. if any input _is_array output array, else matrix
+        Fl, Gl = [[1, 2],[3, 4]], [[7], [5]]
+        Fm, Gm = csr_matrix(Fl), csr_matrix(Gl)
+        Fa, Ga = csr_array(Fl), csr_array(Gl)
+        assert isinstance(bmat([[Fa, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm, Gm]], format="csr"), spmatrix)
+        assert isinstance(bmat([[None, Fa], [Ga, None]], format="csr"), sparray)
+        assert isinstance(bmat([[None, Fm], [Ga, None]], format="csr"), sparray)
+        assert isinstance(bmat([[None, Fm], [Gm, None]], format="csr"), spmatrix)
+        assert isinstance(bmat([[None, Fl], [Gl, None]], format="csr"), spmatrix)
+
+        # type returned by _compressed_sparse_stack (all csr)
+        assert isinstance(bmat([[Ga, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Ga, Gm]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm, Gm]], format="csr"), spmatrix)
+        # shape is 2x2 so no _stack_along_minor_axis
+        assert isinstance(bmat([[Fa, Fm]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm, Fm]], format="csr"), spmatrix)
+
+        # type returned by _compressed_sparse_stack (all csc)
+        assert isinstance(bmat([[Gm.tocsc(), Ga.tocsc()]], format="csc"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Gm.tocsc()]], format="csc"), spmatrix)
+        # shape is 2x2 so no _stack_along_minor_axis
+        assert isinstance(bmat([[Fa.tocsc(), Fm.tocsc()]], format="csr"), sparray)
+        assert isinstance(bmat([[Fm.tocsc(), Fm.tocsc()]], format="csr"), spmatrix)
+
+        # type returned when mixed input
+        assert isinstance(bmat([[Gl, Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Ga]], format="csr"), sparray)
+        assert isinstance(bmat([[Gm.tocsc(), Gm]], format="csr"), spmatrix)
+        assert isinstance(bmat([[Gm, Gm]], format="csc"), spmatrix)
 
     @pytest.mark.slow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
@@ -471,9 +537,10 @@ class TestConstructUtils:
         check_free_memory(30000)
 
         n = 33000
-        A = csr_matrix(np.ones((n, n), dtype=bool))
+        A = csr_array(np.ones((n, n), dtype=bool))
         B = A.copy()
-        C = construct._compressed_sparse_stack((A,B), 0)
+        C = construct._compressed_sparse_stack((A, B), axis=0,
+                                               return_spmatrix=False)
 
         assert_(np.all(np.equal(np.diff(C.indptr), n)))
         assert_equal(C.indices.dtype, np.int64)
@@ -481,9 +548,9 @@ class TestConstructUtils:
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
-        A = coo_matrix([[1,2],[3,4]])
-        B = coo_matrix([[5],[6]])
-        C = coo_matrix([[7]])
+        A = coo_array([[1,2],[3,4]])
+        B = coo_array([[5],[6]])
+        C = coo_array([[7]])
 
         expected = array([[1, 2, 0, 0],
                           [3, 4, 0, 0],
@@ -511,20 +578,25 @@ class TestConstructUtils:
         assert_equal(construct.block_diag([1]).toarray(),
                      array([[1]]))
 
-    def test_block_diag_sparse_matrices(self):
-        """ block_diag with sparse matrices """
+    def test_block_diag_sparse_arrays(self):
+        """ block_diag with sparse arrays """
 
-        sparse_col_matrices = [coo_matrix(([[1, 2, 3]]), shape=(1, 3)),
-                               coo_matrix(([[4, 5]]), shape=(1, 2))]
-        block_sparse_cols_matrices = construct.block_diag(sparse_col_matrices)
-        assert_equal(block_sparse_cols_matrices.toarray(),
+        A = coo_array([[1, 2, 3]], shape=(1, 3))
+        B = coo_array([[4, 5]], shape=(1, 2))
+        assert_equal(construct.block_diag([A, B]).toarray(),
                      array([[1, 2, 3, 0, 0], [0, 0, 0, 4, 5]]))
 
-        sparse_row_matrices = [coo_matrix(([[1], [2], [3]]), shape=(3, 1)),
-                               coo_matrix(([[4], [5]]), shape=(2, 1))]
-        block_sparse_row_matrices = construct.block_diag(sparse_row_matrices)
-        assert_equal(block_sparse_row_matrices.toarray(),
+        A = coo_array([[1], [2], [3]], shape=(3, 1))
+        B = coo_array([[4], [5]], shape=(2, 1))
+        assert_equal(construct.block_diag([A, B]).toarray(),
                      array([[1, 0], [2, 0], [3, 0], [0, 4], [0, 5]]))
+
+    def test_block_diag_return_type(self):
+        A, B = coo_array([[1, 2, 3]]), coo_matrix([[2, 3, 4]])
+        assert isinstance(construct.block_diag([A, A]), sparray)
+        assert isinstance(construct.block_diag([A, B]), sparray)
+        assert isinstance(construct.block_diag([B, A]), sparray)
+        assert isinstance(construct.block_diag([B, B]), spmatrix)
 
     def test_random_sampling(self):
         # Simple sanity checks for sparse random sampling.
@@ -537,7 +609,7 @@ class TestConstructUtils:
                 assert_equal(x.nnz, 5)
 
             x1 = f(5, 10, density=0.1, random_state=4321)
-            assert_equal(x1.dtype, np.double)
+            assert_equal(x1.dtype, np.float64)
 
             x2 = f(5, 10, density=0.1,
                    random_state=np.random.RandomState(4321))

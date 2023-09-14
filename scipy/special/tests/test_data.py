@@ -562,7 +562,12 @@ BOOST_TESTS = [
 
 @pytest.mark.parametrize('test', BOOST_TESTS, ids=repr)
 def test_boost(test):
-    _test_factory(test)
+    # Filter deprecation warnings of any deprecated functions.
+    if test.func in [btdtr, btdtri, btdtri_comp]:
+        with pytest.deprecated_call():
+            _test_factory(test)
+    else:
+        _test_factory(test)
 
 
 GSL_TESTS = [
@@ -605,7 +610,7 @@ def test_local(test):
     _test_factory(test)
 
 
-def _test_factory(test, dtype=np.double):
+def _test_factory(test, dtype=np.float64):
     """Boost test"""
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")

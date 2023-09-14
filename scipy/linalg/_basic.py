@@ -14,7 +14,10 @@ from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
 from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+
+# deprecated imports to be removed in SciPy 1.13.0
+from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
@@ -1317,7 +1320,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 lstsq.default_lapack_driver = 'gelsd'
 
 
-def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
+@_deprecate_positional_args(version="1.14")
+def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
          cond=_NoValue, rcond=_NoValue):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -1361,7 +1365,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
         .. deprecated:: 1.7.0
             Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in SciPy 1.13.0.
+            will be removed in SciPy 1.14.0.
 
         .. versionchanged:: 1.3.0
             Previously the default cutoff value was just ``eps*f`` where ``f``
@@ -1381,7 +1385,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     See Also
     --------
-    pinvh : Moore-Penrose pseudoinverse of a hermititan matrix.
+    pinvh : Moore-Penrose pseudoinverse of a hermitian matrix.
 
     Notes
     -----
@@ -1410,8 +1414,8 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     Here, ``A*`` denotes the conjugate transpose. The Moore-Penrose
     pseudoinverse is a unique ``B`` that satisfies all four of these
     conditions and exists for any ``A``. Note that, unlike the standard
-    matrix inverse, ``A`` does not have to be square or have
-    independant columns/rows.
+    matrix inverse, ``A`` does not have to be a square matrix or have
+    linearly independent columns/rows.
 
     As an example, we can calculate the Moore-Penrose pseudoinverse of a
     random non-square matrix and verify it satisfies the four conditions.
@@ -1438,7 +1442,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
     if rcond is not _NoValue or cond is not _NoValue:
         warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in SciPy 1.13.0. Use "atol" and '
+             'will be removed in SciPy 1.14.0. Use "atol" and '
              '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
 
     # backwards compatible only atol and rtol are both missing
@@ -1767,7 +1771,7 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         raise ValueError('Incompatible dimensions.')
 
     is_cmplx = np.iscomplexobj(r) or np.iscomplexobj(c) or np.iscomplexobj(b)
-    dtype = np.complex128 if is_cmplx else np.double
+    dtype = np.complex128 if is_cmplx else np.float64
     r, c, b = (np.asarray(i, dtype=dtype) for i in (r, c, b))
 
     if b.ndim == 1 and not keep_b_shape:

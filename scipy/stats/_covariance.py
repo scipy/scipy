@@ -15,7 +15,7 @@ class Covariance:
     Calculations involving covariance matrices (e.g. data whitening,
     multivariate normal function evaluation) are often performed more
     efficiently using a decomposition of the covariance matrix instead of the
-    covariance metrix itself. This class allows the user to construct an
+    covariance matrix itself. This class allows the user to construct an
     object representing a covariance matrix using any of several
     decompositions and perform calculations using a common interface.
 

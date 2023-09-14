@@ -178,6 +178,59 @@ class TestUtils:
         with pytest.raises(ValueError, match="Invalid number of workers..."):
             qmc.discrepancy(sample, workers=-2)
 
+    def test_geometric_discrepancy_errors(self):
+        sample = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
+
+        with pytest.raises(ValueError, match=r"Sample is not in unit hypercube"):
+            qmc.geometric_discrepancy(sample)
+
+        with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+            qmc.geometric_discrepancy([1, 3])
+
+        sample = [[0, 0], [1, 1], [0.5, 0.5]]
+        with pytest.raises(ValueError, match=r"'toto' is not a valid ..."):
+            qmc.geometric_discrepancy(sample, method="toto")
+
+        sample = np.array([[0, 0], [0, 0], [0, 1]])
+        with pytest.warns(UserWarning, match="Sample contains duplicate points."):
+            qmc.geometric_discrepancy(sample)
+
+        sample = np.array([[0.5, 0.5]])
+        with pytest.raises(ValueError, match="Sample must contain at least two points"):
+            qmc.geometric_discrepancy(sample)
+
+    def test_geometric_discrepancy(self):
+        sample = np.array([[0, 0], [1, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), np.sqrt(2))
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), np.sqrt(2))
+
+        sample = np.array([[0, 0], [0, 1], [0.5, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), 0.5)
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), 0.75)
+
+        sample = np.array([[0, 0], [0.25, 0.25], [1, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample), np.sqrt(2) / 4)
+        assert_allclose(qmc.geometric_discrepancy(sample, method="mst"), np.sqrt(2) / 2)
+        assert_allclose(qmc.geometric_discrepancy(sample, metric="chebyshev"), 0.25)
+        assert_allclose(
+            qmc.geometric_discrepancy(sample, method="mst", metric="chebyshev"), 0.5
+        )
+
+        rng = np.random.default_rng(191468432622931918890291693003068437394)
+        sample = qmc.LatinHypercube(d=3, seed=rng).random(50)
+        assert_allclose(qmc.geometric_discrepancy(sample), 0.05106012076093356)
+        assert_allclose(
+            qmc.geometric_discrepancy(sample, method='mst'), 0.19704396643366182
+        )
+
+    @pytest.mark.xfail(
+            reason="minimum_spanning_tree ignores zero distances (#18892)",
+            strict=True,
+    )
+    def test_geometric_discrepancy_mst_with_zero_distances(self):
+        sample = np.array([[0, 0], [0, 0], [0, 1]])
+        assert_allclose(qmc.geometric_discrepancy(sample, method='mst'), 0.5)
+
     def test_update_discrepancy(self):
         # From Fang et al. Design and modeling for computer experiments, 2006
         space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])

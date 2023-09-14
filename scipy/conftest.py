@@ -2,11 +2,14 @@
 import json
 import os
 import warnings
+import tempfile
+from functools import wraps
 
 import numpy as np
 import numpy.array_api
 import numpy.testing as npt
 import pytest
+import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
@@ -147,10 +150,33 @@ skip_if_array_api = pytest.mark.skipif(
     reason="do not run with Array API on",
 )
 
-skip_if_array_api_gpu = pytest.mark.skipif(
-    SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu',
-    reason="do not run with Array API on and not on CPU",
-)
+
+def skip_if_array_api_gpu(func):
+    reason = "do not run with Array API on and not on CPU"
+    # method gets there as a function so we cannot use inspect.ismethod
+    if '.' in func.__qualname__:
+        @wraps(func)
+        def wrapped(self, *args, **kwargs):
+            xp = kwargs["xp"]
+            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
+                if xp.__name__ == 'cupy':
+                    pytest.skip(reason=reason)
+                elif xp.__name__ == 'torch':
+                    if 'cpu' not in torch.empty(0).device.type:
+                        pytest.skip(reason=reason)
+            return func(self, *args, **kwargs)
+    else:
+        @wraps(func)
+        def wrapped(*args, **kwargs):
+            xp = kwargs["xp"]
+            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
+                if xp.__name__ == 'cupy':
+                    pytest.skip(reason=reason)
+                elif xp.__name__ == 'torch':
+                    if 'cpu' not in torch.empty(0).device.type:
+                        pytest.skip(reason=reason)
+            return func(*args, **kwargs)
+    return wrapped
 
 
 def skip_if_array_api_backend(backend):
@@ -160,14 +186,45 @@ def skip_if_array_api_backend(backend):
         )
         # method gets there as a function so we cannot use inspect.ismethod
         if '.' in func.__qualname__:
-            def wrapped(self, *args, xp, **kwargs):
+            @wraps(func)
+            def wrapped(self, *args, **kwargs):
+                xp = kwargs["xp"]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
-                return func(self, *args, xp, **kwargs)
+                return func(self, *args, **kwargs)
         else:
-            def wrapped(*args, xp, **kwargs):  # type: ignore[misc]
+            @wraps(func)
+            def wrapped(*args, **kwargs):
+                xp = kwargs["xp"]
                 if xp.__name__ == backend:
                     pytest.skip(reason=reason)
-                return func(*args, xp, **kwargs)
+                return func(*args, **kwargs)
         return wrapped
     return wrapper
+
+
+# Following the approach of NumPy's conftest.py...
+# Use a known and persistent tmpdir for hypothesis' caches, which
+# can be automatically cleared by the OS or user.
+hypothesis.configuration.set_hypothesis_home_dir(
+    os.path.join(tempfile.gettempdir(), ".hypothesis")
+)
+
+# We register two custom profiles for SciPy - for details see
+# https://hypothesis.readthedocs.io/en/latest/settings.html
+# The first is designed for our own CI runs; the latter also
+# forces determinism and is designed for use via scipy.test()
+hypothesis.settings.register_profile(
+    name="nondeterministic", deadline=None, print_blob=True,
+)
+hypothesis.settings.register_profile(
+    name="deterministic",
+    deadline=None, print_blob=True, database=None, derandomize=True,
+    suppress_health_check=list(hypothesis.HealthCheck),
+)
+
+# Profile is currently set by environment variable `SCIPY_HYPOTHESIS_PROFILE`
+# In the future, it would be good to work the choice into dev.py.
+SCIPY_HYPOTHESIS_PROFILE = os.environ.get("SCIPY_HYPOTHESIS_PROFILE",
+                                          "deterministic")
+hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)

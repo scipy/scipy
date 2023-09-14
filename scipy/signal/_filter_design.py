@@ -891,6 +891,7 @@ def _cplxreal(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxreal
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
     >>> print(zc)
@@ -998,6 +999,7 @@ def _cplxpair(z, tol=None):
 
     Examples
     --------
+    >>> from scipy.signal._filter_design import _cplxpair
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> z = _cplxpair(a)
     >>> print(z)
@@ -1081,6 +1083,20 @@ def tf2zpk(b, a):
     transfer function coefficients must first be converted to the "positive
     powers" form before finding the poles and zeros.
 
+    Examples
+    --------
+    Find the zeroes, poles and gain of 
+    a filter with the transfer function
+
+    .. math::
+    
+        H(s) = \frac{3s^2}{s^2 + 5s + 13}
+        
+    >>> from scipy.signal import tf2zpk
+    >>> tf2zpk([3, 0, 0], [1, 5, 13])
+    (   array([ 0.               ,  0.              ]), 
+        array([ -2.5+2.59807621j ,  -2.5-2.59807621j]), 
+        3.0)
     """
     b, a = normalize(b, a)
     b = (b + 0.0) / a[0]
@@ -4537,6 +4553,7 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498, and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
+    >>> from scipy.signal._filter_design import _bessel_poly
     >>> i = 0
     >>> for n in range(51):
     ...     for x in _bessel_poly(n, reverse=True):

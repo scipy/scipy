@@ -16,7 +16,6 @@ __all__ = [  # noqa: F822
     'check_shape',
     'get_sum_dtype',
     'isdense',
-    'isintlike',
     'isscalarlike',
     'issparse',
     'isspmatrix',

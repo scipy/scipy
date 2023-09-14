@@ -134,7 +134,7 @@ def evaluate_spline(const double[::1] t,
     if nu < 0:
         raise NotImplementedError("Cannot do derivative order %s." % nu)
 
-    cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
+    cdef double[::1] work = np.empty(2*k+2, dtype=np.float64)
 
     # evaluate
     with nogil:
@@ -217,7 +217,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     >>> plt.show()
 
     """
-    bbb = np.empty(2*k+2, dtype=np.float_)
+    bbb = np.empty(2*k+2, dtype=np.float64)
     cdef double[::1] work = bbb
     _deBoor_D(&t[0], xval, k, m, nu, &work[0])
     return bbb[:k+1]
@@ -265,7 +265,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
     cdef double xval
 
     kl = ku = k
-    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     # collocation matrix
     with nogil:
@@ -320,7 +320,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
     """
     cdef:
         int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k+2, dtype=np.float64)
 
     # derivatives @ xval
     with nogil:
@@ -387,7 +387,7 @@ def _norm_eq_lsq(const double[::1] x,
     cdef:
         int j, r, s, row, clmn, left, ci
         double xval, wval
-        double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
         left = k

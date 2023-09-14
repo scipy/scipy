@@ -1190,6 +1190,8 @@ four window positions also named time slices:
 .. When editing the SVGs with Inkscape, convert all arrows from "Stroke" to
    "Path" (See "Path" menu). This circumvents the problem of the arrow tips
    not being displayed in the browser (as with Firefox 105 and Inkscape 1.2).
+   The online tool https://www.svgminify.com/ was used to reduce the file size
+   of the SVGs which were drawn with inkscape.
 
 .. figure:: ../_static/tutorial_stft_sliding_win_start.svg
     :width: 60%

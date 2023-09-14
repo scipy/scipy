@@ -87,12 +87,12 @@ at the top-level directory.
  */
 
 int
-clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
+clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int isave[3])
 {
     /* Table of constant values */
     int c__1 = 1;
-    complex      zero = {0.0, 0.0};
-    complex      one = {1.0, 0.0};
+    singlecomplex      zero = {0.0, 0.0};
+    singlecomplex      one = {1.0, 0.0};
 
     /* System generated locals */
     float d__1;
@@ -104,12 +104,12 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
     float temp;
     float safmin;
     extern float smach(char *);
-    extern int icmax1_slu(int *, complex *, int *);
-    extern double scsum1_slu(int *, complex *, int *);
+    extern int icmax1_slu(int *, singlecomplex *, int *);
+    extern double scsum1_slu(int *, singlecomplex *, int *);
 #ifdef _CRAY
-    extern int CCOPY(int *, complex *, int *, complex [], int *);
+    extern int CCOPY(int *, singlecomplex *, int *, singlecomplex [], int *);
 #else
-    extern int ccopy_(int *, complex *, int *, complex [], int *);
+    extern int ccopy_(int *, singlecomplex *, int *, singlecomplex [], int *);
 #endif
 
     safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */

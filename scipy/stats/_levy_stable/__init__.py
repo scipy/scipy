@@ -772,7 +772,18 @@ class levy_stable_gen(rv_continuous):
         For cdf calculations FFT calculation is considered experimental. Use
         Zolatarev's method instead (default).
 
-    %(after_notes)s
+    The probability density above is defined in the "standardized" form. To
+    shift and/or scale the distribution use the ``loc`` and ``scale``
+    parameters.
+    Generally ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
+    equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+    ``y = (x - loc) / scale``, except in the ``S1`` parameterization if
+    ``alpha == 1``.  In that case ``%(name)s.pdf(x, %(shapes)s, loc, scale)``
+    is identically equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+    ``y = (x - loc - 2 * beta * scale * np.log(scale) / np.pi) / scale``.
+    See [NO2]_ Definition 1.8 for more information.
+    Note that shifting the location of a distribution
+    does not make it a "noncentral" distribution.
 
     References
     ----------
@@ -783,6 +794,8 @@ class levy_stable_gen(rv_continuous):
         to compute densities of stable distribution.
     .. [NO] Nolan, J., 1997. Numerical Calculation of Stable Densities and
         distributions Functions.
+    .. [NO2] Nolan, J., 2018. Stable Distributions: Models for Heavy Tailed
+        Data.
     .. [HO] Hopcraft, K. I., Jakeman, E., Tanner, R. M. J., 1999. Lévy random
         walks with fluctuating step number and multiscale behavior.
 
@@ -1113,7 +1126,7 @@ class levy_stable_gen(rv_continuous):
                     density_x, np.real(density), k=fft_interpolation_degree
                 )
                 data_out[data_mask] = np.array(
-                    [f.integral(self.a, x_1) for x_1 in _x]
+                    [f.integral(self.a, float(x_1.squeeze())) for x_1 in _x]
                 ).reshape(data_out[data_mask].shape)
 
         return data_out.T[0]

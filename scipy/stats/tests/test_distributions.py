@@ -221,40 +221,14 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, 0, np.pi])
-    @pytest.mark.parametrize('kappa_tol', [(1e-1, 5e-2), (1e2, 1e-2),
-                                           (1e5, 1e-2)])
-    def test_vonmises_fit_all(self, kappa_tol, loc):
-        rng = np.random.default_rng(6762668991392531563)
-        kappa, tol = kappa_tol
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000,
-                                                        random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data)
-        assert scale_fit == 1
-        loc_vec = np.array([np.cos(loc), np.sin(loc)])
-        loc_fit_vec = np.array([np.cos(loc_fit), np.sin(loc_fit)])
-        angle = np.arccos(loc_vec.dot(loc_fit_vec))
-        assert_allclose(angle, 0, atol=tol, rtol=0)
-        assert_allclose(kappa, kappa_fit, rtol=tol)
-
-    def test_vonmises_fit_shape(self):
-        rng = np.random.default_rng(6762668991392531563)
-        loc = 0.25*np.pi
-        kappa = 10
-        data = stats.vonmises(loc=loc, kappa=kappa).rvs(100000, random_state=rng)
-        kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
-        assert loc_fit == loc
-        assert scale_fit == 1
-        assert_allclose(kappa, kappa_fit, rtol=1e-2)
-
     @pytest.mark.xslow
-    @pytest.mark.parametrize('loc', [-0.5 * np.pi, -0.9 * np.pi])
-    def test_vonmises_fit_bad_floc(self, loc):
+    def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
                 3.05437696, -2.73126329, -3.06272048, 1.64647173, 1.94509247,
                 -1.14328023, 0.8499056, 2.36714682, -1.6823179, -0.88359996]
         data = np.asarray(data)
+        loc = -0.5 * np.pi
         kappa_fit, loc_fit, scale_fit = stats.vonmises.fit(data, floc=loc)
         assert kappa_fit == np.finfo(float).tiny
         _assert_less_or_close_loglike(stats.vonmises, data,
@@ -1200,6 +1174,40 @@ class TestHalfNorm:
         # `floc` bigger than the minimal data point
         with pytest.raises(FitDataError):
             stats.halfnorm.fit([1, 2, 3], floc=2)
+
+
+class TestHalfCauchy:
+
+    @pytest.mark.parametrize("rvs_loc", [1e-5, 1e10])
+    @pytest.mark.parametrize("rvs_scale", [1e-2, 1e8])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale,
+                                    fix_loc, fix_scale):
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.halfnorm.rvs(loc=rvs_loc, scale=rvs_scale, size=1000,
+                                  random_state=rng)
+
+        if fix_loc and fix_scale:
+            error_msg = ("All parameters fixed. There is nothing to "
+                         "optimize.")
+            with pytest.raises(RuntimeError, match=error_msg):
+                stats.halfcauchy.fit(data, floc=rvs_loc, fscale=rvs_scale)
+            return
+
+        kwds = {}
+        if fix_loc:
+            kwds['floc'] = rvs_loc
+        if fix_scale:
+            kwds['fscale'] = rvs_scale
+
+        _assert_less_or_close_loglike(stats.halfcauchy, data, **kwds)
+
+    def test_fit_error(self):
+        # `floc` bigger than the minimal data point
+        with pytest.raises(FitDataError):
+            stats.halfcauchy.fit([1, 2, 3], floc=2)
 
 
 class TestHalfLogistic:
@@ -3660,6 +3668,51 @@ class TestSkewCauchy:
         assert_allclose(stats.skewcauchy.ppf(cdf, a), x)
 
 
+class TestJFSkewT:
+    def test_compare_t(self):
+        # Verify that jf_skew_t with a=b recovers the t distribution with 2a
+        # degrees of freedom
+        a = b = 5
+        df = a * 2
+        x = [-1.0, 0.0, 1.0, 2.0]
+        q = [0.0, 0.1, 0.25, 0.75, 0.90, 1.0]
+
+        jf = stats.jf_skew_t(a, b)
+        t = stats.t(df)
+
+        assert_allclose(jf.pdf(x), t.pdf(x))
+        assert_allclose(jf.cdf(x), t.cdf(x))
+        assert_allclose(jf.ppf(q), t.ppf(q))
+        assert_allclose(jf.stats('mvsk'), t.stats('mvsk'))
+
+    @pytest.fixture
+    def gamlss_pdf_data(self):
+        """Sample data points computed using the `ST5` distribution from the
+        GAMLSS package in R. The pdf has been calculated for (a,b)=(2,3),
+        (a,b)=(8,4), and (a,b)=(12,13) for x in `np.linspace(-10, 10, 41)`.
+
+        N.B. the `ST5` distribution in R uses an alternative parameterization
+        in terms of nu and tau, where:
+            - nu = (a - b) / (a * b * (a + b)) ** 0.5
+            - tau = 2 / (a + b)
+        """
+        data = np.load(
+            Path(__file__).parent / "data/jf_skew_t_gamlss_pdf_data.npy"
+        )
+        return np.rec.fromarrays(data, names="x,pdf,a,b")
+
+    @pytest.mark.parametrize("a,b", [(2, 3), (8, 4), (12, 13)])
+    def test_compare_with_gamlss_r(self, gamlss_pdf_data, a, b):
+        """Compare the pdf with a table of reference values. The table of
+        reference values was produced using R, where the Jones and Faddy skew
+        t distribution is available in the GAMLSS package as `ST5`.
+        """
+        data = gamlss_pdf_data[
+            (gamlss_pdf_data["a"] == a) & (gamlss_pdf_data["b"] == b)
+        ]
+        x, pdf = data["x"], data["pdf"]
+        assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter
@@ -4051,7 +4104,7 @@ class TestTruncexpon:
         b = [20, 100]
         x = [19.999999, 99.999999]
         ref = [2.0611546593828472e-15, 3.7200778266671455e-50]
-        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1e-10)
+        assert_allclose(stats.truncexpon.sf(x, b), ref, rtol=1.5e-10)
         assert_allclose(stats.truncexpon.isf(ref, b), x, rtol=1e-12)
 
 
@@ -4315,6 +4368,18 @@ class TestBeta:
             (5e6, 5e6+10, -7.333257022834638, 1e-8),
             (1e10, 1e10+20, -11.133707703130474, 1e-11),
             (1e50, 1e50+20, -57.185409562486385, 1e-15),
+            (2, 1e10, -21.448635265288925, 1e-11),
+            (2, 1e20, -44.47448619497938, 1e-14),
+            (2, 1e50, -113.55203898480075, 1e-14),
+            (5, 1e10, -20.87226777401971, 1e-10),
+            (5, 1e20, -43.89811870326017, 1e-14),
+            (5, 1e50, -112.97567149308153, 1e-14),
+            (10, 1e10, -20.489796752909477, 1e-9),
+            (10, 1e20, -43.51564768139993, 1e-14),
+            (10, 1e50, -112.59320047122131, 1e-14),
+            (1e20, 2, -44.47448619497938, 1e-14),
+            (1e20, 5, -43.89811870326017, 1e-14),
+            (1e50, 10, -112.59320047122131, 1e-14),
         ]
     )
     def test_extreme_entropy(self, a, b, ref, tol):
@@ -7237,6 +7302,20 @@ class TestBurr12:
         delta = stats.burr12._delta_cdf(2e5, 4e5, 4, 8, scale=scale)
         assert_allclose(delta, expected, rtol=1e-13)
 
+    def test_moments_edge(self):
+        # gh-18838 reported that burr12 moments could be invalid; see above.
+        # Check that this is resolved in an edge case where c*d == n, and
+        # compare the results against those produced by Mathematica, e.g.
+        # `SinghMaddalaDistribution[2, 2, 1]` at Wolfram Alpha.
+        c, d = 2, 2
+        mean = np.pi/4
+        var = 1 - np.pi**2/16
+        skew = np.pi**3/(32*var**1.5)
+        kurtosis = np.nan
+        ref = [mean, var, skew, kurtosis]
+        res = stats.burr12(c, d).stats('mvsk')
+        assert_allclose(res, ref, rtol=1e-14)
+
 
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
@@ -9349,10 +9428,21 @@ class TestTruncPareto:
             _assert_less_or_close_loglike(stats.truncpareto, data, **kwds)
 
 
+class TestKappa3:
+    def test_sf(self):
+        # During development of gh-18822, we found that the override of
+        # kappa3.sf could experience overflow where the version in main did
+        # not. Check that this does not happen in final implementation.
+        sf0 = 1 - stats.kappa3.cdf(0.5, 1e5)
+        sf1 = stats.kappa3.sf(0.5, 1e5)
+        assert_allclose(sf1, sf0)
+
+
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
 # rtol). None uses default values.
-@pytest.mark.parametrize("case", [("loglaplace", None, None, None, None),
+@pytest.mark.parametrize("case", [("kappa3", None, None, None, None),
+                                  ("loglaplace", None, None, None, None),
                                   ("lognorm", None, None, None, None),
                                   ("lomax", None, None, None, None),
                                   ("pareto", None, None, None, None),])

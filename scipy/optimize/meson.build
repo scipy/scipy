@@ -244,11 +244,13 @@ py3.install_sources(
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_chandrupatla.py',
   '_cobyla_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
   '_lbfgsb_py.py',

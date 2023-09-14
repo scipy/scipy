@@ -274,7 +274,7 @@ def issymmetric(a, atol=None, rtol=None):
     The diagonal of the array is not scanned. Thus if there are infs, NaNs or
     similar problematic entries on the diagonal, they will be ignored. However,
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed
@@ -400,7 +400,7 @@ def ishermitian(a, atol=None, rtol=None):
     For square empty arrays the result is returned True by convention.
 
     `numpy.inf` will be treated as a number, that is to say ``[[1, inf],
-    [inf, 2]]`` will return ``True``. On the other hand `numpy.NaN` is never
+    [inf, 2]]`` will return ``True``. On the other hand `numpy.nan` is never
     symmetric, say, ``[[1, nan], [nan, 2]]`` will return ``False``.
 
     When ``atol`` and/or ``rtol`` are set to , then the comparison is performed

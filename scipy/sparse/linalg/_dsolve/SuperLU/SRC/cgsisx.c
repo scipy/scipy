@@ -410,7 +410,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 {
 
     DNformat  *Bstore, *Xstore;
-    complex    *Bmat, *Xmat;
+    singlecomplex    *Bmat, *Xmat;
     int       ldb, ldx, nrhs, n;
     SuperMatrix *AA;/* A in SLU_NC format used by the factorization routine.*/
     SuperMatrix AC; /* Matrix postmultiplied by Pc */
@@ -549,7 +549,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
 	int nnz = Astore->nnz;
 	int *colptr = Astore->colptr;
 	int *rowind = Astore->rowind;
-	complex *nzval = (complex *)Astore->nzval;
+	singlecomplex *nzval = (singlecomplex *)Astore->nzval;
 
 	if ( mc64 ) {
 	    t0 = SuperLU_timer_();
@@ -678,7 +678,7 @@ cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
     }
 
     if ( nrhs > 0 ) { /* Solve the system */
-        complex *rhs_work;
+        singlecomplex *rhs_work;
 
 	/* Scale and permute the right-hand side if equilibration
            and permutation from MC64 were performed. */

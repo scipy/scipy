@@ -13,6 +13,7 @@ py3.install_sources([
     'test_discrete_distns.py',
     'test_distributions.py',
     'test_entropy.py',
+    'test_fast_gen_inversion.py',
     'test_fit.py',
     'test_hypotests.py',
     'test_kdeoth.py',

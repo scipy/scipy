@@ -403,10 +403,9 @@ def varmats_from_mat(file_obj):
     Examples
     --------
     >>> import scipy.io
-
-    BytesIO is from the ``io`` module in Python 3, and is ``cStringIO`` for
-    Python < 3.
-
+    >>> import numpy as np
+    >>> from io import BytesIO
+    >>> from scipy.io.matlab._mio5 import varmats_from_mat
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)

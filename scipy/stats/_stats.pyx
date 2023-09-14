@@ -15,6 +15,7 @@ cimport scipy.special.cython_special as cs
 
 np.import_array()
 
+
 cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     cdef double s, c, sn, cn, R, V
     cdef unsigned int n
@@ -33,10 +34,9 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
         return 0.5 + x / (2 * PI) + V / PI
 
 
-DEF SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
-
-
 cdef von_mises_cdf_normalapprox(k, x):
+    cdef double SQRT2_PI = 0.79788456080286535588  # sqrt(2/pi)
+
     b = SQRT2_PI / scipy.special.i0e(k)  # Check for negative k
     z = b * np.sin(x / 2.)
     return scipy.stats.norm.cdf(z)
