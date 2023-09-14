@@ -364,7 +364,7 @@ def test_private_but_present_deprecation(module_name, correct_module):
         import_name = f'scipy.{module_name.split(".")[1]}'
     else:
         import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
-    
+
     correct_import = import_module(import_name)
 
     # Attributes that were formerly in `module_name` can still be imported from

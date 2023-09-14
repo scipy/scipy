@@ -6,13 +6,13 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'LinearOperator', 
+    'LinearOperator',
     'aslinearoperator',
-    'isshape', 
-    'isintlike', 
+    'isshape',
+    'isintlike',
     'asmatrix',
-    'is_pydata_spmatrix', 
-    'MatrixLinearOperator', 
+    'is_pydata_spmatrix',
+    'MatrixLinearOperator',
     'IdentityOperator'
 ]
 

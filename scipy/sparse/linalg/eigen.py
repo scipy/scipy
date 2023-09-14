@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'ArpackError', 'ArpackNoConvergence', 'ArpackError', 
+    'ArpackError', 'ArpackNoConvergence', 'ArpackError',
     'eigs', 'eigsh', 'lobpcg', 'svds', 'arpack', 'test'
 ]
 
@@ -19,5 +19,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="sparse.linalg", module="eigen",
-                                private_modules=["_eigen"], all=__all__,
-                                attribute=name)
+                                   private_modules=["_eigen"], all=__all__,
+                                   attribute=name)

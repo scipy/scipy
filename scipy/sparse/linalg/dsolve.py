@@ -20,5 +20,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="sparse.linalg", module="dsolve",
-                                private_modules=["_dsolve"], all=__all__,
-                                attribute=name)
+                                   private_modules=["_dsolve"], all=__all__,
+                                   attribute=name)

@@ -5,10 +5,9 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-
 __all__ = [  # noqa: F822
     'csr_count_blocks',
-    'estimate_blocksize', 
+    'estimate_blocksize',
     'count_blocks'
 ]
 

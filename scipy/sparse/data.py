@@ -19,4 +19,3 @@ def __getattr__(name):
     return _sub_module_deprecation(sub_package="sparse", module="data",
                                    private_modules=["_data"], all=__all__,
                                    attribute=name)
-    
