@@ -26,11 +26,12 @@ def _execute(func_str, pocketfft_func, x, s, axes, norm,
     # or x is a NumPy array or array-like.
     # When SCIPY_ARRAY_API is set, we try to use xp.fft for CuPy arrays,
     # PyTorch arrays and other array API standard supporting objects.
-    # If that is unsuccessful, we attempt to convert to np and back to use pocketfft.
+    # If xp.fft does not exist, we attempt to convert to np and back to use pocketfft.
     if is_numpy(xp):
         return pocketfft_func(x, s, axes, norm=norm, overwrite_x=overwrite_x,
                               workers=workers, plan=plan)
 
+    # Parameters which are not in the standard are not accepted past this point 
     norm = _validate_fft_args(overwrite_x, workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
