@@ -168,7 +168,7 @@ rich_click.OPTION_GROUPS = {
         },
         {
             "name": "Options: test selection",
-            "options": ["--submodule", "--tests", "--mode"],
+            "options": ["--submodule", "--tests", "--mode", "--doctests"],
         },
     ],
 }
@@ -188,7 +188,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check", "doctest"],
+            "commands": ["doc", "refguide-check"],
         },
         {
             "name": "release",
@@ -663,6 +663,9 @@ class Test(Task):
         help="more verbosity")
     # removed doctests as currently not supported by _lib/_testutils.py
     # doctests = Option(['--doctests'], default=False)
+    doctests = Option(['--doctests'], default=False, is_flag=True,
+        help="Run doctests"
+    )
     coverage = Option(
         ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
@@ -746,7 +749,7 @@ class Test(Task):
                 args.mode,
                 verbose=verbose,
                 extra_argv=extra_argv,
-                # doctests=False,
+                doctests=args.doctests,
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
@@ -1093,87 +1096,6 @@ class RefguideCheck(Task):
             'task_dep': ['build'],
             'io': {'capture': False},
         }
-
-
-@cli.cls_cmd('doctest')
-class Doctest(Task):
-    """
-    :wrench: Run doctests
-
-    \b
-    ```python
-    Examples:
-
-    $ python dev.py doctest -s {submodule}
-    $ python dev.py doctest -t {path/to/file}
-    ```
-    """
-    ctx = CONTEXT
-
-    doctests = Option(['--doctests'], default=True, is_flag=True)
-    submodule = Option(
-        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
-        help="Submodule whose tests to run (cluster, constants, ...)"
-    )
-    filename = Option(
-            ['--filename', '-t'], default=None, metavar='FILENAME',
-            help="Specify a .py file to check"
-        ) 
-    fail_fast = Option(
-        ['--fail-fast', '-x'], default=False, is_flag=True,
-        help="fail on first error"
-    )
-    verbose = Option(
-        ['--verbose', '-v'], default=False, is_flag=True,
-        help="verbosity"
-    )
-    
-    pytest_args = Argument(
-        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
-    )
-
-    TASK_META = {
-        'task_dep': ['build'],
-    }
-
-    @classmethod
-    def scipy_doctests(cls, args, pytest_args):
-        dirs = Dirs(args)
-        dirs.add_sys_path()
-
-        extra_argv = pytest_args[:] if pytest_args else []
-        if extra_argv and extra_argv[0] == '--':
-            extra_argv = extra_argv[1:]
-
-        if args.fail_fast:
-            extra_argv += ['--fail-fast', args.fail_fast]
-
-        if args.submodule:
-            tests = [PROJECT_MODULE + "." + args.submodule]
-        elif args.filename:
-            tests = args.filename
-        else:
-            tests = None
-
-        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
-
-        with working_dir(dirs.site):
-            print("Running doctests for {} version:{}, installed at:{}".format(
-                        PROJECT_MODULE, version, mod_path))
-            verbose = int(args.verbose) + 1
-            result = runner(  # scipy._lib._testutils:PytestTester
-                verbose=verbose,
-                extra_argv=extra_argv,
-                doctests=True,
-                tests=tests)
-        return result
-    
-    @classmethod
-    def run(cls, pytest_args, **kwargs):
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
-        args = Args(**kwargs)
-        return cls.scipy_doctests(args, pytest_args)
 
 
 ##########################################
