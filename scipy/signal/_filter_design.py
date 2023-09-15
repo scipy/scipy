@@ -2794,7 +2794,7 @@ def lp2lp_zpk(z, p, k, wo=1.0):
     Examples
     --------
     Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
-    transform it to a new 'zpk' representation associated with a cutoff frequency wo
+    transform it to a new 'zpk' representation associated with a cutoff frequency wo.
 
     >>> from scipy.signal import lp2lp_zpk
     >>> z   = [7,   2]
@@ -2869,7 +2869,7 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     Examples
     --------
     Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
-    transform it to a highpass filter with a cutoff frequency wo
+    transform it to a highpass filter with a cutoff frequency wo.
     
     >>> from scipy.signal import lp2hp_zpk
     >>> z   = [ -2 + 3j ,  -0.5 - 0.8j ]
