@@ -1265,8 +1265,8 @@ def sos2tf(sos):
 
     Examples
     --------
-    Find the polynomial representation of the transfer function H(s) 
-    using its 'sos' (second-order sections).
+    Find the polynomial representation of an elliptic filter 
+    using its 'sos' (second-order sections) format.
    
     >>> from scipy.signal import sos2tf
     >>> from scipy import signal
