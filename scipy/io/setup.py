@@ -9,6 +9,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('matlab')
     config.add_subpackage('arff')
     config.add_subpackage('_harwell_boeing')
+    config.add_subpackage('_fast_matrix_market')
     return config
 
 

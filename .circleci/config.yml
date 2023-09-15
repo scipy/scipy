@@ -77,7 +77,7 @@ jobs:
             pip install cython
             pip install numpy==1.23.5
             pip install -r doc_requirements.txt
-            pip install mpmath gmpy2 "asv>=0.6.0" pythran ninja meson click rich-click doit pydevtool pooch
+            pip install mpmath gmpy2 "asv>=0.6.0" pythran ninja meson click rich-click doit pydevtool pooch threadpoolctl
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
