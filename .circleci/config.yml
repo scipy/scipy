@@ -176,6 +176,7 @@ jobs:
             pip install matplotlib
             pip install hypothesis
             pip install git+https://github.com/ev-br/scpdt.git@9cff5e2f53cd0f505bfaa697e3a2c12f86efa288
+            export PY_IGNORE_IMPORTMISMATCH=1
             python dev.py test --doctests
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
