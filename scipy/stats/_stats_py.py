@@ -33,7 +33,6 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
-from numpy.lib import NumpyVersion
 from numpy.testing import suppress_warnings
 
 from scipy import sparse
@@ -3453,12 +3452,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    if NumpyVersion(np.__version__) >= '1.22.0':
-        pct = percentile_func(x, rng, axis=axis, method=interpolation,
-                              keepdims=keepdims)
-    else:
-        pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                              keepdims=keepdims)
+    pct = percentile_func(x, rng, axis=axis, method=interpolation,
+                          keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:

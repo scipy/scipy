@@ -4,7 +4,6 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
-from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import (gammaln, psi, multigammaln, xlogy, entr, betaln,
@@ -3854,9 +3853,6 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
@@ -4269,9 +4265,6 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
