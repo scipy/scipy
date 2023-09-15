@@ -1109,7 +1109,7 @@ def tf2zpk(b, a):
 
 
 def zpk2tf(z, p, k):
-    """
+    r"""
     Return polynomial transfer function representation from zeros and poles
 
     Parameters
@@ -1128,6 +1128,23 @@ def zpk2tf(z, p, k):
     a : ndarray
         Denominator polynomial coefficients.
 
+    Examples
+    --------
+    Find the polynomial representation of a transfer function H(s)
+    using its 'zpk' (Zero-Pole-Gain) representation.
+    
+    .. math::
+            
+        H(z) = 5 \frac
+        { (s - 2)(s - 6) }
+        { (s - 1)(s - 8) }
+
+    >>> from scipy.signal import zpk2tf
+    >>> z   = [2,   6]
+    >>> p   = [1,   8]
+    >>> k   = 5
+    >>> zpk2tf(z, p, k)
+    (   array([  5., -40.,  60.]), array([ 1., -9.,  8.]))
     """
     z = atleast_1d(z)
     k = atleast_1d(k)
@@ -1168,7 +1185,7 @@ def zpk2tf(z, p, k):
 
 
 def tf2sos(b, a, pairing=None, *, analog=False):
-    """
+    r"""
     Return second-order sections from transfer function representation
 
     Parameters
@@ -1206,12 +1223,26 @@ def tf2sos(b, a, pairing=None, *, analog=False):
     ZPK to SOS.
 
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Find the 'sos' (second-order sections) of the transfer function H(s)
+    using its polynomial representation.
+    
+    .. math::
+    
+        H(s) = \frac{s^2 - 3.5s - 2}{s^4 + 3s^3 - 15s^2 - 19s + 30}
+        
+    >>> from scipy.signal import tf2sos
+    >>> tf2sos([1, -3.5, -2], [1, 3, -15, -19, 30], analog=True)
+    array([[  0. ,   0. ,   1. ,   1. ,   2. , -15. ],
+           [  1. ,  -3.5,  -2. ,   1. ,   1. ,  -2. ]])
     """
     return zpk2sos(*tf2zpk(b, a), pairing=pairing, analog=analog)
 
 
 def sos2tf(sos):
-    """
+    r"""
     Return a single transfer function from a series of second-order sections
 
     Parameters
@@ -1231,6 +1262,18 @@ def sos2tf(sos):
     Notes
     -----
     .. versionadded:: 0.16.0
+
+    Examples
+    --------
+    Find the polynomial representation of an elliptic filter 
+    using its 'sos' (second-order sections) format.
+   
+    >>> from scipy.signal import sos2tf
+    >>> from scipy import signal
+    >>> sos = signal.ellip(1, 0.001, 50, 0.1, output='sos')
+    >>> sos2tf(sos)
+    (   array([0.91256522, 0.91256522, 0.        ]),
+        array([1.        , 0.82513043, 0.        ]))
     """
     sos = np.asarray(sos)
     result_type = sos.dtype
@@ -2748,6 +2791,18 @@ def lp2lp_zpk(z, p, k, wo=1.0):
 
     .. versionadded:: 1.1.0
 
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a new 'zpk' representation associated with a cutoff frequency wo.
+
+    >>> from scipy.signal import lp2lp_zpk
+    >>> z   = [7,   2]
+    >>> p   = [5,   13]
+    >>> k   = 0.8
+    >>> wo  = 0.4
+    >>> lp2lp_zpk(z, p, k, wo)
+    (   array([2.8, 0.8]), array([2. , 5.2]), 0.8)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2810,7 +2865,21 @@ def lp2hp_zpk(z, p, k, wo=1.0):
     logarithmic scale.
 
     .. versionadded:: 1.1.0
-
+    
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a highpass filter with a cutoff frequency wo.
+    
+    >>> from scipy.signal import lp2hp_zpk
+    >>> z   = [ -2 + 3j ,  -0.5 - 0.8j ]
+    >>> p   = [ -1      ,  -4          ]
+    >>> k   = 10
+    >>> wo  = 0.6
+    >>> lp2hp_zpk(z, p, k, wo)
+    (   array([-0.09230769-0.13846154j, -0.33707865+0.53932584j]),
+        array([-0.6 , -0.15]),
+        8.5)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2879,7 +2948,24 @@ def lp2bp_zpk(z, p, k, wo=1.0, bw=1.0):
     geometric (log frequency) symmetry about `wo`.
 
     .. versionadded:: 1.1.0
-
+    
+    Examples
+    --------
+    Use the 'zpk' (Zero-Pole-Gain) representation of a lowpass filter to 
+    transform it to a bandpass filter with a center frequency wo and
+    bandwidth bw.
+    
+    >>> from scipy.signal import lp2bp_zpk
+    >>> z   = [ 5 + 2j ,  5 - 2j ]
+    >>> p   = [ 7      ,  -16    ]
+    >>> k   = 0.8
+    >>> wo  = 0.62
+    >>> bw  = 15
+    >>> lp2bp_zpk(z, p, k, wo, bw)
+    (   array([7.49955815e+01+3.00017676e+01j, 7.49955815e+01-3.00017676e+01j,
+               4.41850748e-03-1.76761126e-03j, 4.41850748e-03+1.76761126e-03j]), 
+        array([1.04996339e+02+0.j, -1.60167736e-03+0.j,  3.66108003e-03+0.j,
+               -2.39998398e+02+0.j]), 0.8)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -2959,6 +3045,22 @@ def lp2bs_zpk(z, p, k, wo=1.0, bw=1.0):
 
     .. versionadded:: 1.1.0
 
+    Examples
+    --------
+    Transform a low-pass filter represented in 'zpk' (Zero-Pole-Gain) form 
+    into a bandstop filter represented in 'zpk' form, with a center frequency wo and
+    bandwidth bw.
+    
+    >>> from scipy.signal import lp2bs_zpk
+    >>> z   = [             ]
+    >>> p   = [ 0.7 ,    -1 ]
+    >>> k   = 9
+    >>> wo  = 0.5
+    >>> bw  = 10
+    >>> lp2bs_zpk(z, p, k, wo, bw)
+    (   array([0.+0.5j, 0.+0.5j, 0.-0.5j, 0.-0.5j]), 
+        array([14.2681928 +0.j, -0.02506281+0.j,  0.01752149+0.j, -9.97493719+0.j]), 
+        -12.857142857142858)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
