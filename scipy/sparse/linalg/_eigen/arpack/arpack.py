@@ -899,15 +899,6 @@ class _UnsymmetricArpackParams(_ArpackParams):
         else:
             return d
 
-
-def _aslinearoperator_with_dtype(m):
-    m = aslinearoperator(m)
-    if not hasattr(m, 'dtype'):
-        x = np.zeros(m.shape[1])
-        m.dtype = (m * x).dtype
-    return m
-
-
 class SpLuInv(LinearOperator):
     """
     SpLuInv:
@@ -1081,13 +1072,13 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
         else:
-            return IterOpInv(_aslinearoperator_with_dtype(A),
+            return IterOpInv(aslinearoperator(A),
                              M, sigma, tol=tol).matvec
     else:
         if ((not isdense(A) and not issparse(A) and not is_pydata_spmatrix(A)) or
                 (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(A))):
-            return IterOpInv(_aslinearoperator_with_dtype(A),
-                             _aslinearoperator_with_dtype(M),
+            return IterOpInv(aslinearoperator(A),
+                             aslinearoperator(M),
                              sigma, tol=tol).matvec
         elif isdense(A) or isdense(M):
             return LuInv(A - sigma * M).matvec
@@ -1291,7 +1282,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         return eig(A, b=M, right=return_eigenvectors)
 
     if sigma is None:
-        matvec = _aslinearoperator_with_dtype(A).matvec
+        matvec = aslinearoperator(A).matvec
 
         if OPinv is not None:
             raise ValueError("OPinv should not be specified "
@@ -1314,9 +1305,9 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
-                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv = aslinearoperator(Minv)
                 Minv_matvec = Minv.matvec
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
     else:
         #sigma is not None: shift-invert mode
         if np.issubdtype(A.dtype, np.complexfloating):
@@ -1333,19 +1324,19 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         else:
             raise ValueError("OPpart must be one of ('r','i')")
 
-        matvec = _aslinearoperator_with_dtype(A).matvec
+        matvec = aslinearoperator(A).matvec
         if Minv is not None:
             raise ValueError("Minv should not be specified when sigma is")
         if OPinv is None:
             Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                            hermitian=False, tol=tol)
         else:
-            OPinv = _aslinearoperator_with_dtype(OPinv)
+            OPinv = aslinearoperator(OPinv)
             Minv_matvec = OPinv.matvec
         if M is None:
             M_matvec = None
         else:
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
 
     params = _UnsymmetricArpackParams(n, k, A.dtype.char, matvec, mode,
                                       M_matvec, Minv_matvec, sigma,
@@ -1619,7 +1610,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
     if sigma is None:
-        A = _aslinearoperator_with_dtype(A)
+        A = aslinearoperator(A)
         matvec = A.matvec
 
         if OPinv is not None:
@@ -1639,9 +1630,9 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             if Minv is None:
                 Minv_matvec = get_inv_matvec(M, hermitian=True, tol=tol)
             else:
-                Minv = _aslinearoperator_with_dtype(Minv)
+                Minv = aslinearoperator(Minv)
                 Minv_matvec = Minv.matvec
-            M_matvec = _aslinearoperator_with_dtype(M).matvec
+            M_matvec = aslinearoperator(M).matvec
     else:
         # sigma is not None: shift-invert mode
         if Minv is not None:
@@ -1655,12 +1646,12 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                OPinv = _aslinearoperator_with_dtype(OPinv)
+                OPinv = aslinearoperator(OPinv)
                 Minv_matvec = OPinv.matvec
             if M is None:
                 M_matvec = None
             else:
-                M = _aslinearoperator_with_dtype(M)
+                M = aslinearoperator(M)
                 M_matvec = M.matvec
 
         # buckling mode
@@ -1670,23 +1661,23 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
-            matvec = _aslinearoperator_with_dtype(A).matvec
+                Minv_matvec = aslinearoperator(OPinv).matvec
+            matvec = aslinearoperator(A).matvec
             M_matvec = None
 
         # cayley-transform mode
         elif mode == 'cayley':
             mode = 5
-            matvec = _aslinearoperator_with_dtype(A).matvec
+            matvec = aslinearoperator(A).matvec
             if OPinv is None:
                 Minv_matvec = get_OPinv_matvec(A, M, sigma,
                                                hermitian=True, tol=tol)
             else:
-                Minv_matvec = _aslinearoperator_with_dtype(OPinv).matvec
+                Minv_matvec = aslinearoperator(OPinv).matvec
             if M is None:
                 M_matvec = None
             else:
-                M_matvec = _aslinearoperator_with_dtype(M).matvec
+                M_matvec = aslinearoperator(M).matvec
 
         # unrecognized mode
         else:
