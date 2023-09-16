@@ -17,8 +17,7 @@ def _validate_fft_args(workers, plan, norm):
     return norm
 
 
-def _execute(func_str, pocketfft_func, x, s, axes, norm, 
-             overwrite_x, workers, plan):
+def _execute(func_str, pocketfft_func, x, **kwargs):
     xp = array_namespace(x)
     # pocketfft is used whenever SCIPY_ARRAY_API is not set,
     # or x is a NumPy array or array-like.
@@ -26,8 +25,19 @@ def _execute(func_str, pocketfft_func, x, s, axes, norm,
     # PyTorch arrays and other array API standard supporting objects.
     # If xp.fft does not exist, we attempt to convert to np and back to use pocketfft.
     if is_numpy(xp):
-        return pocketfft_func(x, s, axes, norm=norm, overwrite_x=overwrite_x,
-                              workers=workers, plan=plan)
+        return pocketfft_func(x, **kwargs)
+
+    try:
+        s = kwargs["n"]
+    except KeyError:
+        s = kwargs["s"]
+    try:
+        axes = kwargs["axis"]
+    except KeyError:
+        axes = kwargs["axes"]
+    norm = kwargs["norm"]
+    workers = kwargs["workers"]
+    plan = kwargs["plan"]
 
     norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
@@ -41,51 +51,51 @@ def _execute(func_str, pocketfft_func, x, s, axes, norm,
 
 def fft(x, n=None, axis=-1, norm=None,
         overwrite_x=False, workers=None, *, plan=None):
-    return _execute('fft', _pocketfft.fft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('fft', _pocketfft.fft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def ifft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
          plan=None):
-    return _execute('ifft', _pocketfft.ifft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('ifft', _pocketfft.ifft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def rfft(x, n=None, axis=-1, norm=None,
          overwrite_x=False, workers=None, *, plan=None):
-    return _execute('rfft', _pocketfft.rfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('rfft', _pocketfft.rfft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def irfft(x, n=None, axis=-1, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    return _execute('irfft', _pocketfft.irfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('irfft', _pocketfft.irfft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def hfft(x, n=None, axis=-1, norm=None,
          overwrite_x=False, workers=None, *, plan=None):
-    return _execute('hfft', _pocketfft.hfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('hfft', _pocketfft.hfft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def ihfft(x, n=None, axis=-1, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    return _execute('ihfft', _pocketfft.ihfft, x, n, axis, norm,
-                    overwrite_x, workers, plan)
+    return _execute('ihfft', _pocketfft.ihfft, x, n=n, axis=axis, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def fftn(x, s=None, axes=None, norm=None,
          overwrite_x=False, workers=None, *, plan=None):
-    return _execute('fftn', _pocketfft.fftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return _execute('fftn', _pocketfft.fftn, x, s=s, axes=axes, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 
 def ifftn(x, s=None, axes=None, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    return _execute('ifftn', _pocketfft.ifftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return _execute('ifftn', _pocketfft.ifftn, x, s=s, axes=axes, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def fft2(x, s=None, axes=(-2, -1), norm=None,
@@ -110,8 +120,8 @@ def ifft2(x, s=None, axes=(-2, -1), norm=None,
 
 def rfftn(x, s=None, axes=None, norm=None,
           overwrite_x=False, workers=None, *, plan=None):
-    return _execute('rfftn', _pocketfft.rfftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return _execute('rfftn', _pocketfft.rfftn, x, s=s, axes=axes, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def rfft2(x, s=None, axes=(-2, -1), norm=None,
@@ -126,8 +136,8 @@ def rfft2(x, s=None, axes=(-2, -1), norm=None,
 
 def irfftn(x, s=None, axes=None, norm=None,
            overwrite_x=False, workers=None, *, plan=None):
-    return _execute('irfftn', _pocketfft.irfftn, x, s, axes, norm,
-                    overwrite_x, workers, plan)
+    return _execute('irfftn', _pocketfft.irfftn, x, s=s, axes=axes, norm=norm,
+                    overwrite_x=overwrite_x, workers=workers, plan=plan)
 
 
 def irfft2(x, s=None, axes=(-2, -1), norm=None,
@@ -168,7 +178,6 @@ def ihfftn(x, s=None, axes=None, norm=None,
                           overwrite_x=overwrite_x,
                           workers=workers, plan=plan)
     return xp.asarray(y)
-
 
 
 def ihfft2(x, s=None, axes=(-2, -1), norm=None,
