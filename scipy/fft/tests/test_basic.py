@@ -550,7 +550,6 @@ def test_non_standard_params(func, xp):
         x = xp.asarray([1, 2, 3])
         # func(x) should not raise an exception
         func(x)
-        assert_raises(ValueError, func, x, overwrite_x=True)
         assert_raises(ValueError, func, x, workers=2)
         # `plan` param is not tested since SciPy does not use it currently
         # but should be tested if it comes into use

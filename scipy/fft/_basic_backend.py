@@ -7,9 +7,7 @@ def arg_err_msg(param):
     return f'Providing {param!r} is only supported for numpy arrays.'
 
 
-def _validate_fft_args(overwrite_x, workers, plan, norm):
-    if overwrite_x:
-        raise ValueError(arg_err_msg("overwrite_x"))
+def _validate_fft_args(workers, plan, norm):
     if workers is not None:
         raise ValueError(arg_err_msg("workers"))
     if plan is not None:
@@ -31,8 +29,7 @@ def _execute(func_str, pocketfft_func, x, s, axes, norm,
         return pocketfft_func(x, s, axes, norm=norm, overwrite_x=overwrite_x,
                               workers=workers, plan=plan)
 
-    # Parameters which are not in the standard are not accepted past this point 
-    norm = _validate_fft_args(overwrite_x, workers, plan, norm)
+    norm = _validate_fft_args(workers, plan, norm)
     if hasattr(xp, 'fft'):
         xp_func = getattr(xp.fft, func_str)
         return xp_func(x, s, axes, norm=norm)
