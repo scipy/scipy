@@ -105,13 +105,19 @@ class MedFilt2D(Benchmark):
 
 
 class FreqzRfft(Benchmark):
-    param_names = ['worN']
+    param_names = ['vector_input', 'whole', 'nyquist', 'worN']
     params = [
-        [64, 65, 128, 129, 256, 257, 512, 513],
+        [False, True],
+        [False, True],
+        [False, True],
+        [64, 65, 128, 129, 256, 257, 258, 512, 513, 65536, 65537, 65538],
     ]
 
-    def setup(self, worN):
-        self.y = np.random.RandomState(0).randn(worN,10000)[...,np.newaxis]
+    def setup(self, vector_input, whole, nyquist, worN):
+        self.y = np.zeros(worN)
+        self.y[worN//2] = 1.0
+        if vector_input:
+            self.y = np.repeat(self.y[:,np.newaxis], 1000, axis=-1)[...,np.newaxis]
 
-    def time_freqz(self, worN):
-        freqz(self.y, worN=worN)
+    def time_freqz(self, vector_input, whole, nyquist, worN):
+        freqz(self.y, whole=whole, include_nyquist=nyquist, worN=worN)
