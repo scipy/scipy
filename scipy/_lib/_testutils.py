@@ -77,6 +77,7 @@ class PytestTester:
 
         if doctests:
             # raise ValueError("Doctests not supported")
+            # XXX: maybe do not ignore `scipy._lib._disjoint_set.DisjointSet` etc
             pytest_args += ["--doctest-modules", "--ignore=scipy/interpolate/_interpnd_info.py", "--ignore=scipy/_lib/"]
 
         if extra_argv:
