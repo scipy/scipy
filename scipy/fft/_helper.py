@@ -101,7 +101,6 @@ def _init_nd_shape_and_axes(x, shape, axes):
         Axes along which the calculation is computed. It is a 1-D integer array.
 
     """
-    xp = array_namespace(x)
     x = np.asarray(x)
     return _helper._init_nd_shape_and_axes(x, shape, axes)
 
