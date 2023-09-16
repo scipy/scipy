@@ -103,8 +103,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
     """
     xp = array_namespace(x)
     x = np.asarray(x)
-    shape, axes = _helper._init_nd_shape_and_axes(x, shape, axes)
-    return xp.asarray(shape), xp.asarray(axes)
+    return _helper._init_nd_shape_and_axes(x, shape, axes)
 
 
 def fftfreq(n, d=1.0, *, xp=None, device=None):
