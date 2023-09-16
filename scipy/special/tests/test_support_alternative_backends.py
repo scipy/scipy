@@ -2,8 +2,8 @@ import pytest
 from hypothesis import given, strategies, reproduce_failure  # noqa
 import hypothesis.extra.numpy as npst
 
-from scipy.special._support_cupy_torch_jax import (get_array_special_func,
-                                                   array_special_func_map)
+from scipy.special._support_alternative_backends import (get_array_special_func,
+                                                         array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
 from scipy._lib._array_api import xp_assert_close
@@ -23,7 +23,7 @@ def test_dispatch_to_unrecognize_library():
 @array_api_compatible
 @given(data=strategies.data())
 @pytest.mark.parametrize('f_name_n_args', array_special_func_map.items())
-def test_cupy_torch_jax_support(xp, data, f_name_n_args):
+def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
     f = getattr(special, f_name)
 

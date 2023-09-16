@@ -38,7 +38,7 @@ def get_array_special_func(f_name, xp, n_array_args):
 
 # functools.wraps doesn't work because:
 # 'numpy.ufunc' object has no attribute '__module__'
-def support_cupy_torch_jax(f_name, n_array_args):
+def support_alternative_backends(f_name, n_array_args):
     func = getattr(_ufuncs, f_name)
 
     @functools.wraps(func)
@@ -68,7 +68,7 @@ array_special_func_map = {
 }
 
 for f_name, n_array_args in array_special_func_map.items():
-    f = (support_cupy_torch_jax(f_name, n_array_args) if _SCIPY_ARRAY_API
+    f = (support_alternative_backends(f_name, n_array_args) if _SCIPY_ARRAY_API
          else getattr(_ufuncs, f_name))
     sys.modules[__name__].__dict__[f_name] = f
 
