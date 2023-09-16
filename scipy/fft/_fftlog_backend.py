@@ -52,7 +52,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
         A = A * xp.exp(bias*((j - j_c)*dln + offset))
 
     # compute FHT coefficients
-    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias))
+    u = xp.asarray(fhtcoeff(n, dln, mu, offset=offset, bias=bias, inverse=True))
 
     # transform
     a = _fhtq(A, u, inverse=True, xp=xp)
@@ -65,7 +65,7 @@ def ifht(A, dln, mu, offset=0.0, bias=0.0):
     return a
 
 
-def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
+def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0, inverse=False):
     """Compute the coefficient array for a fast Hankel transform."""
     lnkr, q = offset, bias
 
@@ -99,6 +99,18 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0):
         u[0] = 2**q * poch(xm, xp-xm)
         # the coefficient may be inf or 0, meaning the transform or the
         # inverse transform, respectively, is singular
+
+    # check for singular transform or singular inverse transform
+    if np.isinf(u[0]) and not inverse:
+        warn('singular transform; consider changing the bias')
+        # fix coefficient to obtain (potentially correct) transform anyway
+        u = copy(u)
+        u[0] = 0
+    elif u[0] == 0 and inverse:
+        warn('singular inverse transform; consider changing the bias')
+        # fix coefficient to obtain (potentially correct) inverse anyway
+        u = copy(u)
+        u[0] = np.inf
 
     return u
 
@@ -170,18 +182,6 @@ def _fhtq(a, u, inverse=False, *, xp=None):
 
     # size of transform
     n = a.shape[-1]
-
-    # check for singular transform or singular inverse transform
-    if xp.isinf(u[0]) and not inverse:
-        warn('singular transform; consider changing the bias')
-        # fix coefficient to obtain (potentially correct) transform anyway
-        u = copy(u)
-        u[0] = 0
-    elif u[0] == 0 and inverse:
-        warn('singular inverse transform; consider changing the bias')
-        # fix coefficient to obtain (potentially correct) inverse anyway
-        u = copy(u)
-        u[0] = xp.inf
 
     # biased fast Hankel transform via real FFT
     A = rfft(a, axis=-1)
