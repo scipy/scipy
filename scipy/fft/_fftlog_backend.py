@@ -192,6 +192,6 @@ def _fhtq(a, u, inverse=False, *, xp=None):
         # backward transform
         A /= xp.conj(u)
     A = irfft(A, n, axis=-1)
-    A = A[..., ::-1]
+    A = xp.flip(A, axis=-1)
 
     return A
