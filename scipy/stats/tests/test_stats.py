@@ -35,7 +35,6 @@ from scipy.special import binom
 from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
-from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
@@ -2342,9 +2341,8 @@ class TestMode:
         # mode should treat np.nan as it would any other object when
         # nan_policy='propagate'
         a = [2, np.nan, 1, np.nan]
-        if NumpyVersion(np.__version__) >= '1.21.0':
-            res = stats.mode(a)
-            assert np.isnan(res.mode) and res.count == 2
+        res = stats.mode(a)
+        assert np.isnan(res.mode) and res.count == 2
 
     def test_keepdims(self):
         # test empty arrays (handled by `np.mean`)
@@ -2439,10 +2437,9 @@ class TestMode:
         ref = ([20, np.nan], [2, 0])
         assert_equal(res, ref)
 
-        if NumpyVersion(np.__version__) >= '1.21.0':
-            res = stats.mode(a, axis=1, nan_policy='propagate')
-            ref = ([20, np.nan], [2, 3])
-            assert_equal(res, ref)
+        res = stats.mode(a, axis=1, nan_policy='propagate')
+        ref = ([20, np.nan], [2, 3])
+        assert_equal(res, ref)
 
         z = np.array([[], []])
         res = stats.mode(z, axis=1)
@@ -2955,12 +2952,11 @@ class TestIQR:
         assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
 
         # Check all method= values new in numpy 1.22.0 are accepted
-        if NumpyVersion(np.__version__) >= '1.22.0':
-            for method in ('inverted_cdf', 'averaged_inverted_cdf',
-                           'closest_observation', 'interpolated_inverted_cdf',
-                           'hazen', 'weibull', 'median_unbiased',
-                           'normal_unbiased'):
-                stats.iqr(y, interpolation=method)
+        for method in ('inverted_cdf', 'averaged_inverted_cdf',
+                       'closest_observation', 'interpolated_inverted_cdf',
+                       'hazen', 'weibull', 'median_unbiased',
+                       'normal_unbiased'):
+            stats.iqr(y, interpolation=method)
 
         assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 

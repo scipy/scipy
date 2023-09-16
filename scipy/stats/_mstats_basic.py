@@ -407,11 +407,11 @@ def pearsonr(x, y):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
