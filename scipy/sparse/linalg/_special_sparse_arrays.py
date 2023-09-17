@@ -3,6 +3,8 @@ from scipy.sparse.linalg import LinearOperator
 from scipy.sparse import kron, eye, dia_array
 
 __all__ = ['LaplacianNd']
+# Sakurai and Mikota classes are intended for tests and benchmarks
+# and their docstings are untested and unpublished
 
 
 class LaplacianNd(LinearOperator):
