@@ -1413,8 +1413,7 @@ def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
     b = a + 1 if b is None else b
     min = -np.inf if min is None else min
     max = np.inf if max is None else max
-    # golden ratio as suggested in gh-18348, but higher values are faster.
-    factor = .5 + .5*5**.5 if factor is None else factor
+    factor = 2. if factor is None else factor
     a, b, min, max, factor = np.broadcast_arrays(a, b, min, max, factor)
 
     if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b).any():
@@ -1450,17 +1449,28 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
                   args=(), maxiter=1000):
     """Bracket the root of a monotonic scalar function of one variable
 
+    This function works elementwise when `a`, `b`, `min`, `max`, `factor`, and
+    the elements of `args` are broadcastable arrays.
+
     Parameters
     ----------
     func : callable
         The function for which the root is to be bracketed.
-    a, b : float
+        The signature must be::
+
+            func(x: ndarray, *args) -> ndarray
+
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`. ``func`` must be an elementwise function: each element
+        ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
+    a, b : float array_like
         Starting guess of bracket, which need not contain a root. If `b` is
         not provided, ``b = a + 1``. Must be broadcastable with one another.
-    min, max : float, optional
+    min, max : float array_like, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
         be broadcastable with `a` and `b`.
-    factor : float, default: golden ratio
+    factor : float array_like, default: 2
         The factor used to grow the bracket. See notes for details.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.  Must be arrays

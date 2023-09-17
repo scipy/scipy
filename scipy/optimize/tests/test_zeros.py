@@ -1724,8 +1724,9 @@ class TestBracketRoot:
         maxiter = 10
 
         @np.vectorize
-        def bracket_root_single(p):
-            return zeros._bracket_root(self.f, -0.01, 0.01, args=(p,),
+        def bracket_root_single(a, b, min, max, factor, p):
+            return zeros._bracket_root(self.f, a, b, min=min, max=max,
+                                       factor=factor, args=(p,),
                                        maxiter=maxiter)
 
         def f(*args, **kwargs):
@@ -1733,8 +1734,17 @@ class TestBracketRoot:
             return self.f(*args, **kwargs)
         f.f_evals = 0
 
-        res = zeros._bracket_root(f, -0.01, 0.01, args=args, maxiter=maxiter)
-        refs = bracket_root_single(p).ravel()
+        rng = np.random.default_rng(2348234)
+        a = -rng.random(size=shape)
+        b = rng.random(size=shape)
+        min, max = 1e3*a, 1e3*b
+        if shape:  # make some elements un
+            i = rng.random(size=shape) > 0.5
+            min[i], max[i] = -np.inf, np.inf
+        factor = rng.random(size=shape) + 1.5
+        res = zeros._bracket_root(f, a, b, min=min, max=max, factor=factor,
+                                  args=args, maxiter=maxiter)
+        refs = bracket_root_single(a, b, min, max, factor, p).ravel()
 
         attrs = ['xl', 'xr', 'fl', 'fr', 'success', 'nfev', 'nit']
         for attr in attrs:
