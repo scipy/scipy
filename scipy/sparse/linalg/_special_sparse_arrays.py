@@ -512,6 +512,7 @@ of_the_second_derivative
     def _transpose(self):
         return self
 
+
 class Sakurai(LinearOperator):
     """
     Construct a Sakurai matrix in various formats and its eigenvalues.
