@@ -66,7 +66,7 @@ class Bench(Benchmark):
         ee = self.eigenvalues[:m]
         tol = m * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
-        X =rng.normal(size=(n, m))
+        X = rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.Ab.astype(np.float32))
             with warnings.catch_warnings():
@@ -81,7 +81,7 @@ class Bench(Benchmark):
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
-                                  v0=rng.normal(size=(n, 1)))
+                          v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
@@ -94,7 +94,7 @@ class Bench(Benchmark):
         ee = self.eigenvalues[:m]
         tol = 100 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
-        X =rng.normal(size=(n, m))
+        X = rng.normal(size=(n, m))
         if solver == 'lobpcg':
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -104,7 +104,7 @@ class Bench(Benchmark):
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
-                                   v0=rng.normal(size=(n, 1)))
+                          v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
             assert accuracy < tol
         else:
@@ -131,7 +131,7 @@ class Bench(Benchmark):
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
-                                   v0=rng.normal(size=(n, 1)))
+                          v0=rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
             assert accuracy < tol
         else:
