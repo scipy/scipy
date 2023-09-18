@@ -49,7 +49,7 @@ class Bench(Benchmark):
         self.Ab = mik_k.tobanded()
         self.eigenvalues = mik.eigenvalues
 
-        if solver == 'eigh' and n > 512:
+        if solver == 'lapack' and n > 512:
             # skip: slow, and not useful to benchmark
             raise NotImplementedError()
 
