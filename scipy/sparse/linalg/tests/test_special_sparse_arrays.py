@@ -160,8 +160,6 @@ class TestLaplacianNd:
                 yy = lap.toarray() @ x.astype(dtype)
                 assert yy.dtype == dtype
                 np.array_equal(y, yy)
-            else:
-                pass
 
     def test_boundary_conditions_value_error(self):
         with pytest.raises(ValueError, match="Unknown value 'robin'"):
@@ -229,8 +227,6 @@ class TestSakurai:
             if x.ndim == 2:
                 yy = sak.toarray() @ x.astype(dtype)
                 np.array_equal(y, yy)
-            else:
-                pass
 
 
 class TestMikotaPair:
@@ -318,6 +314,3 @@ class TestMikotaPair:
                 if x.ndim == 2:
                     yy = lo.toarray() @ x.astype(dtype)
                     np.array_equal(y, yy)
-                else:
-                    pass
-
