@@ -5,7 +5,7 @@ Modified for Array API, 2023
 
 """
 from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
-from numpy.testing import assert_equal, assert_array_equal
+from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
