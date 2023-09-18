@@ -7,7 +7,7 @@ from scipy.linalg import eigh
 
 from scipy.sparse.linalg import LaplacianNd
 from scipy.sparse.linalg._special_sparse_arrays import Sakurai
-from scipy.sparse.linalg._special_sparse_arrays import Mikota_pair
+from scipy.sparse.linalg._special_sparse_arrays import MikotaPair
 
 INT_DTYPES = [np.int8, np.int16, np.int32, np.int64]
 REAL_DTYPES = [np.float32, np.float64]
@@ -233,15 +233,15 @@ class TestSakurai:
                 pass
 
 
-class TestMikota_pair:
+class TestMikotaPair:
     """
-    Mikota_pair tests
+    MikotaPair tests
     """
     ALLDTYPES = [np.int32, np.int64] + REAL_DTYPES + COMPLEX_DTYPES
 
     def test_specific_shape(self):
         n = 6
-        mik = Mikota_pair(n)
+        mik = MikotaPair(n)
         mik_k = mik.k
         mik_m = mik.m
         assert_array_equal(mik_k.toarray(), mik_k(np.eye(n)))
@@ -278,14 +278,14 @@ class TestMikota_pair:
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_linearoperator_shape_dtype(self, dtype):
         n = 7
-        mik = Mikota_pair(n, dtype=dtype)
+        mik = MikotaPair(n, dtype=dtype)
         mik_k = mik.k
         mik_m = mik.m
         assert mik_k.shape == (n, n)
         assert mik_k.dtype == dtype
         assert mik_m.shape == (n, n)
         assert mik_m.dtype == dtype
-        mik_default_dtype = Mikota_pair(n)
+        mik_default_dtype = MikotaPair(n)
         mikd_k = mik_default_dtype.k
         mikd_m = mik_default_dtype.m
         assert mikd_k.shape == (n, n)
@@ -300,7 +300,7 @@ class TestMikota_pair:
     @pytest.mark.parametrize('dtype', ALLDTYPES)
     def test_dot(self, dtype):
         n = 5
-        mik = Mikota_pair(n, dtype=dtype)
+        mik = MikotaPair(n, dtype=dtype)
         mik_k = mik.k
         mik_m = mik.m
         x0 = np.arange(n)
