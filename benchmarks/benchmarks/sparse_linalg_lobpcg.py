@@ -9,6 +9,13 @@ with safe_import():
     from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
                                                             MikotaPair)
 
+# ensure that we are benchmarking a consistent outcome;
+# (e.g. if the code wasn't able to find a solution at all,
+# the timing of the benchmark would become useless).
+msg = ("the benchmark code did not converge as expected, "
+       "the timing is therefore useless")
+
+
 class Bench(Benchmark):
     params = [
         [],
@@ -74,20 +81,20 @@ class Bench(Benchmark):
                 el, _ = lobpcg(self.Ac, X, self.Bc, M=a, tol=1e-4,
                                maxiter=40, largest=False)
             accuracy = max(abs(ee - el) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
         elif solver == 'eigsh':
             B = LinearOperator((n, n), matvec=self.Bc, matmat=self.Bc, dtype='float64')
             A = LinearOperator((n, n), matvec=self.Ac, matmat=self.Ac, dtype='float64')
             c = cholesky_banded(self.Ab)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(B, k=m, M=A, Minv=a_l, which='LA', tol=1e-4, maxiter=50,
-                          v0=rng.normal(size=(n, 1)))
+                          v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - np.sort(1./ea)) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
         else:
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
 
     def time_sakurai(self, n, solver):
         m = 3
@@ -100,41 +107,41 @@ class Bench(Benchmark):
                 warnings.simplefilter("ignore")
                 el, _ = lobpcg(self.A, X, tol=1e-9, maxiter=5000, largest=False)
             accuracy = max(abs(ee - el) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
         elif solver == 'eigsh':
             a_l = LinearOperator((n, n), matvec=self.A, matmat=self.A, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='SA', tol=1e-9, maxiter=15000,
-                          v0=rng.normal(size=(n, 1)))
+                          v0 = rng.normal(size=(n, 1)))
             accuracy = max(abs(ee - ea) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
         else:
             ed, _ = eigh(self.Aa, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
 
-    def time_sakuraii(self, n, solver):
+    def time_sakurai_inverse(self, n, solver):
         def a(x):
             return cho_solve_banded((c, False), x)
         m = 3
         ee = self.eigenvalues[:m]
         tol = 10 * n * n * n* np.finfo(float).eps
         rng = np.random.default_rng(0)
-        X =rng.normal(size=(n, m))
+        X = rng.normal(size=(n, m))
         if solver == 'lobpcg':
             c = cholesky_banded(self.A)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 el, _ = lobpcg(a, X, tol=1e-9, maxiter=8)
             accuracy = max(abs(ee - 1. / el) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
         elif solver == 'eigsh':
             c = cholesky_banded(self.A)
             a_l = LinearOperator((n, n), matvec=a, matmat=a, dtype='float64')
             ea, _ = eigsh(a_l, k=m, which='LA', tol=1e-9, maxiter=8,
-                          v0=rng.normal(size=(n, 1)))
-            accuracy = max(abs(ee - np.sort(1./ea)) / ee)
-            assert accuracy < tol
+                          v0 = rng.normal(size=(n, 1)))
+            accuracy = max(abs(ee - np.sort(1. / ea)) / ee)
+            assert accuracy < tol, msg
         else:
             ed, _ = eig_banded(self.A, select='i', select_range=[0, m-1])
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol
+            assert accuracy < tol, msg
