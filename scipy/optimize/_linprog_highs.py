@@ -17,7 +17,7 @@ from enum import Enum
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
-# from . import _highs_wrapper
+from ._highs._highs_wrapper import _highs_wrapper
 from scipy.sparse import csc_matrix, vstack, issparse
 
 from highspy import HighsModelStatus as hms
@@ -51,31 +51,33 @@ class HighsStatusMapping:
     def __init__(self):
         # Custom mapping from HiGHS status and errors to SciPy status
         self.highs_to_scipy = {
-            hspy.hms.kNotSet: (SciPyRC.NUMERICAL, "Not set"),
-            hspy.hms.kLoadError: (SciPyRC.NUMERICAL, "Load Error"),
-            hspy.hms.kModelError: (SciPyRC.INFEASIBLE, "Model Error"),
-            hspy.hms.kPresolveError: (SciPyRC.NUMERICAL, "Presolve Error"),
-            hspy.hms.kSolveError: (SciPyRC.NUMERICAL, "Solve Error"),
-            hspy.hms.kPostsolveError: (SciPyRC.NUMERICAL, "Postsolve Error"),
-            hspy.hms.kModelEmpty: (SciPyRC.NUMERICAL, "Model Empty"),
-            hspy.hms.kOptimal: (SciPyRC.OPTIMAL, "Optimal"),
-            hspy.hms.kInfeasible: (SciPyRC.INFEASIBLE, "Infeasible"),
-            hspy.hms.kUnboundedOrInfeasible: (SciPyRC.NUMERICAL, "Unbounded or Infeasible"),
-            hspy.hms.kUnbounded: (SciPyRC.UNBOUNDED, "Unbounded"),
-            hspy.hms.kObjectiveBound: (SciPyRC.NUMERICAL, "Objective Bound"),
-            hspy.hms.kObjectiveTarget: (SciPyRC.NUMERICAL, "Objective Target"),
-            hspy.hms.kTimeLimit: (SciPyRC.ITERATION_LIMIT, "Time Limit"),
-            hspy.hms.kIterationLimit: (SciPyRC.ITERATION_LIMIT, "Iteration Limit"),
-            hspy.hms.kUnknown: (SciPyRC.NUMERICAL, "Unknown"),
-            hspy.hms.kSolutionLimit: (SciPyRC.NUMERICAL, "Solution Limit"),
+            hms.kNotset: (SciPyRC.NUMERICAL, "Not set"),
+            hms.kLoadError: (SciPyRC.NUMERICAL, "Load Error"),
+            hms.kModelError: (SciPyRC.INFEASIBLE, "Model Error"),
+            hms.kPresolveError: (SciPyRC.NUMERICAL, "Presolve Error"),
+            hms.kSolveError: (SciPyRC.NUMERICAL, "Solve Error"),
+            hms.kPostsolveError: (SciPyRC.NUMERICAL, "Postsolve Error"),
+            hms.kModelEmpty: (SciPyRC.NUMERICAL, "Model Empty"),
+            hms.kOptimal: (SciPyRC.OPTIMAL, "Optimal"),
+            hms.kInfeasible: (SciPyRC.INFEASIBLE, "Infeasible"),
+            hms.kUnboundedOrInfeasible: (SciPyRC.NUMERICAL, "Unbounded or Infeasible"),
+            hms.kUnbounded: (SciPyRC.UNBOUNDED, "Unbounded"),
+            hms.kObjectiveBound: (SciPyRC.NUMERICAL, "Objective Bound"),
+            hms.kObjectiveTarget: (SciPyRC.NUMERICAL, "Objective Target"),
+            hms.kTimeLimit: (SciPyRC.ITERATION_LIMIT, "Time Limit"),
+            hms.kIterationLimit: (SciPyRC.ITERATION_LIMIT, "Iteration Limit"),
+            hms.kUnknown: (SciPyRC.NUMERICAL, "Unknown"),
+            hms.kSolutionLimit: (SciPyRC.NUMERICAL, "Solution Limit"),
         }
+
 
     def get_scipy_status(self, highs_status, highs_message):
         """Converts HiGHS status and message to SciPy status and message"""
-        scipy_status = scipy_status_enum.value
-        scipy_message = (f"{scipy_status_enum.to_string()}"
-                         f"(HiGHS Status {highs_status}: {highs_message})")
-        return scipy_status, scipy_message
+        scipy_status, message_prefix = self.highs_to_scipy.get(hspy.HighsModelStatus(highs_status),
+                                                               (SciPyRC.NUMERICAL, "Unknown HiGHS Status"))
+        scip = SciPyRC(scipy_status)
+        scipy_message = f"{scip.to_string()} (HiGHS Status {highs_status}: {highs_message})"
+        return scipy_status.value, scipy_message
 
 def _replace_inf(x):
     # Replace `np.inf` with kHighsInf
@@ -93,14 +95,16 @@ class SimplexStrategy(Enum):
 
     def to_highs_enum(self):
         mapping = {
-            SimplexStrategy.DANTZIG: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig,
-            SimplexStrategy.DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex,
-            SimplexStrategy.STEEPEST_DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose,
-            SimplexStrategy.STEEPEST: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge,
+            SimplexStrategy.DANTZIG: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig.value,
+            SimplexStrategy.DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex.value,
+            SimplexStrategy.STEEPEST_DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose.value,
+            SimplexStrategy.STEEPEST: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge.value,
         }
         return mapping.get(self)
 
 def convert_to_highs_enum(option, option_str, choices_enum, default_value):
+    if option is None:
+        return choices_enum[default_value.upper()].to_highs_enum()
     try:
         enum_value = choices_enum[option.upper()]
     except KeyError:
@@ -345,7 +349,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'sense': hspy.ObjSense.kMinimize,
         'solver': solver,
         'time_limit': time_limit,
-        'highs_debug_level': hspy.kHighs, # TODO
+        # 'highs_debug_level': hspy.kHighs, # TODO
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
@@ -354,8 +358,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': simpc.SimplexStrategy.kSimplexStrategyDual,
-        'simplex_crash_strategy': simpc.SimplexCrashStrategy.kSimplexCrashStrategyOff,
+        'simplex_strategy': simpc.kSimplexStrategyDual.value,
+        # 'simplex_crash_strategy': simpc.SimplexCrashStrategy.kSimplexCrashStrategyOff,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
@@ -428,7 +432,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             }),
            'fun': res.get('fun'),
            'status': status,
-           'success': res['status'] == MODEL_STATUS_OPTIMAL,
+           'success': res['status'] == hms.kOptimal,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
