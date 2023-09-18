@@ -1037,7 +1037,7 @@ class Doc(Task):
     TARGETS: Sphinx build targets [default: 'html']
 
     Running `python dev.py doc -j8 html` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run make on `doc/Makefile`, i.e.: `make -C doc -j8 TARGETS`
@@ -1140,7 +1140,7 @@ class Python:
           If not set, an interactive shell is launched.
 
     Running `python dev.py shell my_script.py` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run interpreter: `python my_script.py`
@@ -1183,7 +1183,7 @@ class Ipython(Python):
     """:wrench: Start IPython shell with PYTHONPATH set.
 
     Running `python dev.py ipython` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Set the PYTHONPATH environment variable
        (query with `python dev.py -n show_PYTHONPATH`).
     3. Run the `ipython` interpreter.
@@ -1203,7 +1203,7 @@ class Shell(Python):
     """:wrench: Start Unix shell with PYTHONPATH set.
 
     Running `python dev.py shell` is equivalent to:
-    1. Execute build command (skipp by passing the global `-n` option).
+    1. Execute build command (skip by passing the global `-n` option).
     2. Open a new shell.
     3. Set the PYTHONPATH environment variable in shell
        (query with `python dev.py -n show_PYTHONPATH`).
@@ -1242,6 +1242,7 @@ class ShowDirs(Python):
         cls._setup(pythonpath, **kwargs)
         py_path = os.environ.get('PYTHONPATH', '')
         click.echo(f"PYTHONPATH={py_path}")
+
 
 @cli.command()
 @click.argument('version_args', nargs=2)

@@ -484,6 +484,7 @@ python_sources = [
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',

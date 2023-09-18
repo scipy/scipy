@@ -326,7 +326,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         of the statistic.
     batch : int, optional
         The number of resamples to process in each vectorized call to
-        `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
+        `statistic`. Memory usage is O( `batch` * ``n`` ), where ``n`` is the
         sample size. Default is ``None``, in which case ``batch = n_resamples``
         (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
     vectorized : bool, optional
@@ -788,7 +788,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
         used as the Monte Carlo null distribution.
     batch : int, optional
         The number of Monte Carlo samples to process in each call to
-        `statistic`. Memory usage is O(`batch`*``sample.size[axis]``). Default
+        `statistic`. Memory usage is O( `batch` * ``sample.size[axis]`` ). Default
         is ``None``, in which case `batch` equals `n_resamples`.
     alternative : {'two-sided', 'less', 'greater'}
         The alternative hypothesis for which the p-value is calculated.
@@ -1300,7 +1300,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
         data sets.
     batch : int, optional
         The number of permutations to process in each call to `statistic`.
-        Memory usage is O(`batch`*``n``), where ``n`` is the total size
+        Memory usage is O( `batch` * ``n`` ), where ``n`` is the total size
         of all samples, regardless of the value of `vectorized`. Default is
         ``None``, in which case ``batch`` is the number of permutations.
     alternative : {'two-sided', 'less', 'greater'}, optional
