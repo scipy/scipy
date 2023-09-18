@@ -60,7 +60,7 @@ class Bench(Benchmark):
         self.Aa = sakurai_obj.toarray()
         self.eigenvalues = sakurai_obj.eigenvalues
 
-    def setup_sakuraii(self, n, solver):
+    def setup_sakurai_inverse(self, n, solver):
         self.shape = (n, n)
         sakurai_obj = Sakurai(n)
         self.A = sakurai_obj.tobanded()
@@ -94,7 +94,7 @@ class Bench(Benchmark):
         else:
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < 0. * tol, msg
+            assert accuracy < tol, msg
 
     def time_sakurai(self, n, solver):
         m = 3
