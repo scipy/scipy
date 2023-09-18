@@ -348,7 +348,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         work.Sk = np.concatenate((work.Sk, work.Sn[:, np.newaxis]), axis=-1)
         return
 
-    def customize_result(res):
+    def customize_result(res, shape):
         # If the integration limits were such that b < a, we reversed them
         # to perform the calculation, and the final result needs to be negated.
         if log and np.any(negative):
@@ -363,6 +363,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         res['maxlevel'] = minlevel + res['nit'] - 1
         res['maxlevel'][res['nit'] == 0] = -1
         del res['nit']
+        return shape
 
     # Suppress all warnings initially, since there are many places in the code
     # for which this is expected behavior.

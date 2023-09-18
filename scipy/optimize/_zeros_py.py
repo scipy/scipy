@@ -15,12 +15,14 @@ __all__ = ['newton', 'bisect', 'ridder', 'brentq', 'brenth', 'toms748',
 
 # Must agree with CONVERGED, SIGNERR, CONVERR, ...  in zeros.h
 _ECONVERGED = 0
-_ESIGNERR = -1
+_ESIGNERR = -1  # used in _chandrupatla
+_EERRORINCREASE = -1  # used in _differentiate
+_ELIMITS = -1  # used in _bracket_root
 _ECONVERR = -2
 _EVALUEERR = -3
 _ECALLBACK = -4
-_EERRORINCREASE = -1
 _EINPROGRESS = 1
+_ESTOPONESIDE = 2  # used in _bracket_root
 
 CONVERGED = 'converged'
 SIGNERR = 'sign error'
@@ -1404,6 +1406,308 @@ def toms748(f, a, b, args=(), k=1,
                            "toms748")
 
 
+def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
+
+    if not callable(func):
+        raise ValueError('`func` must be callable.')
+
+    if not np.iterable(args):
+        args = (args,)
+
+    a = np.asarray(a)[()]
+    if not np.issubdtype(a.dtype, np.number) or np.iscomplex(a).any():
+        raise ValueError('`a` must be numeric and real.')
+
+    b = a + 1 if b is None else b
+    min = -np.inf if min is None else min
+    max = np.inf if max is None else max
+    factor = 2. if factor is None else factor
+    a, b, min, max, factor = np.broadcast_arrays(a, b, min, max, factor)
+
+    if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b).any():
+        raise ValueError('`b` must be numeric and real.')
+
+    if not np.issubdtype(min.dtype, np.number) or np.iscomplex(min).any():
+        raise ValueError('`min` must be numeric and real.')
+
+    if not np.issubdtype(max.dtype, np.number) or np.iscomplex(max).any():
+        raise ValueError('`max` must be numeric and real.')
+
+    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor).any():
+        raise ValueError('`factor` must be numeric and real.')
+    if not np.all(factor > 1):
+        raise ValueError('All elements of `factor` must be greater than 1.')
+
+    maxiter = np.asarray(maxiter)
+    message = '`maxiter` must be a non-negative integer.'
+    if (not np.issubdtype(maxiter.dtype, np.number) or maxiter.shape != tuple()
+            or np.iscomplex(maxiter)):
+        raise ValueError(message)
+    maxiter_int = int(maxiter[()])
+    if not maxiter == maxiter_int or maxiter < 0:
+        raise ValueError(message)
+
+    if not np.all((min <= a) & (a < b) & (b <= max)):
+        raise ValueError('`min <= a < b <= max` must be True (elementwise).')
+
+    return func, a, b, min, max, factor, args, maxiter
+
+
+def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
+                  args=(), maxiter=1000):
+    """Bracket the root of a monotonic scalar function of one variable
+
+    This function works elementwise when `a`, `b`, `min`, `max`, `factor`, and
+    the elements of `args` are broadcastable arrays.
+
+    Parameters
+    ----------
+    func : callable
+        The function for which the root is to be bracketed.
+        The signature must be::
+
+            func(x: ndarray, *args) -> ndarray
+
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`. ``func`` must be an elementwise function: each element
+        ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
+    a, b : float array_like
+        Starting guess of bracket, which need not contain a root. If `b` is
+        not provided, ``b = a + 1``. Must be broadcastable with one another.
+    min, max : float array_like, optional
+        Minimum and maximum allowable endpoints of the bracket, inclusive. Must
+        be broadcastable with `a` and `b`.
+    factor : float array_like, default: 2
+        The factor used to grow the bracket. See notes for details.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`.  Must be arrays
+        broadcastable with `a`, `b`, `min`, and `max`. If the callable to be
+        differentiated requires arguments that are not broadcastable with the
+        other arrays, wrap that callable with `func` such that `func` accepts
+        only `x` and broadcastable arrays.
+
+    Returns
+    -------
+    res : OptimizeResult
+        An instance of `scipy.optimize.OptimizeResult` with the following
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+        arrays of the same shape.
+
+        xl, xr : float
+            The lower and upper ends of the bracket.
+        fl, fr : float
+            The function value at the lower and upper ends of the bracket.
+        nfev : int
+            The number of times the function was called to find the root.
+        nit : int
+            The number of iterations of Chandrupatla's algorithm performed.
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm produced a valid bracket.
+            ``-1`` : The bracket expanded to the allowable limits without finding a bracket.
+            ``-2`` : The maximum number of iterations was reached.
+            ``-3`` : A non-finite value was encountered.
+            ``-4`` : Iteration was terminated by `callback`.
+            ``1`` : The algorithm is proceeding normally (in `callback` only).
+            ``2`` : A bracket was found in the opposite search direction (in `callback` only).
+
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
+
+    Notes
+    -----
+    This function generalizes an algorithm found in pieces throughout
+    `scipy.stats`. The strategy is to iteratively grow the bracket `(l, r)`
+     until ``func(l) < 0 < func(r)``.
+
+    - If `min` is not provided, the distance between `b` and `l` is iteratively
+      increased by `factor`.
+    - If `min` is provided, the distance between `min` and `l` is iteratively
+      decreased by `factor`. Note that this *increases* the bracket size.
+
+    Growth of the bracket to the right is analogous.
+
+    Growth of the bracket in one direction stops when the endpoint is no longer
+    finite, the function value at the endpoint is no longer finite, or the
+    endpoint reaches its limiting value (`min` or `max`). Iteration terminates
+    when the bracket stops growing in both directions, the bracket surrounds
+    the root, or a root is found (accidentally).
+
+    If multiple brackets are found, only the leftmost one is returned.
+    If roots of the function are found, both `l` and `r` are set to the
+    leftmost root.
+
+    """
+    # Todo:
+    # - find bracket with sign change in specified direction
+    # - Add tolerance
+    # - allow factor < 1?
+
+    callback = None  # works; I just don't want to test it
+    temp = _bracket_root_iv(func, a, b, min, max, factor, args, maxiter)
+    func, a, b, min, max, factor, args, maxiter = temp
+
+    xs = (a, b)
+    temp = _scalar_optimization_initialize(func, xs, args)
+    xs, fs, args, shape, dtype = temp
+    x = np.concatenate(xs)
+    f = np.concatenate(fs)
+    n = len(x) // 2
+
+    x_last = np.concatenate((x[n:], x[:n]))
+    f_last = np.concatenate((f[n:], f[:n]))
+    x0 = x_last
+
+    min = np.broadcast_to(min, shape).astype(dtype, copy=False).ravel()
+    max = np.broadcast_to(max, shape).astype(dtype, copy=False).ravel()
+    limit = np.concatenate((min, max))
+
+    factor = np.broadcast_to(factor, shape).astype(dtype, copy=False).ravel()
+    factor = np.concatenate((factor, factor))
+
+    active = np.arange(2*n)
+    args = [np.concatenate((arg, arg)) for arg in args]
+    shape = shape + (2,)
+
+    i = np.isinf(limit)
+    ni = ~i
+    d = np.zeros_like(x)
+    d[i] = (x[i] - x0[i]) * factor[i]
+    d[ni] = (limit[ni] - x[ni]) / factor[ni]
+
+    status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
+    nit, nfev = 0, 1  # one function evaluation per side performed above
+
+    work = OptimizeResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
+                          active=active, d=d, x_last=x_last, f_last=f_last,
+                          nit=nit, nfev=nfev, status=status, args=args,
+                          xl=None, xr=None, fl=None, fr=None, n=n)
+    res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xr', 'xr'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'),
+                      ('fr', 'fr'), ('x', 'x'), ('f', 'f'),
+                      ('x_last', 'x_last'), ('f_last', 'f_last')]
+
+    def pre_func_eval(work):
+        work.x_last = work.x
+        work.f_last = work.f
+        i = np.isinf(work.limit)
+        x = np.zeros_like(work.x)
+
+        x[i] = work.x0[i] + work.d[i]
+        work.d[i] *= work.factor[i]
+
+        ni = ~i
+        x[ni] = work.limit[ni] - work.d[ni]
+        work.d[ni] /= work.factor[ni]
+
+        return x
+
+    def post_func_eval(x, f, work):
+        work.x = x
+        work.f = f
+
+    def check_termination(work):
+
+        stop = np.zeros_like(work.x, dtype=bool)
+
+        sf = np.sign(work.f)
+        sf_last = np.sign(work.f_last)
+
+        i = (sf_last == -sf) | (sf_last == 0) | (sf == 0)
+        work.status[i] = _ECONVERGED
+        stop[i] = True
+
+        # If we just found a bracket on the right, we can stop looking on the
+        # left, and vice-versa. This is a bit tricky.
+        # Get the integer indices of the elements that can also stop
+        also_stop = (work.active[i] + work.n) % (2*work.n)
+        # Check whether they are still active.
+        # To start, we need to find out whether they would be in `work.active`
+        # if they are indeed there.
+        j = np.searchsorted(work.active, also_stop)
+        # If the location exceeds the length of the `work.active`, they are
+        # not there.
+        j = j[j < len(work.active)]
+        # Check whether they are still there.
+        j = j[also_stop == work.active[j]]
+        # Now convert these to boolean indices
+        i = np.zeros_like(stop)
+        i[j] = True  # boolean indices of elements that can also stop
+        i = i & ~stop
+        work.status[i] = _ESTOPONESIDE
+        stop[i] = True
+
+        i = (work.x == work.limit) & ~stop
+        work.status[i] = _ELIMITS
+        stop[i] = True
+
+        i = ~(np.isfinite(work.x) & np.isfinite(work.f)) & ~stop
+        work.status[i] = _EVALUEERR
+        stop[i] = True
+
+        return stop
+
+    def post_termination_check(work):
+        pass
+
+    def customize_result(res, shape):
+        n = len(res['x']) // 2
+
+        xal = res['x'][:n]
+        xar = res['x_last'][:n]
+        xbl = res['x_last'][n:]
+        xbr = res['x'][n:]
+
+        fal = res['f'][:n]
+        far = res['f_last'][:n]
+        fbl = res['f_last'][n:]
+        fbr = res['f'][n:]
+
+        sa = res['status'][:n]
+        sb = res['status'][n:]
+
+        da = xar - xal
+        db = xbr - xbl
+
+        i1 = ((da <= db) & (sa == 0)) | ((sa == 0) & (sb != 0))
+        i2 = ((db <= da) & (sb == 0)) | ((sb == 0) & (sa != 0))
+
+        xl = xal.copy()
+        fl = fal.copy()
+        xr = xbr.copy()
+        fr = fbr.copy()
+
+        xr[i1] = xar[i1]
+        fr[i1] = far[i1]
+        xl[i2] = xbl[i2]
+        fl[i2] = fbl[i2]
+
+        res['xl'] = xl
+        res['xr'] = xr
+        res['fl'] = fl
+        res['fr'] = fr
+
+        res['nit'] = np.maximum(res['nit'][:n], res['nit'][n:])
+        res['nfev'] = res['nfev'][:n] + res['nfev'][n:]
+        # If the status on one side is zero, the status is zero. In any case,
+        # report the status from one side only.
+        res['status'] = np.choose(sa == 0, (sb, sa))
+        res['success'] = (res['status'] == 0)
+        del res['x']
+        del res['f']
+        del res['x_last']
+        del res['f_last']
+        return shape[:-1]
+
+    return _scalar_optimization_loop(work, callback, shape,
+                                     maxiter, func, args, dtype,
+                                     pre_func_eval, post_func_eval,
+                                     check_termination, post_termination_check,
+                                     customize_result, res_work_pairs)
+
+
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
                   fatol=None, frtol=0, maxiter=_iter, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
@@ -1606,13 +1910,14 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         tl = 0.5 * work.tol / work.dx
         work.t = np.clip(t, tl, 1 - tl)
 
-    def customize_result(res):
+    def customize_result(res, shape):
         xl, xr, fl, fr = res['xl'], res['xr'], res['fl'], res['fr']
         i = res['xl'] < res['xr']
         res['xl'] = np.choose(i, (xr, xl))
         res['xr'] = np.choose(i, (xl, xr))
         res['fl'] = np.choose(i, (fr, fl))
         res['fr'] = np.choose(i, (fl, fr))
+        return shape
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
@@ -1663,8 +1968,9 @@ def _scalar_optimization_loop(work, callback, shape, maxiter,
         steps that need to happen after the termination check and before the
         end of the iteration.
     customize_result : callable
-        A function that accepts `res`. May modify `res` according to
-        preferences (e.g. rearrange elements between attributes).
+        A function that accepts `res` and `shape` and returns `shape`. May
+        modify `res` (in-place) according to preferences (e.g. rearrange
+        elements between attributes) and modify `shape` if needed.
     res_work_pairs : list of (str, str)
         Identifies correspondence between attributes of `res` and attributes
         of `work`; i.e., attributes of active elements of `work` will be
@@ -1903,7 +2209,7 @@ def _scalar_optimization_prepare_result(work, res, res_work_pairs, active,
     res = res.copy()
     _scalar_optimization_update_active(work, res, res_work_pairs, active)
 
-    customize_result(res)
+    shape = customize_result(res, shape)
 
     for key, val in res.items():
         res[key] = np.reshape(val, shape)[()]
@@ -2353,8 +2659,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def post_termination_check(work):
         return
 
-    def customize_result(res):
-        return
+    def customize_result(res, shape):
+        return shape
 
     return _scalar_optimization_loop(work, callback, shape,
                                      maxiter, func, args, dtype,
