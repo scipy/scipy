@@ -29,7 +29,7 @@ class Bench(Benchmark):
         self.time_mikota.__func__.setup = self.setup_mikota
 
         self.time_sakurai.__func__.params = list(self.params)
-        self.time_sakurai.__func__.params[0] = [50, 100]
+        self.time_sakurai.__func__.params[0] = [50]
         self.time_sakurai.__func__.setup = self.setup_sakurai
 
         self.time_sakurai_inverse.__func__.params = list(self.params)
@@ -94,7 +94,7 @@ class Bench(Benchmark):
         else:
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < tol, msg
+            assert accuracy < 1e-2 * tol, msg
 
     def time_sakurai(self, n, solver):
         m = 3
