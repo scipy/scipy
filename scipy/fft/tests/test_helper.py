@@ -17,7 +17,8 @@ from scipy.conftest import (
 )
 from scipy._lib._array_api import(
     _assert_matching_namespace,
-    xp_assert_close
+    xp_assert_close,
+    SCIPY_DEVICE
 )
 from scipy import fft
 
@@ -435,17 +436,26 @@ class TestFFTFreq:
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
+        device = SCIPY_DEVICE
+        try:
+            x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1],
+                           dtype=xp.float64, device=device)
+            x2 = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1],
+                            dtype=xp.float64, device=device)
+        except TypeError:
+            x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1], dtype=xp.float64)
+            x2 = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1],
+                            dtype=xp.float64)
+
         y = xp.asarray(9 * fft.fftfreq(9, xp=xp), dtype=xp.float64)
         xp_assert_close(y, x)
         y = xp.asarray(9 * xp.pi * fft.fftfreq(9, xp.pi, xp=xp), dtype=xp.float64)
         xp_assert_close(y, x)
 
-        x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1], dtype=xp.float64)
         y = xp.asarray(10 * fft.fftfreq(10, xp=xp), dtype=xp.float64)
-        xp_assert_close(y, x)
+        xp_assert_close(y, x2)
         y = xp.asarray(10 * xp.pi * fft.fftfreq(10, xp.pi, xp=xp), dtype=xp.float64)
-        xp_assert_close(y, x)
+        xp_assert_close(y, x2)
 
 
 class TestRFFTFreq:
@@ -456,17 +466,24 @@ class TestRFFTFreq:
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64)
+        device = SCIPY_DEVICE
+        try:
+            x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64, device=device)
+            x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64, device=device)
+        except TypeError:
+            # work around the `device` keyword not being implemented in numpy yet
+            x = xp.asarray([0, 1, 2, 3, 4], dtype=xp.float64)
+            x2 = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
+
         y = xp.asarray(9 * fft.rfftfreq(9, xp=xp), dtype=xp.float64)
         xp_assert_close(y, x)
         y = xp.asarray(9 * xp.pi * fft.rfftfreq(9, xp.pi, xp=xp), dtype=xp.float64)
         xp_assert_close(y, x)
 
-        x = xp.asarray([0, 1, 2, 3, 4, 5], dtype=xp.float64)
         y = xp.asarray(10 * fft.rfftfreq(10, xp=xp), dtype=xp.float64)
-        xp_assert_close(y, x)
+        xp_assert_close(y, x2)
         y = xp.asarray(10 * xp.pi * fft.rfftfreq(10, xp.pi, xp=xp), dtype=xp.float64)
-        xp_assert_close(y, x)
+        xp_assert_close(y, x2)
 
 
 class TestNamespaces:
