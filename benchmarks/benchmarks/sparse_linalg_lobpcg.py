@@ -94,7 +94,7 @@ class Bench(Benchmark):
         else:
             ed, _ = eigh(self.Aa, self.Ba, subset_by_index=(0, m - 1))
             accuracy = max(abs(ee - ed) / ee)
-            assert accuracy < 1e-2 * tol, msg
+            assert accuracy < 1e-6 * tol, msg
 
     def time_sakurai(self, n, solver):
         m = 3
