@@ -801,7 +801,7 @@ class MikotaK(LinearOperator):
         return self
 
 
-class Mikota_pair:
+class MikotaPair:
     """
     Construct the Mikota pair of matrices in various formats and
     eigenvalues of the generalized eigenproblem with them.
@@ -856,9 +856,9 @@ class Mikota_pair:
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.sparse.linalg._special_sparse_arrays import Mikota_pair
+    >>> from scipy.sparse.linalg._special_sparse_arrays import MikotaPair
     >>> n = 6
-    >>> mik = Mikota_pair(n)
+    >>> mik = MikotaPair(n)
     >>> mik_k = mik.k
     >>> mik_m = mik.m
     >>> mik_k.toarray()
