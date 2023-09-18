@@ -1,3 +1,0 @@
-eval "$(/opt/conda/bin/conda shell.posix hook)"
-conda activate  /workspaces/scipy/venv
-/workspaces/scipy/venv/bin/python3.10 -Wi -m compileall -q -l -i /tmp/tmp4rzdt8tt -j 0

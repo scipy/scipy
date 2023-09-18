@@ -1,7 +1,0 @@
-
-Name: Graphite2
-Description: Font rendering engine for Complex Scripts
-Version: 3.0.1
-Libs: -L/workspaces/scipy/venv/lib -lgraphite2
-Cflags: -I/workspaces/scipy/venv/include
-

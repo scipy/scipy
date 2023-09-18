@@ -1,3 +1,0 @@
-SYSTEM_HEADER_DIR="/workspaces/scipy/venv/x86_64-conda-linux-gnu/sysroot${sysroot_headers_suffix}/usr/include"
-OTHER_FIXINCLUDES_DIRS=""
-STMP_FIXINC="stmp-fixinc"

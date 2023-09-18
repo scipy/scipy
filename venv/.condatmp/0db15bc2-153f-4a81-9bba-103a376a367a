@@ -1,7 +1,0 @@
-
-datadir=/workspaces/scipy/venv/share
-xkb_base=/workspaces/scipy/venv/share/X11/xkb
-
-Name: XKeyboardConfig
-Description: X Keyboard configuration data
-Version: 2.39

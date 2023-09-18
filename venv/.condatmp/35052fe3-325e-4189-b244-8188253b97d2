@@ -1,5 +1,0 @@
-[Paths]
-Prefix = /workspaces/scipy/venv
-Binaries = /workspaces/scipy/venv/bin
-Libraries = /workspaces/scipy/venv/lib
-Headers = /workspaces/scipy/venv/include/qt
