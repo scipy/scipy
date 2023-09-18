@@ -74,7 +74,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
         raise ValueError(
             f"invalid number of data points ({shape}) specified")
 
-    return shape, axes
+    return tuple(shape), list(axes)
 
 
 def _asfarray(x):

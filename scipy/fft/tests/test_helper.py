@@ -138,13 +138,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([])
-        axes_expected = np.array([])
+        shape_expected = ()
+        axes_expected = []
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -153,13 +153,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([])
-        axes_expected = np.array([])
+        shape_expected = ()
+        axes_expected = []
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -168,13 +168,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([3])
-        axes_expected = np.array([0])
+        shape_expected = (3,)
+        axes_expected = [0]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -183,29 +183,29 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([10])
-        axes_expected = np.array([0])
+        shape_expected = (10,)
+        axes_expected = [0]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_py_2d_defaults(self, xp):
         x = xp.asarray([[1, 2, 3, 4],
-                      [5, 6, 7, 8]])
+                        [5, 6, 7, 8]])
         shape = None
         axes = None
 
-        shape_expected = np.array([2, 4])
-        axes_expected = np.array([0, 1])
+        shape_expected = (2, 4)
+        axes_expected = [0, 1]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -215,13 +215,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([5, 2])
-        axes_expected = np.array([0, 1])
+        shape_expected = (5, 2)
+        axes_expected = [0, 1]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -230,13 +230,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = None
 
-        shape_expected = np.array([6, 2, 5, 3, 4])
-        axes_expected = np.array([0, 1, 2, 3, 4])
+        shape_expected = (6, 2, 5, 3, 4)
+        axes_expected = [0, 1, 2, 3, 4]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -245,13 +245,13 @@ class Test_init_nd_shape_and_axes:
         shape = [10, -1, -1, 1, 4]
         axes = None
 
-        shape_expected = np.array([10, 2, 5, 1, 4])
-        axes_expected = np.array([0, 1, 2, 3, 4])
+        shape_expected = (10, 2, 5, 1, 4)
+        axes_expected = [0, 1, 2, 3, 4]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -260,13 +260,13 @@ class Test_init_nd_shape_and_axes:
         shape = None
         axes = [4, 1, 2]
 
-        shape_expected = np.array([4, 2, 5])
-        axes_expected = np.array([4, 1, 2])
+        shape_expected = (4, 2, 5)
+        axes_expected = [4, 1, 2]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -275,13 +275,13 @@ class Test_init_nd_shape_and_axes:
         shape = [10, -1, 2]
         axes = [1, 0, 3]
 
-        shape_expected = np.array([10, 6, 2])
-        axes_expected = np.array([1, 0, 3])
+        shape_expected = (10, 6, 2)
+        axes_expected = [1, 0, 3]
 
         shape_res, axes_res = _init_nd_shape_and_axes(x, shape, axes)
 
-        assert_equal(shape_res, shape_expected)
-        assert_equal(axes_res, axes_expected)
+        assert shape_res == shape_expected
+        assert axes_res == axes_expected
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -289,8 +289,8 @@ class Test_init_nd_shape_and_axes:
         x = xp.zeros((2, 3, 4, 5))
         shape, axes = _init_nd_shape_and_axes(x, shape=(5, 5, 5), axes=None)
 
-        assert_array_equal(shape, [5, 5, 5])
-        assert_array_equal(axes, [1, 2, 3])
+        assert shape == (5, 5, 5)
+        assert axes == [1, 2, 3]
 
     @skip_if_array_api_gpu
     @array_api_compatible

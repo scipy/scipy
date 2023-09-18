@@ -95,10 +95,10 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
     Returns
     -------
-    shape : array
-        The shape of the result. It is a 1-D integer array.
-    axes : array
-        Axes along which the calculation is computed. It is a 1-D integer array.
+    shape : tuple
+        The shape of the result as a tuple of integers.
+    axes : list
+        Axes along which the calculation is computed, as a list of integers.
 
     """
     x = np.asarray(x)
