@@ -2632,6 +2632,7 @@ def num_obs_dm(d):
     is_valid_dm(d, tol=np.inf, throw=True, name='d')
     return d.shape[0]
 
+
 def num_obs_y(Y):
     """
     Return the number of original observations that correspond to a
