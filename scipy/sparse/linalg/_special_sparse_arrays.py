@@ -4,7 +4,7 @@ from scipy.sparse import kron, eye, dia_array
 
 __all__ = ['LaplacianNd']
 # Sakurai and Mikota classes are intended for tests and benchmarks
-# and their docstrings are untested and unpublished
+# and explicitly not included in the public API of this module.
 
 
 class LaplacianNd(LinearOperator):
