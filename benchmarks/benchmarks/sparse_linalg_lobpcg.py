@@ -7,7 +7,7 @@ with safe_import():
                               cholesky_banded, cho_solve_banded, eig_banded)
     from scipy.sparse.linalg import lobpcg, eigsh, LinearOperator
     from scipy.sparse.linalg._special_sparse_arrays import (Sakurai,
-                                                            Mikota_pair)
+                                                            MikotaPair)
 
 class Bench(Benchmark):
     params = [
@@ -32,7 +32,7 @@ class Bench(Benchmark):
 
     def setup_mikota(self, n, solver):
         self.shape = (n, n)
-        mik = Mikota_pair(n)
+        mik = MikotaPair(n)
         mik_k = mik.k
         mik_m = mik.m
         self.Ac = mik_k
